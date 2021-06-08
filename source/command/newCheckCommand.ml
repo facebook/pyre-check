@@ -194,9 +194,13 @@ module CheckConfiguration = struct
 end
 
 let run_check check_configuration =
-  let _analysis_configuration = CheckConfiguration.analysis_configuration_of check_configuration in
-  Log.warning "Coming soon...";
-  Lwt.return 0
+  let { CheckConfiguration.source_paths; _ } = check_configuration in
+  Newserver.BuildSystem.with_build_system source_paths ~f:(fun _build_system ->
+      let _analysis_configuration =
+        CheckConfiguration.analysis_configuration_of check_configuration
+      in
+      Log.warning "Coming soon...";
+      Lwt.return 0)
 
 
 let run_check configuration_file =

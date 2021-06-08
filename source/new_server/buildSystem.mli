@@ -42,7 +42,7 @@ val lookup_artifact : t -> PyrePath.t -> PyrePath.t list
 val store : t -> unit
 (** Store the current build system into saved state. *)
 
-(** {2 Construction & Initialization} *)
+(** {1 Construction & Initialization} *)
 
 (* This function allows the client to fully tweak the behavior of a build system. Expose for testing
    purpose only. *)
@@ -103,3 +103,9 @@ module Initializer : sig
     unit ->
     t
 end
+
+(** {1 Convenient Helpers}*)
+
+val with_build_system : f:(t -> 'a Lwt.t) -> Configuration.SourcePaths.t -> 'a Lwt.t
+(** [with_build_system ~f source_paths] creates a build system from [source_paths] and invoke [f] on
+    it. The created build system will be automatically cleaned up after [f] returns.*)
