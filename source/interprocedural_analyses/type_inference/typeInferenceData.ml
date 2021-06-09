@@ -64,43 +64,56 @@ module AnnotationLocation = struct
     create ~lookup ~qualifier ~line
 end
 
+module SerializableType = struct
+  type t = Type.t [@@deriving show, eq]
+
+  let to_yojson type_ = `String (type_to_string type_)
+end
+
 module TypeAnnotation = struct
-  type t = {
-    inferred: Type.t option;
-    given: Type.t option;
-  }
+  type t =
+    | Inferred of SerializableType.t
+    | Given of SerializableType.t
+    | Missing
   [@@deriving show, eq]
 
-  let is_inferred annotation = Option.is_some annotation.inferred
-
-  let combine_with ~f left right =
-    {
-      inferred =
-        ( match left.inferred, right.inferred with
-        | Some left, Some right -> Some (f left right)
-        | None, right -> right
-        | left, None -> left );
-      given = (if Option.is_some left.given then left.given else right.given);
-    }
+  let is_inferred = function
+    | Inferred _ -> true
+    | Given _
+    | Missing ->
+        false
 
 
-  let join ~global_resolution = combine_with ~f:(GlobalResolution.join global_resolution)
-
-  let meet ~global_resolution = combine_with ~f:(GlobalResolution.meet global_resolution)
-
-  let from_given ~global_resolution given =
+  let from_given ~global_resolution expression =
     let parser = GlobalResolution.annotation_parser global_resolution in
-    let given = given >>| parser.parse_annotation in
-    { inferred = None; given }
+    match expression >>| parser.parse_annotation with
+    | Some type_ -> Given type_
+    | None -> Missing
 
 
-  let from_inferred inferred = { inferred = Some inferred; given = None }
+  let from_inferred type_ = Inferred type_
 
-  let to_yojson { inferred; given } =
-    match inferred, given with
-    | Some inferred, _ -> `String (type_to_string inferred)
-    | None, Some given -> `String (type_to_string given)
-    | _ -> `Null
+  let merge ~f left right =
+    match left, right with
+    | Inferred left, Inferred right -> Inferred (f left right)
+    | Inferred type_, _
+    | _, Inferred type_ ->
+        Inferred type_
+    | Given type_, _
+    | _, Given type_ ->
+        Given type_
+    | Missing, Missing -> Missing
+
+
+  let join ~global_resolution = merge ~f:(GlobalResolution.join global_resolution)
+
+  let meet ~global_resolution = merge ~f:(GlobalResolution.meet global_resolution)
+
+  let to_yojson = function
+    | Inferred type_
+    | Given type_ ->
+        SerializableType.to_yojson type_
+    | Missing -> `Null
 end
 
 module AnnotationsByName = struct
@@ -182,7 +195,7 @@ module GlobalAnnotation = struct
     type t = {
       name: SerializableReference.t;
       location: AnnotationLocation.t;
-      annotation: TypeAnnotation.t;
+      annotation: SerializableType.t;
     }
     [@@deriving show, eq, to_yojson]
 
@@ -199,7 +212,7 @@ module GlobalAnnotation = struct
     let combine ~global_resolution left right =
       {
         left with
-        annotation = TypeAnnotation.join ~global_resolution left.annotation right.annotation;
+        annotation = GlobalResolution.join global_resolution left.annotation right.annotation;
       }
   end
 
@@ -213,7 +226,7 @@ module AttributeAnnotation = struct
       parent: SerializableReference.t;
       name: SerializableReference.t;
       location: AnnotationLocation.t;
-      annotation: TypeAnnotation.t;
+      annotation: SerializableType.t;
     }
     [@@deriving show, eq, to_yojson]
 
@@ -230,7 +243,7 @@ module AttributeAnnotation = struct
     let combine ~global_resolution left right =
       {
         left with
-        annotation = TypeAnnotation.join ~global_resolution left.annotation right.annotation;
+        annotation = GlobalResolution.join global_resolution left.annotation right.annotation;
       }
   end
 
@@ -412,7 +425,7 @@ module LocalResult = struct
               {
                 parent = type_to_reference parent;
                 name;
-                annotation = TypeAnnotation.from_inferred type_;
+                annotation = type_;
                 location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
               };
         }
@@ -425,7 +438,7 @@ module LocalResult = struct
               globals
               {
                 name;
-                annotation = TypeAnnotation.from_inferred type_;
+                annotation = type_;
                 location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
               };
         }

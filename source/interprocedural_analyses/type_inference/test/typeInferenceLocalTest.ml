@@ -141,19 +141,23 @@ let check_inference_results ~context ~checks source =
   Memory.reset_shared_memory ()
 
 
+let get_inferred = function
+  | TypeAnnotation.Inferred inferred -> Some inferred
+  | TypeAnnotation.Given _
+  | TypeAnnotation.Missing ->
+      None
+
+
 let test_inferred_returns context =
   let check_return_annotation ~define_name ~expected source =
-    let check
-        ( { LocalResult.define = { DefineAnnotation.return = { TypeAnnotation.inferred; _ }; _ }; _ }
-        as result )
-      =
+    let check ({ LocalResult.define = { DefineAnnotation.return; _ }; _ } as result) =
       Asserts.assert_inference_result
         ~context
         ~result
         ~details:"Checking inferred return annotation"
         ~source
         ~expected:(Some expected)
-        ~actual:inferred
+        ~actual:(get_inferred return)
     in
     check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
   in
@@ -170,7 +174,7 @@ let test_inferred_parameters context =
   let open DefineAnnotation.Parameters in
   let check_parameter_annotation ~define_name ~parameter_name ~expected source =
     let check ({ LocalResult.define = { DefineAnnotation.parameters; _ }; _ } as result) =
-      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
+      let { Value.annotation; _ } =
         Asserts.find_by_name ("$parameter$" ^ parameter_name) parameters
       in
       Asserts.assert_inference_result
@@ -179,7 +183,7 @@ let test_inferred_parameters context =
         ~details:("Checking inferred annotation for parameter " ^ parameter_name)
         ~source
         ~expected:(Some expected)
-        ~actual:inferred
+        ~actual:(get_inferred annotation)
     in
     check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
   in
@@ -197,16 +201,14 @@ let test_inferred_globals context =
   let check_global_annotation ~define_name ~global_name ~expected source =
     let open GlobalAnnotation in
     let check ({ LocalResult.globals; _ } as result) =
-      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
-        Asserts.find_by_name global_name globals
-      in
+      let { Value.annotation; _ } = Asserts.find_by_name global_name globals in
       Asserts.assert_inference_result
         ~context
         ~result
         ~details:("Checking inferred annotation for global " ^ global_name)
         ~source
         ~expected:(Some expected)
-        ~actual:inferred
+        ~actual:(Some annotation)
     in
     check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
   in
@@ -223,16 +225,14 @@ let test_inferred_attributes context =
   let check_attribute_annotation ~define_name ~attribute_name ~expected source =
     let open AttributeAnnotation in
     let check ({ LocalResult.attributes; _ } as result) =
-      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
-        Asserts.find_by_name attribute_name attributes
-      in
+      let { Value.annotation; _ } = Asserts.find_by_name attribute_name attributes in
       Asserts.assert_inference_result
         ~context
         ~result
         ~details:("Checking inferred annotation for attribute " ^ attribute_name)
         ~source
         ~expected:(Some expected)
-        ~actual:inferred
+        ~actual:(Some annotation)
     in
     check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
   in
