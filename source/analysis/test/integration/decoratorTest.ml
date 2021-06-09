@@ -1050,6 +1050,52 @@ let test_decorator_factories context =
        `decorator_factory` but got `int`.";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Callable, List, TypeVar
+      T = TypeVar('T')
+      class IntList(List[int]): ...
+      class StrList(List[str]): ...
+
+      def decorator_factory(x: List[T]) -> Callable[[Callable[[str], T]], Callable[[], T]]: ...
+
+      @decorator_factory(x=IntList())
+      def foo_a(x: str) -> str:
+          return ""
+
+      @decorator_factory(x=StrList())
+      def foo_b(x: int) -> int:
+          return 1
+    |}
+    [
+      "Invalid decoration [56]: While applying decorator `test.decorator_factory(...)`: Expected \
+       `typing.Callable[[str], int]` for 1st positional only parameter to anonymous call but got \
+       `typing.Callable(test.foo_a)[[Named(x, str)], str]`.";
+      "Invalid decoration [56]: While applying decorator `test.decorator_factory(...)`: Expected \
+       `typing.Callable[[str], str]` for 1st positional only parameter to anonymous call but got \
+       `typing.Callable(test.foo_b)[[Named(x, int)], int]`.";
+    ];
+  assert_type_errors
+    {|
+        from typing import Callable, List
+
+        def expand(input: List[float]) -> Callable[[Callable[[int], int]], Callable[[int], str]]:
+            ...
+
+        @expand([1, 2])
+        def test_foo(x: int) -> int:
+            return x
+        reveal_type(test_foo)
+
+        @expand([])
+        def test_bar(x: int) -> int:
+          return x
+        reveal_type(test_bar)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.test_foo` is `typing.Callable[[int], str]`.";
+      "Revealed type [-1]: Revealed type for `test.test_bar` is `typing.Callable[[int], str]`.";
+    ];
   ()
 
 
