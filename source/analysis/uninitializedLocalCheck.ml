@@ -127,20 +127,24 @@ module State (Context : Context) = struct
   let backward ~key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
+let run_on_define ~qualifier define =
+  let module Context = struct
+    let uninitialized_usage = Int.Table.create ()
+  end
+  in
+  let module State = State (Context) in
+  let module Fixpoint = Fixpoint.Make (State) in
+  let cfg = Cfg.create (Node.value define) in
+  let fixpoint = Fixpoint.forward ~cfg ~initial:(State.initial ~define) in
+  Fixpoint.exit fixpoint >>| State.errors ~qualifier ~define |> Option.value ~default:[]
+
+
 let run
     ~configuration:_
     ~environment:_
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
-  let check define =
-    let module Context = struct
-      let uninitialized_usage = Int.Table.create ()
-    end
-    in
-    let module State = State (Context) in
-    let module Fixpoint = Fixpoint.Make (State) in
-    let cfg = Cfg.create (Node.value define) in
-    let fixpoint = Fixpoint.forward ~cfg ~initial:(State.initial ~define) in
-    Fixpoint.exit fixpoint >>| State.errors ~qualifier ~define |> Option.value ~default:[]
-  in
-  source |> Preprocessing.defines ~include_toplevels:false |> List.map ~f:check |> List.concat
+  source
+  |> Preprocessing.defines ~include_toplevels:false
+  |> List.map ~f:(run_on_define ~qualifier)
+  |> List.concat
