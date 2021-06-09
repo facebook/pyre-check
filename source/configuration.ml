@@ -14,7 +14,7 @@ let default_python_minor_version = 10
 
 let default_python_micro_version = 10
 
-let default_shared_memory_heap_size = 16 * 1024 * 1024 * 1024 (* 16 GiB *)
+let default_shared_memory_heap_size = 8 * 1024 * 1024 * 1024 (* 8 GiB *)
 
 let default_shared_memory_dependency_table_power = 27
 
