@@ -48,6 +48,7 @@ module T : sig
         callee: Expression.t;
         arguments: Expression.Call.Argument.t list;
       }
+    | InvalidArgumentsClause of Expression.t
     | InvalidNameClause of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;

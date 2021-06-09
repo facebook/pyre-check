@@ -50,6 +50,7 @@ module T = struct
         callee: Expression.t;
         arguments: Expression.Call.Argument.t list;
       }
+    | InvalidArgumentsClause of Expression.t
     | InvalidNameClause of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
@@ -139,6 +140,8 @@ let description error =
         "`%s` is not a valid model for model queries with find clause of kind `%s`."
         (Expression.show expression)
         find_clause_kind
+  | InvalidArgumentsClause expression ->
+      Format.asprintf "`%s` is not a valid arguments clause." (Expression.show expression)
   | InvalidNameClause expression ->
       Format.asprintf "`%s` is not a valid name clause." (Expression.show expression)
   | InvalidParameterExclude expression ->
@@ -244,6 +247,7 @@ let code { kind; _ } =
   | DefineBodyNotEllipsis _ -> 23
   | InvalidNameClause _ -> 24
   | ParseError -> 25
+  | InvalidArgumentsClause _ -> 26
 
 
 let display { kind = error; path; location } =
