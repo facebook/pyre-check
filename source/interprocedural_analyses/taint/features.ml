@@ -186,9 +186,14 @@ module ReturnAccessPath = struct
 
   let less_or_equal ~left ~right = Abstract.TreeDomain.Label.is_prefix ~prefix:right left
 
+  let common_prefix = function
+    | head :: tail -> List.fold ~init:head ~f:Abstract.TreeDomain.Label.common_prefix tail
+    | [] -> []
+
+
   let widen set =
     if List.length set > TaintConfiguration.maximum_return_access_path_width then
-      [[]]
+      [common_prefix set]
     else
       let truncate = function
         | p when List.length p > TaintConfiguration.maximum_return_access_path_depth ->

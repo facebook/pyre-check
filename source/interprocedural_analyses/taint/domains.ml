@@ -604,11 +604,13 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
 
   let approximate_return_access_paths ~maximum_return_access_path_length tree =
-    let cut_off features =
-      if Features.ReturnAccessPathSet.count features > maximum_return_access_path_length then
-        Features.ReturnAccessPathSet.singleton []
+    let cut_off paths =
+      if Features.ReturnAccessPathSet.count paths > maximum_return_access_path_length then
+        Features.ReturnAccessPathSet.elements paths
+        |> Features.ReturnAccessPath.common_prefix
+        |> Features.ReturnAccessPathSet.singleton
       else
-        features
+        paths
     in
     transform Features.ReturnAccessPathSet.Self Map ~f:cut_off tree
 
