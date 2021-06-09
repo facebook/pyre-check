@@ -88,13 +88,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let transform_non_leaves path taint =
-    let f feature =
-      match feature with
-      | Features.Complex.ReturnAccessPath prefix -> Features.Complex.ReturnAccessPath (prefix @ path)
-    in
+    let f prefix = prefix @ path in
     match path with
     | Abstract.TreeDomain.Label.AnyIndex :: _ -> taint
-    | _ -> BackwardTaint.transform BackwardTaint.complex_feature Map ~f taint
+    | _ -> BackwardTaint.transform Features.ReturnAccessPathSet.Element Map ~f taint
 
 
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
@@ -197,13 +194,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let extra_paths =
                 match kind with
                 | Sinks.LocalReturn ->
-                    let gather_paths (Features.Complex.ReturnAccessPath extra_path) paths =
-                      extra_path :: paths
-                    in
                     BackwardTaint.fold
-                      BackwardTaint.complex_feature
+                      Features.ReturnAccessPathSet.Element
                       element
-                      ~f:gather_paths
+                      ~f:List.cons
                       ~init:[]
                 | _ ->
                     (* No special path handling for side effect taint *)
@@ -1372,7 +1366,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     TaintConfiguration.analysis_model_constraints =
       {
         maximum_model_width;
-        maximum_complex_access_path_length;
+        maximum_return_access_path_length;
         maximum_trace_length;
         maximum_tito_depth;
         _;
@@ -1405,7 +1399,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     |> BackwardState.Tree.limit_to
          ~transform:(BackwardTaint.add_features Features.widen_broadening)
          ~width:maximum_model_width
-    |> BackwardState.Tree.approximate_complex_access_paths ~maximum_complex_access_path_length
+    |> BackwardState.Tree.approximate_return_access_paths ~maximum_return_access_path_length
   in
 
   let split_and_simplify model (parameter, name, original) =

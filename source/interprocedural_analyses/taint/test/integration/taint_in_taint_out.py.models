@@ -948,7 +948,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "taint_in_taint_out.approximate_complex_access_paths",
+    "callable": "taint_in_taint_out.approximate_return_access_paths",
     "sources": [],
     "sinks": [],
     "tito": [

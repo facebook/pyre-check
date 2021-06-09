@@ -100,7 +100,7 @@ def issue_with_indirect_sink_tito():
     adds_tito_with_indirect_sink(x)
 
 
-def approximate_complex_access_paths(x):
+def approximate_return_access_paths(x):
     return {
         "a": x.a,
         "b": x.b,

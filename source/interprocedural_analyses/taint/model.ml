@@ -336,10 +336,9 @@ let infer_class_models ~environment =
   let fold_taint position existing_state attribute =
     let leaf =
       BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn)
-      |> BackwardState.Tree.transform BackwardTaint.complex_feature_set Map ~f:(fun _ ->
-             Features.ComplexSet.singleton
-               (Features.Complex.ReturnAccessPath
-                  [Abstract.TreeDomain.Label.create_name_index attribute]))
+      |> BackwardState.Tree.transform Features.ReturnAccessPathSet.Self Map ~f:(fun _ ->
+             Features.ReturnAccessPathSet.singleton
+               [Abstract.TreeDomain.Label.create_name_index attribute])
     in
     BackwardState.assign
       ~root:

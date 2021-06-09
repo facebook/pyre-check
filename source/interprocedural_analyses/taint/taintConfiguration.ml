@@ -44,7 +44,7 @@ let empty_implicit_sources = { literal_strings = [] }
 
 type analysis_model_constraints = {
   maximum_model_width: int;
-  maximum_complex_access_path_length: int;
+  maximum_return_access_path_length: int;
   maximum_overrides_to_analyze: int option;
   maximum_trace_length: int option;
   maximum_tito_depth: int option;
@@ -53,7 +53,7 @@ type analysis_model_constraints = {
 let default_analysis_model_constraints =
   {
     maximum_model_width = 25;
-    maximum_complex_access_path_length = 10;
+    maximum_return_access_path_length = 10;
     maximum_overrides_to_analyze = None;
     maximum_trace_length = None;
     maximum_tito_depth = None;

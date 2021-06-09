@@ -179,34 +179,26 @@ end
 
 module SimpleSet = Abstract.OverUnderSetDomain.Make (Simple)
 
-(* Set of complex features, where element can be abstracted and joins are expensive. Should only be
-   used for elements that need this kind of joining. *)
-module Complex = struct
-  let name = "complex features"
+module ReturnAccessPath = struct
+  let name = "return access paths"
 
-  type t = ReturnAccessPath of Abstract.TreeDomain.Label.path
-  [@@deriving show { with_path = false }, compare]
+  type t = Abstract.TreeDomain.Label.path [@@deriving show { with_path = false }, compare]
 
-  let less_or_equal ~left ~right =
-    match left, right with
-    | ReturnAccessPath left_path, ReturnAccessPath right_path ->
-        Abstract.TreeDomain.Label.is_prefix ~prefix:right_path left_path
-
+  let less_or_equal ~left ~right = Abstract.TreeDomain.Label.is_prefix ~prefix:right left
 
   let widen set =
     let truncate = function
-      | ReturnAccessPath p when List.length p > TaintConfiguration.maximum_return_access_path_depth
-        ->
-          ReturnAccessPath (List.take p TaintConfiguration.maximum_return_access_path_depth)
+      | p when List.length p > TaintConfiguration.maximum_return_access_path_depth ->
+          List.take p TaintConfiguration.maximum_return_access_path_depth
       | x -> x
     in
     if List.length set > TaintConfiguration.maximum_return_access_path_width then
-      [ReturnAccessPath []]
+      [[]]
     else
       List.map ~f:truncate set
 end
 
-module ComplexSet = Abstract.ElementSetDomain.Make (Complex)
+module ReturnAccessPathSet = Abstract.ElementSetDomain.Make (ReturnAccessPath)
 
 let obscure = Simple.Breadcrumb Breadcrumb.Obscure
 
