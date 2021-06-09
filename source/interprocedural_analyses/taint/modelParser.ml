@@ -111,7 +111,6 @@ module T = struct
       | AnyParameterConstraint of parameter_constraint
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
-      | DecoratorNameConstraint of string
       | DecoratorConstraint of {
           name_constraint: name_constraint;
           arguments_constraint: ArgumentsConstraint.t option;
@@ -1006,44 +1005,6 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         } ->
         parse_name_constraint constraint_expression
         >>= fun name_constraint -> Ok (ModelQuery.NameConstraint name_constraint)
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    {
-                      base =
-                        {
-                          Node.value =
-                            Name
-                              (Name.Attribute
-                                {
-                                  base = { Node.value = Name (Name.Identifier "any_decorator"); _ };
-                                  attribute = "name";
-                                  _;
-                                });
-                          _;
-                        };
-                      attribute = "matches";
-                      _;
-                    });
-              _;
-            } as callee;
-          arguments =
-            [
-              {
-                Call.Argument.value =
-                  { Node.value = Expression.String { StringLiteral.value = name_constraint; _ }; _ };
-                _;
-              };
-            ];
-        } ->
-        if String.equal find_clause_kind "attributes" then
-          Error (invalid_model_query_where_clause ~path ~location callee)
-        else
-          Ok (ModelQuery.DecoratorNameConstraint name_constraint)
     | Expression.Call
         {
           Call.callee = { Node.value = Expression.Name (Name.Identifier "Decorator"); _ } as callee;

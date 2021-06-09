@@ -574,7 +574,11 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [DecoratorNameConstraint "d1"];
+        query =
+          [
+            DecoratorConstraint
+              { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
+          ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
@@ -598,7 +602,11 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [DecoratorNameConstraint "d1"];
+        query =
+          [
+            DecoratorConstraint
+              { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
+          ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
@@ -622,7 +630,11 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [DecoratorNameConstraint "d1"];
+        query =
+          [
+            DecoratorConstraint
+              { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
+          ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
@@ -639,7 +651,14 @@ let test_apply_rule context =
     ~rule:
       {
         name = None;
-        query = [DecoratorNameConstraint "app.route"];
+        query =
+          [
+            DecoratorConstraint
+              {
+                name_constraint = Matches (Re2.create_exn "app.route");
+                arguments_constraint = None;
+              };
+          ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
