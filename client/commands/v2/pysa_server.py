@@ -91,9 +91,14 @@ class PysaServer:
     ) -> Dict[Path, List[lsp.Diagnostic]]:
         result: Dict[Path, List[lsp.Diagnostic]] = {}
         for model in invalid_models:
-            result.setdefault(Path(model.path), []).append(
-                self.invalid_model_to_diagnostic(model)
-            )
+            if model.path is None:
+                self.log_and_show_message_to_client(
+                    "Path cannot be None", lsp.MessageType.WARNING
+                )
+            else:
+                result.setdefault(Path(model.path), []).append(
+                    self.invalid_model_to_diagnostic(model)
+                )
         return result
 
     async def update_errors(self, document_path: Path) -> None:
