@@ -29,6 +29,7 @@ from .persistent import (
     _read_lsp_request,
     try_initialize,
     _log_lsp_event,
+    _publish_diagnostics,
     InitializationExit,
     InitializationSuccess,
     InitializationFailure,
@@ -139,9 +140,7 @@ class PysaServer:
         self, diagnostics: Dict[Path, List[lsp.Diagnostic]]
     ) -> None:
         for path, diagnostic in diagnostics.items():
-            await _publish_diagnostics(self.output_channel, path, [])
-            if diagnostic is not None:
-                await _publish_diagnostics(self.output_channel, path, diagnostic)
+            await _publish_diagnostics(self.output_channel, path, diagnostic or [])
 
     async def wait_for_exit(self) -> int:
         while True:
