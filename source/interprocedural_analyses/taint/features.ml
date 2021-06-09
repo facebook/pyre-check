@@ -187,14 +187,14 @@ module ReturnAccessPath = struct
   let less_or_equal ~left ~right = Abstract.TreeDomain.Label.is_prefix ~prefix:right left
 
   let widen set =
-    let truncate = function
-      | p when List.length p > TaintConfiguration.maximum_return_access_path_depth ->
-          List.take p TaintConfiguration.maximum_return_access_path_depth
-      | x -> x
-    in
     if List.length set > TaintConfiguration.maximum_return_access_path_width then
       [[]]
     else
+      let truncate = function
+        | p when List.length p > TaintConfiguration.maximum_return_access_path_depth ->
+            List.take p TaintConfiguration.maximum_return_access_path_depth
+        | x -> x
+      in
       List.map ~f:truncate set
 end
 
