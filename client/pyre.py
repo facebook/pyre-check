@@ -818,12 +818,6 @@ def incremental(
     default=False,
     help="Print error message when file fails to annotate.",
 )
-@click.option(
-    "--full-stubs",
-    is_flag=True,
-    default=False,
-    help="Include pre-existing annotations in the generated stubs.",
-)
 @click.pass_context
 def infer(
     context: click.Context,
@@ -835,13 +829,11 @@ def infer(
     json: bool,
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
-    full_stubs: bool,
 ) -> int:
     """
     Try adding type annotations to untyped codebase.
     """
     in_place_paths = list(modify_paths) if in_place else None
-    full_stub_paths = list(modify_paths) if full_stubs else None
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     return run_pyre_command(
@@ -856,7 +848,6 @@ def infer(
             errors_from_stdin=json,
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
-            full_stub_paths=full_stub_paths,
         ),
         configuration,
         command_argument.noninteractive,

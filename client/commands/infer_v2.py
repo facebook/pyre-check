@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import cast, Dict, List, Optional, Sequence
 
-import libcst
 from typing_extensions import Final
 from typing_extensions import TypeAlias
 
@@ -177,114 +176,6 @@ class AttributeAnnotation(FieldAnnotation):
     parent: str
 
 
-class AnnotationCollector(libcst.CSTVisitor):
-    def __init__(self, file_path: str) -> None:
-        self.qualifier: str = file_path.replace(".py", "")
-        self.globals_: list[GlobalAnnotation] = []
-        self.attributes: list[AttributeAnnotation] = []
-        self.functions: list[FunctionAnnotation] = []
-        self.methods: list[MethodAnnotation] = []
-        self.class_name: list[str] = []
-
-    def visit_ClassDef(self, node: libcst.ClassDef) -> None:
-        self.class_name.append(node.name.value)
-
-    def leave_ClassDef(self, original_node: libcst.ClassDef) -> None:
-        self.class_name.remove(original_node.name.value)
-
-    def visit_AnnAssign(self, node: libcst.AnnAssign) -> None:
-        target_name = self._code_for_node(node.target)
-        if target_name is None:
-            return
-        parent = ".".join(self.class_name) if self.class_name else None
-        name = self._qualified_name(
-            parent=parent,
-            target_name=target_name,
-        )
-        annotation = TypeAnnotation(self._code_for_node(node.annotation.annotation))
-        if parent is None:
-            self.globals_.append(
-                GlobalAnnotation(
-                    name=name,
-                    annotation=annotation,
-                )
-            )
-        else:
-            self.attributes.append(
-                AttributeAnnotation(
-                    parent=parent,
-                    name=name,
-                    annotation=annotation,
-                )
-            )
-
-    def visit_FunctionDef(self, node: libcst.FunctionDef) -> bool:
-        if node.returns is None:
-            return False
-        parent = ".".join(self.class_name) if self.class_name else None
-        name = self._qualified_name(
-            parent=parent,
-            target_name=node.name.value,
-        )
-        return_annotation = TypeAnnotation(self._code_for_node(node.returns.annotation))
-        parameters = [
-            Parameter(
-                name=parameter.name.value,
-                annotation=TypeAnnotation(
-                    self._code_for_node(
-                        parameter.annotation.annotation
-                        if parameter.annotation
-                        else None
-                    )
-                ),
-                value=self._code_for_node(parameter.default),
-            )
-            for parameter in node.params.params
-        ]
-        decorators = [
-            decorator
-            for decorator in (
-                self._code_for_node(decorator) for decorator in node.decorators
-            )
-            if decorator is not None
-        ]
-        is_async = node.asynchronous is not None
-        if parent is None:
-            self.functions.append(
-                FunctionAnnotation(
-                    name=name,
-                    return_annotation=return_annotation,
-                    parameters=parameters,
-                    decorators=decorators,
-                    is_async=is_async,
-                )
-            )
-        else:
-            self.methods.append(
-                MethodAnnotation(
-                    parent=parent,
-                    name=name,
-                    return_annotation=return_annotation,
-                    parameters=parameters,
-                    decorators=decorators,
-                    is_async=is_async,
-                )
-            )
-        return False
-
-    # utility methods
-
-    def _qualified_name(self, parent: str | None, target_name: str) -> str:
-        prefix = f"{self.qualifier}."
-        if parent is not None:
-            prefix += f"{parent}."
-        return prefix + target_name
-
-    @staticmethod
-    def _code_for_node(node: Optional[libcst.CSTNode]) -> Optional[str]:
-        return None if node is None else libcst.parse_module("").code_for_node(node)
-
-
 @dataclass
 class ModuleAnnotations:
     path: str
@@ -359,57 +250,6 @@ class ModuleAnnotations:
                 for define in infer_output["defines"]
                 if define.get("parent") is not None
             ],
-        )
-
-    @staticmethod
-    def from_module(path: str, module: libcst.Module) -> ModuleAnnotations:
-        collector = AnnotationCollector(file_path=path)
-        module.visit(collector)
-        return ModuleAnnotations(
-            path=path,
-            globals_=collector.globals_,
-            attributes=collector.attributes,
-            functions=collector.functions,
-            methods=collector.methods,
-        )
-
-    def __add__(self, other: ModuleAnnotations) -> ModuleAnnotations:
-        """
-        Combine two sets of annotations for the same module, preferring
-        those from the right where there are collisions.
-
-        One use for this is to add existing annotations to those from infer
-        when generating full stub files.
-        """
-        if self.path != other.path:
-            raise ValueError(
-                "Cannot add ModuleAnnotations from different paths "
-                + f"{self.path!r} vs {other.path!r}"
-            )
-        other_names: set[str] = {
-            annotation.name
-            for annotation in
-            # pyre-ignore[58] : list[A] + list[B] = list[A | B]
-            other.globals_ + other.attributes + other.functions + other.methods
-        }
-        return ModuleAnnotations(
-            path=self.path,
-            globals_=other.globals_
-            + [global_ for global_ in self.globals_ if global_.name not in other_names],
-            attributes=other.attributes
-            + [
-                attribute
-                for attribute in self.attributes
-                if attribute.name not in other_names
-            ],
-            functions=other.functions
-            + [
-                function
-                for function in self.functions
-                if function.name not in other_names
-            ],
-            methods=other.methods
-            + [method for method in self.methods if method.name not in other_names],
         )
 
     def filter_for_complete(self) -> ModuleAnnotations:
