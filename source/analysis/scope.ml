@@ -43,6 +43,8 @@ module Binding = struct
   }
   [@@deriving sexp, compare, hash]
 
+  let name { name; _ } = name
+
   let rec of_unannotated_target ~kind sofar { Node.value = target; location } =
     let open Expression in
     match target with

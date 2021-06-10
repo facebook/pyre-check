@@ -92,7 +92,6 @@ let test_simple context =
     |}
     [];
 
-  (* shouild be: no errors *)
   assert_uninitialized_errors
     {|
         def f():
@@ -100,19 +99,15 @@ let test_simple context =
             pass
           g()
     |}
-    ["Unbound name [10]: Name `g` is used but not defined in the current scope."];
+    [];
 
-  (* should be: no errors *)
   assert_uninitialized_errors
     {|
         def f():
           x, y = 0, 0
           return x, y
     |}
-    [
-      "Unbound name [10]: Name `x` is used but not defined in the current scope.";
-      "Unbound name [10]: Name `y` is used but not defined in the current scope.";
-    ];
+    [];
 
   (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
      not be defined. *)
