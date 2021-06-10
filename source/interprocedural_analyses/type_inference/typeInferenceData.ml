@@ -317,8 +317,6 @@ module LocalResult = struct
     globals: GlobalAnnotation.ByName.t;
     attributes: AttributeAnnotation.ByName.t;
     define: DefineAnnotation.t;
-    (* Temporary: keep the errors for compatiblity as we roll this out *)
-    errors: AnalysisError.Instantiated.t list;
     (* Used to skip inferring abstract return types *)
     abstract: bool;
   }
@@ -380,7 +378,6 @@ module LocalResult = struct
       globals = GlobalAnnotation.ByName.empty;
       attributes = AttributeAnnotation.ByName.empty;
       define;
-      errors = [];
       abstract = Statement.Define.Signature.is_abstract_method signature;
     }
 
@@ -388,15 +385,9 @@ module LocalResult = struct
   let add_missing_annotation_error
       ~global_resolution
       ~lookup
-      ({ globals; attributes; define; errors; abstract } as result)
+      ({ globals; attributes; define; abstract } as result)
       error
     =
-    let result =
-      {
-        result with
-        errors = AnalysisError.instantiate ~show_error_traces:true ~lookup error :: errors;
-      }
-    in
     let ignore type_ =
       Type.is_untyped type_
       || Type.contains_unknown type_
@@ -443,9 +434,6 @@ module LocalResult = struct
               };
         }
     | _ -> result
-
-
-  let get_errors { errors; _ } = List.rev errors
 end
 
 module GlobalResult = struct
