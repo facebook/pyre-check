@@ -109,6 +109,32 @@ let test_simple context =
     |}
     [];
 
+  (* should be: no error *)
+  assert_uninitialized_errors
+    {|
+        def f( *args, **kwargs) -> None:
+          print(args)
+          print(list(kwargs.items()))
+    |}
+    [
+      "Unbound name [10]: Name `args` is used but not defined in the current scope.";
+      "Unbound name [10]: Name `kwargs` is used but not defined in the current scope.";
+    ];
+
+  (* should be: no error *)
+  assert_uninitialized_errors
+    {|
+       x = 0
+       def f() -> None:
+         global x
+         if x == 0:
+           x = 1
+    |}
+    [
+      "Unbound name [10]: Name `x` is used but not defined in the current scope.";
+      "Unbound name [10]: Name `x` is used but not defined in the current scope.";
+    ];
+
   (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
      not be defined. *)
   assert_uninitialized_errors
