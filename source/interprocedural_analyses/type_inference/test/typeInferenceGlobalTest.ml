@@ -150,7 +150,42 @@ let type_inference_serialization_test context =
     |}
 
 
+let type_inference_attribute_widen_test context =
+  assert_fixpoint_result
+    ~context
+    ~sources:
+      [
+        ( "test.py",
+          {|
+          class Foo:
+            x = None
+            def __init__(self) -> None:
+              self.x = 1 + 1
+          |}
+        );
+      ]
+    ~callable_names:["test.Foo.$class_toplevel"; "test.Foo.__init__"]
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
+              "annotation": "typing.Optional[int]"
+            }
+          ],
+          "defines": []
+        }
+      |}
+
+
 let () =
   "typeInferenceAnalysisTest"
-  >::: ["serialization" >:: type_inference_serialization_test]
+  >::: [
+         "serialization" >:: type_inference_serialization_test;
+         "attribute_widen" >:: type_inference_attribute_widen_test;
+       ]
   |> Test.run

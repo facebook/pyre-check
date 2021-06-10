@@ -103,9 +103,11 @@ let check_inference_results ~context ~target ~expected source =
   let results = Setup.run_inference ~context ~targets:[Setup.make_function target] source in
   assert_equal (List.length results) 1;
   let result = results |> List.hd_exn |> snd |> LocalResult.to_yojson in
-  (* Filter out toplevel defines, which are never interesting and make the json verbose *)
+  (* Filter out toplevel and __init__ defines, which are verbose and uninteresting *)
   let actual =
-    if String.is_substring target ~substring:"toplevel" then
+    if
+      String.is_suffix target ~suffix:"__init__" or String.is_substring target ~substring:"toplevel"
+    then
       match result with
       | `Assoc pairs ->
           `Assoc (pairs |> List.filter ~f:(fun (key, _) -> not (String.equal key "define")))
@@ -201,25 +203,118 @@ let test_inferred_attributes context =
   let check_inference_results = check_inference_results ~context in
   check_inference_results
     {|
-      class C:
-          x = None
+      def foo() -> int:
+        return 1
+      class Foo:
+        x = foo()
     |}
-    ~target:"test.C.$class_toplevel"
+    ~target:"test.Foo.$class_toplevel"
     ~expected:
       {|
         {
           "globals": [],
           "attributes": [
             {
-              "parent": "C",
+              "parent": "Foo",
               "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 5 },
+              "annotation": "int"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  check_inference_results
+    {|
+      class Foo:
+        x = 1 + 1
+    |}
+    ~target:"test.Foo.$class_toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
+              "annotation": "int"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  check_inference_results
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.x = 1 + 1
+    |}
+    ~target:"test.Foo.__init__"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
+              "annotation": "int"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  check_inference_results
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.x = self.foo()
+
+        def foo(self) -> int:
+          return 1
+    |}
+    ~target:"test.Foo.__init__"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
+              "annotation": "int"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  (* TODO(T84365830): Be more intelligent about inferring None type. *)
+  check_inference_results
+    {|
+    class Foo:
+      foo = None
+    |}
+    ~target:"test.Foo.$class_toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "foo",
               "location": { "qualifier": "test", "path": "test.py", "line": 3 },
               "annotation": "None"
             }
           ],
           "abstract": false
         }
-      |}
+      |};
+  ()
 
 
 let () =
