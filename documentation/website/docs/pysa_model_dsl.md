@@ -78,6 +78,22 @@ ModelQuery(
 )
 ```
 
+### `name.equals`
+
+This clause will match when the entity's fully qualified name is exactly the same as the specified string.
+
+Example:
+
+```python
+ModelQuery(
+  find = ...,
+  where = [
+    name.equals("bar.C.foo")
+  ],
+  model = ...
+)
+```
+
 ### `return_annotation` clauses
 
 Model queries allow for querying based on the return annotation of a function. Pysa currently only allows querying whether a function type is `typing.Annotated`.
@@ -130,17 +146,110 @@ ModelQuery(
 )
 ```
 
-### `any_decorator` clauses
+### `Decorator` clauses
 
-`any_decorator` clauses are used to find callables decorated with decorators that match a pattern.
+`Decorator` clauses are used to find callables decorated with decorators that match a pattern. The syntax for using this clause is `Decorator(<name clause>, [<arguments clause>])`.
 
-Pysa currently only supports matching on the name of any decorator. For example, if you wanted to find all functions which are decorated by `@app.route()`, you can write:
+The first argument to `Decorator` should be a name clause, which is used to match the name of a decorator. The supported name clauses are the same as the ones discussed above for model query constraints, i.e. `name.matches("pattern")`, which will match when the decorator matches the regex pattern specified as a string, and `name.equals("foo.bar.d1")` which will match when the fully-qualified name of the decorator equals the specified string exactly.
 
+For example, if you wanted to find all functions which are decorated by `@app.route()`, a decorator imported from `my_module`, you can write:
 
 ```python
 ModelQuery(
   find = "functions",
-  where = any_decorator.name.matches("app.route"),
+  where = Decorator(name.matches("app.route")),
+  ...
+)
+```
+or
+```python
+ModelQuery(
+  find = "functions",
+  where = Decorator(name.equals("my_module.app.route")),
+  ...
+)
+```
+
+
+The second argument to `Decorator` is an optional arguments clause, which is used to match on the arguments provided to the decorator. The supported arguments clauses are `arguments.contains(...)`, which will match when the arguments specified are a subset of the decorator's arguments, and `arguments.equals(...)`, which will match when the decorator has the specified arguments exactly.
+
+`arguments.contains()` supports both positional and keyword arguments. For positional arguments, the list of positonal arguments supplied to the `arguments.contains()` clause must be a prefix of the list of positional arguments on the actual decorator, i.e. the value of the argument at each position should be the same. For example, with the following Python code:
+```python
+@d1(a, 2)
+def match1():
+  ...
+
+@d1(a, 2, 3, 4)
+def match2():
+  ...
+
+@d1(2, a):
+def nomatch():
+  ...
+```
+
+This query will match both `match1()` and `match2()`, but not `nomatch()`, since the values of the positional arguments don't match up.
+```python
+ModelQuery(
+  find = "functions",
+  where = Decorator(
+    name.matches("d1"),
+    arguments.contains(a, 2)
+  ),
+  ...
+)
+```
+
+For keyword arguments in `arguments.contains()`, the specified keyword arguments must be a subset of the decorator's keyword arguments, but can be specified in any order. For example, with the following Python code:
+```python
+@d1(a, 2, foo="Bar")
+def match1():
+  ...
+
+@d1(baz="Boo", foo="Bar")
+def match2():
+  ...
+```
+
+This query will match both `match1()` and `match2()`:
+```python
+ModelQuery(
+  find = "functions",
+  where = Decorator(
+    name.matches("d1"),
+    arguments.contains(foo="Bar")
+  ),
+  ...
+)
+```
+
+`arguments.equals()` operates similarly, but will only match if the specified arguments match the decorator's arguments exactly. This means that for positional arguments, all arguments in each position must match by value exactly. Keyword arguments can be specified in a different order, but the set of specified keyword arguments and the set of the decorator's actual keyword arguments must be the same. For example, with the following Python code:
+```python
+@d1(a, 2, foo="Bar", baz="Boo")
+def match1():
+  ...
+
+@d1(a, 2, baz="Boo", foo="Bar")
+def match2():
+  ...
+
+@d1(2, a, baz="Boo", foo="Bar")
+def nomatch1():
+  ...
+
+@d1(a, 2, 3, baz="Boo", foo="Bar")
+def nomatch2():
+  ...
+```
+
+This query will match both `match1()` and `match2()`, but not `nomatch1()` or `nomatch2()`:
+```python
+ModelQuery(
+  find = "functions",
+  where = Decorator(
+    name.matches("d1"),
+    arguments.equals(a, 2, foo="bar", baz="Boo")
+  ),
   ...
 )
 ```
