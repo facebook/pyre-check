@@ -109,17 +109,13 @@ let test_simple context =
     |}
     [];
 
-  (* should be: no error *)
   assert_uninitialized_errors
     {|
         def f( *args, **kwargs) -> None:
           print(args)
           print(list(kwargs.items()))
     |}
-    [
-      "Unbound name [10]: Name `args` is used but not defined in the current scope.";
-      "Unbound name [10]: Name `kwargs` is used but not defined in the current scope.";
-    ];
+    [];
 
   (* should be: no error *)
   assert_uninitialized_errors

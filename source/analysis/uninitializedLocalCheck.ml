@@ -9,7 +9,6 @@ open Core
 open Ast
 open Pyre
 open Statement
-open Expression
 module Error = AnalysisError
 
 let name = "UninitializedLocal"
@@ -69,7 +68,10 @@ module State (Context : Context) = struct
   let pp format state = Format.fprintf format "%s" (show state)
 
   let initial ~define:{ Node.value = { Define.signature; _ }; _ } =
-    signature.parameters |> List.map ~f:Parameter.name |> InitializedVariables.of_list
+    signature.parameters
+    |> Scope.Binding.of_parameters []
+    |> List.map ~f:Scope.Binding.name
+    |> InitializedVariables.of_list
 
 
   let errors ~qualifier ~define _ =
