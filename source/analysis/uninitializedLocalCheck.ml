@@ -23,9 +23,9 @@ let extract_reads_expression expression =
   |> List.map ~f:name_access_to_identifier_node
 
 
-let extract_reads_statement statement =
+let extract_reads_statement { Node.value; _ } =
   let expressions =
-    match statement with
+    match value with
     | Statement.Assign { Assign.value = expression; _ }
     | Delete expression
     | Expression expression
@@ -102,11 +102,13 @@ module State (Context : Context) = struct
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let forward ~key state ~statement:({ Node.value; _ } as statement) =
+  let forward ~key state ~statement =
     let is_uninitialized { Node.value = identifier; _ } =
       not (InitializedVariables.mem state identifier)
     in
-    let uninitialized_usage = extract_reads_statement value |> List.filter ~f:is_uninitialized in
+    let uninitialized_usage =
+      extract_reads_statement statement |> List.filter ~f:is_uninitialized
+    in
     Hashtbl.set Context.uninitialized_usage ~key ~data:uninitialized_usage;
     Scope.Binding.of_statement [] statement
     |> List.map ~f:Scope.Binding.name
