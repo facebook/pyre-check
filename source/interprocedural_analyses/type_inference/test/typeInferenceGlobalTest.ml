@@ -36,7 +36,13 @@ let static_analysis_configuration { ScratchProject.configuration; _ } =
 
 let analysis = TypeInference.Analysis.abstract_kind
 
-let fixpoint_result ~context ~callables ~sources =
+let fixpoint_result ~context ~sources ~callable_names =
+  let callables =
+    let callable_of_string name : Callable.t =
+      name |> Reference.create |> Callable.create_function
+    in
+    callable_names |> List.map ~f:callable_of_string
+  in
   let scratch_project = ScratchProject.setup ~context ~infer:true sources in
   let filtered_callables = Callable.Set.of_list callables in
   let environment =
@@ -80,11 +86,19 @@ let assert_json_equal ~context ~expected result =
     result
 
 
-let type_inference_integration_test context =
-  let sources =
-    [
-      ( "test.py",
-        {|
+let assert_fixpoint_result ~context ~sources ~callable_names ~expected =
+  let result = fixpoint_result ~context ~sources ~callable_names in
+  assert_equal ~ctxt:context 1 (List.length result) ~msg:"Expected length-1 list for result";
+  assert_json_equal ~context (List.hd_exn result) ~expected
+
+
+let type_inference_serialization_test context =
+  assert_fixpoint_result
+    ~context
+    ~sources:
+      [
+        ( "test.py",
+          {|
           x = 1 + 1
 
           class C:
@@ -96,22 +110,10 @@ let type_inference_integration_test context =
           def needs_return(y: int, x: int):
               return x
         |}
-      );
-    ]
-  in
-  let callables =
-    let callable_of_string name : Callable.t =
-      name |> Reference.create |> Callable.create_function
-    in
-    List.map
+        );
+      ]
+    ~callable_names:
       ["test.no_errors"; "test.needs_return"; "test.$toplevel"; "test.C.$class_toplevel"]
-      ~f:callable_of_string
-  in
-  let result = fixpoint_result ~context ~callables ~sources in
-  assert_equal ~ctxt:context 1 (List.length result) ~msg:"Expected length-1 list for result";
-  assert_json_equal
-    ~context
-    (List.hd_exn result)
     ~expected:
       {|
         {
@@ -149,4 +151,6 @@ let type_inference_integration_test context =
 
 
 let () =
-  "typeInferenceAnalysisTest" >::: ["integration" >:: type_inference_integration_test] |> Test.run
+  "typeInferenceAnalysisTest"
+  >::: ["serialization" >:: type_inference_serialization_test]
+  |> Test.run
