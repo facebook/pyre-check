@@ -94,156 +94,132 @@ module Setup = struct
     targets |> List.map ~f:analyze
 end
 
-module Asserts = struct
-  type type_option = Type.t option [@@deriving show, eq]
-
-  let assert_inference_result ~source ~result ~details ~context ~expected ~actual =
-    let msg =
-      Format.asprintf
-        {| Mismatch in inference result
-         ---
-         %a
-         ---
-         %s
-         ---
-         %s |}
-        LocalResult.pp
-        result
-        source
-        details
-    in
-    assert_equal ~ctxt:context ~cmp:equal_type_option ~printer:show_type_option ~msg expected actual
+let assert_json_equal ~context ~expected result =
+  let expected = Yojson.Safe.from_string expected in
+  assert_equal ~ctxt:context ~printer:Yojson.Safe.pretty_to_string expected result
 
 
-  let find_by_name name map =
-    match name |> Reference.create |> SerializableReference.Map.find map with
-    | Some value -> value
-    | None ->
-        raise
-          (Failure
-             (Format.asprintf
-                "No such name %s in %s"
-                name
-                ( map
-                |> SerializableReference.Map.keys
-                |> List.map ~f:Reference.show
-                |> String.concat ~sep:"," )))
-end
-
-let check_inference_results ~context ~checks source =
-  let targets, _ = List.unzip checks in
-  let results = Setup.run_inference ~context ~targets source in
-  let check_result (target, result) =
-    let check = List.Assoc.find_exn ~equal:Callable.equal_real_target checks target in
-    check result
+let check_inference_results ~context ~target ~expected source =
+  let results = Setup.run_inference ~context ~targets:[Setup.make_function target] source in
+  assert_equal (List.length results) 1;
+  let result = results |> List.hd_exn |> snd |> LocalResult.to_yojson in
+  (* Filter out toplevel defines, which are never interesting and make the json verbose *)
+  let actual =
+    if String.is_substring target ~substring:"toplevel" then
+      match result with
+      | `Assoc pairs ->
+          `Assoc (pairs |> List.filter ~f:(fun (key, _) -> not (String.equal key "define")))
+      | json -> json
+    else
+      result
   in
-  results |> List.iter ~f:check_result;
-  Memory.reset_shared_memory ()
-
-
-let get_inferred = function
-  | TypeAnnotation.Inferred inferred -> Some inferred
-  | TypeAnnotation.Given _
-  | TypeAnnotation.Missing ->
-      None
+  assert_json_equal ~context ~expected actual
 
 
 let test_inferred_returns context =
-  let check_return_annotation ~define_name ~expected source =
-    let check ({ LocalResult.define = { DefineAnnotation.return; _ }; _ } as result) =
-      Asserts.assert_inference_result
-        ~context
-        ~result
-        ~details:"Checking inferred return annotation"
-        ~source
-        ~expected:(Some expected)
-        ~actual:(get_inferred return)
-    in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
-  in
-  check_return_annotation
+  let check_inference_results = check_inference_results ~context in
+  check_inference_results
     {|
       def foo(x: int):
         return x
     |}
-    ~define_name:"test.foo"
-    ~expected:(Type.Primitive "int")
+    ~target:"test.foo"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "define": {
+            "name": "test.foo",
+            "parent": null,
+            "return": "int",
+            "parameters": [
+              { "name": "x", "annotation": "int", "value": null, "index": 0 }
+            ],
+            "decorators": [],
+            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+            "async": false
+          },
+          "abstract": false
+        }
+      |}
 
 
 let test_inferred_parameters context =
-  let open DefineAnnotation.Parameters in
-  let check_parameter_annotation ~define_name ~parameter_name ~expected source =
-    let check ({ LocalResult.define = { DefineAnnotation.parameters; _ }; _ } as result) =
-      let { Value.annotation; _ } =
-        Asserts.find_by_name ("$parameter$" ^ parameter_name) parameters
-      in
-      Asserts.assert_inference_result
-        ~context
-        ~result
-        ~details:("Checking inferred annotation for parameter " ^ parameter_name)
-        ~source
-        ~expected:(Some expected)
-        ~actual:(get_inferred annotation)
-    in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
-  in
-  check_parameter_annotation
+  let check_inference_results = check_inference_results ~context in
+  check_inference_results
     {|
       def foo(x) -> int:
         return x
     |}
-    ~define_name:"test.foo"
-    ~parameter_name:"x"
-    ~expected:(Type.Primitive "int")
+    ~target:"test.foo"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "define": {
+            "name": "test.foo",
+            "parent": null,
+            "return": "int",
+            "parameters": [
+              { "name": "x", "annotation": "int", "value": null, "index": 0 }
+            ],
+            "decorators": [],
+            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+            "async": false
+          },
+          "abstract": false
+        }
+      |}
 
 
 let test_inferred_globals context =
-  let check_global_annotation ~define_name ~global_name ~expected source =
-    let open GlobalAnnotation in
-    let check ({ LocalResult.globals; _ } as result) =
-      let { Value.annotation; _ } = Asserts.find_by_name global_name globals in
-      Asserts.assert_inference_result
-        ~context
-        ~result
-        ~details:("Checking inferred annotation for global " ^ global_name)
-        ~source
-        ~expected:(Some expected)
-        ~actual:(Some annotation)
-    in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
-  in
-  check_global_annotation
+  let check_inference_results = check_inference_results ~context in
+  check_inference_results
     {|
       x = None
     |}
-    ~define_name:"test.$toplevel"
-    ~global_name:"test.$local_test$x"
-    ~expected:Type.NoneType
+    ~target:"test.$toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [
+            {
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+              "annotation": "None"
+            }
+          ],
+          "attributes": [],
+          "abstract": false
+        }
+      |}
 
 
 let test_inferred_attributes context =
-  let check_attribute_annotation ~define_name ~attribute_name ~expected source =
-    let open AttributeAnnotation in
-    let check ({ LocalResult.attributes; _ } as result) =
-      let { Value.annotation; _ } = Asserts.find_by_name attribute_name attributes in
-      Asserts.assert_inference_result
-        ~context
-        ~result
-        ~details:("Checking inferred annotation for attribute " ^ attribute_name)
-        ~source
-        ~expected:(Some expected)
-        ~actual:(Some annotation)
-    in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
-  in
-  check_attribute_annotation
+  let check_inference_results = check_inference_results ~context in
+  check_inference_results
     {|
       class C:
           x = None
     |}
-    ~define_name:"test.C.$class_toplevel"
-    ~attribute_name:"test.C.x"
-    ~expected:Type.NoneType
+    ~target:"test.C.$class_toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "C",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
+              "annotation": "None"
+            }
+          ],
+          "abstract": false
+        }
+      |}
 
 
 let () =

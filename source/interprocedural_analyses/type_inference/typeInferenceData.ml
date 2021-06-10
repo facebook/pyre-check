@@ -320,7 +320,7 @@ module LocalResult = struct
     (* Used to skip inferring abstract return types *)
     abstract: bool;
   }
-  [@@deriving show]
+  [@@deriving show, to_yojson]
 
   let from_signature
       ~global_resolution
