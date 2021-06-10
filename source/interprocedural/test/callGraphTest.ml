@@ -1075,6 +1075,185 @@ let test_call_graph_of_define context =
                  targets = [`Function "$local_test?Foo?outer$inner"];
                }) );
       ];
+  ();
+  (* Well-typed decorators are 'safely' ignored (when not inlined). *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Callable, TypeVar
+      from pyre_extensions import ParameterSpecification
+
+      _T = TypeVar("_T")
+      _TParams = ParameterSpecification("_TParams")
+
+      class Timer:
+        def __call__(self, func: Callable[_TParams, _T]) -> Callable[_TParams, _T]:
+          return func
+
+      def timer(name: str) -> Timer:
+        return Timer()
+
+      @timer("bar")
+      def foo(self, x: int) -> None:
+        pass
+
+      def caller() -> None:
+        foo(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:
+      [
+        ( "20:2-20:8",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "test.foo"];
+               }) );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Callable, TypeVar
+      from pyre_extensions import ParameterSpecification
+
+      _T = TypeVar("_T")
+      _TParams = ParameterSpecification("_TParams")
+
+      class Timer:
+        def __call__(self, func: Callable[_TParams, _T]) -> Callable[_TParams, _T]:
+          return func
+
+      def timer(name: str) -> Timer:
+        return Timer()
+
+      class Foo:
+        @timer("bar")
+        def bar(self, x: int) -> None:
+          pass
+
+      def caller(foo: Foo) -> None:
+        foo.bar(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:
+      [
+        ( "21:2-21:12",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
+               }) );
+      ];
+  (* Partially-typed decorators lead to unsolved calls (unsafe). *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Callable, TypeVar
+      _T = TypeVar("_T")
+
+      class Timer:
+        def __call__(self, func: Callable[..., _T]) -> Callable[..., _T]:
+          return func
+
+      def timer(name: str) -> Timer:
+        return Timer()
+
+      @timer("bar")
+      def foo(self, x: int) -> None:
+        pass
+
+      def caller() -> None:
+        foo(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:[];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Callable, TypeVar
+      _T = TypeVar("_T")
+
+      class Timer:
+        def __call__(self, func: Callable[..., _T]) -> Callable[..., _T]:
+          return func
+
+      def timer(name: str) -> Timer:
+        return Timer()
+
+      class Foo:
+        @timer("bar")
+        def bar(self, x: int) -> None:
+          pass
+
+      def caller(foo: Foo) -> None:
+        foo.bar(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:[];
+  (* Untyped decorators lead to unsolved calls (unsafe). *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def timer(name: str):
+        pass
+
+      @timer("bar")
+      def foo(self, x: int) -> None:
+        pass
+
+      def caller() -> None:
+        foo(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:[];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def timer(name: str):
+        pass
+
+      class Foo:
+        @timer("bar")
+        def bar(self, x: int) -> None:
+          pass
+
+      def caller(foo: Foo) -> None:
+        foo.bar(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:[];
+  (* Well-typed decorators used on a class method leads to unsolved calls (unsafe). *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Callable, TypeVar
+      from pyre_extensions import ParameterSpecification
+
+      _T = TypeVar("_T")
+      _TParams = ParameterSpecification("_TParams")
+
+      class Timer:
+        def __call__(self, func: Callable[_TParams, _T]) -> Callable[_TParams, _T]:
+          return func
+
+      def timer(name: str) -> Timer:
+        return Timer()
+
+      class Foo:
+        @classmethod
+        @timer("bar")
+        def bar(cls, x: int) -> None:
+          pass
+
+      def caller() -> None:
+        Foo.bar(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:[];
   ()
 
 
