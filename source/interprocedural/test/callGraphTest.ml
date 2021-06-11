@@ -528,6 +528,34 @@ let test_call_graph_of_define context =
                }) );
       ];
   assert_call_graph_of_define
+    ~source:
+      {|
+      from builtins import to_callable_target
+
+      class Foo:
+        @to_callable_target
+        def callable_target(arg):
+          pass
+
+      def bar(foo: Foo):
+        foo.callable_target(1)
+      |}
+    ~define_name:"test.bar"
+    ~expected:
+      [
+        ( "10:2-10:24",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 collapse_tito = true;
+                 implicit_self = true;
+                 targets =
+                   [
+                     `Method { Callable.class_name = "TestCallableTarget"; method_name = "__call__" };
+                   ];
+               }) );
+      ];
+  assert_call_graph_of_define
     ~source:{|
       def foo(x=bar()):
         pass
