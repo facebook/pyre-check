@@ -7,6 +7,7 @@ import contextlib
 import dataclasses
 import json
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Union, Sequence, Set, IO, Iterator, Any
@@ -17,7 +18,7 @@ from ... import configuration as configuration_module, find_directories
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-ARTIFACT_ROOT_NAME: str = "link_trees"
+SERVER_ARTIFACT_ROOT_NAME: str = "link_trees"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -87,7 +88,9 @@ def find_buck_root(base: Path) -> Optional[Path]:
     return find_directories.find_parent_directory_containing_file(base, ".buckconfig")
 
 
-def get_source_path(configuration: configuration_module.Configuration) -> SourcePath:
+def get_source_path(
+    configuration: configuration_module.Configuration, artifact_root_name: str
+) -> SourcePath:
     source_directories = configuration.source_directories
     targets = configuration.targets
 
@@ -104,7 +107,7 @@ def get_source_path(configuration: configuration_module.Configuration) -> Source
             LOG.warning("Pyre did not find any targets to check.")
 
         search_base = Path(configuration.project_root)
-        artifact_root = configuration.dot_pyre_directory / ARTIFACT_ROOT_NAME
+        artifact_root = configuration.dot_pyre_directory / artifact_root_name
 
         relative_local_root = configuration.relative_local_root
         if relative_local_root is not None:
@@ -136,6 +139,23 @@ def get_source_path(configuration: configuration_module.Configuration) -> Source
         "Cannot find any source files to analyze. "
         + "Either `source_directory` or `targets` must be specified."
     )
+
+
+def get_source_path_for_server(
+    configuration: configuration_module.Configuration,
+) -> SourcePath:
+    # We know that for each source root there could be at most one server alive.
+    # Therefore artifact root name can be a fixed constant.
+    return get_source_path(configuration, SERVER_ARTIFACT_ROOT_NAME)
+
+
+def get_source_path_for_check(
+    configuration: configuration_module.Configuration,
+) -> SourcePath:
+    # Artifact for one-off check command should not be a fixed constant, to prevent
+    # concurrent check commands overwriting each other's artifacts. Here we use process
+    # ID to isolate the artifact root of each individual check command.
+    return get_source_path(configuration, str(os.getpid()))
 
 
 def get_profiling_log_path(log_directory: Path) -> Path:

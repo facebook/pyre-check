@@ -308,7 +308,7 @@ def create_server_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_paths = backend_arguments.get_source_path(configuration)
+    source_paths = backend_arguments.get_source_path_for_server(configuration)
 
     logging_sections = start_arguments.logging_sections
     additional_logging_sections = (
