@@ -378,9 +378,6 @@ class Infer(Check):
         *,
         configuration: Configuration,
         analysis_directory: AnalysisDirectory | None = None,
-        dump_call_graph: bool,
-        repository_root: str | None,
-        use_cache: bool,
     ) -> None:
         super(Infer, self).__init__(
             command_arguments,
@@ -388,9 +385,6 @@ class Infer(Check):
             configuration=configuration,
             analysis_directory=analysis_directory,
         )
-        self._dump_call_graph: bool = dump_call_graph
-        self._repository_root: Final[str | None] = repository_root
-        self._use_cache: bool = use_cache
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -405,13 +399,6 @@ class Infer(Check):
     def _flags(self) -> list[str]:
         flags = super()._flags()
         flags.extend(["-analysis", self.ANALYSIS])
-        if self._dump_call_graph:
-            flags.append("-dump-call-graph")
-        repository_root = self._repository_root
-        if repository_root:
-            flags.extend(["-repository-root", repository_root])
-        if self._use_cache:
-            flags.append("-use-cache")
         return flags
 
     def _run(self, retries: int = 1) -> None:
