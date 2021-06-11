@@ -54,26 +54,35 @@ def parse_type_error_response(response: str) -> List[error.Error]:
         raise InvalidServerResponse(message) from decode_error
 
 
-def _display_type_errors(socket_path: Path, output: str) -> None:
+def _read_type_errors(socket_path: Path) -> List[error.Error]:
     with server_connection.connect_in_text_mode(socket_path) as (
         input_channel,
         output_channel,
     ):
         # The empty list argument means we want all type errors from the server.
         output_channel.write('["DisplayTypeError", []]\n')
-        type_errors = parse_type_error_response(input_channel.readline())
-        error.print_errors(
-            [error.relativize_path(against=Path.cwd()) for error in type_errors],
-            output=output,
-        )
+        return parse_type_error_response(input_channel.readline())
+
+
+def display_type_errors(errors: List[error.Error], output: str) -> None:
+    error.print_errors(
+        [error.relativize_path(against=Path.cwd()) for error in errors],
+        output=output,
+    )
 
 
 def _show_progress_and_display_type_errors(
     log_path: Path, socket_path: Path, output: str
-) -> None:
+) -> commands.ExitCode:
     LOG.info("Waiting for server...")
     with start.background_logging(log_path):
-        _display_type_errors(socket_path, output)
+        type_errors = _read_type_errors(socket_path)
+        display_type_errors(type_errors, output=output)
+        return (
+            commands.ExitCode.SUCCESS
+            if len(type_errors) == 0
+            else commands.ExitCode.FOUND_ERRORS
+        )
 
 
 def run_incremental(
@@ -87,9 +96,11 @@ def run_incremental(
     log_path = Path(configuration.log_directory) / "new_server" / "server.stderr"
     output = incremental_arguments.output
     try:
-        _show_progress_and_display_type_errors(log_path, socket_path, output)
+        exit_code = _show_progress_and_display_type_errors(
+            log_path, socket_path, output
+        )
         return remote_logging.ExitCodeWithAdditionalLogging(
-            exit_code=commands.ExitCode.SUCCESS,
+            exit_code=exit_code,
             additional_logging={
                 "connected_to": "already_running_server",
             },
@@ -106,9 +117,11 @@ def run_incremental(
             raise commands.ClientException(
                 f"`pyre start` failed with non-zero exit code: {start_status}"
             )
-        _show_progress_and_display_type_errors(log_path, socket_path, output)
+        exit_code = _show_progress_and_display_type_errors(
+            log_path, socket_path, output
+        )
         return remote_logging.ExitCodeWithAdditionalLogging(
-            exit_code=commands.ExitCode.SUCCESS,
+            exit_code=exit_code,
             additional_logging={
                 "connected_to": "newly_started_server",
             },

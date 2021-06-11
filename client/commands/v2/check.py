@@ -19,7 +19,7 @@ from ... import (
     configuration as configuration_module,
     error,
 )
-from . import remote_logging, backend_arguments, start
+from . import remote_logging, backend_arguments, start, incremental
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -223,13 +223,6 @@ def parse_type_error_response(response: str) -> List[error.Error]:
         raise InvalidCheckResponse(message) from decode_error
 
 
-def _display_type_errors(errors: List[error.Error], output: str) -> None:
-    error.print_errors(
-        [error.relativize_path(against=Path.cwd()) for error in errors],
-        output=output,
-    )
-
-
 def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode:
     with backend_log_file() as log_file:
         with start.background_logging(Path(log_file.name)):
@@ -243,7 +236,7 @@ def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode
 
             if return_code == 0:
                 type_errors = parse_type_error_response(result.stdout)
-                _display_type_errors(type_errors, output=output)
+                incremental.display_type_errors(type_errors, output=output)
                 return (
                     commands.ExitCode.SUCCESS
                     if len(type_errors) == 0
