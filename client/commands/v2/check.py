@@ -5,14 +5,20 @@
 
 import contextlib
 import dataclasses
+import json
 import logging
 import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Sequence, Optional, Dict, Any, Iterator, IO
+from typing import Sequence, Optional, Dict, Any, Iterator, IO, List
 
-from ... import commands, command_arguments, configuration as configuration_module
+from ... import (
+    commands,
+    command_arguments,
+    configuration as configuration_module,
+    error,
+)
 from . import remote_logging, backend_arguments, start
 
 
@@ -187,7 +193,44 @@ def backend_log_file() -> Iterator[_LogFile]:
         yield _LogFile(name=argument_file.name, file=argument_file.file)
 
 
-def _run_check_command(command: Sequence[str]) -> commands.ExitCode:
+class InvalidCheckResponse(Exception):
+    pass
+
+
+def parse_type_error_response_json(response_json: object) -> List[error.Error]:
+    try:
+        # The response JSON is expected to have the following form:
+        # `{"errors": [error_json0, error_json1, ...]}`
+        if isinstance(response_json, dict):
+            errors_json = response_json.get("errors", [])
+            if isinstance(errors_json, list):
+                return [error.Error.from_json(error_json) for error_json in errors_json]
+
+        raise InvalidCheckResponse(
+            f"Unexpected JSON response from check command: {response_json}"
+        )
+    except error.ErrorParsingFailure as parsing_error:
+        message = f"Unexpected error JSON from check command: {parsing_error}"
+        raise InvalidCheckResponse(message) from parsing_error
+
+
+def parse_type_error_response(response: str) -> List[error.Error]:
+    try:
+        response_json = json.loads(response)
+        return parse_type_error_response_json(response_json)
+    except json.JSONDecodeError as decode_error:
+        message = f"Cannot parse response as JSON: {decode_error}"
+        raise InvalidCheckResponse(message) from decode_error
+
+
+def _display_type_errors(errors: List[error.Error], output: str) -> None:
+    error.print_errors(
+        [error.relativize_path(against=Path.cwd()) for error in errors],
+        output=output,
+    )
+
+
+def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode:
     with backend_log_file() as log_file:
         with start.background_logging(Path(log_file.name)):
             result = subprocess.run(
@@ -199,8 +242,13 @@ def _run_check_command(command: Sequence[str]) -> commands.ExitCode:
             return_code = result.returncode
 
             if return_code == 0:
-                LOG.warning(f"{result.stdout}")
-                return commands.ExitCode.SUCCESS
+                type_errors = parse_type_error_response(result.stdout)
+                _display_type_errors(type_errors, output=output)
+                return (
+                    commands.ExitCode.SUCCESS
+                    if len(type_errors) == 0
+                    else commands.ExitCode.FOUND_ERRORS
+                )
             else:
                 LOG.error(
                     f"Check command exited with non-zero return code: {return_code}"
@@ -221,7 +269,7 @@ def run_check(
     arguments = create_check_arguments(configuration, check_arguments)
     with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
         check_command = [binary_location, "newcheck", str(argument_file_path)]
-        return _run_check_command(check_command)
+        return _run_check_command(command=check_command, output=check_arguments.output)
 
 
 @remote_logging.log_usage(command_name="check")
