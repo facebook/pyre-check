@@ -8,6 +8,7 @@ import dataclasses
 import json
 import logging
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Union, Sequence, Set, IO, Iterator, Any
@@ -45,6 +46,9 @@ class SimpleSourcePath:
     def get_checked_directory_allowlist(self) -> Set[str]:
         return {element.path() for element in self.elements}
 
+    def cleanup(self) -> None:
+        pass
+
 
 @dataclasses.dataclass(frozen=True)
 class BuckSourcePath:
@@ -73,6 +77,9 @@ class BuckSourcePath:
 
     def get_checked_directory_allowlist(self) -> Set[str]:
         return {str(self.checked_directory)}
+
+    def cleanup(self) -> None:
+        shutil.rmtree(str(self.artifact_root), ignore_errors=True)
 
 
 SourcePath = Union[SimpleSourcePath, BuckSourcePath]
@@ -107,12 +114,9 @@ def get_source_path(
             LOG.warning("Pyre did not find any targets to check.")
 
         search_base = Path(configuration.project_root)
-        artifact_root = configuration.dot_pyre_directory / artifact_root_name
-
         relative_local_root = configuration.relative_local_root
         if relative_local_root is not None:
             search_base = search_base / relative_local_root
-            artifact_root = artifact_root / relative_local_root
 
         source_root = find_buck_root(search_base)
         if source_root is None:
@@ -123,7 +127,7 @@ def get_source_path(
 
         return BuckSourcePath(
             source_root=source_root,
-            artifact_root=artifact_root,
+            artifact_root=configuration.dot_pyre_directory / artifact_root_name,
             checked_directory=search_base,
             targets=targets,
             mode=configuration.buck_mode,
@@ -146,7 +150,13 @@ def get_source_path_for_server(
 ) -> SourcePath:
     # We know that for each source root there could be at most one server alive.
     # Therefore artifact root name can be a fixed constant.
-    return get_source_path(configuration, SERVER_ARTIFACT_ROOT_NAME)
+    artifact_root_name = SERVER_ARTIFACT_ROOT_NAME
+    relative_local_root = configuration.relative_local_root
+    if relative_local_root is not None:
+        # Prevent artifact roots of different local projects from clashing with
+        # each other.
+        artifact_root_name = str(Path(artifact_root_name) / relative_local_root)
+    return get_source_path(configuration, artifact_root_name)
 
 
 def get_source_path_for_check(

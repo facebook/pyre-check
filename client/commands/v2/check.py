@@ -179,6 +179,20 @@ def create_check_arguments(
     )
 
 
+@contextlib.contextmanager
+def create_check_arguments_and_cleanup(
+    configuration: configuration_module.Configuration,
+    check_arguments: command_arguments.CheckArguments,
+) -> Iterator[Arguments]:
+    arguments = create_check_arguments(configuration, check_arguments)
+    try:
+        yield arguments
+    finally:
+        # It is safe to clean up source paths after check command since
+        # any created artifact directory won't be reused by other commands.
+        arguments.source_paths.cleanup()
+
+
 @dataclasses.dataclass
 class _LogFile:
     name: str
@@ -259,10 +273,14 @@ def run_check(
             "Cannot locate a Pyre binary to run."
         )
 
-    arguments = create_check_arguments(configuration, check_arguments)
-    with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
-        check_command = [binary_location, "newcheck", str(argument_file_path)]
-        return _run_check_command(command=check_command, output=check_arguments.output)
+    with create_check_arguments_and_cleanup(
+        configuration, check_arguments
+    ) as arguments:
+        with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
+            check_command = [binary_location, "newcheck", str(argument_file_path)]
+            return _run_check_command(
+                command=check_command, output=check_arguments.output
+            )
 
 
 @remote_logging.log_usage(command_name="check")

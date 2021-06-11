@@ -201,7 +201,7 @@ class ArgumentsTest(testslide.TestCase):
                         ),
                         root_path / "project",
                     ),
-                    artifact_root_name="artifact_root",
+                    artifact_root_name="artifact_root/local",
                 ),
                 BuckSourcePath(
                     source_root=root_path / "project/local",
