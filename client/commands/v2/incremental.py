@@ -3,10 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import dataclasses
 import json
 import logging
-import os
 from pathlib import Path
 from typing import List
 
@@ -56,11 +54,6 @@ def parse_type_error_response(response: str) -> List[error.Error]:
         raise InvalidServerResponse(message) from decode_error
 
 
-def _relativize_error_path(error: error.Error) -> error.Error:
-    relativized_path = os.path.relpath(str(error.path), str(Path.cwd()))
-    return dataclasses.replace(error, path=relativized_path)
-
-
 def _display_type_errors(socket_path: Path, output: str) -> None:
     with server_connection.connect_in_text_mode(socket_path) as (
         input_channel,
@@ -70,7 +63,8 @@ def _display_type_errors(socket_path: Path, output: str) -> None:
         output_channel.write('["DisplayTypeError", []]\n')
         type_errors = parse_type_error_response(input_channel.readline())
         error.print_errors(
-            [_relativize_error_path(error) for error in type_errors], output=output
+            [error.relativize_path(against=Path.cwd()) for error in type_errors],
+            output=output,
         )
 
 

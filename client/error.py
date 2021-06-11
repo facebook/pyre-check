@@ -3,10 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
 import dataclasses
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Sequence, Union, Optional
@@ -66,6 +66,21 @@ class Error:
         except json.JSONDecodeError as decode_error:
             message = f"Cannot parse JSON: {decode_error}"
             raise ErrorParsingFailure(message) from decode_error
+
+    def relativize_path(self, against: Path) -> "Error":
+        relativized_path = Path(os.path.relpath(str(self.path), str(against)))
+        return Error(
+            line=self.line,
+            column=self.column,
+            stop_line=self.stop_line,
+            stop_column=self.stop_column,
+            path=relativized_path,
+            code=self.code,
+            name=self.name,
+            description=self.description,
+            long_description=self.long_description,
+            concise_description=self.concise_description,
+        )
 
     def to_json(self) -> Dict[str, Any]:
         return {
