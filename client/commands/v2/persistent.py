@@ -25,6 +25,7 @@ from ... import (
     statistics,
 )
 from . import (
+    backend_arguments,
     language_server_protocol as lsp,
     server_connection,
     async_server_connection as connection,
@@ -47,7 +48,7 @@ class LSPEvent(enum.Enum):
 
 
 def _log_lsp_event(
-    remote_logging: Optional[start.RemoteLogging],
+    remote_logging: Optional[backend_arguments.RemoteLogging],
     event: LSPEvent,
     integers: Optional[Dict[str, int]] = None,
     normals: Optional[Dict[str, Optional[str]]] = None,
@@ -409,7 +410,9 @@ async def _start_pyre_server(
     binary_location: str, pyre_arguments: start.Arguments
 ) -> Union[StartSuccess, StartFailure]:
     try:
-        with start.server_argument_file(pyre_arguments) as argument_file_path:
+        with backend_arguments.temporary_argument_file(
+            pyre_arguments
+        ) as argument_file_path:
             server_environment = {
                 **os.environ,
                 # This is to make sure that backend server shares the socket root

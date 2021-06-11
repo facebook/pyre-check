@@ -12,7 +12,7 @@ import testslide
 
 from .... import json_rpc, error
 from ....tests import setup
-from .. import language_server_protocol as lsp, start
+from .. import language_server_protocol as lsp, start, backend_arguments
 from ..async_server_connection import (
     TextReader,
     TextWriter,
@@ -524,7 +524,7 @@ class PersistentTest(testslide.TestCase):
             binary_location="/bin/pyre",
             server_identifier="foo",
             pyre_arguments=start.Arguments(
-                source_paths=start.SimpleSourcePath(),
+                source_paths=backend_arguments.SimpleSourcePath(),
                 log_path="/log/path",
                 global_root="/global/root",
             ),

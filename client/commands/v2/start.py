@@ -7,15 +7,12 @@ import contextlib
 import dataclasses
 import datetime
 import enum
-import json
 import logging
 import os
-import re
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import (
-    IO,
     TextIO,
     Any,
     Dict,
@@ -24,7 +21,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Union,
 )
@@ -36,12 +32,11 @@ from ... import (
     find_directories,
     log,
 )
-from . import server_connection, server_event, stop, remote_logging
+from . import backend_arguments, server_connection, server_event, stop, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-ARTIFACT_ROOT_NAME: str = "link_trees"
 SERVER_LOG_FILE_FORMAT: str = "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
 
 
@@ -120,63 +115,6 @@ SavedStateAction = Union[
 
 
 @dataclasses.dataclass(frozen=True)
-class RemoteLogging:
-    logger: str
-    identifier: str = ""
-
-    def serialize(self) -> Dict[str, str]:
-        return {"logger": self.logger, "identifier": self.identifier}
-
-
-@dataclasses.dataclass(frozen=True)
-class SimpleSourcePath:
-    elements: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
-        default_factory=list
-    )
-
-    def serialize(self) -> Dict[str, object]:
-        return {
-            "kind": "simple",
-            "paths": [element.command_line_argument() for element in self.elements],
-        }
-
-    def get_checked_directory_allowlist(self) -> Set[str]:
-        return {element.path() for element in self.elements}
-
-
-@dataclasses.dataclass(frozen=True)
-class BuckSourcePath:
-    source_root: Path
-    artifact_root: Path
-    checked_directory: Path
-    targets: Sequence[str] = dataclasses.field(default_factory=list)
-    mode: Optional[str] = None
-    isolation_prefix: Optional[str] = None
-
-    def serialize(self) -> Dict[str, object]:
-        mode = self.mode
-        isolation_prefix = self.isolation_prefix
-        return {
-            "kind": "buck",
-            "targets": self.targets,
-            **({} if mode is None else {"mode": mode}),
-            **(
-                {}
-                if isolation_prefix is None
-                else {"isolation_prefix": isolation_prefix}
-            ),
-            "source_root": str(self.source_root),
-            "artifact_root": str(self.artifact_root),
-        }
-
-    def get_checked_directory_allowlist(self) -> Set[str]:
-        return {str(self.checked_directory)}
-
-
-SourcePath = Union[SimpleSourcePath, BuckSourcePath]
-
-
-@dataclasses.dataclass(frozen=True)
 class Arguments:
     """
     Data structure for configuration options the backend server can recognize.
@@ -185,7 +123,7 @@ class Arguments:
 
     log_path: str
     global_root: str
-    source_paths: SourcePath
+    source_paths: backend_arguments.SourcePath
 
     additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
     checked_directory_allowlist: Sequence[str] = dataclasses.field(default_factory=list)
@@ -205,7 +143,7 @@ class Arguments:
     shared_memory: configuration_module.SharedMemory = (
         configuration_module.SharedMemory()
     )
-    remote_logging: Optional[RemoteLogging] = None
+    remote_logging: Optional[backend_arguments.RemoteLogging] = None
     saved_state_action: Optional[SavedStateAction] = None
     search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
         default_factory=list
@@ -358,71 +296,6 @@ def get_saved_state_action(
     return None
 
 
-def find_watchman_root(base: Path) -> Optional[Path]:
-    return find_directories.find_parent_directory_containing_file(
-        base, ".watchmanconfig"
-    )
-
-
-def find_buck_root(base: Path) -> Optional[Path]:
-    return find_directories.find_parent_directory_containing_file(base, ".buckconfig")
-
-
-def get_source_path(configuration: configuration_module.Configuration) -> SourcePath:
-    source_directories = configuration.source_directories
-    targets = configuration.targets
-
-    if source_directories is not None and targets is None:
-        elements: Sequence[
-            configuration_module.SearchPathElement
-        ] = configuration.get_source_directories()
-        if len(elements) == 0:
-            LOG.warning("Pyre did not find an existent source directory.")
-        return SimpleSourcePath(elements)
-
-    if targets is not None and source_directories is None:
-        if len(targets) == 0:
-            LOG.warning("Pyre did not find any targets to check.")
-
-        search_base = Path(configuration.project_root)
-        artifact_root = configuration.dot_pyre_directory / ARTIFACT_ROOT_NAME
-
-        relative_local_root = configuration.relative_local_root
-        if relative_local_root is not None:
-            search_base = search_base / relative_local_root
-            artifact_root = artifact_root / relative_local_root
-
-        source_root = find_buck_root(search_base)
-        if source_root is None:
-            raise configuration_module.InvalidConfiguration(
-                "Cannot find a buck root for the specified targets. "
-                + "Make sure the project is covered by a `.buckconfig` file."
-            )
-
-        return BuckSourcePath(
-            source_root=source_root,
-            artifact_root=artifact_root,
-            checked_directory=search_base,
-            targets=targets,
-            mode=configuration.buck_mode,
-            isolation_prefix=configuration.isolation_prefix,
-        )
-
-    if source_directories is None and targets is not None:
-        raise configuration_module.InvalidConfiguration(
-            "`source_directory` and `targets` are mutually exclusive"
-        )
-
-    raise configuration_module.InvalidConfiguration(
-        "Cannot find any source files to analyze. "
-        + "Either `source_directory` or `targets` must be specified."
-    )
-
-
-def get_profiling_log_path(log_directory: Path) -> Path:
-    return log_directory / "profiling.log"
-
-
 def create_server_arguments(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
@@ -435,7 +308,7 @@ def create_server_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_paths = get_source_path(configuration)
+    source_paths = backend_arguments.get_source_path(configuration)
 
     logging_sections = start_arguments.logging_sections
     additional_logging_sections = (
@@ -447,19 +320,21 @@ def create_server_arguments(
     additional_logging_sections.append("server")
 
     profiling_output = (
-        get_profiling_log_path(Path(configuration.log_directory))
+        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
         if start_arguments.enable_profiling
         else None
     )
     memory_profiling_output = (
-        get_profiling_log_path(Path(configuration.log_directory))
+        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
         if start_arguments.enable_memory_profiling
         else None
     )
 
     logger = configuration.logger
     remote_logging = (
-        RemoteLogging(logger=logger, identifier=start_arguments.log_identifier or "")
+        backend_arguments.RemoteLogging(
+            logger=logger, identifier=start_arguments.log_identifier or ""
+        )
         if logger is not None
         else None
     )
@@ -500,7 +375,7 @@ def create_server_arguments(
         taint_models_path=configuration.taint_models_path,
         watchman_root=None
         if start_arguments.no_watchman
-        else find_watchman_root(Path(configuration.project_root)),
+        else backend_arguments.find_watchman_root(Path(configuration.project_root)),
     )
 
 
@@ -510,14 +385,6 @@ def get_server_identifier(configuration: configuration_module.Configuration) -> 
     if relative_local_root is None:
         return global_identifier
     return f"{global_identifier}/{relative_local_root}"
-
-
-def _write_argument_file(output_file: IO[str], arguments: Arguments) -> None:
-    LOG.info(f"Writing server startup configurations into {output_file.name}...")
-    serialized_arguments = arguments.serialize()
-    LOG.debug(f"Arguments:\n{json.dumps(serialized_arguments, indent=2)}")
-    output_file.write(json.dumps(serialized_arguments))
-    output_file.flush()
 
 
 def _run_in_foreground(
@@ -630,15 +497,6 @@ def _run_in_background(
         raise commands.ClientException("Interrupted by user. No server is spawned.")
 
 
-@contextlib.contextmanager
-def server_argument_file(server_arguments: Arguments) -> Iterator[Path]:
-    with tempfile.NamedTemporaryFile(
-        mode="w", prefix="pyre_arguments_", suffix=".json"
-    ) as argument_file:
-        _write_argument_file(argument_file, server_arguments)
-        yield Path(argument_file.name)
-
-
 def run_start(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
@@ -659,7 +517,9 @@ def run_start(
         )
 
     LOG.info(f"Starting server at `{get_server_identifier(configuration)}`...")
-    with server_argument_file(server_arguments) as argument_file_path:
+    with backend_arguments.temporary_argument_file(
+        server_arguments
+    ) as argument_file_path:
         server_command = [binary_location, "newserver", str(argument_file_path)]
         server_environment = {
             **os.environ,
