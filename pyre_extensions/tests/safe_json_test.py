@@ -14,9 +14,9 @@ from typing_extensions import TypedDict
 from .. import safe_json
 
 
-class ExampleTypedDict(TypedDict):
-    string: str
-    integer: int
+class Movie(TypedDict):
+    name: str
+    year: int
 
 
 class BasicTestCase(unittest.TestCase):
@@ -88,11 +88,11 @@ class BasicTestCase(unittest.TestCase):
 
         # Typed dictionaries.
         self.assertEqual(
-            safe_json.loads('{"string": "", "integer": 1}', ExampleTypedDict),
-            {"string": "", "integer": 1},
+            safe_json.loads('{"name": "The Matrix", "year": 1999}', Movie),
+            {"name": "The Matrix", "year": 1999},
         )
         with self.assertRaises(safe_json.InvalidJson):
-            safe_json.loads('{"string": "", "integer": ""}', ExampleTypedDict)
+            safe_json.loads('{"name": "The Matrix", "year": ""}', Movie)
 
         # Any.
         self.assertEqual(safe_json.loads("[1]", List[Any]), [1])
@@ -132,14 +132,12 @@ class BasicTestCase(unittest.TestCase):
             safe_json.validate(parsedDictNested, Dict[str, int])
 
         # Typed dictionaries.
-        parsedDictTyped = {"string": "", "integer": 1}
-        parsedDictTypedFailing = {"string": "", "integer": ""}
+        parsedDictTyped = {"name": "The Matrix", "year": 1999}
+        parsedDictTypedFailing = {"name": "The Matrix", "year": ""}
 
-        self.assertEqual(
-            safe_json.validate(parsedDictTyped, ExampleTypedDict), parsedDictTyped
-        )
+        self.assertEqual(safe_json.validate(parsedDictTyped, Movie), parsedDictTyped)
         with self.assertRaises(safe_json.InvalidJson):
-            safe_json.validate(parsedDictTypedFailing, ExampleTypedDict)
+            safe_json.validate(parsedDictTypedFailing, Movie)
 
         # Any.
         parsedAny = [{"1": 1}]
