@@ -10,13 +10,10 @@ open Pyre
 
 let get_analysis_kind = function
   | "taint" -> TaintAnalysis.abstract_kind
-  | "type_inference" -> TypeInference.Analysis.abstract_kind
   | _ ->
       Log.error "Invalid analysis kind specified.";
       failwith "bad argument"
 
-
-let should_infer analysis = String.equal analysis "type_inference"
 
 let type_environment_with_decorators_inlined ~configuration ~scheduler environment =
   let open Analysis in
@@ -127,7 +124,6 @@ let run_analysis
         ~debug
         ~strict
         ~show_error_traces
-        ~infer:(should_infer analysis)
         ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories
