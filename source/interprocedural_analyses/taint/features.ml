@@ -203,7 +203,17 @@ module ReturnAccessPath = struct
       List.map ~f:truncate set
 end
 
-module ReturnAccessPathSet = Abstract.ElementSetDomain.Make (ReturnAccessPath)
+module ReturnAccessPathSet = struct
+  module T = Abstract.ElementSetDomain.Make (ReturnAccessPath)
+  include T
+
+  let join left right =
+    let set = T.join left right in
+    if T.count set > TaintConfiguration.maximum_return_access_path_width then
+      set |> T.elements |> ReturnAccessPath.common_prefix |> T.singleton
+    else
+      set
+end
 
 let obscure = Simple.Breadcrumb Breadcrumb.Obscure
 
