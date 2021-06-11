@@ -14,13 +14,23 @@ let test_check_scoping context =
       def foo(foo: str) -> str:
         return foo
     |} [];
+
   assert_type_errors
     {|
       class C:
         def method(self, foo: str) -> str:
           return foo
     |}
-    []
+    [];
+
+  (* TODO (T78261323): should be no error *)
+  assert_type_errors
+    {|
+    f'{"".join(f"{}{metric}" for metric in [])}'
+    |}
+    ["Unbound name [10]: Name `metric` is used but not defined in the current scope."];
+
+  ()
 
 
 let () = "scope" >::: ["check_scoping" >:: test_check_scoping] |> Test.run
