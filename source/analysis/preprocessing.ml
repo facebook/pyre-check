@@ -278,7 +278,8 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
             List.fold substrings ~init:[] ~f:gather_expressions_in_substring |> List.rev
           in
           let parse ((start_line, start_column), input_string) =
-            let string = input_string ^ "\n" in
+            let string = "(" ^ input_string ^ ")" ^ "\n" in
+            let start_column = start_column - 1 in
             match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
             | Ok [{ Node.value = Expression expression; _ }] -> [expression]
             | Ok _
