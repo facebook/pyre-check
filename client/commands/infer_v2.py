@@ -368,8 +368,7 @@ def _create_module_annotations(
 
 
 class Infer(Check):
-    NAME = "analyze"
-    ANALYSIS = "type_inference"
+    NAME = "infer"
 
     def __init__(
         self,
@@ -398,7 +397,7 @@ class Infer(Check):
 
     def _flags(self) -> list[str]:
         flags = super()._flags()
-        flags.extend(["-analysis", self.ANALYSIS])
+        flags.append("-use-v2")
         return flags
 
     def _run(self, retries: int = 1) -> None:
