@@ -314,6 +314,9 @@ let test_expand_format_string _ =
          };
     ];
 
+  (* TODO (T91307381): Generators inside f-strings not handled. *)
+  assert_format_string "f'{x for x in []}'" "{x for x in []}" [];
+
   (* Ensure we fix up locations. *)
   let assert_locations source statements =
     let parsed_source = parse source |> Preprocessing.expand_format_string in
