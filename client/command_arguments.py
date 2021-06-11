@@ -84,6 +84,19 @@ class IncrementalArguments:
 
 
 @dataclass(frozen=True)
+class CheckArguments:
+    debug: bool = False
+    enable_memory_profiling: bool = False
+    enable_profiling: bool = False
+    log_identifier: Optional[str] = None
+    logging_sections: Optional[str] = None
+    noninteractive: bool = False
+    output: str = TEXT
+    sequential: bool = False
+    show_error_traces: bool = False
+
+
+@dataclass(frozen=True)
 class RageArguments:
     output: Optional[Path] = None
     server_log_count: Optional[int] = None

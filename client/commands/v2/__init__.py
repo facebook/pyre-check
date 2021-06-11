@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from . import check  # noqa F401
 from . import incremental  # noqa F401
 from . import kill  # noqa F401
 from . import persistent  # noqa F401
