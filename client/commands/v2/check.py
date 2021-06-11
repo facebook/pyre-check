@@ -6,6 +6,7 @@
 import dataclasses
 import logging
 import os
+import subprocess
 from pathlib import Path
 from typing import Sequence, Optional, Dict, Any
 
@@ -170,12 +171,37 @@ def create_check_arguments(
     )
 
 
+def _run_check_command(command: Sequence[str]) -> commands.ExitCode:
+    result = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=None,
+        universal_newlines=True,
+    )
+    return_code = result.returncode
+
+    if return_code == 0:
+        LOG.warning(f"{result.stdout}")
+        return commands.ExitCode.SUCCESS
+    else:
+        LOG.error(f"Check command exited with non-zero return code: {return_code}")
+        return commands.ExitCode.FAILURE
+
+
 def run_check(
     configuration: configuration_module.Configuration,
     check_arguments: command_arguments.CheckArguments,
 ) -> commands.ExitCode:
-    LOG.warning("Coming soon...")
-    return commands.ExitCode.SUCCESS
+    binary_location = configuration.get_binary_respecting_override()
+    if binary_location is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot locate a Pyre binary to run."
+        )
+
+    arguments = create_check_arguments(configuration, check_arguments)
+    with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
+        check_command = [binary_location, "newcheck", str(argument_file_path)]
+        return _run_check_command(check_command)
 
 
 @remote_logging.log_usage(command_name="check")
