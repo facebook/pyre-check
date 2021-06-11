@@ -3,15 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import contextlib
 import dataclasses
 import logging
 import os
 import subprocess
+import tempfile
 from pathlib import Path
-from typing import Sequence, Optional, Dict, Any
+from typing import Sequence, Optional, Dict, Any, Iterator, IO
 
 from ... import commands, command_arguments, configuration as configuration_module
-from . import remote_logging, backend_arguments
+from . import remote_logging, backend_arguments, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -171,21 +173,39 @@ def create_check_arguments(
     )
 
 
-def _run_check_command(command: Sequence[str]) -> commands.ExitCode:
-    result = subprocess.run(
-        command,
-        stdout=subprocess.PIPE,
-        stderr=None,
-        universal_newlines=True,
-    )
-    return_code = result.returncode
+@dataclasses.dataclass
+class _LogFile:
+    name: str
+    file: IO[str]
 
-    if return_code == 0:
-        LOG.warning(f"{result.stdout}")
-        return commands.ExitCode.SUCCESS
-    else:
-        LOG.error(f"Check command exited with non-zero return code: {return_code}")
-        return commands.ExitCode.FAILURE
+
+@contextlib.contextmanager
+def backend_log_file() -> Iterator[_LogFile]:
+    with tempfile.NamedTemporaryFile(
+        mode="w", prefix="pyre_check", suffix=".log", delete=True
+    ) as argument_file:
+        yield _LogFile(name=argument_file.name, file=argument_file.file)
+
+
+def _run_check_command(command: Sequence[str]) -> commands.ExitCode:
+    with backend_log_file() as log_file:
+        with start.background_logging(Path(log_file.name)):
+            result = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=log_file.file,
+                universal_newlines=True,
+            )
+            return_code = result.returncode
+
+            if return_code == 0:
+                LOG.warning(f"{result.stdout}")
+                return commands.ExitCode.SUCCESS
+            else:
+                LOG.error(
+                    f"Check command exited with non-zero return code: {return_code}"
+                )
+                return commands.ExitCode.FAILURE
 
 
 def run_check(
