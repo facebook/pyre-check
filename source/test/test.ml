@@ -1275,13 +1275,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |};
     ( "typing_extensions.pyi",
       {|
-        from typing import Final as Final, ParamSpec as ParamSpec
-        class _SpecialForm:
-            def __getitem__(self, typeargs: Any) -> Any: ...
+        from typing import Final as Final, ParamSpec as ParamSpec, _SpecialForm
         Literal: _SpecialForm = ...
-        class TypeAlias:
-          def __init__(self, target_type: type) -> None: ...
-          def __getitem__(self, typeargs: Any) -> Any: ...
+
+        TypeAlias: _SpecialForm = ...
         |}
     );
     ( "collections.pyi",
