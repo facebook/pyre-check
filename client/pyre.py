@@ -837,8 +837,19 @@ def infer(
 
 @pyre.command()
 @click.pass_context
+@click.option(
+    "-p",
+    "--print-only",
+    is_flag=True,
+    default=False,
+    help=(
+        "Print raw JSON errors to standard output, without converting to stubs "
+        "or annnotating."
+    ),
+)
 def infer_v2(
     context: click.Context,
+    print_only: bool,
 ) -> int:
     """
     Run the (under construction) interprocedural version of pyre infer.
@@ -850,6 +861,7 @@ def infer_v2(
             command_argument,
             original_directory=os.getcwd(),
             configuration=configuration,
+            print_only=print_only,
         ),
         configuration,
         command_argument.noninteractive,

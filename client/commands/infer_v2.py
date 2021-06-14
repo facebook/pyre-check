@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
+import shutil
 from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
@@ -314,6 +316,11 @@ class ModuleAnnotations:
             ]
         )
 
+    def write_stubs(self, type_directory: Path) -> None:
+        path = self.stubs_path(type_directory)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(self.to_stubs())
+
     def _typing_imports(self) -> str:
         all_imports = (
             typing_import
@@ -376,12 +383,17 @@ class Infer(Check):
         *,
         configuration: Configuration,
         analysis_directory: AnalysisDirectory | None = None,
+        print_only: bool,
     ) -> None:
         super(Infer, self).__init__(
             command_arguments,
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
+        )
+        self._print_only = print_only
+        self._type_directory = Path(
+            os.path.join(self._configuration.log_directory, "types")
         )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
@@ -403,12 +415,19 @@ class Infer(Check):
         self._analysis_directory.prepare()
         result = self._call_client(command=self.NAME)
         result.check()
-        LOG.log(
-            log.SUCCESS,
-            "Raw output from infer:\n" + result.output,
-        )
         infer_output = RawInferOutput(data=json.loads(result.output)[0])
         module_annotations = _create_module_annotations(infer_output=infer_output)
+        if self._print_only:
+            return self._print_inferences(
+                infer_output=infer_output, module_annotations=module_annotations
+            )
+        self._write_stubs(module_annotations=module_annotations)
+
+    @staticmethod
+    def _print_inferences(
+        infer_output: RawInferOutput, module_annotations: Sequence[ModuleAnnotations]
+    ) -> None:
+        json.dump(infer_output.data, log.stdout, indent=2)
         LOG.log(
             log.SUCCESS,
             "Generated stubs:\n\n"
@@ -416,3 +435,15 @@ class Infer(Check):
                 f"*{module.path}*\n{module.to_stubs()}" for module in module_annotations
             ),
         )
+        return
+
+    def _write_stubs(self, module_annotations: Sequence[ModuleAnnotations]) -> None:
+        type_directory = self._type_directory
+        if type_directory.exists():
+            LOG.log(log.SUCCESS, f"Deleting {type_directory}")
+            shutil.rmtree(type_directory)
+        type_directory.mkdir(parents=True, exist_ok=True)
+
+        LOG.log(log.SUCCESS, f"Outputting inferred stubs to {type_directory}")
+        for module in module_annotations:
+            module.write_stubs(type_directory=type_directory)
