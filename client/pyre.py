@@ -1052,16 +1052,19 @@ def profile(context: click.Context, profile_output: str) -> int:
 
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return run_pyre_command(
-        commands.Profile(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            profile_output=get_profile_output(profile_output),
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+    if configuration.use_command_v2:
+        return v2.profile.run(configuration, get_profile_output(profile_output))
+    else:
+        return run_pyre_command(
+            commands.Profile(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                profile_output=get_profile_output(profile_output),
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
