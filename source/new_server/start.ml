@@ -472,6 +472,8 @@ let initialize_server_state
   get_initial_state ~build_system_initializer ()
   >>= fun state ->
   Log.info "Server state initialized.";
+  if configuration.debug then
+    Memory.report_statistics ();
   store_initial_state state;
   Lwt.return (ExclusiveLock.create state)
 
