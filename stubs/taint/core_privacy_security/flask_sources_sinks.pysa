@@ -78,7 +78,7 @@ def flask.templating.render_template_string(
 ModelQuery(
   find = "functions",
   where = [
-    Decorator(name.matches("app.route")),
+    any_decorator.name.matches("app.route"),
   ],
   model = [
     AllParameters(TaintSource[UserControlled, UserControlled_Parameter]),
@@ -89,7 +89,7 @@ ModelQuery(
 ModelQuery(
   find = "functions",
   where = [
-    Decorator(name.matches("app.errorhandler")),
+    any_decorator.name.matches("app.errorhandler"),
   ],
   model = [
     Returns(TaintSink[ReturnedToUser])

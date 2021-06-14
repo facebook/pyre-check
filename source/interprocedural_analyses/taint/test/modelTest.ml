@@ -1356,13 +1356,13 @@ let test_invalid_models context =
       {|
       ModelQuery(
         find = "attributes",
-        where = Decorator(name.matches("app.route")),
+        where = any_decorator.name.matches("app.route"),
         model = AttributeModel(TaintSource[Test])
       )
     |}
     ~expect:
-      "`Decorator` is not a valid constraint for model queries with find clause of kind \
-       `attributes`."
+      "`any_decorator.name.matches` is not a valid constraint for model queries with find clause \
+       of kind `attributes`."
     ();
 
   assert_invalid_model
@@ -3148,7 +3148,7 @@ let test_query_parsing context =
       {|
     ModelQuery(
      find = "methods",
-     where = Decorator(name.matches("foo")),
+     where = any_decorator.name.matches("foo"),
      model = [Returns([TaintSource[Test]])],
     )
   |}
@@ -3156,11 +3156,7 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query =
-            [
-              DecoratorConstraint
-                { name_constraint = Matches (Re2.create_exn "foo"); arguments_constraint = None };
-            ];
+          query = [DecoratorNameConstraint "foo"];
           rule_kind = MethodModel;
           productions =
             [

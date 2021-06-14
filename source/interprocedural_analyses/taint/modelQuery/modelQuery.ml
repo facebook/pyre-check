@@ -68,6 +68,8 @@ module SanitizedCallArgumentSet = Set.Make (struct
   let compare = sanitized_location_insensitive_compare
 end)
 
+let matches_pattern ~pattern = Re2.matches (Re2.create_exn pattern)
+
 let is_ancestor ~resolution ~is_transitive ancestor_class child_class =
   if is_transitive then
     try
@@ -160,6 +162,23 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
         | _ -> false )
   in
   match query_constraint with
+  | ModelQuery.DecoratorNameConstraint name -> (
+      match get_callable_type () with
+      | Some
+          {
+            Node.value =
+              { Statement.Define.signature = { Statement.Define.Signature.decorators; _ }; _ };
+            _;
+          }
+        when not (List.is_empty decorators) ->
+          let matches_pattern = matches_pattern ~pattern:name in
+          let decorator_name_matches
+              { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ }
+            =
+            matches_pattern (Reference.show decorator_name)
+          in
+          List.exists decorators ~f:decorator_name_matches
+      | _ -> false )
   | ModelQuery.DecoratorConstraint { name_constraint; arguments_constraint } -> (
       match get_callable_type () with
       | Some
