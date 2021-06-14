@@ -6,12 +6,283 @@
 import testslide
 
 from ..profile import (
+    CounterEvent,
+    DurationEvent,
+    EventMetadata,
     StatisticsOverTime,
     TableStatistics,
+    parse_event,
+    to_incremental_updates,
+    to_cold_start_phases,
 )
 
 
 class ProfileTest(testslide.TestCase):
+    def test_parse_event(self) -> None:
+        self.assertEqual(
+            parse_event(
+                """
+                {
+                  "name": "Kara",
+                  "worker_id": 579102694,
+                  "pid": 400,
+                  "event_type": [ "Duration", 11 ],
+                  "timestamp": 42,
+                  "tags": [["actor", "Valorie Curry"]]
+                }
+                """
+            ),
+            DurationEvent(
+                duration=11,
+                metadata=EventMetadata(
+                    name="Kara",
+                    worker_id=579102694,
+                    pid=400,
+                    timestamp=42,
+                    tags={"actor": "Valorie Curry"},
+                ),
+            ),
+        )
+        self.assertEqual(
+            parse_event(
+                """
+                {
+                  "name": "Conor",
+                  "worker_id": 313248317,
+                  "pid": 800,
+                  "event_type": [ "Counter" ],
+                  "timestamp": 43,
+                  "tags": [["actor", "Bryan Dechart"]]
+                }
+                """
+            ),
+            CounterEvent(
+                description=None,
+                metadata=EventMetadata(
+                    name="Conor",
+                    worker_id=313248317,
+                    pid=800,
+                    timestamp=43,
+                    tags={"actor": "Bryan Dechart"},
+                ),
+            ),
+        )
+        self.assertEqual(
+            parse_event(
+                """
+                {
+                  "name": "Marcus",
+                  "worker_id": 684842971,
+                  "pid": 200,
+                  "event_type": [ "Counter", "ra9" ],
+                  "timestamp": 44
+                }
+                """
+            ),
+            CounterEvent(
+                description="ra9",
+                metadata=EventMetadata(
+                    name="Marcus", worker_id=684842971, pid=200, timestamp=44, tags={}
+                ),
+            ),
+        )
+
+        with self.assertRaises(Exception):
+            parse_event("{}")
+        with self.assertRaises(Exception):
+            parse_event('{ name: "foo" }')
+        with self.assertRaises(Exception):
+            parse_event('{ "name": "foo", "pid": 42, "timestamp": 100}')
+        with self.assertRaises(Exception):
+            parse_event(
+                '{ "name": "foo", "pid": 42, "event_type": "wat", "timestamp": 100}'
+            )
+        with self.assertRaises(Exception):
+            parse_event(
+                '{ "name": "foo", "pid": 42, "event_type": [ "Duration", "10" ]}'
+            )
+
+    def test_to_incremental_updates(self) -> None:
+        self.assertEqual(
+            to_incremental_updates(
+                [
+                    DurationEvent(
+                        duration=11,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase1"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=11,
+                        metadata=EventMetadata(
+                            name="initialization",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=11,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=2,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase1"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=12,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=3,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase2"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=13,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase3"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=1,
+                        metadata=EventMetadata(
+                            name="incremental check",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=21,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=2,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase1"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=22,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=3,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase2"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=2,
+                        metadata=EventMetadata(
+                            name="incremental check",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=31,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase1"},
+                        ),
+                    ),
+                ]
+            ),
+            [
+                {"phase1": 11, "phase2": 12, "phase3": 13, "total": 1},
+                {"phase1": 21, "phase2": 22, "total": 2},
+            ],
+        )
+
+    def test_to_cold_start_phases(self) -> None:
+        self.assertEqual(
+            to_cold_start_phases(
+                [
+                    DurationEvent(
+                        duration=11,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase1"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=14,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase2"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=12,
+                        metadata=EventMetadata(
+                            name="initialization",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=40,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase1"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=50,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase2"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=1,
+                        metadata=EventMetadata(
+                            name="incremental check",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
+                        ),
+                    ),
+                ]
+            ),
+            {"phase1": 11, "phase2": 14, "total": 12},
+        )
+
     def test_table_statistics(self) -> None:
         statistics = TableStatistics()
         lines = [
