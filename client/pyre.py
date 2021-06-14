@@ -688,27 +688,6 @@ def analyze(
 
 @pyre.command()
 @click.pass_context
-def infer_v2(
-    context: click.Context,
-) -> int:
-    """
-    Run the (under construction) interprocedural version of pyre infer.
-    """
-    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return run_pyre_command(
-        commands.infer_v2.Infer(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
-
-
-@pyre.command()
-@click.pass_context
 def check(context: click.Context) -> int:
     """
     Runs a one-time type check of a Python project.
@@ -850,6 +829,27 @@ def infer(
             errors_from_stdin=json,
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
+        ),
+        configuration,
+        command_argument.noninteractive,
+    )
+
+
+@pyre.command()
+@click.pass_context
+def infer_v2(
+    context: click.Context,
+) -> int:
+    """
+    Run the (under construction) interprocedural version of pyre infer.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    return run_pyre_command(
+        commands.infer_v2.Infer(
+            command_argument,
+            original_directory=os.getcwd(),
+            configuration=configuration,
         ),
         configuration,
         command_argument.noninteractive,

@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import cast, Dict, List, Optional, Sequence
 
-from typing_extensions import Final
 from typing_extensions import TypeAlias
 
 from .. import command_arguments, log
