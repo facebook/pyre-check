@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict
 
 from ... import (
+    log,
     json_rpc,
     error,
     version,
@@ -342,7 +343,7 @@ class PyreServer:
             async with _read_lsp_request(
                 self.input_channel, self.output_channel
             ) as request:
-                LOG.debug(f"Received LSP request: {request}")
+                LOG.debug(f"Received LSP request: {log.truncate(str(request), 400)}")
 
                 if request.method == "exit":
                     return commands.ExitCode.FAILURE
