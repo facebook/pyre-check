@@ -861,9 +861,9 @@ class InferTest(unittest.TestCase):
                 call_client.assert_not_called()
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_empty_in_place(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -894,16 +894,16 @@ class InferTest(unittest.TestCase):
             in_place=[],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
-            "/root/my-project/foo/bar/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            code_path="/root/my-project/foo/bar/baz.py",
+            debug_infer=False,
         )
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_in_place_directory(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -935,16 +935,16 @@ class InferTest(unittest.TestCase):
             in_place=["foo/bar"],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
-            "/root/my-project/foo/bar/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            code_path="/root/my-project/foo/bar/baz.py",
+            debug_infer=False,
         )
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_no_match(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -975,12 +975,12 @@ class InferTest(unittest.TestCase):
             in_place=["some_other_directory"],
             debug_infer=False,
         )
-        annotate_path.assert_not_called()
+        annotate_code.assert_not_called()
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_relative_file_path(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -1011,16 +1011,16 @@ class InferTest(unittest.TestCase):
             in_place=["foo/bar/baz.py"],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
-            "/root/my-project/foo/bar/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            code_path="/root/my-project/foo/bar/baz.py",
+            debug_infer=False,
         )
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_relative_file_path_not_local_root(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -1049,16 +1049,16 @@ class InferTest(unittest.TestCase):
             in_place=["foo/bar/types/baz.py"],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/types/foo/bar/types/baz.pyi",
-            "/root/foo/bar/types/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/types/foo/bar/types/baz.pyi",
+            code_path="/root/foo/bar/types/baz.py",
+            debug_infer=False,
         )
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_relative_local_root(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -1089,8 +1089,8 @@ class InferTest(unittest.TestCase):
             in_place=["local-root/foo/bar"],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi",
-            "/root/local-root/foo/bar/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi",
+            code_path="/root/local-root/foo/bar/baz.py",
+            debug_infer=False,
         )
