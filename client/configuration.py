@@ -420,7 +420,6 @@ class PartialConfiguration:
         return {
             "accept_command_v2",
             "create_open_source_configuration",
-            "differential",
             "saved_state",
             "stable_client",
             "taint_models_path",
