@@ -92,6 +92,12 @@ def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
         _show_pyre_version_as_text(binary_version, client_version)
 
 
+def _start_logging_to_directory(log_directory: str) -> None:
+    log_directory_path = Path(log_directory)
+    log_directory_path.mkdir(parents=True, exist_ok=True)
+    log.enable_file_logging(log_directory_path / "pyre.stderr")
+
+
 def run_pyre_command(
     command: Command,
     configuration: configuration_module.Configuration,
@@ -105,7 +111,7 @@ def run_pyre_command(
     exit_code = ExitCode.FAILURE
     try:
         _check_configuration(configuration)
-        log.start_logging_to_directory(noninteractive, configuration.log_directory)
+        _start_logging_to_directory(configuration.log_directory)
         LOG.debug(f"Running cli command `{' '.join(sys.argv)}`...")
         exit_code = command.run().exit_code()
     except (buck.BuckException, EnvironmentException) as error:
@@ -148,9 +154,7 @@ def _run_check_command(arguments: command_arguments.CommandArguments) -> ExitCod
     configuration = _create_configuration_with_retry(arguments, Path("."))
     if configuration.use_command_v2:
         _check_configuration(configuration)
-        log.start_logging_to_directory(
-            arguments.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         check_arguments = command_arguments.CheckArguments(
             debug=arguments.debug,
             enable_memory_profiling=arguments.enable_memory_profiling,
@@ -183,9 +187,7 @@ def _run_incremental_command(
     configuration = _create_configuration_with_retry(arguments, Path("."))
     if configuration.use_command_v2:
         _check_configuration(configuration)
-        log.start_logging_to_directory(
-            arguments.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         start_arguments = command_arguments.StartArguments(
             changed_files_path=arguments.changed_files_path,
             debug=arguments.debug,
@@ -951,10 +953,8 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
         command_argument, Path(".")
     )
     if configuration.use_command_v2:
-        log.start_logging_to_directory(
-            # Always log to file regardless of whether `-n` is given
-            noninteractive=False,
-            log_directory=configuration.log_directory,
+        _start_logging_to_directory(
+            configuration.log_directory,
         )
         return v2.persistent.run(
             configuration,
@@ -1004,10 +1004,8 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    log.start_logging_to_directory(
-        # Always log to file regardless of whether `-n` is given
-        noninteractive=False,
-        log_directory=configuration.log_directory,
+    _start_logging_to_directory(
+        configuration.log_directory,
     )
     return v2.pysa_server.run(
         configuration,
@@ -1082,9 +1080,7 @@ def query(context: click.Context, query: str) -> int:
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
     if configuration.use_command_v2:
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         return v2.query.run(configuration, query)
     else:
         return run_pyre_command(
@@ -1187,9 +1183,7 @@ def restart(
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     if configuration.use_command_v2:
         _check_configuration(configuration)
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         start_arguments = command_arguments.StartArguments(
             changed_files_path=command_argument.changed_files_path,
             debug=command_argument.debug,
@@ -1332,9 +1326,7 @@ def start(
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     if configuration.use_command_v2:
         _check_configuration(configuration)
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         return v2.start.run(
             configuration,
             command_arguments.StartArguments(
@@ -1427,9 +1419,7 @@ def stop(context: click.Context) -> int:
         command_argument, Path(".")
     )
     if configuration.use_command_v2:
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         return v2.stop.run(configuration)
     else:
         return run_pyre_command(
@@ -1453,9 +1443,7 @@ def validate_models(context: click.Context) -> int:
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
     if configuration.use_command_v2:
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         return v2.validate_models.run(configuration, output=command_argument.output)
     else:
         return run_pyre_command(
