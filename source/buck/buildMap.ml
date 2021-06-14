@@ -65,6 +65,8 @@ module Partial = struct
 
   let empty : t = of_alist_exn []
 
+  let contains ~key build_map = Hashtbl.mem build_map key
+
   let of_json_exn_ignoring_duplicates json =
     let open Yojson.Safe.Util in
     let sources = member "sources" json |> to_assoc in
