@@ -7,22 +7,25 @@ from __future__ import annotations
 
 import json
 import logging
+import multiprocessing
 import os
 import re
 import shutil
+import subprocess
 from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast, Dict, List, Optional, Sequence
+from typing import cast, Dict, Final, List, Optional, Sequence
 
+from pyre_extensions import none_throws
 from typing_extensions import TypeAlias
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from .check import Check
-from .infer import dequalify_and_fix_pathlike, split_imports
+from .infer import dequalify_and_fix_pathlike, split_imports, AnnotateModuleInPlace
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -384,7 +387,15 @@ class Infer(Check):
         configuration: Configuration,
         analysis_directory: AnalysisDirectory | None = None,
         print_only: bool,
+        in_place_paths: Optional[List[str]],
+        annotate_from_existing_stubs: bool,
+        debug_infer: bool,
     ) -> None:
+        if annotate_from_existing_stubs and in_place_paths is None:
+            raise ValueError(
+                "--annotate-from-existing-stubs cannot be used without the \
+                --in-place argument"
+            )
         super(Infer, self).__init__(
             command_arguments,
             original_directory,
@@ -395,6 +406,9 @@ class Infer(Check):
         self._type_directory = Path(
             os.path.join(self._configuration.log_directory, "types")
         )
+        self._in_place_paths: Final[Optional[List[str]]] = in_place_paths
+        self._annotate_from_existing_stubs = annotate_from_existing_stubs
+        self._debug_infer = debug_infer
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -412,6 +426,8 @@ class Infer(Check):
         return flags
 
     def _run(self, retries: int = 1) -> None:
+        if self._annotate_from_existing_stubs:
+            return self._annotate_in_place()
         self._analysis_directory.prepare()
         result = self._call_client(command=self.NAME)
         result.check()
@@ -447,3 +463,55 @@ class Infer(Check):
         LOG.log(log.SUCCESS, f"Outputting inferred stubs to {type_directory}")
         for module in module_annotations:
             module.write_stubs(type_directory=type_directory)
+
+    def _annotate_in_place(self, stub_paths: Sequence[Path] | None = None) -> None:
+        root = self._original_directory
+        formatter = self._configuration.formatter
+        type_directory = self._type_directory
+        debug_infer = self._debug_infer
+        number_workers = self._configuration.get_number_of_workers()
+        in_place_paths = none_throws(
+            self._in_place_paths,
+            "_annotate_in_place called with self._in_place_paths == None",
+        )
+
+        tasks: List[AnnotateModuleInPlace] = []
+        for stub_path in stub_paths or type_directory.rglob("*.pyi"):
+            relative_code_path = stub_path.relative_to(type_directory).with_suffix(
+                ".py"
+            )
+
+            annotate_in_place = in_place_paths == [] or any(
+                path
+                in (
+                    relative_code_path,
+                    *relative_code_path.parents,
+                )
+                for path in in_place_paths
+            )
+
+            if annotate_in_place:
+                code_path = root / relative_code_path
+                tasks.append(
+                    AnnotateModuleInPlace(
+                        stub_path=str(stub_path),
+                        code_path=str(code_path),
+                        debug_infer=debug_infer,
+                    )
+                )
+
+        with multiprocessing.Pool(number_workers) as pool:
+            for _ in pool.imap_unordered(AnnotateModuleInPlace.run_task, tasks):
+                pass
+
+        if formatter:
+            subprocess.call(
+                formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            self._suppress_errors()
+
+    def _suppress_errors(self) -> None:
+        result = self._call_client(command="check")
+        errors = self._get_errors(result)
+        error_json = json.dumps([error.to_json() for error in errors])
+        subprocess.run("pyre-upgrade fixme", input=error_json)

@@ -847,13 +847,36 @@ def infer(
         "or annnotating."
     ),
 )
+@click.option(
+    "-i",
+    "--in-place",
+    is_flag=True,
+    default=False,
+    help="Modifies original files and add inferred annotations to all functions.",
+)
+@click.option(
+    "--annotate-from-existing-stubs",
+    is_flag=True,
+    default=False,
+    help="Add annotations from existing stubs.",
+)
+@click.option(
+    "--debug-infer",
+    is_flag=True,
+    default=False,
+    help="Print error message when file fails to annotate.",
+)
 def infer_v2(
     context: click.Context,
     print_only: bool,
+    in_place: bool,
+    annotate_from_existing_stubs: bool,
+    debug_infer: bool,
 ) -> int:
     """
     Run the (under construction) interprocedural version of pyre infer.
     """
+    in_place_paths = [] if in_place else None
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     return run_pyre_command(
@@ -862,6 +885,9 @@ def infer_v2(
             original_directory=os.getcwd(),
             configuration=configuration,
             print_only=print_only,
+            in_place_paths=in_place_paths,
+            annotate_from_existing_stubs=annotate_from_existing_stubs,
+            debug_infer=debug_infer,
         ),
         configuration,
         command_argument.noninteractive,
