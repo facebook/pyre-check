@@ -82,12 +82,19 @@ module State (Context : Context) = struct
         ~define
     in
     let all_locals =
-      let { Scope.Scope.bindings; _ } = Scope.Scope.of_define_exn define.value in
-      Identifier.Map.keys bindings
+      let { Scope.Scope.bindings; globals; nonlocals; _ } =
+        Scope.Scope.of_define_exn define.value
+      in
       (* Santitization is needed to remove (some) scope information that is (sometimes, but not
          consistently) added into the identifiers themselves (e.g. $local_test?f$y). *)
-      |> List.map ~f:Identifier.sanitized
-      |> Identifier.Set.of_list
+      let locals =
+        Identifier.Map.keys bindings |> List.map ~f:Identifier.sanitized |> Identifier.Set.of_list
+      in
+      (* This operation needs to be repeated as Scope doesn't know about qualification, and hence
+         doesn't remove all globals and nonlocals from bindings *)
+      let globals = Identifier.Set.map ~f:Identifier.sanitized globals in
+      let nonlocals = Identifier.Set.map ~f:Identifier.sanitized nonlocals in
+      Identifier.Set.diff (Identifier.Set.diff locals globals) nonlocals
     in
     let in_local_scope { Node.value = identifier; _ } =
       identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
