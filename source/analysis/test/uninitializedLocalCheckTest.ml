@@ -78,53 +78,50 @@ let test_simple context =
     ["Unbound name [10]: Name `counter` is used but not defined in the current scope."];
 
   assert_uninitialized_errors {|
-       x: int = 5
-       def f():
-         return x
+      x: int = 5
+      def f():
+        return x
     |} [];
 
   assert_uninitialized_errors
     {|
-       class Foo(object):
-         pass
-       def f():
-         return Foo()
+      class Foo(object):
+        pass
+      def f():
+        return Foo()
     |}
     [];
 
   assert_uninitialized_errors
     {|
-        def f():
-          def g():
-            pass
-          g()
+      def f():
+        def g():
+          pass
+        g()
+    |}
+    [];
+
+  assert_uninitialized_errors {|
+      def f():
+        x, y = 0, 0
+        return x, y
+    |} [];
+
+  assert_uninitialized_errors
+    {|
+      def f( *args, **kwargs) -> None:
+        print(args)
+        print(list(kwargs.items()))
     |}
     [];
 
   assert_uninitialized_errors
     {|
-        def f():
-          x, y = 0, 0
-          return x, y
-    |}
-    [];
-
-  assert_uninitialized_errors
-    {|
-        def f( *args, **kwargs) -> None:
-          print(args)
-          print(list(kwargs.items()))
-    |}
-    [];
-
-  (* should be: no error *)
-  assert_uninitialized_errors
-    {|
-       x = 0
-       def f() -> None:
-         global x
-         if x == 0:
-           x = 1
+      x = 0
+      def f() -> None:
+        global x
+        if x == 0:
+          x = 1
     |}
     [];
 
