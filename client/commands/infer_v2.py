@@ -141,13 +141,6 @@ class FunctionAnnotation:
             ]
         )
 
-    @property
-    def complete(self) -> bool:
-        missing = self.return_annotation.missing or any(
-            parameter.annotation.missing for parameter in self.parameters
-        )
-        return not missing
-
 
 @dataclass(frozen=True)
 class MethodAnnotation(FunctionAnnotation):
@@ -257,15 +250,6 @@ class ModuleAnnotations:
             ],
         )
 
-    def filter_for_complete(self) -> ModuleAnnotations:
-        return ModuleAnnotations(
-            path=self.path,
-            globals_=self.globals_,
-            attributes=self.attributes,
-            functions=[function for function in self.functions if function.complete],
-            methods=[method for method in self.methods if method.complete],
-        )
-
     @property
     def classes(self) -> dict[str, list[AttributeAnnotation | MethodAnnotation]]:
         """
@@ -359,22 +343,17 @@ class ModuleAnnotations:
 
 def _create_module_annotations(
     infer_output: RawInferOutput,
-    complete_only: bool = False,
 ) -> Sequence[ModuleAnnotations]:
     infer_output_by_path = RawInferOutput.split_by_path(
         infer_output=infer_output,
     )
-    modules = [
+    return [
         ModuleAnnotations.from_infer_output(
             path=path,
             infer_output=infer_output_for_path,
         )
         for path, infer_output_for_path in infer_output_by_path.items()
     ]
-    if complete_only:
-        return [module.filter_for_complete() for module in modules]
-    else:
-        return modules
 
 
 class Infer(Check):

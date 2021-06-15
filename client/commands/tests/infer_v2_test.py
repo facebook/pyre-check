@@ -45,11 +45,9 @@ def _raw_infer_output(
 
 def _create_test_module_annotations(
     data: dict[str, object] | None,
-    complete_only: bool,
 ) -> ModuleAnnotations:
     all_module_annotations = _create_module_annotations(
         infer_output=_raw_infer_output(data=data),
-        complete_only=complete_only,
     )
     if len(all_module_annotations) != 1:
         raise AssertionError("Expected exactly one module!")
@@ -72,11 +70,9 @@ class StubGenerationTest(unittest.TestCase):
         self,
         data: dict[str, object],
         expected: str,
-        complete_only: bool = False,
     ) -> None:
         module_annotations = _create_test_module_annotations(
             data=data,
-            complete_only=complete_only,
         )
         actual = module_annotations.to_stubs()
         _assert_stubs_equal(actual, expected)
@@ -452,89 +448,6 @@ class StubGenerationTest(unittest.TestCase):
 
             def bar(x: int) -> PathLike[Variable[AnyStr <: [str, bytes]]]: ...
             """,
-        )
-
-    def test_stubs_complete_only(self) -> None:
-        """
-        Make sure we correctly filter out incomplete annotations when desired
-        """
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "int",
-                        "name": "test.with_params",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "y", "annotation": None, "value": "7"},
-                            {"name": "x", "annotation": "int", "value": "5"},
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            "",
-            complete_only=True,
-        )
-
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "int",
-                        "name": "test.complete_only",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "x", "annotation": "int", "value": "5"}
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            "def complete_only(x: int = 5) -> int: ...",
-            complete_only=True,
-        )
-
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "int",
-                        "name": "test.with_params",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "y", "annotation": "int", "value": "7"},
-                            {"name": "x", "annotation": "int", "value": "5"},
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ],
-            },
-            "def with_params(y: int = 7, x: int = 5) -> int: ...",
-            complete_only=True,
-        )
-
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "int",
-                        "name": "test.Test.with_params",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "y", "annotation": None, "value": "7"},
-                            {"name": "x", "annotation": "int", "value": "5"},
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            "",
-            complete_only=True,
         )
 
     def test_stubs_no_typing_import(self) -> None:
