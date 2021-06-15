@@ -1961,6 +1961,13 @@ let test_convert_all_escaped_free_variables_to_anys _ =
 let test_int_expression_create _ =
   let x = Type.Variable.Unary.create "x" in
   let y = Type.Variable.Unary.create "y" in
+  let assert_create_list_type given expected =
+    assert_equal
+      ~printer:[%show: Type.type_t]
+      ~cmp:[%equal: Type.type_t]
+      (Type.IntExpression.create (polynomial_create_from_variables_list given))
+      expected
+  in
   let assert_create_list_list given expected =
     match Type.IntExpression.create (polynomial_create_from_variables_list given) with
     | Type.IntExpression (Data result_polynomial) ->
@@ -1973,7 +1980,12 @@ let test_int_expression_create _ =
   in
   assert_create_list_list [1, [x, 1]; 1, []; -1, []] [1, [x, 1]; 1, []; -1, []];
   assert_create_list_list [1, [y, 1; y, 1]] [1, [y, 1; y, 1]];
-  assert_create_list_list [0, [x, 1; y, 1]; 0, []; 1, []] [1, []];
+
+  assert_create_list_type [7, []] (Type.literal_integer 7);
+  assert_create_list_type [] (Type.literal_integer 0);
+  assert_create_list_type [1, [x, 1]] (Type.Variable x);
+
+  assert_create_list_list [0, [x, 1]; 0, []; 1, [x, 1; y, 1]] [1, [x, 1; y, 1]];
   assert_create_list_list [1, [x, 1]; 1, [y, 1]] [1, [y, 1]; 1, [x, 1]];
   assert_create_list_list [1, [x, 1; y, 1]] [1, [y, 1; x, 1]];
   ()

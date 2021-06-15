@@ -2050,7 +2050,37 @@ let test_check_typevar_arithmetic context =
       "Revealed type [-1]: Revealed type for `c1` is `Vec[int]`.";
       "Revealed type [-1]: Revealed type for `c2` is `Vec[typing.Any]`.";
       "Revealed type [-1]: Revealed type for `c3` is `Vec[typing.Any]`.";
-    ]
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Generic, TypeVar
+      from pyre_extensions import TypeVarTuple, Add
+      from typing_extensions import Literal as L
+
+      N = TypeVar("N", bound=int)
+
+      def foo(x: N) -> Add[Add[N, L[-1]], L[1]]: ...
+
+      def bar(x: N) -> N:
+        return foo(x)
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      from typing import Generic, TypeVar
+      from pyre_extensions import TypeVarTuple, Add
+      from typing_extensions import Literal as L
+
+      N = TypeVar("N", bound=int)
+      M = TypeVar("M", bound=int)
+      O = TypeVar("O", bound=int)
+
+      def foo(x: N, y: M, z: O) -> Add[O, Add[N, M]]: ...
+
+      def bar(z: O) -> O:
+        return foo(1, -1, z)
+    |}
+    []
 
 
 let test_check_typevar_division_simplify context =

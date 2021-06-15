@@ -985,7 +985,8 @@ module RecordIntExpression : sig
   type 'a t = private Data of 'a Polynomial.t [@@deriving compare, eq, sexp, show, hash]
 
   type 'a variant =
-    | NonPolynomial of 'a Polynomial.t
+    | Constant of int
+    | Variable of 'a Record.Variable.RecordUnary.record
     | Polynomial of 'a t
 
   val normalize_variant : compare_t:('a -> 'a -> int) -> 'a Polynomial.t -> 'a variant
@@ -993,11 +994,23 @@ end = struct
   type 'a t = Data of 'a Polynomial.t [@@deriving compare, eq, sexp, show, hash]
 
   type 'a variant =
-    | NonPolynomial of 'a Polynomial.t
+    | Constant of int
+    | Variable of 'a Record.Variable.RecordUnary.record
     | Polynomial of 'a t
 
   let normalize_variant ~compare_t polynomial =
-    Polynomial (Data (Polynomial.normalize ~compare_t polynomial))
+    let normalized = Polynomial.normalize ~compare_t polynomial in
+    match normalized with
+    | [] -> Constant 0
+    | [{ variables = []; constant_factor }] -> Constant constant_factor
+    | [
+     {
+       Monomial.constant_factor = 1;
+       variables = [{ Monomial.variable = Monomial.Variable variable_name; degree = 1 }];
+     };
+    ] ->
+        Variable variable_name
+    | _ -> Polynomial (Data normalized)
 end
 
 open Record.Callable
@@ -1065,7 +1078,8 @@ module IntExpression : sig
 end = struct
   let create polynomial =
     match RecordIntExpression.normalize_variant ~compare_t:[%compare: type_t] polynomial with
-    | RecordIntExpression.NonPolynomial _ -> failwith "impossible"
+    | RecordIntExpression.Constant n -> Literal (Integer n)
+    | RecordIntExpression.Variable variable_name -> Variable variable_name
     | RecordIntExpression.Polynomial polynomial -> IntExpression polynomial
 end
 
@@ -1141,30 +1155,39 @@ let type_to_int_expression = function
   | _ -> None
 
 
-let checked_division left right =
-  if List.length right = 0 then
-    Bottom
-  else
-    IntExpression.create (Polynomial.divide left right ~compare_t:T.compare)
-
-
-let merge_int_expressions ?(divide = false) left right ~operation =
-  match left, type_to_int_expression right |> Option.value ~default:Bottom with
-  | Bottom, _
-  | _, Bottom ->
+let apply_over_types ~operation ?(divide = false) left right =
+  let checked_division left right =
+    if List.length right = 0 then
       Bottom
-  | _, Any
-  | Any, _ ->
-      Any
-  | Primitive "int", _
-  | _, Primitive "int" ->
-      Primitive "int"
-  | IntExpression (Data left), IntExpression (Data right) ->
+    else
+      IntExpression.create (Polynomial.divide left right ~compare_t:T.compare)
+  in
+  let type_to_polynomial = function
+    | Literal (Integer n) -> Some (Polynomial.create_from_int n)
+    | Variable variable_name -> Some (Polynomial.create_from_variable variable_name)
+    | IntExpression (Data polynomial) -> Some polynomial
+    | _ -> None
+  in
+  let non_int_expression_result left right =
+    match left, right with
+    | Bottom, _
+    | _, Bottom ->
+        Bottom
+    | Any, _
+    | _, Any ->
+        Any
+    | Primitive "int", _
+    | _, Primitive "int" ->
+        Primitive "int"
+    | _ -> Bottom
+  in
+  match type_to_polynomial left, type_to_polynomial right with
+  | Some left_polynomial, Some right_polynomial ->
       if divide then
-        checked_division left right
+        checked_division left_polynomial right_polynomial
       else
-        IntExpression.create (operation left right)
-  | _ -> Bottom
+        IntExpression.create (operation left_polynomial right_polynomial)
+  | _ -> non_int_expression_result left right
 
 
 let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
@@ -1184,7 +1207,7 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
           | None -> IntExpression.create polynomial
         in
         let replaced_division =
-          merge_int_expressions
+          apply_over_types
             (replace_polynomial dividend)
             (replace_polynomial quotient)
             ~divide:true
@@ -1197,7 +1220,7 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
     None
   else
     let merge_replace left (variable, right) =
-      merge_int_expressions left right ~operation:(fun left right ->
+      apply_over_types left right ~operation:(fun left right ->
           Polynomial.replace left ~by:right ~variable ~compare_t:T.compare)
     in
     let replaced_expression =
@@ -3065,7 +3088,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             List.fold
               tl
               ~init:hd
-              ~f:(merge_int_expressions ~operation:(operation ~compare_t:T.compare) ~divide)
+              ~f:(apply_over_types ~operation:(operation ~compare_t:T.compare) ~divide)
     in
     match expression with
     | Call
