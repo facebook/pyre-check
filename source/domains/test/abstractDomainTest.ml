@@ -2615,7 +2615,14 @@ module OverUnderStringSet = struct
     (* Test empty *)
     assert_bool "bottom is empty" (is_empty bottom);
     assert_bool "empty is empty" (is_empty empty);
-    assert_bool "subtraction is empty" (is_empty (subtract set_a ~from:set_a_over))
+    assert_bool "subtraction is empty" (is_empty (subtract set_a ~from:set_a_over));
+
+    (* Test expand *)
+    assert_equal
+      set_a
+      (transform Element Expand ~f:(fun e -> [e; "c"]) set_b)
+      ~printer:show
+      ~cmp:compare
 
 
   let test_context _ = ()
