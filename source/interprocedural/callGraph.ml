@@ -312,6 +312,7 @@ let rec resolve_callees_from_type
             | _ -> Callable.create_function name
           in
           Some (RegularTargets { implicit_self = false; targets = [target]; collapse_tito }) )
+  | Type.Callable { kind = Anonymous; _ } -> None
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
       resolve_callees_from_type ~resolution ~receiver_type ~callee_kind ~collapse_tito callable
@@ -545,14 +546,80 @@ let resolve_recognized_callees ~resolution ~callee ~callee_type =
   | _ -> None
 
 
+let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
+  let global_resolution = Resolution.global_resolution resolution in
+  let open UnannotatedGlobalEnvironment in
+  match Node.value callee with
+  | Expression.Name name when is_all_names (Node.value callee) -> (
+      (* Resolving expressions that do not reference local variables or parameters. *)
+      let name = Ast.Expression.name_to_reference_exn name in
+      match GlobalResolution.resolve_exports global_resolution name with
+      | Some
+          (ResolvedReference.ModuleAttribute
+            { export = ResolvedReference.Exported (Module.Export.Name.Define _); remaining = []; _ })
+        ->
+          Some
+            (RegularTargets
+               { implicit_self = false; targets = [`Function (Reference.show name)]; collapse_tito })
+      | Some
+          (ResolvedReference.ModuleAttribute
+            {
+              from;
+              name;
+              export = ResolvedReference.Exported Module.Export.Name.Class;
+              remaining = [attribute];
+              _;
+            }) -> (
+          let class_name = Reference.create ~prefix:from name |> Reference.show in
+          GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
+          >>| Node.value
+          >>| ClassSummary.attributes
+          >>= Identifier.SerializableMap.find_opt attribute
+          >>| Node.value
+          >>= function
+          | { kind = Method { static; _ }; _ } ->
+              Some
+                (RegularTargets
+                   {
+                     implicit_self = not static;
+                     targets = [`Method { Callable.class_name; method_name = attribute }];
+                     collapse_tito;
+                   })
+          | _ -> None )
+      | _ -> None )
+  | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
+      (* Resolve `base.attribute` by looking up the type of `base`. *)
+      match resolve_ignoring_optional ~resolution base with
+      | Type.Primitive class_name -> (
+          GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
+          >>| Node.value
+          >>| ClassSummary.attributes
+          >>= Identifier.SerializableMap.find_opt attribute
+          >>| Node.value
+          >>= function
+          | { kind = Method _; _ } ->
+              Some
+                (RegularTargets
+                   {
+                     implicit_self = true;
+                     targets = [`Method { Callable.class_name; method_name = attribute }];
+                     collapse_tito;
+                   })
+          | _ -> None )
+      | _ -> None )
+  | _ -> None
+
+
 let resolve_regular_callees ~resolution ~callee =
   let callee_type = resolve_ignoring_optional ~resolution callee in
   match resolve_recognized_callees ~resolution ~callee ~callee_type with
   | Some callees -> Some callees
-  | None ->
+  | None -> (
       let callee_kind = callee_kind ~resolution callee callee_type in
       let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
-      resolve_callees_from_type ~callee_kind ~resolution ~collapse_tito callee_type
+      match resolve_callees_from_type ~callee_kind ~resolution ~collapse_tito callee_type with
+      | Some callees -> Some callees
+      | None -> resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee )
 
 
 let resolve_callees ~resolution ~call =

@@ -1176,7 +1176,7 @@ let test_call_graph_of_define context =
                  targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
                }) );
       ];
-  (* Partially-typed decorators lead to unsolved calls (unsafe). *)
+  (* Partially-typed decorators are 'safely' ignored (when not inlined). *)
   assert_call_graph_of_define
     ~source:
       {|
@@ -1198,7 +1198,17 @@ let test_call_graph_of_define context =
         foo(1)
     |}
     ~define_name:"test.caller"
-    ~expected:[];
+    ~expected:
+      [
+        ( "17:2-17:8",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "test.foo"];
+               }) );
+      ];
   assert_call_graph_of_define
     ~source:
       {|
@@ -1221,8 +1231,18 @@ let test_call_graph_of_define context =
         foo.bar(1)
     |}
     ~define_name:"test.caller"
-    ~expected:[];
-  (* Untyped decorators lead to unsolved calls (unsafe). *)
+    ~expected:
+      [
+        ( "18:2-18:12",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
+               }) );
+      ];
+  (* Untyped decorators are 'safely' ignored (when not inlined). *)
   assert_call_graph_of_define
     ~source:
       {|
@@ -1237,7 +1257,17 @@ let test_call_graph_of_define context =
         foo(1)
     |}
     ~define_name:"test.caller"
-    ~expected:[];
+    ~expected:
+      [
+        ( "10:2-10:8",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "test.foo"];
+               }) );
+      ];
   assert_call_graph_of_define
     ~source:
       {|
@@ -1253,8 +1283,18 @@ let test_call_graph_of_define context =
         foo.bar(1)
     |}
     ~define_name:"test.caller"
-    ~expected:[];
-  (* Well-typed decorators used on a class method leads to unsolved calls (unsafe). *)
+    ~expected:
+      [
+        ( "11:2-11:12",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
+               }) );
+      ];
+  (* Well-typed decorators with @classmethod or @staticmethod. *)
   assert_call_graph_of_define
     ~source:
       {|
@@ -1281,7 +1321,54 @@ let test_call_graph_of_define context =
         Foo.bar(1)
     |}
     ~define_name:"test.caller"
-    ~expected:[];
+    ~expected:
+      [
+        ( "22:2-22:12",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
+               }) );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Callable, TypeVar
+      from pyre_extensions import ParameterSpecification
+
+      _T = TypeVar("_T")
+      _TParams = ParameterSpecification("_TParams")
+
+      class Timer:
+        def __call__(self, func: Callable[_TParams, _T]) -> Callable[_TParams, _T]:
+          return func
+
+      def timer(name: str) -> Timer:
+        return Timer()
+
+      class Foo:
+        @staticmethod
+        @timer("bar")
+        def bar(x: int) -> None:
+          pass
+
+      def caller() -> None:
+        Foo.bar(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:
+      [
+        ( "22:2-22:12",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
+               }) );
+      ];
   ()
 
 
