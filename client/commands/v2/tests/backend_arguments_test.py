@@ -21,6 +21,22 @@ from ..backend_arguments import (
 
 
 class ArgumentsTest(testslide.TestCase):
+    def test_create_remote_logging(self) -> None:
+        self.assertIsNone(
+            RemoteLogging.create(),
+        )
+        self.assertIsNone(
+            RemoteLogging.create(identifier="foo"),
+        )
+        self.assertEqual(
+            RemoteLogging.create(logger="logger"),
+            RemoteLogging(logger="logger", identifier=""),
+        )
+        self.assertEqual(
+            RemoteLogging.create(logger="logger", identifier="foo"),
+            RemoteLogging(logger="logger", identifier="foo"),
+        )
+
     def test_serialize_remote_logging(self) -> None:
         self.assertDictEqual(
             RemoteLogging(logger="/bin/logger").serialize(),

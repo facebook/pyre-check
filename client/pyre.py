@@ -959,7 +959,13 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
         )
         # NOTE(grievejia): `--no-watchman` has no effect here. We might want to
         # either respect it or deprecate it at some point.
-        return v2.persistent.run(command_argument, base_directory)
+        return v2.persistent.run(
+            command_argument,
+            base_directory,
+            v2.backend_arguments.RemoteLogging.create(
+                configuration.logger, command_argument.log_identifier
+            ),
+        )
     else:
         return run_pyre_command(
             commands.Persistent(

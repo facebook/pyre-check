@@ -27,6 +27,16 @@ class RemoteLogging:
     logger: str
     identifier: str = ""
 
+    @staticmethod
+    def create(
+        logger: Optional[str] = None, identifier: Optional[str] = None
+    ) -> "Optional[RemoteLogging]":
+        return (
+            RemoteLogging(logger=logger, identifier=identifier or "")
+            if logger is not None
+            else None
+        )
+
     def serialize(self) -> Dict[str, str]:
         return {"logger": self.logger, "identifier": self.identifier}
 

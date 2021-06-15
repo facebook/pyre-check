@@ -510,6 +510,7 @@ class PyreServerHandler(connection.BackgroundTask):
     binary_location: str
     server_identifier: str
     pyre_arguments: start.Arguments
+    remote_logging: Optional[backend_arguments.RemoteLogging]
     client_output_channel: connection.TextWriter
     server_state: ServerState
 
@@ -520,10 +521,12 @@ class PyreServerHandler(connection.BackgroundTask):
         pyre_arguments: start.Arguments,
         client_output_channel: connection.TextWriter,
         server_state: ServerState,
+        remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         self.binary_location = binary_location
         self.server_identifier = server_identifier
         self.pyre_arguments = pyre_arguments
+        self.remote_logging = remote_logging
         self.client_output_channel = client_output_channel
         self.server_state = server_state
 
@@ -649,7 +652,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 )
                 self.server_state.consecutive_start_failure = 0
                 _log_lsp_event(
-                    remote_logging=self.pyre_arguments.remote_logging,
+                    remote_logging=self.remote_logging,
                     event=LSPEvent.CONNECTED,
                     normals={
                         "connected_to": "already_running_server",
@@ -677,7 +680,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 ):
                     self.server_state.consecutive_start_failure = 0
                     _log_lsp_event(
-                        remote_logging=self.pyre_arguments.remote_logging,
+                        remote_logging=self.remote_logging,
                         event=LSPEvent.CONNECTED,
                         normals={
                             "connected_to": "newly_started_server",
@@ -692,7 +695,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     < CONSECUTIVE_START_ATTEMPT_THRESHOLD
                 ):
                     _log_lsp_event(
-                        remote_logging=self.pyre_arguments.remote_logging,
+                        remote_logging=self.remote_logging,
                         event=LSPEvent.NOT_CONNECTED,
                         normals={
                             **self._auxiliary_logging_info(),
@@ -710,7 +713,7 @@ class PyreServerHandler(connection.BackgroundTask):
                         level=lsp.MessageType.ERROR,
                     )
                     _log_lsp_event(
-                        remote_logging=self.pyre_arguments.remote_logging,
+                        remote_logging=self.remote_logging,
                         event=LSPEvent.SUSPENDED,
                         normals=self._auxiliary_logging_info(),
                     )
@@ -723,7 +726,7 @@ class PyreServerHandler(connection.BackgroundTask):
             await self._run()
         except Exception:
             _log_lsp_event(
-                remote_logging=self.pyre_arguments.remote_logging,
+                remote_logging=self.remote_logging,
                 event=LSPEvent.DISCONNECTED,
                 normals={
                     **self._auxiliary_logging_info(),
@@ -734,7 +737,10 @@ class PyreServerHandler(connection.BackgroundTask):
 
 
 async def run_persistent(
-    binary_location: str, server_identifier: str, pyre_arguments: start.Arguments
+    binary_location: str,
+    server_identifier: str,
+    pyre_arguments: start.Arguments,
+    remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     stdin, stdout = await connection.create_async_stdin_stdout()
     while True:
@@ -746,7 +752,7 @@ async def run_persistent(
             LOG.info("Initialization successful.")
             client_info = initialize_result.client_info
             _log_lsp_event(
-                remote_logging=pyre_arguments.remote_logging,
+                remote_logging=remote_logging,
                 event=LSPEvent.INITIALIZED,
                 normals=(
                     {}
@@ -771,6 +777,7 @@ async def run_persistent(
                         binary_location=binary_location,
                         server_identifier=server_identifier,
                         pyre_arguments=pyre_arguments,
+                        remote_logging=remote_logging,
                         client_output_channel=stdout,
                         server_state=initial_server_state,
                     )
@@ -789,7 +796,9 @@ async def run_persistent(
 
 
 def run(
-    command_argument: command_arguments.CommandArguments, base_directory: Path
+    command_argument: command_arguments.CommandArguments,
+    base_directory: Path,
+    remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, base_directory
@@ -828,5 +837,7 @@ def run(
         )
 
     return asyncio.get_event_loop().run_until_complete(
-        run_persistent(binary_location, server_identifier, pyre_arguments)
+        run_persistent(
+            binary_location, server_identifier, pyre_arguments, remote_logging
+        )
     )
