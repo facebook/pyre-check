@@ -949,35 +949,17 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
     and responses from the Pyre server to stdout.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    base_directory = Path(".")
     configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
+        command_argument, base_directory
     )
     if configuration.use_command_v2:
         _start_logging_to_directory(
             configuration.log_directory,
         )
-        return v2.persistent.run(
-            configuration,
-            command_arguments.StartArguments(
-                changed_files_path=command_argument.changed_files_path,
-                debug=command_argument.debug,
-                enable_memory_profiling=command_argument.enable_memory_profiling,
-                enable_profiling=command_argument.enable_profiling,
-                load_initial_state_from=command_argument.load_initial_state_from,
-                log_identifier=command_argument.log_identifier,
-                logging_sections=command_argument.logging_sections,
-                no_saved_state=command_argument.no_saved_state,
-                no_watchman=no_watchman,
-                noninteractive=command_argument.noninteractive,
-                save_initial_state_to=command_argument.save_initial_state_to,
-                saved_state_project=command_argument.saved_state_project,
-                sequential=command_argument.sequential,
-                show_error_traces=command_argument.show_error_traces,
-                store_type_check_resolution=False,
-                terminal=False,
-                wait_on_initialization=True,
-            ),
-        )
+        # NOTE(grievejia): `--no-watchman` has no effect here. We might want to
+        # either respect it or deprecate it at some point.
+        return v2.persistent.run(command_argument, base_directory)
     else:
         return run_pyre_command(
             commands.Persistent(
