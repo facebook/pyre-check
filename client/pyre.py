@@ -868,12 +868,19 @@ def infer(
     default=False,
     help="Print error message when file fails to annotate.",
 )
+@click.option(
+    "--read-stdin",
+    is_flag=True,
+    default=False,
+    help="Read input from stdin instead of running a full infer",
+)
 def infer_v2(
     context: click.Context,
     print_only: bool,
     in_place: bool,
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
+    read_stdin: bool,
 ) -> int:
     """
     Run the (under construction) interprocedural version of pyre infer.
@@ -890,6 +897,7 @@ def infer_v2(
             in_place_paths=in_place_paths,
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
+            read_stdin=read_stdin,
         ),
         configuration,
         command_argument.noninteractive,

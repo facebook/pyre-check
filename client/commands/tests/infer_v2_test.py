@@ -5,16 +5,26 @@
 
 from __future__ import annotations
 
+import json
+import sys
 import textwrap
 import unittest
 from pathlib import Path
 from typing import cast
+from unittest.mock import MagicMock, patch
 
+from ... import commands, find_directories, configuration as configuration_module
+from ...analysis_directory import AnalysisDirectory
 from ...commands.infer_v2 import (
     _create_module_annotations,
     RawInferOutput,
     RawInferOutputDict,
     ModuleAnnotations,
+    Infer,
+)
+from .command_test import (
+    mock_arguments,
+    mock_configuration,
 )
 
 
@@ -564,3 +574,136 @@ class StubGenerationTest(unittest.TestCase):
             def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...
             """,
         )
+
+
+class InferV2Test(unittest.TestCase):
+    @staticmethod
+    def mock_configuration() -> MagicMock:
+        configuration = mock_configuration()
+        configuration.search_path = ["path1", "path2"]
+        configuration.get_typeshed = lambda: "stub"
+        configuration.logger = None
+        configuration.strict = False
+        configuration.get_existent_ignore_infer_paths = lambda: []
+        return configuration
+
+    @patch(
+        f"{find_directories.__name__}.find_global_and_local_root",
+        return_value=find_directories.FoundRoot(Path(".")),
+    )
+    @patch.object(
+        json,
+        "loads",
+        return_value=[{"defines": [], "attributes": [], "globals": []}],
+    )
+    # pyre-ignore[56]
+    @patch.object(AnalysisDirectory, "get_filter_roots", return_value=set())
+    def test_infer_v2_commandline_calls(
+        self,
+        analysis_directory_get_filter_roots: MagicMock,
+        json_loads: MagicMock,
+        find_global_and_local_root: MagicMock,
+    ) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = self.mock_configuration()
+        configuration.get_typeshed.return_value = "stub"
+
+        with patch.object(commands.Command, "_call_client") as call_client:
+            command = Infer(
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
+                print_only=True,
+                in_place_paths=None,
+                annotate_from_existing_stubs=False,
+                debug_infer=False,
+                read_stdin=False,
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "-progress",
+                    "-project-root",
+                    "/root",
+                    "-log-directory",
+                    ".pyre",
+                    "-python-major-version",
+                    "3",
+                    "-python-minor-version",
+                    "6",
+                    "-python-micro-version",
+                    "0",
+                    "-shared-memory-heap-size",
+                    "1073741824",
+                    "-workers",
+                    "5",
+                    "-use-v2",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Infer.NAME)
+
+        configuration.get_existent_ignore_infer_paths = lambda: ["path1.py", "path2.py"]
+        with patch.object(commands.Command, "_call_client") as call_client:
+            command = Infer(
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory(
+                    configuration_module.SimpleSearchPathElement(".")
+                ),
+                print_only=True,
+                in_place_paths=None,
+                annotate_from_existing_stubs=False,
+                debug_infer=False,
+                read_stdin=False,
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "-progress",
+                    "-project-root",
+                    "/root",
+                    "-log-directory",
+                    ".pyre",
+                    "-python-major-version",
+                    "3",
+                    "-python-minor-version",
+                    "6",
+                    "-python-micro-version",
+                    "0",
+                    "-shared-memory-heap-size",
+                    "1073741824",
+                    "-workers",
+                    "5",
+                    "-use-v2",
+                    "-ignore-infer",
+                    "path1.py;path2.py",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Infer.NAME)
+
+        with patch.object(commands.Command, "_call_client") as call_client:
+            with patch.object(sys.stdin, "read", return_value=""):
+                command = Infer(
+                    arguments,
+                    original_directory,
+                    configuration=configuration,
+                    analysis_directory=AnalysisDirectory(
+                        configuration_module.SimpleSearchPathElement(".")
+                    ),
+                    print_only=True,
+                    in_place_paths=None,
+                    annotate_from_existing_stubs=False,
+                    debug_infer=False,
+                    read_stdin=True,
+                )
+                command.run()
+                call_client.assert_not_called()

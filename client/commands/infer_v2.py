@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
@@ -390,6 +391,7 @@ class Infer(Check):
         in_place_paths: Optional[List[str]],
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
+        read_stdin: bool,
     ) -> None:
         if annotate_from_existing_stubs and in_place_paths is None:
             raise ValueError(
@@ -409,6 +411,7 @@ class Infer(Check):
         self._in_place_paths: Final[Optional[List[str]]] = in_place_paths
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
+        self._read_stdin = read_stdin
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -422,22 +425,54 @@ class Infer(Check):
 
     def _flags(self) -> list[str]:
         flags = super()._flags()
+
         flags.append("-use-v2")
+
+        filter_directories = self._analysis_directory.get_filter_roots()
+        filter_directories.update(
+            set(self._configuration.get_existent_do_not_ignore_errors_in_paths())
+        )
+        if len(filter_directories):
+            flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
+
+        search_path = [
+            search_path.command_line_argument()
+            for search_path in (
+                self._configuration.expand_and_get_existent_search_paths()
+            )
+        ]
+        if search_path:
+            flags.extend(["-search-path", ",".join(search_path)])
+
+        excludes = self._configuration.excludes
+        for exclude in excludes:
+            flags.extend(["-exclude", exclude])
+
+        ignore_infer = self._configuration.get_existent_ignore_infer_paths()
+        if len(ignore_infer) > 0:
+            flags.extend(["-ignore-infer", ";".join(ignore_infer)])
+
         return flags
 
     def _run(self, retries: int = 1) -> None:
         if self._annotate_from_existing_stubs:
             return self._annotate_in_place()
-        self._analysis_directory.prepare()
-        result = self._call_client(command=self.NAME)
-        result.check()
-        infer_output = RawInferOutput(data=json.loads(result.output)[0])
+        infer_output = RawInferOutput(data=json.loads(self._load_infer_output())[0])
         module_annotations = _create_module_annotations(infer_output=infer_output)
         if self._print_only:
             return self._print_inferences(
                 infer_output=infer_output, module_annotations=module_annotations
             )
         self._write_stubs(module_annotations=module_annotations)
+
+    def _load_infer_output(self) -> str:
+        if self._read_stdin:
+            return sys.stdin.read()
+        else:
+            self._analysis_directory.prepare()
+            result = self._call_client(command=self.NAME)
+            result.check()
+            return result.output
 
     @staticmethod
     def _print_inferences(
