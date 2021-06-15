@@ -113,6 +113,8 @@ def _delete_server_files(configuration: configuration_module.Configuration) -> N
     except OSError:
         pass
 
+    # TODO(T92826668): Delete files under artifact root
+
 
 def _delete_caches(configuration: configuration_module.Configuration) -> None:
     dot_pyre_directory = configuration.dot_pyre_directory

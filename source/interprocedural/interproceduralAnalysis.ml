@@ -12,13 +12,10 @@ open Statement
 module Kind = AnalysisKind
 module Result = InterproceduralResult
 
-let initialize_configuration kinds ~static_analysis_configuration =
-  let initialize_kind kind =
-    let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis kind in
-    let module Analysis = (val analysis) in
-    Analysis.initialize_configuration ~static_analysis_configuration
-  in
-  List.iter kinds ~f:initialize_kind
+let initialize_configuration kind ~static_analysis_configuration =
+  let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis kind in
+  let module Analysis = (val analysis) in
+  Analysis.initialize_configuration ~static_analysis_configuration
 
 
 type initialize_result = {
@@ -26,41 +23,22 @@ type initialize_result = {
   skip_overrides: Ast.Reference.Set.t;
 }
 
-let initialize_models kinds ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs
-  =
-  let initialize_each
-      { initial_models = models; skip_overrides }
-      (Result.Analysis { kind; analysis })
-    =
-    let module Analysis = (val analysis) in
-    let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
-      Analysis.initialize_models
-        ~static_analysis_configuration
-        ~scheduler
-        ~environment
-        ~functions
-        ~stubs
-    in
-    let add_analysis_model existing model =
-      let open Result in
-      let package = Pkg { kind = ModelPart kind; value = model } in
-      { existing with models = Kind.Map.add (Kind.abstract kind) package existing.models }
-    in
-    let merge ~key:_ = function
-      | `Both (existing, new_model) -> Some (add_analysis_model existing new_model)
-      | `Left existing -> Some existing
-      | `Right new_model -> Some (add_analysis_model Result.empty_model new_model)
-    in
-    {
-      initial_models = Callable.Map.merge models new_models ~f:merge;
-      skip_overrides = Reference.Set.union skip_overrides new_skip_overrides;
-    }
+let initialize_models kind ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
+  let (Result.Analysis { analysis; kind = storable_kind }) = Result.get_abstract_analysis kind in
+  let module Analysis = (val analysis) in
+  let { Result.initial_models = analysis_initial_models; skip_overrides } =
+    Analysis.initialize_models
+      ~static_analysis_configuration
+      ~scheduler
+      ~environment
+      ~functions
+      ~stubs
   in
-  let accumulate model kind = initialize_each model (Result.get_abstract_analysis kind) in
-  List.fold
-    kinds
-    ~init:{ initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
-    ~f:accumulate
+  let to_model_t model =
+    let pkg = Result.Pkg { kind = ModelPart storable_kind; value = model } in
+    { Result.models = Kind.Map.add kind pkg Kind.Map.empty; is_obscure = false }
+  in
+  { initial_models = analysis_initial_models |> Callable.Map.map ~f:to_model_t; skip_overrides }
 
 
 let record_initial_models ~functions ~stubs models =
@@ -103,17 +81,16 @@ let get_empty_model (type a) (kind : < model : a ; .. > Result.storable_kind) : 
   Analysis.empty_model
 
 
-let get_obscure_models analyses =
-  let get_analysis_specific_obscure_model map abstract_analysis =
+let get_obscure_models abstract_analysis =
+  let models =
     let (Result.Analysis { kind; analysis }) = abstract_analysis in
     let module Analysis = (val analysis) in
     let obscure_model = Analysis.obscure_model in
     Kind.Map.add
       (Kind.abstract kind)
       (Result.Pkg { kind = ModelPart kind; value = obscure_model })
-      map
+      Kind.Map.empty
   in
-  let models = List.fold ~f:get_analysis_specific_obscure_model ~init:Kind.Map.empty analyses in
   Result.{ models; is_obscure = true }
 
 
@@ -207,9 +184,9 @@ let explain_non_fixpoint ~iteration ~previous ~next =
 let show_models models =
   let open Result in
   (* list them to make the type system do its work *)
-  let to_string (akind, Pkg { kind = ModelPart kind; value = model }) =
+  let to_string (abstract_kind, Pkg { kind = ModelPart kind; value = model }) =
     let module Analysis = (val get_analysis kind) in
-    Format.sprintf "%s: %s" (Kind.show akind) (Analysis.show_call_model model)
+    Format.sprintf "%s: %s" (Kind.show abstract_kind) (Analysis.show_call_model model)
   in
   Kind.Map.bindings models |> List.map ~f:to_string |> String.concat ~sep:"\n"
 
@@ -289,7 +266,7 @@ let widen_if_necessary step callable ~old_model ~new_model result =
 
 let analyze_define
     step
-    analyses
+    abstract_analysis
     callable
     environment
     qualifier
@@ -312,28 +289,16 @@ let analyze_define
     | None ->
         Format.asprintf "No initial model found for %a" Callable.pretty_print callable |> failwith
   in
-  let new_model, results =
-    let analyze (Result.Analysis { Result.kind; analysis }) =
+  let models, results =
+    try
+      let (Result.Analysis { Result.kind; analysis }) = abstract_analysis in
       let open Result in
-      let akind = Kind.abstract kind in
+      let abstract_kind = Kind.abstract kind in
       let module Analysis = (val analysis) in
       let existing = Result.get (ModelPart kind) old_model.models in
-      let method_result, method_model =
-        Analysis.analyze ~callable ~environment ~qualifier ~define ~existing
-      in
-      ( akind,
-        Pkg { kind = ModelPart kind; value = method_model },
-        Pkg { kind = ResultPart kind; value = method_result } )
-    in
-    let accumulate (models, results) analysis =
-      let akind, model, result = analyze analysis in
-      Result.Kind.Map.add akind model models, Result.Kind.Map.add akind result results
-    in
-    (* Run all the analyses *)
-    try
-      let init = Result.Kind.Map.(empty, empty) in
-      let models, results = List.fold ~f:accumulate analyses ~init in
-      models, results
+      let result, model = Analysis.analyze ~callable ~environment ~qualifier ~define ~existing in
+      ( Kind.Map.add abstract_kind (Pkg { kind = ModelPart kind; value = model }) Kind.Map.empty,
+        Kind.Map.add abstract_kind (Pkg { kind = ResultPart kind; value = result }) Kind.Map.empty )
     with
     | Analysis.ClassHierarchy.Untracked annotation ->
         Log.log
@@ -346,17 +311,17 @@ let analyze_define
     | Sys.Break as exn -> analysis_failed step ~exn ~message:"Hit Ctrl+C" callable
     | _ as exn -> analysis_failed step ~exn ~message:"Analysis failed" callable
   in
-  let new_model = { Result.models = new_model; is_obscure = false } in
+  let new_model = { Result.models; is_obscure = false } in
   widen_if_necessary step callable ~old_model ~new_model results
 
 
 let strip_for_callsite model =
   let open Result in
   (* list them to make the type system do its work *)
-  let strip akind (Pkg { kind = ModelPart kind; value = model }) models =
+  let strip abstract_kind (Pkg { kind = ModelPart kind; value = model }) models =
     let module Analysis = (val get_analysis kind) in
     let model = Analysis.strip_for_callsite model in
-    Kind.Map.add akind (Pkg { kind = ModelPart kind; value = model }) models
+    Kind.Map.add abstract_kind (Pkg { kind = ModelPart kind; value = model }) models
   in
   let models = Kind.Map.fold strip model.InterproceduralResult.models Kind.Map.empty in
   { model with models }
@@ -407,7 +372,7 @@ let callables_to_dump =
   ref Callable.Set.empty
 
 
-let analyze_callable analyses step callable environment =
+let analyze_callable analysis step callable environment =
   let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
   let () =
     (* Verify invariants *)
@@ -446,13 +411,13 @@ let analyze_callable analyses step callable environment =
           Fixpoint.
             {
               is_partial = false;
-              model = get_obscure_models analyses;
+              model = get_obscure_models analysis;
               result = Result.empty_result;
             }
       | Some (qualifier, ({ Node.value; _ } as define)) ->
           if Define.dump value then
             callables_to_dump := Callable.Set.add callable !callables_to_dump;
-          analyze_define step analyses callable environment qualifier define )
+          analyze_define step analysis callable environment qualifier define )
   | #Callable.override_target as callable -> analyze_overrides step callable
   | #Callable.object_target as path ->
       Format.asprintf "Found object %a in fixpoint analysis" Callable.pp path |> failwith
@@ -470,11 +435,11 @@ type result = {
 }
 
 (* Called on a worker with a set of functions to analyze. *)
-let one_analysis_pass ~analyses ~step ~environment ~callables =
-  let analyses = List.map ~f:Result.get_abstract_analysis analyses in
+let one_analysis_pass ~analysis ~step ~environment ~callables =
+  let analysis = Result.get_abstract_analysis analysis in
   let analyze_and_cache expensive_callables callable =
     let timer = Timer.start () in
-    let result = analyze_callable analyses step callable environment in
+    let result = analyze_callable analysis step callable environment in
     Fixpoint.add_state step callable result;
     (* Log outliers. *)
     if Timer.stop_in_ms timer > 500 then begin
@@ -564,7 +529,7 @@ let compute_callables_to_reanalyze
 let compute_fixpoint
     ~scheduler
     ~environment
-    ~analyses
+    ~analysis
     ~dependencies
     ~filtered_callables
     ~all_callables
@@ -635,7 +600,7 @@ let compute_fixpoint
           Scheduler.map_reduce
             scheduler
             ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1000)
-            ~map:(fun _ callables -> one_analysis_pass ~analyses ~step ~environment ~callables)
+            ~map:(fun _ callables -> one_analysis_pass ~analysis ~step ~environment ~callables)
             ~initial:
               {
                 callables_processed = 0;
@@ -722,7 +687,7 @@ let report_results
     ~static_analysis_configuration
     ~environment
     ~filename_lookup
-    ~analyses
+    ~analysis
     ~callables
     ~skipped_overrides
     ~fixpoint_timer
@@ -740,5 +705,4 @@ let report_results
       ~fixpoint_timer
       ~fixpoint_iterations
   in
-  let analyses = List.map ~f:Result.get_abstract_analysis analyses in
-  analyses |> List.concat_map ~f:report_analysis
+  Result.get_abstract_analysis analysis |> report_analysis

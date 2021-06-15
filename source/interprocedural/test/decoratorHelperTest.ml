@@ -136,8 +136,11 @@ let test_inline_decorators context =
       def __original_function(z: str) -> None:
         print(z)
 
-      __test_sink(y)
-      __original_function(y)
+      def __inlined_with_logging(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
+
+      return __inlined_with_logging(y)
   |};
   (* Leave decorators as such if none can be inlined. *)
   assert_inlined
@@ -253,9 +256,12 @@ let test_inline_decorators context =
         result = None
         return result
 
-      __test_sink(y)
-      result = __original_function(y)
-      return result
+      def __inlined_with_logging(y: str) -> None:
+        __test_sink(y)
+        result = __original_function(y)
+        return result
+
+      return __inlined_with_logging(y)
   |};
   (* `async` decorator. *)
   assert_inlined
@@ -296,11 +302,14 @@ let test_inline_decorators context =
       async def __original_function(x: str) -> int:
         print(x)
 
-      try:
-        result = await __original_function(y)
-        return result
-      except Exception:
-        return 42
+      async def __inlined_with_logging_async(y: str) -> int:
+        try:
+          result = await __original_function(y)
+          return result
+        except Exception:
+          return 42
+
+      return await __inlined_with_logging_async(y)
   |};
   (* Decorator that types the function parameter as `f: Callable`. *)
   assert_inlined
@@ -337,8 +346,11 @@ let test_inline_decorators context =
       def __original_function(x: str) -> int:
         print(x)
 
-      __test_sink(y)
-      __original_function(y)
+      def __inlined_with_logging(y: str) -> int:
+        __test_sink(y)
+        __original_function(y)
+
+      return __inlined_with_logging(y)
   |};
   (* Wrapper function with default values for parameters. *)
   assert_inlined
@@ -374,8 +386,11 @@ let test_inline_decorators context =
       def __original_function(z: str) -> None:
         print(z)
 
-      __test_sink(y)
-      __original_function(y + z)
+      def __inlined_with_logging(y: str, z: int = 4) -> None:
+        __test_sink(y)
+        __original_function(y + z)
+
+      return __inlined_with_logging(y, z)
   |};
   (* Wrapper function with `*args` and `**kwargs`. *)
   assert_inlined
@@ -412,10 +427,13 @@ let test_inline_decorators context =
       def __original_function(x: str) -> None:
         print(x)
 
-      __args = (x,)
-      __kwargs = {"x": x}
-      __test_sink(__args)
-      __original_function(x)
+      def __inlined_with_logging(x: str) -> None:
+        __args = (x,)
+        __kwargs = {"x": x}
+        __test_sink(__args)
+        __original_function(x)
+
+      return __inlined_with_logging(x)
   |};
   (* ParamSpec. *)
   assert_inlined
@@ -456,9 +474,12 @@ let test_inline_decorators context =
       def __original_function(x: str, y: int) -> None:
         print(x, y)
 
-      __args = (x, y)
-      __kwargs = {"x": x, "y": y}
-      __original_function(x, y)
+      def __inlined_with_logging(x: str, y: int) -> None:
+        __args = (x, y)
+        __kwargs = {"x": x, "y": y}
+        __original_function(x, y)
+
+      return __inlined_with_logging(x, y)
   |};
   assert_inlined
     {|
@@ -494,10 +515,13 @@ let test_inline_decorators context =
       def __original_function(x: str) -> None:
         print(x)
 
-      __args = (x,)
-      __kwargs = {"x": x}
-      __original_function(x)
-      return 1
+      def __inlined_change_return_type(x: str) -> int:
+        __args = (x,)
+        __kwargs = {"x": x}
+        __original_function(x)
+        return 1
+
+      return __inlined_change_return_type(x)
   |};
   (* Multiple decorators. *)
   assert_inlined
@@ -545,14 +569,18 @@ let test_inline_decorators context =
       return inner
 
     def foo(y: str) -> None:
-      def __original_function(y: str) -> None:
-        def __original_function(z: str) -> None:
-          print(z)
 
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __inlined_with_logging_sink(y: str) -> None:
         __test_sink(y)
         __original_function(y)
 
-      __original_function(y + __test_source())
+      def __inlined_with_logging_source(y: str) -> None:
+        __inlined_with_logging_sink(y + __test_source())
+
+      return __inlined_with_logging_source(y)
   |};
   (* Multiple decorators where one decorator fails to apply. *)
   assert_inlined
@@ -609,14 +637,18 @@ let test_inline_decorators context =
       return f
 
     def foo(y: str) -> None:
-      def __original_function(y: str) -> None:
-        def __original_function(z: str) -> None:
-          print(z)
 
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __inlined_with_logging_sink(y: str) -> None:
         __test_sink(y)
         __original_function(y)
 
-      __original_function(y + __test_source())
+      def __inlined_with_logging_source(y: str) -> None:
+        __inlined_with_logging_sink(y + __test_source())
+
+      return __inlined_with_logging_source(y)
   |};
   (* Decorator factory. *)
   assert_inlined
@@ -662,12 +694,15 @@ let test_inline_decorators context =
       def __original_function(x: str) -> None:
         print(x)
 
-      __args = (x, )
-      __kwargs = {"x": x}
+      def __inlined_with_named_logger(x: str) -> None:
+        __args = (x, )
+        __kwargs = {"x": x}
 
-      print($parameter$logger_name)
-      __test_sink(__args)
-      __original_function(x)
+        print($parameter$logger_name)
+        __test_sink(__args)
+        __original_function(x)
+
+      return __inlined_with_named_logger(x)
   |};
   (* Decorator that uses helper functions. *)
   assert_inlined
@@ -729,21 +764,25 @@ let test_inline_decorators context =
       def __original_function(z: str) -> None:
         print(z)
 
-      def my_print(y: str) -> None:
-        print("before", y)
+      def __inlined_with_logging(y: str) -> None:
 
-      def before(y: str) -> None:
-        message = "before"
-        my_print(message, y)
+        def my_print(y: str) -> None:
+          print("before", y)
 
-      def after(y: str) -> None:
-        message = "after"
-        my_print(message, y)
+        def before(y: str) -> None:
+          message = "before"
+          my_print(message, y)
 
-      __test_sink(y)
-      before(y)
-      __original_function(y)
-      after(y)
+        def after(y: str) -> None:
+          message = "after"
+          my_print(message, y)
+
+        __test_sink(y)
+        before(y)
+        __original_function(y)
+        after(y)
+
+      return __inlined_with_logging(y)
   |};
   (* Decorator factory with helper functions. *)
   assert_inlined
@@ -813,23 +852,26 @@ let test_inline_decorators context =
       def __original_function(z: str) -> None:
         print(z)
 
-      def my_print(y: str) -> None:
-        print("before", y)
+      def __inlined_with_named_logger(y: str) -> None:
 
-      def before(y: str) -> None:
-        message = "before"
-        my_print(message, y)
+        def my_print(y: str) -> None:
+          print("before", y)
 
-      def after(y: str) -> None:
-        message = "after"
-        # Uses of `callable` in the helper functions treat it as an unknown variable.
-        $parameter$callable(y)
-        my_print(message, y)
+        def before(y: str) -> None:
+          message = "before"
+          my_print(message, y)
 
-      __test_sink(y)
-      before(y)
-      __original_function(y)
-      after(y)
+        def after(y: str) -> None:
+          message = "after"
+          __original_function(y)
+          my_print(message, y)
+
+        __test_sink(y)
+        before(y)
+        __original_function(y)
+        after(y)
+
+      return __inlined_with_named_logger(y)
   |};
   assert_inlined
     {|
@@ -877,11 +919,14 @@ let test_inline_decorators context =
       def __original_function(x: int, y: str, z: bool) -> None:
         print(x, y, z)
 
-      __args = (y, z)
-      __kwargs = {"y": y, "z": z}
-      __original_function(x, y, z)
-      print(x)
-      print(__args, __kwargs)
+      def __inlined_with_logging(x: int, y: str, z: bool) -> None:
+        __args = (y, z)
+        __kwargs = {"y": y, "z": z}
+        __original_function(x, y, z)
+        print(x)
+        print(__args, __kwargs)
+
+      return __inlined_with_logging(x, y, z)
   |};
   (* Decorator used on a method. *)
   assert_inlined
@@ -946,38 +991,50 @@ let test_inline_decorators context =
         def __original_function(self: Foo, x: str) -> None:
           self.bar(x)
 
-        def helper(args) -> None:
-          __test_sink(args)
+        def __inlined_with_logging(self: Foo, x: str) -> None:
 
-        __args = (self, x)
-        __kwargs = {"self": self, "x": x}
-        helper(__args)
-        __original_function(self, x)
+          def helper(args) -> None:
+            __test_sink(args)
+
+          __args = (self, x)
+          __kwargs = {"self": self, "x": x}
+          helper(__args)
+          __original_function(self, x)
+
+        return __inlined_with_logging(self, x)
 
       def self_has_type(self: Base, x: str) -> None:
         def __original_function(self: Base, x: str) -> None:
           self.bar(x)
 
-        def helper(args) -> None:
-          __test_sink(args)
+        def __inlined_with_logging(self: Base, x: str) -> None:
 
-        __args = (self, x)
-        __kwargs = {"self": self, "x": x}
-        helper(__args)
-        __original_function(self, x)
+          def helper(args) -> None:
+            __test_sink(args)
+
+          __args = (self, x)
+          __kwargs = {"self": self, "x": x}
+          helper(__args)
+          __original_function(self, x)
+
+        return __inlined_with_logging(self, x)
 
       def self_has_generic_type(self: T, other: T, x: str) -> None:
         def __original_function(self: T, other: T, x: str) -> None:
           self.bar(x)
           other.bar(x)
 
-        def helper(args) -> None:
-          __test_sink(args)
+        def __inlined_with_logging(self: T, other: T, x: str) -> None:
 
-        __args = (self, other, x)
-        __kwargs = {"self": self, "other": other, "x": x}
-        helper(__args)
-        __original_function(self, other, x)
+          def helper(args) -> None:
+            __test_sink(args)
+
+          __args = (self, other, x)
+          __kwargs = {"self": self, "other": other, "x": x}
+          helper(__args)
+          __original_function(self, other, x)
+
+        return __inlined_with_logging(self, other, x)
   |};
   (* Decorator used on a classmethod. *)
   assert_inlined
@@ -1041,10 +1098,13 @@ let test_inline_decorators context =
           cls.some_class_method(x)
           cls().some_method(x)
 
-        __args = (cls, x)
-        __kwargs = {"cls": cls, "x": x}
-        __test_sink(__args)
-        __original_function(cls, x)
+        def __inlined_with_logging(cls: typing.Type[Foo], x: int) -> None:
+          __args = (cls, x)
+          __kwargs = {"cls": cls, "x": x}
+          __test_sink(__args)
+          __original_function(cls, x)
+
+        return __inlined_with_logging(cls, x)
   |};
   (* TODO(T69755379): Correctly inline decorator used on a staticmethod. Right now, we're missing
      the @staticmethod decorator. *)
@@ -1091,10 +1151,75 @@ let test_inline_decorators context =
         def __original_function(x: int) -> None:
           print(x)
 
-        __args = (x,)
-        __kwargs = {"x": x}
-        __test_sink(__args)
-        __original_function(x)
+        def __inlined_with_logging(x: int) -> None:
+          __args = (x,)
+          __kwargs = {"x": x}
+          __test_sink(__args)
+          __original_function(x)
+
+        return __inlined_with_logging(x)
+  |};
+  (* Same decorator applied multiple times. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+    def identity(f):
+      def inner(y: str) -> None:
+        f(y)
+
+      return inner
+
+    @with_logging
+    @identity
+    @with_logging
+    def foo(z: str) -> None:
+      print(z)
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        __test_sink(y)
+        callable(y)
+
+      return inner
+
+
+    def identity(f):
+      def inner(y: str) -> None:
+        f(y)
+
+      return inner
+
+    def foo(y: str) -> None:
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __inlined_with_logging(y: str) -> None:
+        __test_sink(y)
+        __original_function(y)
+
+      def __inlined_identity(y: str) -> None:
+        __inlined_with_logging(y)
+
+      def __inlined_with_logging2(y: str) -> None:
+        __test_sink(y)
+        __inlined_identity(y)
+
+      return __inlined_with_logging2(y)
   |};
   ()
 
@@ -1189,18 +1314,30 @@ let test_decorator_location context =
     @same_module_decorator
     def baz(z: str) -> None:
       print(z)
+
+    @identity
+    @identity
+    def same_decorator_twice(z: str) -> None:
+      print(z)
   |}
     ~expected_function_module_pairs:
       [
+        !&"test.baz.__inlined_same_module_decorator", Some !&"test";
         !&"test.baz.__original_function", None;
-        !&"test.baz", Some !&"test";
-        !&"test.bar.__original_function", Some !&"some_module.identity_decorator";
-        !&"test.bar.__original_function.__original_function", None;
-        !&"test.bar.helper", Some !&"logging_decorator";
-        !&"test.bar", Some !&"logging_decorator";
-        !&"test.foo", Some !&"logging_decorator";
+        !&"test.baz", None;
+        !&"test.bar.__inlined_with_logging", Some !&"logging_decorator";
+        !&"test.bar.__inlined_with_logging.helper", Some !&"logging_decorator";
+        !&"test.bar", None;
+        !&"test.bar.__original_function", None;
+        !&"test.bar.__inlined_identity", Some !&"some_module.identity_decorator";
+        !&"test.foo.__inlined_with_logging", Some !&"logging_decorator";
+        !&"test.foo.__inlined_with_logging.helper", Some !&"logging_decorator";
+        !&"test.foo", None;
         !&"test.foo.__original_function", None;
-        !&"test.foo.helper", Some !&"logging_decorator";
+        !&"test.same_decorator_twice.__inlined_identity", Some !&"some_module.identity_decorator";
+        !&"test.same_decorator_twice.__inlined_identity2", Some !&"some_module.identity_decorator";
+        !&"test.same_decorator_twice.__original_function", None;
+        !&"test.same_decorator_twice", None;
       ]
     {|
     from builtins import __test_sink
@@ -1218,34 +1355,59 @@ let test_decorator_location context =
       def __original_function(z: str) -> None:
         print(z)
 
-      def helper(y: str) -> None:
-        print(y)
+      def __inlined_with_logging(y: str) -> None:
 
-      __test_sink(y)
-      __original_function(y)
-      helper(y)
+        def helper(y: str) -> None:
+          print(y)
+
+        __test_sink(y)
+        __original_function(y)
+        helper(y)
+
+      return __inlined_with_logging(y)
 
     def bar(y: str) -> None:
-      def __original_function(y: str) -> None:
 
-        def __original_function(z: str) -> None:
-          print(z)
+      def __original_function(z: str) -> None:
+        print(z)
 
+      def __inlined_identity(y: str) -> None:
         __original_function(y)
 
-      def helper(y: str) -> None:
-        print(y)
+      def __inlined_with_logging(y: str) -> None:
 
-      __test_sink(y)
-      __original_function(y)
-      helper(y)
+        def helper(y: str) -> None:
+          print(y)
+
+        __test_sink(y)
+        __inlined_identity(y)
+        helper(y)
+
+      return __inlined_with_logging(y)
 
 
     def baz(y: str) -> None:
       def __original_function(z: str) -> None:
         print(z)
 
-      __original_function(y)
+      def __inlined_same_module_decorator(y: str) -> None:
+        __original_function(y)
+
+      return __inlined_same_module_decorator(y)
+
+
+    def same_decorator_twice(y: str) -> None:
+
+      def __original_function(z: str) -> None:
+        print(z)
+
+      def __inlined_identity(y: str) -> None:
+        __original_function(y)
+
+      def __inlined_identity2(y: str) -> None:
+        __inlined_identity(y)
+
+      return __inlined_identity2(y)
   |};
   ()
 
@@ -1555,6 +1717,23 @@ let test_rename_local_variables _ =
   ()
 
 
+let test_uniquify_names _ =
+  let assert_uniquified given expected =
+    assert_equal
+      ~cmp:[%equal: Reference.t list]
+      ~printer:[%show: Reference.t list]
+      (List.map expected ~f:Reference.create)
+      ( List.map given ~f:Reference.create
+      |> DecoratorHelper.uniquify_names ~get_reference:Fn.id ~set_reference:(fun reference _ ->
+             reference) )
+  in
+  assert_uniquified
+    ["a.b"; "a.c"; "a.b"; "a.b"; "a.c"; "foo"]
+    ["a.b3"; "a.c2"; "a.b2"; "a.b"; "a.c"; "foo"];
+  assert_uniquified [] [];
+  ()
+
+
 let () =
   "decoratorHelper"
   >::: [
@@ -1564,5 +1743,6 @@ let () =
          "requalify_name" >:: test_requalify_name;
          "replace_signature" >:: test_replace_signature;
          "rename_local_variables" >:: test_rename_local_variables;
+         "uniquify_names" >:: test_uniquify_names;
        ]
   |> Test.run

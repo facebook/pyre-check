@@ -72,7 +72,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[benign]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -81,7 +83,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[tainted]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[tainted]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -90,7 +94,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -210,7 +214,11 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[processor_type]" }
+              {
+                "kind": "LocalReturn",
+                "name": "[processor_type]",
+                "depth": 0
+              }
             ]
           }
         ]
@@ -220,7 +228,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -239,7 +247,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[benign]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -248,7 +258,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[tainted]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[tainted]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -258,7 +270,11 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[processor_type]" }
+              {
+                "kind": "LocalReturn",
+                "name": "[processor_type]",
+                "depth": 0
+              }
             ]
           }
         ]
@@ -268,7 +284,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -287,7 +303,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[benign]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -296,7 +314,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[tainted]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[tainted]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -305,7 +325,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -375,7 +395,11 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[processor_type]" }
+              {
+                "kind": "LocalReturn",
+                "name": "[processor_type]",
+                "depth": 0
+              }
             ]
           }
         ]
@@ -385,7 +409,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }

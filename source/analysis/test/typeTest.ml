@@ -1914,6 +1914,10 @@ let test_contains_escaped_free_variable _ =
   ()
 
 
+let polynomial_create_from_variables_list =
+  Type.Polynomial.create_from_variables_list ~compare_t:Type.compare
+
+
 let test_convert_all_escaped_free_variables_to_anys _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let escaped_free =
@@ -1954,6 +1958,27 @@ let test_convert_all_escaped_free_variables_to_anys _ =
   ()
 
 
+let test_int_expression_create _ =
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let assert_create_list_list given expected =
+    match Type.IntExpression.create (polynomial_create_from_variables_list given) with
+    | Type.IntExpression (Data result_polynomial) ->
+        assert_equal
+          ~printer:[%show: Type.type_t Type.Polynomial.t]
+          ~cmp:[%equal: Type.type_t Type.Polynomial.t]
+          result_polynomial
+          (polynomial_create_from_variables_list expected)
+    | _ -> assert false
+  in
+  assert_create_list_list [1, [x, 1]; 1, []; -1, []] [1, [x, 1]; 1, []; -1, []];
+  assert_create_list_list [1, [y, 1; y, 1]] [1, [y, 1; y, 1]];
+  assert_create_list_list [0, [x, 1; y, 1]; 0, []; 1, []] [1, []];
+  assert_create_list_list [1, [x, 1]; 1, [y, 1]] [1, [y, 1]; 1, [x, 1]];
+  assert_create_list_list [1, [x, 1; y, 1]] [1, [y, 1; x, 1]];
+  ()
+
+
 let test_replace_all _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let annotation = Type.parametric "p" ![free_variable; Type.integer] in
@@ -1968,6 +1993,161 @@ let test_replace_all _ =
        (fun _ -> Some Type.integer)
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
     (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> None)
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
+    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun variable -> Some (Type.Annotated (Type.Variable variable)))
+       free_variable)
+    (Type.annotated free_variable);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some Type.float)
+       (Type.union [Type.literal_integer 2; Type.integer; free_variable]))
+    (Type.union [Type.literal_integer 2; Type.integer; Type.float]);
+
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  let w = Type.Variable.Unary.create "w" in
+  let variable_list_to_type variable_list =
+    polynomial_create_from_variables_list variable_list |> Type.polynomial_to_type
+  in
+  let divide_to_type numerator denominator =
+    Type.IntExpression.create (Type.Polynomial.divide ~compare_t:Type.compare numerator denominator)
+  in
+  (* TODO: Task T90507423. This needs to be normalized before output. *)
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some Type.Any)
+       (variable_list_to_type [1, []; 1, [x, 1]]))
+    Type.Any;
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some Type.integer)
+       (variable_list_to_type [1, []; 1, [x, 1]]))
+    Type.integer;
+
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.literal_integer 7))
+       (divide_to_type (Type.Polynomial.create_from_int 7) (Type.Polynomial.create_from_variable x)))
+    (Type.IntExpression.create (polynomial_create_from_variables_list [1, []]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.literal_integer 6))
+       (divide_to_type
+          (Type.Polynomial.create_from_int 10)
+          (Type.Polynomial.create_from_variable x)))
+    (Type.IntExpression.create (polynomial_create_from_variables_list [1, []]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (function
+         | variable when [%equal: Type.Variable.Unary.t] variable x ->
+             Some
+               (divide_to_type
+                  (Type.Polynomial.create_from_int 7)
+                  (polynomial_create_from_variables_list [1, [y, 1]]))
+         | _ -> None)
+       (variable_list_to_type [1, [x, 1; y, 1]]))
+    (Type.IntExpression.create
+       (Type.Polynomial.multiply
+          ~compare_t:Type.compare
+          (Type.Polynomial.create_from_variable y)
+          (Type.Polynomial.divide
+             ~compare_t:Type.compare
+             (Type.Polynomial.create_from_int 7)
+             (Type.Polynomial.create_from_variable y))));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (function
+         | variable when not ([%equal: Type.Variable.Unary.t] variable z) -> Some (Type.Variable z)
+         | _ -> None)
+       (Type.IntExpression.create
+          (Type.Polynomial.add
+             ~compare_t:Type.compare
+             (Type.Polynomial.divide
+                ~compare_t:Type.compare
+                (polynomial_create_from_variables_list [7, [x, 1]])
+                (polynomial_create_from_variables_list [1, [z, 3]]))
+             (Type.Polynomial.divide
+                ~compare_t:Type.compare
+                (Type.Polynomial.create_from_int 7)
+                (polynomial_create_from_variables_list [1, [y, 1; z, 1]])))))
+    (Type.IntExpression.create
+       (Type.Polynomial.multiply
+          ~compare_t:Type.compare
+          (Type.Polynomial.create_from_int 2)
+          (Type.Polynomial.divide
+             ~compare_t:Type.compare
+             (Type.Polynomial.create_from_int 7)
+             (polynomial_create_from_variables_list [1, [z, 2]]))));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (function
+         | variable when [%equal: Type.Variable.Unary.t] variable x -> Some (Type.Variable y)
+         | _ -> None)
+       (Type.IntExpression.create
+          (Type.Polynomial.add
+             ~compare_t:Type.compare
+             (Type.Polynomial.create_from_int 1)
+             (Type.Polynomial.divide
+                ~compare_t:Type.compare
+                (Type.Polynomial.create_from_variable x)
+                (Type.Polynomial.create_from_variable y)))))
+    (Type.IntExpression.create (polynomial_create_from_variables_list [2, []]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.literal_integer 0))
+       (divide_to_type (Type.Polynomial.create_from_int 7) (Type.Polynomial.create_from_variable x)))
+    Type.Bottom;
+
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.literal_integer 4))
+       (variable_list_to_type [2, [x, 3]; 3, [y, 1; z, 1]]))
+    (Type.IntExpression.create (polynomial_create_from_variables_list [176, []]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (function
+         | variable when [%equal: Type.Variable.Unary.t] variable x -> Some (Type.literal_integer 5)
+         | _ -> None)
+       (variable_list_to_type [3, [x, 2]; 5, [y, 1]]))
+    (variable_list_to_type [75, []; 5, [y, 1]]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (variable_list_to_type [3, [x, 2]; 5, [y, 2; z, 7]]))
+       (variable_list_to_type [15150, []]))
+    (variable_list_to_type [15150, []]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some Type.integer)
+       (variable_list_to_type [2, [x, 3]]))
+    Type.integer;
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.Variable x))
+       (variable_list_to_type [2, [x, 1; y, 2]; 3, [x, 2; y, 1]]))
+    (variable_list_to_type [5, [x, 3]]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (variable_list_to_type [3, [y, 2; z, 1]; 5, [y, 1; z, 3]]))
+       (variable_list_to_type [2, [x, 2]; 5, [x, 1]]))
+    (variable_list_to_type
+       [18, [y, 4; z, 2]; 60, [y, 3; z, 4]; 50, [y, 2; z, 6]; 15, [y, 2; z, 1]; 25, [y, 1; z, 3]]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (variable_list_to_type [3, [w, 1]; 1, [z, 2]]))
+       (variable_list_to_type [2, [x, 1]; 1, [y, 1]]))
+    (variable_list_to_type [9, [w, 1]; 3, [z, 2]]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (variable_list_to_type [1, [x, 1; y, 1]]))
+       (variable_list_to_type [1, [x, 1]; 1, [y, 1]]))
+    (variable_list_to_type [1, [x, 1; y, 1]; 1, [x, 2; y, 1]]);
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
@@ -2056,6 +2236,118 @@ let test_replace_all _ =
     ~replace:replace_with_concatenation
     "typing.Callable[[int, pyre_extensions.Unpack[Ts], str], None]"
     "typing.Callable[[int, bool, pyre_extensions.Unpack[Ts], bool, str], None]";
+  ()
+
+
+let test_less_or_equal _ =
+  let assert_solve ~left ~right expected =
+    let impossible = [] in
+    let rec solve ~left ~right =
+      match left, right with
+      | Type.Variable variable1, Type.Variable variable2 ->
+          List.sort
+            [[variable1, Type.Variable variable2]; [variable2, Type.Variable variable1]]
+            ~compare:[%compare: (Type.Variable.Unary.t * Type.t) list]
+      | Type.Variable variable, bound
+      | bound, Type.Variable variable ->
+          [[variable, bound]]
+      | IntExpression _, _
+      | _, IntExpression _ ->
+          Type.solve_less_or_equal_polynomial ~left ~right ~solve ~impossible
+      | _ when Type.equal left right -> [[]]
+      | _ -> impossible
+    in
+
+    assert_equal
+      ~cmp:[%equal: (Type.t Type.Variable.Unary.record * Type.t) list list]
+      ~printer:[%show: (Type.t Type.Variable.Unary.record * Type.t) list list]
+      expected
+      (solve ~left ~right);
+    assert_equal
+      ~cmp:[%equal: (Type.t Type.Variable.Unary.record * Type.t) list list]
+      ~printer:[%show: (Type.t Type.Variable.Unary.record * Type.t) list list]
+      expected
+      (solve ~left:right ~right:left)
+  in
+  let assert_impossible ~left ~right = assert_solve ~left ~right [] in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  let variable_list_to_type variable_list =
+    polynomial_create_from_variables_list variable_list |> Type.polynomial_to_type
+  in
+  let divide_to_type numerator denominator =
+    Type.IntExpression.create (Type.Polynomial.divide ~compare_t:Type.compare numerator denominator)
+  in
+  let very_complicated_type =
+    Type.tuple
+      [
+        Type.Any;
+        Type.Union [Type.Bottom; Type.bool];
+        Type.Variable x;
+        variable_list_to_type [3, [x, 2; y, 1; z, 42]];
+      ]
+  in
+  assert_solve
+    ~left:(Type.literal_integer 6)
+    ~right:(variable_list_to_type [1, []; 1, [x, 1]])
+    [[x, Type.literal_integer 5]];
+  assert_solve
+    ~left:(Type.literal_integer 1)
+    ~right:(variable_list_to_type [6, []; 1, [x, 1]])
+    [[x, Type.literal_integer (-5)]];
+  assert_impossible
+    ~left:(variable_list_to_type [1, [x, 2]])
+    ~right:(variable_list_to_type [1, [x, 3]]);
+
+  assert_solve ~left:very_complicated_type ~right:(Type.Variable x) [[x, very_complicated_type]];
+
+  assert_impossible ~left:(Type.literal_integer 5) ~right:very_complicated_type;
+
+  assert_impossible
+    ~left:(variable_list_to_type [1, [x, 1]; 1, [y, 1]])
+    ~right:(Type.literal_integer 5);
+
+  assert_impossible ~left:(variable_list_to_type [1, [x, 1; y, 1]]) ~right:(Type.literal_integer 5);
+
+  assert_solve
+    ~left:(variable_list_to_type [6, [x, 1]])
+    ~right:(Type.literal_integer 18)
+    [[x, Type.literal_integer 3]];
+
+  assert_solve
+    ~left:(variable_list_to_type [2, []; 4, [x, 1]])
+    ~right:(Type.literal_integer 18)
+    [[x, Type.literal_integer 4]];
+
+  assert_impossible ~left:(variable_list_to_type [1, [x, 2]]) ~right:(Type.literal_integer 9);
+
+  assert_solve
+    ~left:(variable_list_to_type [1, [x, 1]])
+    ~right:(variable_list_to_type [1, [y, 1]])
+    [[x, Type.Variable y]; [y, Type.Variable x]];
+  assert_impossible
+    ~left:(variable_list_to_type [2, []; 3, [x, 1]])
+    ~right:(variable_list_to_type [2, []; 9, [y, 1]]);
+
+  assert_impossible
+    ~left:
+      (divide_to_type
+         (polynomial_create_from_variables_list [1, [x, 1]])
+         (Type.Polynomial.create_from_int 7))
+    ~right:
+      (divide_to_type
+         (polynomial_create_from_variables_list [1, [y, 1]])
+         (Type.Polynomial.create_from_int 7));
+  assert_impossible
+    ~left:
+      (divide_to_type
+         (Type.Polynomial.create_from_int 1)
+         (polynomial_create_from_variables_list [3, [x, 1]]))
+    ~right:
+      (divide_to_type
+         (Type.Polynomial.create_from_int 1)
+         (polynomial_create_from_variables_list [3, [x, 1]]));
   ()
 
 
@@ -2856,10 +3148,6 @@ let polynomial_multiply = Type.Polynomial.multiply ~compare_t:Type.compare
 
 let polynomial_divide = Type.Polynomial.divide ~compare_t:Type.compare
 
-let polynomial_create_from_variables_list =
-  Type.Polynomial.create_from_variables_list ~compare_t:Type.compare
-
-
 let test_polynomial_create_from_list _ =
   let assert_create given expected =
     let given = polynomial_create_from_variables_list given in
@@ -2883,7 +3171,7 @@ let test_polynomial_create_from_list _ =
     [
       2, [y, 1]; 1, [x, 1]; 1, [x, 2; y, 1]; 1, [z, 1]; 1, [y, 1; z, 1; x, 1]; 1, [x, 1; y, 2]; 2, [];
     ]
-    "2 + x + 2y + z + x^2y + xy^2 + xyz";
+    "2 + x + 2y + z + xyz + xy^2 + x^2y";
   ()
 
 
@@ -2911,6 +3199,85 @@ let test_polynomial_to_type _ =
   ()
 
 
+let test_polynomial_replace _ =
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  let w = Type.Variable.Unary.create "w" in
+  let assert_polynomial_replace given ~replacements:(variable, by) expected =
+    let replaced =
+      Type.Polynomial.replace
+        ~compare_t:Type.compare
+        (polynomial_create_from_variables_list given)
+        ~by:(polynomial_create_from_variables_list by)
+        ~variable:(Type.Monomial.create_variable variable)
+    in
+    let expected_polynomial = polynomial_create_from_variables_list expected in
+    assert_equal
+      ~printer:Fn.id
+      (polynomial_show_normal expected_polynomial)
+      (polynomial_show_normal replaced)
+  in
+  (* [y/x] 0 => 0 *)
+  assert_polynomial_replace [] ~replacements:(x, [1, [y, 1]]) [];
+  (* [0/x] 2x => 0 *)
+  assert_polynomial_replace [2, [x, 1]] ~replacements:(x, []) [];
+  (* [x/x] 2x => 2x *)
+  assert_polynomial_replace [2, [x, 1]] ~replacements:(x, [1, [x, 1]]) [2, [x, 1]];
+  (* [0/x] 3y^2 => 3y^2 *)
+  assert_polynomial_replace [3, [y, 2]] ~replacements:(x, []) [3, [y, 2]];
+  (* [3y/x] 2x => 6y *)
+  assert_polynomial_replace [2, [x, 1]] ~replacements:(x, [3, [y, 1]]) [6, [y, 1]];
+  (* [2y^3/x] 5x^2 => 20y^6 *)
+  assert_polynomial_replace [5, [x, 2]] ~replacements:(x, [2, [y, 3]]) [20, [y, 6]];
+  (* [2z^4/y] 2x^2y^3 => 16x^2z^12 *)
+  assert_polynomial_replace [2, [x, 2; y, 3]] ~replacements:(y, [2, [z, 4]]) [16, [x, 2; z, 12]];
+
+  (* [3yz + 6x^3/x] 2x => 6yz + 12x^3 *)
+  assert_polynomial_replace
+    [2, [x, 1]]
+    ~replacements:(x, [3, [y, 2; z, 1]; 6, [x, 3]])
+    [6, [y, 2; z, 1]; 12, [x, 3]];
+  (* [2x^2 + 3yz^3/x] 4x^2y^3z => 16x^4y^3z + 48x^2y^4z^4 + 36y^5z^7 *)
+  assert_polynomial_replace
+    [4, [x, 2; y, 3; z, 1]]
+    ~replacements:(x, [2, [x, 2]; 3, [y, 1; z, 3]])
+    [16, [x, 4; y, 3; z, 1]; 48, [x, 2; y, 4; z, 4]; 36, [y, 5; z, 7]];
+
+  (* [0/z] 2xy + 3z => 2xy *)
+  assert_polynomial_replace [2, [x, 1; y, 1]; 3, [z, 1]] ~replacements:(z, []) [2, [x, 1; y, 1]];
+  (* [2/y] 2x^2y^3 + 3y^2z => 16x^2 + 12z *)
+  assert_polynomial_replace
+    [2, [x, 2; y, 3]; 3, [y, 2; z, 1]]
+    ~replacements:(y, [2, []])
+    [16, [x, 2]; 12, [z, 1]];
+  (* [3x^2/z] 8xy^2z^2 + 3x^3y^2z => 81x^5y^2 *)
+  assert_polynomial_replace
+    [8, [x, 1; y, 2; z, 2]; 3, [x, 3; y, 2; z, 1]]
+    ~replacements:(z, [3, [x, 2]])
+    [81, [x, 5; y, 2]];
+
+  (* [2x^2 + 5y^4/z] 3yz^2 + 2x^2yz => 35x^4y + 15y^9 + 10x^2y^5 *)
+  assert_polynomial_replace
+    [3, [y, 1; z, 2]; 2, [x, 2; y, 1; z, 1]]
+    ~replacements:(z, [2, [x, 2]; 5, [y, 4]])
+    [16, [x, 4; y, 1]; 70, [x, 2; y, 5]; 75, [y, 9]];
+  (* [2x^2 + 5y^4z/x] 3xyz^2 + 2x^2yz + 2w^2 => 6x^2yz^2 + 15y^5z^3 + 8x^4yz + 40x^2y^5z^2 +
+     50y^9z^3 + 2w^2 *)
+  assert_polynomial_replace
+    [3, [x, 1; y, 1; z, 2]; 2, [x, 2; y, 1; z, 1]; 2, [w, 2]]
+    ~replacements:(x, [2, [x, 2]; 5, [y, 4; z, 1]])
+    [
+      6, [x, 2; y, 1; z, 2];
+      15, [y, 5; z, 3];
+      8, [x, 4; y, 1; z, 1];
+      40, [x, 2; y, 5; z, 2];
+      50, [y, 9; z, 3];
+      2, [w, 2];
+    ];
+  ()
+
+
 let test_add_polynomials _ =
   let assert_add given1 given2 expected =
     let given1 = polynomial_create_from_variables_list given1 in
@@ -2924,6 +3291,7 @@ let test_add_polynomials _ =
   assert_add [3, []] [2, []] "5";
   assert_add [3, []] [-3, []; 2, [x, 2]] "2x^2";
   assert_add [1, []; 3, [x, 1]; 2, [y, 1]] [2, []; 1, [x, 1]; 1, [z, 1]] "3 + 4x + 2y + z";
+  assert_add [1, []; 1, [x, 1; y, 2]] [1, [x, 2; y, 1]] "1 + xy^2 + x^2y";
   ()
 
 
@@ -3225,7 +3593,9 @@ let () =
          "contains_escaped_free_variable" >:: test_contains_escaped_free_variable;
          "convert_all_escaped_free_variables_to_anys"
          >:: test_convert_all_escaped_free_variables_to_anys;
+         "int_expression_create" >:: test_int_expression_create;
          "replace_all" >:: test_replace_all;
+         "less_or_equal_polynomial" >:: test_less_or_equal;
          "collect_all" >:: test_collect_all;
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
          "starred_annotation_expression" >:: test_starred_annotation_expression;
@@ -3240,6 +3610,7 @@ let () =
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
          "polynomial_create_from_list" >:: test_polynomial_create_from_list;
          "polynomial_to_type" >:: test_polynomial_to_type;
+         "polynomial_replace" >:: test_polynomial_replace;
          "add_polynomials" >:: test_add_polynomials;
          "subtract_polynomials" >:: test_subtract_polynomials;
          "multiply_polynomial" >:: test_multiply_polynomial;

@@ -314,6 +314,25 @@ let test_expand_format_string _ =
          };
     ];
 
+  assert_format_string
+    "f'{x for x in []}'"
+    "{x for x in []}"
+    [
+      +Expression.Generator
+         {
+           Comprehension.element = +Expression.Name (Name.Identifier "x");
+           generators =
+             [
+               {
+                 Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
+                 iterator = +Expression.List [];
+                 conditions = [];
+                 async = false;
+               };
+             ];
+         };
+    ];
+
   (* Ensure we fix up locations. *)
   let assert_locations source statements =
     let parsed_source = parse source |> Preprocessing.expand_format_string in

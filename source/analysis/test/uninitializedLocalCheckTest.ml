@@ -23,16 +23,31 @@ let assert_uninitialized_errors ~context =
 let test_simple context =
   let assert_uninitialized_errors = assert_uninitialized_errors ~context in
 
-  (* TODO (T69630394): Tests below document errors we do not report, but would like this check to. *)
-
-  (* line 2, in f: local variable 'y' referenced before assignment *)
-  assert_uninitialized_errors {|
+  assert_uninitialized_errors
+    {|
       def f():
+        x = y
+        y = 5
+    |}
+    ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
+
+  assert_uninitialized_errors {|
+      def f(y):
         x = y
         y = 5
     |} [];
 
-  (* line 4, in f: local variable 'y' referenced before assignment *)
+  assert_uninitialized_errors
+    {|
+      def f(x):
+        if x > 5:
+          return y   # Error
+        y = 5
+        z = 5
+        return z   # OK
+    |}
+    ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
+
   assert_uninitialized_errors
     {|
       def f(x):
@@ -40,19 +55,8 @@ let test_simple context =
           y = 2
         return y
     |}
-    [];
+    ["Unbound name [10]: Name `y` is used but not defined in the current scope."];
 
-  (* line 4, in increment: local variable 'counter' referenced before assignment *)
-  assert_uninitialized_errors
-    {|
-      counter = 0
-
-      def increment() -> None:
-        counter += 1
-    |}
-    [];
-
-  (* line 6, in f: local variable 'x' referenced before assignment *)
   assert_uninitialized_errors
     {|
       def f() -> int:
@@ -62,9 +66,70 @@ let test_simple context =
           except ZeroDivisionError:
               return x
     |}
+    ["Unbound name [10]: Name `x` is used but not defined in the current scope."];
+
+  assert_uninitialized_errors
+    {|
+      counter = 0
+
+      def increment() -> None:
+        counter += 1
+    |}
+    ["Unbound name [10]: Name `counter` is used but not defined in the current scope."];
+
+  assert_uninitialized_errors {|
+       x: int = 5
+       def f():
+         return x
+    |} [];
+
+  assert_uninitialized_errors
+    {|
+       class Foo(object):
+         pass
+       def f():
+         return Foo()
+    |}
     [];
 
-  (* Extracted from a real-world example. *)
+  assert_uninitialized_errors
+    {|
+        def f():
+          def g():
+            pass
+          g()
+    |}
+    [];
+
+  assert_uninitialized_errors
+    {|
+        def f():
+          x, y = 0, 0
+          return x, y
+    |}
+    [];
+
+  assert_uninitialized_errors
+    {|
+        def f( *args, **kwargs) -> None:
+          print(args)
+          print(list(kwargs.items()))
+    |}
+    [];
+
+  (* should be: no error *)
+  assert_uninitialized_errors
+    {|
+       x = 0
+       def f() -> None:
+         global x
+         if x == 0:
+           x = 1
+    |}
+    [];
+
+  (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
+     not be defined. *)
   assert_uninitialized_errors
     {|
       from dataclasses import dataclass
@@ -92,7 +157,9 @@ let test_simple context =
                       harness_config = task.harness_config
                   foo(harness_config)
       |}
-    []
+    [];
+
+  ()
 
 
 let () = "uninitializedCheck" >::: ["simple" >:: test_simple] |> Test.run

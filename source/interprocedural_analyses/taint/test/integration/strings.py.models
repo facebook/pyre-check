@@ -383,7 +383,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "always-via": "string_concat_rhs" } ]
           }
         ]
@@ -393,7 +393,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
@@ -414,7 +414,7 @@
           {
             "decl": null,
             "tito": [ { "line": 10, "start": 11, "end": 17 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_lhs" }
@@ -438,7 +438,7 @@
           {
             "decl": null,
             "tito": [ { "line": 14, "start": 17, "end": 23 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_rhs" }
@@ -522,7 +522,7 @@
           {
             "decl": null,
             "tito": [ { "line": 59, "start": 25, "end": 26 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [
               { "always-via": "obscure" },
               { "always-via": "format-string" }

@@ -768,80 +768,6 @@ let test_check_missing_global context =
       ]
 
 
-let test_check_missing_attribute context =
-  let assert_inference_errors = assert_inference_errors ~context in
-  assert_inference_errors
-    {|
-      def foo() -> int:
-        return 1
-      class Foo:
-        x = foo()
-    |}
-    ~expected:
-      [
-        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but no type \
-         is specified.";
-      ];
-  assert_inference_errors
-    {|
-      class Foo:
-        x = 1 + 1
-    |}
-    ~expected:
-      [
-        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but no type \
-         is specified.";
-      ];
-  assert_inference_errors
-    {|
-      class Foo:
-        def __init__(self) -> None:
-          self.x = 1 + 1
-    |}
-    ~expected:
-      [
-        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but no type \
-         is specified.";
-      ];
-  assert_inference_errors
-    {|
-      class Foo:
-        x = None
-        def __init__(self) -> None:
-          self.x = 1 + 1
-    |}
-    ~expected:
-      [
-        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type \
-         `typing.Optional[int]` but no type is specified.";
-      ];
-  assert_inference_errors
-    {|
-      class Foo:
-        def __init__(self) -> None:
-          self.x = self.foo()
-
-        def foo(self) -> int:
-          return 1
-    |}
-    ~expected:
-      [
-        "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but no type \
-         is specified.";
-      ];
-  (* TODO(T84365830): Be more intelligent about inferring None type. *)
-  assert_inference_errors
-    {|
-    class Foo:
-      foo = None
-  |}
-    ~expected:
-      [
-        "Missing attribute annotation [4]: Attribute `foo` of class `Foo` has type `None` but no \
-         type is specified.";
-      ]
-
-
 let test_infer_error_fields context =
   let assert_infer ?(fields = ["description"]) source errors =
     let fields_of_error error =
@@ -943,7 +869,6 @@ let () =
          "missing_parameter" >:: test_check_missing_parameter;
          "missing_return" >:: test_check_missing_return;
          "missing_global" >:: test_check_missing_global;
-         "missing_attribute" >:: test_check_missing_attribute;
          "infer_fields" >:: test_infer_error_fields;
        ]
   |> Test.run

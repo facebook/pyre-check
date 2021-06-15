@@ -62,3 +62,5 @@ val prefix : t -> t option
 val head : t -> t option
 
 val last : t -> Identifier.t
+
+val map_last : f:(Identifier.t -> Identifier.t) -> t -> t

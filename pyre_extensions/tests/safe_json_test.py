@@ -7,19 +7,53 @@
 
 import unittest
 from io import StringIO
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 from typing_extensions import TypedDict
 
 from .. import safe_json
 
+T = TypeVar("T")
 
-class ExampleTypedDict(TypedDict):
-    string: str
-    integer: int
+
+class Movie(TypedDict):
+    name: str
+    year: int
+
+
+class MovieWithRating(Movie):
+    rating: float
+
+
+class MovieWithArbitraryDictionary(Movie):
+    dictionary: Dict[str, Any]
+
+
+class MovieWithUnion(Movie):
+    int_or_str: Union[int, str]
+
+
+class MovieWithNonRequiredField(Movie, total=False):
+    not_required: str
 
 
 class BasicTestCase(unittest.TestCase):
+    def _assert_loads(self, input: str, target_type: Type[T], output: T) -> None:
+        self.assertEqual(
+            safe_json.loads(
+                input,
+                target_type,
+            ),
+            output,
+        )
+
+    def _assert_loads_fails(self, input: str, target_type: Type[T]) -> None:
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads(
+                input,
+                target_type,
+            )
+
     def test_loads(self) -> None:
         # Primitives.
         self.assertEqual(safe_json.loads("1", int), 1)
@@ -88,11 +122,11 @@ class BasicTestCase(unittest.TestCase):
 
         # Typed dictionaries.
         self.assertEqual(
-            safe_json.loads('{"string": "", "integer": 1}', ExampleTypedDict),
-            {"string": "", "integer": 1},
+            safe_json.loads('{"name": "The Matrix", "year": 1999}', Movie),
+            {"name": "The Matrix", "year": 1999},
         )
         with self.assertRaises(safe_json.InvalidJson):
-            safe_json.loads('{"string": "", "integer": ""}', ExampleTypedDict)
+            safe_json.loads('{"name": "The Matrix", "year": ""}', Movie)
 
         # Any.
         self.assertEqual(safe_json.loads("[1]", List[Any]), [1])
@@ -132,14 +166,12 @@ class BasicTestCase(unittest.TestCase):
             safe_json.validate(parsedDictNested, Dict[str, int])
 
         # Typed dictionaries.
-        parsedDictTyped = {"string": "", "integer": 1}
-        parsedDictTypedFailing = {"string": "", "integer": ""}
+        parsedDictTyped = {"name": "The Matrix", "year": 1999}
+        parsedDictTypedFailing = {"name": "The Matrix", "year": ""}
 
-        self.assertEqual(
-            safe_json.validate(parsedDictTyped, ExampleTypedDict), parsedDictTyped
-        )
+        self.assertEqual(safe_json.validate(parsedDictTyped, Movie), parsedDictTyped)
         with self.assertRaises(safe_json.InvalidJson):
-            safe_json.validate(parsedDictTypedFailing, ExampleTypedDict)
+            safe_json.validate(parsedDictTypedFailing, Movie)
 
         # Any.
         parsedAny = [{"1": 1}]
@@ -159,6 +191,61 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(safe_json.load(f, Dict[str, Dict[str, int]]), {"1": {"2": 3}})
         with self.assertRaises(safe_json.InvalidJson):
             safe_json.load(f, Dict[int, Dict[int, int]])
+
+    def test_loads_typed_dictionary(self) -> None:
+        # Field that is not present in the TypedDict.
+        self._assert_loads(
+            '{"name": "The Matrix Reloaded", "year": 1999, "extra_field": "hello"}',
+            Movie,
+            {"name": "The Matrix Reloaded", "year": 1999, "extra_field": "hello"},
+        )
+
+        # TypedDict inheriting from another.
+        self._assert_loads(
+            '{"name": "The Matrix", "year": 1999, "rating": 9.0}',
+            MovieWithRating,
+            {"name": "The Matrix", "year": 1999, "rating": 9.0},
+        )
+
+        self._assert_loads_fails(
+            '{"name": "The Matrix", "year": 1999, "rating": "not a float"}',
+            MovieWithRating,
+        )
+
+        # TypedDict with a field accepting an arbitrary dictionary.
+        self._assert_loads(
+            '{"name": "The Matrix", "year": 1999,'
+            + ' "dictionary": {"foo": "bar", "baz": {}}}',
+            MovieWithArbitraryDictionary,
+            {
+                "name": "The Matrix",
+                "year": 1999,
+                "dictionary": {"foo": "bar", "baz": {}},
+            },
+        )
+
+        self._assert_loads_fails(
+            '{"name": "The Matrix", "year": 1999, "dictionary": [1, 2]}',
+            MovieWithArbitraryDictionary,
+        )
+
+        # TODO(T92804673): Unions are not supported.
+        self._assert_loads_fails(
+            '{"name": "The Matrix", "year": 1999, "int_or_str": 1}',
+            MovieWithUnion,
+        )
+
+        self._assert_loads(
+            '{"name": "The Matrix", "year": 1999, "not_required": "hello"}',
+            MovieWithNonRequiredField,
+            {"name": "The Matrix", "year": 1999, "not_required": "hello"},
+        )
+
+        # TODO(T92805077): Missing non-required field should not be an error.
+        self._assert_loads_fails(
+            '{"name": "The Matrix", "year": 1999}',
+            MovieWithNonRequiredField,
+        )
 
 
 if __name__ == "__main__":

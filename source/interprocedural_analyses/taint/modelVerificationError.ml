@@ -19,6 +19,8 @@ module T = struct
   [@@deriving sexp, compare, eq, show]
 
   type kind =
+    | ParseError
+    | UnexpectedStatement of Statement.t
     | InvalidDefaultValue of {
         callable_name: string;
         name: string;
@@ -48,6 +50,7 @@ module T = struct
         callee: Expression.t;
         arguments: Expression.Call.Argument.t list;
       }
+    | InvalidArgumentsClause of Expression.t
     | InvalidNameClause of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
@@ -69,7 +72,6 @@ module T = struct
         unexpected_decorators: Statement.Decorator.t list;
       }
     | InvalidIdentifier of Expression.t
-    | UnexpectedStatement of Statement.t
     | ClassBodyNotEllipsis of string
     | DefineBodyNotEllipsis of string
     (* TODO(T81363867): Remove this variant. *)
@@ -91,6 +93,8 @@ include T
 
 let description error =
   match error with
+  | ParseError -> "Syntax error."
+  | UnexpectedStatement _ -> "Unexpected statement."
   | InvalidDefaultValue { callable_name; name; expression } ->
       Format.sprintf
         "Default values of `%s`'s parameters must be `...`. Did you mean to write `%s: %s`?"
@@ -136,6 +140,8 @@ let description error =
         "`%s` is not a valid model for model queries with find clause of kind `%s`."
         (Expression.show expression)
         find_clause_kind
+  | InvalidArgumentsClause expression ->
+      Format.asprintf "`%s` is not a valid arguments clause." (Expression.show expression)
   | InvalidNameClause expression ->
       Format.asprintf "`%s` is not a valid name clause." (Expression.show expression)
   | InvalidParameterExclude expression ->
@@ -177,7 +183,6 @@ let description error =
       Format.sprintf
         "Invalid identifier: `%s`. Expected a fully-qualified name."
         (Expression.show expression)
-  | UnexpectedStatement _ -> "Unexpected statement"
   | ClassBodyNotEllipsis class_name ->
       Format.sprintf "Class model for `%s` must have a body of `...`." class_name
   | DefineBodyNotEllipsis model_name ->
@@ -241,6 +246,8 @@ let code { kind; _ } =
   | ClassBodyNotEllipsis _ -> 22
   | DefineBodyNotEllipsis _ -> 23
   | InvalidNameClause _ -> 24
+  | ParseError -> 25
+  | InvalidArgumentsClause _ -> 26
 
 
 let display { kind = error; path; location } =

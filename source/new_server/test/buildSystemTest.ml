@@ -244,17 +244,17 @@ let test_buck_renormalize context =
 
   let get_buck_build_system () =
     let raw =
-      let query _ =
+      let query ?isolation_prefix:_ _ =
         incr query_counter;
         Lwt.return "{}"
       in
-      let build _ = Lwt.return {| { "sources": {}, "dependencies": {} } |} in
+      let build ?isolation_prefix:_ _ = Lwt.return {| { "sources": {}, "dependencies": {} } |} in
       Buck.Raw.create_for_testing ~query ~build ()
     in
     let source_root = bracket_tmpdir context |> Path.create_absolute in
     let artifact_root = bracket_tmpdir context |> Path.create_absolute in
     {
-      ServerConfiguration.Buck.mode = None;
+      Configuration.Buck.mode = None;
       isolation_prefix = None;
       targets = ["//foo:target"];
       source_root;
@@ -311,8 +311,8 @@ let test_buck_update context =
          the first build. This setup emulates an incremental Buck update where the user edits the
          TARGET file to include another source in the target. *)
       let is_rebuild = ref false in
-      let query _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
-      let build _ =
+      let query ?isolation_prefix:_ _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
+      let build ?isolation_prefix:_ _ =
         let content =
           if !is_rebuild then
             {| {
@@ -331,7 +331,7 @@ let test_buck_update context =
       Buck.Raw.create_for_testing ~query ~build ()
     in
     {
-      ServerConfiguration.Buck.mode = None;
+      Configuration.Buck.mode = None;
       isolation_prefix = None;
       targets = ["//foo:target"];
       source_root;
@@ -401,8 +401,8 @@ let test_buck_update_without_rebuild context =
     in
     let raw =
       let is_rebuild = ref false in
-      let query _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
-      let build _ =
+      let query ?isolation_prefix:_ _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
+      let build ?isolation_prefix:_ _ =
         if not !is_rebuild then (
           let content =
             {| {
@@ -421,7 +421,7 @@ let test_buck_update_without_rebuild context =
       Buck.Raw.create_for_testing ~query ~build ()
     in
     {
-      ServerConfiguration.Buck.mode = None;
+      Configuration.Buck.mode = None;
       isolation_prefix = None;
       targets = ["//foo:target"];
       source_root;

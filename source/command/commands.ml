@@ -8,6 +8,7 @@
 module Analyze = AnalyzeCommand
 module Check = CheckCommand
 module Infer = InferCommand
+module NewCheck = NewCheckCommand
 module NewServer = NewServerCommand
 module Persistent = PersistentCommand
 module Rage = RageCommand

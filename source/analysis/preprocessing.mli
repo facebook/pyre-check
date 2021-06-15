@@ -6,6 +6,13 @@
  *)
 
 open Ast
+open Core
+
+module NameAccessSet : Set.S with type Elt.t = Statement.Define.NameAccess.t
+
+module AccessCollector : sig
+  val from_expression : NameAccessSet.t -> Expression.t -> NameAccessSet.t
+end
 
 val expand_relative_imports : Source.t -> Source.t
 

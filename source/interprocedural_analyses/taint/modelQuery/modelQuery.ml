@@ -35,6 +35,39 @@ end = struct
     path |> File.create ~content |> File.write
 end
 
+let sanitized_location_insensitive_compare left right =
+  let sanitize_decorator_argument ({ Expression.Call.Argument.name; value } as argument) =
+    let new_name =
+      match name with
+      | None -> None
+      | Some ({ Node.value = argument_name; _ } as previous_name) ->
+          Some { previous_name with value = Identifier.sanitized argument_name }
+    in
+    let new_value =
+      match value with
+      | { Node.value = Expression.Expression.Name (Expression.Name.Identifier argument_value); _ }
+        as previous_value ->
+          {
+            previous_value with
+            value =
+              Expression.Expression.Name
+                (Expression.Name.Identifier (Identifier.sanitized argument_value));
+          }
+      | _ -> value
+    in
+    { argument with name = new_name; value = new_value }
+  in
+  let left_sanitized = sanitize_decorator_argument left in
+  let right_sanitized = sanitize_decorator_argument right in
+  Expression.Call.Argument.location_insensitive_compare left_sanitized right_sanitized
+
+
+module SanitizedCallArgumentSet = Set.Make (struct
+  type t = Expression.Call.Argument.t [@@deriving sexp]
+
+  let compare = sanitized_location_insensitive_compare
+end)
+
 let matches_pattern ~pattern = Re2.matches (Re2.create_exn pattern)
 
 let is_ancestor ~resolution ~is_transitive ancestor_class child_class =
@@ -58,6 +91,61 @@ let matches_name_constraint ~name_constraint =
   | ModelQuery.Matches pattern -> Re2.matches pattern
 
 
+let matches_decorator_constraint ~name_constraint ~arguments_constraint decorator =
+  let decorator_name_matches { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } =
+    matches_name_constraint ~name_constraint (Reference.show decorator_name)
+  in
+  let decorator_arguments_matches { Statement.Decorator.arguments = decorator_arguments; _ } =
+    let split_arguments =
+      List.partition_tf ~f:(fun { Expression.Call.Argument.name; _ } ->
+          match name with
+          | None -> true
+          | _ -> false)
+    in
+    let positional_arguments_equal left right =
+      List.equal (fun l r -> Int.equal (sanitized_location_insensitive_compare l r) 0) left right
+    in
+    match arguments_constraint, decorator_arguments with
+    | None, _ -> true
+    | Some (ModelQuery.ArgumentsConstraint.Contains constraint_arguments), None ->
+        List.is_empty constraint_arguments
+    | Some (ModelQuery.ArgumentsConstraint.Contains constraint_arguments), Some arguments ->
+        let constraint_positional_arguments, constraint_keyword_arguments =
+          split_arguments constraint_arguments
+        in
+        let decorator_positional_arguments, decorator_keyword_arguments =
+          split_arguments arguments
+        in
+        List.length constraint_positional_arguments <= List.length decorator_positional_arguments
+        && positional_arguments_equal
+             constraint_positional_arguments
+             (List.take
+                decorator_positional_arguments
+                (List.length constraint_positional_arguments))
+        && SanitizedCallArgumentSet.is_subset
+             (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
+             ~of_:(SanitizedCallArgumentSet.of_list decorator_keyword_arguments)
+    | Some (ModelQuery.ArgumentsConstraint.Equals constraint_arguments), None ->
+        List.is_empty constraint_arguments
+    | Some (ModelQuery.ArgumentsConstraint.Equals constraint_arguments), Some arguments ->
+        let constraint_positional_arguments, constraint_keyword_arguments =
+          split_arguments constraint_arguments
+        in
+        let decorator_positional_arguments, decorator_keyword_arguments =
+          split_arguments arguments
+        in
+        (* Since equality comparison is more costly, check the lists are the same lengths first. *)
+        Int.equal
+          (List.length constraint_positional_arguments)
+          (List.length decorator_positional_arguments)
+        && positional_arguments_equal constraint_positional_arguments decorator_positional_arguments
+        && SanitizedCallArgumentSet.equal
+             (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
+             (SanitizedCallArgumentSet.of_list decorator_keyword_arguments)
+  in
+  decorator_name_matches decorator && decorator_arguments_matches decorator
+
+
 let rec callable_matches_constraint query_constraint ~resolution ~callable =
   let get_callable_type =
     Memo.unit (fun () ->
@@ -75,8 +163,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
   in
   match query_constraint with
   | ModelQuery.DecoratorNameConstraint name -> (
-      let callable_type = get_callable_type () in
-      match callable_type with
+      match get_callable_type () with
       | Some
           {
             Node.value =
@@ -91,6 +178,21 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
             matches_pattern (Reference.show decorator_name)
           in
           List.exists decorators ~f:decorator_name_matches
+      | _ -> false )
+  | ModelQuery.DecoratorConstraint { name_constraint; arguments_constraint } -> (
+      match get_callable_type () with
+      | Some
+          {
+            Node.value =
+              {
+                Statement.Define.signature =
+                  { Statement.Define.Signature.decorators = _ :: _ as decorators; _ };
+                _;
+              };
+            _;
+          } ->
+          List.exists decorators ~f:(fun decorator ->
+              matches_decorator_constraint ~name_constraint ~arguments_constraint decorator)
       | _ -> false )
   | ModelQuery.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint (Callable.external_target_name callable)

@@ -42,6 +42,12 @@ module Binding : sig
     location: Location.t;
   }
   [@@deriving sexp, compare, hash]
+
+  val name : t -> Identifier.t
+
+  val of_statement : t list -> Statement.t -> t list
+
+  val of_parameters : t list -> Expression.Parameter.parameter Node.t list -> t list
 end
 
 (** Data structure that aggregates all bindings in a single code block (excluding all the nesting

@@ -62,6 +62,13 @@ module T : sig
       | Matches of Re2.t
     [@@deriving compare, show]
 
+    module ArgumentsConstraint : sig
+      type t =
+        | Equals of Ast.Expression.Call.Argument.t list
+        | Contains of Ast.Expression.Call.Argument.t list
+      [@@deriving compare, show]
+    end
+
     type class_constraint =
       | NameSatisfies of name_constraint
       | Extends of {
@@ -77,6 +84,10 @@ module T : sig
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
       | DecoratorNameConstraint of string
+      | DecoratorConstraint of {
+          name_constraint: name_constraint;
+          arguments_constraint: ArgumentsConstraint.t option;
+        }
       | Not of model_constraint
     [@@deriving compare, show]
 

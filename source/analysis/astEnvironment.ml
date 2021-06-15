@@ -117,12 +117,9 @@ type parse_result =
 let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source_path) =
   let parse_lines lines =
     let metadata = Source.Metadata.parse ~qualifier lines in
-    try
-      let statements = Parser.parse ~relative lines in
-      Success (Source.create_from_source_path ~metadata ~source_path statements)
-    with
-    | Parser.Error error
-    | Failure error ->
+    match Parser.parse ~relative lines with
+    | Ok statements -> Success (Source.create_from_source_path ~metadata ~source_path statements)
+    | Error error ->
         let is_suppressed =
           let { Source.Metadata.local_mode; ignore_codes; _ } = metadata in
           match Source.mode ~configuration ~local_mode with
@@ -131,7 +128,7 @@ let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source
               (* NOTE: The number needs to be updated when the error code changes. *)
               List.exists ignore_codes ~f:(Int.equal 404)
         in
-        Error { message = error; is_suppressed }
+        Error { message = Parser.Error.show error; is_suppressed }
   in
   let path = SourcePath.full_path ~configuration source_path in
   try File.lines_exn (File.create path) |> parse_lines with
@@ -282,7 +279,7 @@ let get_and_preprocess_source
       (* Files that have parser errors fall back into getattr-any. *)
       let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
       let metadata = Source.Metadata.parse ~qualifier fallback_source in
-      let statements = Parser.parse ~relative fallback_source in
+      let statements = Parser.parse_exn ~relative fallback_source in
       Source.create_from_source_path ~metadata ~source_path statements |> preprocessing
 
 

@@ -88,13 +88,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let transform_non_leaves path taint =
-    let f feature =
-      match feature with
-      | Features.Complex.ReturnAccessPath prefix -> Features.Complex.ReturnAccessPath (prefix @ path)
-    in
+    let f prefix = prefix @ path in
     match path with
     | Abstract.TreeDomain.Label.AnyIndex :: _ -> taint
-    | _ -> BackwardTaint.transform BackwardTaint.complex_feature Map ~f taint
+    | _ -> BackwardTaint.transform Features.ReturnAccessPathSet.Element Map ~f taint
 
 
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
@@ -197,13 +194,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let extra_paths =
                 match kind with
                 | Sinks.LocalReturn ->
-                    let gather_paths (Features.Complex.ReturnAccessPath extra_path) paths =
-                      extra_path :: paths
-                    in
                     BackwardTaint.fold
-                      BackwardTaint.complex_feature
+                      Features.ReturnAccessPathSet.Element
                       element
-                      ~f:gather_paths
+                      ~f:List.cons
                       ~init:[]
                 | _ ->
                     (* No special path handling for side effect taint *)
@@ -216,6 +210,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~f:Features.gather_breadcrumbs
                   ~init:Features.SimpleSet.bottom
               in
+              let tito_depth =
+                BackwardTaint.fold
+                  TraceLength.Self
+                  element
+                  ~f:TraceLength.join
+                  ~init:TraceLength.bottom
+              in
               let taint_to_propagate =
                 match kind with
                 | Sinks.LocalReturn -> call_taint
@@ -227,6 +228,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     | Some argument -> get_argument_taint ~resolution ~argument state )
                 | _ -> failwith "unexpected tito sink"
               in
+              let compute_tito_depth leaf depth =
+                match leaf with
+                | Sinks.LocalReturn -> max depth (1 + tito_depth)
+                | _ -> depth
+              in
               List.fold
                 extra_paths
                 ~f:(fun taint extra_path ->
@@ -237,6 +243,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        BackwardTaint.simple_feature_self
                        Abstract.Domain.Add
                        ~f:breadcrumbs
+                  |> BackwardTaint.transform
+                       TraceLength.Self
+                       (Context (BackwardTaint.leaf, Map))
+                       ~f:compute_tito_depth
                   |> BackwardState.Tree.create_leaf
                   |> BackwardState.Tree.prepend tito_path
                   |> BackwardState.Tree.join taint)
@@ -1354,7 +1364,13 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
   let { Statement.Define.signature = { parameters; _ }; _ } = define in
   let {
     TaintConfiguration.analysis_model_constraints =
-      { maximum_model_width; maximum_complex_access_path_length; maximum_trace_length; _ };
+      {
+        maximum_model_width;
+        maximum_return_access_path_length;
+        maximum_trace_length;
+        maximum_tito_depth;
+        _;
+      };
     _;
   }
     =
@@ -1383,7 +1399,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     |> BackwardState.Tree.limit_to
          ~transform:(BackwardTaint.add_features Features.widen_broadening)
          ~width:maximum_model_width
-    |> BackwardState.Tree.approximate_complex_access_paths ~maximum_complex_access_path_length
+    |> BackwardState.Tree.approximate_return_access_paths ~maximum_return_access_path_length
   in
 
   let split_and_simplify model (parameter, name, original) =
@@ -1402,6 +1418,12 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
         Map.Poly.find partition Sinks.LocalReturn
         |> Option.value ~default:BackwardState.Tree.empty
         |> simplify annotation
+      in
+      let candidate_tree =
+        match maximum_tito_depth with
+        | Some maximum_tito_depth ->
+            BackwardState.Tree.prune_maximum_length maximum_tito_depth candidate_tree
+        | _ -> candidate_tree
       in
       let candidate_tree =
         if Features.SimpleSet.is_bottom features_to_attach then

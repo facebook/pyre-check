@@ -461,8 +461,8 @@ let initialize_server_state
   in
   let build_system_initializer =
     let from_source_paths = function
-      | ServerConfiguration.SourcePaths.Simple _ -> BuildSystem.Initializer.null
-      | ServerConfiguration.SourcePaths.Buck buck_options ->
+      | Configuration.SourcePaths.Simple _ -> BuildSystem.Initializer.null
+      | Configuration.SourcePaths.Buck buck_options ->
           let raw = Buck.Raw.create () in
           BuildSystem.Initializer.buck ~raw buck_options
     in
@@ -472,6 +472,8 @@ let initialize_server_state
   get_initial_state ~build_system_initializer ()
   >>= fun state ->
   Log.info "Server state initialized.";
+  if configuration.debug then
+    Memory.report_statistics ();
   store_initial_state state;
   Lwt.return (ExclusiveLock.create state)
 
@@ -645,6 +647,16 @@ let start_server_and_wait ?event_channel server_configuration =
               | _ -> ServerEvent.ErrorKind.BuckInternal
             in
             ( kind,
+              let arguments =
+                let quote argument =
+                  if String.contains argument ' ' then
+                    (* This makes sure that the buck command gets properly escaped by the shell. *)
+                    Format.sprintf "'%s'" argument
+                  else
+                    argument
+                in
+                List.map arguments ~f:quote
+              in
               Format.sprintf
                 "Cannot build the project: %s. To reproduce this error, run `%s`."
                 description

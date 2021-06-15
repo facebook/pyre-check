@@ -433,15 +433,12 @@ violates the substitution principle:
 
 ```python
 class Image:
-    @abstractmethod:
     def width() -> float: pass
 
 class JpegImage(Image):
-    @override
     def width() -> int: return 10  # this is fine
 
 class ComplexImage(Image):
-    @override
     def width() -> complex: return 1j
 
 def foo() -> None:

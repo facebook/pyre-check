@@ -6,6 +6,7 @@
 import dataclasses
 import json
 import os
+from pathlib import Path
 from typing import Sequence, Dict, Any
 
 from .. import command_arguments
@@ -70,7 +71,7 @@ class ValidateModels(Query):
                 )
                 for error_json in json_result["errors"]
             ),
-            key=lambda error: (error.path or "?", error.line, error.code),
+            key=lambda error: (error.path or Path(), error.line, error.code),
         )
 
     def _socket_result_handler(self, result: Result) -> None:

@@ -30,10 +30,6 @@ from ..socket_connection import SocketConnection, SocketException
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class ClientException(Exception):
-    pass
-
-
 class State(enum.IntEnum):
     DEAD = 0
     RUNNING = 1
@@ -48,8 +44,17 @@ class ExitCode(enum.IntEnum):
     INCONSISTENT_SERVER = 5
     CONFIGURATION_ERROR = 6
     BUCK_USER_ERROR = 7
+    WATCHMAN_ERROR = 8
     # If the process exited due to a signal, this will be the negative signal number.
     SIGSEGV = -signal.SIGSEGV
+
+
+class ClientException(Exception):
+    exit_code: ExitCode
+
+    def __init__(self, message: str, exit_code: ExitCode = ExitCode.FAILURE) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
 
 
 class IncrementalStyle(enum.Enum):
@@ -264,6 +269,19 @@ class Command(CommandParser, ABC):
                 str(python_version.micro),
             ]
         )
+        heap_size = self._configuration.shared_memory.heap_size
+        if heap_size:
+            flags.extend(["-shared-memory-heap-size", str(heap_size)])
+        dependency_table_power = (
+            self._configuration.shared_memory.dependency_table_power
+        )
+        if dependency_table_power:
+            flags.extend(
+                ["-shared-memory-dependency-table-power", str(dependency_table_power)]
+            )
+        hash_table_power = self._configuration.shared_memory.hash_table_power
+        if hash_table_power:
+            flags.extend(["-shared-memory-hash-table-power", str(hash_table_power)])
         return flags
 
     # temporarily always return empty list to unblock client release

@@ -72,7 +72,7 @@ module Filter : sig
   val from_server_configurations
     :  critical_files:ServerConfiguration.CriticalFile.t list ->
     extensions:Configuration.Extension.t list ->
-    source_paths:ServerConfiguration.SourcePaths.t ->
+    source_paths:Configuration.SourcePaths.t ->
     unit ->
     t
 

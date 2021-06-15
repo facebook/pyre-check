@@ -28,6 +28,7 @@ include Taint.Result.Register (struct
         ~find_missing_flows:None
         ~dump_model_query_results_path:None
         ~maximum_trace_length:None
+        ~maximum_tito_depth:None
         ~taint_model_paths
     in
     ()
@@ -42,6 +43,7 @@ include Taint.Result.Register (struct
             rule_filter;
             find_missing_flows;
             maximum_trace_length;
+            maximum_tito_depth;
             _;
           } as static_analysis_configuration )
       ~environment
@@ -159,6 +161,7 @@ include Taint.Result.Register (struct
                 ~find_missing_flows
                 ~dump_model_query_results_path
                 ~maximum_trace_length
+                ~maximum_tito_depth
                 ~taint_model_paths
             in
             TaintConfiguration.register configuration;

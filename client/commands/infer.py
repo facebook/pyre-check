@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-unsafe
+from __future__ import annotations
 
 import functools
 import json
@@ -18,7 +19,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from logging import Logger
 from pathlib import Path
-from typing import IO, Dict, List, Optional, Sequence, Set, Union
+from typing import IO, List, Optional, Sequence, Set, Union
 
 import libcst
 from libcst.codemod import CodemodContext
@@ -27,13 +28,10 @@ from typing_extensions import Final
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory
-from ..annotation_collector import AnnotationCollector
 from ..configuration import Configuration
 from ..error import LegacyError
 from .command import Command, Result
 from .reporting import Reporting
-from .statistics import _get_paths, _parse_paths, parse_path_to_module
-
 
 LOG: Logger = logging.getLogger(__name__)
 
@@ -382,71 +380,52 @@ def filter_paths(
     ]
 
 
-def _parse(file: IO[str]) -> libcst.Module:
-    contents = file.read()
-    return libcst.parse_module(contents)
-
-
-def apply_stub_annotations(stub_path: str, file_path: str) -> str:
-    with open(stub_path) as stub_file, open(file_path) as source_file:
-        stub = _parse(stub_file)
-        source = _parse(source_file)
-        context = CodemodContext()
-        ApplyTypeAnnotationsVisitor.store_stub_in_context(context, stub)
-        modified_tree = ApplyTypeAnnotationsVisitor(context).transform_module(source)
-        return modified_tree.code
-
-
-def annotate_path(stub_path: str, file_path: str, debug_infer: bool) -> None:
-    try:
-        annotated_content = apply_stub_annotations(stub_path, file_path)
-        with open(file_path, "w") as source_file:
-            source_file.write(annotated_content)
-        LOG.info(f"Annotated {file_path}")
-    except Exception as error:
-        LOG.warning(f"Failed to annotate {file_path}")
-        if debug_infer:
-            LOG.warning(f"\tError: {error}")
-
-
 @dataclass
-class AnnotatePathArguments:
+class AnnotateModuleInPlace:
     stub_path: str
-    file_path: str
+    code_path: str
     debug_infer: bool
 
+    @staticmethod
+    def _parse(file: IO[str]) -> libcst.Module:
+        contents = file.read()
+        return libcst.parse_module(contents)
 
-def annotate_path_from_arguments(arguments: AnnotatePathArguments) -> None:
-    annotate_path(arguments.stub_path, arguments.file_path, arguments.debug_infer)
+    @staticmethod
+    def _annotated_code(stub_path: str, code_path: str) -> str:
+        "Merge inferred annotations from a stub file with a code file to get code"
+        with open(stub_path) as stub_file, open(code_path) as code_file:
+            stub = AnnotateModuleInPlace._parse(stub_file)
+            code = AnnotateModuleInPlace._parse(code_file)
+            context = CodemodContext()
+            ApplyTypeAnnotationsVisitor.store_stub_in_context(context, stub)
+            modified_tree = ApplyTypeAnnotationsVisitor(context).transform_module(code)
+            return modified_tree.code
 
+    @staticmethod
+    def annotate_code(stub_path: str, code_path: str, debug_infer: bool) -> None:
+        "Merge a stub file of inferred annotations with a code file inplace"
+        try:
+            annotated_code = AnnotateModuleInPlace._annotated_code(stub_path, code_path)
+            with open(code_path, "w") as code_file:
+                code_file.write(annotated_code)
+            LOG.info(f"Annotated {code_path}")
+        except Exception as error:
+            LOG.warning(f"Failed to annotate {code_path}")
+            if debug_infer:
+                LOG.warning(f"\tError: {error}")
 
-def _existing_annotations_as_errors(
-    modules: Dict[Path, Optional[libcst.Module]], project_root: str
-) -> List[LegacyError]:
-    errors = []
-    for path_name, module in modules.items():
-        path_name = str(path_name)
-        path = path_name.replace(".py", "").replace(project_root + "/", "")
-        collector = AnnotationCollector(path)
-        if module is not None:
-            module.visit(collector)
-        for stub in collector.stubs:
-            errors.append(
-                LegacyError.create(
-                    {
-                        "path": path_name.replace(project_root + "/", ""),
-                        "inference": stub,
-                        "line": 0,
-                        "column": 0,
-                        "stop_line": 0,
-                        "stop_column": 0,
-                        "code": 0,
-                        "name": "example_string",
-                        "description": "example description",
-                    }
-                )
-            )
-    return errors
+    def run(self) -> None:
+        return self.annotate_code(
+            stub_path=self.stub_path,
+            code_path=self.code_path,
+            debug_infer=self.debug_infer,
+        )
+
+    @staticmethod
+    def run_task(task: AnnotateModuleInPlace) -> None:
+        "Wrap `run` in a static method to use with multiprocessing"
+        return task.run()
 
 
 class Infer(Reporting):
@@ -466,7 +445,6 @@ class Infer(Reporting):
         errors_from_stdin: bool,
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
-        full_stub_paths: Optional[List[str]],
     ) -> None:
         super(Infer, self).__init__(
             arguments, original_directory, configuration, analysis_directory
@@ -481,8 +459,6 @@ class Infer(Reporting):
         self._ignore_infer: List[
             str
         ] = self._configuration.get_existent_ignore_infer_paths()
-        self._full_stub_paths: Final[Optional[List[str]]] = full_stub_paths
-
         self._show_error_traces = True
         self._output = command_arguments.JSON
 
@@ -504,21 +480,6 @@ class Infer(Reporting):
                 self._in_place,
                 self._debug_infer,
             )
-            return self
-        if self._full_stub_paths is not None:
-            if self._full_stub_paths:
-                paths = _parse_paths([Path(path) for path in self._full_stub_paths])
-            else:
-                paths = _get_paths(Path(self._original_directory))
-            modules = {path: parse_path_to_module(path) for path in paths}
-            errors = _existing_annotations_as_errors(
-                modules, self._configuration.project_root
-            )
-            type_directory = Path(
-                os.path.join(self._configuration.log_directory, "types")
-            )
-            stubs = generate_stub_files(full_only=False, errors=errors)
-            write_stubs_to_disk(stubs, type_directory)
             return self
         if self._errors_from_stdin:
             result = self._get_errors_from_stdin()
@@ -616,11 +577,17 @@ class Infer(Reporting):
                 file_path = (root / stub._path).resolve()
             else:
                 file_path = stub._path.resolve()
-            tasks.append(AnnotatePathArguments(str(stub_path), file_path, debug_infer))
+            tasks.append(
+                AnnotateModuleInPlace(
+                    stub_path=str(stub_path),
+                    code_path=file_path,
+                    debug_infer=debug_infer,
+                )
+            )
 
         number_workers = self._configuration.get_number_of_workers()
         with multiprocessing.Pool(number_workers) as pool:
-            for _ in pool.imap_unordered(annotate_path_from_arguments, tasks):
+            for _ in pool.imap_unordered(AnnotateModuleInPlace.run_task, tasks):
                 pass
 
         if formatter:
@@ -651,11 +618,11 @@ class Infer(Reporting):
                 )
                 for path in in_place_paths
             ):
-                annotate_path(
-                    str(stub_path),
-                    str(root / relative_source_path_for_stub),
-                    debug_infer,
-                )
+                AnnotateModuleInPlace(
+                    stub_path=str(stub_path),
+                    code_path=str(root / relative_source_path_for_stub),
+                    debug_infer=debug_infer,
+                ).run()
         if formatter:
             subprocess.call(
                 formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL

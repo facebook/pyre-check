@@ -33,6 +33,7 @@ let static_analysis_configuration { ScratchProject.configuration; _ } =
     dump_model_query_results = false;
     use_cache = false;
     maximum_trace_length = None;
+    maximum_tito_depth = None;
   }
 
 
@@ -93,156 +94,227 @@ module Setup = struct
     targets |> List.map ~f:analyze
 end
 
-module Asserts = struct
-  type type_option = Type.t option [@@deriving show, eq]
-
-  let assert_inference_result ~source ~result ~details ~context ~expected ~actual =
-    let msg =
-      Format.asprintf
-        {| Mismatch in inference result
-         ---
-         %a
-         ---
-         %s
-         ---
-         %s |}
-        LocalResult.pp
-        result
-        source
-        details
-    in
-    assert_equal ~ctxt:context ~cmp:equal_type_option ~printer:show_type_option ~msg expected actual
+let assert_json_equal ~context ~expected result =
+  let expected = Yojson.Safe.from_string expected in
+  assert_equal ~ctxt:context ~printer:Yojson.Safe.pretty_to_string expected result
 
 
-  let find_by_name name map =
-    match name |> Reference.create |> SerializableReference.Map.find map with
-    | Some value -> value
-    | None ->
-        raise
-          (Failure
-             (Format.asprintf
-                "No such name %s in %s"
-                name
-                ( map
-                |> SerializableReference.Map.keys
-                |> List.map ~f:Reference.show
-                |> String.concat ~sep:"," )))
-end
-
-let check_inference_results ~context ~checks source =
-  let targets, _ = List.unzip checks in
-  let results = Setup.run_inference ~context ~targets source in
-  let check_result (target, result) =
-    let check = List.Assoc.find_exn ~equal:Callable.equal_real_target checks target in
-    check result
+let check_inference_results ~context ~target ~expected source =
+  let results = Setup.run_inference ~context ~targets:[Setup.make_function target] source in
+  assert_equal (List.length results) 1;
+  let result = results |> List.hd_exn |> snd |> LocalResult.to_yojson in
+  (* Filter out toplevel and __init__ defines, which are verbose and uninteresting *)
+  let actual =
+    if
+      String.is_suffix target ~suffix:"__init__" or String.is_substring target ~substring:"toplevel"
+    then
+      match result with
+      | `Assoc pairs ->
+          `Assoc (pairs |> List.filter ~f:(fun (key, _) -> not (String.equal key "define")))
+      | json -> json
+    else
+      result
   in
-  results |> List.iter ~f:check_result;
-  Memory.reset_shared_memory ()
+  assert_json_equal ~context ~expected actual
 
 
 let test_inferred_returns context =
-  let check_return_annotation ~define_name ~expected source =
-    let check
-        ( { LocalResult.define = { DefineAnnotation.return = { TypeAnnotation.inferred; _ }; _ }; _ }
-        as result )
-      =
-      Asserts.assert_inference_result
-        ~context
-        ~result
-        ~details:"Checking inferred return annotation"
-        ~source
-        ~expected:(Some expected)
-        ~actual:inferred
-    in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
-  in
-  check_return_annotation
+  let check_inference_results = check_inference_results ~context in
+  check_inference_results
     {|
       def foo(x: int):
         return x
     |}
-    ~define_name:"test.foo"
-    ~expected:(Type.Primitive "int")
+    ~target:"test.foo"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "define": {
+            "name": "test.foo",
+            "parent": null,
+            "return": "int",
+            "parameters": [
+              { "name": "x", "annotation": "int", "value": null, "index": 0 }
+            ],
+            "decorators": [],
+            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+            "async": false
+          },
+          "abstract": false
+        }
+      |}
 
 
 let test_inferred_parameters context =
-  let open DefineAnnotation.Parameters in
-  let check_parameter_annotation ~define_name ~parameter_name ~expected source =
-    let check ({ LocalResult.define = { DefineAnnotation.parameters; _ }; _ } as result) =
-      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
-        Asserts.find_by_name ("$parameter$" ^ parameter_name) parameters
-      in
-      Asserts.assert_inference_result
-        ~context
-        ~result
-        ~details:("Checking inferred annotation for parameter " ^ parameter_name)
-        ~source
-        ~expected:(Some expected)
-        ~actual:inferred
-    in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
-  in
-  check_parameter_annotation
+  let check_inference_results = check_inference_results ~context in
+  check_inference_results
     {|
       def foo(x) -> int:
         return x
     |}
-    ~define_name:"test.foo"
-    ~parameter_name:"x"
-    ~expected:(Type.Primitive "int")
+    ~target:"test.foo"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "define": {
+            "name": "test.foo",
+            "parent": null,
+            "return": "int",
+            "parameters": [
+              { "name": "x", "annotation": "int", "value": null, "index": 0 }
+            ],
+            "decorators": [],
+            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+            "async": false
+          },
+          "abstract": false
+        }
+      |}
 
 
 let test_inferred_globals context =
-  let check_global_annotation ~define_name ~global_name ~expected source =
-    let open GlobalAnnotation in
-    let check ({ LocalResult.globals; _ } as result) =
-      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
-        Asserts.find_by_name global_name globals
-      in
-      Asserts.assert_inference_result
-        ~context
-        ~result
-        ~details:("Checking inferred annotation for global " ^ global_name)
-        ~source
-        ~expected:(Some expected)
-        ~actual:inferred
-    in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
-  in
-  check_global_annotation
+  let check_inference_results = check_inference_results ~context in
+  check_inference_results
     {|
       x = None
     |}
-    ~define_name:"test.$toplevel"
-    ~global_name:"test.$local_test$x"
-    ~expected:Type.NoneType
+    ~target:"test.$toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [
+            {
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+              "annotation": "None"
+            }
+          ],
+          "attributes": [],
+          "abstract": false
+        }
+      |}
 
 
 let test_inferred_attributes context =
-  let check_attribute_annotation ~define_name ~attribute_name ~expected source =
-    let open AttributeAnnotation in
-    let check ({ LocalResult.attributes; _ } as result) =
-      let { Value.annotation = { TypeAnnotation.inferred; _ }; _ } =
-        Asserts.find_by_name attribute_name attributes
-      in
-      Asserts.assert_inference_result
-        ~context
-        ~result
-        ~details:("Checking inferred annotation for attribute " ^ attribute_name)
-        ~source
-        ~expected:(Some expected)
-        ~actual:inferred
-    in
-    check_inference_results ~context ~checks:[Setup.make_function define_name, check] source
-  in
-  check_attribute_annotation
+  let check_inference_results = check_inference_results ~context in
+  check_inference_results
     {|
-      class C:
-          x = None
+      def foo() -> int:
+        return 1
+      class Foo:
+        x = foo()
     |}
-    ~define_name:"test.C.$class_toplevel"
-    ~attribute_name:"test.C.x"
-    ~expected:Type.NoneType
+    ~target:"test.Foo.$class_toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 5 },
+              "annotation": "int"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  check_inference_results
+    {|
+      class Foo:
+        x = 1 + 1
+    |}
+    ~target:"test.Foo.$class_toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
+              "annotation": "int"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  check_inference_results
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.x = 1 + 1
+    |}
+    ~target:"test.Foo.__init__"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
+              "annotation": "int"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  check_inference_results
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.x = self.foo()
+
+        def foo(self) -> int:
+          return 1
+    |}
+    ~target:"test.Foo.__init__"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
+              "annotation": "int"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  (* TODO(T84365830): Be more intelligent about inferring None type. *)
+  check_inference_results
+    {|
+    class Foo:
+      foo = None
+    |}
+    ~target:"test.Foo.$class_toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "foo",
+              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
+              "annotation": "None"
+            }
+          ],
+          "abstract": false
+        }
+      |};
+  ()
 
 
 let () =

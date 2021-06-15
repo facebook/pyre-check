@@ -145,3 +145,9 @@ let head reference = List.hd reference >>| fun head -> [head]
 let last = function
   | [] -> ""
   | reference -> List.last_exn reference
+
+
+let map_last ~f reference =
+  match List.rev reference with
+  | [] -> []
+  | head :: tail -> f head :: tail |> List.rev

@@ -13,8 +13,6 @@ from pathlib import Path
 from typing import Any, Dict, Union
 from unittest.mock import MagicMock, patch
 
-import libcst as cst
-
 from ... import commands, find_directories, configuration as configuration_module
 from ...analysis_directory import AnalysisDirectory
 from ...commands import infer
@@ -23,10 +21,8 @@ from ...commands.infer import (
     FunctionStub,
     Infer,
     StubFile,
-    _existing_annotations_as_errors,
     _relativize_access,
     dequalify_and_fix_pathlike,
-    generate_stub_files,
 )
 from ...error import LegacyError
 from .command_test import (
@@ -80,80 +76,6 @@ class HelperTest(unittest.TestCase):
                 "tools.pyre.client.function", "tools/pyre/client/__init__.py"
             ),
             ["function"],
-        )
-
-    def test_existing_annotations_to_stubs(self) -> None:
-        def assert_stub_equal(file_content, expected) -> None:
-            module = cst.parse_module(textwrap.dedent(file_content))
-            expected_stub = textwrap.dedent(expected.rstrip()) + "\n"
-            errors = _existing_annotations_as_errors(
-                {Path("example/module.py"): module}, "example"
-            )
-            stub_files = generate_stub_files(full_only=False, errors=errors)
-            self.assertTrue(stub_files)
-            self.assertEqual(stub_files[0].to_string(), expected_stub)
-
-        # test function stubs
-        assert_stub_equal(
-            """
-            def foo() -> int:
-                return 1 + 1
-            """,
-            "def foo() -> int: ...",
-        )
-
-        # functions in classes
-        assert_stub_equal(
-            """
-            class Foo:
-                def bar(x: int) -> Union[int, str]:
-                    return ""
-            """,
-            """
-            class Foo:
-                def bar(x: int) -> Union[int, str]: ...
-            """,
-        )
-
-        # attributes in classes
-        assert_stub_equal(
-            """
-            class Foo:
-                def bar(x: int) -> Union[int, str]:
-                    return ""
-            """,
-            """
-            class Foo:
-                def bar(x: int) -> Union[int, str]: ...
-            """,
-        )
-
-        # with decorators
-        assert_stub_equal(
-            """
-            @click
-            def foo() -> int:
-                return 1 + 1
-            """,
-            "@@click\n\ndef foo() -> int: ...",
-        )
-
-        # attributes
-        assert_stub_equal(
-            """
-            x: int = 10
-            """,
-            "x: int = ...",
-        )
-        assert_stub_equal(
-            """
-            class Foo:
-                x: int = 10
-            """,
-            """
-            class Foo:
-                x: int = ...
-            """,
         )
 
 
@@ -792,7 +714,6 @@ class InferTest(unittest.TestCase):
                 errors_from_stdin=False,
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
-                full_stub_paths=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -810,6 +731,8 @@ class InferTest(unittest.TestCase):
                     "6",
                     "-python-micro-version",
                     "0",
+                    "-shared-memory-heap-size",
+                    "1073741824",
                 ],
             )
             command.run()
@@ -831,7 +754,6 @@ class InferTest(unittest.TestCase):
                 errors_from_stdin=False,
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
-                full_stub_paths=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -849,6 +771,8 @@ class InferTest(unittest.TestCase):
                     "6",
                     "-python-micro-version",
                     "0",
+                    "-shared-memory-heap-size",
+                    "1073741824",
                 ],
             )
             command.run()
@@ -870,7 +794,6 @@ class InferTest(unittest.TestCase):
                     errors_from_stdin=True,
                     annotate_from_existing_stubs=False,
                     debug_infer=False,
-                    full_stub_paths=None,
                 )
                 self.assertEqual(
                     command._flags(),
@@ -888,6 +811,8 @@ class InferTest(unittest.TestCase):
                         "6",
                         "-python-micro-version",
                         "0",
+                        "-shared-memory-heap-size",
+                        "1073741824",
                     ],
                 )
                 command.run()
@@ -909,7 +834,6 @@ class InferTest(unittest.TestCase):
                     errors_from_stdin=True,
                     annotate_from_existing_stubs=False,
                     debug_infer=False,
-                    full_stub_paths=None,
                 )
                 self.assertEqual(
                     command._flags(),
@@ -927,6 +851,8 @@ class InferTest(unittest.TestCase):
                         "6",
                         "-python-micro-version",
                         "0",
+                        "-shared-memory-heap-size",
+                        "1073741824",
                         "-ignore-infer",
                         "path1.py;path2.py",
                     ],
@@ -935,9 +861,9 @@ class InferTest(unittest.TestCase):
                 call_client.assert_not_called()
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_empty_in_place(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -956,7 +882,6 @@ class InferTest(unittest.TestCase):
             errors_from_stdin=True,
             annotate_from_existing_stubs=False,
             debug_infer=False,
-            full_stub_paths=None,
         )
         root = Path("/root/my-project")
         recursive_glob.return_value = [
@@ -969,16 +894,16 @@ class InferTest(unittest.TestCase):
             in_place=[],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
-            "/root/my-project/foo/bar/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            code_path="/root/my-project/foo/bar/baz.py",
+            debug_infer=False,
         )
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_in_place_directory(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -997,7 +922,6 @@ class InferTest(unittest.TestCase):
             errors_from_stdin=True,
             annotate_from_existing_stubs=False,
             debug_infer=False,
-            full_stub_paths=None,
         )
         root = Path("/root/my-project")
         recursive_glob.return_value = [
@@ -1011,16 +935,16 @@ class InferTest(unittest.TestCase):
             in_place=["foo/bar"],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
-            "/root/my-project/foo/bar/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            code_path="/root/my-project/foo/bar/baz.py",
+            debug_infer=False,
         )
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_no_match(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -1039,7 +963,6 @@ class InferTest(unittest.TestCase):
             errors_from_stdin=True,
             annotate_from_existing_stubs=False,
             debug_infer=False,
-            full_stub_paths=None,
         )
         root = Path("/root/my-project")
         recursive_glob.return_value = [
@@ -1052,12 +975,12 @@ class InferTest(unittest.TestCase):
             in_place=["some_other_directory"],
             debug_infer=False,
         )
-        annotate_path.assert_not_called()
+        annotate_code.assert_not_called()
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_relative_file_path(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -1076,7 +999,6 @@ class InferTest(unittest.TestCase):
             errors_from_stdin=True,
             annotate_from_existing_stubs=False,
             debug_infer=False,
-            full_stub_paths=None,
         )
         root = Path("/root/my-project")
         recursive_glob.return_value = [
@@ -1089,16 +1011,16 @@ class InferTest(unittest.TestCase):
             in_place=["foo/bar/baz.py"],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
-            "/root/my-project/foo/bar/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            code_path="/root/my-project/foo/bar/baz.py",
+            debug_infer=False,
         )
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_relative_file_path_not_local_root(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -1117,7 +1039,6 @@ class InferTest(unittest.TestCase):
             errors_from_stdin=True,
             annotate_from_existing_stubs=False,
             debug_infer=False,
-            full_stub_paths=None,
         )
         root = Path("/root")
         recursive_glob.return_value = [Path("/root/.pyre/types/foo/bar/types/baz.pyi")]
@@ -1128,16 +1049,16 @@ class InferTest(unittest.TestCase):
             in_place=["foo/bar/types/baz.py"],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/types/foo/bar/types/baz.pyi",
-            "/root/foo/bar/types/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/types/foo/bar/types/baz.pyi",
+            code_path="/root/foo/bar/types/baz.py",
+            debug_infer=False,
         )
 
     @patch.object(Path, "rglob")
-    @patch.object(infer, "annotate_path")
+    @patch.object(infer.AnnotateModuleInPlace, "annotate_code")
     def test_annotate_from_existing_stubs_relative_local_root(
-        self, annotate_path: MagicMock, recursive_glob: MagicMock
+        self, annotate_code: MagicMock, recursive_glob: MagicMock
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -1156,7 +1077,6 @@ class InferTest(unittest.TestCase):
             errors_from_stdin=True,
             annotate_from_existing_stubs=False,
             debug_infer=False,
-            full_stub_paths=None,
         )
         root = Path("/root")
         recursive_glob.return_value = [
@@ -1169,8 +1089,8 @@ class InferTest(unittest.TestCase):
             in_place=["local-root/foo/bar"],
             debug_infer=False,
         )
-        annotate_path.assert_called_once_with(
-            "/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi",
-            "/root/local-root/foo/bar/baz.py",
-            False,
+        annotate_code.assert_called_once_with(
+            stub_path="/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi",
+            code_path="/root/local-root/foo/bar/baz.py",
+            debug_infer=False,
         )

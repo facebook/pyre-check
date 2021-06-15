@@ -278,6 +278,7 @@ let test_filter_creation context =
   in
 
   let open ServerConfiguration in
+  let open Configuration in
   let open Watchman.Filter in
   assert_filter
     (from_server_configurations
@@ -290,12 +291,10 @@ let test_filter_creation context =
         base_names = [".pyre_configuration"; ".pyre_configuration.local"];
         suffixes = ["py"; "pyi"];
       };
-  let open ServerConfiguration in
-  let open Watchman.Filter in
   assert_filter
     (from_server_configurations
        ~critical_files:[]
-       ~extensions:[Configuration.Extension.create_extension "foo"]
+       ~extensions:[Extension.create_extension "foo"]
        ~source_paths:(SourcePaths.Simple [])
        ())
     ~expected:
@@ -364,7 +363,7 @@ let test_filter_creation context =
     ~expected:
       {
         base_names = [".pyre_configuration"; ".pyre_configuration.local"; "TARGETS"; "BUCK"];
-        suffixes = ["py"; "pyi"; "thrift"];
+        suffixes = ["py"; "pyi"];
       };
   ()
 

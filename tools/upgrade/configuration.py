@@ -42,7 +42,6 @@ class Configuration:
             "source_directories"
         )
         self.version: Optional[str] = json_contents.get("version")
-        self.differential: bool = json_contents.get("differential", False)
         self.use_buck_builder: Optional[bool] = json_contents.get("use_buck_builder")
         self.use_buck_source_database: Optional[bool] = json_contents.get(
             "use_buck_source_database"

@@ -175,6 +175,20 @@ let test_prefix _ =
   assert_last "a.b" "b"
 
 
+let test_map_last _ =
+  let assert_mapped ~f given expected =
+    assert_equal
+      ~cmp:Reference.equal
+      ~printer:Reference.show
+      (Reference.map_last ~f (Reference.create given))
+      (Reference.create expected)
+  in
+  assert_mapped ~f:(fun s -> s ^ "_suffix") "" "";
+  assert_mapped ~f:(fun s -> s ^ "_suffix") "a.b" "a.b_suffix";
+  assert_mapped ~f:Fn.id "a.b" "a.b";
+  ()
+
+
 let () =
   "reference"
   >::: [
@@ -183,5 +197,6 @@ let () =
          "name" >:: test_name;
          "delocalize" >:: test_delocalize;
          "prefix" >:: test_prefix;
+         "map_last" >:: test_map_last;
        ]
   |> Test.run

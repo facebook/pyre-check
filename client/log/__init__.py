@@ -17,7 +17,7 @@ from .log import (  # noqa: F401
     get_optional_input,
     get_yes_no_input,
     initialize,
-    start_logging_to_directory,
+    enable_file_logging,
     stdout,
     truncate,
 )

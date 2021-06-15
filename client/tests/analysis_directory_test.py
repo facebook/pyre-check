@@ -140,8 +140,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
 
     @patch(f"{analysis_directory_name}.find_buck_root", return_value="/buck_root")
-    # pyre-fixme[56]: Argument `os.path` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "exists", return_value=True)
     def test_filter_root_for_buck(
         self, exists: MagicMock, buck_root: MagicMock
@@ -1047,10 +1045,10 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     @patch.object(filesystem, "is_empty", return_value=False)
     @patch.object(os, "symlink")
     @patch.object(subprocess, "check_output")
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument `os` to
+    #  decorator factory `unittest.mock.patch.object`.
     @patch.object(os, "makedirs")
     @patch.object(os.path, "exists")
-    # pyre-fixme[56]: Argument `os.path` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "realpath")
     def test_merge(
         self,

@@ -10,13 +10,10 @@ open Pyre
 
 let get_analysis_kind = function
   | "taint" -> TaintAnalysis.abstract_kind
-  | "type_inference" -> TypeInference.Analysis.abstract_kind
   | _ ->
       Log.error "Invalid analysis kind specified.";
       failwith "bad argument"
 
-
-let should_infer analysis = String.equal analysis "type_inference"
 
 let type_environment_with_decorators_inlined ~configuration ~scheduler environment =
   let open Analysis in
@@ -67,6 +64,7 @@ let run_analysis
     use_cache
     inline_decorators
     maximum_trace_length
+    maximum_tito_depth
     _verbose
     expected_version
     sections
@@ -126,7 +124,6 @@ let run_analysis
         ~debug
         ~strict
         ~show_error_traces
-        ~infer:(should_infer analysis)
         ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories
@@ -167,6 +164,7 @@ let run_analysis
         dump_model_query_results;
         use_cache;
         maximum_trace_length;
+        maximum_tito_depth;
       }
     in
     let analysis_kind = get_analysis_kind analysis in
@@ -175,7 +173,7 @@ let run_analysis
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           Interprocedural.Analysis.initialize_configuration
             ~static_analysis_configuration
-            [analysis_kind];
+            analysis_kind;
           let cached_environment =
             if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
           in
@@ -232,7 +230,7 @@ let run_analysis
           in
           Service.StaticAnalysis.analyze
             ~scheduler
-            ~analysis_kind
+            ~analysis:analysis_kind
             ~static_analysis_configuration
             ~filename_lookup
             ~environment:(Analysis.TypeEnvironment.read_only environment)
@@ -290,5 +288,9 @@ let command =
            no_arg
            ~doc:"Inline decorators at use sites to catch flows through the decorators."
       +> flag "-maximum-trace-length" (optional int) ~doc:"Limit the trace length of taint flows."
+      +> flag
+           "-maximum-tito-depth"
+           (optional int)
+           ~doc:"Limit the depth of inferred taint-in-taint-out in taint flows."
       ++ Specification.base_command_line_arguments)
     run_analysis

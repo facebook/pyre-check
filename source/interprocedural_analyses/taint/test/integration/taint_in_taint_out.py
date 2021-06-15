@@ -100,7 +100,7 @@ def issue_with_indirect_sink_tito():
     adds_tito_with_indirect_sink(x)
 
 
-def approximate_complex_access_paths(x):
+def approximate_return_access_paths(x):
     return {
         "a": x.a,
         "b": x.b,
@@ -113,6 +113,40 @@ def approximate_complex_access_paths(x):
         "j": x.j,
         "k": x.k,
         "l": x.l,
+    }
+
+
+def approximate_return_access_paths_common_prefix_input(x):
+    return {
+        "a": x.y.a,
+        "b": x.y.b,
+        "c": x.y.c,
+        "d": x.y.d,
+        "e": x.y.e,
+        "f": x.y.f,
+        "g": x.y.g,
+        "h": x.y.h,
+        "j": x.y.j,
+        "k": x.y.k,
+        "l": x.y.l,
+    }
+
+
+def approximate_return_access_paths_common_prefix_output(x):
+    return {
+        "a": {
+            "a": x.a,
+            "b": x.b,
+            "c": x.c,
+            "d": x.d,
+            "e": x.e,
+            "f": x.f,
+            "g": x.g,
+            "h": x.h,
+            "j": x.j,
+            "k": x.k,
+            "l": x.l,
+        }
     }
 
 

@@ -765,8 +765,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -776,7 +776,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -796,8 +796,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -807,7 +807,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -827,8 +827,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -838,7 +838,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -858,8 +858,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -869,7 +869,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -889,8 +889,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -900,7 +900,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -944,8 +944,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -955,7 +955,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -975,8 +975,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -986,7 +986,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1006,8 +1006,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1017,7 +1017,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1037,8 +1037,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1048,7 +1048,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1068,8 +1068,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1079,7 +1079,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1099,8 +1099,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1110,7 +1110,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1130,8 +1130,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1141,7 +1141,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1161,8 +1161,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1172,7 +1172,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1226,8 +1226,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1237,7 +1237,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1257,8 +1257,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1268,7 +1268,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1288,8 +1288,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1299,7 +1299,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1319,8 +1319,8 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[instance]" },
-              { "kind": "LocalReturn", "name": "[attribute]" }
+              { "kind": "LocalReturn", "name": "[instance]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[attribute]", "depth": 0 }
             ]
           }
         ]
@@ -1330,7 +1330,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1529,7 +1529,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1548,7 +1548,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1582,7 +1582,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -1691,7 +1691,7 @@
           {
             "decl": null,
             "tito": [ { "line": 113, "start": 28, "end": 29 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
@@ -1728,7 +1728,7 @@
           {
             "decl": null,
             "tito": [ { "line": 108, "start": 28, "end": 29 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
@@ -1843,7 +1843,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }

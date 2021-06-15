@@ -13,6 +13,7 @@ from .. import command_arguments, configuration as configuration_module
 from ..analysis_directory import AnalysisDirectory
 from ..commands.command import IncrementalStyle
 from ..commands.incremental import Incremental
+from ..configuration import SharedMemory
 
 
 def mock_arguments(
@@ -68,6 +69,7 @@ def mock_arguments(
         dot_pyre_directory=dot_pyre_directory or Path(".pyre"),
         features=features,
         python_version="3.6.0",
+        shared_memory_heap_size=1024 * 1024 * 1024,
     )
 
 
@@ -93,6 +95,7 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.get_python_version = lambda: configuration_module.PythonVersion(
         major=3, minor=6, micro=0
     )
+    configuration.shared_memory = SharedMemory(heap_size=1024 * 1024 * 1024)
     return configuration
 
 

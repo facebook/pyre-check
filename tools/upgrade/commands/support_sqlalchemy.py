@@ -143,7 +143,7 @@ class SupportSqlalchemy(ErrorSuppressingCommand):
                 *paths,
             ],
             description="Running `pyre infer`",
-            should_clean=True,
+            should_clean=self._should_clean,
             stderr_flag=None,
             command_input=json.dumps(errors),
         )
@@ -169,7 +169,9 @@ class SupportSqlalchemy(ErrorSuppressingCommand):
         local_configuration = Configuration(local_configuration_path)
 
         unannotated_attribute_errors = local_configuration.get_errors(
-            only_fix_error_code=MISSING_ATTRIBUTE_ANNOTATION_ERROR_CODE, strict=True
+            only_fix_error_code=MISSING_ATTRIBUTE_ANNOTATION_ERROR_CODE,
+            strict=True,
+            should_clean=self._should_clean,
         )
 
         sqlalchemy_path_wise_errors = self._get_sqlalchemy_errors(

@@ -740,6 +740,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make "typing_extensions.Final";
       make "typing_extensions.Literal" ~bases:catch_all_generic;
       make "typing_extensions.Annotated" ~bases:catch_all_generic;
+      make "typing_extensions.TypeAlias";
     ]
   in
   let builtin_classes =

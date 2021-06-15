@@ -10,6 +10,31 @@ open Ast
 
 exception Error of string
 
+module Error = struct
+  type t = {
+    location: Location.t;
+    file_name: string;
+    content: string option;
+  }
+
+  let pp formatter { location; file_name; content } =
+    let column = location.Location.start.Location.column in
+    let header = Format.asprintf "Could not parse file at %s:%a" file_name Location.pp location in
+    match content with
+    | Some content ->
+        let indicator =
+          if column > 0 then
+            String.make (column - 1) ' ' ^ "^"
+          else
+            "^"
+        in
+        Format.fprintf formatter "%s\n  %s\n  %s" header content indicator
+    | None -> Format.fprintf formatter "%s" header
+
+
+  let show = Format.asprintf "%a" pp
+end
+
 let sanitize_input lines =
   (* Remove byte order mark from first line if it exists. *)
   let lines =
@@ -44,27 +69,19 @@ let parse ?start_line ?start_column ?relative lines =
     buffer
   in
   let state = Lexer.State.initial () in
-  try Generator.parse (Lexer.read state) buffer with
+  try Ok (Generator.parse (Lexer.read state) buffer) with
   | Pyre.ParserError _
   | Generator.Error
   | Failure _ ->
       let location =
         Location.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p
       in
-      let line = location.Location.start.Location.line - 1
-      and column = location.Location.start.Location.column in
-      let error =
-        let header =
-          Format.asprintf "Could not parse file at %s:%a" file_name Location.pp location
-        in
-        let indicator =
-          if column > 0 then
-            String.make (column - 1) ' ' ^ "^"
-          else
-            "^"
-        in
-        match List.nth (String.split ~on:'\n' input) line with
-        | Some line -> Format.sprintf "%s\n  %s\n  %s" header line indicator
-        | None -> Format.sprintf "%s" header
-      in
-      raise (Error error)
+      let line_number = location.Location.start.Location.line - 1 in
+      let content = List.nth (String.split ~on:'\n' input) line_number in
+      Error { Error.location; file_name; content }
+
+
+let parse_exn ?start_line ?start_column ?relative lines =
+  match parse ?start_line ?start_column ?relative lines with
+  | Ok statements -> statements
+  | Error error -> raise (Error (Error.show error))

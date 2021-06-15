@@ -30,12 +30,19 @@ let static_analysis_configuration { ScratchProject.configuration; _ } =
     dump_model_query_results = false;
     use_cache = false;
     maximum_trace_length = None;
+    maximum_tito_depth = None;
   }
 
 
-let analyses = [TypeInference.Analysis.abstract_kind]
+let analysis = TypeInference.Analysis.abstract_kind
 
-let fixpoint_result ~context ~callables ~sources =
+let fixpoint_result ~context ~sources ~callable_names =
+  let callables =
+    let callable_of_string name : Callable.t =
+      name |> Reference.create |> Callable.create_function
+    in
+    callable_names |> List.map ~f:callable_of_string
+  in
   let scratch_project = ScratchProject.setup ~context ~infer:true sources in
   let filtered_callables = Callable.Set.of_list callables in
   let environment =
@@ -43,7 +50,7 @@ let fixpoint_result ~context ~callables ~sources =
   in
   let scheduler = Test.mock_scheduler () in
   let static_analysis_configuration = static_analysis_configuration scratch_project in
-  Analysis.initialize_configuration ~static_analysis_configuration analyses;
+  Analysis.initialize_configuration ~static_analysis_configuration analysis;
   Analysis.record_initial_models ~functions:callables ~stubs:[] Callable.Map.empty;
   let fixpoint_iterations =
     let iteration_limit = 1 in
@@ -51,7 +58,7 @@ let fixpoint_result ~context ~callables ~sources =
       (Analysis.compute_fixpoint
          ~scheduler
          ~environment
-         ~analyses
+         ~analysis
          ~dependencies:DependencyGraph.empty
          ~filtered_callables
          ~all_callables:callables
@@ -61,7 +68,7 @@ let fixpoint_result ~context ~callables ~sources =
     ~scheduler
     ~static_analysis_configuration
     ~environment
-    ~analyses
+    ~analysis
     ~filename_lookup:(fun _ -> None)
     ~callables:filtered_callables
     ~skipped_overrides:[]
@@ -79,11 +86,19 @@ let assert_json_equal ~context ~expected result =
     result
 
 
-let type_inference_integration_test context =
-  let sources =
-    [
-      ( "test.py",
-        {|
+let assert_fixpoint_result ~context ~sources ~callable_names ~expected =
+  let result = fixpoint_result ~context ~sources ~callable_names in
+  assert_equal ~ctxt:context 1 (List.length result) ~msg:"Expected length-1 list for result";
+  assert_json_equal ~context (List.hd_exn result) ~expected
+
+
+let type_inference_serialization_test context =
+  assert_fixpoint_result
+    ~context
+    ~sources:
+      [
+        ( "test.py",
+          {|
           x = 1 + 1
 
           class C:
@@ -92,25 +107,13 @@ let type_inference_integration_test context =
           def no_errors(x: int) -> int:
               return x
 
-          def needs_return(x: int):
+          def needs_return(y: int, x: int):
               return x
         |}
-      );
-    ]
-  in
-  let callables =
-    let callable_of_string name : Callable.t =
-      name |> Reference.create |> Callable.create_function
-    in
-    List.map
+        );
+      ]
+    ~callable_names:
       ["test.no_errors"; "test.needs_return"; "test.$toplevel"; "test.C.$class_toplevel"]
-      ~f:callable_of_string
-  in
-  let result = fixpoint_result ~context ~callables ~sources in
-  assert_equal ~ctxt:context 1 (List.length result) ~msg:"Expected length-1 list for result";
-  assert_json_equal
-    ~context
-    (List.hd_exn result)
     ~expected:
       {|
         {
@@ -134,7 +137,10 @@ let type_inference_integration_test context =
               "name": "test.needs_return",
               "parent": null,
               "return": "int",
-              "parameters": [ { "name": "x", "annotation": "int", "value": null } ],
+              "parameters": [
+                { "name": "y", "annotation": "int", "value": null, "index": 0 },
+                { "name": "x", "annotation": "int", "value": null, "index": 1 }
+              ],
               "decorators": [],
               "location": { "qualifier": "test", "path": "test.py", "line": 10 },
               "async": false
@@ -144,5 +150,42 @@ let type_inference_integration_test context =
     |}
 
 
+let type_inference_attribute_widen_test context =
+  assert_fixpoint_result
+    ~context
+    ~sources:
+      [
+        ( "test.py",
+          {|
+          class Foo:
+            x = None
+            def __init__(self) -> None:
+              self.x = 1 + 1
+          |}
+        );
+      ]
+    ~callable_names:["test.Foo.$class_toplevel"; "test.Foo.__init__"]
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [
+            {
+              "parent": "Foo",
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
+              "annotation": "typing.Optional[int]"
+            }
+          ],
+          "defines": []
+        }
+      |}
+
+
 let () =
-  "typeInferenceAnalysisTest" >::: ["integration" >:: type_inference_integration_test] |> Test.run
+  "typeInferenceAnalysisTest"
+  >::: [
+         "serialization" >:: type_inference_serialization_test;
+         "attribute_widen" >:: type_inference_attribute_widen_test;
+       ]
+  |> Test.run

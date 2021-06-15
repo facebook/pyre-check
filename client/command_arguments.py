@@ -50,6 +50,9 @@ class CommandArguments:
     use_command_v2: Optional[bool] = None
     isolation_prefix: Optional[str] = None
     python_version: Optional[str] = None
+    shared_memory_heap_size: Optional[int] = None
+    shared_memory_dependency_table_power: Optional[int] = None
+    shared_memory_hash_table_power: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -78,6 +81,19 @@ class IncrementalArguments:
     output: str = TEXT
     no_start: bool = False
     start_arguments: StartArguments = field(default_factory=StartArguments)
+
+
+@dataclass(frozen=True)
+class CheckArguments:
+    debug: bool = False
+    enable_memory_profiling: bool = False
+    enable_profiling: bool = False
+    log_identifier: Optional[str] = None
+    logging_sections: Optional[str] = None
+    noninteractive: bool = False
+    output: str = TEXT
+    sequential: bool = False
+    show_error_traces: bool = False
 
 
 @dataclass(frozen=True)

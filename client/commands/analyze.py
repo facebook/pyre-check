@@ -46,6 +46,7 @@ class Analyze(Check):
         use_cache: bool,
         inline_decorators: bool,
         maximum_trace_length: Optional[int],
+        maximum_tito_depth: Optional[int],
     ) -> None:
         super(Analyze, self).__init__(
             command_arguments,
@@ -67,6 +68,7 @@ class Analyze(Check):
         self._use_cache: bool = use_cache
         self._inline_decorators: bool = inline_decorators
         self._maximum_trace_length: Optional[int] = maximum_trace_length
+        self._maximum_tito_depth: Optional[int] = maximum_tito_depth
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -109,6 +111,9 @@ class Analyze(Check):
         maximum_trace_length = self._maximum_trace_length
         if maximum_trace_length:
             flags.extend(["-maximum-trace-length", str(maximum_trace_length)])
+        maximum_tito_depth = self._maximum_tito_depth
+        if maximum_tito_depth:
+            flags.extend(["-maximum-tito-depth", str(maximum_tito_depth)])
 
         return flags
 

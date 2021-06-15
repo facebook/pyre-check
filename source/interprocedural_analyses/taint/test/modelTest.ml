@@ -1198,7 +1198,8 @@ let test_invalid_models context =
   let assert_valid_model ?source ?sources ~model_source () =
     assert_invalid_model ?source ?sources ~model_source ~expect:"no failure" ()
   in
-  assert_invalid_model ~model_source:"import foo" ~expect:"Unexpected statement" ();
+  assert_invalid_model ~model_source:"1 + import" ~expect:"Syntax error." ();
+  assert_invalid_model ~model_source:"import foo" ~expect:"Unexpected statement." ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
     ~expect:
@@ -1948,6 +1949,104 @@ let test_invalid_models context =
     ~expect:
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some fnid); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
   value = Returns(TaintSource[Test]) }` are invalid: expected a find, where and model clause.|}
+    ();
+  (* Test Decorator clause in model queries *)
+  assert_valid_model
+    ~source:{|
+      @d("1")
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = Decorator(arguments.contains("1"), name.matches("d")),
+        model = Returns(TaintSource[A])
+      )
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      @d("1")
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = Decorator(arguments.contains("1"), name.matches("d")),
+        model = Returns(TaintSource[A])
+      )
+    |}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = Decorator(foo),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:"`foo` is not a valid name clause."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = Decorator(name.matches("a"), name.matches("b")),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:"`name.matches(\"a\")` is not a valid arguments clause."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = Decorator(arguments.contains("a")),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:"`arguments.contains(\"a\")` is not a valid name clause."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = Decorator(arguments.contains("a"), arguments.contains("b")),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:"`arguments.contains(\"b\")` is not a valid name clause."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = Decorator(name.matches(a, b)),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|Unsupported arguments for callee `name.matches`: `{ Expression.Call.Argument.name = None; value = a }, { Expression.Call.Argument.name = None; value = b }`.|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = Decorator(name.equals(a, b), arguments.equals(1, 2)),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:{|`arguments.equals(1, 2)` is not a valid name clause.|}
     ();
 
   (* We error starting on the first decorator. *)

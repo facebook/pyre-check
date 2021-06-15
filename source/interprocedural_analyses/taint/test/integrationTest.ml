@@ -109,7 +109,7 @@ let test_integration path context =
     Analysis.compute_fixpoint
       ~scheduler:(Test.mock_scheduler ())
       ~environment
-      ~analyses:[TaintAnalysis.abstract_kind]
+      ~analysis:TaintAnalysis.abstract_kind
       ~dependencies
       ~filtered_callables:Callable.Set.empty
       ~all_callables:callables_to_analyze

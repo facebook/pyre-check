@@ -1030,7 +1030,7 @@ end = struct
           in
           match kind with
           | StringLiteral.Format expressions ->
-              Format.fprintf formatter "%s\"%s\"(%a)" bytes value pp_expression_list expressions
+              Format.fprintf formatter "f\"%s\"(%a)" value pp_expression_list expressions
           | _ -> Format.fprintf formatter "%s\"%s\"" bytes value )
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           Format.fprintf

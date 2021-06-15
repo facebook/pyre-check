@@ -8,26 +8,6 @@
 open Core
 open Pyre
 
-module Buck : sig
-  type t = {
-    mode: string option;
-    isolation_prefix: string option;
-    targets: string list;
-    (* This is the buck root of the source directory, i.e. output of `buck root`. *)
-    source_root: Path.t;
-    (* This is the root of directory where built artifacts will be placed. *)
-    artifact_root: Path.t;
-  }
-  [@@deriving sexp, compare, hash, yojson]
-end
-
-module SourcePaths : sig
-  type t =
-    | Simple of SearchPath.t list
-    | Buck of Buck.t
-  [@@deriving sexp, compare, hash, yojson]
-end
-
 module CriticalFile : sig
   type t =
     | BaseName of string
@@ -56,39 +36,9 @@ module SavedStateAction : sig
   [@@deriving sexp, compare, hash, yojson]
 end
 
-module RemoteLogging : sig
-  type t = {
-    logger: string;
-    identifier: string;
-  }
-  [@@deriving sexp, compare, hash, yojson]
-end
-
-module PythonVersion : sig
-  type t = {
-    major: int;
-    minor: int;
-    micro: int;
-  }
-  [@@deriving sexp, compare, hash, yojson]
-
-  val default : t
-end
-
-module SharedMemory : sig
-  type t = {
-    heap_size: int;
-    dependency_table_power: int;
-    hash_table_power: int;
-  }
-  [@@deriving sexp, compare, hash, yojson]
-
-  val default : t
-end
-
 type t = {
   (* Source file discovery *)
-  source_paths: SourcePaths.t;
+  source_paths: Configuration.SourcePaths.t;
   search_paths: SearchPath.t list;
   excludes: string list;
   checked_directory_allowlist: Path.t list;
@@ -103,7 +53,7 @@ type t = {
   (* Type checking controls *)
   debug: bool;
   strict: bool;
-  python_version: PythonVersion.t;
+  python_version: Configuration.PythonVersion.t;
   show_error_traces: bool;
   store_type_check_resolution: bool;
   critical_files: CriticalFile.t list;
@@ -112,10 +62,10 @@ type t = {
   parallel: bool;
   number_of_workers: int;
   (* Memory controls *)
-  shared_memory: SharedMemory.t;
+  shared_memory: Configuration.SharedMemory.t;
   (* Logging controls *)
   additional_logging_sections: string list;
-  remote_logging: RemoteLogging.t option;
+  remote_logging: Configuration.RemoteLogging.t option;
   profiling_output: string option;
   memory_profiling_output: string option;
 }

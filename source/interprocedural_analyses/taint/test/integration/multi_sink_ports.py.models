@@ -226,7 +226,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
             "features": [ { "always-via": "tito" }, { "via": "split" } ]
           }
         ]
@@ -309,7 +309,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
             "features": [ { "always-via": "tito" }, { "via": "split" } ]
           }
         ]
@@ -329,7 +329,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[_params]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[_params]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -338,7 +340,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -421,7 +423,7 @@
           {
             "decl": null,
             "tito": [ { "line": 58, "start": 28, "end": 32 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
             "features": [ { "always-via": "tito" }, { "via": "split" } ]
           }
         ]
@@ -690,7 +692,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "via": "split" } ]
           }
         ]
@@ -774,7 +776,7 @@
           {
             "decl": null,
             "tito": [ { "line": 46, "start": 17, "end": 18 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" }, { "via": "split" } ]
           }
         ]

@@ -240,7 +240,7 @@ module BuckBuildSystem = struct
   let initialize_from_options
       ~raw
       ~buck_options:
-        { ServerConfiguration.Buck.mode; isolation_prefix; targets; source_root; artifact_root }
+        { Configuration.Buck.mode; isolation_prefix; targets; source_root; artifact_root }
       ()
     =
     let open Lwt.Infix in
@@ -259,8 +259,7 @@ module BuckBuildSystem = struct
 
   let initialize_from_saved_state
       ~raw
-      ~buck_options:
-        { ServerConfiguration.Buck.mode; isolation_prefix; source_root; artifact_root; _ }
+      ~buck_options:{ Configuration.Buck.mode; isolation_prefix; source_root; artifact_root; _ }
       ()
     =
     let open Lwt.Infix in
@@ -318,3 +317,15 @@ module Initializer = struct
 
   let create_for_testing ~initialize ~load () = { initialize; load }
 end
+
+let with_build_system ~f source_paths =
+  let build_system_initializer =
+    match source_paths with
+    | Configuration.SourcePaths.Simple _ -> Initializer.null
+    | Configuration.SourcePaths.Buck buck_options ->
+        let raw = Buck.Raw.create () in
+        Initializer.buck ~raw buck_options
+  in
+  let open Lwt.Infix in
+  Initializer.run build_system_initializer
+  >>= fun build_system -> Lwt.finalize (fun () -> f build_system) (fun () -> cleanup build_system)

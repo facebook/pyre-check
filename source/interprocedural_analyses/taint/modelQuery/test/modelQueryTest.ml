@@ -648,6 +648,356 @@ let test_apply_rule context =
   assert_applied_rules
     ~source:
       {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            DecoratorConstraint
+              { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.baz")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [DecoratorConstraint { name_constraint = Equals "test.d1"; arguments_constraint = None }];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.baz")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            DecoratorConstraint
+              {
+                name_constraint = Equals "test.d1";
+                arguments_constraint =
+                  Some
+                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                       [
+                         {
+                           Ast.Expression.Call.Argument.name = None;
+                           value = +Ast.Expression.Expression.Integer 1;
+                         };
+                       ]);
+              };
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.baz")
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1(1)
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            DecoratorConstraint
+              {
+                name_constraint = Equals "test.d1";
+                arguments_constraint =
+                  Some
+                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                       [
+                         {
+                           Ast.Expression.Call.Argument.name = None;
+                           value = +Ast.Expression.Expression.Integer 1;
+                         };
+                       ]);
+              };
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.baz")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1(1)
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            DecoratorConstraint
+              {
+                name_constraint = Equals "test.d1";
+                arguments_constraint =
+                  Some
+                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                       [
+                         {
+                           Ast.Expression.Call.Argument.name =
+                             Some (Ast.Node.create_with_default_location "arg1");
+                           value = +Ast.Expression.Expression.Integer 1;
+                         };
+                       ]);
+              };
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.baz")
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1(arg1=1)
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            DecoratorConstraint
+              {
+                name_constraint = Equals "test.d1";
+                arguments_constraint =
+                  Some
+                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                       [
+                         {
+                           Ast.Expression.Call.Argument.name =
+                             Some (Ast.Node.create_with_default_location "arg1");
+                           value = +Ast.Expression.Expression.Integer 1;
+                         };
+                       ]);
+              };
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.baz")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1(1, method="POST")
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            DecoratorConstraint
+              {
+                name_constraint = Equals "test.d1";
+                arguments_constraint =
+                  Some
+                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                       [
+                         {
+                           Ast.Expression.Call.Argument.name =
+                             Some (Ast.Node.create_with_default_location "method");
+                           value =
+                             +Ast.Expression.Expression.String
+                                (Ast.Expression.StringLiteral.create "POST");
+                         };
+                         {
+                           Ast.Expression.Call.Argument.name = None;
+                           value = +Ast.Expression.Expression.Integer 1;
+                         };
+                       ]);
+              };
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.baz")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1(1)
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1(1, method="POST")
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            DecoratorConstraint
+              {
+                name_constraint = Equals "test.d1";
+                arguments_constraint =
+                  Some
+                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Equals
+                       [
+                         {
+                           Ast.Expression.Call.Argument.name =
+                             Some (Ast.Node.create_with_default_location "method");
+                           value =
+                             +Ast.Expression.Expression.String
+                                (Ast.Expression.StringLiteral.create "POST");
+                         };
+                         {
+                           Ast.Expression.Call.Argument.name = None;
+                           value = +Ast.Expression.Expression.Integer 1;
+                         };
+                       ]);
+              };
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1(1)
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1(1, method="POST")
+       @d2
+       def baz(a): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            DecoratorConstraint
+              {
+                name_constraint = Equals "test.d1";
+                arguments_constraint =
+                  Some
+                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Equals
+                       [
+                         {
+                           Ast.Expression.Call.Argument.name =
+                             Some (Ast.Node.create_with_default_location "method");
+                           value =
+                             +Ast.Expression.Expression.String
+                                (Ast.Expression.StringLiteral.create "POST");
+                         };
+                         {
+                           Ast.Expression.Call.Argument.name = None;
+                           value = +Ast.Expression.Expression.Integer 1;
+                         };
+                       ]);
+              };
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.baz")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+
+  assert_applied_rules
+    ~source:
+      {|
       class C:
         def foo(): ...
       class D:

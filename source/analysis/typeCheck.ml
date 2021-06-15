@@ -6568,10 +6568,21 @@ let run_on_define ~configuration ~environment ?call_graph_builder (name, depende
   let resolution = resolution global_resolution (module DummyContext) in
   match GlobalResolution.function_definition global_resolution name with
   | None -> ()
-  | Some definition ->
+  | Some ({ FunctionDefinition.qualifier; _ } as definition) ->
       let { CheckResult.errors; local_annotations } =
         check_function_definition ~configuration ~resolution ~name ?call_graph_builder definition
       in
+      let uninitialized_local_errors =
+        if configuration.uninitialized_local then
+          definition
+          |> FunctionDefinition.all_bodies
+          |> List.filter ~f:(fun { Node.value; _ } -> not (Define.is_toplevel value))
+          |> List.map ~f:(UninitializedLocalCheck.run_on_define ~qualifier)
+          |> List.concat
+        else
+          []
+      in
+      let errors = errors @ uninitialized_local_errors in
       let () =
         if configuration.store_type_check_resolution then
           (* Write fixpoint type resolutions to shared memory *)

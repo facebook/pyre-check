@@ -17,6 +17,8 @@ module T : sig
   [@@deriving sexp, compare, eq]
 
   type kind =
+    | ParseError
+    | UnexpectedStatement of Statement.t
     | InvalidDefaultValue of {
         callable_name: string;
         name: string;
@@ -46,6 +48,7 @@ module T : sig
         callee: Expression.t;
         arguments: Expression.Call.Argument.t list;
       }
+    | InvalidArgumentsClause of Expression.t
     | InvalidNameClause of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
@@ -67,7 +70,6 @@ module T : sig
         unexpected_decorators: Statement.Decorator.t list;
       }
     | InvalidIdentifier of Expression.t
-    | UnexpectedStatement of Statement.t
     | ClassBodyNotEllipsis of string
     | DefineBodyNotEllipsis of string
     | UnclassifiedError of {

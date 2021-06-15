@@ -38,9 +38,10 @@ type implicit_sources = { literal_strings: literal_string_source list }
 
 type analysis_model_constraints = {
   maximum_model_width: int;
-  maximum_complex_access_path_length: int;
+  maximum_return_access_path_length: int;
   maximum_overrides_to_analyze: int option;
   maximum_trace_length: int option;
+  maximum_tito_depth: int option;
 }
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
@@ -88,6 +89,7 @@ val create
   find_missing_flows:missing_flows_kind option ->
   dump_model_query_results_path:Path.t option ->
   maximum_trace_length:int option ->
+  maximum_tito_depth:int option ->
   taint_model_paths:Path.t list ->
   t
 

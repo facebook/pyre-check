@@ -635,6 +635,32 @@ let test_validate _ =
       }
       |};
     ];
+  assert_validation_error_with_multiple_configurations
+    ~error:"Multiple values were passed in for `maximum_tito_depth`."
+    [
+      {|
+      {
+        sources: [],
+        sinks: [],
+        features: [],
+        rules: [],
+        options: {
+          maximum_tito_depth: 10
+        }
+      }
+      |};
+      {|
+      {
+        sources: [],
+        sinks: [],
+        features: [],
+        rules: [],
+        options: {
+          maximum_tito_depth: 20
+        }
+      }
+      |};
+    ];
   assert_validation_error
     ~error:"Unsupported taint source `MisspelledStringDigit`"
     {|

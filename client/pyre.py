@@ -92,6 +92,12 @@ def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
         _show_pyre_version_as_text(binary_version, client_version)
 
 
+def _start_logging_to_directory(log_directory: str) -> None:
+    log_directory_path = Path(log_directory)
+    log_directory_path.mkdir(parents=True, exist_ok=True)
+    log.enable_file_logging(log_directory_path / "pyre.stderr")
+
+
 def run_pyre_command(
     command: Command,
     configuration: configuration_module.Configuration,
@@ -105,7 +111,7 @@ def run_pyre_command(
     exit_code = ExitCode.FAILURE
     try:
         _check_configuration(configuration)
-        log.start_logging_to_directory(noninteractive, configuration.log_directory)
+        _start_logging_to_directory(configuration.log_directory)
         LOG.debug(f"Running cli command `{' '.join(sys.argv)}`...")
         exit_code = command.run().exit_code()
     except (buck.BuckException, EnvironmentException) as error:
@@ -120,7 +126,7 @@ def run_pyre_command(
         exit_code = ExitCode.CONFIGURATION_ERROR
     except commands.ClientException as error:
         client_exception_message = str(error)
-        exit_code = ExitCode.FAILURE
+        exit_code = error.exit_code
     except Exception:
         client_exception_message = traceback.format_exc()
         exit_code = ExitCode.FAILURE
@@ -146,13 +152,29 @@ def run_pyre_command(
 
 def _run_check_command(arguments: command_arguments.CommandArguments) -> ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
-    return run_pyre_command(
-        commands.Check(
-            arguments, original_directory=os.getcwd(), configuration=configuration
-        ),
-        configuration,
-        arguments.noninteractive,
-    )
+    if configuration.use_command_v2:
+        _check_configuration(configuration)
+        _start_logging_to_directory(configuration.log_directory)
+        check_arguments = command_arguments.CheckArguments(
+            debug=arguments.debug,
+            enable_memory_profiling=arguments.enable_memory_profiling,
+            enable_profiling=arguments.enable_profiling,
+            log_identifier=arguments.log_identifier,
+            logging_sections=arguments.logging_sections,
+            noninteractive=arguments.noninteractive,
+            output=arguments.output,
+            sequential=arguments.sequential,
+            show_error_traces=arguments.show_error_traces,
+        )
+        return v2.check.run(configuration, check_arguments)
+    else:
+        return run_pyre_command(
+            commands.Check(
+                arguments, original_directory=os.getcwd(), configuration=configuration
+            ),
+            configuration,
+            arguments.noninteractive,
+        )
 
 
 def _run_incremental_command(
@@ -165,9 +187,7 @@ def _run_incremental_command(
     configuration = _create_configuration_with_retry(arguments, Path("."))
     if configuration.use_command_v2:
         _check_configuration(configuration)
-        log.start_logging_to_directory(
-            arguments.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         start_arguments = command_arguments.StartArguments(
             changed_files_path=arguments.changed_files_path,
             debug=arguments.debug,
@@ -438,6 +458,24 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     ),
     hidden=True,
 )
+@click.option(
+    "--shared-memory-heap-size",
+    type=int,
+    help="Size of the shared memory heap, in bytes.",
+    hidden=True,
+)
+@click.option(
+    "--shared-memory-dependency-table-power",
+    type=int,
+    help="Power of the dependency table in shared memory.",
+    hidden=True,
+)
+@click.option(
+    "--shared-memory-hash-table-power",
+    type=int,
+    help="Power of the hash table in shared memory.",
+    hidden=True,
+)
 def pyre(
     context: click.Context,
     local_configuration: str | None,
@@ -476,6 +514,9 @@ def pyre(
     use_command_v2: bool | None,
     isolation_prefix: str | None,
     python_version: str | None,
+    shared_memory_heap_size: int | None,
+    shared_memory_dependency_table_power: int | None,
+    shared_memory_hash_table_power: int | None,
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -516,6 +557,9 @@ def pyre(
         use_command_v2=use_command_v2,
         isolation_prefix=isolation_prefix,
         python_version=python_version,
+        shared_memory_heap_size=shared_memory_heap_size,
+        shared_memory_dependency_table_power=shared_memory_dependency_table_power,
+        shared_memory_hash_table_power=shared_memory_hash_table_power,
     )
     if arguments.version:
         _show_pyre_version(arguments)
@@ -551,6 +595,8 @@ def pyre(
     help="Directory to write analysis results to.",
 )
 @click.option("--dump-call-graph", is_flag=True, default=False, hidden=True)
+# pyre-fixme[56]: Pyre was not able to infer the type of argument `os.path.abspath`
+#  to decorator factory `click.option`.
 @click.option("--repository-root", type=os.path.abspath)
 @click.option(
     "--rule",
@@ -586,6 +632,11 @@ def pyre(
     type=int,
     help="Limit the trace length of taint flows.",
 )
+@click.option(
+    "--maximum-tito-depth",
+    type=int,
+    help="Limit the depth of inferred taint-in-taint-out in taint flows.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -601,6 +652,7 @@ def analyze(
     use_cache: bool,
     inline_decorators: bool,
     maximum_trace_length: int | None,
+    maximum_tito_depth: int | None,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -629,6 +681,7 @@ def analyze(
             use_cache=use_cache,
             inline_decorators=inline_decorators,
             maximum_trace_length=maximum_trace_length,
+            maximum_tito_depth=maximum_tito_depth,
         ),
         configuration,
         command_argument.noninteractive,
@@ -748,12 +801,6 @@ def incremental(
     default=False,
     help="Print error message when file fails to annotate.",
 )
-@click.option(
-    "--full-stubs",
-    is_flag=True,
-    default=False,
-    help="Include pre-existing annotations in the generated stubs.",
-)
 @click.pass_context
 def infer(
     context: click.Context,
@@ -765,13 +812,11 @@ def infer(
     json: bool,
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
-    full_stubs: bool,
 ) -> int:
     """
     Try adding type annotations to untyped codebase.
     """
     in_place_paths = list(modify_paths) if in_place else None
-    full_stub_paths = list(modify_paths) if full_stubs else None
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     return run_pyre_command(
@@ -786,7 +831,65 @@ def infer(
             errors_from_stdin=json,
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
-            full_stub_paths=full_stub_paths,
+        ),
+        configuration,
+        command_argument.noninteractive,
+    )
+
+
+@pyre.command()
+@click.pass_context
+@click.option(
+    "-p",
+    "--print-only",
+    is_flag=True,
+    default=False,
+    help=(
+        "Print raw JSON errors to standard output, without converting to stubs "
+        "or annnotating."
+    ),
+)
+@click.option(
+    "-i",
+    "--in-place",
+    is_flag=True,
+    default=False,
+    help="Modifies original files and add inferred annotations to all functions.",
+)
+@click.option(
+    "--annotate-from-existing-stubs",
+    is_flag=True,
+    default=False,
+    help="Add annotations from existing stubs.",
+)
+@click.option(
+    "--debug-infer",
+    is_flag=True,
+    default=False,
+    help="Print error message when file fails to annotate.",
+)
+def infer_v2(
+    context: click.Context,
+    print_only: bool,
+    in_place: bool,
+    annotate_from_existing_stubs: bool,
+    debug_infer: bool,
+) -> int:
+    """
+    Run the (under construction) interprocedural version of pyre infer.
+    """
+    in_place_paths = [] if in_place else None
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    return run_pyre_command(
+        commands.infer_v2.Infer(
+            command_argument,
+            original_directory=os.getcwd(),
+            configuration=configuration,
+            print_only=print_only,
+            in_place_paths=in_place_paths,
+            annotate_from_existing_stubs=annotate_from_existing_stubs,
+            debug_infer=debug_infer,
         ),
         configuration,
         command_argument.noninteractive,
@@ -850,10 +953,8 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
         command_argument, Path(".")
     )
     if configuration.use_command_v2:
-        log.start_logging_to_directory(
-            # Always log to file regardless of whether `-n` is given
-            noninteractive=False,
-            log_directory=configuration.log_directory,
+        _start_logging_to_directory(
+            configuration.log_directory,
         )
         return v2.persistent.run(
             configuration,
@@ -903,10 +1004,8 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    log.start_logging_to_directory(
-        # Always log to file regardless of whether `-n` is given
-        noninteractive=False,
-        log_directory=configuration.log_directory,
+    _start_logging_to_directory(
+        configuration.log_directory,
     )
     return v2.pysa_server.run(
         configuration,
@@ -953,16 +1052,19 @@ def profile(context: click.Context, profile_output: str) -> int:
 
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return run_pyre_command(
-        commands.Profile(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            profile_output=get_profile_output(profile_output),
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+    if configuration.use_command_v2:
+        return v2.profile.run(configuration, get_profile_output(profile_output))
+    else:
+        return run_pyre_command(
+            commands.Profile(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                profile_output=get_profile_output(profile_output),
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
@@ -981,9 +1083,7 @@ def query(context: click.Context, query: str) -> int:
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
     if configuration.use_command_v2:
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         return v2.query.run(configuration, query)
     else:
         return run_pyre_command(
@@ -999,6 +1099,8 @@ def query(context: click.Context, query: str) -> int:
 
 
 @pyre.command()
+# pyre-fixme[56]: Pyre was not able to infer the type of argument `os.path.abspath`
+#  to decorator factory `click.option`.
 @click.option(
     "--output-file",
     type=os.path.abspath,
@@ -1084,9 +1186,7 @@ def restart(
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     if configuration.use_command_v2:
         _check_configuration(configuration)
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         start_arguments = command_arguments.StartArguments(
             changed_files_path=command_argument.changed_files_path,
             debug=command_argument.debug,
@@ -1229,9 +1329,7 @@ def start(
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     if configuration.use_command_v2:
         _check_configuration(configuration)
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         return v2.start.run(
             configuration,
             command_arguments.StartArguments(
@@ -1324,9 +1422,7 @@ def stop(context: click.Context) -> int:
         command_argument, Path(".")
     )
     if configuration.use_command_v2:
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         return v2.stop.run(configuration)
     else:
         return run_pyre_command(
@@ -1350,9 +1446,7 @@ def validate_models(context: click.Context) -> int:
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
     if configuration.use_command_v2:
-        log.start_logging_to_directory(
-            command_argument.noninteractive, configuration.log_directory
-        )
+        _start_logging_to_directory(configuration.log_directory)
         return v2.validate_models.run(configuration, output=command_argument.output)
     else:
         return run_pyre_command(
@@ -1378,6 +1472,9 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
         except click.ClickException as error:
             error.show()
             return_code = ExitCode.FAILURE
+        except commands.ClientException as error:
+            LOG.error(str(error))
+            return_code = error.exit_code
         except Exception as error:
             LOG.error(str(error))
             return_code = ExitCode.FAILURE

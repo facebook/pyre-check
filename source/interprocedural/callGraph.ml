@@ -337,46 +337,44 @@ let rec resolve_callees_from_type
             ~collapse_tito
             new_target
           |> merge_targets combined_targets)
-  | callable_type ->
+  | Type.Parametric { name = "type"; _ } -> resolve_constructor_callee ~resolution callable_type
+  | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
          ignore it for now to make sure our constructor logic via `cls()` still works. *)
-      if not (Type.is_meta callable_type) then
-        match
-          Resolution.resolve_attribute_access
-            resolution
-            ~base_type:callable_type
-            ~attribute:"__call__"
-        with
-        | Type.Any
-        | Type.Top ->
-            None
-        (* Callable protocol. *)
-        | Type.Callable { kind = Anonymous; _ } ->
-            Type.primitive_name callable_type
-            >>= fun primitive_callable_name ->
-            Some
-              (RegularTargets
-                 {
-                   implicit_self = true;
-                   targets =
-                     [
-                       `Method
-                         { Callable.class_name = primitive_callable_name; method_name = "__call__" };
-                     ];
-                   collapse_tito;
-                 })
-        | annotation ->
-            if not resolving_callable_class then
-              resolve_callees_from_type
-                ~resolution
-                ~resolving_callable_class:true
-                ~callee_kind
-                ~collapse_tito
-                annotation
-            else
-              None
-      else
-        resolve_constructor_callee ~resolution callable_type
+      match
+        Resolution.resolve_attribute_access
+          resolution
+          ~base_type:callable_type
+          ~attribute:"__call__"
+      with
+      | Type.Any
+      | Type.Top ->
+          None
+      (* Callable protocol. *)
+      | Type.Callable { kind = Anonymous; _ } ->
+          Type.primitive_name callable_type
+          >>= fun primitive_callable_name ->
+          Some
+            (RegularTargets
+               {
+                 implicit_self = true;
+                 targets =
+                   [
+                     `Method
+                       { Callable.class_name = primitive_callable_name; method_name = "__call__" };
+                   ];
+                 collapse_tito;
+               })
+      | annotation ->
+          if not resolving_callable_class then
+            resolve_callees_from_type
+              ~resolution
+              ~resolving_callable_class:true
+              ~callee_kind
+              ~collapse_tito
+              annotation
+          else
+            None )
 
 
 and resolve_constructor_callee ~resolution class_type =

@@ -44,17 +44,19 @@ let empty_implicit_sources = { literal_strings = [] }
 
 type analysis_model_constraints = {
   maximum_model_width: int;
-  maximum_complex_access_path_length: int;
+  maximum_return_access_path_length: int;
   maximum_overrides_to_analyze: int option;
   maximum_trace_length: int option;
+  maximum_tito_depth: int option;
 }
 
 let default_analysis_model_constraints =
   {
     maximum_model_width = 25;
-    maximum_complex_access_path_length = 10;
+    maximum_return_access_path_length = 10;
     maximum_overrides_to_analyze = None;
     maximum_trace_length = None;
+    maximum_tito_depth = None;
   }
 
 
@@ -420,6 +422,7 @@ let parse source_jsons =
   in
   let maximum_overrides_to_analyze = parse_integer_option "maximum_overrides_to_analyze" in
   let maximum_trace_length = parse_integer_option "maximum_trace_length" in
+  let maximum_tito_depth = parse_integer_option "maximum_tito_depth" in
   let merge_implicit_sources left right =
     { literal_strings = left.literal_strings @ right.literal_strings }
   in
@@ -440,7 +443,12 @@ let parse source_jsons =
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints =
-      { default_analysis_model_constraints with maximum_overrides_to_analyze; maximum_trace_length };
+      {
+        default_analysis_model_constraints with
+        maximum_overrides_to_analyze;
+        maximum_trace_length;
+        maximum_tito_depth;
+      };
     lineage_analysis;
   }
 
@@ -637,6 +645,7 @@ let create
     ~find_missing_flows
     ~dump_model_query_results_path
     ~maximum_trace_length
+    ~maximum_tito_depth
     ~taint_model_paths
   =
   let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths in
@@ -675,6 +684,15 @@ let create
     | Some _ ->
         let analysis_model_constraints =
           { configuration.analysis_model_constraints with maximum_trace_length }
+        in
+        { configuration with analysis_model_constraints }
+  in
+  let configuration =
+    match maximum_tito_depth with
+    | None -> configuration
+    | Some _ ->
+        let analysis_model_constraints =
+          { configuration.analysis_model_constraints with maximum_tito_depth }
         in
         { configuration with analysis_model_constraints }
   in

@@ -295,7 +295,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -304,7 +306,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -323,7 +325,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -332,7 +336,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -351,7 +355,9 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ]
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            ]
           }
         ]
       },
@@ -360,7 +366,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
           }
         ]
       }
@@ -380,7 +386,9 @@
           {
             "decl": null,
             "tito": [ { "line": 16, "start": 19, "end": 21 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[id]", "depth": 1 }
+            ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
@@ -391,7 +399,7 @@
           {
             "decl": null,
             "tito": [ { "line": 16, "start": 15, "end": 18 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]

@@ -232,13 +232,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let return_paths =
                 match kind with
                 | Sinks.LocalReturn ->
-                    let gather_paths (Features.Complex.ReturnAccessPath extra_path) paths =
-                      extra_path :: paths
-                    in
                     BackwardTaint.fold
-                      BackwardTaint.complex_feature
+                      Features.ReturnAccessPathSet.Element
                       return_taint
-                      ~f:gather_paths
+                      ~f:List.cons
                       ~init:[]
                 | _ ->
                     (* No special handling of paths for side effects *)
@@ -1574,7 +1571,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   let return_type_breadcrumbs = Features.type_breadcrumbs ~resolution return_annotation in
   let {
     TaintConfiguration.analysis_model_constraints =
-      { maximum_model_width; maximum_complex_access_path_length; maximum_trace_length; _ };
+      { maximum_model_width; maximum_return_access_path_length; maximum_trace_length; _ };
     _;
   }
     =
@@ -1600,7 +1597,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
     |> ForwardState.Tree.limit_to
          ~transform:(ForwardTaint.add_features Features.widen_broadening)
          ~width:maximum_model_width
-    |> ForwardState.Tree.approximate_complex_access_paths ~maximum_complex_access_path_length
+    |> ForwardState.Tree.approximate_return_access_paths ~maximum_return_access_path_length
   in
   let attach_features taint =
     if not (Features.SimpleSet.is_bottom features_to_attach) then

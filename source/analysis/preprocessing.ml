@@ -88,24 +88,19 @@ let transform_string_annotation_expression ~relative =
               arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
             }
       | String { StringLiteral.value = string_value; _ } -> (
-          try
-            let parsed =
-              (* Start at column + 1 since parsing begins after the opening quote of the string
-                 literal. *)
-              Parser.parse
-                ~start_line
-                ~start_column:(start_column + 1)
-                [string_value ^ "\n"]
-                ~relative
-            in
-            match parsed with
-            | [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
-            | [{ Node.value = Expression { Node.value = Call _ as expression; _ }; _ }] ->
-                expression
-            | _ -> failwith "Invalid annotation"
+          (* Start at column + 1 since parsing begins after the opening quote of the string literal. *)
+          match
+            Parser.parse
+              ~start_line
+              ~start_column:(start_column + 1)
+              [string_value ^ "\n"]
+              ~relative
           with
-          | Parser.Error _
-          | Failure _ ->
+          | Ok [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
+          | Ok [{ Node.value = Expression { Node.value = Call _ as expression; _ }; _ }] ->
+              expression
+          | Ok _
+          | Error _ ->
               Log.debug
                 "Invalid string annotation `%s` at %s:%a"
                 string_value
@@ -283,14 +278,12 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
             List.fold substrings ~init:[] ~f:gather_expressions_in_substring |> List.rev
           in
           let parse ((start_line, start_column), input_string) =
-            try
-              let string = input_string ^ "\n" in
-              match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
-              | [{ Node.value = Expression expression; _ }] -> [expression]
-              | _ -> failwith "Not an expression"
-            with
-            | Parser.Error _
-            | Failure _ ->
+            let string = "(" ^ input_string ^ ")" ^ "\n" in
+            let start_column = start_column - 1 in
+            match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
+            | Ok [{ Node.value = Expression expression; _ }] -> [expression]
+            | Ok _
+            | Error _ ->
                 Log.debug
                   "Pyre could not parse format string `%s` at %s:%a"
                   input_string
@@ -1142,16 +1135,13 @@ let qualify
             | _ -> kind
           in
           if qualify_strings then (
-            try
-              match Parser.parse [value ^ "\n"] ~relative with
-              | [{ Node.value = Expression expression; _ }] ->
-                  qualify_expression ~qualify_strings ~scope expression
-                  |> Expression.show
-                  |> fun value -> Expression.String { StringLiteral.value; kind }
-              | _ -> failwith "Not an expression"
-            with
-            | Parser.Error _
-            | Failure _ ->
+            match Parser.parse [value ^ "\n"] ~relative with
+            | Ok [{ Node.value = Expression expression; _ }] ->
+                qualify_expression ~qualify_strings ~scope expression
+                |> Expression.show
+                |> fun value -> Expression.String { StringLiteral.value; kind }
+            | Ok _
+            | Error _ ->
                 Log.debug
                   "Invalid string annotation `%s` at %s:%a"
                   value

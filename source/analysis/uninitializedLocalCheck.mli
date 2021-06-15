@@ -10,6 +10,8 @@ module Error = AnalysisError
 
 val name : string
 
+val run_on_define : qualifier:Reference.t -> Statement.Define.t Node.t -> Error.t list
+
 val run
   :  configuration:Configuration.Analysis.t ->
   environment:TypeEnvironment.ReadOnly.t ->

@@ -80,6 +80,13 @@ module T = struct
 
     let show_name_constraint = Format.asprintf "%a" pp_name_constraint
 
+    module ArgumentsConstraint = struct
+      type t =
+        | Equals of Ast.Expression.Call.Argument.t list
+        | Contains of Ast.Expression.Call.Argument.t list
+      [@@deriving compare, show]
+    end
+
     type class_constraint =
       | NameSatisfies of name_constraint
       | Extends of {
@@ -105,6 +112,10 @@ module T = struct
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
       | DecoratorNameConstraint of string
+      | DecoratorConstraint of {
+          name_constraint: name_constraint;
+          arguments_constraint: ArgumentsConstraint.t option;
+        }
       | Not of model_constraint
     [@@deriving compare, show]
 
@@ -954,6 +965,32 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
     | _ ->
         Error (model_verification_error ~path ~location (InvalidNameClause constraint_expression))
   in
+  let parse_arguments_constraint ({ Node.value; _ } as constraint_expression) =
+    match value with
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Name (Name.Identifier "arguments"); _ };
+                      attribute = ("contains" | "equals") as attribute;
+                      _;
+                    });
+              _;
+            };
+          arguments;
+        } -> (
+        match attribute with
+        | "contains" -> Ok (ModelQuery.ArgumentsConstraint.Contains arguments)
+        | "equals" -> Ok (ModelQuery.ArgumentsConstraint.Equals arguments)
+        | _ -> failwith "impossible case" )
+    | _ ->
+        Error
+          (model_verification_error ~path ~location (InvalidArgumentsClause constraint_expression))
+  in
   let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
     match value with
     | Expression.Call
@@ -1007,6 +1044,44 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
           Error (invalid_model_query_where_clause ~path ~location callee)
         else
           Ok (ModelQuery.DecoratorNameConstraint name_constraint)
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Expression.Name (Name.Identifier "Decorator"); _ } as callee;
+          arguments;
+        } -> (
+        if String.equal find_clause_kind "attributes" then
+          Error (invalid_model_query_where_clause ~path ~location callee)
+        else
+          match arguments with
+          | [{ Call.Argument.name = None; Call.Argument.value = decorator_name_constraint }] ->
+              parse_name_constraint decorator_name_constraint
+              >>= fun name_constraint ->
+              Ok (ModelQuery.DecoratorConstraint { name_constraint; arguments_constraint = None })
+          | [
+           { Call.Argument.name = None; value = first_constraint };
+           { Call.Argument.name = None; value = second_constraint };
+          ] -> (
+              match
+                parse_name_constraint first_constraint, parse_arguments_constraint second_constraint
+              with
+              | Ok name_constraint, Ok arguments_constraint ->
+                  Ok
+                    (ModelQuery.DecoratorConstraint
+                       { name_constraint; arguments_constraint = Some arguments_constraint })
+              | _ ->
+                  parse_name_constraint second_constraint
+                  >>= fun name_constraint ->
+                  parse_arguments_constraint first_constraint
+                  >>= fun arguments_constraint ->
+                  Ok
+                    (ModelQuery.DecoratorConstraint
+                       { name_constraint; arguments_constraint = Some arguments_constraint }) )
+          | _ ->
+              Error
+                (model_verification_error
+                   ~path
+                   ~location
+                   (InvalidModelQueryClauseArguments { callee; arguments })) )
     | Expression.Call
         {
           Call.callee =
@@ -2371,17 +2446,21 @@ let create_model_from_attribute
 
 
 let create ~resolution ~path ~configuration ~rule_filter source =
+  let open Core.Result in
   let sources_to_keep, sinks_to_keep =
     compute_sources_and_sinks_to_keep ~configuration ~rule_filter
   in
   let signatures_and_queries, errors =
     String.split ~on:'\n' source
     |> Parser.parse
-    |> Source.create
-    |> Source.statements
-    |> List.map ~f:(parse_statement ~resolution ~path ~configuration)
-    |> List.partition_result
-    |> fun (results, errors) -> List.concat results, errors
+    >>| Source.create
+    >>| Source.statements
+    >>| List.map ~f:(parse_statement ~resolution ~path ~configuration)
+    >>| List.partition_result
+    |> function
+    | Ok (results, errors) -> List.concat results, errors
+    | Error { Parser.Error.location; _ } ->
+        [], [model_verification_error ~path ~location ParseError]
   in
   let create_model_or_query = function
     | ParsedSignature parsed_signature ->

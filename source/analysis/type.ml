@@ -554,6 +554,8 @@ module rec Monomial : sig
   }
   [@@deriving eq, sexp, compare, hash, show]
 
+  val create_variable : 'a Record.Variable.RecordUnary.record -> 'a variable
+
   val equal_variable_id : compare_t:('a -> 'a -> int) -> 'a variable -> 'a variable -> bool
 
   val has_variable : compare_t:('a -> 'a -> int) -> 'a t -> variable:'a variable -> bool
@@ -588,6 +590,8 @@ end = struct
   }
   [@@deriving eq, sexp, compare, hash, show]
 
+  let create_variable variable = Variable variable
+
   let equal_variable_id ~compare_t left right =
     let compare = compare_variable compare_t in
     compare left right = 0
@@ -606,14 +610,18 @@ end = struct
     let total_degree_compare =
       Int.compare (sum_degrees left_variables) (sum_degrees right_variables)
     in
+    let compare_variable_and_degree
+        { Monomial.variable = left_variable; degree = left_degree }
+        { Monomial.variable = right_variable; degree = right_degree }
+      =
+      match compare_variable compare_t left_variable right_variable with
+      | result when not (Int.equal result 0) -> result
+      | _ -> Int.compare left_degree right_degree
+    in
     if total_degree_compare <> 0 then
       total_degree_compare
     else
-      let variable_list variables = List.map variables ~f:(fun { variable; _ } -> variable) in
-      List.compare
-        (compare_variable compare_t)
-        (variable_list left_variables)
-        (variable_list right_variables)
+      List.compare compare_variable_and_degree left_variables right_variables
 
 
   let normalize ~compare_t { constant_factor; variables } =
@@ -719,6 +727,8 @@ and Polynomial : sig
   val create_from_variable : 'a Record.Variable.RecordUnary.record -> 'a t
 
   val create_from_int : int -> 'a t
+
+  val normalize : compare_t:('a -> 'a -> int) -> 'a t -> 'a t
 
   val create_from_variables_list
     :  compare_t:('a -> 'a -> int) ->
@@ -971,6 +981,25 @@ end = struct
         ]
 end
 
+module RecordIntExpression : sig
+  type 'a t = private Data of 'a Polynomial.t [@@deriving compare, eq, sexp, show, hash]
+
+  type 'a variant =
+    | NonPolynomial of 'a Polynomial.t
+    | Polynomial of 'a t
+
+  val normalize_variant : compare_t:('a -> 'a -> int) -> 'a Polynomial.t -> 'a variant
+end = struct
+  type 'a t = Data of 'a Polynomial.t [@@deriving compare, eq, sexp, show, hash]
+
+  type 'a variant =
+    | NonPolynomial of 'a Polynomial.t
+    | Polynomial of 'a t
+
+  let normalize_variant ~compare_t polynomial =
+    Polynomial (Data (Polynomial.normalize ~compare_t polynomial))
+end
+
 open Record.Callable
 module CallableParameter = Record.Callable.RecordParameter
 
@@ -1023,11 +1052,22 @@ module T = struct
     | Tuple of t Record.OrderedTypes.record
     | Union of t list
     | Variable of t Record.Variable.RecordUnary.record
-    | IntExpression of t Polynomial.t
+    | IntExpression of t RecordIntExpression.t
   [@@deriving compare, eq, sexp, show, hash]
 end
 
 include T
+
+type type_t = t [@@deriving compare, eq, sexp, show, hash]
+
+module IntExpression : sig
+  val create : type_t Polynomial.t -> type_t
+end = struct
+  let create polynomial =
+    match RecordIntExpression.normalize_variant ~compare_t:[%compare: type_t] polynomial with
+    | RecordIntExpression.NonPolynomial _ -> failwith "impossible"
+    | RecordIntExpression.Polynomial polynomial -> IntExpression polynomial
+end
 
 let _ = show (* shadowed below *)
 
@@ -1038,8 +1078,6 @@ type class_data = {
 }
 [@@deriving sexp]
 
-type type_t = t [@@deriving compare, eq, sexp, show, hash]
-
 let polynomial_to_type polynomial =
   match polynomial with
   | [] -> Literal (Integer 0)
@@ -1047,51 +1085,57 @@ let polynomial_to_type polynomial =
   | [{ Monomial.variables = [{ degree = 1; variable = Variable variable }]; constant_factor = 1 }]
     ->
       Variable variable
-  | _ -> IntExpression polynomial
+  | _ -> IntExpression.create polynomial
 
 
 let solve_less_or_equal_polynomial ~left ~right ~solve ~impossible =
   match left, right with
-  | IntExpression polynomial, _ when Polynomial.is_base_case polynomial ->
+  | IntExpression (Data polynomial), _ when Polynomial.is_base_case polynomial ->
       solve ~left:(polynomial_to_type polynomial) ~right
-  | _, IntExpression polynomial when Polynomial.is_base_case polynomial ->
+  | _, IntExpression (Data polynomial) when Polynomial.is_base_case polynomial ->
       solve ~left ~right:(polynomial_to_type polynomial)
-  | ( IntExpression ({ Monomial.constant_factor; variables = [] } :: polynomial),
+  | ( IntExpression (Data ({ Monomial.constant_factor; variables = [] } :: polynomial)),
       Literal (Integer literal) ) ->
-      solve ~left:(IntExpression polynomial) ~right:(Literal (Integer (literal - constant_factor)))
+      solve
+        ~left:(IntExpression.create polynomial)
+        ~right:(Literal (Integer (literal - constant_factor)))
   | ( Literal (Integer literal),
-      IntExpression ({ Monomial.constant_factor; variables = [] } :: polynomial) ) ->
-      solve ~left:(Literal (Integer (literal - constant_factor))) ~right:(IntExpression polynomial)
-  | IntExpression [{ Monomial.constant_factor; variables }], Literal (Integer literal)
+      IntExpression (Data ({ Monomial.constant_factor; variables = [] } :: polynomial)) ) ->
+      solve
+        ~left:(Literal (Integer (literal - constant_factor)))
+        ~right:(IntExpression.create polynomial)
+  | IntExpression (Data [{ Monomial.constant_factor; variables }]), Literal (Integer literal)
     when constant_factor <> 1 ->
       if literal mod constant_factor <> 0 then
         impossible
       else
         solve
-          ~left:(IntExpression [{ constant_factor = 1; variables }])
+          ~left:(IntExpression.create [{ constant_factor = 1; variables }])
           ~right:(Literal (Integer (literal / constant_factor)))
-  | Literal (Integer literal), IntExpression [{ Monomial.constant_factor; variables }]
+  | Literal (Integer literal), IntExpression (Data [{ Monomial.constant_factor; variables }])
     when constant_factor <> 1 ->
       if literal mod constant_factor <> 0 then
         impossible
       else
         solve
           ~left:(Literal (Integer (literal / constant_factor)))
-          ~right:(IntExpression [{ Monomial.constant_factor = 1; variables }])
-  | ( IntExpression (({ variables = []; _ } as left_monomial) :: left_polynomial_tail),
-      IntExpression ({ variables = []; _ } :: _ as right_polynomial) ) ->
+          ~right:(IntExpression.create [{ Monomial.constant_factor = 1; variables }])
+  | ( IntExpression (Data (({ variables = []; _ } as left_monomial) :: left_polynomial_tail)),
+      IntExpression (Data ({ variables = []; _ } :: _ as right_polynomial)) ) ->
       let right_polynomial =
         Polynomial.subtract right_polynomial [left_monomial] ~compare_t:T.compare
       in
-      solve ~left:(IntExpression left_polynomial_tail) ~right:(IntExpression right_polynomial)
+      solve
+        ~left:(IntExpression.create left_polynomial_tail)
+        ~right:(IntExpression.create right_polynomial)
   | IntExpression _, Primitive _ -> solve ~left:(Primitive "int") ~right
   | _ -> impossible
 
 
 let type_to_int_expression = function
-  | Literal (Integer literal) -> Some (IntExpression (Polynomial.create_from_int literal))
-  | Variable variable -> Some (IntExpression (Polynomial.create_from_variable variable))
-  | IntExpression polynomial -> Some (IntExpression polynomial)
+  | Literal (Integer literal) -> Some (IntExpression.create (Polynomial.create_from_int literal))
+  | Variable variable -> Some (IntExpression.create (Polynomial.create_from_variable variable))
+  | IntExpression (Data polynomial) -> Some (IntExpression.create polynomial)
   | Primitive "int" -> Some (Primitive "int")
   | Any -> Some Any
   | _ -> None
@@ -1101,7 +1145,7 @@ let checked_division left right =
   if List.length right = 0 then
     Bottom
   else
-    IntExpression (Polynomial.divide left right ~compare_t:T.compare)
+    IntExpression.create (Polynomial.divide left right ~compare_t:T.compare)
 
 
 let merge_int_expressions ?(divide = false) left right ~operation =
@@ -1115,11 +1159,11 @@ let merge_int_expressions ?(divide = false) left right ~operation =
   | Primitive "int", _
   | _, Primitive "int" ->
       Primitive "int"
-  | IntExpression left, IntExpression right ->
+  | IntExpression (Data left), IntExpression (Data right) ->
       if divide then
         checked_division left right
       else
-        IntExpression (operation left right)
+        IntExpression.create (operation left right)
   | _ -> Bottom
 
 
@@ -1135,9 +1179,9 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
         replace_variable variable >>| fun result -> monomial_variable, result
     | Monomial.Divide (dividend, quotient) ->
         let replace_polynomial polynomial =
-          match replace_recursive (IntExpression polynomial) with
+          match replace_recursive (IntExpression.create polynomial) with
           | Some replaced -> replaced
-          | None -> IntExpression polynomial
+          | None -> IntExpression.create polynomial
         in
         let replaced_division =
           merge_int_expressions
@@ -1157,7 +1201,7 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
           Polynomial.replace left ~by:right ~variable ~compare_t:T.compare)
     in
     let replaced_expression =
-      List.fold replacements ~init:(IntExpression polynomial) ~f:merge_replace
+      List.fold replacements ~init:(IntExpression.create polynomial) ~f:merge_replace
     in
     Some replaced_expression
 
@@ -1447,9 +1491,9 @@ let rec pp format annotation =
         "typing.Union[%s]"
         (List.map parameters ~f:show |> String.concat ~sep:", ")
   | Variable unary -> Record.Variable.RecordUnary.pp_concise format unary ~pp_type:pp
-  | IntExpression polynomial when Polynomial.is_base_case polynomial ->
+  | IntExpression (Data polynomial) when Polynomial.is_base_case polynomial ->
       pp format (polynomial_to_type polynomial)
-  | IntExpression polynomial ->
+  | IntExpression (Data polynomial) ->
       Format.fprintf
         format
         "pyre_extensions.IntExpression[%s]"
@@ -1534,9 +1578,9 @@ and pp_concise format annotation =
       Format.fprintf format "Optional[%a]" pp_concise parameter
   | Union parameters -> Format.fprintf format "Union[%a]" pp_comma_separated parameters
   | Variable { variable; _ } -> Format.fprintf format "%s" (strip_qualification variable)
-  | IntExpression polynomial when Polynomial.is_base_case polynomial ->
+  | IntExpression (Data polynomial) when Polynomial.is_base_case polynomial ->
       pp_concise format (polynomial_to_type polynomial)
-  | IntExpression polynomial ->
+  | IntExpression (Data polynomial) ->
       Format.fprintf
         format
         "pyre_extensions.IntExpression[%s]"
@@ -1898,9 +1942,9 @@ let rec expression annotation =
         get_item_call "typing.Optional" [expression parameter]
     | Union parameters -> get_item_call "typing.Union" (List.map ~f:expression parameters)
     | Variable { variable; _ } -> create_name variable
-    | IntExpression polynomial when Polynomial.is_base_case polynomial ->
+    | IntExpression (Data polynomial) when Polynomial.is_base_case polynomial ->
         convert_annotation (polynomial_to_type polynomial)
-    | IntExpression polynomial ->
+    | IntExpression (Data polynomial) ->
         let convert_int_expression arguments ~operator =
           Expression.Call
             {
@@ -1938,7 +1982,10 @@ let rec expression annotation =
                            {
                              name = "pyre_extensions.Divide";
                              parameters =
-                               [Single (IntExpression dividend); Single (IntExpression quotient)];
+                               [
+                                 Single (IntExpression.create dividend);
+                                 Single (IntExpression.create quotient);
+                               ];
                            })
                 in
                 if degree = 1 then
@@ -1949,7 +1996,7 @@ let rec expression annotation =
                   in
                   convert_int_expression ~operator:"Multiply" arguments)
           in
-          if List.length variables = 0 then
+          if List.length variables = 1 then
             constant_factor
           else
             convert_int_expression ~operator:"Multiply" (constant_factor :: variables)
@@ -3215,7 +3262,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         let expression =
           try
             let parsed =
-              Parser.parse [value] |> Source.create |> Preprocessing.preprocess |> Source.statements
+              Parser.parse_exn [value]
+              |> Source.create
+              |> Preprocessing.preprocess
+              |> Source.statements
             in
             match parsed with
             | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
@@ -3903,21 +3953,21 @@ end = struct
 
     let rec local_collect = function
       | Variable variable -> [variable]
-      | IntExpression polynomial ->
+      | IntExpression (Data polynomial) ->
           List.concat_map polynomial ~f:(fun { variables; _ } ->
               List.concat_map variables ~f:(fun { variable; _ } ->
                   match variable with
                   | Variable x -> [x]
                   | Divide (dividend, quotient) ->
-                      local_collect (IntExpression dividend)
-                      @ local_collect (IntExpression quotient)))
+                      local_collect (IntExpression.create dividend)
+                      @ local_collect (IntExpression.create quotient)))
           |> List.dedup_and_sort ~compare
       | _ -> []
 
 
     let rec local_replace replacement = function
       | Variable variable -> replacement variable
-      | IntExpression polynomial ->
+      | IntExpression (Data polynomial) ->
           let replace_variable variable =
             match replacement variable with
             | Some replaced_variable ->
