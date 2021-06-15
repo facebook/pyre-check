@@ -13,7 +13,7 @@ import subprocess
 import tempfile
 import traceback
 from pathlib import Path
-from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict
+from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict, Callable
 
 from ... import (
     log,
@@ -44,6 +44,7 @@ class LSPEvent(enum.Enum):
     INITIALIZED = "initialized"
     CONNECTED = "connected"
     NOT_CONNECTED = "not connected"
+    NOT_CONFIGURED = "not configured"
     DISCONNECTED = "disconnected"
     SUSPENDED = "suspended"
 
@@ -560,20 +561,23 @@ class PyreServerStartOptions:
         )
 
 
+PyreServerStartOptionsReader = Callable[[], PyreServerStartOptions]
+
+
 class PyreServerHandler(connection.BackgroundTask):
-    server_start_options: PyreServerStartOptions
+    server_start_options_reader: PyreServerStartOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
     client_output_channel: connection.TextWriter
     server_state: ServerState
 
     def __init__(
         self,
-        server_start_options: PyreServerStartOptions,
+        server_start_options_reader: PyreServerStartOptionsReader,
         client_output_channel: connection.TextWriter,
         server_state: ServerState,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
-        self.server_start_options = server_start_options
+        self.server_start_options_reader = server_start_options_reader
         self.remote_logging = remote_logging
         self.client_output_channel = client_output_channel
         self.server_state = server_state
@@ -775,9 +779,26 @@ class PyreServerHandler(connection.BackgroundTask):
             else:
                 raise RuntimeError("Impossible type for `start_status`")
 
-    async def run(self) -> None:
-        server_start_options = self.server_start_options
+    def read_server_start_options(self) -> PyreServerStartOptions:
         try:
+            LOG.info("Reading Pyre server configurations...")
+            return self.server_start_options_reader()
+        except Exception:
+            _log_lsp_event(
+                remote_logging=self.remote_logging,
+                event=LSPEvent.NOT_CONFIGURED,
+                normals={
+                    "exception": traceback.format_exc(),
+                },
+            )
+            raise
+
+    async def run(self) -> None:
+        # Re-read server start options on every run, to make sure the server
+        # start options are always up-to-date.
+        server_start_options = self.read_server_start_options()
+        try:
+            LOG.info(f"Starting Pyre server from configuration: {server_start_options}")
             await self._run(server_start_options)
         except Exception:
             _log_lsp_event(
@@ -792,7 +813,7 @@ class PyreServerHandler(connection.BackgroundTask):
 
 
 async def run_persistent(
-    server_start_options: PyreServerStartOptions,
+    server_start_options_reader: PyreServerStartOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     stdin, stdout = await connection.create_async_stdin_stdout()
@@ -827,7 +848,7 @@ async def run_persistent(
                 state=initial_server_state,
                 pyre_manager=connection.BackgroundTaskManager(
                     PyreServerHandler(
-                        server_start_options=server_start_options,
+                        server_start_options_reader=server_start_options_reader,
                         remote_logging=remote_logging,
                         client_output_channel=stdout,
                         server_state=initial_server_state,
@@ -851,9 +872,12 @@ def run(
     base_directory: Path,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
+    def read_server_start_options() -> PyreServerStartOptions:
+        return PyreServerStartOptions.read_from(command_argument, base_directory)
+
     return asyncio.get_event_loop().run_until_complete(
         run_persistent(
-            PyreServerStartOptions.read_from(command_argument, base_directory),
+            read_server_start_options,
             remote_logging,
         )
     )

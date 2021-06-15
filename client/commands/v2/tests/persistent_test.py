@@ -522,7 +522,7 @@ class PersistentTest(testslide.TestCase):
 
         bytes_writer = MemoryBytesWriter()
         server_handler = PyreServerHandler(
-            PyreServerStartOptions(
+            server_start_options_reader=lambda: PyreServerStartOptions(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
