@@ -296,7 +296,7 @@ let rec resolve_callees_from_type
     callable_type
   =
   match callable_type with
-  | Type.Callable { Type.Callable.kind = Named name; _ } -> (
+  | Type.Callable { kind = Named name; _ } -> (
       match receiver_type with
       | Some receiver_type ->
           let targets =
