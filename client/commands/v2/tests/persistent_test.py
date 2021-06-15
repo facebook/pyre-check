@@ -30,6 +30,7 @@ from ..persistent import (
     InitializationFailure,
     InitializationExit,
     PyreServer,
+    PyreServerStartOptions,
     ServerState,
     parse_subscription_response,
     SubscriptionResponse,
@@ -521,12 +522,14 @@ class PersistentTest(testslide.TestCase):
 
         bytes_writer = MemoryBytesWriter()
         server_handler = PyreServerHandler(
-            binary_location="/bin/pyre",
-            server_identifier="foo",
-            pyre_arguments=start.Arguments(
-                source_paths=backend_arguments.SimpleSourcePath(),
-                log_path="/log/path",
-                global_root="/global/root",
+            PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    source_paths=backend_arguments.SimpleSourcePath(),
+                    log_path="/log/path",
+                    global_root="/global/root",
+                ),
             ),
             client_output_channel=TextWriter(bytes_writer),
             server_state=server_state,

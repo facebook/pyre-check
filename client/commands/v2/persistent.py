@@ -506,26 +506,74 @@ def type_errors_to_diagnostics(
     return result
 
 
-class PyreServerHandler(connection.BackgroundTask):
-    binary_location: str
+@dataclasses.dataclass(frozen=True)
+class PyreServerStartOptions:
+    binary: str
     server_identifier: str
-    pyre_arguments: start.Arguments
+    start_arguments: start.Arguments
+
+    @staticmethod
+    def read_from(
+        command_argument: command_arguments.CommandArguments, base_directory: Path
+    ) -> "PyreServerStartOptions":
+        configuration = configuration_module.create_configuration(
+            command_argument, base_directory
+        )
+        binary_location = configuration.get_binary_respecting_override()
+        if binary_location is None:
+            raise configuration_module.InvalidConfiguration(
+                "Cannot locate a Pyre binary to run."
+            )
+
+        start_arguments = start.create_server_arguments(
+            configuration,
+            command_arguments.StartArguments(
+                changed_files_path=command_argument.changed_files_path,
+                debug=command_argument.debug,
+                enable_memory_profiling=command_argument.enable_memory_profiling,
+                enable_profiling=command_argument.enable_profiling,
+                load_initial_state_from=command_argument.load_initial_state_from,
+                log_identifier=command_argument.log_identifier,
+                logging_sections=command_argument.logging_sections,
+                no_saved_state=command_argument.no_saved_state,
+                no_watchman=False,
+                noninteractive=command_argument.noninteractive,
+                save_initial_state_to=command_argument.save_initial_state_to,
+                saved_state_project=command_argument.saved_state_project,
+                sequential=command_argument.sequential,
+                show_error_traces=command_argument.show_error_traces,
+                store_type_check_resolution=False,
+                terminal=False,
+                wait_on_initialization=True,
+            ),
+        )
+        if start_arguments.watchman_root is None:
+            raise commands.ClientException(
+                "Cannot locate a `watchman` root. Pyre's server will not function "
+                "properly."
+            )
+
+        return PyreServerStartOptions(
+            binary=binary_location,
+            server_identifier=start.get_server_identifier(configuration),
+            start_arguments=start_arguments,
+        )
+
+
+class PyreServerHandler(connection.BackgroundTask):
+    server_start_options: PyreServerStartOptions
     remote_logging: Optional[backend_arguments.RemoteLogging]
     client_output_channel: connection.TextWriter
     server_state: ServerState
 
     def __init__(
         self,
-        binary_location: str,
-        server_identifier: str,
-        pyre_arguments: start.Arguments,
+        server_start_options: PyreServerStartOptions,
         client_output_channel: connection.TextWriter,
         server_state: ServerState,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
-        self.binary_location = binary_location
-        self.server_identifier = server_identifier
-        self.pyre_arguments = pyre_arguments
+        self.server_start_options = server_start_options
         self.remote_logging = remote_logging
         self.client_output_channel = client_output_channel
         self.server_state = server_state
@@ -625,21 +673,27 @@ class PyreServerHandler(connection.BackgroundTask):
             self.server_state.diagnostics = {}
             await self.show_type_errors_to_client()
 
-    def _auxiliary_logging_info(self) -> Dict[str, Optional[str]]:
+    @staticmethod
+    def _auxiliary_logging_info(
+        server_start_options: PyreServerStartOptions,
+    ) -> Dict[str, Optional[str]]:
+        relative_local_root = server_start_options.start_arguments.relative_local_root
         return {
-            "binary": self.binary_location,
-            "log_path": self.pyre_arguments.log_path,
-            "global_root": self.pyre_arguments.global_root,
+            "binary": server_start_options.binary,
+            "log_path": server_start_options.start_arguments.log_path,
+            "global_root": server_start_options.start_arguments.global_root,
             **(
                 {}
-                if self.pyre_arguments.local_root is None
-                else {"local_root": self.pyre_arguments.relative_local_root}
+                if relative_local_root is None
+                else {"local_root": relative_local_root}
             ),
         }
 
-    async def _run(self) -> None:
+    async def _run(self, server_start_options: PyreServerStartOptions) -> None:
+        server_identifier = server_start_options.server_identifier
+        start_arguments = server_start_options.start_arguments
         socket_path = server_connection.get_default_socket_path(
-            log_directory=Path(self.pyre_arguments.log_path)
+            log_directory=Path(start_arguments.log_path)
         )
         try:
             async with connection.connect_in_text_mode(socket_path) as (
@@ -648,7 +702,7 @@ class PyreServerHandler(connection.BackgroundTask):
             ):
                 await self.log_and_show_message_to_client(
                     "Established connection with existing Pyre server at "
-                    f"`{self.server_identifier}`."
+                    f"`{server_identifier}`."
                 )
                 self.server_state.consecutive_start_failure = 0
                 _log_lsp_event(
@@ -656,22 +710,22 @@ class PyreServerHandler(connection.BackgroundTask):
                     event=LSPEvent.CONNECTED,
                     normals={
                         "connected_to": "already_running_server",
-                        **self._auxiliary_logging_info(),
+                        **self._auxiliary_logging_info(server_start_options),
                     },
                 )
                 await self.subscribe_to_type_error(input_channel, output_channel)
         except connection.ConnectionFailure:
             await self.log_and_show_message_to_client(
-                f"Starting a new Pyre server at `{self.server_identifier}` in "
+                f"Starting a new Pyre server at `{server_identifier}` in "
                 "the background..."
             )
 
             start_status = await _start_pyre_server(
-                self.binary_location, self.pyre_arguments
+                server_start_options.binary, start_arguments
             )
             if isinstance(start_status, StartSuccess):
                 await self.log_and_show_message_to_client(
-                    f"Pyre server at `{self.server_identifier}` has been initialized."
+                    f"Pyre server at `{server_identifier}` has been initialized."
                 )
 
                 async with connection.connect_in_text_mode(socket_path) as (
@@ -684,7 +738,7 @@ class PyreServerHandler(connection.BackgroundTask):
                         event=LSPEvent.CONNECTED,
                         normals={
                             "connected_to": "newly_started_server",
-                            **self._auxiliary_logging_info(),
+                            **self._auxiliary_logging_info(server_start_options),
                         },
                     )
                     await self.subscribe_to_type_error(input_channel, output_channel)
@@ -698,38 +752,39 @@ class PyreServerHandler(connection.BackgroundTask):
                         remote_logging=self.remote_logging,
                         event=LSPEvent.NOT_CONNECTED,
                         normals={
-                            **self._auxiliary_logging_info(),
+                            **self._auxiliary_logging_info(server_start_options),
                             "exception": str(start_status.detail),
                         },
                     )
                     await self.show_message_to_client(
-                        f"Cannot start a new Pyre server at `{self.server_identifier}`.",
+                        f"Cannot start a new Pyre server at `{server_identifier}`.",
                         level=lsp.MessageType.ERROR,
                     )
                 else:
                     await self.show_message_to_client(
-                        f"Pyre server restart at `{self.server_identifier}` has been "
+                        f"Pyre server restart at `{server_identifier}` has been "
                         "failing repeatedly. Disabling The Pyre plugin for now.",
                         level=lsp.MessageType.ERROR,
                     )
                     _log_lsp_event(
                         remote_logging=self.remote_logging,
                         event=LSPEvent.SUSPENDED,
-                        normals=self._auxiliary_logging_info(),
+                        normals=self._auxiliary_logging_info(server_start_options),
                     )
 
             else:
                 raise RuntimeError("Impossible type for `start_status`")
 
     async def run(self) -> None:
+        server_start_options = self.server_start_options
         try:
-            await self._run()
+            await self._run(server_start_options)
         except Exception:
             _log_lsp_event(
                 remote_logging=self.remote_logging,
                 event=LSPEvent.DISCONNECTED,
                 normals={
-                    **self._auxiliary_logging_info(),
+                    **self._auxiliary_logging_info(server_start_options),
                     "exception": traceback.format_exc(),
                 },
             )
@@ -737,9 +792,7 @@ class PyreServerHandler(connection.BackgroundTask):
 
 
 async def run_persistent(
-    binary_location: str,
-    server_identifier: str,
-    pyre_arguments: start.Arguments,
+    server_start_options: PyreServerStartOptions,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     stdin, stdout = await connection.create_async_stdin_stdout()
@@ -774,9 +827,7 @@ async def run_persistent(
                 state=initial_server_state,
                 pyre_manager=connection.BackgroundTaskManager(
                     PyreServerHandler(
-                        binary_location=binary_location,
-                        server_identifier=server_identifier,
-                        pyre_arguments=pyre_arguments,
+                        server_start_options=server_start_options,
                         remote_logging=remote_logging,
                         client_output_channel=stdout,
                         server_state=initial_server_state,
@@ -800,44 +851,9 @@ def run(
     base_directory: Path,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
-    configuration = configuration_module.create_configuration(
-        command_argument, base_directory
-    )
-    start_arguments = command_arguments.StartArguments(
-        changed_files_path=command_argument.changed_files_path,
-        debug=command_argument.debug,
-        enable_memory_profiling=command_argument.enable_memory_profiling,
-        enable_profiling=command_argument.enable_profiling,
-        load_initial_state_from=command_argument.load_initial_state_from,
-        log_identifier=command_argument.log_identifier,
-        logging_sections=command_argument.logging_sections,
-        no_saved_state=command_argument.no_saved_state,
-        no_watchman=False,
-        noninteractive=command_argument.noninteractive,
-        save_initial_state_to=command_argument.save_initial_state_to,
-        saved_state_project=command_argument.saved_state_project,
-        sequential=command_argument.sequential,
-        show_error_traces=command_argument.show_error_traces,
-        store_type_check_resolution=False,
-        terminal=False,
-        wait_on_initialization=True,
-    )
-    binary_location = configuration.get_binary_respecting_override()
-    if binary_location is None:
-        raise configuration_module.InvalidConfiguration(
-            "Cannot locate a Pyre binary to run."
-        )
-
-    server_identifier = start.get_server_identifier(configuration)
-    pyre_arguments = start.create_server_arguments(configuration, start_arguments)
-    if pyre_arguments.watchman_root is None:
-        raise commands.ClientException(
-            "Cannot locate a `watchman` root. Pyre's server will not function "
-            "properly."
-        )
-
     return asyncio.get_event_loop().run_until_complete(
         run_persistent(
-            binary_location, server_identifier, pyre_arguments, remote_logging
+            PyreServerStartOptions.read_from(command_argument, base_directory),
+            remote_logging,
         )
     )
