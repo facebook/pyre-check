@@ -92,6 +92,7 @@ let merge_targets left right =
   | None, None -> None
   | _ ->
       (* TODO(T77637504): We should probably error here. *)
+      Log.warning "Failed to merge some call graph targets.";
       None
 
 
