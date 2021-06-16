@@ -128,11 +128,19 @@ let test_simple context =
   (* should be: no error *)
   assert_uninitialized_errors
     {|
-    from media import something
-    def f(media):
-      return something()
+      from media import something
+      def f(media):
+        return something()
     |}
     ["Unbound name [10]: Name `media` is used but not defined in the current scope."];
+
+  (* should be: no error *)
+  assert_uninitialized_errors
+    {|
+      def f():
+        (x := 0)
+    |}
+    ["Unbound name [10]: Name `x` is used but not defined in the current scope."];
 
   (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
      not be defined. *)
