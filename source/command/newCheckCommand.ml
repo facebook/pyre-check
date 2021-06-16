@@ -8,6 +8,21 @@
 open Core
 module Path = PyrePath
 
+module ExitStatus = struct
+  type t =
+    | Ok
+    | PyreError
+    | BuckInternalError
+    | BuckUserError
+  [@@deriving sexp, compare, hash]
+
+  let exit_code = function
+    | Ok -> 0
+    | PyreError -> 1
+    | BuckInternalError -> 2
+    | BuckUserError -> 3
+end
+
 module CheckConfiguration = struct
   type t = {
     (* Source file discovery *)
@@ -256,40 +271,68 @@ let run_check check_configuration =
           ()
       in
       print_errors errors;
-      Lwt.return 0)
+      Lwt.return ExitStatus.Ok)
+
+
+let on_check_exception = function
+  | Buck.Raw.BuckError { arguments; description; exit_code } ->
+      Log.error
+        "Cannot build the project: %s. To reproduce this error, run `%s`."
+        description
+        (Buck.Raw.ArgumentList.to_buck_command arguments);
+      let exit_status =
+        match exit_code with
+        | Some exit_code when exit_code < 10 -> ExitStatus.BuckUserError
+        | _ -> ExitStatus.BuckInternalError
+      in
+      Lwt.return exit_status
+  | Buck.Builder.JsonError message ->
+      Log.error "Cannot build the project because Buck returns malformed JSON: %s" message;
+      Lwt.return ExitStatus.BuckUserError
+  | Buck.Builder.LinkTreeConstructionError message ->
+      Log.error
+        "Cannot build the project because Pyre encounters a fatal error while constructing a link \
+         tree: %s"
+        message;
+      Lwt.return ExitStatus.BuckUserError
+  | _ as exn ->
+      Log.error "Pyre encountered an internal exception: %s" (Exn.to_string exn);
+      Lwt.return ExitStatus.PyreError
 
 
 let run_check configuration_file =
-  match
-    NewCommandStartup.read_and_parse_json configuration_file ~f:CheckConfiguration.of_yojson
-  with
-  | Result.Error message ->
-      Log.error "%s" message;
-      exit 1
-  | Result.Ok
-      ( {
-          CheckConfiguration.global_root;
-          local_root;
-          debug;
-          additional_logging_sections;
-          remote_logging;
-          profiling_output;
-          memory_profiling_output;
-          _;
-        } as check_configuration ) ->
-      NewCommandStartup.setup_global_states
-        ~global_root
-        ~local_root
-        ~debug
-        ~additional_logging_sections
-        ~remote_logging
-        ~profiling_output
-        ~memory_profiling_output
-        ();
+  let exit_status =
+    match
+      NewCommandStartup.read_and_parse_json configuration_file ~f:CheckConfiguration.of_yojson
+    with
+    | Result.Error message ->
+        Log.error "%s" message;
+        ExitStatus.PyreError
+    | Result.Ok
+        ( {
+            CheckConfiguration.global_root;
+            local_root;
+            debug;
+            additional_logging_sections;
+            remote_logging;
+            profiling_output;
+            memory_profiling_output;
+            _;
+          } as check_configuration ) ->
+        NewCommandStartup.setup_global_states
+          ~global_root
+          ~local_root
+          ~debug
+          ~additional_logging_sections
+          ~remote_logging
+          ~profiling_output
+          ~memory_profiling_output
+          ();
 
-      let exit_code = Lwt_main.run (run_check check_configuration) in
-      Statistics.flush ();
-      exit exit_code
+        Lwt_main.run (Lwt.catch (fun () -> run_check check_configuration) on_check_exception)
+  in
+  Statistics.flush ();
+  exit (ExitStatus.exit_code exit_status)
 
 
 let command =
