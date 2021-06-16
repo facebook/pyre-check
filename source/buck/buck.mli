@@ -284,9 +284,17 @@ end
 
 (** This module contains the low-level interfaces for invoking `buck` as an external tool. *)
 module Raw : sig
+  module ArgumentList : sig
+    type t
+    (** This type represents the argument list for a raw Buck invocation. *)
+
+    val to_buck_command : t -> string
+    (** Reconstruct the shell command Pyre uses to invoke Buck from an {!ArgumentList.t}. *)
+  end
+
   exception
     BuckError of {
-      arguments: string list;
+      arguments: ArgumentList.t;
       description: string;
       exit_code: int option;
     }

@@ -5,9 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module ArgumentList = struct
+  type t = string list
+
+  let to_buck_command arguments =
+    let open Core in
+    let escaped_arguments =
+      let quote argument =
+        if String.contains argument ' ' then
+          (* This makes sure that the buck command gets properly escaped by the shell. *)
+          Format.sprintf "'%s'" argument
+        else
+          argument
+      in
+      List.map arguments ~f:quote
+    in
+    String.concat ~sep:" " ("buck" :: escaped_arguments)
+end
+
 exception
   BuckError of {
-    arguments: string list;
+    arguments: ArgumentList.t;
     description: string;
     exit_code: int option;
   }

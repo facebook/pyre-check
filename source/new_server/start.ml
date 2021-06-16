@@ -659,20 +659,10 @@ let start_server_and_wait ?event_channel server_configuration =
               | _ -> ServerEvent.ErrorKind.BuckInternal
             in
             ( kind,
-              let arguments =
-                let quote argument =
-                  if String.contains argument ' ' then
-                    (* This makes sure that the buck command gets properly escaped by the shell. *)
-                    Format.sprintf "'%s'" argument
-                  else
-                    argument
-                in
-                List.map arguments ~f:quote
-              in
               Format.sprintf
                 "Cannot build the project: %s. To reproduce this error, run `%s`."
                 description
-                (String.concat ~sep:" " ("buck" :: arguments)) )
+                (Buck.Raw.ArgumentList.to_buck_command arguments) )
         | Buck.Builder.JsonError message ->
             ( ServerEvent.ErrorKind.Pyre,
               Format.sprintf
