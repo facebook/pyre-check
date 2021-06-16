@@ -21,21 +21,10 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
   Log.info "Running inference...";
   let timer = Timer.start () in
   let ast_environment = GlobalResolution.ast_environment global_resolution in
-  let should_infer ~configuration:{ Configuration.Analysis.ignore_infer; _ } source_path =
-    try
-      let path = Ast.SourcePath.full_path ~configuration source_path in
-      let path_equals ~path ignore_path = Path.equal path ignore_path in
-      not (List.exists ignore_infer ~f:(path_equals ~path))
-    with
-    | Unix.Unix_error (Unix.ENOENT, _, _) -> false
-  in
   let map _ qualifiers =
-    let analyze_source (errors, number_files) ({ Ast.Source.source_path; _ } as source) =
-      if not (should_infer ~configuration source_path) then
-        errors, number_files
-      else
-        let new_errors = Inference.run ~configuration ~global_resolution ~source in
-        List.append new_errors errors, number_files + 1
+    let analyze_source (errors, number_files) source =
+      let new_errors = Inference.run ~configuration ~global_resolution ~source in
+      List.append new_errors errors, number_files + 1
     in
     List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
     |> List.fold ~init:([], 0) ~f:analyze_source

@@ -19,12 +19,12 @@ let setup_environment scratch_project =
   global_environment
 
 
-let static_analysis_configuration { ScratchProject.configuration; _ } =
+let static_analysis_configuration ~transform_configuration { ScratchProject.configuration; _ } =
   {
     Configuration.StaticAnalysis.result_json_path = None;
     dump_call_graph = false;
     verify_models = false;
-    configuration;
+    configuration = transform_configuration configuration;
     rule_filter = None;
     find_missing_flows = None;
     dump_model_query_results = false;
@@ -36,7 +36,7 @@ let static_analysis_configuration { ScratchProject.configuration; _ } =
 
 let analysis = TypeInference.Analysis.abstract_kind
 
-let fixpoint_result ~context ~sources ~callable_names =
+let fixpoint_result ~context ~sources ~callable_names ~transform_configuration =
   let callables =
     let callable_of_string name : Callable.t =
       name |> Reference.create |> Callable.create_function
@@ -49,7 +49,9 @@ let fixpoint_result ~context ~sources ~callable_names =
     setup_environment scratch_project |> TypeEnvironment.create |> TypeEnvironment.read_only
   in
   let scheduler = Test.mock_scheduler () in
-  let static_analysis_configuration = static_analysis_configuration scratch_project in
+  let static_analysis_configuration =
+    static_analysis_configuration ~transform_configuration scratch_project
+  in
   Analysis.initialize_configuration ~static_analysis_configuration analysis;
   Analysis.record_initial_models ~functions:callables ~stubs:[] Callable.Map.empty;
   let fixpoint_iterations =
@@ -86,8 +88,15 @@ let assert_json_equal ~context ~expected result =
     result
 
 
-let assert_fixpoint_result ~context ~sources ~callable_names ~expected =
-  let result = fixpoint_result ~context ~sources ~callable_names in
+let assert_fixpoint_result
+    ~context
+    ~sources
+    ~callable_names
+    ~expected
+    ?(transform_configuration = fun configuration -> configuration)
+    ()
+  =
+  let result = fixpoint_result ~context ~sources ~callable_names ~transform_configuration in
   assert_equal ~ctxt:context 1 (List.length result) ~msg:"Expected length-1 list for result";
   assert_json_equal ~context (List.hd_exn result) ~expected
 
@@ -148,6 +157,7 @@ let type_inference_serialization_test context =
           ]
         }
     |}
+    ()
 
 
 let type_inference_attribute_widen_test context =
@@ -180,6 +190,51 @@ let type_inference_attribute_widen_test context =
           "defines": []
         }
       |}
+    ()
+
+
+let type_inference_ignore_infer_test context =
+  let assert_fixpoint_result =
+    assert_fixpoint_result
+      ~context
+      ~sources:["test.py", {|
+          x = 1 + 1
+          |}]
+      ~callable_names:["test.$toplevel"]
+  in
+  assert_fixpoint_result
+    ~expected:
+      {|
+        {
+          "globals": [
+            {
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+              "annotation": "int"
+            }
+          ],
+          "attributes": [],
+          "defines": []
+        }
+      |}
+    ();
+  assert_fixpoint_result
+    ~transform_configuration:(fun configuration ->
+      {
+        configuration with
+        Configuration.Analysis.ignore_infer =
+          [PyrePath.create_relative ~root:configuration.local_root ~relative:"test.py"];
+      })
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "defines": []
+        }
+      |}
+    ();
+  ()
 
 
 let () =
@@ -187,5 +242,6 @@ let () =
   >::: [
          "serialization" >:: type_inference_serialization_test;
          "attribute_widen" >:: type_inference_attribute_widen_test;
+         "ignore_infer" >:: type_inference_ignore_infer_test;
        ]
   |> Test.run

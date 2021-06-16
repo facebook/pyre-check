@@ -27,17 +27,20 @@ module Analyzer = struct
 
 
   let analyze ~environment ~callable:_ ~qualifier ~define ~existing:_ =
+    let configuration = TypeInferenceSharedMemory.get_configuration () in
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     let ast_environment = GlobalResolution.ast_environment global_resolution in
     let maybe_source = AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier in
-    let configuration = TypeInferenceSharedMemory.get_configuration () in
     let lookup = TypeInferenceData.lookup ~configuration ~global_resolution in
     let result =
       let errors =
         match maybe_source with
         | None -> []
-        | Some source ->
-            Inference.infer_for_define ~configuration ~global_resolution ~source ~define
+        | Some ({ Ast.Source.source_path; _ } as source) ->
+            if Inference.skip_infer ~configuration source_path then
+              []
+            else
+              Inference.infer_for_define ~configuration ~global_resolution ~source ~define
       in
       List.fold
         ~init:

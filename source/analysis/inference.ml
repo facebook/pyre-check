@@ -985,17 +985,24 @@ let infer_for_define
         []
 
 
-let run
-    ~configuration
-    ~global_resolution
-    ~source:({ Source.source_path = { relative; is_stub; _ }; _ } as source)
+let skip_infer
+    ~configuration:({ Configuration.Analysis.ignore_infer; _ } as configuration)
+    source_path
   =
-  Log.debug "Checking %s..." relative;
-  let check define = infer_for_define ~configuration ~global_resolution ~source ~define in
-  if is_stub then
+  try
+    let path = Ast.SourcePath.full_path ~configuration source_path in
+    source_path.is_stub or List.exists ignore_infer ~f:(Path.equal path)
+  with
+  | Unix.Unix_error (Unix.ENOENT, _, _) -> true
+
+
+let run ~configuration ~global_resolution ~source:({ Source.source_path; _ } as source) =
+  if skip_infer ~configuration source_path then
     []
-  else
+  else (
+    Log.debug "Checking %s..." source_path.relative;
+    let check define = infer_for_define ~configuration ~global_resolution ~source ~define in
     let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
     List.concat results
     |> Error.join_at_source ~resolution:global_resolution
-    |> List.sort ~compare:Error.compare
+    |> List.sort ~compare:Error.compare )
