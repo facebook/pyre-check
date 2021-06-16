@@ -102,7 +102,19 @@ let handle_request ~state request =
         ~server_configuration
         "Restarting Pyre server due to unexpected crash"
     in
-    Statistics.log_exception exn ~fatal:true ~origin:"server";
+    let origin =
+      match exn with
+      | Buck.Raw.BuckError _
+      | Buck.Builder.JsonError _
+      | Buck.Builder.LinkTreeConstructionError _ ->
+          "buck"
+      | Watchman.ConnectionError _
+      | Watchman.SubscriptionError _
+      | Watchman.QueryError _ ->
+          "watchman"
+      | _ -> "server"
+    in
+    Statistics.log_exception exn ~fatal:true ~origin;
     Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state ()
   in
   Lwt.catch
