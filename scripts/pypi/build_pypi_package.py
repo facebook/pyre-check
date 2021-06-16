@@ -173,7 +173,7 @@ def _sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
 
 
 def _patch_version(version: str, build_root: Path) -> None:
-    file_contents = "__version__ = {}".format(version)
+    file_contents = f'__version__ = "{version}"'
     (build_root / MODULE_NAME / "client/version.py").write_text(file_contents)
 
 
@@ -292,7 +292,6 @@ def build_pypi_package(
     with tempfile.TemporaryDirectory() as build_root:
         build_path = Path(build_root)
         _add_init_files(build_path, version)
-        _patch_version(version, build_path)
         _create_setup_py(pyre_directory, version, build_path, nightly)
 
         _sync_python_files(pyre_directory, build_path)
@@ -303,6 +302,8 @@ def build_pypi_package(
         _sync_binary(pyre_directory, build_path)
         _strip_binary(build_path)
         _sync_documentation_files(pyre_directory, build_path)
+
+        _patch_version(version, build_path)
 
         # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
         _run_setup_command(pyre_directory, build_root, version, "sdist", nightly)
