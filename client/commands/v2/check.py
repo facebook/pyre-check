@@ -248,6 +248,8 @@ def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode
             )
             return_code = result.returncode
 
+            # Interpretation of the return code needs to be kept in sync with
+            # `command/newCheckCommand.ml`.
             if return_code == 0:
                 type_errors = parse_type_error_response(result.stdout)
                 incremental.display_type_errors(type_errors, output=output)
@@ -256,9 +258,15 @@ def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode
                     if len(type_errors) == 0
                     else commands.ExitCode.FOUND_ERRORS
                 )
+            elif return_code == 2:
+                LOG.error("Pyre encountered a failure within buck.")
+                return commands.ExitCode.BUCK_INTERNAL_ERROR
+            elif return_code == 3:
+                LOG.error("Pyre encountered an error when building the buck targets.")
+                return commands.ExitCode.BUCK_USER_ERROR
             else:
                 LOG.error(
-                    f"Check command exited with non-zero return code: {return_code}"
+                    f"Check command exited with non-zero return code: {return_code}."
                 )
                 return commands.ExitCode.FAILURE
 
