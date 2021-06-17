@@ -301,6 +301,7 @@ class ModuleAnnotations:
                     self._class_stub(classname, annotations)
                     for classname, annotations in self.classes.items()
                 ),
+                "",
             ]
         )
 
@@ -384,13 +385,19 @@ class Infer(Reporting):
             analysis_directory=analysis_directory,
         )
         self._print_only = print_only
-        self._type_directory = Path(
-            os.path.join(self._configuration.log_directory, "types")
-        )
         self._in_place_paths: Final[Optional[List[str]]] = in_place_paths
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
         self._read_stdin = read_stdin
+        self._root_type_directory: Path = Path(
+            os.path.join(self._configuration.log_directory, "types")
+        )
+        self._type_directory: Path = (
+            self._root_type_directory
+            if self._configuration.relative_local_root is None
+            else self._root_type_directory
+            / none_throws(self._configuration.relative_local_root)
+        )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -481,7 +488,7 @@ class Infer(Reporting):
     def _annotate_in_place(self, stub_paths: Sequence[Path] | None = None) -> None:
         root = self._original_directory
         formatter = self._configuration.formatter
-        type_directory = self._type_directory
+        root_type_directory = self._root_type_directory
         debug_infer = self._debug_infer
         number_workers = self._configuration.get_number_of_workers()
         in_place_paths = none_throws(
@@ -490,8 +497,8 @@ class Infer(Reporting):
         )
 
         tasks: List[AnnotateModuleInPlace] = []
-        for stub_path in stub_paths or type_directory.rglob("*.pyi"):
-            relative_code_path = stub_path.relative_to(type_directory).with_suffix(
+        for stub_path in stub_paths or root_type_directory.rglob("*.pyi"):
+            relative_code_path = stub_path.relative_to(root_type_directory).with_suffix(
                 ".py"
             )
 
