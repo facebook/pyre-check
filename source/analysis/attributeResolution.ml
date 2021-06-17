@@ -2519,10 +2519,10 @@ class base class_metadata_environment dependency =
             in
             List.fold ~init:(Type.Bottom, Type.Bottom) ~f:join_entry entries
           in
-          let key = if Type.is_concrete key_annotation then key_annotation else Type.Any in
-          let value = if Type.is_concrete value_annotation then value_annotation else Type.Any in
-          Type.dictionary ~key ~value
-      | Dictionary _ -> Type.dictionary ~key:Type.Any ~value:Type.Any
+          if Type.is_concrete key_annotation && Type.is_concrete value_annotation then
+            Type.dictionary ~key:key_annotation ~value:value_annotation
+          else
+            Type.Any
       | False -> Type.bool
       | Float _ -> Type.float
       | Integer _ -> Type.integer
@@ -2533,7 +2533,7 @@ class base class_metadata_environment dependency =
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
-          if Type.is_concrete parameter then Type.list parameter else Type.list Type.Any
+          if Type.is_concrete parameter then Type.list parameter else Type.Any
       | Set elements ->
           let parameter =
             let join sofar element =
@@ -2541,7 +2541,7 @@ class base class_metadata_environment dependency =
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
-          if Type.is_concrete parameter then Type.set parameter else Type.set Type.Any
+          if Type.is_concrete parameter then Type.set parameter else Type.Any
       | String { StringLiteral.kind; _ } -> (
           match kind with
           | StringLiteral.Bytes -> Type.bytes
@@ -2765,7 +2765,7 @@ class base class_metadata_environment dependency =
                              ~error:(AnnotatedAttribute.InvalidDecorator { index; reason = error })
                     | expression ->
                         let resolved = self#resolve_literal ~assumptions expression in
-                        if Type.is_untyped resolved || Type.contains_unknown resolved then
+                        if Type.is_partially_typed resolved then
                           make_error error
                         else
                           Ok (make_argument resolved)
