@@ -2860,9 +2860,7 @@ module AccessCollector = struct
         let collected = from_expression collected test in
         from_expression collected alternative
     | UnaryOperator { UnaryOperator.operand; _ } -> from_expression collected operand
-    | WalrusOperator { WalrusOperator.target; value } ->
-        let collected = from_expression collected target in
-        from_expression collected value
+    | WalrusOperator { WalrusOperator.value; _ } -> from_expression collected value
     | Yield yield -> Option.value_map yield ~default:collected ~f:(from_expression collected)
     | String _
     | Complex _
