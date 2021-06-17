@@ -5036,6 +5036,12 @@ let test_populate_unbound_names _ =
     ~expected:[!&"foo", []];
   assert_unbound_names
     {|
+      def foo() -> None:
+        (x := derp)
+    |}
+    ~expected:[!&"foo", ["derp", location (3, 8) (3, 12)]];
+  assert_unbound_names
+    {|
       import derp
       def foo() -> None:
         derp
