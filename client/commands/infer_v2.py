@@ -25,8 +25,8 @@ from typing_extensions import TypeAlias
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from .check import Check
 from .infer import dequalify_and_fix_pathlike, split_imports, AnnotateModuleInPlace
+from .reporting import Reporting
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -356,7 +356,7 @@ def _create_module_annotations(
     ]
 
 
-class Infer(Check):
+class Infer(Reporting):
     NAME = "infer"
 
     def __init__(

@@ -521,15 +521,16 @@ class InferV2Test(unittest.TestCase):
         arguments = mock_arguments()
         configuration = self.mock_configuration()
         configuration.get_typeshed.return_value = "stub"
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
 
         with patch.object(commands.Command, "_call_client") as call_client:
             command = Infer(
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
+                analysis_directory=analysis_directory,
                 print_only=True,
                 in_place_paths=None,
                 annotate_from_existing_stubs=False,
@@ -553,8 +554,6 @@ class InferV2Test(unittest.TestCase):
                     "0",
                     "-shared-memory-heap-size",
                     "1073741824",
-                    "-workers",
-                    "5",
                     "-use-v2",
                 ],
             )
@@ -562,16 +561,16 @@ class InferV2Test(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Infer.NAME)
 
         configuration.get_existent_ignore_infer_paths = lambda: ["path1.py", "path2.py"]
+        # pyre-ignore[8]
+        analysis_directory.get_filter_roots = lambda: {"filter_root_1", "filter_root_2"}
         with patch.object(commands.Command, "_call_client") as call_client:
             command = Infer(
                 arguments,
                 original_directory,
                 configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
+                analysis_directory=analysis_directory,
                 print_only=True,
-                in_place_paths=None,
+                in_place_paths=[],
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
@@ -593,9 +592,9 @@ class InferV2Test(unittest.TestCase):
                     "0",
                     "-shared-memory-heap-size",
                     "1073741824",
-                    "-workers",
-                    "5",
                     "-use-v2",
+                    "-filter-directories",
+                    "filter_root_1;filter_root_2",
                     "-ignore-infer",
                     "path1.py;path2.py",
                 ],
@@ -609,9 +608,7 @@ class InferV2Test(unittest.TestCase):
                     arguments,
                     original_directory,
                     configuration=configuration,
-                    analysis_directory=AnalysisDirectory(
-                        configuration_module.SimpleSearchPathElement(".")
-                    ),
+                    analysis_directory=analysis_directory,
                     print_only=True,
                     in_place_paths=None,
                     annotate_from_existing_stubs=False,
