@@ -11,5 +11,6 @@
   ],
   "exclude": [
     ".*/integration_test/.*"
-  ]
+  ],
+  "use_command_v2": true
 }
