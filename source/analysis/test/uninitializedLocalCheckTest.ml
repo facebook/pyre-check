@@ -126,12 +126,10 @@ let test_simple context =
     [];
 
   (* should be: no error *)
-  assert_uninitialized_errors
-    {|
+  assert_uninitialized_errors {|
       def f(x: str) -> None:
         assert True, x
-    |}
-    ["Unbound name [10]: Name `x` is used but not defined in the current scope."];
+    |} [];
 
   (* should be: no error *)
   assert_uninitialized_errors

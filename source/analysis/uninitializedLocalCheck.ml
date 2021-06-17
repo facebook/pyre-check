@@ -71,6 +71,7 @@ module State (Context : Context) = struct
     signature.parameters
     |> Scope.Binding.of_parameters []
     |> List.map ~f:Scope.Binding.name
+    |> List.map ~f:Identifier.sanitized
     |> InitializedVariables.of_list
 
 
@@ -113,7 +114,7 @@ module State (Context : Context) = struct
 
   let forward ~key state ~statement =
     let is_uninitialized { Node.value = identifier; _ } =
-      not (InitializedVariables.mem state identifier)
+      not (InitializedVariables.mem state (Identifier.sanitized identifier))
     in
     let uninitialized_usage =
       extract_reads_statement statement |> List.filter ~f:is_uninitialized
@@ -121,6 +122,7 @@ module State (Context : Context) = struct
     Hashtbl.set Context.uninitialized_usage ~key ~data:uninitialized_usage;
     Scope.Binding.of_statement [] statement
     |> List.map ~f:Scope.Binding.name
+    |> List.map ~f:Identifier.sanitized
     |> InitializedVariables.of_list
     |> InitializedVariables.union state
 
