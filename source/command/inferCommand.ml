@@ -10,6 +10,13 @@ open Analysis
 open Pyre
 open Service
 
+let argument_to_paths argument =
+  argument
+  >>| String.split_on_chars ~on:[';']
+  >>| List.map ~f:String.strip
+  >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
+
+
 let run_infer_v2
     ignore_infer
     _verbose
@@ -43,28 +50,19 @@ let run_infer_v2
     ()
   =
   try
-    Log.GlobalState.initialize ~debug ~sections;
-    if Option.is_some ignore_infer then failwith "-ignore-infer not yet implemented for infer v2";
     let source_path = Option.value source_path ~default:[local_root] in
     let local_root = SearchPath.create local_root |> SearchPath.get_root in
+    Log.GlobalState.initialize ~debug ~sections;
     Statistics.GlobalState.initialize
       ~log_identifier
       ?logger
       ~project_name:(Path.last local_root)
+      ~project_root
       ();
     Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
-    let filter_directories =
-      filter_directories
-      >>| String.split_on_chars ~on:[';']
-      >>| List.map ~f:String.strip
-      >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
-    in
-    let ignore_all_errors =
-      ignore_all_errors
-      >>| String.split_on_chars ~on:[';']
-      >>| List.map ~f:String.strip
-      >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
-    in
+    let ignore_infer = argument_to_paths ignore_infer in
+    let filter_directories = argument_to_paths filter_directories in
+    let ignore_all_errors = argument_to_paths ignore_all_errors in
     let configuration =
       Configuration.Analysis.create
         ?expected_version
@@ -81,6 +79,7 @@ let run_infer_v2
         ~excludes
         ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
         ?log_directory
+        ?ignore_infer
         ?python_major_version
         ?python_minor_version
         ?python_micro_version
@@ -209,12 +208,6 @@ let run_infer_v1
       ~project_root
       ();
     Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
-    let argument_to_paths argument =
-      argument
-      >>| String.split_on_chars ~on:[';']
-      >>| List.map ~f:String.strip
-      >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
-    in
     let ignore_infer = argument_to_paths ignore_infer in
     let filter_directories = argument_to_paths filter_directories in
     let ignore_all_errors = argument_to_paths ignore_all_errors in
