@@ -50,6 +50,68 @@ include Taint.Result.Register (struct
     query_data: model_query_data option;
   }
 
+  let generate_models_from_queries
+      ~scheduler
+      ~static_analysis_configuration:
+        { Configuration.StaticAnalysis.rule_filter; find_missing_flows; _ }
+      ~environment
+      ~functions
+      ~stubs
+      ~initialize_result:{ Interprocedural.Result.initial_models = models; skip_overrides }
+      { queries; taint_configuration }
+    =
+    let resolution =
+      Analysis.TypeCheck.resolution
+        (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module Analysis.TypeCheck.DummyContext)
+    in
+    try
+      let models =
+        let callables =
+          List.rev_append stubs functions
+          |> List.filter_map ~f:(function
+                 | `Function _ as callable -> Some (callable :> Callable.real_target)
+                 | `Method _ as callable -> Some (callable :> Callable.real_target)
+                 | _ -> None)
+        in
+        TaintModelQuery.ModelQuery.apply_all_rules
+          ~resolution
+          ~scheduler
+          ~configuration:taint_configuration
+          ~rule_filter
+          ~rules:queries
+          ~callables
+          ~environment
+          ~models
+      in
+      let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
+      let add_obscure_sinks models =
+        let add_obscure_sink models callable =
+          let model =
+            Callable.Map.find models callable
+            |> Option.value ~default:Taint.Result.empty_model
+            |> Model.add_obscure_sink ~resolution ~call_target:callable
+          in
+          Callable.Map.set models ~key:callable ~data:model
+        in
+        List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
+        |> List.fold ~init:models ~f:add_obscure_sink
+      in
+      let find_missing_flows =
+        find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
+      in
+      let models =
+        match find_missing_flows with
+        | Some Obscure -> models |> remove_sinks |> add_obscure_sinks
+        | Some Type -> models |> remove_sinks
+        | None -> models
+      in
+      { Interprocedural.Result.initial_models = models; skip_overrides }
+    with
+    | exception_ -> log_and_reraise_taint_model_exception exception_
+
+
   let parse_models_and_queries_from_sources
       ~scheduler
       ~static_analysis_configuration:
@@ -57,12 +119,12 @@ include Taint.Result.Register (struct
             Configuration.StaticAnalysis.verify_models;
             configuration = { taint_model_paths; _ };
             rule_filter;
+            find_missing_flows;
             maximum_trace_length;
             maximum_tito_depth;
             _;
           } as static_analysis_configuration )
       ~environment
-      ~find_missing_flows
     =
     let resolution =
       Analysis.TypeCheck.resolution
@@ -74,6 +136,9 @@ include Taint.Result.Register (struct
       try
         let dump_model_query_results_path =
           Configuration.StaticAnalysis.dump_model_query_results_path static_analysis_configuration
+        in
+        let find_missing_flows =
+          find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
         in
         let taint_configuration =
           TaintConfiguration.create
@@ -205,80 +270,18 @@ include Taint.Result.Register (struct
     | _ -> add_models_and_queries_from_sources initial_models
 
 
-  let initialize_models
-      ~scheduler
-      ~static_analysis_configuration:
-        ( { Configuration.StaticAnalysis.rule_filter; find_missing_flows; _ } as
-        static_analysis_configuration )
-      ~environment
-      ~functions
-      ~stubs
-    =
-    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
-    let resolution =
-      Analysis.TypeCheck.resolution
-        global_resolution
-        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-        (module Analysis.TypeCheck.DummyContext)
-    in
-    let find_missing_flows =
-      find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-    in
-    let generate_models_from_queries
-        ~initialize_result:{ Interprocedural.Result.initial_models = models; skip_overrides }
-        { queries; taint_configuration }
-      =
-      try
-        let models =
-          let callables =
-            List.rev_append stubs functions
-            |> List.filter_map ~f:(function
-                   | `Function _ as callable -> Some (callable :> Callable.real_target)
-                   | `Method _ as callable -> Some (callable :> Callable.real_target)
-                   | _ -> None)
-          in
-          TaintModelQuery.ModelQuery.apply_all_rules
-            ~resolution
-            ~scheduler
-            ~configuration:taint_configuration
-            ~rule_filter
-            ~rules:queries
-            ~callables
-            ~environment
-            ~models
-        in
-        let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
-        let add_obscure_sinks models =
-          let add_obscure_sink models callable =
-            let model =
-              Callable.Map.find models callable
-              |> Option.value ~default:Taint.Result.empty_model
-              |> Model.add_obscure_sink ~resolution ~call_target:callable
-            in
-            Callable.Map.set models ~key:callable ~data:model
-          in
-          List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
-          |> List.fold ~init:models ~f:add_obscure_sink
-        in
-        let models =
-          match find_missing_flows with
-          | Some Obscure -> models |> remove_sinks |> add_obscure_sinks
-          | Some Type -> models |> remove_sinks
-          | None -> models
-        in
-        { Interprocedural.Result.initial_models = models; skip_overrides }
-      with
-      | exception_ -> log_and_reraise_taint_model_exception exception_
-    in
+  let initialize_models ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
     let { initialize_result; query_data } =
-      parse_models_and_queries_from_sources
-        ~scheduler
-        ~static_analysis_configuration
-        ~environment
-        ~find_missing_flows
+      parse_models_and_queries_from_sources ~scheduler ~static_analysis_configuration ~environment
     in
     query_data
-    >>| generate_models_from_queries ~initialize_result
+    >>| generate_models_from_queries
+          ~scheduler
+          ~static_analysis_configuration
+          ~environment
+          ~functions
+          ~stubs
+          ~initialize_result
     |> Option.value ~default:initialize_result
 
 
