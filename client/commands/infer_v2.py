@@ -463,6 +463,8 @@ class Infer(Reporting):
                 infer_output=infer_output, module_annotations=module_annotations
             )
         self._write_stubs(module_annotations=module_annotations)
+        if self._in_place:
+            self._annotate_in_place()
 
     def _load_infer_output(self) -> str:
         if self._read_stdin:
