@@ -368,6 +368,7 @@ class Infer(Reporting):
         analysis_directory: AnalysisDirectory | None = None,
         print_only: bool,
         in_place: bool,
+        paths_to_modify: set[Path],
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
         read_stdin: bool,
@@ -385,6 +386,7 @@ class Infer(Reporting):
         )
         self._print_only = print_only
         self._in_place = in_place
+        self._paths_to_modify = paths_to_modify
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
         self._read_stdin = read_stdin
@@ -513,13 +515,14 @@ class Infer(Reporting):
             code_path = stub_path.with_suffix(".py")
             full_code_path = project_root / code_path
 
-            tasks.append(
-                AnnotateModuleInPlace(
-                    full_stub_path=str(full_stub_path),
-                    full_code_path=str(full_code_path),
-                    debug_infer=debug_infer,
+            if self._should_annotate_in_place(full_code_path):
+                tasks.append(
+                    AnnotateModuleInPlace(
+                        full_stub_path=str(full_stub_path),
+                        full_code_path=str(full_code_path),
+                        debug_infer=debug_infer,
+                    )
                 )
-            )
 
         with multiprocessing.Pool(number_workers) as pool:
             for _ in pool.imap_unordered(AnnotateModuleInPlace.run_task, tasks):
@@ -530,6 +533,14 @@ class Infer(Reporting):
                 formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             self._suppress_errors()
+
+    def _should_annotate_in_place(self, full_code_path: Path) -> bool:
+        if self._paths_to_modify == set():
+            return True
+        return any(
+            path in self._paths_to_modify
+            for path in (full_code_path, *full_code_path.parents)
+        )
 
     def _suppress_errors(self) -> None:
         result = self._call_client(command="check")

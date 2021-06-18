@@ -839,6 +839,11 @@ def infer(
 
 @pyre.command()
 @click.pass_context
+@click.argument(
+    "paths_to_modify",
+    type=filesystem.file_or_directory_exists,
+    nargs=-1,
+)
 @click.option(
     "-p",
     "--print-only",
@@ -876,6 +881,7 @@ def infer(
 )
 def infer_v2(
     context: click.Context,
+    paths_to_modify: Iterable[str],
     print_only: bool,
     in_place: bool,
     annotate_from_existing_stubs: bool,
@@ -884,6 +890,12 @@ def infer_v2(
 ) -> int:
     """
     Run the (under construction) interprocedural version of pyre infer.
+
+    The optional PATHS_TO_MODIFY argument is a list of directory or file
+    paths to include when annotating in-place.
+
+    If empty, then we'll annotate all relevant modules in-place, and it is
+    ignored unless the `--in-place` flag is set.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
@@ -894,6 +906,7 @@ def infer_v2(
             configuration=configuration,
             print_only=print_only,
             in_place=in_place,
+            paths_to_modify={Path(path) for path in paths_to_modify},
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
             read_stdin=read_stdin,

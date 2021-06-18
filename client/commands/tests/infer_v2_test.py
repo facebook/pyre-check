@@ -500,6 +500,59 @@ class InferV2Test(unittest.TestCase):
         configuration.get_existent_ignore_infer_paths = lambda: []
         return configuration
 
+    def test_infer_v2_should_annotate_in_place(self) -> None:
+        def check_should_annotate_in_place(
+            paths_to_modify: set[Path],
+            path: Path,
+            expected: bool,
+        ) -> None:
+            original_directory = "/original/directory"
+            arguments = mock_arguments()
+            configuration = self.mock_configuration()
+            configuration.get_typeshed.return_value = "stub"
+            analysis_directory = AnalysisDirectory(
+                configuration_module.SimpleSearchPathElement(".")
+            )
+            infer = Infer(
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
+                print_only=True,
+                in_place=False,
+                paths_to_modify=paths_to_modify,
+                annotate_from_existing_stubs=False,
+                debug_infer=False,
+                read_stdin=False,
+            )
+            self.assertEqual(expected, infer._should_annotate_in_place(path))
+
+        check_should_annotate_in_place(
+            paths_to_modify=set(),
+            path=Path("any/path/will/do"),
+            expected=True,
+        )
+        check_should_annotate_in_place(
+            paths_to_modify={Path("some/directory")},
+            path=Path("some/directory/inner/file.py"),
+            expected=True,
+        )
+        check_should_annotate_in_place(
+            paths_to_modify={Path("some/directory")},
+            path=Path("other/directory/inner/file.py"),
+            expected=False,
+        )
+        check_should_annotate_in_place(
+            paths_to_modify={Path("some/file.py")},
+            path=Path("some/file.py"),
+            expected=True,
+        )
+        check_should_annotate_in_place(
+            paths_to_modify={Path("some/file.py")},
+            path=Path("some/other_file.py"),
+            expected=False,
+        )
+
     @patch(
         f"{find_directories.__name__}.find_global_and_local_root",
         return_value=find_directories.FoundRoot(Path(".")),
@@ -533,6 +586,7 @@ class InferV2Test(unittest.TestCase):
                 analysis_directory=analysis_directory,
                 print_only=True,
                 in_place=False,
+                paths_to_modify=set(),
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
@@ -571,6 +625,7 @@ class InferV2Test(unittest.TestCase):
                 analysis_directory=analysis_directory,
                 print_only=True,
                 in_place=False,
+                paths_to_modify=set(),
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
@@ -611,6 +666,7 @@ class InferV2Test(unittest.TestCase):
                     analysis_directory=analysis_directory,
                     print_only=True,
                     in_place=False,
+                    paths_to_modify=set(),
                     annotate_from_existing_stubs=False,
                     debug_infer=False,
                     read_stdin=True,
