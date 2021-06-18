@@ -46,9 +46,9 @@ module AccessCollector = struct
     | Name (Name.Identifier identifier) ->
         (* For simple names, add them to the result *)
         Set.add collected { Define.NameAccess.name = identifier; location = expression_location }
-    | Name (Name.Attribute { Name.Attribute.base; _ }) ->
-        (* For attribute access, only count the base *)
-        from_expression collected base
+    | Name (Name.Attribute _) ->
+        (* For attribute access, we currently skip *)
+        collected
     (* The rest is boilerplates to make sure that expressions are visited recursively *)
     | Await await -> from_expression collected await
     | BooleanOperator { BooleanOperator.left; right; _ }
