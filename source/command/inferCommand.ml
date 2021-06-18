@@ -17,7 +17,7 @@ let argument_to_paths argument =
   >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
 
 
-let run_infer_v2
+let run_infer_interprocedural
     ignore_infer
     _verbose
     expected_version
@@ -165,7 +165,7 @@ let run_infer_v2
       raise error
 
 
-let run_infer_v1
+let run_infer_legacy
     ignore_infer
     _verbose
     expected_version
@@ -273,10 +273,14 @@ let run_infer_v1
       raise error
 
 
-let run_infer use_v2 =
-  match use_v2 with
-  | true -> run_infer_v2
-  | false -> run_infer_v1
+let run_infer infer_mode use_v2 =
+  match infer_mode with
+  | None -> (
+      match use_v2 with
+      | true -> run_infer_interprocedural
+      | false -> run_infer_legacy )
+  | Some "interprocedural" -> run_infer_interprocedural
+  | Some unknown_mode -> failwith (Format.asprintf "Unknown infer mode \"%s\"" unknown_mode)
 
 
 let infer_command =
@@ -284,6 +288,7 @@ let infer_command =
     ~summary:"Runs type inference."
     Command.Spec.(
       empty
+      +> flag "-infer-mode" (optional string) ~doc:"Mode to use for type inference."
       +> flag "-use-v2" no_arg ~doc:"Use v2 logic and output format"
       +> flag "-ignore-infer" (optional string) ~doc:"Will not infer the listed files."
       ++ Specification.base_command_line_arguments)
