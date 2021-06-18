@@ -127,6 +127,75 @@ class QueryAPITest(unittest.TestCase):
         )
         self.assertEqual(class_hierarchy.superclasses("Foo"), ["Bar", "Baz"])
 
+    def test_annotations_per_file(self) -> None:
+        test_data: connection.PyreQueryResult = {
+            "response": [
+                {
+                    "response": [
+                        {
+                            "path": "tensor.py",
+                            "types": [
+                                {
+                                    "location": {
+                                        "start": {"line": 1, "column": 0},
+                                        "stop": {"line": 1, "column": 5},
+                                    },
+                                    "annotation": "int",
+                                },
+                                {
+                                    "location": {
+                                        "start": {"line": 1, "column": 4},
+                                        "stop": {"line": 1, "column": 5},
+                                    },
+                                    "annotation": "typing_extensions.Literal[1]",
+                                },
+                            ],
+                        }
+                    ]
+                },
+                {
+                    "response": [
+                        {
+                            "path": "test.py",
+                            "types": [
+                                {
+                                    "location": {
+                                        "start": {"line": 1, "column": 0},
+                                        "stop": {"line": 1, "column": 1},
+                                    },
+                                    "annotation": "typing_extensions.Literal[2]",
+                                }
+                            ],
+                        }
+                    ]
+                },
+            ]
+        }
+        self.assertEqual(
+            query._annotations_per_file(test_data),
+            {
+                "tensor.py": [
+                    query.Annotation(
+                        type_name="int",
+                        start=query.Position(line=1, column=0),
+                        stop=query.Position(line=1, column=5),
+                    ),
+                    query.Annotation(
+                        type_name="typing_extensions.Literal[1]",
+                        start=query.Position(line=1, column=4),
+                        stop=query.Position(line=1, column=5),
+                    ),
+                ],
+                "test.py": [
+                    query.Annotation(
+                        type_name="typing_extensions.Literal[2]",
+                        start=query.Position(line=1, column=0),
+                        stop=query.Position(line=1, column=1),
+                    )
+                ],
+            },
+        )
+
     def test_get_superclasses(self) -> None:
         pyre_connection = MagicMock()
         pyre_connection.query_server.return_value = {

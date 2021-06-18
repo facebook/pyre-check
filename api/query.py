@@ -4,11 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import re
+from dataclasses import dataclass
 from functools import lru_cache
 from itertools import islice
 from typing import Any, Dict, Generator, Iterable, List, NamedTuple, Optional, TypeVar
 
-from .connection import PyreConnection, PyreQueryError
+from .connection import PyreConnection, PyreQueryResult
 
 
 T = TypeVar("T")
@@ -43,6 +44,13 @@ class Position(NamedTuple):
 
 class Location(NamedTuple):
     path: str
+    start: Position
+    stop: Position
+
+
+@dataclass(frozen=True)
+class Annotation:
+    type_name: str
     start: Position
     stop: Position
 
@@ -151,6 +159,32 @@ def get_class_hierarchy(pyre_connection: PyreConnection) -> ClassHierarchy:
         for key, edges in annotation_and_edges.items()
     }
     return ClassHierarchy(hierarchy)
+
+
+def _annotations_per_file(data: PyreQueryResult) -> Dict[str, List[Annotation]]:
+    def make_position(mapping: Dict[str, int]) -> Position:
+        return Position(column=mapping["column"], line=mapping["line"])
+
+    return {
+        response["response"][0]["path"]: [
+            Annotation(
+                locations_and_annotations["annotation"],
+                make_position(locations_and_annotations["location"]["start"]),
+                make_position(locations_and_annotations["location"]["stop"]),
+            )
+            for locations_and_annotations in response["response"][0]["types"]
+        ]
+        for response in data["response"]
+    }
+
+
+def get_types(
+    pyre_connection: PyreConnection, *paths: str
+) -> Dict[str, List[Annotation]]:
+    types_sequence = ",".join([f"types('{path}')" for path in paths])
+    result = pyre_connection.query_server(f"batch({types_sequence})")
+
+    return _annotations_per_file(result)
 
 
 def get_superclasses(pyre_connection: PyreConnection, class_name: str) -> List[str]:
