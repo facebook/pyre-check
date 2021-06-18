@@ -2483,7 +2483,7 @@ module State (Context : Context) = struct
           in
           let rec is_compatible annotation =
             match annotation with
-            | _ when Type.is_meta annotation -> true
+            | _ when Type.is_meta annotation or Type.is_untyped annotation -> true
             | Type.Primitive "typing._Alias" -> true
             | Type.Tuple (Concatenation concatenation) ->
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation

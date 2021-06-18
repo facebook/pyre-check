@@ -301,6 +301,47 @@ let test_check_isinstance context =
       "Revealed type [-1]: Revealed type for `x` is `Union[Tuple[int, test.X (resolves to \
        Union[Tuple[int, X], int])], int]`.";
     ];
+  (* Using a nonexistent or Any class in isinstance should not raise an error. *)
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, Type
+      import enum
+
+      # pyre-fixme[5]: Ignore the lack of annotation for Bar.
+      # pyre-fixme[16]: Intentionally using a nonexistent class from enum.
+      Bar = enum.NonExistent
+
+      def foo() -> None:
+        x = ...
+        reveal_type(x)
+        reveal_type(Bar)
+
+        # No error about Bar or enum.NonExistent being unsuitable.
+        isinstance(x, Bar)
+        isinstance(x, enum.NonExistent)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `Bar` is `typing.Any`.";
+      "Undefined attribute [16]: Module `enum` has no attribute `NonExistent`.";
+    ];
+  (* A try-except block desugars to branches with `isinstance` checks at the start. *)
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, Type
+      import enum
+
+      # pyre-fixme[5]: Ignore the lack of annotation for Bar.
+      # pyre-fixme[16]: Intentionally using a nonexistent class from enum.
+      Bar = enum.NonExistent
+
+      def foo() -> None:
+        try:
+          print("hello")
+        except Bar as exception:
+          print(exception)
+    |}
+    [];
   ()
 
 
