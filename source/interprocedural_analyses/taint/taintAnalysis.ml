@@ -57,94 +57,7 @@ include Taint.Result.Register (struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module Analysis.TypeCheck.DummyContext)
     in
-    let find_missing_flows =
-      find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-    in
 
-    let create_models ~configuration ~initial_models sources =
-      let timer = Timer.start () in
-      let map state sources =
-        List.fold
-          sources
-          ~init:state
-          ~f:(fun (models, errors, skip_overrides, queries) (path, source) ->
-            let {
-              ModelParser.T.models;
-              errors = new_errors;
-              skip_overrides = new_skip_overrides;
-              queries = new_queries;
-            }
-              =
-              ModelParser.parse ~resolution ~path ~source ~configuration ?rule_filter models
-            in
-            ( models,
-              List.rev_append new_errors errors,
-              Set.union skip_overrides new_skip_overrides,
-              List.rev_append new_queries queries ))
-      in
-      let reduce
-          (models_left, errors_left, skip_overrides_left, queries_left)
-          (models_right, errors_right, skip_overrides_right, queries_right)
-        =
-        let merge_models ~key:_ = function
-          | `Left model
-          | `Right model ->
-              Some model
-          | `Both (left, right) ->
-              Some
-                {
-                  mode = Mode.join left.mode right.mode;
-                  forward =
-                    {
-                      source_taint =
-                        Domains.ForwardState.join
-                          left.forward.source_taint
-                          right.forward.source_taint;
-                    };
-                  backward =
-                    {
-                      sink_taint =
-                        Domains.BackwardState.join
-                          left.backward.sink_taint
-                          right.backward.sink_taint;
-                      taint_in_taint_out =
-                        Domains.BackwardState.join
-                          left.backward.taint_in_taint_out
-                          right.backward.taint_in_taint_out;
-                    };
-                }
-        in
-        ( Callable.Map.merge models_left models_right ~f:merge_models,
-          List.rev_append errors_left errors_right,
-          Set.union skip_overrides_left skip_overrides_right,
-          List.rev_append queries_left queries_right )
-      in
-      let result =
-        Scheduler.map_reduce
-          scheduler
-          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-          ~initial:(initial_models, [], Ast.Reference.Set.empty, [])
-          ~map
-          ~reduce
-          ~inputs:sources
-          ()
-      in
-      Statistics.performance ~name:"Parsed taint models" ~phase_name:"Taint model parsing" ~timer ();
-      result
-    in
-    let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
-    let add_obscure_sinks models =
-      let add_obscure_sink models callable =
-        let model =
-          Callable.Map.find models callable
-          |> Option.value ~default:Taint.Result.empty_model
-          |> Model.add_obscure_sink ~resolution ~call_target:callable
-        in
-        Callable.Map.set models ~key:callable ~data:model
-      in
-      List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
-      |> List.fold ~init:models ~f:add_obscure_sink
-    in
     let initial_models = Model.infer_class_models ~environment in
     let models, skip_overrides =
       match taint_model_paths with
@@ -154,6 +67,9 @@ include Taint.Result.Register (struct
             let dump_model_query_results_path =
               Configuration.StaticAnalysis.dump_model_query_results_path
                 static_analysis_configuration
+            in
+            let find_missing_flows =
+              find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
             in
             let configuration =
               TaintConfiguration.create
@@ -165,6 +81,81 @@ include Taint.Result.Register (struct
                 ~taint_model_paths
             in
             TaintConfiguration.register configuration;
+            let create_models ~configuration ~initial_models sources =
+              let timer = Timer.start () in
+              let map state sources =
+                List.fold
+                  sources
+                  ~init:state
+                  ~f:(fun (models, errors, skip_overrides, queries) (path, source) ->
+                    let {
+                      ModelParser.T.models;
+                      errors = new_errors;
+                      skip_overrides = new_skip_overrides;
+                      queries = new_queries;
+                    }
+                      =
+                      ModelParser.parse ~resolution ~path ~source ~configuration ?rule_filter models
+                    in
+                    ( models,
+                      List.rev_append new_errors errors,
+                      Set.union skip_overrides new_skip_overrides,
+                      List.rev_append new_queries queries ))
+              in
+              let reduce
+                  (models_left, errors_left, skip_overrides_left, queries_left)
+                  (models_right, errors_right, skip_overrides_right, queries_right)
+                =
+                let merge_models ~key:_ = function
+                  | `Left model
+                  | `Right model ->
+                      Some model
+                  | `Both (left, right) ->
+                      Some
+                        {
+                          mode = Mode.join left.mode right.mode;
+                          forward =
+                            {
+                              source_taint =
+                                Domains.ForwardState.join
+                                  left.forward.source_taint
+                                  right.forward.source_taint;
+                            };
+                          backward =
+                            {
+                              sink_taint =
+                                Domains.BackwardState.join
+                                  left.backward.sink_taint
+                                  right.backward.sink_taint;
+                              taint_in_taint_out =
+                                Domains.BackwardState.join
+                                  left.backward.taint_in_taint_out
+                                  right.backward.taint_in_taint_out;
+                            };
+                        }
+                in
+                ( Callable.Map.merge models_left models_right ~f:merge_models,
+                  List.rev_append errors_left errors_right,
+                  Set.union skip_overrides_left skip_overrides_right,
+                  List.rev_append queries_left queries_right )
+              in
+              let result =
+                Scheduler.map_reduce
+                  scheduler
+                  ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+                  ~initial:(initial_models, [], Ast.Reference.Set.empty, [])
+                  ~map
+                  ~reduce
+                  ~inputs:sources
+                  ()
+              in
+              Statistics.performance
+                ~name:"Parsed taint models"
+                ~phase_name:"Taint model parsing"
+                ~timer
+                ();
+              result
+            in
             let models, errors, skip_overrides, queries =
               Model.get_model_sources ~paths:taint_model_paths
               |> create_models ~configuration ~initial_models
@@ -203,6 +194,19 @@ include Taint.Result.Register (struct
                 ~callables
                 ~environment
                 ~models
+            in
+            let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
+            let add_obscure_sinks models =
+              let add_obscure_sink models callable =
+                let model =
+                  Callable.Map.find models callable
+                  |> Option.value ~default:Taint.Result.empty_model
+                  |> Model.add_obscure_sink ~resolution ~call_target:callable
+                in
+                Callable.Map.set models ~key:callable ~data:model
+              in
+              List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
+              |> List.fold ~init:models ~f:add_obscure_sink
             in
             let models =
               match find_missing_flows with
