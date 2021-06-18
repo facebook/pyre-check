@@ -493,7 +493,7 @@ class Infer(Reporting):
         for module in module_annotations:
             module.write_stubs(type_directory=type_directory)
 
-    def _annotate_in_place(self, stub_paths: Sequence[Path] | None = None) -> None:
+    def _annotate_in_place(self) -> None:
         project_root = self.project_root
         formatter = self._configuration.formatter
         type_directory = self._type_directory
@@ -505,7 +505,7 @@ class Infer(Reporting):
         )
 
         tasks: List[AnnotateModuleInPlace] = []
-        for full_stub_path in stub_paths or type_directory.rglob("*.pyi"):
+        for full_stub_path in type_directory.rglob("*.pyi"):
             stub_path = full_stub_path.relative_to(type_directory)
             code_path = stub_path.with_suffix(".py")
             full_code_path = project_root / code_path
