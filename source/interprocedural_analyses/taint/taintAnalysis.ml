@@ -57,12 +57,11 @@ include Taint.Result.Register (struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module Analysis.TypeCheck.DummyContext)
     in
-    let models = Model.infer_class_models ~environment in
     let find_missing_flows =
       find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
     in
 
-    let create_models ~configuration sources =
+    let create_models ~configuration ~initial_models sources =
       let timer = Timer.start () in
       let map state sources =
         List.fold
@@ -124,7 +123,7 @@ include Taint.Result.Register (struct
         Scheduler.map_reduce
           scheduler
           ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-          ~initial:(models, [], Ast.Reference.Set.empty, [])
+          ~initial:(initial_models, [], Ast.Reference.Set.empty, [])
           ~map
           ~reduce
           ~inputs:sources
@@ -146,9 +145,10 @@ include Taint.Result.Register (struct
       List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
       |> List.fold ~init:models ~f:add_obscure_sink
     in
+    let initial_models = Model.infer_class_models ~environment in
     let models, skip_overrides =
       match taint_model_paths with
-      | [] -> models, Ast.Reference.Set.empty
+      | [] -> initial_models, Ast.Reference.Set.empty
       | _ -> (
           try
             let dump_model_query_results_path =
@@ -166,7 +166,8 @@ include Taint.Result.Register (struct
             in
             TaintConfiguration.register configuration;
             let models, errors, skip_overrides, queries =
-              Model.get_model_sources ~paths:taint_model_paths |> create_models ~configuration
+              Model.get_model_sources ~paths:taint_model_paths
+              |> create_models ~configuration ~initial_models
             in
             Model.register_verification_errors errors;
             let () =
