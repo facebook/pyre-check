@@ -367,12 +367,12 @@ class Infer(Reporting):
         configuration: Configuration,
         analysis_directory: AnalysisDirectory | None = None,
         print_only: bool,
-        in_place_paths: Optional[List[str]],
+        in_place: bool,
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
         read_stdin: bool,
     ) -> None:
-        if annotate_from_existing_stubs and in_place_paths is None:
+        if annotate_from_existing_stubs and in_place is None:
             raise ValueError(
                 "--annotate-from-existing-stubs cannot be used without the \
                 --in-place argument"
@@ -384,13 +384,18 @@ class Infer(Reporting):
             analysis_directory=analysis_directory,
         )
         self._print_only = print_only
-        self._in_place_paths: Final[Optional[List[str]]] = in_place_paths
+        self._in_place = in_place
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
         self._read_stdin = read_stdin
         self._type_directory: Path = Path(
             os.path.join(self._configuration.log_directory, "types")
         )
+        if self._annotate_from_existing_stubs and not self._in_place:
+            raise ValueError(
+                "The --in-place flag is required when using "
+                + "--annotate-from-existing-stubs"
+            )
 
     @property
     def project_root(self) -> Path:
@@ -499,10 +504,6 @@ class Infer(Reporting):
         type_directory = self._type_directory
         debug_infer = self._debug_infer
         number_workers = self._configuration.get_number_of_workers()
-        in_place_paths = none_throws(
-            self._in_place_paths,
-            "_annotate_in_place called with self._in_place_paths == None",
-        )
 
         tasks: List[AnnotateModuleInPlace] = []
         for full_stub_path in type_directory.rglob("*.pyi"):
@@ -510,23 +511,13 @@ class Infer(Reporting):
             code_path = stub_path.with_suffix(".py")
             full_code_path = project_root / code_path
 
-            annotate_in_place = in_place_paths == [] or any(
-                path
-                in (
-                    code_path,
-                    *code_path.parents,
+            tasks.append(
+                AnnotateModuleInPlace(
+                    full_stub_path=str(full_stub_path),
+                    full_code_path=str(full_code_path),
+                    debug_infer=debug_infer,
                 )
-                for path in in_place_paths
             )
-
-            if annotate_in_place:
-                tasks.append(
-                    AnnotateModuleInPlace(
-                        full_stub_path=str(full_stub_path),
-                        full_code_path=str(full_code_path),
-                        debug_infer=debug_infer,
-                    )
-                )
 
         with multiprocessing.Pool(number_workers) as pool:
             for _ in pool.imap_unordered(AnnotateModuleInPlace.run_task, tasks):

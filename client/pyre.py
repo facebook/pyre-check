@@ -885,7 +885,6 @@ def infer_v2(
     """
     Run the (under construction) interprocedural version of pyre infer.
     """
-    in_place_paths = [] if in_place else None
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     return run_pyre_command(
@@ -894,7 +893,7 @@ def infer_v2(
             original_directory=os.getcwd(),
             configuration=configuration,
             print_only=print_only,
-            in_place_paths=in_place_paths,
+            in_place=in_place,
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
             read_stdin=read_stdin,
