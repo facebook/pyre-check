@@ -1369,6 +1369,40 @@ let test_call_graph_of_define context =
                  targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
                }) );
       ];
+  (* Decorators with type errors. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Callable, TypeVar
+      _T = TypeVar("_T")
+      _TParams = ParameterSpecification("_TParams")
+
+      class Timer:
+        def __call__(self, func: Callable[_TParams, _T]) -> Callable[_TParams, _T]:
+          return func
+
+      def timer(name: str) -> Timer:
+        return Timer()
+
+      @timer(1) # Intended type error here.
+      def foo(x: int) -> None:
+        pass
+
+      def caller() -> None:
+        foo(1)
+    |}
+    ~define_name:"test.caller"
+    ~expected:
+      [
+        ( "18:2-18:8",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "test.foo"];
+               }) );
+      ];
   ()
 
 
