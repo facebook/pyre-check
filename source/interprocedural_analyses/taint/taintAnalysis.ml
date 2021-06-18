@@ -34,6 +34,12 @@ include Taint.Result.Register (struct
     ()
 
 
+  let log_and_reraise_taint_model_exception exception_ =
+    Log.error "Error getting taint models.";
+    Log.error "%s" (Exn.to_string exception_);
+    raise exception_
+
+
   let initialize_models
       ~scheduler
       ~static_analysis_configuration:
@@ -216,10 +222,7 @@ include Taint.Result.Register (struct
             in
             models, skip_overrides
           with
-          | exn ->
-              Log.error "Error getting taint models.";
-              Log.error "%s" (Exn.to_string exn);
-              raise exn )
+          | exception_ -> log_and_reraise_taint_model_exception exception_ )
     in
     { Interprocedural.Result.initial_models = models; skip_overrides }
 
