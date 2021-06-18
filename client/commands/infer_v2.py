@@ -388,14 +388,21 @@ class Infer(Reporting):
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
         self._read_stdin = read_stdin
-        self._root_type_directory: Path = Path(
+        self._type_directory: Path = Path(
             os.path.join(self._configuration.log_directory, "types")
         )
-        self._type_directory: Path = (
-            self._root_type_directory
-            if self._configuration.relative_local_root is None
-            else self._root_type_directory
-            / none_throws(self._configuration.relative_local_root)
+
+    @property
+    def project_root(self) -> Path:
+        """
+        Get the prefix of the analysis directory root, relative to
+        the current working directory (self._original_directory).
+        """
+        return Path(
+            os.path.relpath(
+                os.path.realpath(self._analysis_directory.get_root_path().get_root()),
+                self._original_directory,
+            )
         )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
@@ -443,7 +450,9 @@ class Infer(Reporting):
         if self._annotate_from_existing_stubs:
             return self._annotate_in_place()
         infer_output = RawInferOutput(data=json.loads(self._load_infer_output())[0])
-        module_annotations = _create_module_annotations(infer_output=infer_output)
+        module_annotations = _create_module_annotations(
+            infer_output=infer_output,
+        )
         if self._print_only:
             return self._print_inferences(
                 infer_output=infer_output, module_annotations=module_annotations
@@ -485,9 +494,9 @@ class Infer(Reporting):
             module.write_stubs(type_directory=type_directory)
 
     def _annotate_in_place(self, stub_paths: Sequence[Path] | None = None) -> None:
-        root = self._original_directory
+        project_root = self.project_root
         formatter = self._configuration.formatter
-        root_type_directory = self._root_type_directory
+        type_directory = self._type_directory
         debug_infer = self._debug_infer
         number_workers = self._configuration.get_number_of_workers()
         in_place_paths = none_throws(
@@ -496,26 +505,25 @@ class Infer(Reporting):
         )
 
         tasks: List[AnnotateModuleInPlace] = []
-        for stub_path in stub_paths or root_type_directory.rglob("*.pyi"):
-            relative_code_path = stub_path.relative_to(root_type_directory).with_suffix(
-                ".py"
-            )
+        for full_stub_path in stub_paths or type_directory.rglob("*.pyi"):
+            stub_path = full_stub_path.relative_to(type_directory)
+            code_path = stub_path.with_suffix(".py")
+            full_code_path = project_root / code_path
 
             annotate_in_place = in_place_paths == [] or any(
                 path
                 in (
-                    relative_code_path,
-                    *relative_code_path.parents,
+                    code_path,
+                    *code_path.parents,
                 )
                 for path in in_place_paths
             )
 
             if annotate_in_place:
-                code_path = root / relative_code_path
                 tasks.append(
                     AnnotateModuleInPlace(
-                        stub_path=str(stub_path),
-                        code_path=str(code_path),
+                        full_stub_path=str(full_stub_path),
+                        full_code_path=str(full_code_path),
                         debug_infer=debug_infer,
                     )
                 )

@@ -382,8 +382,8 @@ def filter_paths(
 
 @dataclass
 class AnnotateModuleInPlace:
-    stub_path: str
-    code_path: str
+    full_stub_path: str
+    full_code_path: str
     debug_infer: bool
 
     @staticmethod
@@ -417,8 +417,8 @@ class AnnotateModuleInPlace:
 
     def run(self) -> None:
         return self.annotate_code(
-            stub_path=self.stub_path,
-            code_path=self.code_path,
+            stub_path=self.full_stub_path,
+            code_path=self.full_code_path,
             debug_infer=self.debug_infer,
         )
 
@@ -579,8 +579,8 @@ class Infer(Reporting):
                 file_path = stub._path.resolve()
             tasks.append(
                 AnnotateModuleInPlace(
-                    stub_path=str(stub_path),
-                    code_path=file_path,
+                    full_stub_path=str(stub_path),
+                    full_code_path=file_path,
                     debug_infer=debug_infer,
                 )
             )
@@ -619,8 +619,8 @@ class Infer(Reporting):
                 for path in in_place_paths
             ):
                 AnnotateModuleInPlace(
-                    stub_path=str(stub_path),
-                    code_path=str(root / relative_source_path_for_stub),
+                    full_stub_path=str(stub_path),
+                    full_code_path=str(root / relative_source_path_for_stub),
                     debug_infer=debug_infer,
                 ).run()
         if formatter:
