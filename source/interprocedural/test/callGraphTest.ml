@@ -1122,7 +1122,7 @@ let test_call_graph_of_define context =
         return Timer()
 
       @timer("bar")
-      def foo(self, x: int) -> None:
+      def foo(x: int) -> None:
         pass
 
       def caller() -> None:
@@ -1191,7 +1191,7 @@ let test_call_graph_of_define context =
         return Timer()
 
       @timer("bar")
-      def foo(self, x: int) -> None:
+      def foo(x: int) -> None:
         pass
 
       def caller() -> None:
@@ -1250,7 +1250,7 @@ let test_call_graph_of_define context =
         pass
 
       @timer("bar")
-      def foo(self, x: int) -> None:
+      def foo(x: int) -> None:
         pass
 
       def caller() -> None:
