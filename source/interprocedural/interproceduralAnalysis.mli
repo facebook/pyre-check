@@ -7,11 +7,6 @@
 
 module Kind = AnalysisKind
 
-type initialize_result = {
-  initial_models: InterproceduralResult.model_t Callable.Map.t;
-  skip_overrides: Ast.Reference.Set.t;
-}
-
 val initialize_configuration
   :  Kind.abstract ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
@@ -23,9 +18,7 @@ val initialize_models
   scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  functions:Callable.t list ->
-  stubs:Callable.t list ->
-  initialize_result
+  InterproceduralResult.model_t InterproceduralResult.InitializedModels.t
 
 val record_initial_models
   :  functions:Callable.t list ->

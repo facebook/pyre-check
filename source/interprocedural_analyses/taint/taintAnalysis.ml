@@ -46,7 +46,7 @@ include Taint.Result.Register (struct
   }
 
   type parse_sources_result = {
-    initialize_result: call_model Interprocedural.Result.initialize_result;
+    initialize_result: call_model Interprocedural.Result.InitializedModels.initialize_result;
     query_data: model_query_data option;
   }
 
@@ -57,7 +57,8 @@ include Taint.Result.Register (struct
       ~environment
       ~functions
       ~stubs
-      ~initialize_result:{ Interprocedural.Result.initial_models = models; skip_overrides }
+      ~initialize_result:
+        { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides }
       { queries; taint_configuration }
     =
     let resolution =
@@ -107,7 +108,7 @@ include Taint.Result.Register (struct
         | Some Type -> models |> remove_sinks
         | None -> models
       in
-      { Interprocedural.Result.initial_models = models; skip_overrides }
+      { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides }
     with
     | exception_ -> log_and_reraise_taint_model_exception exception_
 
@@ -249,7 +250,8 @@ include Taint.Result.Register (struct
             end
         in
         {
-          initialize_result = { Interprocedural.Result.initial_models = models; skip_overrides };
+          initialize_result =
+            { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides };
           query_data = Some { queries; taint_configuration };
         }
       with
@@ -260,25 +262,35 @@ include Taint.Result.Register (struct
     | [] ->
         {
           initialize_result =
-            { Interprocedural.Result.initial_models; skip_overrides = Ast.Reference.Set.empty };
+            {
+              Interprocedural.Result.InitializedModels.initial_models;
+              skip_overrides = Ast.Reference.Set.empty;
+            };
           query_data = None;
         }
     | _ -> add_models_and_queries_from_sources initial_models
 
 
-  let initialize_models ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
+  let initialize_models ~scheduler ~static_analysis_configuration ~environment =
     let { initialize_result; query_data } =
       parse_models_and_queries_from_sources ~scheduler ~static_analysis_configuration ~environment
     in
-    query_data
-    >>| generate_models_from_queries
-          ~scheduler
-          ~static_analysis_configuration
-          ~environment
-          ~functions
-          ~stubs
-          ~initialize_result
-    |> Option.value ~default:initialize_result
+    let get_taint_models ~function_and_stub_data =
+      match function_and_stub_data, query_data with
+      | None, _
+      | _, None ->
+          initialize_result
+      | Some { Interprocedural.Result.functions; stubs; updated_environment }, Some query_data ->
+          generate_models_from_queries
+            ~scheduler
+            ~static_analysis_configuration
+            ~environment:updated_environment
+            ~functions
+            ~stubs
+            ~initialize_result
+            query_data
+    in
+    Interprocedural.Result.InitializedModels.create get_taint_models
 
 
   let analyze ~environment ~callable ~qualifier ~define ~mode existing_model =

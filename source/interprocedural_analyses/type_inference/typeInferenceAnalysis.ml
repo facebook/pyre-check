@@ -16,14 +16,8 @@ module Analyzer = struct
     TypeInferenceSharedMemory.register_configuration configuration
 
 
-  let initialize_models
-      ~scheduler:_
-      ~static_analysis_configuration:_
-      ~environment:_
-      ~functions:_
-      ~stubs:_
-    =
-    { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
+  let initialize_models ~scheduler:_ ~static_analysis_configuration:_ ~environment:_ =
+    Result.InitializedModels.empty
 
 
   let analyze ~environment ~callable:_ ~qualifier ~define ~existing:_ =

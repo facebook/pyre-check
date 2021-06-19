@@ -18,27 +18,36 @@ let initialize_configuration kind ~static_analysis_configuration =
   Analysis.initialize_configuration ~static_analysis_configuration
 
 
-type initialize_result = {
-  initial_models: InterproceduralResult.model_t Callable.Map.t;
-  skip_overrides: Ast.Reference.Set.t;
-}
-
-let initialize_models kind ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
+let initialize_models kind ~scheduler ~static_analysis_configuration ~environment =
   let (Result.Analysis { analysis; kind = storable_kind }) = Result.get_abstract_analysis kind in
   let module Analysis = (val analysis) in
-  let { Result.initial_models = analysis_initial_models; skip_overrides } =
-    Analysis.initialize_models
-      ~static_analysis_configuration
-      ~scheduler
-      ~environment
-      ~functions
-      ~stubs
+  (* We call initialize_models outside the returned lambda so that initial models are computed
+     eagerly. *)
+  let initialized_models =
+    Analysis.initialize_models ~static_analysis_configuration ~scheduler ~environment
   in
-  let to_model_t model =
-    let pkg = Result.Pkg { kind = ModelPart storable_kind; value = model } in
-    { Result.models = Kind.Map.add kind pkg Kind.Map.empty; is_obscure = false }
+  let specialize_models
+      { Result.InitializedModels.initial_models = analysis_initial_models; skip_overrides }
+    =
+    let to_model_t model =
+      let pkg = Result.Pkg { kind = ModelPart storable_kind; value = model } in
+      { Result.models = Kind.Map.add kind pkg Kind.Map.empty; is_obscure = false }
+    in
+    {
+      Result.InitializedModels.initial_models =
+        analysis_initial_models |> Callable.Map.map ~f:to_model_t;
+      skip_overrides;
+    }
   in
-  { initial_models = analysis_initial_models |> Callable.Map.map ~f:to_model_t; skip_overrides }
+  let get_specialized_models ~function_and_stub_data =
+    (* We call get_models_including_generated_models within the lambda so that callable-specific
+       models are generated only on demand. *)
+    Result.InitializedModels.get_models_including_generated_models
+      ~function_and_stub_data
+      initialized_models
+    |> specialize_models
+  in
+  Result.InitializedModels.create get_specialized_models
 
 
 let record_initial_models ~functions ~stubs models =

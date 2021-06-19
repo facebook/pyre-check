@@ -514,14 +514,11 @@ let analyze
   Log.info "Initializing analysis...";
   let skip_overrides, initial_models_callables =
     let functions = (List.map callables_with_dependency_information ~f:fst :> Callable.t list) in
-    let { Interprocedural.Analysis.initial_models = models; skip_overrides } =
-      Analysis.initialize_models
-        analysis
-        ~static_analysis_configuration
-        ~scheduler
-        ~environment
-        ~functions
-        ~stubs
+    let { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides } =
+      Analysis.initialize_models analysis ~static_analysis_configuration ~scheduler ~environment
+      |> Interprocedural.Result.InitializedModels.get_models_including_generated_models
+           ~function_and_stub_data:
+             (Some { Interprocedural.Result.functions; stubs; updated_environment = environment })
     in
     Analysis.record_initial_models ~functions ~stubs models;
     skip_overrides, Callable.Map.keys models

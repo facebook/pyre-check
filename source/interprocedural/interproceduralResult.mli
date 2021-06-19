@@ -81,10 +81,36 @@ type model_t = {
 
 type result_t = result_pkg Kind.Map.t [@@deriving show]
 
-type 'call_model initialize_result = {
-  initial_models: 'call_model Callable.Map.t;
-  skip_overrides: Ast.Reference.Set.t;
+type function_and_stub_data = {
+  functions: Callable.t list;
+  stubs: Callable.t list;
+  updated_environment: Analysis.TypeEnvironment.ReadOnly.t;
 }
+
+module InitializedModels : sig
+  type 'call_model t
+
+  type 'call_model initialize_result = {
+    initial_models: 'call_model Callable.Map.t;
+    skip_overrides: Ast.Reference.Set.t;
+  }
+
+  val create
+    :  (function_and_stub_data:function_and_stub_data option -> 'call_model initialize_result) ->
+    'call_model t
+
+  val empty : 'call_model t
+
+  (* Return all initially-created models. *)
+  val get_models : 'call_model t -> 'call_model initialize_result
+
+  (* Return initially-created models along with any models generated from functions, say, by using
+     model queries. *)
+  val get_models_including_generated_models
+    :  function_and_stub_data:function_and_stub_data option ->
+    'call_model t ->
+    'call_model initialize_result
+end
 
 module type ANALYZER = sig
   type result
@@ -109,9 +135,7 @@ module type ANALYZER = sig
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    functions:Callable.t list ->
-    stubs:Callable.t list ->
-    call_model initialize_result
+    call_model InitializedModels.t
 
   val report
     :  scheduler:Scheduler.t ->
