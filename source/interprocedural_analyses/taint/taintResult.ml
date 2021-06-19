@@ -357,4 +357,16 @@ let has_significant_summary root path target =
           not (BackwardTaint.is_bottom taint) )
 
 
+let decorators_to_skip models =
+  let skippable_decorator_reference (callable, model) =
+    match callable, Interprocedural.Result.get_model kind model with
+    | `Function callable_name, Some { mode = Normal { skip_decorator_when_inlining = true }; _ } ->
+        Some (Ast.Reference.create callable_name)
+    | _ -> None
+  in
+  Map.to_alist models
+  |> List.filter_map ~f:skippable_decorator_reference
+  |> Ast.Reference.Set.of_list
+
+
 let () = TraceInfo.has_significant_summary := has_significant_summary
