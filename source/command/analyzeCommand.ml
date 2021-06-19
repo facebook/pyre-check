@@ -15,12 +15,21 @@ let get_analysis_kind = function
       failwith "bad argument"
 
 
-let type_environment_with_decorators_inlined ~configuration ~scheduler environment =
+let type_environment_with_decorators_inlined
+    ~configuration
+    ~scheduler
+    ~decorators_to_skip
+    environment
+  =
   let open Analysis in
   let open Interprocedural in
   let open Ast in
   let decorator_bodies =
     DecoratorHelper.all_decorator_bodies (TypeEnvironment.read_only environment)
+  in
+  let decorator_bodies =
+    Map.filter_keys decorator_bodies ~f:(fun decorator ->
+        Set.mem decorators_to_skip decorator |> not)
   in
   let environment =
     AstEnvironment.create
@@ -208,8 +217,14 @@ let run_analysis
                   ~scheduler
                   ~environment:(Analysis.TypeEnvironment.read_only environment)
               in
-              (* TODO(T69755379): Skip inlining decorators based on models. *)
-              ( type_environment_with_decorators_inlined ~configuration ~scheduler environment,
+              let { Interprocedural.Result.InitializedModels.initial_models; _ } =
+                Interprocedural.Result.InitializedModels.get_models initialized_models
+              in
+              ( type_environment_with_decorators_inlined
+                  ~configuration
+                  ~scheduler
+                  ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
+                  environment,
                 Some initialized_models ) )
             else
               environment, None
