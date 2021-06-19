@@ -98,6 +98,8 @@ def _collect_shape_types(
 
 
 def _report_percentages(mapping: Dict[str, ShapeAnnotations]) -> None:
+    global_precise_count = 0
+    global_imprecise_count = 0
     for filename, shape_annotations in mapping.items():
         precise_count = len(shape_annotations.precise_annotations)
         imprecise_count = len(shape_annotations.imprecise_annotations)
@@ -110,6 +112,20 @@ def _report_percentages(mapping: Dict[str, ShapeAnnotations]) -> None:
             f"shape types ({precise_count} out of "
             f"{imprecise_count + precise_count} expressions)"
         )
+        global_precise_count += precise_count
+        global_imprecise_count += imprecise_count
+    if (global_precise_count + global_imprecise_count) == 0:
+        LOG.info("Overall, files contain no expressions with tensor shape type.")
+        return
+    percentage = round(
+        global_precise_count / (global_imprecise_count + global_precise_count) * 100.0,
+        2,
+    )
+    LOG.info(
+        f"Overall, files have {percentage}% precise tensor "
+        f"shape types ({global_precise_count} out of "
+        f"{global_imprecise_count + global_precise_count} expressions)"
+    )
 
 
 def main(filenames: Iterable[str]) -> None:
