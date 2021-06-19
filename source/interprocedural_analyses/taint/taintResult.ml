@@ -145,10 +145,10 @@ module Mode = struct
     | SkipAnalysis (* Don't analyze at all *)
     | Sanitize of sanitize
     (* Analyze, but throw away inferred model *)
-    | Normal
+    | Normal of { skip_decorator_when_inlining: bool }
   [@@deriving show, eq]
 
-  let normal = Normal
+  let normal = Normal { skip_decorator_when_inlining = false }
 
   let join left right =
     match left, right with
@@ -209,7 +209,9 @@ module Mode = struct
         Sanitize { sources; sinks; tito }
     | Sanitize _, _ -> left
     | _, Sanitize _ -> right
-    | Normal, Normal -> Normal
+    | ( Normal { skip_decorator_when_inlining = left },
+        Normal { skip_decorator_when_inlining = right } ) ->
+        Normal { skip_decorator_when_inlining = left || right }
     [@@deriving show, eq]
 end
 

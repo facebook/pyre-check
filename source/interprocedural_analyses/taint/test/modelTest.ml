@@ -1032,6 +1032,25 @@ let test_skip_analysis context =
     ()
 
 
+let test_skip_inlining_decorator context =
+  let open Taint.Result in
+  let assert_model = assert_model ~context in
+  assert_model
+    ~model_source:{|
+      @SkipDecoratorWhenInlining
+      def test.my_decorator(f): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_mode:(Mode.Normal { skip_decorator_when_inlining = true })
+          "test.my_decorator";
+      ]
+    ();
+  ()
+
+
 let test_taint_in_taint_out_update_models context =
   let assert_model = assert_model ~context in
   assert_model
@@ -3192,6 +3211,7 @@ let () =
          "query_parsing" >:: test_query_parsing;
          "sanitize" >:: test_sanitize;
          "skip_analysis" >:: test_skip_analysis;
+         "skip_inlining_decorator" >:: test_skip_inlining_decorator;
          "sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "sink_models" >:: test_sink_models;
          "source_breadcrumbs" >:: test_source_breadcrumbs;

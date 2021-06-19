@@ -1822,6 +1822,8 @@ let adjust_mode_and_skipped_overrides
           >>| fun sanitize_kind ->
           TaintResult.Mode.join mode (Mode.Sanitize sanitize_kind), skipped_override
       | "SkipAnalysis" -> Ok (TaintResult.Mode.SkipAnalysis, skipped_override)
+      | "SkipDecoratorWhenInlining" ->
+          Ok (TaintResult.Mode.Normal { skip_decorator_when_inlining = true }, skipped_override)
       | "SkipOverrides" -> Ok (mode, Some define_name)
       | _ -> Ok (mode, skipped_override)
     in
@@ -2204,6 +2206,7 @@ let create_model_from_signature
       match Reference.show (Node.value decorator.Decorator.name) with
       | "Sanitize"
       | "SkipAnalysis"
+      | "SkipDecoratorWhenInlining"
       | "SkipOverrides" ->
           true
       | _ -> false

@@ -51,7 +51,7 @@ module Mode : sig
     | SkipAnalysis (* Don't analyze at all *)
     | Sanitize of sanitize
     (* Analyze, but throw away inferred model *)
-    | Normal
+    | Normal of { skip_decorator_when_inlining: bool }
   [@@deriving show, eq]
 
   val normal : t

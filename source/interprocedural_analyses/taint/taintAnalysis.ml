@@ -315,7 +315,7 @@ include Taint.Result.Register (struct
     let model =
       let open Domains in
       match mode with
-      | Mode.Normal -> { forward; backward; mode }
+      | Mode.Normal _ -> { forward; backward; mode }
       | Sanitize { sources = sanitize_sources; sinks = sanitize_sinks; tito = sanitize_tito } ->
           let forward =
             match sanitize_sources with
