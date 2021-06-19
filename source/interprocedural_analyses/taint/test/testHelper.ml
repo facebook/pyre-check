@@ -386,37 +386,13 @@ type test_environment = {
 }
 
 let type_environment_with_decorators_inlined ~configuration environment =
-  let decorator_bodies =
-    DecoratorHelper.all_decorator_bodies (TypeEnvironment.read_only environment)
-  in
-  let environment =
-    AstEnvironment.create
-      ~additional_preprocessing:
-        (DecoratorHelper.inline_decorators
-           ~environment:(TypeEnvironment.read_only environment)
-           ~decorator_bodies)
-      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
-    |> AnnotatedGlobalEnvironment.create
-    |> TypeEnvironment.create
-  in
-  let all_internal_paths =
-    let get_internal_path source_path =
-      let path = SourcePath.full_path ~configuration source_path in
-      Option.some_if (SourcePath.is_internal_path ~configuration path) path
-    in
-    ModuleTracker.source_paths
-      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
-    |> List.filter_map ~f:get_internal_path
-  in
-  let _ =
-    Server.IncrementalCheck.recheck
-      ~configuration
-      ~scheduler:(Test.mock_scheduler ())
-      ~environment
-      ~errors:(Ast.Reference.Table.create ())
-      all_internal_paths
-  in
-  TypeEnvironment.read_only environment
+  DecoratorHelper.type_environment_with_decorators_inlined
+    ~configuration
+    ~scheduler:(Test.mock_scheduler ())
+    ~recheck:Server.IncrementalCheck.recheck
+    ~decorators_to_skip:Reference.Set.empty
+    environment
+  |> TypeEnvironment.read_only
 
 
 let initialize

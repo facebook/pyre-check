@@ -15,52 +15,6 @@ let get_analysis_kind = function
       failwith "bad argument"
 
 
-let type_environment_with_decorators_inlined
-    ~configuration
-    ~scheduler
-    ~decorators_to_skip
-    environment
-  =
-  let open Analysis in
-  let open Interprocedural in
-  let open Ast in
-  let decorator_bodies =
-    DecoratorHelper.all_decorator_bodies (TypeEnvironment.read_only environment)
-  in
-  let decorator_bodies =
-    Map.filter_keys decorator_bodies ~f:(fun decorator ->
-        Set.mem decorators_to_skip decorator |> not)
-  in
-  let environment =
-    AstEnvironment.create
-      ~additional_preprocessing:
-        (DecoratorHelper.inline_decorators
-           ~environment:(TypeEnvironment.read_only environment)
-           ~decorator_bodies)
-      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
-    |> AnnotatedGlobalEnvironment.create
-    |> TypeEnvironment.create
-  in
-  let all_internal_paths =
-    let get_internal_path source_path =
-      let path = SourcePath.full_path ~configuration source_path in
-      Option.some_if (SourcePath.is_internal_path ~configuration path) path
-    in
-    ModuleTracker.source_paths
-      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
-    |> List.filter_map ~f:get_internal_path
-  in
-  let _ =
-    Server.IncrementalCheck.recheck
-      ~configuration
-      ~scheduler
-      ~environment
-      ~errors:(Ast.Reference.Table.create ())
-      all_internal_paths
-  in
-  environment
-
-
 let run_analysis
     analysis
     result_json_path
@@ -220,9 +174,10 @@ let run_analysis
               let { Interprocedural.Result.InitializedModels.initial_models; _ } =
                 Interprocedural.Result.InitializedModels.get_models initialized_models
               in
-              ( type_environment_with_decorators_inlined
+              ( Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
                   ~configuration
                   ~scheduler
+                  ~recheck:Server.IncrementalCheck.recheck
                   ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
                   environment,
                 Some initialized_models ) )

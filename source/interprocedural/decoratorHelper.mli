@@ -39,6 +39,20 @@ val inline_decorators
   Source.t ->
   Source.t
 
+val type_environment_with_decorators_inlined
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  recheck:
+    (configuration:Configuration.Analysis.t ->
+    scheduler:Scheduler.t ->
+    environment:Analysis.TypeEnvironment.t ->
+    errors:Analysis.AnalysisError.t list Ast.Reference.Table.t ->
+    PyrePath.t list ->
+    Ast.Reference.t list * Analysis.AnalysisError.t list) ->
+  decorators_to_skip:Reference.Set.t ->
+  TypeEnvironment.t ->
+  TypeEnvironment.t
+
 val sanitize_defines : strip_decorators:bool -> Source.t -> Source.t
 
 val requalify_name
