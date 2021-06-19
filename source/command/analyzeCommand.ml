@@ -198,12 +198,21 @@ let run_analysis
                   Service.StaticAnalysis.Cache.save_environment ~configuration ~environment;
                 environment
           in
-          let environment =
+          let environment, initialized_models =
             if inline_decorators then (
               Log.info "Inlining decorators for taint analysis...";
-              type_environment_with_decorators_inlined ~configuration ~scheduler environment )
+              let initialized_models =
+                Interprocedural.Analysis.initialize_models
+                  analysis_kind
+                  ~static_analysis_configuration
+                  ~scheduler
+                  ~environment:(Analysis.TypeEnvironment.read_only environment)
+              in
+              (* TODO(T69755379): Skip inlining decorators based on models. *)
+              ( type_environment_with_decorators_inlined ~configuration ~scheduler environment,
+                Some initialized_models ) )
             else
-              environment
+              environment, None
           in
           let ast_environment =
             Analysis.TypeEnvironment.ast_environment environment
@@ -235,6 +244,7 @@ let run_analysis
             ~filename_lookup
             ~environment:(Analysis.TypeEnvironment.read_only environment)
             ~qualifiers
+            ?initialized_models
             ();
           let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
           Statistics.performance
