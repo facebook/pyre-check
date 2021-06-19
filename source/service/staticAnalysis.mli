@@ -44,5 +44,6 @@ val analyze
   filename_lookup:(Reference.t -> string option) ->
   environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
+  ?initialized_models:Interprocedural.Result.model_t Interprocedural.Result.InitializedModels.t ->
   unit ->
   unit
