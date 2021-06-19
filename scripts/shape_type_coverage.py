@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Iterable
 
 from ..api.connection import PyreConnection
-from ..api.query import Annotation, get_types
+from ..api.query import Annotation, get_types, Position
 from ..client.find_directories import find_global_and_local_root, FoundRoot
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -97,6 +97,56 @@ def _collect_shape_types(
     return final_dictionary
 
 
+def _extract_substring(
+    line: str, line_number: int, start_position: Position, stop_position: Position
+) -> str:
+    assert line_number >= start_position.line and line_number <= stop_position.line
+    if start_position.line == stop_position.line and line_number == start_position.line:
+        return line[start_position.column : stop_position.column]
+    elif line_number == start_position.line:
+        return line[start_position.column :]
+    elif line_number == stop_position.line:
+        return line[: stop_position.column]
+    else:
+        return line
+
+
+def _extract_multiline_text(corpus: List[str], start: Position, stop: Position) -> str:
+    return " ".join(
+        [
+            _extract_substring(
+                line,
+                relative_row_number + start.line,
+                start,
+                stop,
+            )
+            for relative_row_number, line in enumerate(
+                # Lines are 1-indexed
+                corpus[start.line - 1 : stop.line]
+            )
+        ]
+    )
+
+
+def _report_imprecise_warnings(mapping: Dict[str, ShapeAnnotations]) -> None:
+    for filename, shape_annotations in mapping.items():
+        try:
+            lines = Path(filename).read_text().split("\n")
+            for annotation in shape_annotations.imprecise_annotations:
+                expression = " ".join(
+                    _extract_multiline_text(
+                        lines, annotation.start, annotation.stop
+                    ).split()
+                )
+                LOG.error(
+                    f"{filename}:{annotation.start.line}:{annotation.start.column} "
+                    f"Expression `{expression}` has imprecise tensor shape type "
+                    f"`{annotation.type_name}`"
+                )
+        except Exception as exception:
+            LOG.error(f"Unable to read from file {filename}, got exception {exception}")
+
+
 def _report_percentages(mapping: Dict[str, ShapeAnnotations]) -> None:
     global_precise_count = 0
     global_imprecise_count = 0
@@ -129,6 +179,10 @@ def _report_percentages(mapping: Dict[str, ShapeAnnotations]) -> None:
 
 
 def main(filenames: Iterable[str]) -> None:
+    """Prints out coverage statistics and errors related to expressions with
+    imprecise shape types. Note that currently due to the `pyre query` API, lhs
+    and rhs expressions are both counted as imprecise. This means that we will get
+    double-counting for assignments, and duplicated errors."""
     logging.basicConfig(
         format="[%(asctime)s][%(levelname)s]: %(message)s", level=logging.INFO
     )
@@ -146,6 +200,7 @@ def main(filenames: Iterable[str]) -> None:
             )
             typing_summary = get_types(pyre_connection, *filenames)
             shape_mapping = _collect_shape_types(typing_summary)
+            _report_imprecise_warnings(shape_mapping)
             _report_percentages(shape_mapping)
     except Exception as exception:
         LOG.error(f"Pyre server raised an exception: {exception}")

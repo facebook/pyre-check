@@ -14,6 +14,8 @@ from ..shape_type_coverage import (
     _parametric_type,
     ShapeAnnotations,
     _collect_shape_types,
+    _extract_substring,
+    _extract_multiline_text,
 )
 
 
@@ -154,4 +156,132 @@ class CollectShapeTypesTest(unittest.TestCase):
                 "first_file": ShapeAnnotations([precise], []),
                 "second_file": ShapeAnnotations([], [imprecise]),
             },
+        )
+
+
+class ExtractSubstringTests(unittest.TestCase):
+    def assert_extracts_as(
+        self,
+        line: str,
+        line_number: int,
+        start_position: Position,
+        stop_position: Position,
+        expected: str,
+    ) -> None:
+        self.assertEqual(
+            _extract_substring(line, line_number, start_position, stop_position),
+            expected,
+        )
+
+    def test_extract_substring(self) -> None:
+        self.assert_extracts_as(
+            line="linear1(linear2(x))",
+            line_number=1,
+            start_position=Position(1, 0),
+            stop_position=Position(1, 19),
+            expected="linear1(linear2(x))",
+        )
+        self.assert_extracts_as(
+            line="linear1(linear2(x))",
+            line_number=1,
+            start_position=Position(1, 7),
+            stop_position=Position(1, 19),
+            expected="(linear2(x))",
+        )
+        self.assert_extracts_as(
+            line="linear1(linear2(x))",
+            line_number=1,
+            start_position=Position(1, 0),
+            stop_position=Position(1, 7),
+            expected="linear1",
+        )
+        self.assert_extracts_as(
+            line="linear1(linear2(x))",
+            line_number=1,
+            start_position=Position(1, 16),
+            stop_position=Position(1, 17),
+            expected="x",
+        )
+
+        self.assert_extracts_as(
+            line="linear1(linear2(x))",
+            line_number=3,
+            start_position=Position(1, 0),
+            stop_position=Position(5, 0),
+            expected="linear1(linear2(x))",
+        )
+
+        self.assert_extracts_as(
+            line="linear1(linear2(x))",
+            line_number=1,
+            start_position=Position(1, 7),
+            stop_position=Position(2, 4),
+            expected="(linear2(x))",
+        )
+
+        self.assert_extracts_as(
+            line="linear1(linear2(x))",
+            line_number=2,
+            start_position=Position(1, 1),
+            stop_position=Position(2, 7),
+            expected="linear1",
+        )
+
+        with self.assertRaises(AssertionError):
+            _extract_substring(
+                line="linear1(linear2(x))",
+                line_number=50,
+                start_position=Position(1, 0),
+                stop_position=Position(5, 0),
+            )
+
+
+class ExtractMultilineTextTests(unittest.TestCase):
+    def assert_extract_text_as(
+        self,
+        corpus: List[str],
+        start: Position,
+        stop: Position,
+        expected: str,
+    ) -> None:
+        self.assertEqual(_extract_multiline_text(corpus, start, stop), expected)
+
+    def test_extract_text(self) -> None:
+        corpus = ["bar(", "    x,", "    y,", ")"]
+        self.assert_extract_text_as(
+            corpus,
+            start=Position(1, 0),
+            stop=Position(4, 1),
+            expected="bar(     x,     y, )",
+        )
+        self.assert_extract_text_as(
+            corpus,
+            start=Position(1, 3),
+            stop=Position(4, 1),
+            expected="(     x,     y, )",
+        )
+        self.assert_extract_text_as(
+            corpus,
+            start=Position(1, 0),
+            stop=Position(2, 5),
+            expected="bar(     x",
+        )
+
+        self.assert_extract_text_as(
+            corpus,
+            start=Position(1, 0),
+            stop=Position(1, 3),
+            expected="bar",
+        )
+        self.assert_extract_text_as(
+            corpus,
+            start=Position(1, 1),
+            stop=Position(1, 4),
+            expected="ar(",
+        )
+        self.assert_extract_text_as(
+            corpus,
+            start=Position(1, 0),
+            stop=Position(1, 4),
+            expected="bar(",
         )
