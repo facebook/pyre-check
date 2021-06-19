@@ -148,6 +148,8 @@ module Mode = struct
     | Normal
   [@@deriving show, eq]
 
+  let normal = Normal
+
   let join left right =
     match left, right with
     | SkipAnalysis, _ -> SkipAnalysis
@@ -246,9 +248,9 @@ module ResultArgument = struct
 
   let pp_call_model = pp_call_model
 
-  let obscure_model = { forward = Forward.obscure; backward = Backward.obscure; mode = Normal }
+  let obscure_model = { forward = Forward.obscure; backward = Backward.obscure; mode = Mode.normal }
 
-  let empty_model = { forward = Forward.empty; backward = Backward.empty; mode = Normal }
+  let empty_model = { forward = Forward.empty; backward = Backward.empty; mode = Mode.normal }
 
   let is_empty_model { forward; backward; _ } =
     Forward.is_empty_model forward && Backward.is_empty_model backward

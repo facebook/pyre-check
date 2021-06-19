@@ -293,7 +293,7 @@ module GlobalModel = struct
 
   let get_mode { models; _ } =
     let get_mode existing { model = { TaintResult.mode; _ }; _ } = Mode.join mode existing in
-    List.fold ~init:Mode.Normal ~f:get_mode models
+    List.fold ~init:Mode.normal ~f:get_mode models
 
 
   let is_sanitized { models; _ } =
@@ -368,7 +368,7 @@ let infer_class_models ~environment =
             List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
           sink_taint = BackwardState.empty;
         };
-      mode = Normal;
+      mode = Mode.normal;
     }
   in
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
@@ -394,7 +394,7 @@ let infer_class_models ~environment =
               List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
             sink_taint = BackwardState.empty;
           };
-        mode = Normal;
+        mode = Mode.normal;
       }
   in
   let compute_models class_name class_summary =

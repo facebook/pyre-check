@@ -50,7 +50,7 @@ let outcome
     ?(returns = [])
     ?(errors = [])
     ?obscure
-    ?(analysis_mode = Taint.Result.Mode.Normal)
+    ?(analysis_mode = Taint.Result.Mode.normal)
     define_name
   =
   {

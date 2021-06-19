@@ -2499,7 +2499,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
       ~init:([], [])
   in
   let is_empty_model model =
-    Mode.equal model.mode Mode.Normal
+    Mode.equal model.mode Mode.normal
     && ForwardState.is_bottom model.forward.source_taint
     && BackwardState.is_bottom model.backward.sink_taint
     && BackwardState.is_bottom model.backward.taint_in_taint_out

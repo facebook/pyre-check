@@ -391,7 +391,7 @@ include Taint.Result.Register (struct
         let () = Log.info "Skipping taint analysis of %a" Callable.pretty_print callable in
         [], model
     | Some ({ mode; _ } as model) -> analyze ~callable ~environment ~qualifier ~define ~mode model
-    | None -> analyze ~callable ~environment ~qualifier ~define ~mode:Normal empty_model
+    | None -> analyze ~callable ~environment ~qualifier ~define ~mode:Mode.normal empty_model
 
 
   let report = Taint.Reporting.report

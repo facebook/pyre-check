@@ -54,6 +54,8 @@ module Mode : sig
     | Normal
   [@@deriving show, eq]
 
+  val normal : t
+
   val join : t -> t -> t
 end
 
