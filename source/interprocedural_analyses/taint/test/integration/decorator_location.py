@@ -30,11 +30,32 @@ def with_logging2(f: Callable[[int], None]) -> Callable[[int], None]:
     return inner
 
 
+def skip_this_decorator(f: Callable[[int], None]) -> Callable[[int], None]:
+    def inner(x: int) -> None:
+        __test_sink(x)
+        f(x)
+
+    return inner
+
+
 @with_logging
 @with_logging2
 def foo(x: int) -> None:
     __test_sink(x)
 
 
+@skip_this_decorator
+def bar(x: int) -> None:
+    print(x)
+
+
+@with_logging2
+@skip_this_decorator
+def baz(x: int) -> None:
+    print(x)
+
+
 def main() -> None:
     foo(__test_source())
+    bar(__test_source())
+    baz(__test_source())
