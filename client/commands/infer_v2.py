@@ -17,9 +17,8 @@ from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast, Dict, Final, List, Optional, Sequence
+from typing import cast, Dict, List, Optional, Sequence
 
-from pyre_extensions import none_throws
 from typing_extensions import TypeAlias
 
 from .. import command_arguments, log
