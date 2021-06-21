@@ -263,13 +263,8 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some Mode.AllSources;
-                 sinks = Some Mode.AllSinks;
-                 tito = Some AllTito;
-               })
+          ~sanitize:
+            { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -282,8 +277,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = None })
+          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
           "test.taint";
       ]
     ();
@@ -296,8 +290,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = None; sinks = Some Mode.AllSinks; tito = None })
+          ~sanitize:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
           "test.taint";
       ]
     ();
@@ -310,7 +303,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:(Mode.Sanitize { Mode.sources = None; sinks = None; tito = Some AllTito })
+          ~sanitize:{ Sanitize.sources = None; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -325,9 +318,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               { Mode.sources = Some Mode.AllSources; sinks = None; tito = Some AllTito })
+          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -341,9 +332,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               { Mode.sources = Some Mode.AllSources; sinks = None; tito = Some AllTito })
+          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -356,13 +345,12 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              sinks = None;
+              tito = None;
+            }
           "test.taint";
       ]
     ();
@@ -376,16 +364,15 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources =
-                   Some
-                     (Mode.SpecificSources
-                        [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources =
+                Some
+                  (SpecificSources
+                     [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]);
+              sinks = None;
+              tito = None;
+            }
           "test.taint";
       ]
     ();
@@ -399,19 +386,18 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = None;
-                 sinks = None;
-                 tito =
-                   Some
-                     (Mode.SpecificTito
-                        {
-                          sanitized_tito_sources = [Sources.NamedSource "Test"];
-                          sanitized_tito_sinks = [];
-                        });
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = [Sources.NamedSource "Test"];
+                       sanitized_tito_sinks = [];
+                     });
+            }
           "test.taint";
       ]
     ();
@@ -425,19 +411,18 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = None;
-                 sinks = None;
-                 tito =
-                   Some
-                     (Mode.SpecificTito
-                        {
-                          sanitized_tito_sources = [];
-                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
-                        });
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = [];
+                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                     });
+            }
           "test.taint";
       ]
     ();
@@ -451,19 +436,18 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito =
-                   Some
-                     (Mode.SpecificTito
-                        {
-                          sanitized_tito_sources = [];
-                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
-                        });
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = [];
+                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                     });
+            }
           "test.taint";
       ]
     ();
@@ -477,19 +461,18 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = None;
-                 sinks = None;
-                 tito =
-                   Some
-                     (Mode.SpecificTito
-                        {
-                          sanitized_tito_sources = [Sources.NamedSource "Test"];
-                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
-                        });
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = [Sources.NamedSource "Test"];
+                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                     });
+            }
           "test.taint";
       ]
     ();
@@ -499,13 +482,8 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some Mode.AllSources;
-                 Mode.sinks = Some Mode.AllSinks;
-                 Mode.tito = Some Mode.AllTito;
-               })
+          ~sanitize:
+            { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
           "django.http.Request.GET";
       ]
     ();
@@ -515,8 +493,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = None })
+          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
           "django.http.Request.GET";
       ]
     ();
@@ -526,8 +503,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize { sources = None; Mode.sinks = Some Mode.AllSinks; tito = None })
+          ~sanitize:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
           "django.http.Request.GET";
       ]
     ();
@@ -537,13 +513,12 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              sinks = None;
+              tito = None;
+            }
           "django.http.Request.GET";
       ]
     ();
@@ -553,13 +528,12 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 sources = None;
-                 Mode.sinks = Some (Mode.SpecificSinks [Sinks.NamedSink "Test"]);
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = Some (SpecificSinks [Sinks.NamedSink "Test"]);
+              tito = None;
+            }
           "django.http.Request.GET";
       ]
     ();
@@ -569,16 +543,13 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources =
-                   Some
-                     (Mode.SpecificSources
-                        [Sources.NamedSource "TestTest"; Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources =
+                Some (SpecificSources [Sources.NamedSource "TestTest"; Sources.NamedSource "Test"]);
+              sinks = None;
+              tito = None;
+            }
           "django.http.Request.GET";
       ]
     ();
@@ -588,15 +559,30 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 sources = None;
-                 Mode.sinks =
-                   Some (Mode.SpecificSinks [Sinks.NamedSink "TestSink"; Sinks.NamedSink "Test"]);
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = Some (SpecificSinks [Sinks.NamedSink "TestSink"; Sinks.NamedSink "Test"]);
+              tito = None;
+            }
           "django.http.Request.GET";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize
+      @SkipDecoratorWhenInlining
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sanitize:
+            { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+          ~analysis_mode:(Taint.Result.Mode.Normal { skip_decorator_when_inlining = true })
+          "test.taint";
       ]
     ()
 

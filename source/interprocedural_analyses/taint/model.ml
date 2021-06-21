@@ -102,8 +102,9 @@ let register_unknown_callee_model callable =
     (Interprocedural.Result.make_model
        TaintResult.kind
        {
-         TaintResult.forward = TaintResult.Forward.empty;
+         TaintResult.forward = Forward.empty;
          backward = { sink_taint; taint_in_taint_out };
+         sanitize = Sanitize.empty;
          mode = SkipAnalysis;
        })
 
@@ -114,7 +115,12 @@ let get_callsite_model ~resolution ~call_target ~arguments =
   | None -> { is_obscure = true; call_target; model = TaintResult.empty_model }
   | Some model ->
       let expand_via_value_of
-          { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
+          {
+            forward = { source_taint };
+            backward = { sink_taint; taint_in_taint_out };
+            sanitize;
+            mode;
+          }
         =
         let expand features =
           let transform feature features =
@@ -164,7 +170,12 @@ let get_callsite_model ~resolution ~call_target ~arguments =
             ~f:expand
             taint_in_taint_out
         in
-        { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
+        {
+          forward = { source_taint };
+          backward = { sink_taint; taint_in_taint_out };
+          sanitize;
+          mode;
+        }
       in
       let taint_model =
         Interprocedural.Result.get_model TaintResult.kind model
@@ -291,20 +302,26 @@ module GlobalModel = struct
     List.fold ~init:BackwardState.Tree.bottom ~f:to_tito models
 
 
+  let get_sanitize { models; _ } =
+    let get_sanitize existing { model = { TaintResult.sanitize; _ }; _ } =
+      Sanitize.join sanitize existing
+    in
+    List.fold ~init:Sanitize.empty ~f:get_sanitize models
+
+
   let get_mode { models; _ } =
     let get_mode existing { model = { TaintResult.mode; _ }; _ } = Mode.join mode existing in
     List.fold ~init:Mode.normal ~f:get_mode models
 
 
   let is_sanitized { models; _ } =
-    let is_sanitized_model { model = { TaintResult.mode; _ }; _ } =
-      match mode with
-      | TaintResult.Mode.Sanitize
-          {
-            sources = Some TaintResult.Mode.AllSources;
-            sinks = Some TaintResult.Mode.AllSinks;
-            tito = Some AllTito;
-          } ->
+    let is_sanitized_model { model = { TaintResult.sanitize; _ }; _ } =
+      match sanitize with
+      | {
+       sources = Some TaintResult.Sanitize.AllSources;
+       sinks = Some TaintResult.Sanitize.AllSinks;
+       tito = Some TaintResult.Sanitize.AllTito;
+      } ->
           true
       | _ -> false
     in
@@ -368,6 +385,7 @@ let infer_class_models ~environment =
             List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
           sink_taint = BackwardState.empty;
         };
+      sanitize = Sanitize.empty;
       mode = Mode.normal;
     }
   in
@@ -394,6 +412,7 @@ let infer_class_models ~environment =
               List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
             sink_taint = BackwardState.empty;
           };
+        sanitize = Sanitize.empty;
         mode = Mode.normal;
       }
   in

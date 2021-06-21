@@ -39,6 +39,7 @@ type expectation = {
   returns: Taint.Sources.t list;
   errors: error_expectation list;
   obscure: bool option;
+  sanitize: Taint.Result.Sanitize.t;
   analysis_mode: Taint.Result.Mode.t;
 }
 
@@ -50,6 +51,7 @@ let outcome
     ?(returns = [])
     ?(errors = [])
     ?obscure
+    ?(sanitize = Taint.Result.Sanitize.empty)
     ?(analysis_mode = Taint.Result.Mode.normal)
     define_name
   =
@@ -62,6 +64,7 @@ let outcome
     returns;
     errors;
     obscure;
+    sanitize;
     analysis_mode;
   }
 
@@ -98,6 +101,7 @@ let check_expectation
       errors;
       kind;
       obscure;
+      sanitize = expected_sanitize;
       analysis_mode = expected_analysis_mode;
     }
   =
@@ -135,8 +139,9 @@ let check_expectation
         String.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let { backward; forward; mode }, is_obscure = get_model callable in
+  let { backward; forward; sanitize; mode }, is_obscure = get_model callable in
   assert_equal ~printer:Taint.Result.Mode.show mode expected_analysis_mode;
+  assert_equal ~printer:Taint.Result.Sanitize.show sanitize expected_sanitize;
   let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue

@@ -1672,7 +1672,7 @@ let resolve_global_callable
     Ok (resolve_global ~resolution name)
 
 
-let adjust_mode_and_skipped_overrides
+let adjust_sanitize_and_mode_and_skipped_overrides
     ~path
     ~location
     ~define_name
@@ -1682,9 +1682,9 @@ let adjust_mode_and_skipped_overrides
   =
   (* Adjust analysis mode and whether we skip overrides by applying top-level decorators. *)
   let open Core.Result in
-  let mode_and_skipped_override =
-    let adjust_mode
-        (mode, skipped_override)
+  let sanitize_and_mode_and_skipped_override =
+    let adjust
+        (sanitize, mode, skipped_override)
         { Decorator.name = { Node.value = name; _ }; arguments }
       =
       match Reference.show name with
@@ -1692,7 +1692,8 @@ let adjust_mode_and_skipped_overrides
           let sanitize_kind =
             match arguments with
             | None ->
-                Ok { Mode.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+                Ok
+                  { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
             | Some arguments ->
                 let to_sanitize_kind sanitize { Call.Argument.value; _ } =
                   match Node.value value with
@@ -1700,9 +1701,9 @@ let adjust_mode_and_skipped_overrides
                       sanitize
                       >>| fun sanitize ->
                       match name with
-                      | "TaintSource" -> { sanitize with Mode.sources = Some AllSources }
-                      | "TaintSink" -> { sanitize with Mode.sinks = Some AllSinks }
-                      | "TaintInTaintOut" -> { sanitize with Mode.tito = Some AllTito }
+                      | "TaintSource" -> { sanitize with Sanitize.sources = Some AllSources }
+                      | "TaintSink" -> { sanitize with Sanitize.sinks = Some AllSinks }
+                      | "TaintInTaintOut" -> { sanitize with Sanitize.tito = Some AllTito }
                       | _ -> sanitize )
                   | Expression.Call { Call.callee; arguments = [{ Call.Argument.value; _ }] }
                     when Option.equal String.equal (base_name callee) (Some "TaintInTaintOut") -> (
@@ -1747,7 +1748,7 @@ let adjust_mode_and_skipped_overrides
                           value
                         >>= List.fold_result ~init:([], []) ~f:add_tito_annotation
                         >>| fun (sanitized_tito_sources, sanitized_tito_sinks) ->
-                        Mode.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
+                        Sanitize.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
                       in
                       sanitize_tito
                       >>= fun sanitize_tito ->
@@ -1757,7 +1758,7 @@ let adjust_mode_and_skipped_overrides
                       | Some AllTito -> sanitize
                       | _ -> { sanitize with tito = Some sanitize_tito } )
                   | _ ->
-                      let add_annotation { Mode.sources; sinks; tito } = function
+                      let add_annotation { Sanitize.sources; sinks; tito } = function
                         | Source
                             {
                               source;
@@ -1768,12 +1769,12 @@ let adjust_mode_and_skipped_overrides
                             } ->
                             let sources =
                               match sources with
-                              | None -> Some (Mode.SpecificSources [source])
-                              | Some (Mode.SpecificSources sources) ->
-                                  Some (Mode.SpecificSources (source :: sources))
-                              | Some Mode.AllSources -> Some Mode.AllSources
+                              | None -> Some (Sanitize.SpecificSources [source])
+                              | Some (Sanitize.SpecificSources sources) ->
+                                  Some (Sanitize.SpecificSources (source :: sources))
+                              | Some Sanitize.AllSources -> Some Sanitize.AllSources
                             in
-                            Ok { Mode.sources; sinks; tito }
+                            Ok { Sanitize.sources; sinks; tito }
                         | Sink
                             {
                               sink;
@@ -1784,12 +1785,12 @@ let adjust_mode_and_skipped_overrides
                             } ->
                             let sinks =
                               match sinks with
-                              | None -> Some (Mode.SpecificSinks [sink])
-                              | Some (Mode.SpecificSinks sinks) ->
-                                  Some (Mode.SpecificSinks (sink :: sinks))
-                              | Some Mode.AllSinks -> Some Mode.AllSinks
+                              | None -> Some (Sanitize.SpecificSinks [sink])
+                              | Some (Sanitize.SpecificSinks sinks) ->
+                                  Some (Sanitize.SpecificSinks (sink :: sinks))
+                              | Some Sanitize.AllSinks -> Some Sanitize.AllSinks
                             in
-                            Ok { Mode.sources; sinks; tito }
+                            Ok { Sanitize.sources; sinks; tito }
                         | taint_annotation ->
                             Error
                               (invalid_model_error
@@ -1813,24 +1814,24 @@ let adjust_mode_and_skipped_overrides
                       >>= fun sanitize ->
                       List.fold_result ~init:sanitize ~f:add_annotation annotations
                 in
-                List.fold
-                  arguments
-                  ~f:to_sanitize_kind
-                  ~init:(Ok { Mode.sources = None; sinks = None; tito = None })
+                List.fold arguments ~f:to_sanitize_kind ~init:(Ok Sanitize.empty)
           in
           sanitize_kind
           >>| fun sanitize_kind ->
-          TaintResult.Mode.join mode (Mode.Sanitize sanitize_kind), skipped_override
-      | "SkipAnalysis" -> Ok (TaintResult.Mode.SkipAnalysis, skipped_override)
+          TaintResult.Sanitize.join sanitize sanitize_kind, mode, skipped_override
+      | "SkipAnalysis" -> Ok (sanitize, TaintResult.Mode.SkipAnalysis, skipped_override)
       | "SkipDecoratorWhenInlining" ->
-          Ok (TaintResult.Mode.Normal { skip_decorator_when_inlining = true }, skipped_override)
-      | "SkipOverrides" -> Ok (mode, Some define_name)
-      | _ -> Ok (mode, skipped_override)
+          Ok
+            ( sanitize,
+              TaintResult.Mode.Normal { skip_decorator_when_inlining = true },
+              skipped_override )
+      | "SkipOverrides" -> Ok (sanitize, mode, Some define_name)
+      | _ -> Ok (sanitize, mode, skipped_override)
     in
-    List.fold_result top_level_decorators ~f:adjust_mode ~init:(model.mode, None)
+    List.fold_result top_level_decorators ~f:adjust ~init:(model.sanitize, model.mode, None)
   in
-  mode_and_skipped_override
-  >>| fun (mode, skipped_override) -> { model with mode }, skipped_override
+  sanitize_and_mode_and_skipped_override
+  >>| fun (sanitize, mode, skipped_override) -> { model with sanitize; mode }, skipped_override
 
 
 let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
@@ -2362,7 +2363,7 @@ let create_model_from_signature
           annotation)
   in
   model
-  >>= adjust_mode_and_skipped_overrides
+  >>= adjust_sanitize_and_mode_and_skipped_overrides
         ~path
         ~location
         ~configuration
@@ -2438,7 +2439,7 @@ let create_model_from_attribute
         ~sinks_to_keep
         accumulator
         annotation)
-  >>= adjust_mode_and_skipped_overrides
+  >>= adjust_sanitize_and_mode_and_skipped_overrides
         ~path
         ~location
         ~configuration
@@ -2503,6 +2504,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
   in
   let is_empty_model model =
     Mode.equal model.mode Mode.normal
+    && Sanitize.is_empty model.sanitize
     && ForwardState.is_bottom model.forward.source_taint
     && BackwardState.is_bottom model.backward.sink_taint
     && BackwardState.is_bottom model.backward.taint_in_taint_out

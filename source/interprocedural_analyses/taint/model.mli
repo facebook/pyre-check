@@ -34,6 +34,8 @@ module GlobalModel : sig
 
   val get_tito : t -> Domains.BackwardState.Tree.t
 
+  val get_sanitize : t -> TaintResult.Sanitize.t
+
   val get_mode : t -> TaintResult.Mode.t
 
   val is_sanitized : t -> bool

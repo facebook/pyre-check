@@ -159,7 +159,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (Node.create_with_default_location call_expression)
           Model.pp
           taint_model;
-        let { TaintResult.backward; mode; _ } = taint_model.model in
+        let { TaintResult.backward; sanitize; _ } = taint_model.model in
         let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
         let sink_argument_matches =
           BackwardState.roots sink_taint |> AccessPath.match_actuals_to_formals arguments
@@ -290,8 +290,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~f:(combine_tito argument.Node.location)
                 ~init:BackwardState.Tree.empty
             in
-            match mode with
-            | Sanitize { tito = Some (SpecificTito { sanitized_tito_sinks; _ }); _ } ->
+            match sanitize with
+            | { tito = Some (SpecificTito { sanitized_tito_sinks; _ }); _ } ->
                 BackwardState.Tree.partition
                   BackwardTaint.leaf
                   ByFilter
@@ -1116,24 +1116,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
 
               let apply_attribute_sanitizers taint =
-                match Model.GlobalModel.get_mode global_model with
-                | Sanitize { sinks = sanitize_sinks; _ } -> (
-                    match sanitize_sinks with
-                    | Some TaintResult.Mode.AllSinks -> BackwardState.Tree.empty
-                    | Some (TaintResult.Mode.SpecificSinks sanitized_sinks) ->
-                        BackwardState.Tree.partition
-                          BackwardTaint.leaf
-                          ByFilter
-                          ~f:(fun sink ->
-                            Option.some_if
-                              (not (List.mem ~equal:Sinks.equal sanitized_sinks sink))
-                              sink)
-                          taint
-                        |> Core.Map.Poly.fold
-                             ~init:BackwardState.Tree.bottom
-                             ~f:(fun ~key:_ ~data:sink_state state ->
-                               BackwardState.Tree.join sink_state state)
-                    | None -> taint )
+                match Model.GlobalModel.get_sanitize global_model with
+                | { TaintResult.Sanitize.sinks = Some AllSinks; _ } -> BackwardState.Tree.empty
+                | { TaintResult.Sanitize.sinks = Some (SpecificSinks sanitized_sinks); _ } ->
+                    BackwardState.Tree.partition
+                      BackwardTaint.leaf
+                      ByFilter
+                      ~f:(fun sink ->
+                        Option.some_if (not (List.mem ~equal:Sinks.equal sanitized_sinks sink)) sink)
+                      taint
+                    |> Core.Map.Poly.fold
+                         ~init:BackwardState.Tree.bottom
+                         ~f:(fun ~key:_ ~data:sink_state state ->
+                           BackwardState.Tree.join sink_state state)
                 | _ -> taint
               in
               let taint =

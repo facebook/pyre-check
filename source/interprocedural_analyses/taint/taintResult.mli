@@ -23,7 +23,7 @@ module Forward : sig
   val empty : model
 end
 
-module Mode : sig
+module Sanitize : sig
   type sanitize_sources =
     | AllSources
     | SpecificSources of Sources.t list
@@ -40,17 +40,23 @@ module Mode : sig
       }
   [@@deriving show, compare, eq]
 
-  type sanitize = {
+  type t = {
     sources: sanitize_sources option;
     sinks: sanitize_sinks option;
     tito: sanitize_tito option;
   }
   [@@deriving show, eq]
 
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val join : t -> t -> t
+end
+
+module Mode : sig
   type t =
     | SkipAnalysis (* Don't analyze at all *)
-    | Sanitize of sanitize
-    (* Analyze, but throw away inferred model *)
     | Normal of { skip_decorator_when_inlining: bool }
   [@@deriving show, eq]
 
@@ -62,6 +68,7 @@ end
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
+  sanitize: Sanitize.t;
   mode: Mode.t;
 }
 

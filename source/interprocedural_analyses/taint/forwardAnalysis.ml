@@ -132,7 +132,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
          sinks at the end. *)
       let triggered_sinks = String.Hash_set.create () in
       let apply_call_target state argument_taint call_target =
-        let ({ Model.model = { TaintResult.forward; backward; mode }; _ } as taint_model) =
+        let ({ Model.model = { TaintResult.forward; backward; sanitize; _ }; _ } as taint_model) =
           Model.get_callsite_model ~resolution ~call_target ~arguments
         in
         log
@@ -176,8 +176,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             (argument_taint, ((argument, sink_matches), (_dup, tito_matches)))
           =
           let taint_to_propagate =
-            match mode with
-            | Sanitize { tito = Some (SpecificTito { sanitized_tito_sources; _ }); _ } ->
+            match sanitize with
+            | { tito = Some (SpecificTito { sanitized_tito_sources; _ }); _ } ->
                 ForwardState.Tree.partition
                   ForwardTaint.leaf
                   ByFilter
@@ -1102,24 +1102,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           taint
       in
       let apply_attribute_sanitizers taint =
-        match Model.GlobalModel.get_mode global_model with
-        | Sanitize { sources = sanitize_sources; _ } -> (
-            match sanitize_sources with
-            | Some TaintResult.Mode.AllSources -> ForwardState.Tree.empty
-            | Some (TaintResult.Mode.SpecificSources sanitized_sources) ->
-                ForwardState.Tree.partition
-                  ForwardTaint.leaf
-                  ByFilter
-                  ~f:(fun source ->
-                    Option.some_if
-                      (not (List.mem ~equal:Sources.equal sanitized_sources source))
-                      source)
-                  taint
-                |> Core.Map.Poly.fold
-                     ~init:ForwardState.Tree.bottom
-                     ~f:(fun ~key:_ ~data:source_state state ->
-                       ForwardState.Tree.join source_state state)
-            | None -> taint )
+        match Model.GlobalModel.get_sanitize global_model with
+        | { TaintResult.Sanitize.sources = Some AllSources; _ } -> ForwardState.Tree.empty
+        | { TaintResult.Sanitize.sources = Some (SpecificSources sanitized_sources); _ } ->
+            ForwardState.Tree.partition
+              ForwardTaint.leaf
+              ByFilter
+              ~f:(fun source ->
+                Option.some_if (not (List.mem ~equal:Sources.equal sanitized_sources source)) source)
+              taint
+            |> Core.Map.Poly.fold
+                 ~init:ForwardState.Tree.bottom
+                 ~f:(fun ~key:_ ~data:source_state state ->
+                   ForwardState.Tree.join source_state state)
         | _ -> taint
       in
 
