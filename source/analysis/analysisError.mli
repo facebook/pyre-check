@@ -350,6 +350,7 @@ and kind =
       missing_key: string;
     }
   | UnboundName of Identifier.t
+  | UninitializedLocal of Identifier.t
   | UndefinedAttribute of {
       attribute: Identifier.t;
       origin: origin;

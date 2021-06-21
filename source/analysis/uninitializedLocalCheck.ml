@@ -189,7 +189,7 @@ module State (Context : Context) = struct
     let emit_error { Node.value; location } =
       Error.create
         ~location:(Location.with_module ~qualifier location)
-        ~kind:(Error.UnboundName value)
+        ~kind:(Error.UninitializedLocal value)
         ~define
     in
     let all_locals =

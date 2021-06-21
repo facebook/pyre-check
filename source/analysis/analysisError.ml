@@ -359,6 +359,7 @@ and kind =
       missing_key: string;
     }
   | UnboundName of Identifier.t
+  | UninitializedLocal of Identifier.t
   | UndefinedAttribute of {
       attribute: Identifier.t;
       origin: origin;
@@ -465,6 +466,7 @@ let code = function
   | UnsupportedOperand _ -> 58
   | DuplicateTypeVariables _ -> 59
   | TupleConcatenationError _ -> 60
+  | UninitializedLocal _ -> 61
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -528,6 +530,7 @@ let name = function
   | UndefinedType _ -> "Undefined or invalid type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UninitializedAttribute _ -> "Uninitialized attribute"
+  | UninitializedLocal _ -> "Uninitilaized local"
   | Unpack _ -> "Unable to unpack"
   | UnsafeCast _ -> "Unsafe cast"
   | UnsupportedOperand _ -> "Unsupported operand"
@@ -2042,6 +2045,16 @@ let rec messages ~concise ~signature location kind =
           name;
         "Did you forget to import it or assign to it?";
       ]
+  | UninitializedLocal name when concise ->
+      [Format.asprintf "`%a` may not be initialized here." Identifier.pp_sanitized name]
+  | UninitializedLocal name ->
+      [
+        Format.asprintf
+          "Local variable `%a` may not be initialized here."
+          Identifier.pp_sanitized
+          name;
+        "Check if along control flows the variable is defined.";
+      ]
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
@@ -2414,6 +2427,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UnsafeCast _
   | UnawaitedAwaitable _
   | UnboundName _
+  | UninitializedLocal _
   | UndefinedAttribute _
   | UndefinedImport _
   | UndefinedType _
@@ -2613,7 +2627,9 @@ let less_or_equal ~resolution left right =
     ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | UnawaitedAwaitable left, UnawaitedAwaitable right -> equal_unawaited_awaitable left right
-  | UnboundName left_name, UnboundName right_name -> Identifier.equal_sanitized left_name right_name
+  | UnboundName left_name, UnboundName right_name
+  | UninitializedLocal left_name, UninitializedLocal right_name ->
+      Identifier.equal_sanitized left_name right_name
   | ( DuplicateTypeVariables { variable = left; base = left_base },
       DuplicateTypeVariables { variable = right; base = right_base } ) -> (
       match left_base, right_base with
@@ -2726,6 +2742,7 @@ let less_or_equal ~resolution left right =
   | TypedDictionaryKeyNotFound _, _
   | UnawaitedAwaitable _, _
   | UnboundName _, _
+  | UninitializedLocal _, _
   | DuplicateTypeVariables _, _
   | UndefinedAttribute _, _
   | UndefinedImport _, _
@@ -2981,6 +2998,9 @@ let join ~resolution left right =
     | UnboundName left_name, UnboundName right_name
       when Identifier.equal_sanitized left_name right_name ->
         left.kind
+    | UninitializedLocal left_name, UninitializedLocal right_name
+      when Identifier.equal_sanitized left_name right_name ->
+        left.kind
     | ( DuplicateTypeVariables { variable = left; base = GenericBase },
         DuplicateTypeVariables { variable = right; base = GenericBase } )
       when Type.Variable.equal left right ->
@@ -3151,6 +3171,7 @@ let join ~resolution left right =
     | TypedDictionaryInitializationError _, _
     | UnawaitedAwaitable _, _
     | UnboundName _, _
+    | UninitializedLocal _, _
     | DuplicateTypeVariables _, _
     | UndefinedAttribute _, _
     | UndefinedImport _, _
@@ -3762,6 +3783,7 @@ let dequalify
     | DuplicateTypeVariables { variable; base } ->
         DuplicateTypeVariables { variable = Type.Variable.dequalify dequalify_map variable; base }
     | UnboundName name -> UnboundName (dequalify_identifier name)
+    | UninitializedLocal name -> UninitializedLocal (dequalify_identifier name)
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =
           match origin with
