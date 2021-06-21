@@ -258,6 +258,7 @@ def setup(runner_type: Type[Setup]) -> None:
     parser.add_argument("--development", action="store_true")
     parser.add_argument("--release", action="store_true")
     parser.add_argument("--build-type", type=BuildType)
+    parser.add_argument("--no-tests", action="store_true")
 
     parsed = parser.parse_args()
 
@@ -290,7 +291,9 @@ def setup(runner_type: Type[Setup]) -> None:
         LOG.info("Environment built successfully, stopping here as requested.")
     else:
         runner.full_setup(
-            pyre_directory, run_tests=True, build_type_override=parsed.build_type
+            pyre_directory,
+            run_tests=not parsed.no_tests,
+            build_type_override=parsed.build_type,
         )
 
 

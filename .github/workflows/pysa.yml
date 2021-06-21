@@ -1,0 +1,52 @@
+name: pysa
+
+on:
+  push:
+    branches: [ test-2, master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  pysa:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          sudo apt-get install ocaml ocaml-dune
+
+      - name: Setup OCaml
+        uses: avsm/setup-ocaml@v2
+        with:
+          ocaml-compiler: 4.10.2
+
+      - name: Setup opam switch
+        run: |
+          opam switch create 4.10.2
+          echo "OPAM_SWITCH_PREFIX=$HOME/.opam/4.10.2" >> $GITHUB_ENV
+          echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/4.10.2/lib/stublibs:$HOME/.opam/4.10.2/lib/ocaml/stublibs:$HOME/.opam/4.10.2/lib/ocam" >> $GITHUB_ENV
+          echo "$HOME/.opam/4.10.2/bin" >> $GITHUB_PATH
+          echo "/home/opam/.opam/4.10.2/bin" >> $GITHUB_PATH
+
+      - name: Build Pyre (and Pysa)
+        run: |
+          mkdir typeshed
+          unzip -qq ./stubs/typeshed/typeshed.zip -d ./typeshed/
+          ./scripts/setup.sh --local --no-tests
+          make -C source
+          echo "PYTHONPATH=$GITHUB_WORKSPACE:$PYTHONPATH" >> $GITHUB_ENV
+          echo "pythonLocation=$GITHUB_WORKSPACE:$pythonLocation" >> $GITHUB_ENV
+          echo "PYRE_BINARY=$GITHUB_WORKSPACE/source/_build/default/main.exe" >> $GITHUB_ENV
+          echo "PYRE_TYPESHED=$GITHUB_WORKSPACE/typeshed/typeshed-master/" >> $GITHUB_ENV
+
+      - name: Run and test pysa output
+        run: |
+          cd ./documentation/deliberately_vulnerable_flask_app
+          . ./setup.sh
+          ./run_integration_tests.sh
