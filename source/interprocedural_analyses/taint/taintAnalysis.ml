@@ -168,30 +168,7 @@ include Taint.Result.Register (struct
           | `Left model
           | `Right model ->
               Some model
-          | `Both (left, right) ->
-              Some
-                {
-                  modes = ModeSet.join left.modes right.modes;
-                  sanitize = Sanitize.join left.sanitize right.sanitize;
-                  forward =
-                    {
-                      source_taint =
-                        Domains.ForwardState.join
-                          left.forward.source_taint
-                          right.forward.source_taint;
-                    };
-                  backward =
-                    {
-                      sink_taint =
-                        Domains.BackwardState.join
-                          left.backward.sink_taint
-                          right.backward.sink_taint;
-                      taint_in_taint_out =
-                        Domains.BackwardState.join
-                          left.backward.taint_in_taint_out
-                          right.backward.taint_in_taint_out;
-                    };
-                }
+          | `Both (left, right) -> Some (Result.join ~iteration:0 left right)
         in
         ( Callable.Map.merge models_left models_right ~f:merge_models,
           List.rev_append errors_left errors_right,
