@@ -279,8 +279,15 @@ module ResultArgument = struct
     }
 
 
-  let is_empty_model { forward; backward; _ } =
-    Forward.is_empty_model forward && Backward.is_empty_model backward
+  let is_empty_model ~with_mode { forward; backward; sanitize; mode } =
+    Forward.is_empty_model forward
+    && Backward.is_empty_model backward
+    && Sanitize.is_empty sanitize
+    && Mode.equal with_mode mode
+
+
+  let should_externalize_model { forward; backward; _ } =
+    (not (Forward.is_empty_model forward)) || not (Backward.is_empty_model backward)
 
 
   let join ~iteration:_ left right =
@@ -358,6 +365,8 @@ module ResultArgument = struct
 end
 
 let is_empty_model = ResultArgument.is_empty_model
+
+let should_externalize_model = ResultArgument.should_externalize_model
 
 let model_to_json = ResultArgument.model_to_json
 

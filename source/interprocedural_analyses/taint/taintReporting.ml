@@ -58,7 +58,7 @@ let extract_errors scheduler callables =
 
 let externalize ~filename_lookup callable result_option model =
   let issues = issues_to_json ~filename_lookup callable result_option in
-  if TaintResult.is_empty_model model then
+  if not (TaintResult.should_externalize_model model) then
     issues
   else
     TaintResult.model_to_json ~filename_lookup callable model :: issues

@@ -72,9 +72,11 @@ type call_model = {
   mode: Mode.t;
 }
 
-val is_empty_model : call_model -> bool
+val is_empty_model : with_mode:Mode.t -> call_model -> bool
 
 val empty_skip_model : call_model (* Skips analysis *)
+
+val should_externalize_model : call_model -> bool
 
 type result = Flow.issue list
 
