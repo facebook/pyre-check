@@ -160,7 +160,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }
 {
@@ -174,6 +175,7 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }

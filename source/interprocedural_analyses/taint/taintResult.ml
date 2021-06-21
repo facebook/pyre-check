@@ -196,6 +196,51 @@ module Sanitize = struct
       | None, None -> None
     in
     { sources; sinks; tito }
+
+
+  let to_json { sources; sinks; tito } =
+    let to_string name = `String name in
+    let sources_to_json sources =
+      `List
+        ( sources
+        |> List.dedup_and_sort ~compare:Sources.compare
+        |> List.map ~f:Sources.show
+        |> List.map ~f:to_string )
+    in
+    let sinks_to_json sinks =
+      `List
+        ( sinks
+        |> List.dedup_and_sort ~compare:Sinks.compare
+        |> List.map ~f:Sinks.show
+        |> List.map ~f:to_string )
+    in
+    let sources_json =
+      match sources with
+      | Some AllSources -> ["sources", `String "All"]
+      | Some (SpecificSources sources) -> ["sources", sources_to_json sources]
+      | None -> []
+    in
+    let sinks_json =
+      match sinks with
+      | Some AllSinks -> ["sinks", `String "All"]
+      | Some (SpecificSinks sinks) -> ["sinks", sinks_to_json sinks]
+      | None -> []
+    in
+    let tito_json =
+      match tito with
+      | Some AllTito -> ["tito", `String "All"]
+      | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
+          [
+            "tito_sources", sources_to_json sanitized_tito_sources;
+            "tito_sinks", sinks_to_json sanitized_tito_sinks;
+          ]
+      | None -> []
+    in
+    `Assoc (sources_json @ sinks_json @ tito_json)
+
+
+  let pp_model formatter sanitize =
+    Format.fprintf formatter "%s" (json_to_string (to_json sanitize))
 end
 
 module Mode = struct
@@ -214,6 +259,15 @@ module Mode = struct
         Normal { skip_decorator_when_inlining = right } ) ->
         Normal { skip_decorator_when_inlining = left || right }
     [@@deriving show, eq]
+
+
+  let to_json = function
+    | SkipAnalysis -> `String "SkipAnalysis"
+    | Normal { skip_decorator_when_inlining = true } -> `String "SkipDecoratorWhenInlining"
+    | Normal { skip_decorator_when_inlining = false } -> `String "Normal"
+
+
+  let pp_model formatter mode = Format.fprintf formatter "%s" (json_to_string (to_json mode))
 end
 
 type call_model = {
@@ -231,9 +285,9 @@ let pp_call_model formatter { forward; backward; sanitize; mode } =
     forward
     Backward.pp_model
     backward
-    Sanitize.pp
+    Sanitize.pp_model
     sanitize
-    Mode.pp
+    Mode.pp_model
     mode
 
 
@@ -286,8 +340,10 @@ module ResultArgument = struct
     && Mode.equal with_mode mode
 
 
-  let should_externalize_model { forward; backward; _ } =
-    (not (Forward.is_empty_model forward)) || not (Backward.is_empty_model backward)
+  let should_externalize_model { forward; backward; sanitize; _ } =
+    (not (Forward.is_empty_model forward))
+    || (not (Backward.is_empty_model backward))
+    || not (Sanitize.is_empty sanitize)
 
 
   let join ~iteration:_ left right =
@@ -353,15 +409,26 @@ module ResultArgument = struct
   let model_to_json ~filename_lookup callable model =
     let callable_name = Interprocedural.Callable.external_target_name callable in
     let model_json =
-      `Assoc
-        [
-          "callable", `String callable_name;
-          "sources", Forward.to_json ~filename_lookup model.forward;
-          "sinks", Backward.to_json_sinks ~filename_lookup model.backward;
-          "tito", Backward.to_json_tito ~filename_lookup model.backward;
-        ]
+      [
+        "callable", `String callable_name;
+        "sources", Forward.to_json ~filename_lookup model.forward;
+        "sinks", Backward.to_json_sinks ~filename_lookup model.backward;
+        "tito", Backward.to_json_tito ~filename_lookup model.backward;
+      ]
     in
-    `Assoc ["kind", `String "model"; "data", model_json]
+    let model_json =
+      if not (Sanitize.is_empty model.sanitize) then
+        model_json @ ["sanitize", Sanitize.to_json model.sanitize]
+      else
+        model_json
+    in
+    let model_json =
+      if not (Mode.equal model.mode Mode.normal) then
+        model_json @ ["mode", Mode.to_json model.mode]
+      else
+        model_json
+    in
+    `Assoc ["kind", `String "model"; "data", `Assoc model_json]
 end
 
 let is_empty_model = ResultArgument.is_empty_model
