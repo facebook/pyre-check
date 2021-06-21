@@ -360,6 +360,11 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
 
     let add element set = add set element
 
+    let contains element = function
+      | Bottom -> false
+      | BiSet { over; _ } -> Set.mem element over
+
+
     let meet = Base.meet
 
     let fold = Base.fold

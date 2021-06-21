@@ -24,6 +24,8 @@ module type S = sig
 
   val remove : element -> t -> t
 
+  val contains : element -> t -> bool
+
   val singleton : element -> t
 
   val elements : t -> element list
