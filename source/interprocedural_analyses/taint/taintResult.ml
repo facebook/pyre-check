@@ -244,51 +244,55 @@ module Sanitize = struct
 end
 
 module Mode = struct
+  let name = "modes"
+
   type t =
     | SkipAnalysis (* Don't analyze at all *)
-    | Normal of { skip_decorator_when_inlining: bool }
-  [@@deriving show, eq]
+    | SkipDecoratorWhenInlining
+  [@@deriving compare]
 
-  let normal = Normal { skip_decorator_when_inlining = false }
-
-  let join left right =
-    match left, right with
-    | SkipAnalysis, _ -> SkipAnalysis
-    | _, SkipAnalysis -> SkipAnalysis
-    | ( Normal { skip_decorator_when_inlining = left },
-        Normal { skip_decorator_when_inlining = right } ) ->
-        Normal { skip_decorator_when_inlining = left || right }
-    [@@deriving show, eq]
+  let pp formatter = function
+    | SkipAnalysis -> Format.fprintf formatter "SkipAnalysis"
+    | SkipDecoratorWhenInlining -> Format.fprintf formatter "SkipDecoratorWhenInlining"
 
 
-  let to_json = function
-    | SkipAnalysis -> `String "SkipAnalysis"
-    | Normal { skip_decorator_when_inlining = true } -> `String "SkipDecoratorWhenInlining"
-    | Normal { skip_decorator_when_inlining = false } -> `String "Normal"
+  let show = Format.asprintf "%a" pp
 
+  let to_json mode = `String (show mode)
+end
 
-  let pp_model formatter mode = Format.fprintf formatter "%s" (json_to_string (to_json mode))
+module ModeSet = struct
+  module T = Abstract.SetDomain.Make (Mode)
+  include T
+
+  let empty = T.bottom
+
+  let is_empty = T.is_bottom
+
+  let equal left right = T.less_or_equal ~left ~right && T.less_or_equal ~left:right ~right:left
+
+  let to_json modes = `List (modes |> T.elements |> List.map ~f:Mode.to_json)
 end
 
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
   sanitize: Sanitize.t;
-  mode: Mode.t;
+  modes: ModeSet.t;
 }
 
-let pp_call_model formatter { forward; backward; sanitize; mode } =
+let pp_call_model formatter { forward; backward; sanitize; modes } =
   Format.fprintf
     formatter
-    "  Forward:\n%a\n  Backward:\n%a\n  Sanitize:%a\n  Mode:%a\n"
+    "  Forward:\n%a\n  Backward:\n%a\n  Sanitize: %a\n  Modes: %a\n"
     Forward.pp_model
     forward
     Backward.pp_model
     backward
     Sanitize.pp_model
     sanitize
-    Mode.pp_model
-    mode
+    ModeSet.pp
+    modes
 
 
 let show_call_model = Format.asprintf "%a" pp_call_model
@@ -300,7 +304,7 @@ let empty_skip_model =
     forward = Forward.empty;
     backward = Backward.empty;
     sanitize = Sanitize.empty;
-    mode = SkipAnalysis;
+    modes = ModeSet.singleton SkipAnalysis;
   }
 
 
@@ -320,7 +324,7 @@ module ResultArgument = struct
       forward = Forward.obscure;
       backward = Backward.obscure;
       sanitize = Sanitize.empty;
-      mode = Mode.normal;
+      modes = ModeSet.empty;
     }
 
 
@@ -329,15 +333,15 @@ module ResultArgument = struct
       forward = Forward.empty;
       backward = Backward.empty;
       sanitize = Sanitize.empty;
-      mode = Mode.normal;
+      modes = ModeSet.empty;
     }
 
 
-  let is_empty_model ~with_mode { forward; backward; sanitize; mode } =
+  let is_empty_model ~with_modes { forward; backward; sanitize; modes } =
     Forward.is_empty_model forward
     && Backward.is_empty_model backward
     && Sanitize.is_empty sanitize
-    && Mode.equal with_mode mode
+    && ModeSet.equal with_modes modes
 
 
   let should_externalize_model { forward; backward; sanitize; _ } =
@@ -351,7 +355,7 @@ module ResultArgument = struct
       forward = Forward.join left.forward right.forward;
       backward = Backward.join left.backward right.backward;
       sanitize = Sanitize.join left.sanitize right.sanitize;
-      mode = Mode.join left.mode right.mode;
+      modes = ModeSet.join left.modes right.modes;
     }
 
 
@@ -360,7 +364,7 @@ module ResultArgument = struct
       forward = Forward.widen ~iteration ~previous:previous.forward ~next:next.forward;
       backward = Backward.widen ~iteration ~previous:previous.backward ~next:next.backward;
       sanitize = Sanitize.join previous.sanitize next.sanitize;
-      mode = Mode.join previous.mode next.mode;
+      modes = ModeSet.widen ~iteration ~prev:previous.modes ~next:next.modes;
     }
 
 
@@ -370,7 +374,7 @@ module ResultArgument = struct
 
 
   let strip_for_callsite
-      { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; mode }
+      { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
     =
     (* Remove positions and other info that are not needed at call site *)
     let source_taint =
@@ -403,7 +407,7 @@ module ResultArgument = struct
            Map
            ~f:Domains.TraceInfo.strip_for_callsite
     in
-    { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; mode }
+    { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
 
 
   let model_to_json ~filename_lookup callable model =
@@ -423,8 +427,8 @@ module ResultArgument = struct
         model_json
     in
     let model_json =
-      if not (Mode.equal model.mode Mode.normal) then
-        model_json @ ["mode", Mode.to_json model.mode]
+      if not (ModeSet.is_empty model.modes) then
+        model_json @ ["modes", ModeSet.to_json model.modes]
       else
         model_json
     in
@@ -463,7 +467,8 @@ let has_significant_summary root path target =
 let decorators_to_skip models =
   let skippable_decorator_reference (callable, model) =
     match callable, Interprocedural.Result.get_model kind model with
-    | `Function callable_name, Some { mode = Normal { skip_decorator_when_inlining = true }; _ } ->
+    | `Function callable_name, Some { modes; _ }
+      when ModeSet.contains Mode.SkipDecoratorWhenInlining modes ->
         Some (Ast.Reference.create callable_name)
     | _ -> None
   in

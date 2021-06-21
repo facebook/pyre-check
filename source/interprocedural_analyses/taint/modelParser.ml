@@ -1672,7 +1672,7 @@ let resolve_global_callable
     Ok (resolve_global ~resolution name)
 
 
-let adjust_sanitize_and_mode_and_skipped_overrides
+let adjust_sanitize_and_modes_and_skipped_override
     ~path
     ~location
     ~define_name
@@ -1680,11 +1680,11 @@ let adjust_sanitize_and_mode_and_skipped_overrides
     ~top_level_decorators
     model
   =
-  (* Adjust analysis mode and whether we skip overrides by applying top-level decorators. *)
+  (* Adjust analysis modes and whether we skip overrides by applying top-level decorators. *)
   let open Core.Result in
-  let sanitize_and_mode_and_skipped_override =
+  let sanitize_and_modes_and_skipped_override =
     let adjust
-        (sanitize, mode, skipped_override)
+        (sanitize, modes, skipped_override)
         { Decorator.name = { Node.value = name; _ }; arguments }
       =
       match Reference.show name with
@@ -1818,20 +1818,17 @@ let adjust_sanitize_and_mode_and_skipped_overrides
           in
           sanitize_kind
           >>| fun sanitize_kind ->
-          TaintResult.Sanitize.join sanitize sanitize_kind, mode, skipped_override
-      | "SkipAnalysis" -> Ok (sanitize, TaintResult.Mode.SkipAnalysis, skipped_override)
+          TaintResult.Sanitize.join sanitize sanitize_kind, modes, skipped_override
+      | "SkipAnalysis" -> Ok (sanitize, ModeSet.add Mode.SkipAnalysis modes, skipped_override)
       | "SkipDecoratorWhenInlining" ->
-          Ok
-            ( sanitize,
-              TaintResult.Mode.Normal { skip_decorator_when_inlining = true },
-              skipped_override )
-      | "SkipOverrides" -> Ok (sanitize, mode, Some define_name)
-      | _ -> Ok (sanitize, mode, skipped_override)
+          Ok (sanitize, ModeSet.add Mode.SkipDecoratorWhenInlining modes, skipped_override)
+      | "SkipOverrides" -> Ok (sanitize, modes, Some define_name)
+      | _ -> Ok (sanitize, modes, skipped_override)
     in
-    List.fold_result top_level_decorators ~f:adjust ~init:(model.sanitize, model.mode, None)
+    List.fold_result top_level_decorators ~f:adjust ~init:(model.sanitize, model.modes, None)
   in
-  sanitize_and_mode_and_skipped_override
-  >>| fun (sanitize, mode, skipped_override) -> { model with sanitize; mode }, skipped_override
+  sanitize_and_modes_and_skipped_override
+  >>| fun (sanitize, modes, skipped_override) -> { model with sanitize; modes }, skipped_override
 
 
 let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
@@ -2363,7 +2360,7 @@ let create_model_from_signature
           annotation)
   in
   model
-  >>= adjust_sanitize_and_mode_and_skipped_overrides
+  >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
         ~location
         ~configuration
@@ -2439,7 +2436,7 @@ let create_model_from_attribute
         ~sinks_to_keep
         accumulator
         annotation)
-  >>= adjust_sanitize_and_mode_and_skipped_overrides
+  >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
         ~location
         ~configuration
@@ -2507,7 +2504,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
       List.map new_models ~f:(fun (model, _) -> model.call_target, model.model)
       |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
       |> Callable.Map.filter ~f:(fun model ->
-             not (TaintResult.is_empty_model ~with_mode:Mode.normal model))
+             not (TaintResult.is_empty_model ~with_modes:ModeSet.empty model))
       |> Callable.Map.merge models ~f:(fun ~key:_ ->
            function
            | `Both (a, b) -> Some (join ~iteration:0 a b)

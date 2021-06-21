@@ -333,7 +333,7 @@ let test_skipped_analysis context =
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Demo"] }]
               ~tito_parameters:["z"]
-              ~analysis_mode:Taint.Result.Mode.SkipAnalysis
+              ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
               "qualifier.skipped_model";
           ];
         iterations = 1;

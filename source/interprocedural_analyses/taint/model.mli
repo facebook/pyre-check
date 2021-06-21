@@ -36,7 +36,7 @@ module GlobalModel : sig
 
   val get_sanitize : t -> TaintResult.Sanitize.t
 
-  val get_mode : t -> TaintResult.Mode.t
+  val get_modes : t -> TaintResult.ModeSet.t
 
   val is_sanitized : t -> bool
 end

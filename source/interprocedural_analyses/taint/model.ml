@@ -105,7 +105,7 @@ let register_unknown_callee_model callable =
          TaintResult.forward = Forward.empty;
          backward = { sink_taint; taint_in_taint_out };
          sanitize = Sanitize.empty;
-         mode = SkipAnalysis;
+         modes = ModeSet.singleton Mode.SkipAnalysis;
        })
 
 
@@ -119,7 +119,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
             forward = { source_taint };
             backward = { sink_taint; taint_in_taint_out };
             sanitize;
-            mode;
+            modes;
           }
         =
         let expand features =
@@ -174,7 +174,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
           forward = { source_taint };
           backward = { sink_taint; taint_in_taint_out };
           sanitize;
-          mode;
+          modes;
         }
       in
       let taint_model =
@@ -309,9 +309,9 @@ module GlobalModel = struct
     List.fold ~init:Sanitize.empty ~f:get_sanitize models
 
 
-  let get_mode { models; _ } =
-    let get_mode existing { model = { TaintResult.mode; _ }; _ } = Mode.join mode existing in
-    List.fold ~init:Mode.normal ~f:get_mode models
+  let get_modes { models; _ } =
+    let get_modes existing { model = { TaintResult.modes; _ }; _ } = ModeSet.join modes existing in
+    List.fold ~init:ModeSet.empty ~f:get_modes models
 
 
   let is_sanitized { models; _ } =
@@ -386,7 +386,7 @@ let infer_class_models ~environment =
           sink_taint = BackwardState.empty;
         };
       sanitize = Sanitize.empty;
-      mode = Mode.normal;
+      modes = ModeSet.empty;
     }
   in
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
@@ -413,7 +413,7 @@ let infer_class_models ~environment =
             sink_taint = BackwardState.empty;
           };
         sanitize = Sanitize.empty;
-        mode = Mode.normal;
+        modes = ModeSet.empty;
       }
   in
   let compute_models class_name class_summary =

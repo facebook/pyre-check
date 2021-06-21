@@ -57,10 +57,22 @@ end
 module Mode : sig
   type t =
     | SkipAnalysis (* Don't analyze at all *)
-    | Normal of { skip_decorator_when_inlining: bool }
-  [@@deriving show, eq]
+    | SkipDecoratorWhenInlining
+  [@@deriving show, compare]
+end
 
-  val normal : t
+module ModeSet : sig
+  type t [@@deriving show]
+
+  val singleton : Mode.t -> t
+
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val add : Mode.t -> t -> t
+
+  val contains : Mode.t -> t -> bool
 
   val join : t -> t -> t
 end
@@ -69,10 +81,10 @@ type call_model = {
   forward: Forward.model;
   backward: Backward.model;
   sanitize: Sanitize.t;
-  mode: Mode.t;
+  modes: ModeSet.t;
 }
 
-val is_empty_model : with_mode:Mode.t -> call_model -> bool
+val is_empty_model : with_modes:ModeSet.t -> call_model -> bool
 
 val empty_skip_model : call_model (* Skips analysis *)
 

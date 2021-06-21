@@ -581,7 +581,7 @@ let test_sanitize context =
           ~kind:`Function
           ~sanitize:
             { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
-          ~analysis_mode:(Taint.Result.Mode.Normal { skip_decorator_when_inlining = true })
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipDecoratorWhenInlining)
           "test.taint";
       ]
     ()
@@ -964,10 +964,13 @@ let test_class_models context =
     ~model_source:"class test.SkipMe(SkipAnalysis): ..."
     ~expect:
       [
-        outcome ~kind:`Method ~analysis_mode:Taint.Result.Mode.SkipAnalysis "test.SkipMe.method";
         outcome
           ~kind:`Method
-          ~analysis_mode:Taint.Result.Mode.SkipAnalysis
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
+          "test.SkipMe.method";
+        outcome
+          ~kind:`Method
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
           "test.SkipMe.method_with_multiple_parameters";
       ]
     ();
@@ -1014,7 +1017,13 @@ let test_skip_analysis context =
       @SkipAnalysis
       def test.taint(x): ...
     |}
-    ~expect:[outcome ~kind:`Function ~analysis_mode:Taint.Result.Mode.SkipAnalysis "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
+          "test.taint";
+      ]
     ()
 
 
@@ -1030,7 +1039,7 @@ let test_skip_inlining_decorator context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:(Mode.Normal { skip_decorator_when_inlining = true })
+          ~analysis_modes:(ModeSet.singleton SkipDecoratorWhenInlining)
           "test.my_decorator";
       ]
     ();

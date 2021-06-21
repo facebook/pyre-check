@@ -171,7 +171,7 @@ include Taint.Result.Register (struct
           | `Both (left, right) ->
               Some
                 {
-                  mode = Mode.join left.mode right.mode;
+                  modes = ModeSet.join left.modes right.modes;
                   sanitize = Sanitize.join left.sanitize right.sanitize;
                   forward =
                     {
@@ -294,7 +294,7 @@ include Taint.Result.Register (struct
     Interprocedural.Result.InitializedModels.create get_taint_models
 
 
-  let analyze ~environment ~callable ~qualifier ~define ~sanitize ~mode existing_model =
+  let analyze ~environment ~callable ~qualifier ~define ~sanitize ~modes existing_model =
     let call_graph_of_define =
       Interprocedural.CallGraph.SharedMemory.get_or_compute
         ~callable
@@ -314,9 +314,10 @@ include Taint.Result.Register (struct
         ~triggered_sinks
     in
     let forward, backward =
-      match mode with
-      | Mode.Normal _ -> forward, backward
-      | SkipAnalysis -> empty_model.forward, empty_model.backward
+      if ModeSet.contains Mode.SkipAnalysis modes then
+        empty_model.forward, empty_model.backward
+      else
+        forward, backward
     in
     let model =
       let open Domains in
@@ -358,7 +359,7 @@ include Taint.Result.Register (struct
                  ~f:(fun ~key:_ ~data:source_state state -> BackwardState.join source_state state)
         | None -> backward.sink_taint
       in
-      { forward; backward = { sink_taint; taint_in_taint_out }; sanitize; mode }
+      { forward; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
     in
     result, model
 
@@ -385,11 +386,11 @@ include Taint.Result.Register (struct
       |> Option.value ~default:qualifier
     in
     match existing with
-    | Some ({ mode = SkipAnalysis; _ } as model) ->
+    | Some ({ modes; _ } as model) when ModeSet.contains Mode.SkipAnalysis modes ->
         let () = Log.info "Skipping taint analysis of %a" Callable.pretty_print callable in
         [], model
-    | Some ({ sanitize; mode; _ } as model) ->
-        analyze ~callable ~environment ~qualifier ~define ~sanitize ~mode model
+    | Some ({ sanitize; modes; _ } as model) ->
+        analyze ~callable ~environment ~qualifier ~define ~sanitize ~modes model
     | None ->
         analyze
           ~callable
@@ -397,7 +398,7 @@ include Taint.Result.Register (struct
           ~qualifier
           ~define
           ~sanitize:Sanitize.empty
-          ~mode:Mode.normal
+          ~modes:ModeSet.empty
           empty_model
 
 

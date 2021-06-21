@@ -12,13 +12,13 @@ open Interprocedural
 
 let test_decorators_to_skip _ =
   let normal_model =
-    { Taint.Result.empty_model with mode = Taint.Result.Mode.normal }
+    { Taint.Result.empty_model with modes = Taint.Result.ModeSet.empty }
     |> Result.make_model Taint.Result.kind
   in
   let skipped_decorator_model =
     {
       Taint.Result.empty_model with
-      mode = Taint.Result.Mode.Normal { skip_decorator_when_inlining = true };
+      modes = Taint.Result.ModeSet.singleton SkipDecoratorWhenInlining;
     }
     |> Result.make_model Taint.Result.kind
   in
