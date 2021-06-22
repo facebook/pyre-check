@@ -273,12 +273,9 @@ let run_infer_legacy
       raise error
 
 
-let run_infer infer_mode use_v2 =
+let run_infer infer_mode =
   match infer_mode with
-  | None -> (
-      match use_v2 with
-      | true -> run_infer_interprocedural
-      | false -> run_infer_legacy )
+  | None -> run_infer_legacy
   | Some "interprocedural" -> run_infer_interprocedural
   | Some unknown_mode -> failwith (Format.asprintf "Unknown infer mode \"%s\"" unknown_mode)
 
@@ -289,7 +286,6 @@ let infer_command =
     Command.Spec.(
       empty
       +> flag "-infer-mode" (optional string) ~doc:"Mode to use for type inference."
-      +> flag "-use-v2" no_arg ~doc:"Use v2 logic and output format"
       +> flag "-ignore-infer" (optional string) ~doc:"Will not infer the listed files."
       ++ Specification.base_command_line_arguments)
     run_infer
