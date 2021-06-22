@@ -301,3 +301,44 @@ This option can also be added in the `taint.config` as follows:
   }
 }
 ```
+
+# Inlining Decorators during Analysis
+
+By default, Pysa ignores issues that arise in the bodies of decorators. For example, it misses issues like decorators logging data. In the code below, Pysa will not catch the flow from `loggable_string` to the sink within the decorator `with_logging`:
+
+```python
+def with_logging(f: Callable[[str], None]) -> Callable[[str], None]:
+
+  def inner(y: str) -> None:
+    log_to_my_sink(y)
+    f(y)
+
+  return inner
+
+@with_logging
+def foo(z: str) -> None:
+  print(z)
+
+foo(loggable_string)
+```
+
+However, Pysa has the ability to inline decorators within functions before analyzing them so that it can catch such flows. This is currently an experimental feature hidden behind the `--inline-decorators` flag.
+
+## Prevent Inlining Decorators with `SkipDecoratorWhenInlining`
+
+Decorator inlining comes at the cost of increasing the analysis time and also increasing the lengths of traces. If you would like to prevent certain decorators from being inlined, you can mark them in your `.pysa` file using `@SkipDecoratorWhenInlining`:
+
+```python
+# foo.pysa
+@SkipDecoratorWhenInlining
+def foo.decorator_to_be_skipped(f): ...
+```
+
+```python
+# foo.py
+@decorator_to_be_skipped
+def bar(x: int) -> None:
+  pass
+```
+
+This will prevent the decorator from being inlined when analyzing `bar`. Note that we use `@SkipDecoratorWhenInlining` on the decorator that is to be skipped, not the function on which the decorator is applied.
