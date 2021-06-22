@@ -29,7 +29,7 @@ let test_simple context =
         x = y
         y = 5
     |}
-    ["Uninitilaized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
 
   assert_uninitialized_errors {|
       def f(y):
@@ -46,7 +46,7 @@ let test_simple context =
         z = 5
         return z   # OK
     |}
-    ["Uninitilaized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
 
   assert_uninitialized_errors
     {|
@@ -55,7 +55,7 @@ let test_simple context =
           y = 2
         return y
     |}
-    ["Uninitilaized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
 
   assert_uninitialized_errors
     {|
@@ -66,7 +66,7 @@ let test_simple context =
           except ZeroDivisionError:
               return x
     |}
-    ["Uninitilaized local [61]: Local variable `x` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
 
   (* should be: `counter` is not defined. counter += 1 gets re-written as counter.__iadd__(1). Since
      we currently don't support attributes, we don't catch this. *)

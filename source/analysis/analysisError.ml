@@ -530,7 +530,7 @@ let name = function
   | UndefinedType _ -> "Undefined or invalid type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UninitializedAttribute _ -> "Uninitialized attribute"
-  | UninitializedLocal _ -> "Uninitilaized local"
+  | UninitializedLocal _ -> "Uninitialized local"
   | Unpack _ -> "Unable to unpack"
   | UnsafeCast _ -> "Unsafe cast"
   | UnsupportedOperand _ -> "Unsupported operand"
