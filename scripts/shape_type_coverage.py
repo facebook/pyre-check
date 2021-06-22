@@ -114,11 +114,22 @@ def _is_unpacked_precise_tuple(type_name: str) -> bool:
     )
 
 
+def _is_int_expression(type_name: str) -> bool:
+    parametric = _parametric_type(type_name)
+
+    return (
+        parametric is not None
+        and parametric.name == "pyre_extensions.IntExpression"
+        and len(parametric.parameters) == 1
+    )
+
+
 def _is_precise_tensor_dimension(dimension: str) -> bool:
     return (
         _is_literal_integer(dimension)
         or _is_int_variable(dimension)
         or _is_unpacked_precise_tuple(dimension)
+        or _is_int_expression(dimension)
     )
 
 

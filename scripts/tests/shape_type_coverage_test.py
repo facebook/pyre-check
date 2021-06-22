@@ -62,6 +62,11 @@ class IsPreciseTensorDimensionTest(unittest.TestCase):
 
         self.assert_is_precise_dimension("*anything")
 
+        self.assert_is_precise_dimension("pyre_extensions.IntExpression[N1 + N2]")
+        self.assert_is_precise_dimension("pyre_extensions.IntExpression[N1 + (N2//3)]")
+        self.assert_is_precise_dimension("pyre_extensions.IntExpression[3N1 + (N2//3)]")
+        self.assert_is_precise_dimension("pyre_extensions.IntExpression[5 + N2]")
+
     def test_is_not_precise_dimension(self) -> None:
         self.assert_is_not_precise_dimension("Variable[N]")
 
@@ -98,6 +103,20 @@ class IsTensorTest(unittest.TestCase):
         self.assert_is_tensor(
             ParametricType(
                 "torch.Tensor", ["torch.float32", "typing_extensions.Literal[5]", "int"]
+            )
+        )
+
+        self.assert_is_tensor(
+            ParametricType(
+                "torch.Tensor",
+                [
+                    "torch.float32",
+                    "typing_extensions.Literal[5]",
+                    "pyre_extensions.IntExpression[5 + 3(N1//2)]",
+                    "Variable[N (bound to int)]",
+                    "*Tuple[Variable[N (bound to int)], typing_extensions.Literal[5], \
+                    pyre_extensions.IntExpression[2N - 5]]",
+                ],
             )
         )
         self.assert_is_tensor(ParametricType("torch.Tensor", []))
