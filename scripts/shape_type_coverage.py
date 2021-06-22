@@ -36,6 +36,29 @@ def _create_pyre_connection(
     return PyreConnection(roots.global_root)
 
 
+def _split_list(string: str) -> List[str]:
+    """Assumes an input of the form `[s1, s2, s3, ..., sn]`,
+    where each si may itself contain lists."""
+    assert string[0] == "[" and string[-1] == "]"
+    nesting_depth = 0
+    all_strings = []
+    current_string = ""
+    for character in string[1:-1]:
+        if character == "," and nesting_depth == 0:
+            all_strings.append(current_string)
+            current_string = ""
+            continue
+
+        if character == "[":
+            nesting_depth += 1
+        elif character == "]":
+            nesting_depth -= 1
+        current_string += character
+    if current_string != "":
+        all_strings.append(current_string)
+    return [string.strip() for string in all_strings]
+
+
 def _parametric_type(string: str) -> Optional[ParametricType]:
     left_bracket_index = string.find("[")
     right_bracket_index = string.rfind("]")
@@ -43,12 +66,7 @@ def _parametric_type(string: str) -> Optional[ParametricType]:
         return None
     return ParametricType(
         name=string[:left_bracket_index],
-        parameters=[
-            parameter.strip()
-            for parameter in string[left_bracket_index + 1 : right_bracket_index].split(
-                ","
-            )
-        ],
+        parameters=_split_list(string[left_bracket_index : right_bracket_index + 1]),
     )
 
 
@@ -69,7 +87,7 @@ def _is_literal_integer(type_name: str) -> bool:
 
 def _is_precise_tensor(parametric: ParametricType) -> bool:
     """Assumes it is given a torch tensor, and that everything from the
-    first parameter on is a dimension."""
+    second parameter on is a dimension."""
     return all(
         _is_literal_integer(dimension) for dimension in parametric.parameters[1:]
     )

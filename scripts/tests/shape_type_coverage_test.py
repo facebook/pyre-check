@@ -16,7 +16,38 @@ from ..shape_type_coverage import (
     _collect_shape_types,
     _extract_substring,
     _extract_multiline_text,
+    _split_list,
 )
+
+
+class SplitListTest(unittest.TestCase):
+    def assert_splits_as(self, given: str, expected: List[str]) -> None:
+        self.assertEqual(_split_list(given), expected)
+
+    def test_split_list(self) -> None:
+        self.assert_splits_as(
+            given="[]",
+            expected=[],
+        )
+        self.assert_splits_as(
+            given="[single]",
+            expected=["single"],
+        )
+
+        self.assert_splits_as(
+            given="[abc, def, ghi]",
+            expected=["abc", "def", "ghi"],
+        )
+
+        self.assert_splits_as(
+            given="[Union[int, str], List[int]]",
+            expected=["Union[int, str]", "List[int]"],
+        )
+
+        self.assert_splits_as(
+            given="[[1, 2], [3, 4], [[5, 6], 7]]",
+            expected=["[1, 2]", "[3, 4]", "[[5, 6], 7]"],
+        )
 
 
 class IsTensorTest(unittest.TestCase):
@@ -46,6 +77,7 @@ class IsTensorTest(unittest.TestCase):
                 "torch.Tensor", ["torch.float32", "typing_extensions.Literal[5]", "int"]
             )
         )
+        self.assert_is_tensor(ParametricType("torch.Tensor", []))
 
     def test_is_not_tensor(self) -> None:
         self.assert_is_not_tensor(ParametricType("torch.TensorLike", []))
@@ -94,7 +126,7 @@ class ParametricTypeTest(unittest.TestCase):
 
     def test_parametric_with(self) -> None:
         self.assert_parametric_with(
-            "torch.Tensor[]", ParametricType("torch.Tensor", [""])
+            "torch.Tensor[]", ParametricType("torch.Tensor", [])
         )
         self.assert_parametric_with(
             "typing_extensions.Literal[5]",
