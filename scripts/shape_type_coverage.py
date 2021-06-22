@@ -74,14 +74,51 @@ def _is_tensor(parametric: ParametricType) -> bool:
     return parametric.name == "torch.Tensor"
 
 
+def _is_int_variable(type_name: str) -> bool:
+    parametric = _parametric_type(type_name)
+    return (
+        parametric is not None
+        and parametric.name == "Variable"
+        and len(parametric.parameters) == 1
+        and parametric.parameters[0].endswith("(bound to int)")
+    )
+
+
 def _is_literal_integer(type_name: str) -> bool:
     parametric = _parametric_type(type_name)
-    if parametric is None:
-        return False
     return (
-        parametric.name == "typing_extensions.Literal"
+        parametric is not None
+        and parametric.name == "typing_extensions.Literal"
         and len(parametric.parameters) == 1
         and parametric.parameters[0].isnumeric()
+    )
+
+
+def _is_unpacked_precise_tuple(type_name: str) -> bool:
+    """A legal unpacked tuple will be a `Tuple` of precise dimensions, or
+    *name, where name is just a simple identifier.
+    There's not enough information here to tell whether what comes after
+    the * is _really_ a TypeVarTuple, but anything that's not should be
+    a type error, and thus not given to us by Pyre."""
+    if len(type_name) == 0 or type_name[0] != "*":
+        return False
+
+    parametric = _parametric_type(type_name[1:])
+
+    return parametric is None or (
+        parametric.name == "Tuple"
+        and all(
+            _is_precise_tensor_dimension(dimension)
+            for dimension in parametric.parameters
+        )
+    )
+
+
+def _is_precise_tensor_dimension(dimension: str) -> bool:
+    return (
+        _is_literal_integer(dimension)
+        or _is_int_variable(dimension)
+        or _is_unpacked_precise_tuple(dimension)
     )
 
 
@@ -89,7 +126,8 @@ def _is_precise_tensor(parametric: ParametricType) -> bool:
     """Assumes it is given a torch tensor, and that everything from the
     second parameter on is a dimension."""
     return all(
-        _is_literal_integer(dimension) for dimension in parametric.parameters[1:]
+        _is_precise_tensor_dimension(dimension)
+        for dimension in parametric.parameters[1:]
     )
 
 

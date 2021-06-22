@@ -16,6 +16,7 @@ from ..shape_type_coverage import (
     _collect_shape_types,
     _extract_substring,
     _extract_multiline_text,
+    _is_precise_tensor_dimension,
     _split_list,
 )
 
@@ -35,11 +36,6 @@ class SplitListTest(unittest.TestCase):
         )
 
         self.assert_splits_as(
-            given="[abc, def, ghi]",
-            expected=["abc", "def", "ghi"],
-        )
-
-        self.assert_splits_as(
             given="[Union[int, str], List[int]]",
             expected=["Union[int, str]", "List[int]"],
         )
@@ -48,6 +44,33 @@ class SplitListTest(unittest.TestCase):
             given="[[1, 2], [3, 4], [[5, 6], 7]]",
             expected=["[1, 2]", "[3, 4]", "[[5, 6], 7]"],
         )
+
+
+class IsPreciseTensorDimensionTest(unittest.TestCase):
+    def assert_is_precise_dimension(self, dimension: str) -> None:
+        self.assertTrue(_is_precise_tensor_dimension(dimension))
+
+    def assert_is_not_precise_dimension(self, dimension: str) -> None:
+        self.assertFalse(_is_precise_tensor_dimension(dimension))
+
+    def test_is_precise_dimension(self) -> None:
+        self.assert_is_precise_dimension("typing_extensions.Literal[5]")
+
+        self.assert_is_precise_dimension("Variable[N (bound to int)]")
+
+        self.assert_is_precise_dimension("*Ts")
+
+        self.assert_is_precise_dimension("*anything")
+
+    def test_is_not_precise_dimension(self) -> None:
+        self.assert_is_not_precise_dimension("Variable[N]")
+
+        self.assert_is_not_precise_dimension(
+            "*Tuple[typing_extensions.Literal[2], ...]"
+        )
+        self.assert_is_not_precise_dimension("*Tuple[Any]")
+
+        self.assert_is_not_precise_dimension("int")
 
 
 class IsTensorTest(unittest.TestCase):
@@ -103,6 +126,26 @@ class IsPreciseTensorTest(unittest.TestCase):
                 ],
             )
         )
+        self.assert_is_precise_tensor(
+            ParametricType(
+                "torch.Tensor",
+                ["DType", "Variable[N1 (bound to int)]", "*Ts"],
+            )
+        )
+
+        self.assert_is_precise_tensor(
+            ParametricType(
+                "torch.Tensor",
+                [
+                    "DType",
+                    "Variable[N1 (bound to int)]",
+                    "Variable[N2 (bound to int)]",
+                    "*Ts",
+                    "Variable[N3 (bound to int)]",
+                    "Variable[N4 (bound to int)]",
+                ],
+            )
+        )
 
     def test_is_not_precise_tensor(self) -> None:
         self.assert_is_not_precise_tensor(
@@ -112,6 +155,22 @@ class IsPreciseTensorTest(unittest.TestCase):
         )
         self.assert_is_not_precise_tensor(
             ParametricType("torch.Tensor", ["torch.float32", "int", "int"])
+        )
+
+        self.assert_is_not_precise_tensor(
+            ParametricType(
+                "torch.Tensor",
+                [
+                    "torch.float32",
+                    "*Tuple[Variable[N1 (bound to int)], ...]",
+                ],
+            )
+        )
+
+        self.assert_is_not_precise_tensor(
+            ParametricType(
+                "torch.Tensor", ["torch.float32", "typing_extensions.Literal[2]", "Any"]
+            )
         )
 
 
