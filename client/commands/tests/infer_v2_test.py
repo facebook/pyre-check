@@ -608,7 +608,8 @@ class InferV2Test(unittest.TestCase):
                     "0",
                     "-shared-memory-heap-size",
                     "1073741824",
-                    "-use-v2",
+                    "-infer-mode",
+                    "interprocedural",
                 ],
             )
             command.run()
@@ -647,7 +648,8 @@ class InferV2Test(unittest.TestCase):
                     "0",
                     "-shared-memory-heap-size",
                     "1073741824",
-                    "-use-v2",
+                    "-infer-mode",
+                    "interprocedural",
                     "-filter-directories",
                     "filter_root_1;filter_root_2",
                     "-ignore-infer",

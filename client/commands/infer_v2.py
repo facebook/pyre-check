@@ -424,7 +424,7 @@ class Infer(Reporting):
     def _flags(self) -> list[str]:
         flags = super()._flags()
 
-        flags.append("-use-v2")
+        flags.extend(["-infer-mode", "interprocedural"])
 
         filter_directories = self._analysis_directory.get_filter_roots()
         filter_directories.update(
