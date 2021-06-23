@@ -182,17 +182,45 @@ print("a" + f())
 The best way to silence this error is to add non-`Any` return annotation to every function.
 
 ### 4: Missing Attribute Annotation
+
 In strict mode, Pyre will error when an attribute does not have an annotation.
 
 ```python
 class A:
     b = foo() # Missing attribute annotation
 ```
-Adding a type annotation will resolve this error.
 
+Adding a type annotation will resolve this error:
 ```python
 class A:
-  b: int = foo()
+    b: int = foo()
+```
+
+
+This error can also occur when pyre is inferring attribute types from constructors.
+For example, here we know that `b` is an int based on the parameter annotation in `__init__`:
+```python
+class A:
+    def __init__(self, b: int) -> None:
+        self.b = b
+```
+
+But here we need a annotations because we can't just propagate an argument annotation:
+```python
+class A:
+    def __init__(self, arg: int) -> None:
+        self.a = arg + 5
+        self.b = arg + 5
+```
+
+We can fix this by making the annotation explicit, either in the class body or
+in `__init__`:
+```python
+class A:
+    a: int
+    def __init__(self, arg: int) -> None:
+        self.a = arg + 5
+        self.b: int = arg + 5
 ```
 
 ### 5: Missing Global Annotation
