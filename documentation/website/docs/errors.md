@@ -246,6 +246,7 @@ Pyre will error if an argument passed into a function call does not match the ex
 ```python
 def takes_int(x: int) -> None:
   pass
+
 def f(x: Optional[int]) -> None:
   takes_int(x) # Incompatible parameter type error
 ```
