@@ -496,6 +496,7 @@ The above code fails at runtime with `TypeError: can't convert complex to int`. 
   ```python
   class Base:
       a: int = 0
+
   class Child(Base):
       a: str = ""
 
@@ -739,7 +740,7 @@ shape: Shape = {"sides": 4, "color": "blue"}
 print(shape["sides"])  # this is fine because "sides" is a literal
 
 for key in ["sides", "color"]:
-    print(key, shapes[key]) . # pyre will complain here because it can't prove `key` is valid
+    print(key, shapes[key])  # pyre will complain here because it can't prove `key` is valid
 ```
 
 The example above shows a situation where you might hit this error: when you want to iterate over the fields of a typed dict. A suggested fix is to use type-safe operations like `dictionary.items` instead. For example the following code produces the same results but typechecks:
@@ -812,17 +813,17 @@ P = ParameterSpecification("P")
 
 def decorator(f: Callable[P, int]) -> Callable[P, None]:
 
-  def foo(*args: P.args, **kwargs: P.kwargs) -> None:
+    def foo(*args: P.args, **kwargs: P.kwargs) -> None:
 
-    f(*args, **kwargs)    # Accepted, should resolve to int
+      f(*args, **kwargs)    # Accepted, should resolve to int
 
-    f(*args)              # Rejected
+      f(*args)              # Rejected
 
-    f(*kwargs, **args)    # Rejected
+      f(*kwargs, **args)    # Rejected
 
-    f(1, *args, **kwargs) # Rejected
+      f(1, *args, **kwargs) # Rejected
 
-  return foo
+    return foo
 ```
 
 ### 30, 36: Terminating Analysis, Mutually Recursive Type Variables
@@ -1009,16 +1010,16 @@ Pyre will error when a type annotation is applied to something that can't be ann
 
 ```python
 def transformation(p: int) -> str:
-  return str(p + 1)
+    return str(p + 1)
 
 def foo(x: int) -> None:
-  y: int = x + 2
-  z = x + 3
+    y: int = x + 2
+    z = x + 3
 
-  # Each of the following will produce an error
-  x: str = transformation(x)
-  y: str = transformation(y)
-  z: int = 4
+    # Each of the following will produce an error
+    x: str = transformation(x)
+    y: str = transformation(y)
+    z: int = 4
 ```
 An easy fix for the first two errors is to use a new variable rather than re-annotating the old variable so it can hold a new type. For the third error, `z` should have been annotated at first declaration.
 
@@ -1026,14 +1027,14 @@ An easy fix for the first two errors is to use a new variable rather than re-ann
 
 ```python
 class Foo:
-  attribute: int = 1
+    attribute: int = 1
 
 class Bar:
-  def __init__(self):
-    Foo.attribute: str = "hello"
+    def __init__(self):
+        Foo.attribute: str = "hello"
 
 def some_method() -> None:
-  Foo.attribute: int = 5
+    Foo.attribute: int = 5
 ```
 
 This is not allowed as Pyre needs to be able to statically determine the type of globally accessible values, including class attributes. Even if Pyre followed control flow across functions to determine class attribute annotations, such re-annotations imply very dynamic behavior that makes the code difficult to work with.
@@ -1045,22 +1046,23 @@ When defining a new class, Pyre will error if the base class given is not a vali
 
 1. The parent class is marked as final which means it explicitly is annotated as not supporting child classes.
 
-```python
-@final
-class Base:
-  ...
+  ```python
+  @final
+  class Base:
+      ...
 
-class Derived(Base): # Invalid inheritance error
-  ...
-```
+  class Derived(Base): # Invalid inheritance error
+      ...
+  ```
 
 2. The expression given in the base class field is not a class at all.
 
-```python
-MY_GLOBAL: str = "string"
-class Foo(MY_GLOBAL): # Invalid inheritance error
-  ...
-```
+  ```python
+  MY_GLOBAL: str = "string"
+
+  class Foo(MY_GLOBAL): # Invalid inheritance error
+      ...
+  ```
 
 Pyre does not support dynamic expressions as base classes, even if they may evaluate to a valid class at runtime. This is because the type checker relies on building up a valid class hierarchy before it can resolve types in the Python it is analyzing. On the other hand, type aliases are equivalent to types and are acceptable as base classes.
 
@@ -1069,17 +1071,17 @@ Pyre does not support dynamic expressions as base classes, even if they may eval
 
 ```python
 class NonTypedDict:
-  ...
+    ...
 
 class Movie(TypedDict):
-  name: str
-  year: int
+    name: str
+    year: int
 
 class BookBasedMovie(Movie): # No error
-  based_on: str
+    based_on: str
 
 class BookBasedMovie(NonTypedDict): # Invalid inheritance error
-  based_on: str
+    based_on: str
 ```
 
 If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
@@ -1102,15 +1104,15 @@ class B(A):
 
 
 ```python
-  from typing import final
-  class Foo:
+from typing import final
+class Foo:
     @final
     def bar(self) -> None:
-      pass
+        pass
 
-  class Bar(Foo):
-    def bar(self) -> None: # Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`.
-      pass
+class Bar(Foo):
+    def bar(self) -> None: # Invalid override, because Foo.bar is final
+        pass
 ```
 
 ### 41: Invalid Assignment
@@ -1297,7 +1299,7 @@ class MyList(typing.Generic[_T_cont]):
         ... # returns first element from list
 
 def takes_int_list(int_list: MyList[int]) -> int:
-   return int_list.read()
+    return int_list.read()
 
 float_list: MyList[float] = ...
 takes_int_list(float_list)  # this call is OK because MyList is contravariant: MyList[float] < MyList[int]
@@ -1312,14 +1314,14 @@ Often times, the method may not need a `self` or `cls` and should be decorated w
 
 ```python
 class Foo:
-  def foo() -> None: ...  # type error
+    def foo() -> None: ...  # type error
 
 class Foo:
-  @staticmethod
-  def foo() -> None: ... # no type error
+    @staticmethod
+    def foo() -> None: ... # no type error
 
 class Foo:
-  def foo(self) -> None: ... # no type error
+    def foo(self) -> None: ... # no type error
 ```
 
 Only type variables with compatible bounds can be used to annotate the `self` or `cls` parameter. For example,
@@ -1332,13 +1334,13 @@ B = TypeVar("S", bound="ChildB")
 class Parent: ...
 
 class ChildA(Parent):
-  @classmethod
-  def foo(cls: Type[A]) -> A: ...  # no type error
+    @classmethod
+    def foo(cls: Type[A]) -> A: ...  # no type error
 
 class ChildB(Parent):
-  def foo(self: A) -> A: ...  # type error
-  def bar(self: B) -> B: ...  # no type error
-  def baz(self: P) -> P: ...  # no type error
+    def foo(self: A) -> A: ...  # type error
+    def bar(self: B) -> B: ...  # no type error
+    def baz(self: P) -> P: ...  # no type error
 ```
 
 
@@ -1516,7 +1518,8 @@ To work around this, you can statically type your arguments to the decorator fac
 ```python
 T = TypeVar("T")
 def decorator_factory(x: T) -> Callable[[Callable[[int], str]], Callable[[str], T]]:
-  ...
+    ...
+
 # pyre-fixme[56]: Pyre was not able to infer the type of argument
 #  `complex_expression()` to decorator factory `decorator_factory`.
 @decorator_factory(complex_expression())
@@ -1528,7 +1531,7 @@ argument: float = complex_expression()
 
 @decorator_factory(argument) # Accepted!  bar resolves to Callable[[str], float]
 def bar(x: int) -> str:
-  ...
+    ...
 ```
 
 #### "Decorator factory \`X\` could not be called"
@@ -1542,7 +1545,7 @@ not_a_factory: int = 5
 # type `int` is not callable
 @not_a_factory(1)
 def bar() -> None:
-  pass
+    pass
 ```
 
 #### "Decorator \`X\` could not be called"
@@ -1552,13 +1555,13 @@ Similarly, these errors correspond to when the entire decorator expression (pote
 
 ```python
 def foo() -> int:
-  return 42
+    return 42
 
 # pyre-fixme[56]: Decorator `foo()` could not be called, because its
 # type `int` is not callable
 @foo()
 def bar() -> None:
-  pass
+    pass
 ```
 
 #### "While applying decorator factory ..."
@@ -1573,7 +1576,7 @@ def factory(x: str) -> Callable[[object], object]:
 # Expected `str` for 1st param but got `int`.
 @factory(1)
 def foo() -> None:
-  pass
+    pass
 ```
 
 #### "While applying decorator ..."
@@ -1588,7 +1591,7 @@ def decorator(f: Callable[[int], str]) -> int:
 # Expected `Callable[[int], str]` for 1st param but got `Callable[[str], int]`.
 @decorator
 def foo(x: str) -> int:
-  return 5
+    return 5
 ```
 
 ### 57: Incompatible Async Generator Return Type
@@ -1597,12 +1600,12 @@ An async generator function is an `async` function that contains at least one `y
 
 ```python
 async def f() -> int:  # Error
-  yield 0
+    yield 0
 
 from typing import AsyncGenerator
 async def g() -> AsyncGenerator[int, None]:  # OK
-  if False:
-    yield 1
+    if False:
+        yield 1
 ```
 
 ### 58: Unsupported Operand
@@ -1615,12 +1618,12 @@ For example,
 
 ```python
 def foo(x: Optional[int]) -> bool:
-  return x < 0  # type error: Optional[int] is not a supported operand
+    return x < 0  # type error: Optional[int] is not a supported operand
 
 def bar(x: Optional[int]) -> bool:
-  if x:
-    return x < 0  # no type error
-  return False
+    if x:
+        return x < 0  # no type error
+    return False
 ```
 
 
@@ -1633,6 +1636,7 @@ from typing import TypeVar, Generic
 
 T = TypeVar("T")
 S = TypeVar("S")
+
 class A(Generic[T, S, T]):  # Error
     pass
 
@@ -1698,5 +1702,5 @@ Furthermore Pyre supports suppressing all errors in an individual file if you ad
 # pyre-ignore-all-errors[7]
 
 def foo(x: int) -> str:
-  return x  # pyre will not error here
+    return x  # pyre will not error here
 ```
