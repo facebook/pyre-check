@@ -15,6 +15,8 @@ end
 
 include T
 
+let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z-_0-9\\?]+\\)\\$"
+
 let create ?prefix name =
   let name =
     if String.equal name "" then
@@ -56,7 +58,6 @@ let delocalize reference =
   match reference with
   | head :: tail when String.is_prefix ~prefix:"$local_" head ->
       let qualifier =
-        let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_0-9\\?]+\\)\\$" in
         if Str.string_match local_qualifier_pattern head 0 then
           Str.matched_group 1 head |> String.substr_replace_all ~pattern:"?" ~with_:"." |> create
         else (

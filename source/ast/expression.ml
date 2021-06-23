@@ -1292,8 +1292,6 @@ let rec sanitized ({ Node.value; location } as expression) =
   | _ -> expression
 
 
-let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z-_0-9\\?]+\\)\\$"
-
 let rec delocalize ({ Node.value; location } as expression) =
   let value =
     match value with
@@ -1304,7 +1302,7 @@ let rec delocalize ({ Node.value; location } as expression) =
         Call { callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
     | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_" ->
         let sanitized = Identifier.sanitized identifier in
-        if Str.string_match local_qualifier_pattern identifier 0 then
+        if Str.string_match Reference.local_qualifier_pattern identifier 0 then
           let qualifier =
             Str.matched_group 1 identifier
             |> String.substr_replace_all ~pattern:"?" ~with_:"."
