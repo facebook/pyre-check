@@ -6,6 +6,25 @@ sidebar_label: Advanced Topics
 
 This page documents less straightforward bits of Pysa.
 
+## Obscure models
+
+When Pysa does not have enough information about a function or method, it will
+make basic assumptions about its behavior. This is referred to as an **obscure
+model**. Most notably, it assumes that the function or method propagates the
+taint from its arguments to its return value.
+
+This usually happens when Pysa doesn't know about the callee of a function call:
+
+```python
+def foo(f: Any):
+    x = input()
+    y = f(x) # no information about `f`, y will be considered tainted.
+    eval(y)
+```
+
+Functions and methods defined in type stubs or in a different language (for
+instance, in C or C++ binding) will also be treated as obscure models.
+
 ## Tainting Specific `kwargs`
 
 Sometimes, a function can have potential sinks mixed together with benign
