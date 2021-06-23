@@ -7,10 +7,14 @@
 
 open Core
 open Ast
-open Analysis
-open Interprocedural
 open Statement
 open Pyre
+module Callable = Interprocedural.Callable
+module TypeEnvironment = Analysis.TypeEnvironment
+module AstEnvironment = Analysis.AstEnvironment
+module GlobalResolution = Analysis.GlobalResolution
+module DependencyGraph = Interprocedural.DependencyGraph
+module DependencyGraphSharedMemory = Interprocedural.DependencyGraphSharedMemory
 
 type initial_callables = {
   callables_with_dependency_information: (Callable.target_with_result * bool) list;
@@ -150,10 +154,10 @@ end = struct
     let path = get_shared_memory_save_path ~configuration in
     try
       init_shared_memory ~configuration;
-      let module_tracker = ModuleTracker.SharedMemory.load () in
+      let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
       let ast_environment = AstEnvironment.load module_tracker in
       let environment =
-        AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create
+        Analysis.AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create
       in
       let scheduler = Scheduler.create ~configuration () in
       let changed_paths =
@@ -167,7 +171,7 @@ end = struct
       in
       match changed_paths with
       | [] ->
-          SharedMemoryKeys.DependencyKey.Registry.load ();
+          Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
           Log.info "Loaded type environment from cache shared memory.";
           Some environment
       | _ ->
@@ -191,9 +195,9 @@ end = struct
     let path = get_shared_memory_save_path ~configuration in
     try
       Memory.SharedMemory.collect `aggressive;
-      TypeEnvironment.module_tracker environment |> ModuleTracker.SharedMemory.store;
+      TypeEnvironment.module_tracker environment |> Analysis.ModuleTracker.SharedMemory.store;
       TypeEnvironment.ast_environment environment |> AstEnvironment.store;
-      SharedMemoryKeys.DependencyKey.Registry.store ();
+      Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
       Log.info "Saved type environment to cache shared memory."
     with
     | error when not (Path.file_exists path) ->
@@ -294,11 +298,35 @@ end = struct
     | _ -> ()
 end
 
+let type_check ~scheduler ~configuration ~use_cache =
+  let cached_environment = if use_cache then Cache.load_environment ~configuration else None in
+  match cached_environment with
+  | Some loaded_environment ->
+      Log.warning "Using cached type environment.";
+      loaded_environment
+  | None ->
+      let configuration =
+        (* In order to get an accurate call graph and type information, we need to ensure that we
+           schedule a type check for external files. *)
+        { configuration with analyze_external_sources = true }
+      in
+      if use_cache then
+        Log.info "No cached type environment loaded, starting a clean run.";
+      Check.check
+        ~scheduler
+        ~configuration
+        ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
+      |> fun { environment; _ } ->
+      if use_cache then
+        Cache.save_environment ~configuration ~environment;
+      environment
+
+
 let record_and_merge_call_graph ~environment ~call_graph ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
-  CallGraph.create_callgraph ~use_shared_memory:true ~environment ~source
+  Interprocedural.CallGraph.create_callgraph ~use_shared_memory:true ~environment ~source
   |> record_and_merge_call_graph call_graph
 
 
@@ -307,7 +335,7 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
   let defines =
     GlobalResolution.unannotated_global_environment resolution
     |> (fun environment ->
-         UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module environment qualifier)
+         Analysis.UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module environment qualifier)
     |> List.filter_map ~f:(GlobalResolution.function_definitions resolution)
     |> List.concat
     |> List.filter ~f:(fun { Node.value = define; _ } -> not (Define.is_overloaded_function define))
@@ -431,7 +459,7 @@ let record_overrides_for_qualifiers
                 in
                 Map.merge_skewed overrides new_overrides ~combine
           with
-          | ClassHierarchy.Untracked untracked_type ->
+          | Analysis.ClassHierarchy.Untracked untracked_type ->
               Log.warning
                 "Error building overrides in path %a for untracked type %s"
                 Reference.pp
@@ -519,7 +547,11 @@ let analyze
       match initialized_models with
       | Some initialized_models -> initialized_models
       | None ->
-          Analysis.initialize_models analysis ~static_analysis_configuration ~scheduler ~environment
+          Interprocedural.Analysis.initialize_models
+            analysis
+            ~static_analysis_configuration
+            ~scheduler
+            ~environment
     in
     let { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides } =
       Interprocedural.Result.InitializedModels.get_models_including_generated_models
@@ -527,7 +559,7 @@ let analyze
         ~function_and_stub_data:
           (Some { Interprocedural.Result.functions; stubs; updated_environment = environment })
     in
-    Analysis.record_initial_models ~functions ~stubs models;
+    Interprocedural.Analysis.record_initial_models ~functions ~stubs models;
     skip_overrides, Callable.Map.keys models
   in
   Statistics.performance
@@ -570,7 +602,7 @@ let analyze
               >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
               |> Option.value ~default:call_graph
             with
-            | ClassHierarchy.Untracked untracked_type ->
+            | Analysis.ClassHierarchy.Untracked untracked_type ->
                 Log.info
                   "Error building call graph in path %a for untracked type %s"
                   Reference.pp
@@ -619,7 +651,10 @@ let analyze
      these by joining models for all overrides *)
   let () =
     let add_predefined callable =
-      Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
+      Interprocedural.Fixpoint.add_predefined
+        Interprocedural.Fixpoint.Epoch.initial
+        callable
+        Interprocedural.Result.empty_model
     in
     List.iter override_targets ~f:add_predefined
   in

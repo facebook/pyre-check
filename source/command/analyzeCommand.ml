@@ -137,29 +137,8 @@ let run_analysis
           Interprocedural.Analysis.initialize_configuration
             ~static_analysis_configuration
             analysis_kind;
-          let cached_environment =
-            if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
-          in
           let environment =
-            match cached_environment with
-            | Some loaded_environment ->
-                Log.warning "Using cached type environment.";
-                loaded_environment
-            | _ ->
-                let configuration =
-                  (* In order to get an accurate call graph and type information, we need to ensure
-                     that we schedule a type check for external files. *)
-                  { configuration with analyze_external_sources = true }
-                in
-                Log.info "No cached type environment loaded, starting a clean run.";
-                Service.Check.check
-                  ~scheduler
-                  ~configuration
-                  ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
-                |> fun { environment; _ } ->
-                if use_cache then
-                  Service.StaticAnalysis.Cache.save_environment ~configuration ~environment;
-                environment
+            Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache
           in
           let environment, initialized_models =
             if inline_decorators then (

@@ -19,6 +19,12 @@ module Cache : sig
     unit
 end
 
+val type_check
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  use_cache:bool ->
+  TypeEnvironment.t
+
 val record_and_merge_call_graph
   :  environment:TypeEnvironment.ReadOnly.t ->
   call_graph:DependencyGraph.callgraph ->

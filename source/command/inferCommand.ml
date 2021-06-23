@@ -111,20 +111,7 @@ let run_infer_interprocedural
           Interprocedural.Analysis.initialize_configuration
             ~static_analysis_configuration
             analysis_kind;
-          let environment =
-            let configuration =
-              (* In order to get an accurate call graph and type information, we need to ensure that
-                 we schedule a type check for external files. *)
-              { configuration with analyze_external_sources = true }
-            in
-            let { Service.Check.environment; _ } =
-              Service.Check.check
-                ~scheduler
-                ~configuration
-                ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
-            in
-            environment
-          in
+          let environment = StaticAnalysis.type_check ~scheduler ~configuration ~use_cache:false in
           let ast_environment =
             Analysis.TypeEnvironment.ast_environment environment
             |> Analysis.AstEnvironment.read_only
@@ -139,7 +126,7 @@ let run_infer_interprocedural
               ast_environment
               path_reference
           in
-          Service.StaticAnalysis.analyze
+          StaticAnalysis.analyze
             ~scheduler
             ~analysis:analysis_kind
             ~static_analysis_configuration
