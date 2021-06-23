@@ -132,7 +132,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
          sinks at the end. *)
       let triggered_sinks = String.Hash_set.create () in
       let apply_call_target state argument_taint call_target =
-        let ({ Model.model = { TaintResult.forward; backward; sanitize; _ }; _ } as taint_model) =
+        let ({ Model.model = { TaintResult.forward; backward; sanitize; modes }; _ } as taint_model)
+          =
           Model.get_callsite_model ~resolution ~call_target ~arguments
         in
         log
@@ -259,7 +260,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> Map.Poly.merge tito_effects ~f:(merge_tito_effect ForwardState.Tree.join)
           in
           let tito =
-            if taint_model.is_obscure then
+            if TaintResult.ModeSet.contains Obscure modes then
               let obscure_tito =
                 ForwardState.Tree.collapse
                   ~transform:(ForwardTaint.add_features Features.tito_broadening)
@@ -398,7 +399,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         let returned_taint =
           let joined = ForwardState.Tree.join result_taint tito in
-          if taint_model.is_obscure then
+          if TaintResult.ModeSet.contains Obscure modes then
             let annotation =
               Resolution.resolve_expression_to_type
                 resolution

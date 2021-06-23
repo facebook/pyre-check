@@ -17,7 +17,6 @@ open TaintResult
 exception InvalidModel of string
 
 type t = {
-  is_obscure: bool;
   call_target: Callable.t;
   model: TaintResult.call_model;
 }
@@ -112,7 +111,7 @@ let register_unknown_callee_model callable =
 let get_callsite_model ~resolution ~call_target ~arguments =
   let call_target = (call_target :> Callable.t) in
   match Interprocedural.Fixpoint.get_model call_target with
-  | None -> { is_obscure = true; call_target; model = TaintResult.empty_model }
+  | None -> { call_target; model = TaintResult.obscure_model }
   | Some model ->
       let expand_via_value_of
           {
@@ -182,7 +181,13 @@ let get_callsite_model ~resolution ~call_target ~arguments =
         |> Option.value ~default:TaintResult.empty_model
         |> expand_via_value_of
       in
-      { is_obscure = model.is_obscure; call_target; model = taint_model }
+      let taint_model =
+        if model.is_obscure then
+          { taint_model with modes = ModeSet.add Obscure taint_model.modes }
+        else
+          taint_model
+      in
+      { call_target; model = taint_model }
 
 
 let get_global_targets ~resolution ~expression =

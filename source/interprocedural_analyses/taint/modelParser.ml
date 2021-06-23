@@ -2366,8 +2366,7 @@ let create_model_from_signature
         ~configuration
         ~top_level_decorators
         ~define_name:callable_name
-  >>| fun (model, skipped_override) ->
-  Model ({ model; call_target; is_obscure = false }, skipped_override)
+  >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
 
 
 (* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
@@ -2442,8 +2441,7 @@ let create_model_from_attribute
         ~configuration
         ~top_level_decorators:decorators
         ~define_name:name
-  >>| fun (model, skipped_override) ->
-  Model ({ model; call_target; is_obscure = false }, skipped_override)
+  >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
 
 
 let create ~resolution ~path ~configuration ~rule_filter source =

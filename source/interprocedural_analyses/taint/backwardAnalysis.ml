@@ -159,7 +159,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (Node.create_with_default_location call_expression)
           Model.pp
           taint_model;
-        let { TaintResult.backward; sanitize; _ } = taint_model.model in
+        let { TaintResult.backward; sanitize; modes; _ } = taint_model.model in
         let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
         let sink_argument_matches =
           BackwardState.roots sink_taint |> AccessPath.match_actuals_to_formals arguments
@@ -343,7 +343,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_unstarred_expression ~resolution argument_taint argument state
         in
         let obscure_taint =
-          if taint_model.is_obscure then
+          if TaintResult.ModeSet.contains Obscure modes then
             let annotation =
               Resolution.resolve_expression_to_type
                 resolution

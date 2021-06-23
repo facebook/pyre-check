@@ -56,6 +56,7 @@ end
 
 module Mode : sig
   type t =
+    | Obscure
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
   [@@deriving show, compare]

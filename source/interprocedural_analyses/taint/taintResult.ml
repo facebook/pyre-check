@@ -247,11 +247,13 @@ module Mode = struct
   let name = "modes"
 
   type t =
+    | Obscure
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
   [@@deriving compare]
 
   let pp formatter = function
+    | Obscure -> Format.fprintf formatter "Obscure"
     | SkipAnalysis -> Format.fprintf formatter "SkipAnalysis"
     | SkipDecoratorWhenInlining -> Format.fprintf formatter "SkipDecoratorWhenInlining"
 
@@ -324,7 +326,7 @@ module ResultArgument = struct
       forward = Forward.obscure;
       backward = Backward.obscure;
       sanitize = Sanitize.empty;
-      modes = ModeSet.empty;
+      modes = ModeSet.singleton Obscure;
     }
 
 
