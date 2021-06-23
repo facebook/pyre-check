@@ -43,8 +43,7 @@ let transform_string_annotation_expression ~relative =
   let rec transform_expression
       ( {
           Node.location =
-            { Location.start = { Location.line = start_line; column = start_column }; _ } as
-            location;
+            { Location.start = { Location.line = start_line; column = start_column }; _ };
           value;
         } as expression )
     =
@@ -106,12 +105,6 @@ let transform_string_annotation_expression ~relative =
               expression
           | Ok _
           | Error _ ->
-              Log.debug
-                "Invalid string annotation `%s` at %s:%a"
-                string_value
-                relative
-                Location.pp
-                location;
               (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
               value )
       | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
@@ -209,7 +202,7 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
 
 
 let expand_strings_in_annotation_expression =
-  transform_string_annotation_expression ~relative:"$some_path"
+  transform_string_annotation_expression ~relative:"$path_placeholder_for_alias_string_annotations"
 
 
 let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) =
