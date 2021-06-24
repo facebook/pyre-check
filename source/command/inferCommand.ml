@@ -112,13 +112,19 @@ let run_infer_interprocedural
             ~static_analysis_configuration
             analysis_kind;
           let environment = StaticAnalysis.type_check ~scheduler ~configuration ~use_cache:false in
-          let ast_environment =
-            Analysis.TypeEnvironment.ast_environment environment
-            |> Analysis.AstEnvironment.read_only
-          in
           let qualifiers =
             Analysis.TypeEnvironment.module_tracker environment
             |> Analysis.ModuleTracker.tracked_explicit_modules
+          in
+          let environment = Analysis.TypeEnvironment.read_only environment in
+          let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
+          let initial_callables =
+            StaticAnalysis.fetch_initial_callables
+              ~scheduler
+              ~configuration
+              ~environment
+              ~qualifiers
+              ~use_cache:false
           in
           let filename_lookup path_reference =
             Analysis.AstEnvironment.ReadOnly.get_real_path_relative
@@ -131,8 +137,9 @@ let run_infer_interprocedural
             ~analysis:analysis_kind
             ~static_analysis_configuration
             ~filename_lookup
-            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~environment
             ~qualifiers
+            ~initial_callables
             ();
           let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
           Statistics.performance

@@ -533,16 +533,13 @@ let analyze
     ~filename_lookup
     ~environment
     ~qualifiers
+    ~initial_callables:{ callables_with_dependency_information; stubs; filtered_callables }
     ?initialized_models
     ()
   =
+  let stubs = (stubs :> Callable.t list) in
   let pre_fixpoint_timer = Timer.start () in
   let get_source = get_source ~environment in
-
-  let { callables_with_dependency_information; stubs; filtered_callables } =
-    fetch_initial_callables ~scheduler ~configuration ~environment ~qualifiers ~use_cache
-  in
-  let stubs = (stubs :> Callable.t list) in
 
   let timer = Timer.start () in
   (* Initialize and add initial models of analyses to shared mem. We do this prior to computing

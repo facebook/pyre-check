@@ -163,13 +163,19 @@ let run_analysis
             else
               environment, None
           in
-          let ast_environment =
-            Analysis.TypeEnvironment.ast_environment environment
-            |> Analysis.AstEnvironment.read_only
-          in
           let qualifiers =
             Analysis.TypeEnvironment.module_tracker environment
             |> Analysis.ModuleTracker.tracked_explicit_modules
+          in
+          let environment = Analysis.TypeEnvironment.read_only environment in
+          let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
+          let initial_callables =
+            Service.StaticAnalysis.fetch_initial_callables
+              ~scheduler
+              ~configuration
+              ~environment
+              ~qualifiers
+              ~use_cache
           in
           let filename_lookup path_reference =
             match repository_root with
@@ -191,8 +197,9 @@ let run_analysis
             ~analysis:analysis_kind
             ~static_analysis_configuration
             ~filename_lookup
-            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~environment
             ~qualifiers
+            ~initial_callables
             ?initialized_models
             ();
           let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
