@@ -16,9 +16,12 @@ module GlobalResolution = Analysis.GlobalResolution
 module DependencyGraph = Interprocedural.DependencyGraph
 module DependencyGraphSharedMemory = Interprocedural.DependencyGraphSharedMemory
 
+(* The boolean indicated whether the callable is internal or not. *)
+type callable_with_dependency_information = Callable.real_target * bool
+
 type initial_callables = {
-  callables_with_dependency_information: (Callable.target_with_result * bool) list;
-  stubs: Callable.target_with_result list;
+  callables_with_dependency_information: callable_with_dependency_information list;
+  stubs: Callable.real_target list;
   filtered_callables: Callable.Set.t;
 }
 
@@ -48,16 +51,11 @@ module Cache : sig
     environment:TypeEnvironment.t ->
     unit
 
-  val load_initial_callables
-    :  configuration:Configuration.Analysis.t ->
-    ((Callable.target_with_result * bool) list * Callable.target_with_result list * Callable.Set.t)
-    option
+  val load_initial_callables : configuration:Configuration.Analysis.t -> initial_callables option
 
   val save_initial_callables
     :  configuration:Configuration.Analysis.t ->
-    callables_with_dependency_information:(Callable.target_with_result * bool) list ->
-    stubs:Callable.target_with_result list ->
-    filtered_callables:Callable.Set.t ->
+    initial_callables:initial_callables ->
     unit
 
   val load_overrides : configuration:Configuration.Analysis.t -> DependencyGraph.overrides option
@@ -208,11 +206,9 @@ end = struct
   let load_initial_callables ~configuration =
     let path = get_shared_memory_save_path ~configuration in
     try
-      let { callables_with_dependency_information; stubs; filtered_callables } =
-        InitialCallablesSharedMemory.load ()
-      in
+      let initial_callables = InitialCallablesSharedMemory.load () in
       Log.info "Loaded initial callables from cache shared memory.";
-      Some (callables_with_dependency_information, stubs, filtered_callables)
+      Some initial_callables
     with
     | error when Path.file_exists path ->
         Log.error
@@ -222,17 +218,11 @@ end = struct
     | _ -> None
 
 
-  let save_initial_callables
-      ~configuration
-      ~callables_with_dependency_information
-      ~stubs
-      ~filtered_callables
-    =
+  let save_initial_callables ~configuration ~initial_callables =
     let path = get_shared_memory_save_path ~configuration in
     try
       Memory.SharedMemory.collect `aggressive;
-      InitialCallablesSharedMemory.store
-        { callables_with_dependency_information; stubs; filtered_callables };
+      InitialCallablesSharedMemory.store initial_callables;
       Log.info "Saved initial callables to cache shared memory.";
       (* Shared memory is saved to file after caching the callables to shared memory. The remaining
          overrides and callgraph to be cached don't use shared memory and are saved as serialized
@@ -389,7 +379,11 @@ let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifier
   in
   let map result qualifiers =
     let make_callables
-        ((existing_callables, existing_stubs, filtered_callables) as result)
+        ( {
+            callables_with_dependency_information = existing_callables;
+            stubs = existing_stubs;
+            filtered_callables = existing_filtered_callables;
+          } as result )
         qualifier
       =
       get_source ~environment qualifier
@@ -400,24 +394,30 @@ let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifier
             let callables, stubs =
               List.fold callables ~f:classify_source ~init:(existing_callables, existing_stubs)
             in
-            let updated_filtered_callables =
+            let filtered_callables =
               List.fold
                 new_filtered_callables
-                ~init:filtered_callables
+                ~init:existing_filtered_callables
                 ~f:(Fn.flip Callable.Set.add)
             in
-            callables, stubs, updated_filtered_callables)
+            { callables_with_dependency_information = callables; stubs; filtered_callables })
       |> Option.value ~default:result
     in
     List.fold qualifiers ~f:make_callables ~init:result
   in
   let reduce
-      (new_callables, new_stubs, new_filtered_callables)
-      (callables, stubs, filtered_callables)
+      {
+        callables_with_dependency_information = new_callables;
+        stubs = new_stubs;
+        filtered_callables = new_filtered_callables;
+      }
+      { callables_with_dependency_information = callables; stubs; filtered_callables }
     =
-    ( List.rev_append new_callables callables,
-      List.rev_append new_stubs stubs,
-      Callable.Set.union new_filtered_callables filtered_callables )
+    {
+      callables_with_dependency_information = List.rev_append new_callables callables;
+      stubs = List.rev_append new_stubs stubs;
+      filtered_callables = Callable.Set.union new_filtered_callables filtered_callables;
+    }
   in
   Scheduler.map_reduce
     scheduler
@@ -425,9 +425,39 @@ let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifier
       (Scheduler.Policy.fixed_chunk_count ~minimum_chunk_size:50 ~preferred_chunks_per_worker:1 ())
     ~map
     ~reduce
-    ~initial:([], [], Callable.Set.empty)
+    ~initial:
+      {
+        callables_with_dependency_information = [];
+        stubs = [];
+        filtered_callables = Callable.Set.empty;
+      }
     ~inputs:qualifiers
     ()
+
+
+let fetch_initial_callables ~scheduler ~configuration ~environment ~qualifiers ~use_cache =
+  let cached_initial_callables =
+    if use_cache then Cache.load_initial_callables ~configuration else None
+  in
+  match cached_initial_callables with
+  | Some initial_callables ->
+      Log.warning "Using cached results for initial callables to analyze.";
+      initial_callables
+  | _ ->
+      let timer = Timer.start () in
+      if use_cache then
+        Log.info "No cached initial callables loaded, fetching initial callables to analyze...";
+      let initial_callables =
+        fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifiers
+      in
+      if use_cache then
+        Cache.save_initial_callables ~configuration ~initial_callables;
+      Statistics.performance
+        ~name:"Fetched initial callables to analyze"
+        ~phase_name:"Fetching initial callables to analyze"
+        ~timer
+        ();
+      initial_callables
 
 
 let record_overrides_for_qualifiers
@@ -509,34 +539,11 @@ let analyze
   let pre_fixpoint_timer = Timer.start () in
   let get_source = get_source ~environment in
 
-  let cached_initial_callables =
-    if use_cache then Cache.load_initial_callables ~configuration else None
-  in
-  let callables_with_dependency_information, stubs, filtered_callables =
-    match cached_initial_callables with
-    | Some (cached_callables, cached_stubs, cached_filtered_callables) ->
-        Log.warning "Using cached results for initial callables to analyze.";
-        cached_callables, cached_stubs, cached_filtered_callables
-    | _ ->
-        let timer = Timer.start () in
-        Log.info "No cached initial callables loaded, fetching initial callables to analyze...";
-        let new_callables, new_stubs, new_filtered_callables =
-          fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifiers
-        in
-        if use_cache then
-          Cache.save_initial_callables
-            ~configuration
-            ~callables_with_dependency_information:new_callables
-            ~stubs:new_stubs
-            ~filtered_callables:new_filtered_callables;
-        Statistics.performance
-          ~name:"Fetched initial callables to analyze"
-          ~phase_name:"Fetching initial callables to analyze"
-          ~timer
-          ();
-        new_callables, new_stubs, new_filtered_callables
+  let { callables_with_dependency_information; stubs; filtered_callables } =
+    fetch_initial_callables ~scheduler ~configuration ~environment ~qualifiers ~use_cache
   in
   let stubs = (stubs :> Callable.t list) in
+
   let timer = Timer.start () in
   (* Initialize and add initial models of analyses to shared mem. We do this prior to computing
      overrides because models can optionally specify overrides to skip *)
