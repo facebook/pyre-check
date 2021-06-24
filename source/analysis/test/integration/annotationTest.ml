@@ -2131,6 +2131,128 @@ let test_check_literal_arithmetic context =
       from typing_extensions import Literal
 
       N = TypeVar("N", bound=int)
+
+      def foo(any: Any, var: N, poly: Add[N, Literal[2]]) -> None:
+        test1 = 2 - 1
+        reveal_type(test1)
+
+        test2 = 1 - 2 - 3
+        reveal_type(test2)
+
+        test3 = 1 - "hi"
+
+        test4 = 1 - any
+        reveal_type(test4)
+
+        x: int
+        test5 = 1 - x
+        reveal_type(test5)
+
+        test6 = 1 - var
+        reveal_type(test6)
+
+        test7 = 1 - poly
+        reveal_type(test7)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `typing_extensions.Literal[1]`.";
+      "Revealed type [-1]: Revealed type for `test2` is `typing_extensions.Literal[-4]`.";
+      "Unsupported operand [58]: `-` is not supported for operand types `int` and `str`.";
+      "Revealed type [-1]: Revealed type for `test4` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test5` is `int`.";
+      "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[1 + -N]`.";
+      "Revealed type [-1]: Revealed type for `test7` is `pyre_extensions.IntExpression[-1 + -N]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
+
+      def foo(any: Any, var: N, poly: Add[N, Literal[2]]) -> None:
+        test1 = 1 * 2
+        reveal_type(test1)
+
+        test2 = 1 * 2 * 3
+        reveal_type(test2)
+
+        test3 = 2 * "hi"
+
+        test4 = 2 * any
+        reveal_type(test4)
+
+        x: int
+        test5 = 2 * x
+        reveal_type(test5)
+
+        test6 = 2 * var
+        reveal_type(test6)
+
+        test7 = 2 * poly
+        reveal_type(test7)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `test2` is `typing_extensions.Literal[6]`.";
+      "Unsupported operand [58]: `*` is not supported for operand types `int` and `str`.";
+      "Revealed type [-1]: Revealed type for `test4` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test5` is `int`.";
+      "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[2N]`.";
+      "Revealed type [-1]: Revealed type for `test7` is `pyre_extensions.IntExpression[4 + 2N]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
+
+      def foo(any: Any, var: N, poly: Add[N, Literal[2]]) -> None:
+        test1 = 9 // 3
+        reveal_type(test1)
+
+        test2 = 9 // 4
+        reveal_type(test2)
+
+        test3 = 9 // 3 // 3
+        reveal_type(test3)
+
+        test4 = 1 // "hi"
+
+        test5 = 1 // any
+        reveal_type(test5)
+
+        x: int
+        test6 = 1 // x
+        reveal_type(test6)
+
+        test7 = 1 // var
+        reveal_type(test7)
+
+        test8 = 1 // poly
+        reveal_type(test8)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `typing_extensions.Literal[3]`.";
+      "Revealed type [-1]: Revealed type for `test2` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `test3` is `typing_extensions.Literal[1]`.";
+      "Unsupported operand [58]: `//` is not supported for operand types `int` and `str`.";
+      "Revealed type [-1]: Revealed type for `test5` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test6` is `int`.";
+      "Revealed type [-1]: Revealed type for `test7` is `pyre_extensions.IntExpression[(1//N)]`.";
+      "Revealed type [-1]: Revealed type for `test8` is `pyre_extensions.IntExpression[(1//(2 + \
+       N))]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
       M = TypeVar("M", bound=int)
 
       def foo(any: Any, var: N, var2: M, poly: Add[N, Literal[2]]) -> None:
@@ -2161,7 +2283,118 @@ let test_check_literal_arithmetic context =
       "Revealed type [-1]: Revealed type for `test5` is `pyre_extensions.IntExpression[M + N]`.";
       "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[2 + 2N]`.";
     ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
 
+      N = TypeVar("N", bound=int)
+      M = TypeVar("M", bound=int)
+
+      def foo(any: Any, var: N, var2: M, poly: Add[N, Literal[2]]) -> None:
+        test1 = var - 1
+        reveal_type(test1)
+
+        test2 = var - "hi"
+
+        test3 = var - any
+        reveal_type(test3)
+
+        x: int
+        test4 = var - x
+        reveal_type(test4)
+
+        test5 = var - var2
+        reveal_type(test5)
+
+        test6 = var - poly
+        reveal_type(test6)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `pyre_extensions.IntExpression[-1 + N]`.";
+      "Unsupported operand [58]: `-` is not supported for operand types `Variable[N (bound to \
+       int)]` and `str`.";
+      "Revealed type [-1]: Revealed type for `test3` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test4` is `int`.";
+      "Revealed type [-1]: Revealed type for `test5` is `pyre_extensions.IntExpression[-M + N]`.";
+      "Revealed type [-1]: Revealed type for `test6` is `typing_extensions.Literal[-2]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
+      M = TypeVar("M", bound=int)
+
+      def foo(any: Any, var: N, var2: M, poly: Add[N, Literal[2]]) -> None:
+        test1 = var * 2
+        reveal_type(test1)
+
+        test2 = var * "hi"
+
+        test3 = var * any
+        reveal_type(test3)
+
+        x: int
+        test4 = var * x
+        reveal_type(test4)
+
+        test5 = var * var2
+        reveal_type(test5)
+
+        test6 = var * poly
+        reveal_type(test6)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `pyre_extensions.IntExpression[2N]`.";
+      "Unsupported operand [58]: `*` is not supported for operand types `Variable[N (bound to \
+       int)]` and `str`.";
+      "Revealed type [-1]: Revealed type for `test3` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test4` is `int`.";
+      "Revealed type [-1]: Revealed type for `test5` is `pyre_extensions.IntExpression[MN]`.";
+      "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[2N + N^2]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
+      M = TypeVar("M", bound=int)
+
+      def foo(any: Any, var: N, var2: M, poly: Add[N, Literal[2]]) -> None:
+        test1 = var // 2
+        reveal_type(test1)
+
+        test2 = var // "hi"
+
+        test3 = var // any
+        reveal_type(test3)
+
+        x: int
+        test4 = var // x
+        reveal_type(test4)
+
+        test5 = var // var2
+        reveal_type(test5)
+
+        test6 = var // poly
+        reveal_type(test6)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `pyre_extensions.IntExpression[(N//2)]`.";
+      "Unsupported operand [58]: `//` is not supported for operand types `Variable[N (bound to \
+       int)]` and `str`.";
+      "Revealed type [-1]: Revealed type for `test3` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test4` is `int`.";
+      "Revealed type [-1]: Revealed type for `test5` is `pyre_extensions.IntExpression[(N//M)]`.";
+      "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[(N//(2 + \
+       N))]`.";
+    ];
   ()
 
 
@@ -2202,6 +2435,133 @@ let test_check_int_expression_arithmetic context =
       "Revealed type [-1]: Revealed type for `test4` is `int`.";
       "Revealed type [-1]: Revealed type for `test5` is `pyre_extensions.IntExpression[2 + 2N]`.";
       "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[4 + 2N]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
+
+      def foo(any: Any, var: N, poly: Add[N, Literal[2]]) -> None:
+        test1 = poly - 1
+        reveal_type(test1)
+
+        test2 = poly - "hi"
+
+        test3 = poly - any
+        reveal_type(test3)
+
+        x: int
+        test4 = poly - x
+        reveal_type(test4)
+
+        test5 = poly - var
+        reveal_type(test5)
+
+        test6 = poly - poly
+        reveal_type(test6)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `pyre_extensions.IntExpression[1 + N]`.";
+      "Unsupported operand [58]: `-` is not supported for operand types \
+       `pyre_extensions.IntExpression[2 + N]` and `str`.";
+      "Revealed type [-1]: Revealed type for `test3` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test4` is `int`.";
+      "Revealed type [-1]: Revealed type for `test5` is `typing_extensions.Literal[2]`.";
+      "Revealed type [-1]: Revealed type for `test6` is `typing_extensions.Literal[0]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
+
+      def foo(any: Any, var: N, poly: Add[N, Literal[2]]) -> None:
+        test1 = poly * 2
+        reveal_type(test1)
+
+        test2 = poly * "hi"
+
+        test3 = poly * any
+        reveal_type(test3)
+
+        x: int
+        test4 = poly * x
+        reveal_type(test4)
+
+        test5 = poly * var
+        reveal_type(test5)
+
+        test6 = poly * poly
+        reveal_type(test6)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `pyre_extensions.IntExpression[4 + 2N]`.";
+      "Unsupported operand [58]: `*` is not supported for operand types \
+       `pyre_extensions.IntExpression[2 + N]` and `str`.";
+      "Revealed type [-1]: Revealed type for `test3` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test4` is `int`.";
+      "Revealed type [-1]: Revealed type for `test5` is `pyre_extensions.IntExpression[2N + N^2]`.";
+      "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[4 + 4N + \
+       N^2]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
+
+      def foo(any: Any, var: N, poly: Add[N, Literal[2]]) -> None:
+        test1 = poly // 2
+        reveal_type(test1)
+
+        test2 = poly // "hi"
+
+        test3 = poly // any
+        reveal_type(test3)
+
+        x: int
+        test4 = poly // x
+        reveal_type(test4)
+
+        test5 = poly // var
+        reveal_type(test5)
+
+        test6 = poly // poly
+        reveal_type(test6)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `pyre_extensions.IntExpression[((2 + \
+       N)//2)]`.";
+      "Unsupported operand [58]: `//` is not supported for operand types \
+       `pyre_extensions.IntExpression[2 + N]` and `str`.";
+      "Revealed type [-1]: Revealed type for `test3` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test4` is `int`.";
+      "Revealed type [-1]: Revealed type for `test5` is `pyre_extensions.IntExpression[((2 + \
+       N)//N)]`.";
+      "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[((2 + \
+       N)//(2 + N))]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar
+      N = TypeVar("N", bound=int)
+      M = TypeVar("M", bound=int)
+      O = TypeVar("O", bound=int)
+
+      def foo(x: N, y: M, z: O) -> None:
+        test = (y * (y + 1)) // (z + 2) - (x * (x - (z // y)))
+        reveal_type(test)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test` is `pyre_extensions.IntExpression[((M + \
+       M^2)//(2 + O)) + N(O//M) + -N^2]`.";
     ];
   ()
 
