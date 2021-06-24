@@ -1671,6 +1671,90 @@ def foo(xs: Tuple[*Ts]) -> None:
   y = (*xs, *xs)  # Error
 ```
 
+### 61: Uninitialized Local
+
+This indicates that there are code paths along which a local variable may not be initialized. Below are some common code patterns that may cause this error:
+
+#### Not initialized in all branches of condition
+
+```python
+def f(x: int) -> None:
+  z = None
+  if x > 5:
+    y = 2
+    z = 2
+  print(y)   # Error
+  print(z)   # OK
+```
+`y` is not defined when the `if` condition is not met. For instance, `f(4)` will result in a runtime error.
+
+There is a slight variation of the above which cannot throw a runtime error but where Pyre will still report an error:
+```python
+def f(x: int) -> None:
+  if x > 5:
+    y = 2
+  if x > 5:
+    print(y)    # Error (according to Pyre)
+```
+Pyre static analysis does not reason about runtime values or potential side effects of interleaving calls, so we cannot guarantee that the two if statements will always be consistent. Possible ways to address this:
+
+- initialize `y` to a default value, outside the conditional or in the `else` branch
+- refactor so that initialization and access are is in the same conditional
+
+#### Initialized only inside a `for` loop
+```python
+def f(xs: List[int]) -> None
+  for x in xs:
+    y = "yes"
+  print("Last element is: ", x)   # Error
+  print("Did we enter the loop?", y)  # Error
+```
+Here, if one calls `f([])`, it will result in errors.
+
+One way to remediate is to initialize outside the loop. For instance,
+```python
+def f(xs: List[int]) -> None:
+  x = None
+  y = "no"
+  for x in xs:
+    y = "yes"
+  print("Last element is: ", x)   # OK
+  print("Did we enter the loop?", y)  # OK
+```
+
+#### Initialized in `try` block
+```python
+def f(x: int) -> None:
+  try:
+    answer = 5 / x
+  except ZeroDivisionError:
+    pass
+  print(f"5 divided by {x} is {answer}")   # Error
+```
+Here, `f(0)` leads to a runtime error. Potential fixes are:
+
+- Initialize `answer` to `None` outside the `try` block.
+- Keep the access to `answer` inside the `try` block.
+
+There is a slight variation of the above which cannot throw a runtime error but where Pyre will still report an error:
+```python
+def f(x: int) -> None:
+  try:
+    y = 5
+    answer = y / x
+    print(f"{y} divided by {x} is {answer}")
+  except ZeroDivisionError:
+    print(f"Cannot divide {y} by 0")    # Error (according to Pyre)
+```
+Pyre currently does not reason that `y = 5` cannont raise a `ZeroDivisionError`. Thus, it is unable conclude that `y` will always be initialized in the `except` block. It is generally considered a good practice to minimize the code inside a try block, and keep it to only have the exception throwing code. Thus, we recommend initializing the variables outside the `try` block in this case:
+```python
+def f(x: int) -> None:
+  y = 5       # Moved outside the try block
+  try:
+    print("{y} divided by {x} is ", y / x)
+  except ZeroDivisionError:
+    print(f"Cannot divide {y} by 0")    # OK
+```
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
