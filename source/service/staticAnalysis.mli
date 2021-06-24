@@ -61,6 +61,7 @@ val analyze
   environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
   initial_callables:initial_callables ->
-  ?initialized_models:Interprocedural.Result.model_t Interprocedural.Result.InitializedModels.t ->
+  initial_models:Interprocedural.Result.model_t Callable.Map.t ->
+  skip_overrides:Ast.Reference.Set.t ->
   unit ->
   unit

@@ -140,28 +140,27 @@ let run_analysis
           let environment =
             Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache
           in
-          let environment, initialized_models =
+          let initialized_models =
+            Interprocedural.Analysis.initialize_models
+              analysis_kind
+              ~static_analysis_configuration
+              ~scheduler
+              ~environment:(Analysis.TypeEnvironment.read_only environment)
+          in
+          let environment =
             if inline_decorators then (
               Log.info "Inlining decorators for taint analysis...";
-              let initialized_models =
-                Interprocedural.Analysis.initialize_models
-                  analysis_kind
-                  ~static_analysis_configuration
-                  ~scheduler
-                  ~environment:(Analysis.TypeEnvironment.read_only environment)
-              in
               let { Interprocedural.Result.InitializedModels.initial_models; _ } =
                 Interprocedural.Result.InitializedModels.get_models initialized_models
               in
-              ( Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
-                  ~configuration
-                  ~scheduler
-                  ~recheck:Server.IncrementalCheck.recheck
-                  ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
-                  environment,
-                Some initialized_models ) )
+              Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
+                ~configuration
+                ~scheduler
+                ~recheck:Server.IncrementalCheck.recheck
+                ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
+                environment )
             else
-              environment, None
+              environment
           in
           let qualifiers =
             Analysis.TypeEnvironment.module_tracker environment
@@ -169,7 +168,9 @@ let run_analysis
           in
           let environment = Analysis.TypeEnvironment.read_only environment in
           let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
-          let initial_callables =
+          let ( { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } as
+              initial_callables )
+            =
             Service.StaticAnalysis.fetch_initial_callables
               ~scheduler
               ~configuration
@@ -177,6 +178,23 @@ let run_analysis
               ~qualifiers
               ~use_cache
           in
+          Log.info "Initializing analysis...";
+          let { Interprocedural.Result.InitializedModels.initial_models; skip_overrides } =
+            let functions =
+              ( List.map callables_with_dependency_information ~f:fst
+                :> Interprocedural.Callable.t list )
+            in
+            let stubs = (stubs :> Interprocedural.Callable.t list) in
+            Interprocedural.Result.InitializedModels.get_models_including_generated_models
+              initialized_models
+              ~function_and_stub_data:
+                (Some { Interprocedural.Result.functions; stubs; updated_environment = environment })
+          in
+          Statistics.performance
+            ~name:"Computed initial analysis state"
+            ~phase_name:"Computing initial analysis state"
+            ~timer
+            ();
           let filename_lookup path_reference =
             match repository_root with
             | Some root ->
@@ -200,7 +218,8 @@ let run_analysis
             ~environment
             ~qualifiers
             ~initial_callables
-            ?initialized_models
+            ~initial_models
+            ~skip_overrides
             ();
           let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
           Statistics.performance

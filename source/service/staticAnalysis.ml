@@ -533,44 +533,20 @@ let analyze
     ~filename_lookup
     ~environment
     ~qualifiers
-    ~initial_callables:{ callables_with_dependency_information; stubs; filtered_callables }
-    ?initialized_models
+    ~initial_callables:{ callables_with_dependency_information; stubs; filtered_callables; _ }
+    ~initial_models
+    ~skip_overrides
     ()
   =
-  let stubs = (stubs :> Callable.t list) in
   let pre_fixpoint_timer = Timer.start () in
   let get_source = get_source ~environment in
 
-  let timer = Timer.start () in
-  (* Initialize and add initial models of analyses to shared mem. We do this prior to computing
-     overrides because models can optionally specify overrides to skip *)
-  Log.info "Initializing analysis...";
-  let skip_overrides, initial_models_callables =
-    let functions = (List.map callables_with_dependency_information ~f:fst :> Callable.t list) in
-    let initialized_models =
-      match initialized_models with
-      | Some initialized_models -> initialized_models
-      | None ->
-          Interprocedural.Analysis.initialize_models
-            analysis
-            ~static_analysis_configuration
-            ~scheduler
-            ~environment
-    in
-    let { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides } =
-      Interprocedural.Result.InitializedModels.get_models_including_generated_models
-        initialized_models
-        ~function_and_stub_data:
-          (Some { Interprocedural.Result.functions; stubs; updated_environment = environment })
-    in
-    Interprocedural.Analysis.record_initial_models ~functions ~stubs models;
-    skip_overrides, Callable.Map.keys models
+  let functions =
+    (List.map callables_with_dependency_information ~f:fst :> Interprocedural.Callable.t list)
   in
-  Statistics.performance
-    ~name:"Computed initial analysis state"
-    ~phase_name:"Computing initial analysis state"
-    ~timer
-    ();
+  let stubs = (stubs :> Interprocedural.Callable.t list) in
+  Interprocedural.Analysis.record_initial_models ~functions ~stubs initial_models;
+
   (* Compute the override graph, which maps overide_targets (parent methods which are overridden) to
      all concrete methods overriding them. We also save data used for callgraph construction into
      shared memory. *)
@@ -691,7 +667,7 @@ let analyze
   in
   let report_results fixpoint_iterations =
     let callables =
-      Callable.Set.of_list (List.rev_append initial_models_callables callables_to_analyze)
+      Callable.Set.of_list (List.rev_append (Callable.Map.keys initial_models) callables_to_analyze)
     in
     Interprocedural.Analysis.report_results
       ~scheduler

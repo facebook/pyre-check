@@ -140,6 +140,8 @@ let run_infer_interprocedural
             ~environment
             ~qualifiers
             ~initial_callables
+            ~initial_models:Interprocedural.Callable.Map.empty
+            ~skip_overrides:Ast.Reference.Set.empty
             ();
           let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
           Statistics.performance
