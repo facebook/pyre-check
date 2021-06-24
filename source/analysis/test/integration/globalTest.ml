@@ -256,7 +256,7 @@ let test_check_globals context =
       "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is incomplete, add \
        an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
     ];
   assert_default_type_errors
     {|
