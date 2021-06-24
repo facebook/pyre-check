@@ -22,21 +22,6 @@ let setup_environment scratch_project =
   global_environment
 
 
-let static_analysis_configuration { ScratchProject.configuration; _ } =
-  {
-    Configuration.StaticAnalysis.result_json_path = None;
-    dump_call_graph = false;
-    verify_models = false;
-    configuration;
-    rule_filter = None;
-    find_missing_flows = None;
-    dump_model_query_results = false;
-    use_cache = false;
-    maximum_trace_length = None;
-    maximum_tito_depth = None;
-  }
-
-
 module Setup = struct
   let make_function name : Callable.real_target =
     name |> Reference.create |> Callable.create_function
@@ -63,35 +48,31 @@ module Setup = struct
     qualifier, define
 
 
-  let set_up_project ~context source =
-    let project = ScratchProject.setup ~context ["test.py", source] ~infer:true in
-    let static_analysis_configuration = static_analysis_configuration project in
+  let set_up_project ~context code =
+    let ({ ScratchProject.configuration; _ } as project) =
+      ScratchProject.setup ~context ["test.py", code] ~infer:true
+    in
     let environment =
       setup_environment project |> TypeEnvironment.create |> TypeEnvironment.read_only
     in
-    let _ =
-      TypeInference.Private.SharedMemory.register_configuration
-        static_analysis_configuration.configuration
-    in
-    environment
+    environment, configuration
 
 
-  let run_inference ~context ~targets source =
-    let environment = set_up_project ~context source in
-    let resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
-    let analyze target =
-      let qualifier, define = find_target ~resolution target in
-      let result, _ =
-        TypeInference.Analysis.analyze
-          ~callable:target
-          ~environment
-          ~qualifier
-          ~define
-          ~existing:None
-      in
-      target, result
+  let run_inference ~context ~target code =
+    let environment, configuration = set_up_project ~context code in
+    let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
+    let source =
+      let ast_environment = GlobalResolution.ast_environment global_resolution in
+      AstEnvironment.ReadOnly.get_processed_source ast_environment (Reference.create "test")
+      |> fun option -> Option.value_exn option
     in
-    targets |> List.map ~f:analyze
+    let module_results =
+      TypeInference.Local.infer_for_module ~configuration ~global_resolution ~source
+    in
+    let is_target { LocalResult.define = { name; _ }; _ } =
+      Reference.equal name (Reference.create target)
+    in
+    module_results |> List.filter ~f:is_target |> List.hd_exn
 end
 
 let assert_json_equal ~context ~expected result =
@@ -99,10 +80,8 @@ let assert_json_equal ~context ~expected result =
   assert_equal ~ctxt:context ~printer:Yojson.Safe.pretty_to_string expected result
 
 
-let check_inference_results ~context ~target ~expected source =
-  let results = Setup.run_inference ~context ~targets:[Setup.make_function target] source in
-  assert_equal (List.length results) 1;
-  let result = results |> List.hd_exn |> snd |> LocalResult.to_yojson in
+let check_inference_results ~context ~target ~expected code =
+  let result = Setup.run_inference ~context ~target code |> LocalResult.to_yojson in
   (* Filter out toplevel and __init__ defines, which are verbose and uninteresting *)
   let actual =
     if
