@@ -9,12 +9,68 @@ open Core
 open Analysis
 open Pyre
 
+type environment_data = {
+  module_tracker: ModuleTracker.t;
+  ast_environment: AstEnvironment.t;
+  global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+  global_resolution: GlobalResolution.t;
+  qualifiers: Ast.Reference.t list;
+}
+
 type result = {
   module_tracker: ModuleTracker.t;
   ast_environment: AstEnvironment.t;
   global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
   errors: Analysis.InferenceError.t list;
 }
+
+let build_environment_data
+    ~configuration:
+      ({ Configuration.Analysis.project_root; source_path; search_path; _ } as configuration)
+    ~scheduler
+    ()
+  =
+  (* Sanity check environment. *)
+  let check_directory_exists directory =
+    if not (Path.is_directory directory) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
+  in
+  source_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
+  check_directory_exists project_root;
+  search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
+
+  let module_tracker = ModuleTracker.create configuration in
+  let ast_environment = AstEnvironment.create module_tracker in
+  let global_environment, qualifiers =
+    Log.info "Building type environment...";
+
+    let timer = Timer.start () in
+    let update_result =
+      let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
+      AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
+        annotated_global_environment
+        ~scheduler
+        ~configuration
+        ColdStart
+    in
+    let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
+    Statistics.performance ~name:"full environment built" ~timer ();
+    let qualifiers =
+      let is_not_external qualifier =
+        let ast_environment = AstEnvironment.read_only ast_environment in
+        AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+        >>| (fun { Ast.SourcePath.is_external; _ } -> not is_external)
+        |> Option.value ~default:false
+      in
+      AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
+      |> AstEnvironment.UpdateResult.invalidated_modules
+      |> List.filter ~f:is_not_external
+    in
+    global_environment, qualifiers
+  in
+  let global_resolution = GlobalResolution.create global_environment in
+  { module_tracker; ast_environment; global_environment; global_resolution; qualifiers }
+
 
 let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
   let number_of_sources = List.length qualifiers in
@@ -48,52 +104,9 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
   errors
 
 
-let infer
-    ~configuration:
-      ({ Configuration.Analysis.project_root; source_path; search_path; _ } as configuration)
-    ~scheduler
-    ()
-  =
-  (* Sanity check environment. *)
-  let check_directory_exists directory =
-    if not (Path.is_directory directory) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
+let infer ~configuration ~scheduler () =
+  let { module_tracker; ast_environment; global_environment; global_resolution; qualifiers } =
+    build_environment_data ~configuration ~scheduler ()
   in
-  source_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
-  check_directory_exists project_root;
-  search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
-
-  let module_tracker = ModuleTracker.create configuration in
-  let ast_environment = AstEnvironment.create module_tracker in
-  let global_environment, qualifiers =
-    Log.info "Building type environment...";
-
-    let timer = Timer.start () in
-    let update_result =
-      let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
-      AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        annotated_global_environment
-        ~scheduler
-        ~configuration
-        ColdStart
-    in
-    let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
-    Statistics.performance ~name:"full environment built" ~timer ();
-    ( global_environment,
-      AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
-      |> AstEnvironment.UpdateResult.invalidated_modules )
-  in
-  let errors =
-    let qualifiers =
-      let is_not_external qualifier =
-        let ast_environment = AstEnvironment.read_only ast_environment in
-        AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
-        >>| (fun { Ast.SourcePath.is_external; _ } -> not is_external)
-        |> Option.value ~default:false
-      in
-      List.filter qualifiers ~f:is_not_external
-    in
-    let global_resolution = GlobalResolution.create global_environment in
-    run_infer ~scheduler ~configuration ~global_resolution qualifiers
-  in
+  let errors = run_infer ~scheduler ~configuration ~global_resolution qualifiers in
   { module_tracker; ast_environment; global_environment; errors }
