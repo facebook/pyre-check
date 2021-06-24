@@ -284,8 +284,8 @@ let test_check_inverse_operator context =
     |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[1]`.";
-      "Incompatible parameter type [6]: Expected `Variable[N2 (bound to int)]` for 1st positional \
-       only parameter to call `int.__add__` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `int.__add__` but got `str`.";
     ];
   assert_type_errors
     ~context

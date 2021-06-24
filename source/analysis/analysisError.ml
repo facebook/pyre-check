@@ -779,7 +779,7 @@ let rec messages ~concise ~signature location kind =
       | MisplacedOverloadDecorator ->
           ["The @overload decorator must be the topmost decorator if present."] )
   | IncompatibleParameterType
-      { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } ->
+      { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } -> (
       let trace =
         if due_to_invariance then
           [Format.asprintf "This call might modify the type of the parameter."; invariance_message]
@@ -802,8 +802,21 @@ let rec messages ~concise ~signature location kind =
         else
           Format.asprintf "%s %s to %s" (ordinal position) parameter callee
       in
-      Format.asprintf "Expected `%a` for %s but got `%a`." pp_type expected target pp_type actual
-      :: trace
+      match Option.map ~f:Reference.as_list callee with
+      | Some ["int"; "__add__"]
+      | Some ["int"; "__sub__"]
+      | Some ["int"; "__mul__"]
+      | Some ["int"; "__floordiv__"] ->
+          Format.asprintf "Expected `int` for %s but got `%a`." target pp_type actual :: trace
+      | _ ->
+          Format.asprintf
+            "Expected `%a` for %s but got `%a`."
+            pp_type
+            expected
+            target
+            pp_type
+            actual
+          :: trace )
   | IncompatibleConstructorAnnotation _ when concise -> ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->
       [
