@@ -371,6 +371,7 @@ class Infer(Reporting):
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
         read_stdin: bool,
+        interprocedural: bool,
     ) -> None:
         if annotate_from_existing_stubs and in_place is None:
             raise ValueError(
@@ -392,6 +393,7 @@ class Infer(Reporting):
         self._type_directory: Path = Path(
             os.path.join(self._configuration.log_directory, "types")
         )
+        self._interprocedural = interprocedural
         if self._annotate_from_existing_stubs and not self._in_place:
             raise ValueError(
                 "The --in-place flag is required when using "
@@ -421,10 +423,14 @@ class Infer(Reporting):
             isolate=True,
         )
 
+    @property
+    def _mode(self) -> str:
+        return "interprocedural" if self._interprocedural else "local"
+
     def _flags(self) -> list[str]:
         flags = super()._flags()
 
-        flags.extend(["-infer-mode", "interprocedural"])
+        flags.extend(["-infer-mode", self._mode])
 
         filter_directories = self._analysis_directory.get_filter_roots()
         filter_directories.update(

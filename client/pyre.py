@@ -877,7 +877,16 @@ def infer(
     "--read-stdin",
     is_flag=True,
     default=False,
-    help="Read input from stdin instead of running a full infer",
+    help="Read input from stdin instead of running a full infer.",
+)
+@click.option(
+    "--interprocedural",
+    is_flag=True,
+    default=False,
+    help=(
+        "Use (experimental) interprocedural inference. "
+        "Will be slower, but may give better results."
+    ),
 )
 def infer_v2(
     context: click.Context,
@@ -887,6 +896,7 @@ def infer_v2(
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
     read_stdin: bool,
+    interprocedural: bool,
 ) -> int:
     """
     Run the (under construction) interprocedural version of pyre infer.
@@ -910,6 +920,7 @@ def infer_v2(
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
             read_stdin=read_stdin,
+            interprocedural=interprocedural,
         ),
         configuration,
         command_argument.noninteractive,

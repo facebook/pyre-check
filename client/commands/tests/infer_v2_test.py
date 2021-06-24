@@ -524,6 +524,7 @@ class InferV2Test(unittest.TestCase):
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
+                interprocedural=False,
             )
             self.assertEqual(expected, infer._should_annotate_in_place(path))
 
@@ -590,6 +591,7 @@ class InferV2Test(unittest.TestCase):
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
+                interprocedural=False,
             )
             self.assertEqual(
                 command._flags(),
@@ -609,7 +611,7 @@ class InferV2Test(unittest.TestCase):
                     "-shared-memory-heap-size",
                     "1073741824",
                     "-infer-mode",
-                    "interprocedural",
+                    "local",
                 ],
             )
             command.run()
@@ -630,6 +632,7 @@ class InferV2Test(unittest.TestCase):
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
+                interprocedural=True,
             )
             self.assertEqual(
                 command._flags(),
@@ -672,6 +675,7 @@ class InferV2Test(unittest.TestCase):
                     annotate_from_existing_stubs=False,
                     debug_infer=False,
                     read_stdin=True,
+                    interprocedural=False,
                 )
                 command.run()
                 call_client.assert_not_called()
