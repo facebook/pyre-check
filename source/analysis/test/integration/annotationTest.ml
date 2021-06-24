@@ -2165,6 +2165,47 @@ let test_check_literal_arithmetic context =
   ()
 
 
+let test_check_int_expression_arithmetic context =
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_default_type_errors
+    {|
+      from typing import TypeVar, Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      N = TypeVar("N", bound=int)
+
+      def foo(any: Any, var: N, poly: Add[N, Literal[2]]) -> None:
+        test1 = poly + 1
+        reveal_type(test1)
+
+        test2 = poly + "hi"
+
+        test3 = poly + any
+        reveal_type(test3)
+
+        x: int
+        test4 = poly + x
+        reveal_type(test4)
+
+        test5 = poly + var
+        reveal_type(test5)
+
+        test6 = poly + poly
+        reveal_type(test6)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test1` is `pyre_extensions.IntExpression[3 + N]`.";
+      "Unsupported operand [58]: `+` is not supported for operand types \
+       `pyre_extensions.IntExpression[2 + N]` and `str`.";
+      "Revealed type [-1]: Revealed type for `test3` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test4` is `int`.";
+      "Revealed type [-1]: Revealed type for `test5` is `pyre_extensions.IntExpression[2 + 2N]`.";
+      "Revealed type [-1]: Revealed type for `test6` is `pyre_extensions.IntExpression[4 + 2N]`.";
+    ];
+  ()
+
+
 let test_check_typevar_division_simplify context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -2318,6 +2359,7 @@ let () =
          "check_annotation_with_any" >:: test_check_annotation_with_any;
          "check_typevar_arithmetic" >:: test_check_typevar_arithmetic;
          "check_literal_arithmetic" >:: test_check_literal_arithmetic;
+         "check_int_expression_arithmetic" >:: test_check_int_expression_arithmetic;
          "check_typevar_division_simplify" >:: test_check_typevar_division_simplify;
          "check_annotated" >:: test_check_annotated;
          "check_union_shorthand" >:: test_check_union_shorthand;

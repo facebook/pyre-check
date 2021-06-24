@@ -3574,6 +3574,7 @@ let split annotation =
       in
       Primitive "tuple", parameters
   | Literal _ as literal -> weaken_literals literal, []
+  | IntExpression _ -> integer, []
   | Callable _ -> Primitive "typing.Callable", []
   | annotation -> annotation, []
 
