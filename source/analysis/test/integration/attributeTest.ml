@@ -1089,6 +1089,21 @@ let test_check_missing_attribute context =
   assert_type_errors
     {|
       class Foo:
+        def __init__(self) -> None:
+          self.a = []
+      def test(foo: Foo) -> None:
+        reveal_type(foo.a)
+    |}
+    [
+      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `self.a` is incomplete, \
+       add an explicit annotation.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
+      (* TODO(T78211867): We should know `foo.a` is a `List`. *)
+      "Revealed type [-1]: Revealed type for `foo.a` is `unknown`.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
         def __init__(self, a) -> None:
           self.a = a
     |}

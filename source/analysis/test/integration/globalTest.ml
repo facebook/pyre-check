@@ -246,6 +246,18 @@ let test_check_globals context =
         return x
     |}
     [];
+  assert_type_errors
+    {|
+      x = []
+      def foo() -> None:
+        reveal_type(x)
+    |}
+    [
+      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is incomplete, add \
+       an explicit annotation.";
+      "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
+    ];
   assert_default_type_errors
     {|
       import typing
