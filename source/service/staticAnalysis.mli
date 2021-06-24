@@ -10,21 +10,13 @@ open Ast
 open Statement
 open Interprocedural
 
-module Cache : sig
-  val load_environment : configuration:Configuration.Analysis.t -> TypeEnvironment.t option
-
-  val save_environment
-    :  configuration:Configuration.Analysis.t ->
-    environment:TypeEnvironment.t ->
-    unit
-end
-
 val type_check
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   use_cache:bool ->
   TypeEnvironment.t
 
+(* Exposed for testing purposes. *)
 val record_and_merge_call_graph
   :  environment:TypeEnvironment.ReadOnly.t ->
   call_graph:DependencyGraph.callgraph ->
@@ -37,6 +29,7 @@ type found_callable = {
   is_internal: bool;
 }
 
+(* Exposed for testing purposes. *)
 val regular_and_filtered_callables
   :  configuration:Configuration.Analysis.t ->
   resolution:GlobalResolution.t ->
