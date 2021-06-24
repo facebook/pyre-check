@@ -122,6 +122,7 @@ module.exports = {
             'fb/warning_codes/code-6445',
             'fb/warning_codes/code-6446',
             'fb/warning_codes/code-6449',
+            'fb/warning_codes/code-7330',
           ],
         },
       ],
