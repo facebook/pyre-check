@@ -140,55 +140,66 @@ let run_analysis
           let environment =
             Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache
           in
+          let qualifiers =
+            Analysis.TypeEnvironment.module_tracker environment
+            |> Analysis.ModuleTracker.tracked_explicit_modules
+          in
+          let initial_callables =
+            Service.StaticAnalysis.fetch_initial_callables
+              ~scheduler
+              ~configuration
+              ~environment:(Analysis.TypeEnvironment.read_only environment)
+              ~qualifiers
+              ~use_cache
+          in
           let initialized_models =
+            let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
+              initial_callables
+            in
             Interprocedural.Analysis.initialize_models
               analysis_kind
               ~static_analysis_configuration
               ~scheduler
               ~environment:(Analysis.TypeEnvironment.read_only environment)
+              ~functions:
+                ( List.map callables_with_dependency_information ~f:fst
+                  :> Interprocedural.Callable.t list )
+              ~stubs:(stubs :> Interprocedural.Callable.t list)
           in
-          let environment =
+          let environment, initial_callables =
             if inline_decorators then (
               Log.info "Inlining decorators for taint analysis...";
               let { Interprocedural.Result.InitializedModels.initial_models; _ } =
                 Interprocedural.Result.InitializedModels.get_models initialized_models
               in
-              Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
-                ~configuration
-                ~scheduler
-                ~recheck:Server.IncrementalCheck.recheck
-                ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
-                environment )
+              let updated_environment =
+                Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
+                  ~configuration
+                  ~scheduler
+                  ~recheck:Server.IncrementalCheck.recheck
+                  ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
+                  environment
+              in
+              let updated_initial_callables =
+                (* We need to re-fetch initial callables, since inlining creates new callables. *)
+                Service.StaticAnalysis.fetch_initial_callables
+                  ~scheduler
+                  ~configuration
+                  ~environment:(Analysis.TypeEnvironment.read_only updated_environment)
+                  ~qualifiers
+                  ~use_cache:false
+              in
+              updated_environment, updated_initial_callables )
             else
-              environment
-          in
-          let qualifiers =
-            Analysis.TypeEnvironment.module_tracker environment
-            |> Analysis.ModuleTracker.tracked_explicit_modules
+              environment, initial_callables
           in
           let environment = Analysis.TypeEnvironment.read_only environment in
           let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
-          let ( { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } as
-              initial_callables )
-            =
-            Service.StaticAnalysis.fetch_initial_callables
-              ~scheduler
-              ~configuration
-              ~environment
-              ~qualifiers
-              ~use_cache
-          in
           Log.info "Initializing analysis...";
           let { Interprocedural.Result.InitializedModels.initial_models; skip_overrides } =
-            let functions =
-              ( List.map callables_with_dependency_information ~f:fst
-                :> Interprocedural.Callable.t list )
-            in
-            let stubs = (stubs :> Interprocedural.Callable.t list) in
             Interprocedural.Result.InitializedModels.get_models_including_generated_models
               initialized_models
-              ~function_and_stub_data:
-                (Some { Interprocedural.Result.functions; stubs; updated_environment = environment })
+              ~updated_environment:(Some environment)
           in
           Statistics.performance
             ~name:"Computed initial analysis state"

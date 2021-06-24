@@ -72,12 +72,6 @@ type 'part pkg =
     }
       -> 'part pkg
 
-type function_and_stub_data = {
-  functions: Callable.t list;
-  stubs: Callable.t list;
-  updated_environment: Analysis.TypeEnvironment.ReadOnly.t;
-}
-
 module InitializedModels = struct
   type 'call_model initialize_result = {
     initial_models: 'call_model Callable.Map.t;
@@ -85,18 +79,18 @@ module InitializedModels = struct
   }
 
   type 'call_model t =
-    function_and_stub_data:function_and_stub_data option -> 'call_model initialize_result
+    updated_environment:Analysis.TypeEnvironment.ReadOnly.t option -> 'call_model initialize_result
 
   let create f = f
 
   let empty =
-    create (fun ~function_and_stub_data:_ ->
+    create (fun ~updated_environment:_ ->
         { initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty })
 
 
-  let get_models f = f ~function_and_stub_data:None
+  let get_models f = f ~updated_environment:None
 
-  let get_models_including_generated_models ~function_and_stub_data f = f ~function_and_stub_data
+  let get_models_including_generated_models ~updated_environment f = f ~updated_environment
 end
 
 module type ANALYZER = sig
@@ -122,6 +116,8 @@ module type ANALYZER = sig
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    functions:Callable.t list ->
+    stubs:Callable.t list ->
     call_model InitializedModels.t
 
   val report

@@ -32,7 +32,13 @@ end)
 include SimpleAnalysis.Register (struct
   let initialize_configuration ~static_analysis_configuration:_ = ()
 
-  let initialize_models ~scheduler:_ ~static_analysis_configuration:_ ~environment:_ =
+  let initialize_models
+      ~scheduler:_
+      ~static_analysis_configuration:_
+      ~environment:_
+      ~functions:_
+      ~stubs:_
+    =
     Result.InitializedModels.empty
 
 

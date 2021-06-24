@@ -16,7 +16,13 @@ module Analyzer = struct
     TypeInferenceSharedMemory.register_configuration configuration
 
 
-  let initialize_models ~scheduler:_ ~static_analysis_configuration:_ ~environment:_ =
+  let initialize_models
+      ~scheduler:_
+      ~static_analysis_configuration:_
+      ~environment:_
+      ~functions:_
+      ~stubs:_
+    =
     Result.InitializedModels.empty
 
 

@@ -249,16 +249,13 @@ include Taint.Result.Register (struct
     | _ -> add_models_and_queries_from_sources initial_models
 
 
-  let initialize_models ~scheduler ~static_analysis_configuration ~environment =
+  let initialize_models ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
     let { initialize_result; query_data } =
       parse_models_and_queries_from_sources ~scheduler ~static_analysis_configuration ~environment
     in
-    let get_taint_models ~function_and_stub_data =
-      match function_and_stub_data, query_data with
-      | None, _
-      | _, None ->
-          initialize_result
-      | Some { Interprocedural.Result.functions; stubs; updated_environment }, Some query_data ->
+    let get_taint_models ~updated_environment =
+      match updated_environment, query_data with
+      | Some updated_environment, Some query_data ->
           generate_models_from_queries
             ~scheduler
             ~static_analysis_configuration
@@ -267,6 +264,7 @@ include Taint.Result.Register (struct
             ~stubs
             ~initialize_result
             query_data
+      | _ -> initialize_result
     in
     Interprocedural.Result.InitializedModels.create get_taint_models
 

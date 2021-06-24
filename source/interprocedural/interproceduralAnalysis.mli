@@ -18,6 +18,8 @@ val initialize_models
   scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  functions:Callable.t list ->
+  stubs:Callable.t list ->
   InterproceduralResult.model_t InterproceduralResult.InitializedModels.t
 
 val record_initial_models
