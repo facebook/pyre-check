@@ -46,8 +46,8 @@ let test_check_assign context =
         x += 'asdf'
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `int.__add__` but got `str`.";
+      "Incompatible parameter type [6]: Expected `Variable[N2 (bound to int)]` for 1st positional \
+       only parameter to call `int.__add__` but got `str`.";
     ];
 
   (* Prune `undeclared` from assignments. *)

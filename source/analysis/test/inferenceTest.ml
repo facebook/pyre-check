@@ -291,7 +291,8 @@ let test_check_missing_parameter context =
     ~expected:
       [
         "Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified.";
-        "Missing parameter annotation [2]: Parameter `y` has type `int` but no type is specified.";
+        "Missing parameter annotation [2]: Parameter `y` has type `Variable[N2 (bound to int)]` \
+         but no type is specified.";
       ];
   (* TODO(T84365830): Support inference on addition. *)
   assert_inference_errors {|
