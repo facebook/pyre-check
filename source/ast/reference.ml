@@ -56,6 +56,7 @@ let combine prefix suffix =
 
 let delocalize reference =
   match reference with
+  | head :: tail when String.is_prefix ~prefix:"$local_$" head -> [Identifier.sanitized head] @ tail
   | head :: tail when String.is_prefix ~prefix:"$local_" head ->
       let qualifier =
         if Str.string_match local_qualifier_pattern head 0 then

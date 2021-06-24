@@ -1300,6 +1300,9 @@ let rec delocalize ({ Node.value; location } as expression) =
           { argument with Call.Argument.value = delocalize value }
         in
         Call { callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
+    | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_$" ->
+        let sanitized = Identifier.sanitized identifier in
+        Name (Name.Identifier sanitized)
     | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_" ->
         let sanitized = Identifier.sanitized identifier in
         if Str.string_match Reference.local_qualifier_pattern identifier 0 then
