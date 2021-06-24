@@ -13,3 +13,9 @@ type result = {
 }
 
 val infer : configuration:Configuration.Analysis.t -> scheduler:Scheduler.t -> unit -> result
+
+val infer_v2
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  unit ->
+  TypeInference.Data.GlobalResult.t

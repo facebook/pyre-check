@@ -110,3 +110,39 @@ let infer ~configuration ~scheduler () =
   in
   let errors = run_infer ~scheduler ~configuration ~global_resolution qualifiers in
   { module_tracker; ast_environment; global_environment; errors }
+
+
+let run_infer_v2 ~scheduler ~configuration ~global_resolution qualifiers =
+  Log.info "Running inference...";
+  let timer = Timer.start () in
+  let ast_environment = GlobalResolution.ast_environment global_resolution in
+  let map _ qualifiers =
+    let analyze_qualifier qualifier =
+      let analyze_source source =
+        TypeInference.Local.infer_for_module ~configuration ~global_resolution ~source
+      in
+      AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier >>| analyze_source
+    in
+    List.filter_map qualifiers ~f:analyze_qualifier |> List.concat
+  in
+  let reduce left right = List.append left right in
+  let results =
+    Scheduler.map_reduce
+      scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 75)
+      ~initial:[]
+      ~map
+      ~reduce
+      ~inputs:qualifiers
+      ()
+  in
+  Statistics.performance ~name:"inference" ~phase_name:"Type inference" ~timer ();
+  results
+
+
+let infer_v2 ~configuration ~scheduler () =
+  let { global_resolution; qualifiers; _ } = build_environment_data ~configuration ~scheduler () in
+  run_infer_v2 ~scheduler ~configuration ~global_resolution qualifiers
+  |> List.fold
+       ~init:TypeInference.Data.GlobalResult.empty
+       ~f:(TypeInference.Data.GlobalResult.add_local_result ~global_resolution)
