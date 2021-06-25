@@ -550,10 +550,25 @@ let weaken_literals kind =
     in
     { actual; expected; due_to_invariance }
   in
+  (* This is necessary because the `int.__add__` stub now takes type variables, which leads to
+     confusing errors *)
+  let weaken_int_variable annotation =
+    let constraints = function
+      | Type.Variable
+          {
+            Type.Record.Variable.RecordUnary.constraints =
+              Type.Record.Variable.Bound (Type.Primitive "int");
+            _;
+          } ->
+          Some Type.integer
+      | _ -> None
+    in
+    Type.instantiate ~constraints annotation
+  in
   let weaken_missing_annotation = function
     | { given_annotation = Some given; _ } as missing when Type.contains_literal given -> missing
     | { annotation = Some annotation; _ } as missing ->
-        { missing with annotation = Some (Type.weaken_literals annotation) }
+        { missing with annotation = Some (weaken_int_variable (Type.weaken_literals annotation)) }
     | missing -> missing
   in
   match kind with
