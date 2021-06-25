@@ -886,7 +886,16 @@ Pyre will warn on any usage of `typing.Any` when run in [strict mode](gradual_ty
 
 ### 34: Invalid Type Variable
 
-Example:
+
+Type variables can only be used as types when they have already been placed "in scope".
+A type variable can be placed into scope via:
+
+* Generic class declarations
+  * for example, `class C(Generic[T]):` puts `T` into scope for the body of the class
+* The **parameter** types of a generic function
+  * for example, `def foo(x: T)` puts `T` into scope for the body and return type annotation of the function
+
+For example:
 
 ```python
 class Base:
@@ -904,15 +913,6 @@ def foo(x: int) -> List[T]:
 $ pyre
 Invalid type variable [34]: The type variable `Variable[T]` isn't present in the function's parameters.
 ```
-
-Type variables can only be used as types when they have already been placed "in scope".
-A type variable can be placed into scope via:
-
-* Generic class declarations
-  * for example, `class C(Generic[T]):` puts `T` into scope for the body of the class
-* The **parameter** types of a generic function
-  * for example, `def foo(x: T)` puts `T` into scope for the body and return type annotation of the function
-
 Suggested fix:
 
 ```python
