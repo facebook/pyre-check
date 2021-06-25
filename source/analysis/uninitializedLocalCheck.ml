@@ -223,18 +223,21 @@ module State (Context : Context) = struct
   let widen ~previous ~next ~iteration:_ = join previous next
 
   let forward ~key state ~statement =
+    let new_state =
+      Scope.Binding.of_statement [] statement
+      |> List.map ~f:Scope.Binding.name
+      |> List.map ~f:Identifier.sanitized
+      |> InitializedVariables.of_list
+      |> InitializedVariables.union state
+    in
     let is_uninitialized { Node.value = identifier; _ } =
-      not (InitializedVariables.mem state (Identifier.sanitized identifier))
+      not (InitializedVariables.mem new_state (Identifier.sanitized identifier))
     in
     let uninitialized_usage =
       extract_reads_statement statement |> List.filter ~f:is_uninitialized
     in
     Hashtbl.set Context.uninitialized_usage ~key ~data:uninitialized_usage;
-    Scope.Binding.of_statement [] statement
-    |> List.map ~f:Scope.Binding.name
-    |> List.map ~f:Identifier.sanitized
-    |> InitializedVariables.of_list
-    |> InitializedVariables.union state
+    new_state
 
 
   let backward ~key:_ _ ~statement:_ = failwith "Not implemented"

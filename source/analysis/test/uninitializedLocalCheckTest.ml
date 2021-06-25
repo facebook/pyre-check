@@ -148,6 +148,22 @@ let test_simple context =
         (x := 0)
     |} [];
 
+  assert_uninitialized_errors {|
+      def f():
+        ((x := 0) and (y := x))
+    |} [];
+
+  (* TODO (T94201165): walrus operator same-expression false negative *)
+  assert_uninitialized_errors {|
+      def f():
+        ((y := x) and (x := 0))
+    |} [];
+
+  assert_uninitialized_errors {|
+      def f():
+        [y for x in [1,2,3] if (y:=x) > 2]
+    |} [];
+
   (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
      not be defined. *)
   assert_uninitialized_errors
