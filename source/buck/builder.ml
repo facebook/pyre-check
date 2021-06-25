@@ -60,7 +60,7 @@ let query_buck_for_normalized_targets
           ["--json"];
           (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
           ["--config"; "client.id=pyre"];
-          Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
+          Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
           [
             "kind(\"python_binary|python_library|python_test\", %s)"
             (* Don't bother with generated rules. *)
@@ -90,7 +90,7 @@ let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_p
             [
               ["--json"];
               ["--config"; "client.id=pyre"];
-              Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
+              Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
               [
                 (* This will get only those owner targets that are beneath our targets or the
                    dependencies of our targets. *)
@@ -113,7 +113,7 @@ let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targe
           ["--show-full-json-output"];
           (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
           ["--config"; "client.id=pyre"];
-          Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
+          Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
           List.map targets ~f:(fun target ->
               Format.sprintf "%s%s" (Target.show target) source_database_suffix);
         ]
