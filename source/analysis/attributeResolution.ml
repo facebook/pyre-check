@@ -2765,7 +2765,7 @@ class base class_metadata_environment dependency =
                              ~error:(AnnotatedAttribute.InvalidDecorator { index; reason = error })
                     | expression ->
                         let resolved = self#resolve_literal ~assumptions expression in
-                        if Type.is_partially_typed resolved then
+                        if Type.is_untyped resolved || Type.contains_unknown resolved then
                           make_error error
                         else
                           Ok (make_argument resolved)
