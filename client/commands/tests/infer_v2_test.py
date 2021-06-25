@@ -21,6 +21,7 @@ from ...commands.infer_v2 import (
     RawInferOutputDict,
     ModuleAnnotations,
     Infer,
+    dequalify_and_fix_pathlike,
 )
 from .command_test import (
     mock_arguments,
@@ -63,6 +64,15 @@ def _assert_stubs_equal(actual: str, expected: str) -> None:
         print(f"---\nactual\n---\n{actual}")
         print(f"---\nexpected\n---\n{expected}")
         raise AssertionError("Stubs not as expected, see stdout")
+
+
+class InferUtilsTestSuite(unittest.TestCase):
+    def test_dequalify_and_fix_pathlike(self) -> None:
+        self.assertEqual(dequalify_and_fix_pathlike("typing.List"), "List")
+        self.assertEqual(
+            dequalify_and_fix_pathlike("typing.Union[typing.List[int]]"),
+            "Union[List[int]]",
+        )
 
 
 class StubGenerationTest(unittest.TestCase):

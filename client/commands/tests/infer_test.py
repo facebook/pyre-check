@@ -22,7 +22,6 @@ from ...commands.infer import (
     Infer,
     StubFile,
     _relativize_access,
-    dequalify_and_fix_pathlike,
 )
 from ...error import LegacyError
 from .command_test import (
@@ -46,13 +45,6 @@ def build_json(inference) -> Dict[str, Union[int, str]]:
 
 
 class HelperTest(unittest.TestCase):
-    def test_dequalify_and_fix_pathlike(self) -> None:
-        self.assertEqual(dequalify_and_fix_pathlike("typing.List"), "List")
-        self.assertEqual(
-            dequalify_and_fix_pathlike("typing.Union[typing.List[int]]"),
-            "Union[List[int]]",
-        )
-
     def test__relativize_access(self) -> None:
         self.assertEqual(
             _relativize_access("function_name", "tools/pyre/client/infer.py"),

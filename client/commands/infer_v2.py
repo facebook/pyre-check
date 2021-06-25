@@ -17,14 +17,16 @@ from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast, Dict, List, Optional, Sequence
+from typing import cast, Dict, IO, List, Optional, Sequence
 
+import libcst
+from libcst.codemod import CodemodContext
+from libcst.codemod.visitors._apply_type_annotations import ApplyTypeAnnotationsVisitor
 from typing_extensions import TypeAlias
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from .infer import dequalify_and_fix_pathlike, split_imports, AnnotateModuleInPlace
 from .reporting import Reporting
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -68,6 +70,51 @@ class RawInferOutput:
 
     def __getitem__(self, attribute: str) -> list[Dict[str, object]]:
         return self.data[attribute]
+
+
+class AnnotationFixer(libcst.CSTTransformer):
+    def leave_Subscript(
+        self,
+        original_node: libcst.Subscript,
+        updated_node: libcst.Subscript | libcst.SimpleString,
+    ) -> libcst.Subscript | libcst.SimpleString:
+        if libcst.matchers.matches(
+            original_node.value, libcst.matchers.Name("PathLike")
+        ):
+            name_node = libcst.Attribute(
+                value=libcst.Name(
+                    value="os",
+                    lpar=[],
+                    rpar=[],
+                ),
+                attr=libcst.Name(value="PathLike"),
+            )
+            node_as_string = libcst.parse_module("").code_for_node(
+                updated_node.with_changes(value=name_node)
+            )
+            updated_node = libcst.SimpleString(f"'{node_as_string}'")
+        return updated_node
+
+
+def dequalify_and_fix_pathlike(annotation: str) -> str:
+    if annotation.find("PathLike") >= 0:
+        try:
+            tree = libcst.parse_module(annotation)
+            annotation = tree.visit(AnnotationFixer()).code
+        except libcst._exceptions.ParserSyntaxError:
+            pass
+
+    return annotation.replace("typing.", "")
+
+
+def split_imports(types_list: list[str]) -> set[str]:
+    typing_imports = set()
+    for full_type in types_list:
+        if full_type:
+            split_type = re.findall(r"[\w]+", full_type)
+            if len(split_type) > 1 and split_type[0] == "typing":
+                typing_imports.add(split_type[1])
+    return typing_imports
 
 
 @dataclass(frozen=True)
@@ -355,6 +402,54 @@ def _create_module_annotations(
     ]
 
 
+@dataclass
+class AnnotateModuleInPlace:
+    full_stub_path: str
+    full_code_path: str
+    debug_infer: bool
+
+    @staticmethod
+    def _parse(file: IO[str]) -> libcst.Module:
+        contents = file.read()
+        return libcst.parse_module(contents)
+
+    @staticmethod
+    def _annotated_code(stub_path: str, code_path: str) -> str:
+        "Merge inferred annotations from a stub file with a code file to get code"
+        with open(stub_path) as stub_file, open(code_path) as code_file:
+            stub = AnnotateModuleInPlace._parse(stub_file)
+            code = AnnotateModuleInPlace._parse(code_file)
+            context = CodemodContext()
+            ApplyTypeAnnotationsVisitor.store_stub_in_context(context, stub)
+            modified_tree = ApplyTypeAnnotationsVisitor(context).transform_module(code)
+            return modified_tree.code
+
+    @staticmethod
+    def annotate_code(stub_path: str, code_path: str, debug_infer: bool) -> None:
+        "Merge a stub file of inferred annotations with a code file inplace"
+        try:
+            annotated_code = AnnotateModuleInPlace._annotated_code(stub_path, code_path)
+            with open(code_path, "w") as code_file:
+                code_file.write(annotated_code)
+            LOG.info(f"Annotated {code_path}")
+        except Exception as error:
+            LOG.warning(f"Failed to annotate {code_path}")
+            if debug_infer:
+                LOG.warning(f"\tError: {error}")
+
+    def run(self) -> None:
+        return self.annotate_code(
+            stub_path=self.full_stub_path,
+            code_path=self.full_code_path,
+            debug_infer=self.debug_infer,
+        )
+
+    @staticmethod
+    def run_task(task: AnnotateModuleInPlace) -> None:
+        "Wrap `run` in a static method to use with multiprocessing"
+        return task.run()
+
+
 class Infer(Reporting):
     NAME = "infer"
 
@@ -514,7 +609,7 @@ class Infer(Reporting):
         debug_infer = self._debug_infer
         number_workers = self._configuration.get_number_of_workers()
 
-        tasks: List[AnnotateModuleInPlace] = []
+        tasks: list[AnnotateModuleInPlace] = []
         for full_stub_path in type_directory.rglob("*.pyi"):
             stub_path = full_stub_path.relative_to(type_directory)
             code_path = stub_path.with_suffix(".py")
