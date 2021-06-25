@@ -296,7 +296,7 @@ module Analysis = struct
 
   let create
       ?(infer = false)
-      ?(uninitialized_local = false)
+      ?(uninitialized_local = true)
       ?configuration_file_hash
       ?(parallel = true)
       ?(analyze_external_sources = false)

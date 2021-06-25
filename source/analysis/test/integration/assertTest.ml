@@ -38,6 +38,7 @@ let test_check_assert context =
           pass
     |}
     [];
+  (* TODO(T93984519): Uninitialized local should not throw an error in these. *)
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -48,7 +49,7 @@ let test_check_assert context =
           assert False
         return int_to_int(x)
     |}
-    [];
+    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -59,7 +60,7 @@ let test_check_assert context =
           assert False, "unreachable, surely"
         return int_to_int(x)
     |}
-    [];
+    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -70,7 +71,7 @@ let test_check_assert context =
           assert not True
         return int_to_int(x)
     |}
-    [];
+    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
   assert_type_errors
     {|
       from builtins import int_to_int
