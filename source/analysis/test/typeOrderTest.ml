@@ -1925,6 +1925,8 @@ let test_join context =
     "typing.Optional[typing.List[int]]"
     "typing.List[$bottom]"
     "typing.Optional[typing.List[int]]";
+  assert_join "typing.List[int]" "typing.List[typing.Any]" "typing.List[typing.Any]";
+  assert_join "typing.List[typing.Any]" "typing.List[int]" "typing.List[typing.Any]";
   assert_join
     "typing.Optional[typing.Set[int]]"
     "typing.Set[$bottom]"
@@ -1953,6 +1955,10 @@ let test_join context =
     "typing.Optional[float]"
     "typing.Union[float, int]"
     "typing.Optional[typing.Union[float, int]]";
+  assert_join
+    "typing.List[typing.Any]"
+    "typing.Union[typing.List[int], typing.List[str]]"
+    "typing.List[typing.Any]";
 
   assert_join
     "typing.Tuple[int, int]"
@@ -2225,7 +2231,7 @@ let test_join context =
        variance_order
        (Type.parametric "LinkedList" ![Type.Any])
        (Type.parametric "LinkedList" ![Type.integer]))
-    (Type.parametric "LinkedList" ![Type.integer]);
+    (Type.parametric "LinkedList" ![Type.Any]);
   (* Contravariant *)
   assert_type_equal
     (join

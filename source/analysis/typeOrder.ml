@@ -175,10 +175,23 @@ module OrderImplementation = struct
         | Type.Union left, Type.Union right -> Type.union (left @ right)
         | (Type.Union elements as union), other
         | other, (Type.Union elements as union) ->
-            if always_less_or_equal order ~left:other ~right:union then
+            if always_less_or_equal order ~left:other ~right:union && not (Type.contains_any other)
+            then
               union
             else
-              List.map elements ~f:(join order other) |> List.fold ~f:(join order) ~init:Type.Bottom
+              let rec flat_join elements new_element =
+                match elements with
+                | [] -> [new_element]
+                | [head] -> (
+                    match join order head new_element with
+                    | Type.Union _ -> [head; new_element]
+                    | joined -> [joined] )
+                | head :: tail -> (
+                    match join order head new_element with
+                    | Type.Union _ -> head :: flat_join tail new_element
+                    | joined -> joined :: tail )
+              in
+              Type.union (List.fold ~f:flat_join ~init:[] (other :: elements))
         | Type.IntExpression (Data polynomial), other when Type.Polynomial.is_base_case polynomial
           ->
             join order other (Type.polynomial_to_type polynomial)
@@ -195,9 +208,11 @@ module OrderImplementation = struct
             Type.Parametric { name = right_primitive; _ } )
         | Type.Parametric { name = left_primitive; _ }, Type.Primitive right_primitive
         | Type.Primitive left_primitive, Type.Parametric { name = right_primitive; _ } ->
-            if always_less_or_equal order ~left ~right then
+            if always_less_or_equal order ~left ~right && not (Type.contains_any left) then
               right
-            else if always_less_or_equal order ~left:right ~right:left then
+            else if
+              always_less_or_equal order ~left:right ~right:left && not (Type.contains_any right)
+            then
               left
             else
               let target =

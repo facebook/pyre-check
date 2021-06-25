@@ -588,7 +588,7 @@ let test_check_while context =
           x = {"a": False}
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, typing.Any]`."];
   assert_type_errors
     {|
       from typing import Dict, Any
@@ -601,7 +601,7 @@ let test_check_while context =
           x = {"a": False}
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, typing.Any]`."];
   assert_type_errors
     {|
       from typing import NoReturn
