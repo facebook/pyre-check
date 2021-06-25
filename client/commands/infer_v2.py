@@ -409,26 +409,28 @@ class AnnotateModuleInPlace:
     debug_infer: bool
 
     @staticmethod
-    def _parse(file: IO[str]) -> libcst.Module:
-        contents = file.read()
-        return libcst.parse_module(contents)
-
-    @staticmethod
-    def _annotated_code(stub_path: str, code_path: str) -> str:
-        "Merge inferred annotations from a stub file with a code file to get code"
-        with open(stub_path) as stub_file, open(code_path) as code_file:
-            stub = AnnotateModuleInPlace._parse(stub_file)
-            code = AnnotateModuleInPlace._parse(code_file)
-            context = CodemodContext()
-            ApplyTypeAnnotationsVisitor.store_stub_in_context(context, stub)
-            modified_tree = ApplyTypeAnnotationsVisitor(context).transform_module(code)
-            return modified_tree.code
+    def _annotated_code(stub: str, code: str) -> str:
+        """
+        Merge inferred annotations from stubs with source code to get
+        annotated code.
+        """
+        context = CodemodContext()
+        ApplyTypeAnnotationsVisitor.store_stub_in_context(
+            context, libcst.parse_module(stub)
+        )
+        modified_tree = ApplyTypeAnnotationsVisitor(context).transform_module(
+            libcst.parse_module(code)
+        )
+        return modified_tree.code
 
     @staticmethod
     def annotate_code(stub_path: str, code_path: str, debug_infer: bool) -> None:
-        "Merge a stub file of inferred annotations with a code file inplace"
+        "Merge a stub file of inferred annotations with a code file inplace."
         try:
-            annotated_code = AnnotateModuleInPlace._annotated_code(stub_path, code_path)
+            with open(stub_path) as stub_file, open(code_path) as code_file:
+                stub = stub_file.read()
+                code = code_file.read()
+                annotated_code = AnnotateModuleInPlace._annotated_code(stub, code)
             with open(code_path, "w") as code_file:
                 code_file.write(annotated_code)
             LOG.info(f"Annotated {code_path}")
