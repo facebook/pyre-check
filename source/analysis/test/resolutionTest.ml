@@ -218,13 +218,14 @@ let test_resolve_literal context =
 
   (* None *)
   assert_resolve_literal "None" Type.Any;
-  assert_resolve_literal "[None]" Type.Any;
+  assert_resolve_literal "[None]" (Type.list Type.Any);
 
   (* Dictionary *)
   assert_resolve_literal "{'a': 1}" (Type.dictionary ~key:Type.string ~value:Type.integer);
-  assert_resolve_literal "{'a': i}" Type.Any;
-  assert_resolve_literal "{**foo}" Type.Any;
-  assert_resolve_literal "{'a': 1, **foo}" Type.Any;
+  assert_resolve_literal "{'a': i}" (Type.dictionary ~key:Type.string ~value:Type.Any);
+  assert_resolve_literal "{'a': [], 'b': [1]}" (Type.dictionary ~key:Type.string ~value:Type.Any);
+  assert_resolve_literal "{**foo}" (Type.dictionary ~key:Type.Any ~value:Type.Any);
+  assert_resolve_literal "{'a': 1, **foo}" (Type.dictionary ~key:Type.Any ~value:Type.Any);
 
   (* Boolean Operator *)
   assert_resolve_literal "1 or 2" Type.integer;
@@ -234,12 +235,12 @@ let test_resolve_literal context =
   (* List *)
   assert_resolve_literal "[1]" (Type.list Type.integer);
   assert_resolve_literal "[1, 'string']" (Type.list (Type.Union [Type.integer; Type.string]));
-  assert_resolve_literal "[1, i]" Type.Any;
+  assert_resolve_literal "[1, i]" (Type.list Type.Any);
 
   (* Set *)
   assert_resolve_literal "{1}" (Type.set Type.integer);
   assert_resolve_literal "{1, 'string'}" (Type.set (Type.Union [Type.integer; Type.string]));
-  assert_resolve_literal "{1, i}" Type.Any;
+  assert_resolve_literal "{1, i}" (Type.set Type.Any);
 
   (* Tuple *)
   assert_resolve_literal "(1,)" (Type.Tuple (Concrete [Type.integer]));

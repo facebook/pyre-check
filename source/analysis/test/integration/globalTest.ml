@@ -256,7 +256,7 @@ let test_check_globals context =
       "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is incomplete, add \
        an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
     ];
   assert_default_type_errors
     {|
@@ -367,6 +367,47 @@ let test_check_globals context =
       "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
       "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
     ];
+  (* Verify resolve literal for unannotated globals doesn't create huge types that cause OOMs. *)
+  assert_default_type_errors
+    {|
+      def cos(x: int) -> int: ...
+      def sin(x: int) -> int: ...
+      def exp(x: int) -> int: ...
+      def pow(x: int) -> int: ...
+      def acos(x: int) -> int: ...
+      def acosh(x: int) -> int: ...
+      def asin(x: int) -> int: ...
+      def asinh(x: int) -> int: ...
+      def cosh(x: int) -> int: ...
+      def tan(x: int) -> int: ...
+      def tan(x: int) -> int: ...
+      def tanh(x: int) -> int: ...
+      def log(x: int) -> int: ...
+      def atan(x: int) -> int: ...
+      def atanh(x: int) -> int: ...
+
+      method_dictionary = {
+          "sin":     [sin, sin],
+          "cos":     [cos, cos],
+          "pow":     [],
+          "exp":     [exp, exp],
+          "log":     [log, log],
+          "acos":    [acos],
+          "acosh":   [acosh],
+          "asin":    [asin],
+          "asinh":   [asinh],
+          "atan2":   [],
+          "atan":    [atan],
+          "atanh":   [atanh],
+          "cbrt":       [],
+          "cdfnorm":    [],
+          "cdfnorminv": [],
+          "ceil":       [],
+          "cosd":       [],
+          "cosh":    [cosh, cosh],
+      }
+  |}
+    [];
   ()
 
 
