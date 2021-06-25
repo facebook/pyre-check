@@ -14,7 +14,7 @@ class Form:
     def __init__(
         self,
         data: Optional[Dict[str, Any]] = ...,
-        files: Optional[Any] = ...,
+        files: Any = ...,
         auto_id: str = ...,
         prefix: Optional[str] = ...,
         initial: Optional[Dict[str, Any]] = ...,
@@ -23,7 +23,7 @@ class Form:
         empty_permitted: bool = ...,
         field_order: Optional[Sequence[str]] = ...,
         use_required_attribute: Optional[bool] = ...,
-        renderer: Optional[Any] = ...,
+        renderer: Any = ...,
     ) -> None: ...
     def clean(self) -> Dict[str, Any]: ...
     def is_valid(self) -> bool: ...

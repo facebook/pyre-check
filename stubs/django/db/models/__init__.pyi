@@ -7,6 +7,8 @@
 
 from typing import Any, ClassVar, Type
 
+from django.db.models.base import Model as Model
+
 from django.core.exceptions import (
     MultipleObjectsReturned as MultipleObjectsReturnedException,
 )
@@ -50,16 +52,23 @@ from django.db.models.fields import (
     TimeField as TimeField,
     URLField as URLField,
 )
+
 from django.db.models.fields.related import ForeignKey as ForeignKey
 from django.db.models.fields.subclassing import SubfieldBase as SubfieldBase
-from django.db.models.manager import Manager as Manager
+
+from django.db.models.fields.files import (
+    ImageField as ImageField,
+    FileField as FileField,
+    FieldFile as FieldFile,
+    FileDescriptor as FileDescriptor,
+)
+
+from django.db.models.manager import BaseManager as BaseManager, Manager as Manager
 from django.db.models.options import Options as Options
 
-class Model:
-    id: int = ...
-    objects: Manager = ...
-    _meta: Options = ...
-    DoesNotExist: Any
-    MultipleObjectsReturned: ClassVar[Type[MultipleObjectsReturnedException]] = ...
-    def __init__(self, *args, **kwargs) -> None: ...
-    def save(self) -> None: ...
+from django.db.models.query import (
+    Prefetch as Prefetch,
+    QuerySet as QuerySet,
+    RawQuerySet as RawQuerySet,
+    prefetch_related_objects as prefetch_related_objects,
+)
