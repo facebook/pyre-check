@@ -1686,20 +1686,20 @@ def f(x: int) -> None:
   print(y)   # Error
   print(z)   # OK
 ```
-`y` is not defined when the `if` condition is not met. For instance, `f(4)` will result in a runtime error.
+`y` is not defined when the `if` condition is not met. For instance, `f(4)` will result in a runtime error. Possible ways to address this:
 
-There is a slight variation of the above which cannot throw a runtime error but where Pyre will still report an error:
+- initialize `y` to a default value, outside the conditional or in the `else` branch
+- refactor so that initialization and access are in the same conditional
+
+Pyre static analysis does not reason about runtime values or potential side effects of interleaving calls, so for instance, in the example below we cannot guarantee that the two if statements will always be consistent and, hence, throw the same error:
 ```python
 def f(x: int) -> None:
   if x > 5:
     y = 2
+  # ...some operations...
   if x > 5:
-    print(y)    # Error (according to Pyre)
+    print(y)    # Error
 ```
-Pyre static analysis does not reason about runtime values or potential side effects of interleaving calls, so we cannot guarantee that the two if statements will always be consistent. Possible ways to address this:
-
-- initialize `y` to a default value, outside the conditional or in the `else` branch
-- refactor so that initialization and access are is in the same conditional
 
 #### Initialized only inside a `for` loop
 ```python
