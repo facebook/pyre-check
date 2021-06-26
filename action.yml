@@ -1,0 +1,22 @@
+name: pysa
+description: "Run pysa on the repository and check for vulnerabilities"
+
+inputs:
+  build-type:
+    description: Pysa build to use. Possible values are stable and nightly. Default is stable.
+    required: false
+    default: "stable"
+runs:
+  using: "composite"
+  steps:
+    - run: if [ ${{inputs.build-type}} = "nighty" ]; then pip3 install pyre-check-nightly; else pip3 install pyre-check; fi
+      shell: bash
+    - run: if [ ! -f .pyre_configuration ]; then printf ".\n" | pyre init; fi
+      shell: bash
+    - run: pyre infer -r
+      shell: bash
+    - run: pyre infer -i --annotate-from-existing-stubs
+      shell: bash
+    - run: pyre -n analyze --no-verify | python3 ${{github.action_path}}/scripts/convert_pysa_results_to_sarif.py > sarif.json
+      shell: bash
+   
