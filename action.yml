@@ -1,0 +1,48 @@
+name: pysa
+description: Run pysa on the repository and check for vulnerabilities.
+
+inputs:
+  build-type:
+    description: Pysa build to use. Possible values are stable and nightly. Default is stable.
+    required: false
+    default: "stable"
+  perform-infer:
+    description: Whether to perform pyre infer and annotate the files. This may have effects on the output. Default is true.
+    required: false
+    default: "false"
+  requirements-file:
+    description: The requirements file to use to look for dependencies. Default is requirements.txt.
+    required: false
+    default: "requirements.txt"
+  filters-directory:
+    description: The path to the filters directory containing filters. Default is .pysa-filters directory at the repository root.
+    required: false
+    default: '.pysa-filters'
+
+runs:
+  using: "composite"
+  steps:
+    - run: if [ ! "$(printf '%s\n' "Python 3.7.0" "$(python -V 2>&1)" | sort -V | head -n1)" = "Python 3.7.0" ]; then exit 1; fi
+      shell: bash
+    - run: if [ ${{inputs.build-type}} = "nighty" ]; then pip install pyre-check-nightly; else pip install pyre-check; fi
+      shell: bash
+    - run: if [ ! -f .pyre_configuration ]; then printf ".\n" | pyre init; fi
+      shell: bash
+    - run: if [ -f ${{inputs.requirements-file}} ]; then pip install -r ${{inputs.requirements-file}}; fi
+      shell: bash
+    - run: if [ ! ${{inputs.perform-infer}} = "false" ]; then pyre infer; fi
+      shell: bash
+    - run: if [ ! ${{inputs.perform-infer}} = "false" ]; then pyre infer -i --annotate-from-existing-stubs ; fi
+      shell: bash
+    - run: pip install fb-sapp
+      shell: bash
+    - run: if [ ${{inputs.filters-directory}} = ".pysa-filters" ] && [ ! -d ".pysa-filters" ]; then mkdir .pysa-filters; fi
+      shell: bash
+    - run: pyre analyze --no-verify --save-results-to ./
+      shell: bash
+    - run: sapp update warning-codes ./taint-metadata.json
+      shell: bash
+    - run: sapp analyze ./taint-output.json
+      shell: bash
+    - run: sapp filter issues 1 ${{inputs.filters-directory}} --output-format sarif > sarif.json
+      shell: bash
