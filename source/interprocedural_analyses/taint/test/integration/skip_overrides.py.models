@@ -15,7 +15,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "SkipOverrides" ]
   }
 }
 {

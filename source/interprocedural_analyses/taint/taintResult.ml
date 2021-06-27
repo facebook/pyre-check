@@ -250,12 +250,14 @@ module Mode = struct
     | Obscure
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
+    | SkipOverrides
   [@@deriving compare]
 
   let pp formatter = function
     | Obscure -> Format.fprintf formatter "Obscure"
     | SkipAnalysis -> Format.fprintf formatter "SkipAnalysis"
     | SkipDecoratorWhenInlining -> Format.fprintf formatter "SkipDecoratorWhenInlining"
+    | SkipOverrides -> Format.fprintf formatter "SkipOverrides"
 
 
   let show = Format.asprintf "%a" pp

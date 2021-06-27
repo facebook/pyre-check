@@ -59,6 +59,7 @@ module Mode : sig
     | Obscure
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
+    | SkipOverrides
   [@@deriving show, compare]
 end
 
