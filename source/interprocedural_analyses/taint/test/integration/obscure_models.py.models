@@ -2,7 +2,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "skip_overrides.C.not_obscure_tito",
+    "callable": "obscure_models.C.not_obscure_tito",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -22,14 +22,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "skip_overrides.test_not_obscure_tito",
+    "callable": "obscure_models.test_not_obscure_tito",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "skip_overrides.py",
+              "filename": "obscure_models.py",
               "line": 25,
               "start": 33,
               "end": 48
@@ -51,14 +51,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "skip_overrides.test_obscure",
+    "callable": "obscure_models.test_obscure",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "skip_overrides.py",
+              "filename": "obscure_models.py",
               "line": 21,
               "start": 24,
               "end": 39

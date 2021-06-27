@@ -1,0 +1,7 @@
+@generated
+Call dependencies
+obscure_models.C::not_obscure_not_tito (method) -> []
+obscure_models.C::not_obscure_tito (method) -> []
+obscure_models.test_not_obscure_not_tito (fun) -> [__test_source (fun) obscure_models.C::not_obscure_not_tito (method)]
+obscure_models.test_not_obscure_tito (fun) -> [__test_source (fun) obscure_models.C::not_obscure_tito (method)]
+obscure_models.test_obscure (fun) -> [__test_source (fun) obscure_models.C::obscure (method)]
