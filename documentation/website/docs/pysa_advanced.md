@@ -25,6 +25,14 @@ def foo(f: Any):
 Functions and methods defined in type stubs or in a different language (for
 instance, in C or C++ binding) will also be treated as obscure models.
 
+To prevent a function or method to be marked as obscure, one can use the
+`@SkipObscure` taint annotation in a `.pysa` file:
+
+```python
+@SkipObscure
+def module.foo(): ...
+```
+
 ## Tainting Specific `kwargs`
 
 Sometimes, a function can have potential sinks mixed together with benign

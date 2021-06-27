@@ -10,20 +10,48 @@ class C:
     def obscure(self, x, y):
         ...
 
-    def not_obscure_tito(self, x, y):
-        pass
+    def obscure_with_skip_overrides(self, x, y):
+        ...
 
-    def not_obscure_not_tito(self, x, y):
-        pass
+    def obscure_with_skip_inlining(self, x, y):
+        ...
+
+    def obscure_with_source(self, x, y):
+        ...
+
+    def obscure_with_skip_obscure(self, x, y):
+        ...
+
+    def obscure_with_skip_obscure_and_tito(self, x, y):
+        ...
+
+    def obscure_with_multiple_models(self, x, y):
+        ...
 
 
 def test_obscure(c: C):
     return c.obscure(0, __test_source())
 
 
-def test_not_obscure_tito(c: C):
-    return c.not_obscure_tito(0, __test_source())
+def test_obscure_with_skip_overrides(c: C):
+    return c.obscure_with_skip_overrides(0, __test_source())
 
 
-def test_not_obscure_not_tito(c: C):
-    return c.not_obscure_not_tito(0, __test_source())
+def test_obscure_with_skip_inlining(c: C):
+    return c.obscure_with_skip_inlining(0, __test_source())
+
+
+def test_obscure_with_source(c: C):
+    return c.obscure_with_source(0, __test_source())
+
+
+def test_obscure_with_skip_obscure(c: C):
+    return c.obscure_with_skip_obscure(0, __test_source())
+
+
+def test_obscure_with_skip_obscure_and_tito(c: C):
+    return c.obscure_with_skip_obscure_and_tito(0, __test_source())
+
+
+def test_obscure_with_multiple_models(c: C):
+    return c.obscure_with_multiple_models(0, __test_source())

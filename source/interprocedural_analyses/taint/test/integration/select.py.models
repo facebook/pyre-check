@@ -31,8 +31,7 @@
           }
         ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
@@ -147,7 +146,7 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "always-via": "obscure" }
+              { "always-via": "tito" }
             ]
           }
         ]
@@ -168,12 +167,11 @@
           {
             "decl": null,
             "tito": [ { "line": 41, "start": 11, "end": 22 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "via": "tito" },
-              { "via": "obscure" }
+              { "always-via": "tito" }
             ]
           }
         ]
@@ -214,7 +212,7 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "always-via": "obscure" }
+              { "always-via": "tito" }
             ]
           }
         ]
@@ -237,7 +235,7 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "payload" },
-      { "always-via": "obscure" }
+      { "always-via": "tito" }
     ]
   }
 }
@@ -344,8 +342,7 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "via": "tito" },
-              { "via": "obscure" }
+              { "always-via": "tito" }
             ]
           }
         ]
@@ -387,7 +384,7 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "always-via": "obscure" }
+              { "always-via": "tito" }
             ]
           }
         ]
@@ -410,7 +407,7 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "payload" },
-      { "always-via": "obscure" }
+      { "always-via": "tito" }
     ]
   }
 }

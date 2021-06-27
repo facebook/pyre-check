@@ -1823,6 +1823,7 @@ let adjust_sanitize_and_modes_and_skipped_override
       | "SkipDecoratorWhenInlining" ->
           Ok (sanitize, ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
       | "SkipOverrides" -> Ok (sanitize, ModeSet.add SkipOverrides modes, Some define_name)
+      | "SkipObscure" -> Ok (sanitize, ModeSet.remove Obscure modes, Some define_name)
       | _ -> Ok (sanitize, modes, skipped_override)
     in
     List.fold_result top_level_decorators ~f:adjust ~init:(model.sanitize, model.modes, None)
@@ -2206,7 +2207,8 @@ let create_model_from_signature
       | "Sanitize"
       | "SkipAnalysis"
       | "SkipDecoratorWhenInlining"
-      | "SkipOverrides" ->
+      | "SkipOverrides"
+      | "SkipObscure" ->
           true
       | _ -> false
     in

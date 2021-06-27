@@ -834,6 +834,25 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dict.get",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dict.update",
     "sources": [],
     "sinks": [],
@@ -844,8 +863,7 @@
           { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
         ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
@@ -862,14 +880,13 @@
             "decl": null,
             "tito": [
               { "line": 206, "start": 16, "end": 58 },
-              { "line": 206, "start": 52, "end": 57 },
-              { "line": 206, "start": 64, "end": 67 }
+              { "line": 206, "start": 52, "end": 57 }
             ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "via": "obscure" }
             ]
           }
@@ -914,14 +931,13 @@
             "tito": [
               { "line": 209, "start": 15, "end": 65 },
               { "line": 209, "start": 22, "end": 64 },
-              { "line": 209, "start": 58, "end": 63 },
-              { "line": 209, "start": 70, "end": 73 }
+              { "line": 209, "start": 58, "end": 63 }
             ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "via": "obscure" }
             ]
           }
@@ -1613,7 +1629,6 @@
           }
         ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
