@@ -26,6 +26,7 @@ val apply_all_rules
   rule_filter:int list option ->
   rules:Taint.Model.ModelQuery.rule list ->
   callables:Interprocedural.Callable.real_target list ->
+  stubs:Interprocedural.Callable.HashSet.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   models:Taint.Result.call_model Interprocedural.Callable.Map.t ->
   Taint.Result.call_model Interprocedural.Callable.Map.t

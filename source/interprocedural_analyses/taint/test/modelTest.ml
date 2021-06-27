@@ -70,7 +70,14 @@ let set_up_environment ?source ?rules ~context ~model_source () =
     | None -> None
   in
   let ({ Taint.Model.errors; skip_overrides; _ } as parse_result) =
-    Taint.Model.parse ~resolution ?rule_filter ~source ~configuration Callable.Map.empty
+    Taint.Model.parse
+      ~resolution
+      ?rule_filter
+      ~source
+      ~configuration
+      ~functions:None
+      ~stubs:(Callable.HashSet.create ())
+      Callable.Map.empty
   in
   assert_bool
     (Format.sprintf
@@ -101,13 +108,6 @@ let assert_model ?source ?rules ?expected_skipped_overrides ~context ~model_sour
     (* obscure *)
   in
   List.iter ~f:(check_expectation ~environment ~get_model) expect
-
-
-let assert_no_model ?source ?rules ~context ~model_source callable =
-  let { Taint.Model.models; _ }, _, _ =
-    set_up_environment ?source ?rules ~context ~model_source ()
-  in
-  assert_false (Callable.Map.mem models callable)
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
@@ -1201,6 +1201,8 @@ let test_invalid_models context =
         ~configuration
         ?path
         ~source:(Test.trim_extra_indentation model_source)
+        ~functions:None
+        ~stubs:(Callable.HashSet.create ())
         Callable.Map.empty
       |> fun { Taint.Model.errors; _ } ->
       List.hd errors
@@ -2336,8 +2338,7 @@ let test_filter_by_rules context =
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "test.taint"]
     ();
-  assert_no_model
-    ~context
+  assert_model
     ~rules:
       [
         {
@@ -2349,7 +2350,8 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
-    (Callable.create_function (Ast.Reference.create "test.taint"));
+    ~expect:[outcome ~kind:`Function ~returns:[] "test.taint"]
+    ();
   assert_model
     ~rules:
       [
@@ -2370,8 +2372,7 @@ let test_filter_by_rules context =
           "test.taint";
       ]
     ();
-  assert_no_model
-    ~context
+  assert_model
     ~rules:
       [
         {
@@ -2383,7 +2384,8 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
-    (Callable.create_function (Ast.Reference.create "test.taint"));
+    ~expect:[outcome ~kind:`Function ~sink_parameters:[] "test.taint"]
+    ();
   assert_model
     ~rules:
       [

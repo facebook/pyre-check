@@ -10,7 +10,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -24,7 +25,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -96,6 +98,18 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [
+      {
+        "port": "formal(ex)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 8, "start": 15, "end": 17 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
+            "features": [ { "always-via": "obscure" } ]
+          }
+        ]
+      }
+    ]
   }
 }

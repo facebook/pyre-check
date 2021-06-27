@@ -149,6 +149,8 @@ val parse
   ?rule_filter:int list ->
   source:string ->
   configuration:TaintConfiguration.t ->
+  functions:Interprocedural.Callable.HashSet.t option ->
+  stubs:Interprocedural.Callable.HashSet.t ->
   TaintResult.call_model Interprocedural.Callable.Map.t ->
   T.parse_result
 
@@ -164,6 +166,7 @@ val create_callable_model_from_annotations
   callable:Interprocedural.Callable.real_target ->
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
+  is_obscure:bool ->
   (T.annotation_kind * T.taint_annotation) list ->
   (TaintResult.call_model, ModelVerificationError.t) result
 

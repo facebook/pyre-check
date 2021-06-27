@@ -34,14 +34,15 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
+              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[app_id]", "depth": 0 }
             ],
             "features": [
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
-              { "always-via": "tito" }
+              { "via": "tito" },
+              { "via": "obscure" }
             ]
           }
         ]
@@ -105,14 +106,15 @@
           {
             "decl": null,
             "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
+              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[app_id]", "depth": 0 }
             ],
             "features": [
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
-              { "always-via": "tito" }
+              { "via": "tito" },
+              { "via": "obscure" }
             ]
           }
         ]
@@ -180,14 +182,15 @@
               { "line": 16, "start": 22, "end": 28 }
             ],
             "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
+              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 0 },
+              { "kind": "LocalReturn", "name": "[app_id]", "depth": 0 }
             ],
             "features": [
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
-              { "always-via": "tito" }
+              { "via": "tito" },
+              { "via": "obscure" }
             ]
           }
         ]

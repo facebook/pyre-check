@@ -146,7 +146,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -162,7 +163,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -221,7 +223,8 @@
         ]
       }
     ],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -240,7 +243,8 @@
         ]
       }
     ],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -259,6 +263,7 @@
         ]
       }
     ],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }

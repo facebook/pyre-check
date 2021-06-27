@@ -313,7 +313,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {

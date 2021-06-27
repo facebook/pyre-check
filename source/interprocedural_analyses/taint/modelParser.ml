@@ -2182,6 +2182,7 @@ let create_model_from_signature
     ~configuration
     ~sources_to_keep
     ~sinks_to_keep
+    ~is_obscure
     {
       signature =
         {
@@ -2343,9 +2344,10 @@ let create_model_from_signature
     >>= fun () ->
     annotations ()
     >>= fun annotations ->
+    let default_model = if is_obscure then TaintResult.obscure_model else TaintResult.empty_model in
     List.fold_result
       annotations
-      ~init:TaintResult.empty_model
+      ~init:default_model
       ~f:(fun accumulator (annotation, annotation_kind) ->
         add_taint_annotation_to_model
           ~path
@@ -2444,12 +2446,12 @@ let create_model_from_attribute
   >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
 
 
-let create ~resolution ~path ~configuration ~rule_filter source =
-  let open Core.Result in
+let create ~resolution ~path ~configuration ~rule_filter ~functions ~stubs source =
   let sources_to_keep, sinks_to_keep =
     compute_sources_and_sinks_to_keep ~configuration ~rule_filter
   in
   let signatures_and_queries, errors =
+    let open Core.Result in
     String.split ~on:'\n' source
     |> Parser.parse
     >>| Source.create
@@ -2461,14 +2463,21 @@ let create ~resolution ~path ~configuration ~rule_filter source =
     | Error { Parser.Error.location; _ } ->
         [], [model_verification_error ~path ~location ParseError]
   in
+  let is_obscure call_target =
+    (* The callable is obscure if and only if it is a type stub or it is not in the set of known
+       callables. *)
+    Hash_set.mem stubs call_target
+    || functions >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
+  in
   let create_model_or_query = function
-    | ParsedSignature parsed_signature ->
+    | ParsedSignature ({ call_target; _ } as parsed_signature) ->
         create_model_from_signature
           ~resolution
           ~path
           ~configuration
           ~sources_to_keep
           ~sinks_to_keep
+          ~is_obscure:(is_obscure (call_target :> Callable.t))
           parsed_signature
     | ParsedAttribute parsed_attribute ->
         create_model_from_attribute
@@ -2485,9 +2494,10 @@ let create ~resolution ~path ~configuration ~rule_filter source =
     (List.map signatures_and_queries ~f:create_model_or_query)
 
 
-let parse ~resolution ?path ?rule_filter ~source ~configuration models =
+let parse ~resolution ?path ?rule_filter ~source ~configuration ~functions ~stubs models =
   let new_models_and_queries, errors =
-    create ~resolution ~path ~rule_filter ~configuration source |> List.partition_result
+    create ~resolution ~path ~rule_filter ~configuration ~functions ~stubs source
+    |> List.partition_result
   in
   let new_models, new_queries =
     List.fold
@@ -2501,8 +2511,6 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
     models =
       List.map new_models ~f:(fun (model, _) -> model.call_target, model.model)
       |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
-      |> Callable.Map.filter ~f:(fun model ->
-             not (TaintResult.is_empty_model ~with_modes:ModeSet.empty model))
       |> Callable.Map.merge models ~f:(fun ~key:_ ->
            function
            | `Both (a, b) -> Some (join ~iteration:0 a b)
@@ -2526,6 +2534,7 @@ let create_callable_model_from_annotations
     ~callable
     ~sources_to_keep
     ~sinks_to_keep
+    ~is_obscure
     annotations
   =
   let open Core.Result in
@@ -2557,9 +2566,12 @@ let create_callable_model_from_annotations
                 Some t
             | _ -> None)
       >>= fun callable_annotation ->
+      let default_model =
+        if is_obscure then TaintResult.obscure_model else TaintResult.empty_model
+      in
       List.fold
         annotations
-        ~init:(Ok TaintResult.empty_model)
+        ~init:(Ok default_model)
         ~f:(fun accumulator (annotation_kind, annotation) ->
           accumulator
           >>= fun accumulator ->

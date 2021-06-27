@@ -335,7 +335,8 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {

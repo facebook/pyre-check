@@ -24,6 +24,10 @@ type t = {
 
 type model_t = t
 
+let is_obscure { modes; _ } = ModeSet.contains Obscure modes
+
+let remove_obscureness ({ modes; _ } as model) = { model with modes = ModeSet.remove Obscure modes }
+
 let remove_sinks model =
   { model with backward = { model.backward with sink_taint = BackwardState.empty } }
 

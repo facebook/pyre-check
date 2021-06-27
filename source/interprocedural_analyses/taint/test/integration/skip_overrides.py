@@ -10,13 +10,20 @@ class C:
     def obscure(self, x, y):
         ...
 
-    def not_obscure(self, x, y):
-        ...
+    def not_obscure_tito(self, x, y):
+        pass
+
+    def not_obscure_not_tito(self, x, y):
+        pass
 
 
-def test_returning_obscure_taint_if_no_model(c: C):
+def test_obscure(c: C):
     return c.obscure(0, __test_source())
 
 
-def test_no_taint_if_model_exists(c: C):
-    return c.not_obscure(0, __test_source())
+def test_not_obscure_tito(c: C):
+    return c.not_obscure_tito(0, __test_source())
+
+
+def test_not_obscure_not_tito(c: C):
+    return c.not_obscure_not_tito(0, __test_source())

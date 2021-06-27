@@ -31,7 +31,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -146,7 +147,7 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "always-via": "obscure" }
             ]
           }
         ]
@@ -167,11 +168,12 @@
           {
             "decl": null,
             "tito": [ { "line": 41, "start": 11, "end": 22 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "via": "tito" },
+              { "via": "obscure" }
             ]
           }
         ]
@@ -212,7 +214,7 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "always-via": "obscure" }
             ]
           }
         ]
@@ -235,7 +237,7 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "payload" },
-      { "always-via": "tito" }
+      { "always-via": "obscure" }
     ]
   }
 }
@@ -342,7 +344,8 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "via": "tito" },
+              { "via": "obscure" }
             ]
           }
         ]
@@ -384,7 +387,7 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "always-via": "obscure" }
             ]
           }
         ]
@@ -407,7 +410,7 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "payload" },
-      { "always-via": "tito" }
+      { "always-via": "obscure" }
     ]
   }
 }

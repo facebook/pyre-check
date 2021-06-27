@@ -358,7 +358,8 @@
           { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -452,7 +453,8 @@
           { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -468,6 +470,7 @@
           { "decl": null, "leaves": [ { "kind": "ParameterUpdate1" } ] }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }

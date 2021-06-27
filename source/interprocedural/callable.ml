@@ -166,6 +166,7 @@ end
 module Set = Caml.Set.Make (Key)
 module RealSet = Caml.Set.Make (RealKey)
 module OverrideSet = Caml.Set.Make (OverrideKey)
+module HashSet = Hash_set.Make (Key)
 
 let get_module_and_definition ~resolution callable =
   let get_bodies { class_name; method_name } =

@@ -73,6 +73,8 @@ module ModeSet : sig
 
   val add : Mode.t -> t -> t
 
+  val remove : Mode.t -> t -> t
+
   val contains : Mode.t -> t -> bool
 
   val join : t -> t -> t

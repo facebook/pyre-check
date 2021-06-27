@@ -8,15 +8,15 @@ from typing import Any, Optional, Tuple
 
 
 def len(o: Any) -> int:
-    ...
+    return 0
 
 
 def min(x: int, y: str):
-    ...
+    return 0
 
 
 def named(*, named_parameter: int, **kw):
-    ...
+    pass
 
 
 def tito_via_len(o: Any):

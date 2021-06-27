@@ -509,6 +509,7 @@ let apply_all_rules
     ~rule_filter
     ~rules
     ~callables
+    ~stubs
     ~environment
     ~models
   =
@@ -547,6 +548,7 @@ let apply_all_rules
             ~callable
             ~sources_to_keep
             ~sinks_to_keep
+            ~is_obscure:(Hash_set.mem stubs (callable :> Callable.t))
             taint_to_model
         with
         | Ok model ->

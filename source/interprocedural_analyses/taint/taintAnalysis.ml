@@ -70,7 +70,7 @@ include Taint.Result.Register (struct
     try
       let models =
         let callables =
-          List.rev_append stubs functions
+          Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:functions
           |> List.filter_map ~f:(function
                  | `Function _ as callable -> Some (callable :> Callable.real_target)
                  | `Method _ as callable -> Some (callable :> Callable.real_target)
@@ -83,6 +83,7 @@ include Taint.Result.Register (struct
           ~rule_filter
           ~rules:queries
           ~callables
+          ~stubs
           ~environment
           ~models
       in
@@ -93,11 +94,14 @@ include Taint.Result.Register (struct
             Callable.Map.find models callable
             |> Option.value ~default:Taint.Result.empty_model
             |> Model.add_obscure_sink ~resolution ~call_target:callable
+            |> Model.remove_obscureness
           in
           Callable.Map.set models ~key:callable ~data:model
         in
-        List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
-        |> List.fold ~init:models ~f:add_obscure_sink
+        stubs
+        |> Hash_set.filter ~f:(fun callable ->
+               Callable.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
+        |> Hash_set.fold ~f:add_obscure_sink ~init:models
       in
       let find_missing_flows =
         find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
@@ -126,6 +130,8 @@ include Taint.Result.Register (struct
             _;
           } as static_analysis_configuration )
       ~environment
+      ~functions
+      ~stubs
     =
     let resolution =
       Analysis.TypeCheck.resolution
@@ -152,6 +158,8 @@ include Taint.Result.Register (struct
                 ~path
                 ~source
                 ~configuration:taint_configuration
+                ~functions
+                ~stubs
                 ?rule_filter
                 models
             in
@@ -250,8 +258,14 @@ include Taint.Result.Register (struct
 
 
   let initialize_models ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
+    let stubs = Callable.HashSet.of_list stubs in
     let { initialize_result; query_data } =
-      parse_models_and_queries_from_sources ~scheduler ~static_analysis_configuration ~environment
+      parse_models_and_queries_from_sources
+        ~scheduler
+        ~static_analysis_configuration
+        ~environment
+        ~functions:(Some (Callable.HashSet.of_list functions))
+        ~stubs
     in
     let get_taint_models ~updated_environment =
       match updated_environment, query_data with

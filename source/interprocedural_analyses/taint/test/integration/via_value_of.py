@@ -44,7 +44,7 @@ def test_via_value_of_does_not_propagate():
 
 
 def tito(parameter, other):
-    ...
+    pass
 
 
 def test_tito():
@@ -53,7 +53,7 @@ def test_tito():
 
 
 def sink_via_value_of(x, y):
-    ...
+    pass
 
 
 def test_sink(element):

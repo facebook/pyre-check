@@ -38,7 +38,8 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -52,7 +53,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {

@@ -7,7 +7,7 @@ from builtins import __test_sink, __test_source
 
 
 def add_feature_to_first(first, second):
-    ...
+    pass
 
 
 def adds_and_taints():
@@ -21,7 +21,7 @@ def propagate_add_feature(parameter):
 
 
 def add_via_value_of(first, second):
-    ...
+    pass
 
 
 def test_add_via_value_of_second():

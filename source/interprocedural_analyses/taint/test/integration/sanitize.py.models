@@ -1472,7 +1472,8 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
       }
     ],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -1486,7 +1487,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -1500,7 +1502,8 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
       }
     ],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -1514,7 +1517,8 @@
       }
     ],
     "sinks": [],
-    "tito": []
+    "tito": [],
+    "modes": [ "Obscure" ]
   }
 }
 {

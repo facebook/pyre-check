@@ -362,6 +362,8 @@ let run_with_taint_models tests ~name =
              (module TypeCheck.DummyContext))
         ~source:model_source
         ~configuration:TaintConfiguration.default
+        ~functions:None
+        ~stubs:(Interprocedural.Callable.HashSet.create ())
         Callable.Map.empty
     in
     assert_bool
@@ -409,6 +411,8 @@ let type_environment_with_decorators_inlined ~configuration ~taint_configuration
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
+            ~functions:None
+            ~stubs:(Interprocedural.Callable.HashSet.create ())
             inferred_models
         in
         models
@@ -483,6 +487,8 @@ let initialize
            (callable :> Callable.t), define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
+  let callables = List.map ~f:fst callables in
+  let stubs = List.map ~f:fst stubs in
   let initial_models, skip_overrides =
     let inferred_models = Model.infer_class_models ~environment in
     match models with
@@ -493,6 +499,8 @@ let initialize
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
+            ~functions:(Some (Callable.HashSet.of_list callables))
+            ~stubs:(Callable.HashSet.of_list stubs)
             inferred_models
         in
         assert_bool
@@ -511,9 +519,10 @@ let initialize
             ~models
             ~callables:
               (List.filter_map (List.rev_append stubs callables) ~f:(function
-                  | (`Function _ as callable), _ -> Some (callable :> Callable.real_target)
-                  | (`Method _ as callable), _ -> Some (callable :> Callable.real_target)
+                  | `Function _ as callable -> Some (callable :> Callable.real_target)
+                  | `Method _ as callable -> Some (callable :> Callable.real_target)
                   | _ -> None))
+            ~stubs:(Callable.HashSet.of_list stubs)
             ~environment
         in
         let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
@@ -523,12 +532,15 @@ let initialize
               Callable.Map.find models callable
               |> Option.value ~default:Taint.Result.empty_model
               |> Model.add_obscure_sink ~resolution ~call_target:callable
+              |> Model.remove_obscureness
             in
             Callable.Map.set models ~key:callable ~data:model
           in
           stubs
-          |> List.map ~f:fst
-          |> List.filter ~f:(fun callable -> not (Callable.Map.mem models callable))
+          |> List.filter ~f:(fun callable ->
+                 Callable.Map.find models callable
+                 >>| Model.is_obscure
+                 |> Option.value ~default:true)
           |> List.fold ~init:models ~f:add_obscure_sink
         in
         let models =
@@ -555,8 +567,7 @@ let initialize
       ~source
   in
 
-  let callables = List.map ~f:fst callables |> List.rev_append (Callable.Map.keys overrides) in
-  let stubs = List.map ~f:fst stubs in
+  let callables = List.rev_append (Callable.Map.keys overrides) callables in
   let callables_to_analyze = List.rev_append stubs callables in
   let initial_models_callables = Callable.Map.keys initial_models in
   (* Initialize models *)

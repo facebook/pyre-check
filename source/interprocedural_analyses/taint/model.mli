@@ -52,6 +52,10 @@ val infer_class_models
   :  environment:TypeEnvironment.ReadOnly.t ->
   TaintResult.call_model Callable.Map.t
 
+val is_obscure : TaintResult.call_model -> bool
+
+val remove_obscureness : TaintResult.call_model -> TaintResult.call_model
+
 val remove_sinks : TaintResult.call_model -> TaintResult.call_model
 
 val add_obscure_sink

@@ -691,6 +691,8 @@ let rec process_request ~environment ~configuration request =
                 ~path
                 ~source
                 ~configuration
+                ~functions:None
+                ~stubs:(Interprocedural.Callable.HashSet.create ())
                 Interprocedural.Callable.Map.empty
               |> fun { Taint.Model.errors; _ } -> errors
             in
