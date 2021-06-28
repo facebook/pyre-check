@@ -83,6 +83,16 @@ let test_simple context =
 
   assert_uninitialized_errors
     {|
+        def f():
+          x = 0
+          def g():
+            nonlocal x
+            x = x
+    |}
+    [];
+
+  assert_uninitialized_errors
+    {|
       class Foo(object):
         pass
       def f():
