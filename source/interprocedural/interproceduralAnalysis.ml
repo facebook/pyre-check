@@ -18,6 +18,8 @@ let initialize_configuration kind ~static_analysis_configuration =
   Analysis.initialize_configuration ~static_analysis_configuration
 
 
+(* Initialize models for the given analysis.
+ * For the taint analysis, this parses taint stubs into models and queries. *)
 let initialize_models kind ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
   let (Result.Analysis { analysis; kind = storable_kind }) = Result.get_abstract_analysis kind in
   let module Analysis = (val analysis) in
@@ -55,6 +57,7 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
   Result.InitializedModels.create get_specialized_models
 
 
+(* Save initial models in the shared memory. *)
 let record_initial_models ~functions ~stubs models =
   let record_models models =
     let add_model_to_memory ~key:call_target ~data:model =

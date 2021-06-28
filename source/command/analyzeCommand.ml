@@ -137,13 +137,16 @@ let run_analysis
           Interprocedural.Analysis.initialize_configuration
             ~static_analysis_configuration
             analysis_kind;
+
           let environment =
             Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache
           in
+
           let qualifiers =
             Analysis.TypeEnvironment.module_tracker environment
             |> Analysis.ModuleTracker.tracked_explicit_modules
           in
+
           let initial_callables =
             Service.StaticAnalysis.fetch_initial_callables
               ~scheduler
@@ -152,6 +155,7 @@ let run_analysis
               ~qualifiers
               ~use_cache
           in
+
           let initialized_models =
             let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
               initial_callables
@@ -166,6 +170,7 @@ let run_analysis
                   :> Interprocedural.Callable.t list )
               ~stubs:(stubs :> Interprocedural.Callable.t list)
           in
+
           let environment, initial_callables =
             if inline_decorators then (
               Log.info "Inlining decorators for taint analysis...";
@@ -193,19 +198,16 @@ let run_analysis
             else
               environment, initial_callables
           in
+
           let environment = Analysis.TypeEnvironment.read_only environment in
           let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
-          Log.info "Initializing analysis...";
+
           let { Interprocedural.Result.InitializedModels.initial_models; skip_overrides } =
             Interprocedural.Result.InitializedModels.get_models_including_generated_models
               initialized_models
               ~updated_environment:(Some environment)
           in
-          Statistics.performance
-            ~name:"Computed initial analysis state"
-            ~phase_name:"Computing initial analysis state"
-            ~timer
-            ();
+
           let filename_lookup path_reference =
             match repository_root with
             | Some root ->

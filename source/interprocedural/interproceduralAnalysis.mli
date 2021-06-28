@@ -12,7 +12,6 @@ val initialize_configuration
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   unit
 
-(* Calls init on specified analysis to get initial models *)
 val initialize_models
   :  Kind.abstract ->
   scheduler:Scheduler.t ->

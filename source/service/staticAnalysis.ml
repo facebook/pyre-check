@@ -288,6 +288,7 @@ end = struct
     | _ -> ()
 end
 
+(* Perform a full type check and build a type environment. *)
 let type_check ~scheduler ~configuration ~use_cache =
   let cached_environment = if use_cache then Cache.load_environment ~configuration else None in
   match cached_environment with
@@ -435,6 +436,8 @@ let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifier
     ()
 
 
+(* Traverse the AST to find all callables (functions and methods), filtering out callables from test
+   files. *)
 let fetch_initial_callables ~scheduler ~configuration ~environment ~qualifiers ~use_cache =
   let cached_initial_callables =
     if use_cache then Cache.load_initial_callables ~configuration else None
@@ -460,6 +463,8 @@ let fetch_initial_callables ~scheduler ~configuration ~environment ~qualifiers ~
       initial_callables
 
 
+(* Compute the override graph, which maps overide_targets (parent methods which are overridden) to
+   all concrete methods overriding them, and save it to shared memory. *)
 let record_overrides_for_qualifiers
     ~configuration
     ~use_cache
@@ -525,93 +530,64 @@ let record_overrides_for_qualifiers
   cap_override_result
 
 
-let analyze
+(* Build the callgraph, a map from caller to callees. The overrides must be computed first because
+   we depend on a global shared memory graph to include overrides in the call graph. Without it,
+   we'll underanalyze and have an inconsistent fixpoint. *)
+let build_call_graph
     ~scheduler
-    ~analysis
     ~static_analysis_configuration:
       ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as static_analysis_configuration)
-    ~filename_lookup
     ~environment
     ~qualifiers
-    ~initial_callables:{ callables_with_dependency_information; stubs; filtered_callables; _ }
-    ~initial_models
-    ~skip_overrides
-    ()
   =
-  let pre_fixpoint_timer = Timer.start () in
-  let get_source = get_source ~environment in
-
-  let functions =
-    (List.map callables_with_dependency_information ~f:fst :> Interprocedural.Callable.t list)
-  in
-  let stubs = (stubs :> Interprocedural.Callable.t list) in
-  Interprocedural.Analysis.record_initial_models ~functions ~stubs initial_models;
-
-  (* Compute the override graph, which maps overide_targets (parent methods which are overridden) to
-     all concrete methods overriding them. We also save data used for callgraph construction into
-     shared memory. *)
-  Log.info "Computing overrides...";
-  let timer = Timer.start () in
-  let { DependencyGraphSharedMemory.overrides; skipped_overrides } =
-    record_overrides_for_qualifiers
-      ~configuration
-      ~use_cache
-      ~scheduler
-      ~environment
-      ~skip_overrides
-      ~qualifiers
-  in
-  let override_dependencies = DependencyGraph.from_overrides overrides in
-  Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
-  (* Build the callgraph, a map from caller to callees. The overrides must be computed first because
-     we depend on a global shared memory graph to include overrides in the call graph. Without it,
-     we'll underanalyze and have an inconsistent fixpoint. *)
-  let callgraph =
-    let cached_callgraph = if use_cache then Cache.load_call_graph ~configuration else None in
-    match cached_callgraph with
-    | Some cached_callgraph ->
-        Log.warning "Using cached call graph.";
-        cached_callgraph
-    | _ ->
+  let cached_call_graph = if use_cache then Cache.load_call_graph ~configuration else None in
+  match cached_call_graph with
+  | Some cached_call_graph ->
+      Log.warning "Using cached call graph.";
+      cached_call_graph
+  | _ ->
+      if use_cache then
         Log.info "No cached call graph loaded, building call graph...";
-        let timer = Timer.start () in
-        let new_callgraph =
-          let build_call_graph call_graph qualifier =
-            try
-              get_source qualifier
-              >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
-              |> Option.value ~default:call_graph
-            with
-            | Analysis.ClassHierarchy.Untracked untracked_type ->
-                Log.info
-                  "Error building call graph in path %a for untracked type %s"
-                  Reference.pp
-                  qualifier
-                  untracked_type;
-                call_graph
-          in
-          Scheduler.map_reduce
-            scheduler
-            ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-            ~initial:Callable.RealMap.empty
-            ~map:(fun _ qualifiers ->
-              List.fold qualifiers ~init:Callable.RealMap.empty ~f:build_call_graph)
-            ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
-            ~inputs:qualifiers
-            ()
+      let timer = Timer.start () in
+      let new_call_graph =
+        let build_call_graph call_graph qualifier =
+          try
+            get_source ~environment qualifier
+            >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
+            |> Option.value ~default:call_graph
+          with
+          | Analysis.ClassHierarchy.Untracked untracked_type ->
+              Log.info
+                "Error building call graph in path %a for untracked type %s"
+                Reference.pp
+                qualifier
+                untracked_type;
+              call_graph
         in
-        Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
-        Log.info "Call graph edges: %d" (Callable.RealMap.length new_callgraph);
-        if use_cache then
-          Cache.save_call_graph ~configuration ~callgraph:new_callgraph;
-        if static_analysis_configuration.dump_call_graph then
-          DependencyGraph.from_callgraph new_callgraph |> DependencyGraph.dump ~configuration;
-        new_callgraph
-  in
-  (* Merge overrides and callgraph into a combined dependency graph, and prune anything not linked
-     to the callables we are actually analyzing. Then reverse the graph, which maps dependers to
-     dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph
-     that maps dependees to dependers. *)
+        Scheduler.map_reduce
+          scheduler
+          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+          ~initial:Callable.RealMap.empty
+          ~map:(fun _ qualifiers ->
+            List.fold qualifiers ~init:Callable.RealMap.empty ~f:build_call_graph)
+          ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
+          ~inputs:qualifiers
+          ()
+      in
+      Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
+      Log.info "Call graph edges: %d" (Callable.RealMap.length new_call_graph);
+      if use_cache then
+        Cache.save_call_graph ~configuration ~callgraph:new_call_graph;
+      if static_analysis_configuration.dump_call_graph then
+        DependencyGraph.from_callgraph new_call_graph |> DependencyGraph.dump ~configuration;
+      new_call_graph
+
+
+(* Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
+   the callables we are actually analyzing. Then reverse the graph, which maps dependers to
+   dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
+   maps dependees to dependers. *)
+let build_dependency_graph ~callables_with_dependency_information ~callgraph ~override_dependencies =
   Log.info "Computing dependencies...";
   let timer = Timer.start () in
   let override_targets = (Callable.Map.keys override_dependencies :> Callable.t list) in
@@ -627,6 +603,7 @@ let analyze
     in
     DependencyGraph.reverse dependencies, pruned_callables
   in
+
   (* Create an empty callable for each override target (on each iteration, the framework will update
      these by joining models for all overrides *)
   let () =
@@ -643,12 +620,58 @@ let analyze
     ~phase_name:"Computing dependencies"
     ~timer
     ();
+  dependencies, callables_to_analyze, override_targets
+
+
+let analyze
+    ~scheduler
+    ~analysis
+    ~static_analysis_configuration:
+      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as static_analysis_configuration)
+    ~filename_lookup
+    ~environment
+    ~qualifiers
+    ~initial_callables:{ callables_with_dependency_information; stubs; filtered_callables; _ }
+    ~initial_models
+    ~skip_overrides
+    ()
+  =
+  let pre_fixpoint_timer = Timer.start () in
+
+  Interprocedural.Analysis.record_initial_models
+    ~functions:
+      (List.map callables_with_dependency_information ~f:fst :> Interprocedural.Callable.t list)
+    ~stubs:(stubs :> Interprocedural.Callable.t list)
+    initial_models;
+
+  Log.info "Computing overrides...";
+  let timer = Timer.start () in
+  let { DependencyGraphSharedMemory.overrides; skipped_overrides } =
+    record_overrides_for_qualifiers
+      ~configuration
+      ~use_cache
+      ~scheduler
+      ~environment
+      ~skip_overrides
+      ~qualifiers
+  in
+  let override_dependencies = DependencyGraph.from_overrides overrides in
+  Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
+
+  let callgraph =
+    build_call_graph ~scheduler ~static_analysis_configuration ~environment ~qualifiers
+  in
+
+  let dependencies, callables_to_analyze, override_targets =
+    build_dependency_graph ~callables_with_dependency_information ~callgraph ~override_dependencies
+  in
+
   Statistics.performance
     ~name:"Pre-fixpoint computation for static analysis"
     ~phase_name:"Pre-fixpoint computation for static analysis"
     ~timer:pre_fixpoint_timer
     ();
-  (* Run the analysis and save results *)
+
   Log.info
     "Analysis fixpoint started for %d overrides and %d functions..."
     (List.length override_targets)

@@ -90,6 +90,8 @@ module InitializedModels = struct
 
   let get_models f = f ~updated_environment:None
 
+  (* Generate models from the initial models and an updated environment.
+   * For the taint analysis, this runs model queries. *)
   let get_models_including_generated_models ~updated_environment f = f ~updated_environment
 end
 
