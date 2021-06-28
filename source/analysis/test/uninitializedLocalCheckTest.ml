@@ -68,22 +68,18 @@ let test_simple context =
     |}
     ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
 
-  (* should be: `counter` is not defined. counter += 1 gets re-written as counter.__iadd__(1). Since
-     we currently don't support attributes, we don't catch this. *)
   assert_uninitialized_errors
     {|
-      counter = 0
-
-      def increment() -> None:
-        counter += 1
+      x, y, z = 0, 0, 0
+      def access_global() -> int:
+        global y
+        _ = x      # Refers to local `x`, hence error
+        x = 1
+        _ = y      # Refers to global `y`, explictly specified
+        y = 1
+        _ = z      # Refers to global `z`, implicitly
     |}
-    [];
-
-  assert_uninitialized_errors {|
-      x: int = 5
-      def f():
-        return x
-    |} [];
+    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
 
   assert_uninitialized_errors
     {|
