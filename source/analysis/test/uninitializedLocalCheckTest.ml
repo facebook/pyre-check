@@ -81,13 +81,27 @@ let test_simple context =
     |}
     ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
 
+  (* TODO(T94070887): should be: error in nested method. *)
   assert_uninitialized_errors
     {|
         def f():
-          x = 0
           def g():
-            nonlocal x
-            x = x
+            x = y
+            y = 5
+    |}
+    [];
+
+  (* TODO(T94070887): we support nonlocal, but test itself is blocked on nested method support. *)
+  assert_uninitialized_errors
+    {|
+        def f() -> None:
+          x, y = 0
+          def g() -> None:
+            nonlocal y
+            _ = x    # Refers to local `x`, hence error
+            x = 1
+            _ = y    # Refers to nonlocal `y`, hence OK
+            y = 1
     |}
     [];
 
