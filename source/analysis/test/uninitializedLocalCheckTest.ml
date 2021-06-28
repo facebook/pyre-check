@@ -147,13 +147,11 @@ let test_simple context =
     |}
     [];
 
-  (* should be: no error *)
   assert_uninitialized_errors {|
       def f(x: str) -> None:
         assert True, x
     |} [];
 
-  (* should be: no error *)
   assert_uninitialized_errors
     {|
       from media import something
