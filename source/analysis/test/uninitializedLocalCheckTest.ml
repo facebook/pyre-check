@@ -182,6 +182,35 @@ let test_simple context =
         [y for x in [1,2,3] if (y:=x) > 2]
     |} [];
 
+  (* TODO (T93984519): Inconsistent handling of "assert False" and raising AssertionError. *)
+  assert_uninitialized_errors
+    {|
+      def f():
+        if True:
+          x = 1
+        else:
+          raise AssertionError("error")
+        return x
+
+      def g():
+        if True:
+          y = 1
+        else:
+          assert False, "error"
+        return y
+
+      def h():
+        if True:
+          z = 1
+        else:
+          assert True, "error"
+        return z
+    |}
+    [
+      "Uninitialized local [61]: Local variable `z` may not be initialized here.";
+      "Uninitialized local [61]: Local variable `y` may not be initialized here.";
+    ];
+
   (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
      not be defined. *)
   assert_uninitialized_errors
