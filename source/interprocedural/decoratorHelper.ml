@@ -211,31 +211,35 @@ let convert_parameter_to_argument ~location { Node.value = { Parameter.name; _ }
   let name_expression name =
     Expression.Name (create_name ~location name) |> Node.create ~location
   in
-  if String.is_prefix ~prefix:"**" name then
-    Expression.Starred (Twice (name_expression (String.drop_prefix name 2)))
-    |> Node.create ~location
-  else if String.is_prefix ~prefix:"*" name then
-    Expression.Starred (Once (name_expression (String.drop_prefix name 1))) |> Node.create ~location
-  else
-    name_expression name
+  let argument_value =
+    if String.is_prefix ~prefix:"**" name then
+      Expression.Starred (Twice (name_expression (String.drop_prefix name 2)))
+      |> Node.create ~location
+    else if String.is_prefix ~prefix:"*" name then
+      Expression.Starred (Once (name_expression (String.drop_prefix name 1)))
+      |> Node.create ~location
+    else
+      name_expression name
+  in
+  { Call.Argument.name = None; value = argument_value }
 
 
-let create_function_call_to ~location ~callee_name { Define.Signature.parameters; async; _ } =
+let create_function_call ~location ~callee_name ~async arguments =
   let call =
     Expression.Call
       {
         callee =
           Expression.Name (create_name_from_reference ~location callee_name)
           |> Node.create ~location;
-        arguments =
-          List.map parameters ~f:(fun parameter ->
-              {
-                Call.Argument.name = None;
-                value = convert_parameter_to_argument ~location parameter;
-              });
+        arguments;
       }
   in
   if async then Expression.Await (Node.create ~location call) else call
+
+
+let create_function_call_to ~location ~callee_name { Define.Signature.parameters; async; _ } =
+  List.map parameters ~f:(convert_parameter_to_argument ~location)
+  |> create_function_call ~location ~callee_name ~async
 
 
 let rename_define ~new_name ({ Define.signature = { name; _ } as signature; _ } as define) =
@@ -376,8 +380,8 @@ let make_args_assignment_from_parameters ~args_local_variable_name parameters =
   let elements =
     List.map parameters ~f:(convert_parameter_to_argument ~location)
     |> List.filter_map ~f:(function
-           | { Node.value = Expression.Starred (Twice _); _ } -> None
-           | element -> Some element)
+           | { Call.Argument.value = { Node.value = Expression.Starred (Twice _); _ }; _ } -> None
+           | { Call.Argument.value; _ } -> Some value)
   in
   Statement.Assign
     {
@@ -396,9 +400,10 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
   let location = Location.any in
   let parameter_to_keyword_or_entry parameter =
     match convert_parameter_to_argument ~location parameter with
-    | { Node.value = Expression.Starred (Twice keyword); _ } -> `Fst keyword
-    | { Node.value = Expression.Starred (Once _); _ } -> `Snd ()
-    | argument ->
+    | { Call.Argument.value = { Node.value = Expression.Starred (Twice keyword); _ }; _ } ->
+        `Fst keyword
+    | { Call.Argument.value = { Node.value = Expression.Starred (Once _); _ }; _ } -> `Snd ()
+    | { Call.Argument.value = argument; _ } ->
         let raw_argument_string = Expression.show argument in
         let argument_string =
           String.chop_prefix ~prefix:"$parameter$" raw_argument_string
@@ -429,7 +434,7 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
 let call_function_with_precise_parameters
     ~callee_name
     ~callee_prefix_parameters
-    ~new_signature:({ Define.Signature.parameters = new_parameters; _ } as new_signature)
+    ~new_signature:{ Define.Signature.parameters = new_parameters; async; _ }
     define
   =
   let inferred_args_kwargs_parameters = ref None in
@@ -460,10 +465,10 @@ let call_function_with_precise_parameters
                    _;
                  };
              }
-             :: remaining_arguments
+             :: prefix_arguments
           when Identifier.equal args_local_variable_name given_args_variable
                && Identifier.equal kwargs_local_variable_name given_kwargs_variable ->
-            let remaining_arguments = List.rev remaining_arguments in
+            let prefix_arguments = List.rev prefix_arguments in
             let parameter_matches_argument
                 { Node.value = { Parameter.name = parameter_name; _ }; _ }
               = function
@@ -478,7 +483,7 @@ let call_function_with_precise_parameters
               match
                 List.for_all2
                   callee_prefix_parameters
-                  remaining_arguments
+                  prefix_arguments
                   ~f:parameter_matches_argument
               with
               | Ok all_arguments_match -> all_arguments_match
@@ -489,10 +494,12 @@ let call_function_with_precise_parameters
                 List.drop new_parameters (List.length callee_prefix_parameters)
               in
               inferred_args_kwargs_parameters := Some suffix_parameters;
-              create_function_call_to
+              create_function_call
                 ~location
                 ~callee_name:(Reference.create callee_name)
-                new_signature )
+                ~async
+                ( prefix_arguments
+                @ List.map suffix_parameters ~f:(convert_parameter_to_argument ~location) ) )
             else (
               inferred_args_kwargs_parameters := None;
               expression )
