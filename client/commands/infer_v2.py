@@ -17,11 +17,11 @@ from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast, Dict, IO, List, Optional, Sequence
+from typing import cast, Dict, List, Optional, Sequence
 
 import libcst
 from libcst.codemod import CodemodContext
-from libcst.codemod.visitors._apply_type_annotations import ApplyTypeAnnotationsVisitor
+from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
 from typing_extensions import TypeAlias
 
 from .. import command_arguments, log
