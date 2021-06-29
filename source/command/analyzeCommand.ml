@@ -174,6 +174,7 @@ let run_analysis
           let environment, initial_callables =
             if inline_decorators then (
               Log.info "Inlining decorators for taint analysis...";
+              let timer = Timer.start () in
               let { Interprocedural.Result.InitializedModels.initial_models; _ } =
                 Interprocedural.Result.InitializedModels.get_models initialized_models
               in
@@ -185,6 +186,12 @@ let run_analysis
                   ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
                   environment
               in
+              Statistics.performance
+                ~name:"Inlined decorators"
+                ~phase_name:"Inlining decorators"
+                ~timer
+                ();
+
               let updated_initial_callables =
                 (* We need to re-fetch initial callables, since inlining creates new callables. *)
                 Service.StaticAnalysis.fetch_initial_callables

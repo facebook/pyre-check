@@ -302,7 +302,7 @@ let type_check ~scheduler ~configuration ~use_cache =
         { configuration with analyze_external_sources = true }
       in
       if use_cache then
-        Log.info "No cached type environment loaded, starting a clean run.";
+        Log.info "No cached type environment found.";
       Check.check
         ~scheduler
         ~configuration
@@ -447,9 +447,10 @@ let fetch_initial_callables ~scheduler ~configuration ~environment ~qualifiers ~
       Log.warning "Using cached results for initial callables to analyze.";
       initial_callables
   | _ ->
-      let timer = Timer.start () in
       if use_cache then
-        Log.info "No cached initial callables loaded, fetching initial callables to analyze...";
+        Log.info "No cached initial callables found.";
+      Log.info "Fetching initial callables to analyze...";
+      let timer = Timer.start () in
       let initial_callables =
         fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifiers
       in
@@ -480,7 +481,8 @@ let record_overrides_for_qualifiers
         Log.warning "Using cached overrides.";
         overrides
     | _ ->
-        let () = Log.warning "No cached overrides loaded, computing overrides..." in
+        if use_cache then
+          Log.info "No cached overrides found.";
         let combine ~key:_ left right = List.rev_append left right in
         let build_overrides overrides qualifier =
           try
@@ -547,8 +549,7 @@ let build_call_graph
       cached_call_graph
   | _ ->
       if use_cache then
-        Log.info "No cached call graph loaded, building call graph...";
-      let timer = Timer.start () in
+        Log.info "No cached call graph found.";
       let new_call_graph =
         let build_call_graph call_graph qualifier =
           try
@@ -574,8 +575,6 @@ let build_call_graph
           ~inputs:qualifiers
           ()
       in
-      Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
-      Log.info "Call graph edges: %d" (Callable.RealMap.length new_call_graph);
       if use_cache then
         Cache.save_call_graph ~configuration ~callgraph:new_call_graph;
       if static_analysis_configuration.dump_call_graph then
@@ -588,8 +587,6 @@ let build_call_graph
    dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
    maps dependees to dependers. *)
 let build_dependency_graph ~callables_with_dependency_information ~callgraph ~override_dependencies =
-  Log.info "Computing dependencies...";
-  let timer = Timer.start () in
   let override_targets = (Callable.Map.keys override_dependencies :> Callable.t list) in
   let dependencies, callables_to_analyze =
     let dependencies =
@@ -615,11 +612,6 @@ let build_dependency_graph ~callables_with_dependency_information ~callgraph ~ov
     in
     List.iter override_targets ~f:add_predefined
   in
-  Statistics.performance
-    ~name:"Computed dependencies"
-    ~phase_name:"Computing dependencies"
-    ~timer
-    ();
   dependencies, callables_to_analyze, override_targets
 
 
@@ -636,13 +628,18 @@ let analyze
     ~skip_overrides
     ()
   =
-  let pre_fixpoint_timer = Timer.start () in
-
+  Log.info "Recording initial models in shared memory...";
+  let timer = Timer.start () in
   Interprocedural.Analysis.record_initial_models
     ~functions:
       (List.map callables_with_dependency_information ~f:fst :> Interprocedural.Callable.t list)
     ~stubs:(stubs :> Interprocedural.Callable.t list)
     initial_models;
+  Statistics.performance
+    ~name:"Recorded initial models"
+    ~phase_name:"Recording initial models"
+    ~timer
+    ();
 
   Log.info "Computing overrides...";
   let timer = Timer.start () in
@@ -658,18 +655,22 @@ let analyze
   let override_dependencies = DependencyGraph.from_overrides overrides in
   Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
 
+  Log.info "Building call graph...";
+  let timer = Timer.start () in
   let callgraph =
     build_call_graph ~scheduler ~static_analysis_configuration ~environment ~qualifiers
   in
+  Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 
+  Log.info "Computing dependencies...";
+  let timer = Timer.start () in
   let dependencies, callables_to_analyze, override_targets =
     build_dependency_graph ~callables_with_dependency_information ~callgraph ~override_dependencies
   in
-
   Statistics.performance
-    ~name:"Pre-fixpoint computation for static analysis"
-    ~phase_name:"Pre-fixpoint computation for static analysis"
-    ~timer:pre_fixpoint_timer
+    ~name:"Computed dependencies"
+    ~phase_name:"Computing dependencies"
+    ~timer
     ();
 
   Log.info

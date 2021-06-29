@@ -358,6 +358,7 @@ let get_model_sources ~paths =
 let infer_class_models ~environment =
   let open Domains in
   Log.info "Computing inferred models...";
+  let timer = Timer.start () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let fold_taint position existing_state attribute =
     let leaf =
@@ -455,5 +456,13 @@ let infer_class_models ~environment =
     |> GlobalResolution.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
-  List.filter_map all_classes ~f:inferred_models
-  |> Callable.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)
+  let models =
+    List.filter_map all_classes ~f:inferred_models
+    |> Callable.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)
+  in
+  Statistics.performance
+    ~name:"Computed inferred models"
+    ~phase_name:"Computing inferred models"
+    ~timer
+    ();
+  models

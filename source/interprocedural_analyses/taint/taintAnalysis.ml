@@ -20,6 +20,7 @@ include Taint.Result.Register (struct
     =
     (* In order to save time, sanity check models before starting the analysis. *)
     Log.info "Verifying model syntax and configuration.";
+    let timer = Timer.start () in
     Taint.Model.get_model_sources ~paths:taint_model_paths
     |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
     let (_ : Taint.TaintConfiguration.t) =
@@ -31,7 +32,11 @@ include Taint.Result.Register (struct
         ~maximum_tito_depth:None
         ~taint_model_paths
     in
-    ()
+    Statistics.performance
+      ~name:"Verified model syntax and configuration"
+      ~phase_name:"Verifying model syntax and configuration"
+      ~timer
+      ()
 
 
   let log_and_reraise_taint_model_exception exception_ =
@@ -140,7 +145,6 @@ include Taint.Result.Register (struct
         (module Analysis.TypeCheck.DummyContext)
     in
     let create_models ~taint_configuration ~initial_models sources =
-      let timer = Timer.start () in
       let map state sources =
         List.fold
           sources
@@ -183,18 +187,14 @@ include Taint.Result.Register (struct
           Set.union skip_overrides_left skip_overrides_right,
           List.rev_append queries_left queries_right )
       in
-      let result =
-        Scheduler.map_reduce
-          scheduler
-          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-          ~initial:(initial_models, [], Ast.Reference.Set.empty, [])
-          ~map
-          ~reduce
-          ~inputs:sources
-          ()
-      in
-      Statistics.performance ~name:"Parsed taint models" ~phase_name:"Taint model parsing" ~timer ();
-      result
+      Scheduler.map_reduce
+        scheduler
+        ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+        ~initial:(initial_models, [], Ast.Reference.Set.empty, [])
+        ~map
+        ~reduce
+        ~inputs:sources
+        ()
     in
     let add_models_and_queries_from_sources initial_models =
       try
@@ -259,6 +259,9 @@ include Taint.Result.Register (struct
 
   let initialize_models ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
     let stubs = Callable.HashSet.of_list stubs in
+
+    Log.info "Parsing taint models...";
+    let timer = Timer.start () in
     let { initialize_result; query_data } =
       parse_models_and_queries_from_sources
         ~scheduler
@@ -267,17 +270,29 @@ include Taint.Result.Register (struct
         ~functions:(Some (Callable.HashSet.of_list functions))
         ~stubs
     in
+    Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
+
     let get_taint_models ~updated_environment =
       match updated_environment, query_data with
       | Some updated_environment, Some query_data ->
-          generate_models_from_queries
-            ~scheduler
-            ~static_analysis_configuration
-            ~environment:updated_environment
-            ~functions
-            ~stubs
-            ~initialize_result
-            query_data
+          Log.info "Generating models from model queries...";
+          let timer = Timer.start () in
+          let models =
+            generate_models_from_queries
+              ~scheduler
+              ~static_analysis_configuration
+              ~environment:updated_environment
+              ~functions
+              ~stubs
+              ~initialize_result
+              query_data
+          in
+          Statistics.performance
+            ~name:"Generated models from model queries"
+            ~phase_name:"Generating models from model queries"
+            ~timer
+            ();
+          models
       | _ -> initialize_result
     in
     Interprocedural.Result.InitializedModels.create get_taint_models
