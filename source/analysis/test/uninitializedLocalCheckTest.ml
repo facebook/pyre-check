@@ -218,6 +218,26 @@ let test_simple context =
         x = Foo()
     |} [];
 
+  assert_uninitialized_errors
+    {|
+      def f():
+        with open("x") as x:
+          pass
+        _ = x, y
+        x, y = None, None
+    |}
+    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+
+  assert_uninitialized_errors
+    {|
+      def f():
+        _  = [(x, y) for x,y in []]
+        x = None
+        _ = x, y
+        y = None
+    |}
+    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+
   (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
      not be defined. *)
   assert_uninitialized_errors
