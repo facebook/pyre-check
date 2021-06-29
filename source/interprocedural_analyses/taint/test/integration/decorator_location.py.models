@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 58,
+    "callable_line": 74,
     "code": 5002,
-    "line": 61,
+    "line": 75,
     "start": 8,
     "end": 23,
     "filename": "decorator_location.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 61,
+              "line": 75,
               "start": 8,
               "end": 23
             },
@@ -33,7 +33,65 @@
             "call": {
               "position": {
                 "filename": "decorator_location.py",
-                "line": 61,
+                "line": 75,
+                "start": 8,
+                "end": 23
+              },
+              "resolves_to": [ "decorator_location.foo" ],
+              "port": "formal(x)",
+              "length": 2
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-type": "scalar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 74,
+    "code": 5002,
+    "line": 77,
+    "start": 8,
+    "end": 23,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "decorator_location.py",
+              "line": 77,
+              "start": 8,
+              "end": 23
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator_location.py",
+                "line": 77,
                 "start": 8,
                 "end": 23
               },
@@ -61,11 +119,11 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 58,
+    "callable_line": 74,
     "code": 5002,
-    "line": 59,
-    "start": 8,
-    "end": 23,
+    "line": 81,
+    "start": 19,
+    "end": 34,
     "filename": "decorator_location.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -75,9 +133,9 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 59,
-              "start": 8,
-              "end": 23
+              "line": 81,
+              "start": 19,
+              "end": 34
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "always-via": "special_source" } ]
@@ -91,28 +149,50 @@
             "call": {
               "position": {
                 "filename": "decorator_location.py",
-                "line": 59,
-                "start": 8,
-                "end": 23
+                "line": 81,
+                "start": 19,
+                "end": 34
               },
-              "resolves_to": [ "decorator_location.foo" ],
-              "port": "formal(x)",
+              "resolves_to": [ "decorator_location.handle_request" ],
+              "port": "formal(request)",
               "length": 2
             },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+            "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable":
+      "decorator_location.handle_request.__inlined_pass_local_variable_to_x",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(request)",
+        "taint": [
+          {
+            "root": {
+              "filename": "decorator_location.py",
+              "line": 62,
+              "start": 20,
+              "end": 27
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
   }
 }
 {
@@ -128,7 +208,7 @@
             "call": {
               "position": {
                 "filename": "decorator_location.py",
-                "line": 52,
+                "line": 53,
                 "start": 1,
                 "end": 14
               },
@@ -162,7 +242,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 27,
+              "line": 28,
               "start": 20,
               "end": 21
             },
@@ -191,7 +271,7 @@
             "call": {
               "position": {
                 "filename": "decorator_location.py",
-                "line": 41,
+                "line": 42,
                 "start": 1,
                 "end": 13
               },
@@ -225,7 +305,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 18,
+              "line": 19,
               "start": 20,
               "end": 21
             },
@@ -239,7 +319,7 @@
             "call": {
               "position": {
                 "filename": "decorator_location.py",
-                "line": 19,
+                "line": 20,
                 "start": 10,
                 "end": 11
               },
@@ -259,7 +339,7 @@
             "call": {
               "position": {
                 "filename": "decorator_location.py",
-                "line": 20,
+                "line": 21,
                 "start": 20,
                 "end": 21
               },
@@ -293,7 +373,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 15,
+              "line": 16,
               "start": 20,
               "end": 21
             },
@@ -321,7 +401,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 27,
+              "line": 28,
               "start": 20,
               "end": 21
             },
@@ -335,7 +415,7 @@
             "call": {
               "position": {
                 "filename": "decorator_location.py",
-                "line": 28,
+                "line": 29,
                 "start": 10,
                 "end": 11
               },
@@ -367,7 +447,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 44,
+              "line": 45,
               "start": 16,
               "end": 17
             },
@@ -376,6 +456,91 @@
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
             ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator_location.handle_request",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(request)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator_location.py",
+                "line": 69,
+                "start": 1,
+                "end": 25
+              },
+              "resolves_to": [
+                "decorator_location.handle_request.__inlined_pass_local_variable_to_x"
+              ],
+              "port": "formal(request)",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator_location.handle_request.__original_function",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "decorator_location.py",
+              "line": 71,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator_location.pass_local_variable_to_x.inner",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(request)",
+        "taint": [
+          {
+            "root": {
+              "filename": "decorator_location.py",
+              "line": 62,
+              "start": 20,
+              "end": 27
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
@@ -395,7 +560,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 35,
+              "line": 36,
               "start": 20,
               "end": 21
             },
@@ -423,7 +588,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 18,
+              "line": 19,
               "start": 20,
               "end": 21
             },
@@ -437,7 +602,7 @@
             "call": {
               "position": {
                 "filename": "decorator_location.py",
-                "line": 20,
+                "line": 21,
                 "start": 20,
                 "end": 21
               },
@@ -471,7 +636,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 15,
+              "line": 16,
               "start": 20,
               "end": 21
             },
@@ -499,7 +664,7 @@
           {
             "root": {
               "filename": "decorator_location.py",
-              "line": 27,
+              "line": 28,
               "start": 20,
               "end": 21
             },

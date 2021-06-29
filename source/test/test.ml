@@ -1192,7 +1192,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     );
     ( "functools.pyi",
       {|
-        from typing import TypeVar, Generic, Callable, Tuple, Any, Dict, Optional
+        from typing import TypeVar, Generic, Callable, Tuple, Any, Dict, Optional, Sequence
+        _AnyCallable = Callable[..., Any]
         _T = TypeVar("_T")
         _S = TypeVar("_S")
 
@@ -1223,6 +1224,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         ) -> Callable[[Callable[..., _T]], _lru_cache_wrapper[_T]]:
             ...
 
+        def wraps(
+          wrapped: _AnyCallable,
+          assigned: Sequence[str] = ...,
+          updated: Sequence[str] = ...
+        ) -> Callable[[_T], _T]: ...
        |}
     );
     ( "subprocess.pyi",

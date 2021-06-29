@@ -435,8 +435,11 @@ let call_function_with_precise_parameters
     ~callee_name
     ~callee_prefix_parameters
     ~new_signature:{ Define.Signature.parameters = new_parameters; async; _ }
-    define
+    ({ Define.signature = wrapper_signature; _ } as define)
   =
+  let wraps_original_function =
+    Define.Signature.has_decorator ~match_prefix:true wrapper_signature "functools.wraps"
+  in
   let inferred_args_kwargs_parameters = ref None in
   let pass_precise_arguments_instead_of_args_kwargs = function
     | Expression.Call
@@ -489,10 +492,8 @@ let call_function_with_precise_parameters
               | Ok all_arguments_match -> all_arguments_match
               | Unequal_lengths -> false
             in
-            if all_arguments_match then (
-              let suffix_parameters =
-                List.drop new_parameters (List.length callee_prefix_parameters)
-              in
+            if all_arguments_match || wraps_original_function then (
+              let suffix_parameters = List.drop new_parameters (List.length prefix_arguments) in
               inferred_args_kwargs_parameters := Some suffix_parameters;
               create_function_call
                 ~location

@@ -1297,6 +1297,108 @@ let test_inline_decorators context =
 
       return __inlined_with_logging2(y)
   |};
+  (* Decorator that passes in a local variable to the original function.
+
+     Note: This is a bit of a weird edge case because the `@wraps` says that the signature is the
+     same as the original function, but in reality it takes in one less parameter. I'm reconciling
+     this by keeping the original signature (for the sake of model-writing and typechecking) but
+     only storing the remaining parameters in `__args` and `__kwargs`. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+    from functools import wraps
+
+    def with_logging(f: Callable) -> Callable:
+
+      @wraps(f)
+      def inner(request: str, *args, **kwargs) -> None:
+        __test_sink(args)
+        x = 42
+        f(request, x, *args, **kwargs)
+
+      return inner
+
+    @with_logging
+    def foo(request: str, x: int, y: int) -> None:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+    from functools import wraps
+
+    def with_logging(f: Callable) -> Callable:
+
+      @wraps(f)
+      def inner(request: str, *args, **kwargs) -> None:
+        __test_sink(args)
+        x = 42
+        f(request, x, *args, **kwargs)
+
+      return inner
+
+    def foo(request: str, x: int, y: int) -> None:
+
+      def __original_function(request: str, x: int, y: int) -> None:
+        print(x)
+
+      def __inlined_with_logging(request: str, x: int, y: int) -> None:
+        __args = (y, )
+        __kwargs = {"y": y}
+        __test_sink(__args)
+
+        # Need to explicitly qualify this local variable because `x` is also a parameter.
+        $local_test?foo?__inlined_with_logging$x = 42
+        __original_function(request, $local_test?foo?__inlined_with_logging$x, y)
+
+      return __inlined_with_logging(request, x, y)
+  |};
+  (* Decorator that passes in a local variable but doesn't use @wraps. We fall back to having *args,
+     **kwargs in the outer signature. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner(request: str, *args, **kwargs) -> None:
+        __test_sink(args)
+        x = 42
+        f(request, x, *args, **kwargs)
+
+      return inner
+
+    @with_logging
+    def foo(request: str, x: int, y: int) -> None:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner(request: str, *args, **kwargs) -> None:
+        __test_sink(args)
+        x = 42
+        f(request, x, *args, **kwargs)
+
+      return inner
+
+    def foo(request: str, *args, **kwargs) -> None:
+
+      def __original_function(request: str, x: int, y: int) -> None:
+        print(x)
+
+      def __inlined_with_logging(request: str, *args, **kwargs) -> None:
+        __test_sink(args)
+        x = 42
+        __original_function(request, x, *args, **kwargs)
+
+      return __inlined_with_logging(request, *args, **kwargs)
+  |};
   ()
 
 
