@@ -429,10 +429,10 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
 let call_function_with_precise_parameters
     ~callee_name
     ~callee_prefix_parameters
-    ~new_signature
+    ~new_signature:({ Define.Signature.parameters = new_parameters; _ } as new_signature)
     define
   =
-  let always_passes_on_all_parameters = ref true in
+  let inferred_args_kwargs_parameters = ref None in
   let pass_precise_arguments_instead_of_args_kwargs = function
     | Expression.Call
         {
@@ -484,28 +484,34 @@ let call_function_with_precise_parameters
               | Ok all_arguments_match -> all_arguments_match
               | Unequal_lengths -> false
             in
-            if all_arguments_match then
+            if all_arguments_match then (
+              let suffix_parameters =
+                List.drop new_parameters (List.length callee_prefix_parameters)
+              in
+              inferred_args_kwargs_parameters := Some suffix_parameters;
               create_function_call_to
                 ~location
                 ~callee_name:(Reference.create callee_name)
-                new_signature
+                new_signature )
             else (
-              always_passes_on_all_parameters := false;
+              inferred_args_kwargs_parameters := None;
               expression )
         | _ ->
             (* The wrapper is calling the original function as something other than `original( <some
                arguments>, *args, **kwargs)`. This means it probably has a different signature from
                the original function, so give up on making it have the same signature. *)
-            always_passes_on_all_parameters := false;
+            inferred_args_kwargs_parameters := None;
             expression )
     | expression -> expression
   in
   match
-    Transform.transform_expressions
-      ~transform:pass_precise_arguments_instead_of_args_kwargs
-      (Statement.Define define)
+    ( Transform.transform_expressions
+        ~transform:pass_precise_arguments_instead_of_args_kwargs
+        (Statement.Define define),
+      !inferred_args_kwargs_parameters )
   with
-  | Statement.Define define when !always_passes_on_all_parameters -> Some define
+  | Statement.Define define, Some inferred_args_kwargs_parameters ->
+      Some (define, inferred_args_kwargs_parameters)
   | _ -> None
 
 
@@ -529,9 +535,7 @@ let replace_signature_if_always_passing_on_arguments
       let args_parameter = String.drop_prefix args_parameter 1 in
       let kwargs_parameter = String.drop_prefix kwargs_parameter 2 in
       let prefix_parameters = List.rev remaining_parameters in
-      let callee_prefix_parameters, callee_suffix_parameters =
-        List.split_n new_parameters (List.length prefix_parameters)
-      in
+      let callee_prefix_parameters = List.take new_parameters (List.length prefix_parameters) in
 
       (* We have to rename `args` and `kwargs` to `__args` and `__kwargs` before transforming calls
          to `callee`. We also have to rename any prefix parameters.
@@ -558,14 +562,18 @@ let replace_signature_if_always_passing_on_arguments
             Some (rename_local_variables ~pairs define_with_original_signature)
         | Unequal_lengths -> None
       in
-      let add_local_assignments_for_args_kwargs ({ Define.body; _ } as define) =
+      let add_local_assignments_for_args_kwargs
+          (({ Define.body; _ } as define), inferred_args_kwargs_parameters)
+        =
         let args_local_assignment =
-          make_args_assignment_from_parameters ~args_local_variable_name callee_suffix_parameters
+          make_args_assignment_from_parameters
+            ~args_local_variable_name
+            inferred_args_kwargs_parameters
         in
         let kwargs_local_assignment =
           make_kwargs_assignment_from_parameters
             ~kwargs_local_variable_name
-            callee_suffix_parameters
+            inferred_args_kwargs_parameters
         in
         { define with Define.body = args_local_assignment :: kwargs_local_assignment :: body }
       in

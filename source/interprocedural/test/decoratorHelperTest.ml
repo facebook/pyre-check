@@ -255,6 +255,44 @@ let test_inline_decorators context =
     def foo(x: str) -> None:
       print(x)
   |};
+  (* Inline a decorator even if it has no calls to the original function. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def no_calls_to_original_function(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+
+      return inner
+
+    @no_calls_to_original_function
+    def foo(x: str) -> None:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def no_calls_to_original_function(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+
+      return inner
+
+    def foo( *args, **kwargs) -> None:
+
+      def __original_function(x: str) -> None:
+        print(x)
+
+      def __inlined_no_calls_to_original_function( *args, **kwargs) -> None:
+        __test_sink(args)
+
+      return __inlined_no_calls_to_original_function( *args, **kwargs)
+  |};
   assert_inlined
     {|
     from builtins import __test_sink
