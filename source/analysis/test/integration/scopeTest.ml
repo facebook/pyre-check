@@ -23,6 +23,18 @@ let test_check_scoping context =
     |}
     [];
 
+  (* TODO (T78261323): should be no error *)
+  assert_type_errors
+    {|
+    f'{"".join(f"{}{metric}" for metric in [])}'
+    |}
+    ["Unbound name [10]: Name `metric` is used but not defined in the current scope."];
+
+  ()
+
+
+let test_uninitialized context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def f() -> None:
@@ -50,14 +62,39 @@ let test_check_scoping context =
       "Unbound name [10]: Name `z` is used but not defined in the current scope.";
     ];
 
-  (* TODO (T78261323): should be no error *)
+  (* Extracted from a real-world example. *)
   assert_type_errors
     {|
-    f'{"".join(f"{}{metric}" for metric in [])}'
-    |}
-    ["Unbound name [10]: Name `metric` is used but not defined in the current scope."];
+      from dataclasses import dataclass
+      from typing import Optional
+
+      @dataclass
+      class Task(object):
+          harness_config: int
+
+      def get_task(i: int) -> Task:
+          return Task(harness_config=i)
+
+      def foo(i: int) -> int:
+          return i
+
+      def outer() -> None:
+          def inner(task_id: int) -> None:
+              if True:
+                  pass
+              else:
+                  task = get_task(task_id)
+
+                  if task.harness_config:
+                      harness_config = task.harness_config
+                  foo(harness_config)
+      |}
+    ["Uninitialized local [61]: Local variable `harness_config` may not be initialized here."];
 
   ()
 
 
-let () = "scope" >::: ["check_scoping" >:: test_check_scoping] |> Test.run
+let () =
+  "scope"
+  >::: ["check_scoping" >:: test_check_scoping; "check_uninitialized" >:: test_uninitialized]
+  |> Test.run

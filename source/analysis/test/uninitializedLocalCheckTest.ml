@@ -214,37 +214,6 @@ let test_simple context =
     |}
     ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
 
-  (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
-     not be defined. *)
-  assert_uninitialized_errors
-    {|
-      from dataclasses import dataclass
-      from typing import Optional
-      import random
-
-      @dataclass
-      class Task(object):
-          harness_config: int
-
-      def get_task(i: int) -> Task:
-          return Task(harness_config=i)
-
-      def foo(i: int) -> int:
-          return i
-
-      def outer() -> None:
-          def inner(task_id: int) -> None:
-              if random.random():
-                  pass
-              else:
-                  task = get_task(task_id)
-
-                  if task.harness_config:
-                      harness_config = task.harness_config
-                  foo(harness_config)
-      |}
-    [];
-
   ()
 
 
