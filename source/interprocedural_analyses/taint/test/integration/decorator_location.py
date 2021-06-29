@@ -71,6 +71,30 @@ def handle_request(request: str, x: int, y: int) -> None:
     __test_sink(x)
 
 
+class Foo:
+    def return_source(self) -> int:
+        return __test_source()
+
+
+def identity(f: Callable) -> Callable:
+    # The return type is wrongly written as `Callable`.
+    @wraps(f)
+    def inner(*args, **kwargs) -> Callable:
+        return f(*args, **kwargs)
+
+    return inner
+
+
+@identity
+def return_foo() -> Foo:
+    return Foo()
+
+
+def call_return_foo() -> None:
+    foo = return_foo()
+    __test_sink(foo.return_source())
+
+
 def main() -> None:
     foo(__test_source())
     bar(__test_source())
@@ -79,3 +103,4 @@ def main() -> None:
     # No issue because this `x` is not passed to `handle_request`.
     handle_request("hello", __test_source(), 42)
     handle_request(__test_source(), 42, 42)
+    call_return_foo()

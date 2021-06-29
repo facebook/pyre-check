@@ -606,13 +606,19 @@ let add_function_decorator_module_mapping
 let make_wrapper_define
     ~location
     ~qualifier
-    ~define:({ Define.signature = { parent; _ } as original_signature; _ } as define)
+    ~define:
+      ( {
+          Define.signature =
+            { parent; return_annotation = original_return_annotation; _ } as original_signature;
+          _;
+        } as define )
     ~function_to_call
     {
       wrapper_define =
         {
           Define.signature =
-            { name = { Node.value = wrapper_define_name; _ } as name; _ } as wrapper_signature;
+            { name = { Node.value = wrapper_define_name; _ } as name; return_annotation; _ } as
+            wrapper_signature;
           _;
         } as wrapper_define;
       helper_defines;
@@ -624,6 +630,15 @@ let make_wrapper_define
     }
   =
   let decorator_reference = Reference.delocalize decorator_reference in
+  let ({ Define.signature = wrapper_signature; _ } as wrapper_define) =
+    let return_annotation =
+      if Define.Signature.has_decorator ~match_prefix:true wrapper_signature "functools.wraps" then
+        original_return_annotation
+      else
+        return_annotation
+    in
+    { wrapper_define with signature = { wrapper_signature with return_annotation } }
+  in
   let ({ Define.body = wrapper_body; _ } as wrapper_define), outer_signature =
     match
       replace_signature_if_always_passing_on_arguments

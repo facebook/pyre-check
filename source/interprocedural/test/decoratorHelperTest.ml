@@ -1399,6 +1399,175 @@ let test_inline_decorators context =
 
       return __inlined_with_logging(request, *args, **kwargs)
   |};
+  (* Preserve the return type if the decorator uses @wraps. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Any, Callable
+    from functools import wraps
+
+    def decorator_using_wraps(func: Callable) -> Any:
+        @wraps(func)
+        def wrap( *args: Any, **kwargs: Any) -> Any:
+            return func( *args, **kwargs)
+
+        return wrap
+
+    @decorator_using_wraps
+    def foo(x: str) -> str:
+      return x
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Any, Callable
+    from functools import wraps
+
+    def decorator_using_wraps(func: Callable) -> Any:
+        @wraps(func)
+        def wrap( *args: Any, **kwargs: Any) -> Any:
+            return func( *args, **kwargs)
+
+        return wrap
+
+    def foo(x: str) -> str:
+      def __original_function(x: str) -> str:
+        return x
+
+      def __inlined_decorator_using_wraps(x: str) -> str:
+        __args = (x,)
+        __kwargs = {"x": x}
+        return __original_function(x)
+
+      return __inlined_decorator_using_wraps(x)
+  |};
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Any, Callable
+    from functools import wraps
+
+    def decorator_using_wraps(callable: Callable) -> Callable:
+
+      @wraps(callable)
+      def inner(y: str) -> Any:
+        return callable(y)
+
+      return inner
+
+    @decorator_using_wraps
+    def foo(z: str) -> str:
+      return z
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Any, Callable
+    from functools import wraps
+
+    def decorator_using_wraps(callable: Callable) -> Callable:
+
+      @wraps(callable)
+      def inner(y: str) -> Any:
+        return callable(y)
+
+      return inner
+
+    def foo(y: str) -> str:
+      def __original_function(z: str) -> str:
+        return z
+
+      def __inlined_decorator_using_wraps(y: str) -> str:
+        return __original_function(y)
+
+      return __inlined_decorator_using_wraps(y)
+  |};
+  assert_inlined
+    {|
+    from typing import Any, Callable, TypeVar
+    from pyre_extensions import ParameterSpecification
+    from functools import wraps
+
+    P = ParameterSpecification("P")
+    R = TypeVar("R")
+
+    def decorator_using_wraps(callable: Callable[P, R]) -> Callable[P, R]:
+
+      @wraps(callable)
+      def inner( *args: P.args, **kwargs: P.kwargs) -> R:
+        return callable( *args, **kwargs)
+
+      return inner
+
+    @decorator_using_wraps
+    def foo(z: str) -> str:
+      return z
+  |}
+    {|
+    from typing import Any, Callable, TypeVar
+    from pyre_extensions import ParameterSpecification
+    from functools import wraps
+
+    P = ParameterSpecification("P")
+    R = TypeVar("R")
+
+    def decorator_using_wraps(callable: Callable[P, R]) -> Callable[P, R]:
+
+      @wraps(callable)
+      def inner( *args: P.args, **kwargs: P.kwargs) -> R:
+        return callable( *args, **kwargs)
+
+      return inner
+
+    def foo(z: str) -> str:
+      def __original_function(z: str) -> str:
+        return z
+
+      def __inlined_decorator_using_wraps(z: str) -> str:
+        __args = (z, )
+        __kwargs = {"z": z}
+        return __original_function(z)
+
+      return __inlined_decorator_using_wraps(z)
+  |};
+  (* Don't preserve the return type if the decorator doesn't use @wraps. *)
+  assert_inlined
+    {|
+    from builtins import __test_sink
+    from typing import Any, Callable
+
+    def decorator_not_using_wraps(func: Callable) -> Any:
+        def wrap( *args: Any, **kwargs: Any) -> int:
+            func( *args, **kwargs)
+            return 1
+
+        return wrap
+
+    @decorator_not_using_wraps
+    def foo(x: str) -> str:
+      return x
+  |}
+    {|
+    from builtins import __test_sink
+    from typing import Any, Callable
+
+    def decorator_not_using_wraps(func: Callable) -> Any:
+        def wrap( *args: Any, **kwargs: Any) -> int:
+            func( *args, **kwargs)
+            return 1
+
+        return wrap
+
+    def foo(x: str) -> int:
+      def __original_function(x: str) -> str:
+        return x
+
+      def __inlined_decorator_not_using_wraps(x: str) -> int:
+        __args = (x,)
+        __kwargs = {"x": x}
+        __original_function(x)
+        return 1
+
+      return __inlined_decorator_not_using_wraps(x)
+  |};
   ()
 
 
