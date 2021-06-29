@@ -211,6 +211,13 @@ let test_simple context =
       "Uninitialized local [61]: Local variable `y` may not be initialized here.";
     ];
 
+  (* TODO(T94414920): attribute reads *)
+  assert_uninitialized_errors {|
+      def f():
+        _ = x.field
+        x = Foo()
+    |} [];
+
   (* Extracted from a real-world example. should be: In foo(harness_config), harness_config might
      not be defined. *)
   assert_uninitialized_errors
