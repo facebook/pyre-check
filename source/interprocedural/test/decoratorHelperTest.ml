@@ -217,6 +217,44 @@ let test_inline_decorators context =
       def some_property(self, value: str) -> None:
         self._some_property = value
   |};
+  (* Ignore decorator if not all calls are identical. *)
+  assert_inlined
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+        f( **kwargs)
+        f( *args)
+        f(1, 2)
+
+      return inner
+
+    @with_logging
+    def foo(x: str) -> None:
+      print(x)
+  |}
+    {|
+    from typing import Callable
+    from builtins import __test_sink
+
+    def with_logging(f: Callable) -> Callable:
+
+      def inner( *args, **kwargs) -> None:
+        __test_sink(args)
+        f( **kwargs)
+        f( *args)
+        f(1, 2)
+
+      return inner
+
+    @with_logging
+    def foo(x: str) -> None:
+      print(x)
+  |};
   assert_inlined
     {|
     from builtins import __test_sink

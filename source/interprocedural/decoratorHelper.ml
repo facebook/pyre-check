@@ -334,12 +334,28 @@ let extract_decorator_data
       | None -> None
     in
     match partition_wrapper_helpers body, parameters with
-    | Some ([wrapper_define], helper_defines), [{ Node.value = { Parameter.name; _ }; _ }] ->
-        Some
+    | ( Some ([wrapper_define], helper_defines),
+        [{ Node.value = { Parameter.name = higher_order_function_parameter_name; _ }; _ }] ) ->
+        let calls_to_decorated_function =
+          Statement.Define decorator_define
+          |> Node.create_with_default_location
+          |> Visit.collect_calls
+          |> List.filter_map ~f:(fun { Node.value = { Call.callee; _ } as call; _ } ->
+                 Option.some_if (name_is ~name:higher_order_function_parameter_name callee) call)
+        in
+        let all_identical ~equal items =
+          match items with
+          | [] -> true
+          | head :: tail -> List.for_all tail ~f:(equal head)
+        in
+        Option.some_if
+          (all_identical
+             ~equal:(fun left right -> Call.location_insensitive_compare left right = 0)
+             calls_to_decorated_function)
           {
             wrapper_define;
             helper_defines;
-            higher_order_function_parameter_name = name;
+            higher_order_function_parameter_name;
             decorator_reference;
             outer_decorator_reference;
             decorator_call_location;
