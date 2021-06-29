@@ -54,8 +54,6 @@ class StatisticsTest(unittest.TestCase):
             ),
         )
 
-    # pyre-fixme[56]: Argument `[]` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(Statistics, "_find_paths", return_value=[])
     @patch.object(Statistics, "_log_to_scuba")
     def test_log_results(self, log: MagicMock, _find_paths: MagicMock) -> None:

@@ -49,6 +49,7 @@ class MissingOverrideReturnAnnotations(Command):
 
     def run(self) -> None:
         errors = Errors.from_stdin(self._only_fix_error_code)
+        # pyre-fixme[16]: `List` has no attribute `paths_to_errors`.
         for path, errors in errors.paths_to_errors.items():
             LOG.info("Patching errors in `%s`.", path)
             errors = sorted(errors, key=lambda error: error["line"], reverse=True)
@@ -108,6 +109,7 @@ class MissingGlobalAnnotations(Command):
 
     def run(self) -> None:
         errors = Errors.from_stdin(self._only_fix_error_code)
+        # pyre-fixme[16]: `List` has no attribute `paths_to_errors`.
         for path, errors in errors.paths_to_errors.items():
             LOG.info("Patching errors in `%s`", path)
             errors = sorted(errors, key=lambda error: error["line"], reverse=True)

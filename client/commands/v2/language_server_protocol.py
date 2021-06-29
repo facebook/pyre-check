@@ -48,6 +48,7 @@ def _get_content_length(headers: Iterable[str]) -> int:
             if parts[0] == "content-length":
                 return int(parts[1])
 
+        # pyre-fixme[61]: `parts` may not be initialized here.
         raise json_rpc.ParseError(f"Failed to find content length header from {parts}")
     except ValueError as error:
         raise json_rpc.ParseError(f"Cannot parse content length into integer: {error}")
