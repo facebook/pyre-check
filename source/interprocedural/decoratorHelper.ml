@@ -794,8 +794,41 @@ let postprocess
   |> Preprocessing.populate_captures
   |> Source.statements
   |> function
-  | [statement] -> Some statement
+  | [{ Node.value = Statement.Define define; _ }] -> Some define
   | _ -> None
+
+
+let inline_decorators_for_define
+    ~decorator_bodies
+    ~location
+    ({ Define.signature = { decorators = original_decorators; _ }; _ } as define)
+  =
+  let uniquify_decorator_data_list =
+    uniquify_names
+      ~get_reference:(fun { outer_decorator_reference; _ } -> outer_decorator_reference)
+      ~set_reference:(fun reference decorator_data ->
+        { decorator_data with outer_decorator_reference = reference })
+  in
+  let find_decorator_data
+      {
+        Decorator.name = { Node.value = decorator_name; location = decorator_call_location };
+        arguments;
+      }
+    =
+    Map.find decorator_bodies decorator_name
+    >>= extract_decorator_data
+          ~decorator_call_location
+          ~is_decorator_factory:(Option.is_some arguments)
+  in
+  let inlinable_decorators =
+    List.filter_map original_decorators ~f:find_decorator_data |> uniquify_decorator_data_list
+  in
+  match inlinable_decorators with
+  | [] -> define
+  | head_decorator :: tail_decorators ->
+      inline_decorators_at_same_scope ~location ~head_decorator ~tail_decorators define
+      |> postprocess ~define ~location
+      |> Option.value ~default:define
 
 
 let inline_decorators ~decorator_bodies source =
@@ -811,39 +844,12 @@ let inline_decorators ~decorator_bodies source =
     let statement _ statement =
       let statement =
         match statement with
-        | {
-         Node.value =
-           Statement.Define ({ signature = { decorators = original_decorators; _ }; _ } as define);
-         location;
-        } -> (
-            let uniquify_decorator_data_list =
-              uniquify_names
-                ~get_reference:(fun { outer_decorator_reference; _ } -> outer_decorator_reference)
-                ~set_reference:(fun reference decorator_data ->
-                  { decorator_data with outer_decorator_reference = reference })
-            in
-            let find_decorator_data
-                {
-                  Decorator.name =
-                    { Node.value = decorator_name; location = decorator_call_location };
-                  arguments;
-                }
-              =
-              Map.find decorator_bodies decorator_name
-              >>= extract_decorator_data
-                    ~decorator_call_location
-                    ~is_decorator_factory:(Option.is_some arguments)
-            in
-            let inlinable_decorators =
-              List.filter_map original_decorators ~f:find_decorator_data
-              |> uniquify_decorator_data_list
-            in
-            match inlinable_decorators with
-            | [] -> statement
-            | head_decorator :: tail_decorators ->
-                inline_decorators_at_same_scope ~location ~head_decorator ~tail_decorators define
-                |> postprocess ~define ~location
-                |> Option.value ~default:statement )
+        | { Node.value = Statement.Define define; location } ->
+            {
+              statement with
+              value =
+                Statement.Define (inline_decorators_for_define ~decorator_bodies ~location define);
+            }
         | _ -> statement
       in
       (), [statement]
