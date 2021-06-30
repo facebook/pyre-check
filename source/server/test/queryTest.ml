@@ -1189,32 +1189,31 @@ let test_inline_decorators context =
   assert_response
     (Query.Request.InlineDecorators (Reference.create "test.foo"))
     ( {|
-        {
-        "response": {
-          "definition": "def test.foo($parameter$a: int) -> int:
-        def $local_test?foo$__original_function($parameter$a: int) -> int:
-          return $parameter$a|}
+      {
+      "response": {
+        "definition": "def test.foo(a: int) -> int:
+        def __original_function(a: int) -> int:
+          return a|}
     ^ "\n        "
     ^ {|
-        def $local_test?foo$__inlined_identity($parameter$a: int) -> int:
-          $local_test?foo?__inlined_identity$__args = ($parameter$a)
-          $local_test?foo?__inlined_identity$__kwargs = { \"a\":$parameter$a }
-          return $local_test?foo$__original_function($parameter$a)|}
+        def __inlined_identity(a: int) -> int:
+          __args = (a)
+          __kwargs = { \"a\":a }
+          return __original_function(a)|}
     ^ "\n        "
     ^ {|
-        def $local_test?foo$__inlined_with_logging($parameter$a: int) -> int:
-          $local_test?foo?__inlined_with_logging$__args = ($parameter$a)
-          $local_test?foo?__inlined_with_logging$__kwargs = { \"a\":$parameter$a }
-          print($local_test?foo?__inlined_with_logging$__args, $local_test?foo?__inlined_with_logging$__kwargs)
-          return $local_test?foo$__inlined_identity($parameter$a)|}
+        def __inlined_with_logging(a: int) -> int:
+          __args = (a)
+          __kwargs = { \"a\":a }
+          print(__args, __kwargs)
+          return __inlined_identity(a)|}
     ^ "\n        "
     ^ {|
-        return $local_test?foo$__inlined_with_logging($parameter$a)
+        return __inlined_with_logging(a)
       "
-        }
-        }
-      |}
-    );
+      }
+      }
+    |} );
   assert_response
     (Query.Request.InlineDecorators (Reference.create "test.non_existent"))
     {|
@@ -1226,9 +1225,9 @@ let test_inline_decorators context =
     (Query.Request.InlineDecorators (Reference.create "test.not_decorated"))
     {|
       {
-      "response": {
-        "definition": "def test.not_decorated($parameter$a: int) -> int:
-        return $parameter$a
+        "response": {
+          "definition": "def test.not_decorated(a: int) -> int:
+        return a
       "  }
       }
 |};

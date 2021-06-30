@@ -389,11 +389,16 @@ module InlineDecorators = struct
         function_reference
     in
     match define with
-    | Some define ->
-        let decorator_bodies = all_decorator_bodies environment in
-        Response.Single
-          (FunctionDefinition
-             (inline_decorators_for_define ~decorator_bodies ~location:Location.any define))
+    | Some define -> (
+        let define_with_inlining =
+          inline_decorators_for_define
+            ~decorator_bodies:(all_decorator_bodies environment)
+            ~location:Location.any
+            define
+        in
+        match Statement.Statement.Define define_with_inlining |> Transform.sanitize_statement with
+        | Statement.Statement.Define define -> Response.Single (FunctionDefinition define)
+        | _ -> failwith "Expected define" )
     | None ->
         Response.Error
           (Format.asprintf "Could not find function `%s`" (Reference.show function_reference))
