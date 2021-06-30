@@ -31,6 +31,7 @@ module Request = struct
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
+    | InlineDecorators of Reference.t
   [@@deriving sexp, compare, eq, show]
 end
 
@@ -264,6 +265,10 @@ let help () =
         Some
           "validate_taint_models('optional path'): Validates models and returns errors. Defaults \
            to model path in configuration if no parameter is passed in."
+    | InlineDecorators _ ->
+        Some
+          "inline_decorators(qualified_function_name): Shows the function definition after \
+           decorators have been inlined."
     | Help _ -> None
   in
   let path = Path.current_working_directory () in
@@ -285,6 +290,7 @@ let help () =
       Type (Node.create_with_default_location Expression.True);
       TypesInFiles [""];
       ValidateTaintModels None;
+      InlineDecorators (Reference.create "");
     ]
   |> List.sort ~compare:String.compare
   |> String.concat ~sep:"\n  "
@@ -353,6 +359,7 @@ let rec parse_request_exn query =
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
       | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] -> Request.ValidateTaintModels (Some (string argument))
+      | "inline_decorators", [name] -> InlineDecorators (reference name)
       | _ -> raise (InvalidQuery "unexpected query") )
   | Ok _ when String.equal query "help" -> Help (help ())
   | Ok _ -> raise (InvalidQuery "unexpected query")
@@ -709,6 +716,9 @@ let rec process_request ~environment ~configuration request =
             Single (Base.ModelVerificationErrors errors)
         with
         | error -> Error (Exn.to_string error) )
+    | InlineDecorators _ ->
+        (* TODO(T69755379):. *)
+        Error "inline_decorators is not yet supported"
   in
   try process_request () with
   | ClassHierarchy.Untracked untracked ->

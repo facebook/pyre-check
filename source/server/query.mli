@@ -25,6 +25,7 @@ module Request : sig
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
+    | InlineDecorators of Reference.t
   [@@deriving sexp, compare, eq, show]
 end
 

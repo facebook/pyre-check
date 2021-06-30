@@ -102,7 +102,9 @@ let test_parse_query context =
   assert_parses "batch(defines(a.b))" (Batch [Defines [Reference.create "a.b"]]);
   assert_parses
     "batch(defines(a.b), types(path='a.py'))"
-    (Batch [Defines [Reference.create "a.b"]; TypesInFiles ["a.py"]])
+    (Batch [Defines [Reference.create "a.b"]; TypesInFiles ["a.py"]]);
+  assert_parses "inline_decorators(a.b.c)" (InlineDecorators !&"a.b.c");
+  ()
 
 
 let assert_query_response_equal ~context ~expected actual =
@@ -219,7 +221,6 @@ let test_handle_query_basic context =
   assert_type_query_response
     ~source:{|
     class C: pass
-  
     class D(C): pass
   |}
     ~query:"superclasses(test.C, test.D)"
