@@ -57,6 +57,7 @@ let test_parse_query context =
     let open Expression in
     Expression.Name (Name.Identifier name) |> Node.create_with_default_location
   in
+  let open Query.Request in
   assert_parses "less_or_equal(int, bool)" (LessOrEqual (!"int", !"bool"));
   assert_parses "less_or_equal (int, bool)" (LessOrEqual (!"int", !"bool"));
   assert_parses "less_or_equal(  int, int)" (LessOrEqual (!"int", !"int"));
@@ -103,7 +104,17 @@ let test_parse_query context =
   assert_parses
     "batch(defines(a.b), types(path='a.py'))"
     (Batch [Defines [Reference.create "a.b"]; TypesInFiles ["a.py"]]);
-  assert_parses "inline_decorators(a.b.c)" (InlineDecorators !&"a.b.c");
+  assert_parses "inline_decorators(a.b.c)" (inline_decorators !&"a.b.c");
+  assert_parses
+    "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, a.b.decorator2])"
+    (InlineDecorators
+       {
+         function_reference = !&"a.b.c";
+         decorators_to_skip = [!&"a.b.decorator1"; !&"a.b.decorator2"];
+       });
+  assert_fails_to_parse "inline_decorators(a.b.c, a.b.d)";
+  assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=a.b.decorator1)";
+  assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, 1 + 1])";
   ()
 
 
@@ -1187,7 +1198,7 @@ let test_inline_decorators context =
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
   in
   assert_response
-    (Query.Request.InlineDecorators (Reference.create "test.foo"))
+    (Query.Request.inline_decorators (Reference.create "test.foo"))
     ( {|
       {
       "response": {
@@ -1215,14 +1226,14 @@ let test_inline_decorators context =
       }
     |} );
   assert_response
-    (Query.Request.InlineDecorators (Reference.create "test.non_existent"))
+    (Query.Request.inline_decorators (Reference.create "test.non_existent"))
     {|
       {
         "error": "Could not find function `test.non_existent`"
       }
 |};
   assert_response
-    (Query.Request.InlineDecorators (Reference.create "test.not_decorated"))
+    (Query.Request.inline_decorators (Reference.create "test.not_decorated"))
     {|
       {
         "response": {

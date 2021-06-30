@@ -31,8 +31,14 @@ module Request = struct
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
-    | InlineDecorators of Reference.t
+    | InlineDecorators of {
+        function_reference: Reference.t;
+        decorators_to_skip: Reference.t list;
+      }
   [@@deriving sexp, compare, eq, show]
+
+  let inline_decorators ?(decorators_to_skip = []) function_reference =
+    InlineDecorators { function_reference; decorators_to_skip }
 end
 
 module Response = struct
@@ -276,8 +282,8 @@ let help () =
            to model path in configuration if no parameter is passed in."
     | InlineDecorators _ ->
         Some
-          "inline_decorators(qualified_function_name): Shows the function definition after \
-           decorators have been inlined."
+          "inline_decorators(qualified_function_name, optional decorators_to_skip=[decorator1, \
+           decorator2]): Shows the function definition after decorators have been inlined."
     | Help _ -> None
   in
   let path = Path.current_working_directory () in
@@ -299,7 +305,7 @@ let help () =
       Type (Node.create_with_default_location Expression.True);
       TypesInFiles [""];
       ValidateTaintModels None;
-      InlineDecorators (Reference.create "");
+      Request.inline_decorators (Reference.create "");
     ]
   |> List.sort ~compare:String.compare
   |> String.concat ~sep:"\n  "
@@ -338,6 +344,38 @@ let rec parse_request_exn query =
             value
         | _ -> raise (InvalidQuery "expected string")
       in
+      let parse_inline_decorators arguments =
+        match arguments with
+        | [name] -> Request.inline_decorators (reference name)
+        | [
+         name;
+         {
+           Call.Argument.name = Some { Node.value = "decorators_to_skip"; _ };
+           value = { Node.value = Expression.List decorators; _ };
+         };
+        ] -> (
+            let decorator_to_reference = function
+              | { Node.value = Expression.Name name; _ } as decorator ->
+                  name_to_reference name |> Result.of_option ~error:decorator
+              | decorator -> Result.Error decorator
+            in
+            let valid_decorators, invalid_decorators =
+              List.map decorators ~f:decorator_to_reference |> List.partition_result
+            in
+            match valid_decorators, invalid_decorators with
+            | decorators_to_skip, [] ->
+                InlineDecorators { function_reference = reference name; decorators_to_skip }
+            | _, invalid_decorators ->
+                InvalidQuery
+                  (Format.asprintf
+                     "inline_decorators: invalid decorators `%s`"
+                     ([%show: Expression.t list] invalid_decorators))
+                |> raise )
+        | _ ->
+            raise
+              (InvalidQuery
+                 "inline_decorators expects qualified name and optional `decorators_to_skip=[...]`")
+      in
       let string argument = argument |> expression |> string_of_expression in
       match String.lowercase name, arguments with
       | "attributes", [name] -> Request.Attributes (reference name)
@@ -368,7 +406,7 @@ let rec parse_request_exn query =
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
       | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] -> Request.ValidateTaintModels (Some (string argument))
-      | "inline_decorators", [name] -> InlineDecorators (reference name)
+      | "inline_decorators", arguments -> parse_inline_decorators arguments
       | _ -> raise (InvalidQuery "unexpected query") )
   | Ok _ when String.equal query "help" -> Help (help ())
   | Ok _ -> raise (InvalidQuery "unexpected query")
@@ -749,7 +787,7 @@ let rec process_request ~environment ~configuration request =
             Single (Base.ModelVerificationErrors errors)
         with
         | error -> Error (Exn.to_string error) )
-    | InlineDecorators function_reference ->
+    | InlineDecorators { function_reference; _ } ->
         InlineDecorators.inline_decorators
           ~environment:(TypeEnvironment.read_only environment)
           function_reference
