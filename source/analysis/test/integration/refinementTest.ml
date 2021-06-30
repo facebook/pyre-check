@@ -513,40 +513,6 @@ let test_check_if_else_clause context =
   ()
 
 
-let test_check_isinstance context =
-  let assert_type_errors = assert_type_errors ~context in
-  assert_type_errors
-    {|
-      import typing
-      def foo(x: typing.Optional[int]) -> None:
-        if isinstance(x, int):
-          reveal_type(x)
-    |}
-    ["Revealed type [-1]: Revealed type for `x` is `int`."];
-  assert_type_errors
-    {|
-      import typing
-      MY_GLOBAL: typing.Union[int, str] = 1
-
-      def foo() -> None:
-        if isinstance(MY_GLOBAL, str):
-          reveal_type(MY_GLOBAL)
-    |}
-    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Union[int, str]`."];
-  assert_type_errors
-    {|
-      import typing
-      class Foo:
-        def __init__(self) -> None:
-          self.x: typing.Union[int, str] = 1
-
-      def foo(f: Foo) -> None:
-        if isinstance(f.x, str):
-          reveal_type(f.x)
-    |}
-    ["Revealed type [-1]: Revealed type for `f.x` is `typing.Union[int, str]`."]
-
-
 let test_assert_contains_none context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
@@ -1061,7 +1027,6 @@ let () =
          "check_global_refinement" >:: test_check_global_refinement;
          "check_local_refinement" >:: test_check_local_refinement;
          "check_if_else_clause" >:: test_check_if_else_clause;
-         "check_isinstance" >:: test_check_isinstance;
          "check_assert_contains_none" >:: test_assert_contains_none;
          "check_callable" >:: test_check_callable;
          "check_final_attribute_refinement" >:: test_check_final_attribute_refinement;
