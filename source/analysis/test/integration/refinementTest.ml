@@ -482,6 +482,37 @@ let test_check_local_refinement context =
   ()
 
 
+let test_check_if_else_clause context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if x is None:
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `None`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`).";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if x:
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+    ];
+  ()
+
+
 let test_check_isinstance context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -1029,6 +1060,7 @@ let () =
          "check_assert_is" >:: test_assert_is;
          "check_global_refinement" >:: test_check_global_refinement;
          "check_local_refinement" >:: test_check_local_refinement;
+         "check_if_else_clause" >:: test_check_if_else_clause;
          "check_isinstance" >:: test_check_isinstance;
          "check_assert_contains_none" >:: test_assert_contains_none;
          "check_callable" >:: test_check_callable;
