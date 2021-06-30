@@ -531,6 +531,49 @@ let test_transform_expression _ =
   ()
 
 
+let test_sanitize_statement _ =
+  let assert_sanitized source expected =
+    let given_statement, expected_statement =
+      match parse source |> Source.statements, parse expected |> Source.statements with
+      | [{ Node.value = given_statement; _ }], [{ Node.value = expected_statement; _ }] ->
+          given_statement, expected_statement
+      | _ -> failwith "Expected defines"
+    in
+    assert_equal
+      ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
+      ~printer:[%show: Statement.t]
+      (expected_statement |> Node.create_with_default_location)
+      (Transform.sanitize_statement given_statement |> Node.create_with_default_location)
+  in
+  assert_sanitized
+    {|
+    def $local_test?foo$bar($parameter$a: int) -> int:
+      $local_test?foo?bar$my_kwargs = { "a":$parameter$a }
+      print($local_test?foo?bar$my_kwargs)
+      return $local_test?foo$baz($parameter$a)
+    |}
+    {|
+    def bar(a: int) -> int:
+      my_kwargs = { "a":a }
+      print(my_kwargs)
+      return baz(a)
+    |};
+  assert_sanitized
+    {|
+    def bar(a: int) -> int:
+      my_kwargs = { "a":a }
+      print(my_kwargs)
+      return baz(a)
+    |}
+    {|
+    def bar(a: int) -> int:
+      my_kwargs = { "a":a }
+      print(my_kwargs)
+      return baz(a)
+    |};
+  ()
+
+
 let () =
   "transform"
   >::: [
@@ -540,5 +583,6 @@ let () =
          "statement_double_counter" >:: test_double_count;
          "statement_transformer" >:: test_statement_transformer;
          "transform_expression" >:: test_transform_expression;
+         "sanitize_statement" >:: test_sanitize_statement;
        ]
   |> Test.run

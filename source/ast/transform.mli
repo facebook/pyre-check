@@ -61,3 +61,5 @@ val transform_expressions
   Statement.statement
 
 val sanitize_expression : Expression.t -> Expression.t
+
+val sanitize_statement : Statement.statement -> Statement.statement

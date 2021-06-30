@@ -472,3 +472,64 @@ let sanitize_expression expression =
   match transform_expressions ~transform (Statement.Expression expression) with
   | Statement.Expression expression -> expression
   | _ -> expression
+
+
+let sanitize_statement statement =
+  (* The names in the function signatures are not strictly "expressions", so [transform_expressions]
+     doesn't transform them. We have to transform them in a separate pass. *)
+  let module SanitizeSignatures = MakeStatementTransformer (struct
+    type t = unit
+
+    let statement state = function
+      | {
+          Node.value =
+            Statement.Define
+              ( {
+                  Define.signature =
+                    { Define.Signature.name = { Node.value = name; _ } as name_node; parameters; _ }
+                    as signature;
+                  _;
+                } as define );
+          _;
+        } as statement ->
+          let transform_parameter
+              ({ Node.value = { Parameter.name; _ } as parameter; _ } as parameter_node)
+            =
+            { parameter_node with value = { parameter with name = Identifier.sanitized name } }
+          in
+
+          ( state,
+            [
+              {
+                statement with
+                value =
+                  Statement.Define
+                    {
+                      define with
+                      signature =
+                        {
+                          signature with
+                          name = { name_node with value = Reference.sanitized name };
+                          parameters = List.map parameters ~f:transform_parameter;
+                        };
+                    };
+              };
+            ] )
+      | statement -> state, [statement]
+  end)
+  in
+  let sanitized_statement =
+    let sanitize_expression expression =
+      Node.create_with_default_location expression |> sanitize_expression |> Node.value
+    in
+    let sanitize_signatures statement =
+      SanitizeSignatures.transform () (Source.create [Node.create_with_default_location statement])
+    in
+    transform_expressions ~transform:sanitize_expression statement
+    |> sanitize_signatures
+    |> SanitizeSignatures.source
+    |> Source.statements
+  in
+  match sanitized_statement with
+  | [{ Node.value = statement; _ }] -> statement
+  | _ -> statement
