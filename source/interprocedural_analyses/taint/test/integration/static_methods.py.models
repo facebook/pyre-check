@@ -57,7 +57,6 @@
   "kind": "model",
   "data": {
     "callable": "static_methods.StaticClass.sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(oops)",
@@ -74,15 +73,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "static_methods.test",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(source)",
@@ -104,7 +101,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

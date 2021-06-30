@@ -108,9 +108,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -122,9 +120,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -136,9 +132,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -150,16 +144,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{model_query.AttributeTestClass3.attribute}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
@@ -168,15 +159,13 @@
           { "decl": null, "leaves": [ { "kind": "SinkB" } ] }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{model_query.AttributeTestClass3.instance}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
@@ -185,8 +174,7 @@
           { "decl": null, "leaves": [ { "kind": "SinkC" } ] }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -201,9 +189,7 @@
           { "decl": null, "leaves": [ { "kind": "SourceD" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -218,9 +204,7 @@
           { "decl": null, "leaves": [ { "kind": "SourceE" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -232,9 +216,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -246,9 +228,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -260,9 +240,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -274,17 +252,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass1::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -302,8 +276,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass2::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -321,8 +293,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass3::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -340,8 +310,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass4::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -359,8 +327,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass5::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -378,8 +344,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass6::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -397,8 +361,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass7::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -416,8 +378,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass8::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -435,8 +395,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -454,8 +412,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{type::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -473,8 +429,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass1.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -492,8 +446,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass2.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -511,8 +463,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass3.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -530,8 +480,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass4.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -549,8 +497,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass5.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -568,8 +514,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass6.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -587,8 +531,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass7.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -606,8 +548,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass8.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -644,9 +584,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -664,9 +602,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -688,9 +624,7 @@
         "port": "formal(self)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -702,9 +636,7 @@
         "port": "formal(y)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -716,9 +648,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -730,9 +660,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceC" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -744,9 +672,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceC" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -758,9 +684,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceC" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -778,16 +702,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_1",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[attribute]",
@@ -804,8 +725,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -862,7 +782,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_10",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[foo_instance]",
@@ -879,8 +798,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -937,7 +855,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_11",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[foo_attribute]",
@@ -954,8 +871,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1012,7 +928,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_12",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[foo_instance]",
@@ -1029,8 +944,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1087,7 +1001,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_2",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[instance]",
@@ -1104,8 +1017,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1162,7 +1074,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_3",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[attribute]",
@@ -1179,8 +1090,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1237,7 +1147,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_4",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[instance]",
@@ -1254,8 +1163,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1352,8 +1260,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1614,7 +1521,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_8",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[instance]",
@@ -1631,8 +1537,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1739,7 +1644,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_9",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[foo_attribute]",
@@ -1756,8 +1660,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1825,9 +1728,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1845,9 +1746,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1859,9 +1758,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1873,16 +1770,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "model_query.no_alarm_1",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[nomatch_attribute1]",
@@ -1914,15 +1808,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "model_query.no_alarm_2",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[nomatch_instance2]",
@@ -1949,8 +1841,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1962,9 +1853,7 @@
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1976,9 +1865,7 @@
         "port": "formal(y)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1991,8 +1878,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -2015,9 +1900,7 @@
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -2039,8 +1922,6 @@
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

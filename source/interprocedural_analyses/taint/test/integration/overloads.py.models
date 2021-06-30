@@ -3,7 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "overloads.call_me",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -20,15 +19,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overloads.f",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -50,7 +47,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

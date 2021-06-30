@@ -106,7 +106,6 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.cross_repository_anchor_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(sink_parameter)",
@@ -123,8 +122,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -164,8 +162,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -240,8 +237,6 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

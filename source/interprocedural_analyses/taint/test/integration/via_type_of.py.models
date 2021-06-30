@@ -24,9 +24,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -38,31 +36,25 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "via_type_of.sink_via_type_of",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_backwards_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(parameter)",
@@ -106,9 +98,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -136,16 +126,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(element)",
@@ -164,8 +151,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -193,9 +179,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -223,9 +207,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -258,17 +240,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "via_type_of.tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(parameter)",

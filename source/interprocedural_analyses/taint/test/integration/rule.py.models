@@ -47,14 +47,12 @@
   "kind": "model",
   "data": {
     "callable": "rule.sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "MyTestSink" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -68,8 +66,6 @@
           { "decl": null, "leaves": [ { "kind": "MyTestSource" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

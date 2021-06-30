@@ -62,7 +62,6 @@
   "kind": "model",
   "data": {
     "callable": "source_sink_flow.bad",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -84,8 +83,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -108,16 +106,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "source_sink_flow.qux",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -134,8 +129,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -163,8 +157,6 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

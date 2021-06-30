@@ -111,7 +111,6 @@
   "kind": "model",
   "data": {
     "callable": "multi_subkind.multi_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(d)[a]",
@@ -147,15 +146,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "multi_subkind.sink_a",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -163,15 +160,13 @@
           { "decl": null, "leaves": [ { "kind": "SinkA[KindA]" } ] }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "multi_subkind.sink_b",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -179,8 +174,7 @@
           { "decl": null, "leaves": [ { "kind": "SinkA[KindB]" } ] }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -194,9 +188,7 @@
           { "decl": null, "leaves": [ { "kind": "SourceA[KindA]" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -210,8 +202,6 @@
           { "decl": null, "leaves": [ { "kind": "SourceA[KindB]" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

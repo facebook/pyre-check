@@ -393,17 +393,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "features.dynamic_feature_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -422,8 +418,6 @@
   "kind": "model",
   "data": {
     "callable": "features.len",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(o)",
@@ -442,8 +436,6 @@
   "kind": "model",
   "data": {
     "callable": "features.min",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -471,8 +463,6 @@
   "kind": "model",
   "data": {
     "callable": "features.named",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(named_parameter)",
@@ -530,9 +520,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -555,17 +543,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "features.tito_via_constructor",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(o)",
@@ -588,8 +572,6 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_len",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(o)",
@@ -612,8 +594,6 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_min_left",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(o)",
@@ -636,8 +616,6 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_min_or_not",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(o)",
@@ -657,8 +635,6 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_min_right",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(o)",
@@ -678,8 +654,6 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_named",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(o)",
@@ -702,8 +676,6 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_with_tuple",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(o)",

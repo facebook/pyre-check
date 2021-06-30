@@ -180,7 +180,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_trace_length.sink_distance_one",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -202,15 +201,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "maximum_trace_length.sink_distance_zero",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -227,8 +224,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -256,9 +252,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -281,8 +275,6 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

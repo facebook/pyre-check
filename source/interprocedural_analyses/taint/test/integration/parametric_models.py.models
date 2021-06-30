@@ -145,8 +145,6 @@
         ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -162,8 +160,6 @@
         ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -171,7 +167,6 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.inferred_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -206,15 +201,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -223,7 +216,6 @@
         ]
       }
     ],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -231,7 +223,6 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink_subkind_a",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -243,7 +234,6 @@
         ]
       }
     ],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -251,7 +241,6 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink_subkind_b",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -263,7 +252,6 @@
         ]
       }
     ],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }

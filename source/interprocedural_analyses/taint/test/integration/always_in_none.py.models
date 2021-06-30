@@ -9,7 +9,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -28,7 +27,6 @@
   "kind": "model",
   "data": {
     "callable": "always_in_none.test",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(complicated_service)",
@@ -53,8 +51,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {

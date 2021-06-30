@@ -272,37 +272,31 @@
         "port": "result[text]",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{attributes.D.buffer}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{attributes.Sink.token}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -314,17 +308,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{attributes.UseViaDict::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(b)",
@@ -364,8 +354,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(b)",
@@ -405,8 +393,6 @@
   "kind": "model",
   "data": {
     "callable": "attributes.UseViaDict.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(b)",
@@ -464,7 +450,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(t)[token]",
@@ -482,7 +467,6 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_attribute_union_source",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(t)[token]",
@@ -519,8 +503,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -621,7 +604,6 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_getattr_backwards",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(t)[token]",
@@ -638,15 +620,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attributes.test_getattr_backwards_default",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(t)[token]",
@@ -663,8 +643,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -688,7 +667,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(t)[unrelated]",
@@ -724,7 +702,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(t)[token]",
@@ -742,7 +719,6 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_issue_with_text_key_of_dictionary",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(c)[dictionary][text]",
@@ -763,8 +739,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -826,7 +801,6 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_no_issue_with_other_key_of_dictionary",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(c)[dictionary][other]",
@@ -847,8 +821,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -873,7 +846,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(request)[non_optional][access_token][token]",
@@ -909,7 +881,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(request)[optional][access_token][token]",
@@ -927,8 +898,6 @@
   "kind": "model",
   "data": {
     "callable": "list.append",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(element)",

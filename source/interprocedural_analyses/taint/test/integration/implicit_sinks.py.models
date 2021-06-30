@@ -54,7 +54,6 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sinks.propagate_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(a)",
@@ -71,7 +70,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

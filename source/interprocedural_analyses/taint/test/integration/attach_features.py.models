@@ -3,7 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.HasMethods.method_with_optionals",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(b)",
@@ -32,8 +31,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -69,8 +67,7 @@
           { "decl": null, "leaves": [ { "kind": "Test" } ] }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -126,8 +123,6 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.attach_without_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -169,16 +164,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attach_features.inferred_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(taint_without_feature)",
@@ -241,15 +233,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attach_features.modeled_sink_with_optionals",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(b)",
@@ -278,15 +268,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attach_features.sink_is_propagated",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(argument)",
@@ -311,8 +299,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -324,9 +311,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -356,17 +341,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attach_features.taint_in_taint_out",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -390,7 +371,6 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.tito_and_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -439,8 +419,6 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.tito_is_propagated",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",

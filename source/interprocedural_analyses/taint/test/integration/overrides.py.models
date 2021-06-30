@@ -431,8 +431,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -463,8 +461,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.A::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -495,7 +491,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.A::methodA}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -512,16 +507,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.B::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -552,7 +544,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.B::classMethod}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -569,8 +560,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -593,17 +583,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.Base::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -634,7 +620,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.Base::classMethod}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -651,15 +636,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.Base::methodA}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -710,17 +693,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.C::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -751,7 +730,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.C::methodA}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -786,8 +764,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.D::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -818,7 +794,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.D::methodA}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -869,17 +844,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.OverloadedOverride::methodA}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -897,8 +868,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.A.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -931,7 +900,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.A.methodA",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -948,16 +916,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overrides.B.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -990,7 +955,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.B.classMethod",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1007,8 +971,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1031,17 +994,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overrides.Base.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1070,8 +1029,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.C.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1104,8 +1061,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.D.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1138,7 +1093,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.D.methodA",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1155,8 +1109,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1179,16 +1132,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overrides.ExtendsSkipped.method",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1205,16 +1155,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overrides.OverloadedOverride.methodA",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1232,8 +1179,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.SkippedOverrides.method",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1273,7 +1218,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(cls)",

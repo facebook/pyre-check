@@ -771,21 +771,18 @@
   "kind": "model",
   "data": {
     "callable": "Obj{dictionary.tainted_dictionary}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{dict::__setitem__}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(key)",
@@ -802,15 +799,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{dictionary.SpecialSetitemDict::__setitem__}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(key)",
@@ -827,16 +822,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dict.get",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -854,8 +846,6 @@
   "kind": "model",
   "data": {
     "callable": "dict.update",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(__m)",
@@ -870,8 +860,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.Service.async_get_dict",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(key)",
@@ -899,8 +887,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.Service.async_get_many_dict",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(keys)[*]",
@@ -920,8 +906,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.Service.async_get_mapping",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(key)",
@@ -950,7 +934,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.SpecialSetitemDict.__setitem__",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(key)",
@@ -967,16 +950,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.backwards_field_assignment",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(external)",
@@ -996,7 +976,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.backwards_model_for_dictionary_comprehension",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(d)[*]",
@@ -1018,8 +997,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1042,9 +1020,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1071,16 +1047,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_entry_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1097,8 +1070,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1125,9 +1097,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1154,9 +1124,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1179,17 +1147,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1209,7 +1173,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.forward_comprehension_key_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1226,8 +1189,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1250,16 +1212,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.forward_comprehension_value_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1276,8 +1235,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1300,17 +1258,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.get_keys",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(d).**keys",
@@ -1344,17 +1298,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.return_tito_literally",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(external)",
@@ -1374,7 +1324,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.sink_dictionary_through_keys",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(d).**keys",
@@ -1391,16 +1340,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.tainted_setitem",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(d)",
@@ -1472,7 +1418,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.test_items_backward_keys",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -1489,15 +1434,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.test_items_backward_values",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(y)",
@@ -1514,8 +1457,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1538,17 +1480,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dictionary.tito_with_index",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(d)[a]",
@@ -1567,8 +1505,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.to_map",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -1586,7 +1522,6 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.update_dictionary_indirectly",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1609,16 +1544,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "typing.Mapping.get",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",

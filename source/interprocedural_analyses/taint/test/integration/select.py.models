@@ -10,17 +10,13 @@
           { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dict.get",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -58,9 +54,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -87,9 +81,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -116,9 +108,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -266,8 +256,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -325,7 +314,6 @@
   "kind": "model",
   "data": {
     "callable": "select.view_entry_get",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(request)[GET]",
@@ -347,8 +335,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -442,8 +429,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {

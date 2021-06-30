@@ -180,8 +180,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{builder_pattern.Builder::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -199,8 +197,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -218,8 +214,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -237,7 +231,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.async_save",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[_saved]",
@@ -254,16 +247,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_not_saved",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(not_saved)",
@@ -292,8 +282,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_not_saved_through_typevar",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(not_saved)",
@@ -322,8 +310,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_saved",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(saved)",
@@ -352,8 +338,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_saved_through_typevar",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(saved)",

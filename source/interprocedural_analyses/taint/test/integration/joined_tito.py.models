@@ -3,8 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{joined_tito.C::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(wrapper)",
@@ -44,8 +42,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{joined_tito.Wrapper::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(b)",
@@ -85,8 +81,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(b)",
@@ -148,8 +142,6 @@
   "kind": "model",
   "data": {
     "callable": "joined_tito.C.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(wrapper)",
@@ -189,8 +181,6 @@
   "kind": "model",
   "data": {
     "callable": "joined_tito.Wrapper.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(b)",

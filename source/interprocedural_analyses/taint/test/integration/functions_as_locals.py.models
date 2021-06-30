@@ -331,7 +331,6 @@
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.C.m",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -348,15 +347,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.barA",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg1)",
@@ -373,15 +370,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.barB",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg2)",
@@ -401,15 +396,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.foo",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -426,15 +419,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.local_tito",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -456,15 +447,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.method_tito",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -486,7 +475,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

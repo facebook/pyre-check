@@ -159,8 +159,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }
@@ -174,8 +172,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }

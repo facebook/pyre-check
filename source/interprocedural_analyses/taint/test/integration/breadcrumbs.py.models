@@ -3,7 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.bool_parameter",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(y)",
@@ -24,8 +23,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -52,16 +50,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.float_parameter",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(y)",
@@ -81,8 +76,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -108,16 +102,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.int_parameter",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(y)",
@@ -137,8 +128,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -164,8 +154,6 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

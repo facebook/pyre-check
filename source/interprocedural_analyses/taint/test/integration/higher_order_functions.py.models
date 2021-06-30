@@ -349,8 +349,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{higher_order_functions.Callable::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -379,8 +377,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -409,7 +405,6 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.C.method_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -426,15 +421,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.C.self_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)",
@@ -451,16 +444,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.Callable.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -489,8 +479,6 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.apply",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -520,7 +508,6 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.goes_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -537,16 +524,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.has_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -564,7 +548,6 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_function_and_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -581,15 +564,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_method",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -614,8 +595,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -649,17 +629,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.test_higher_order_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",

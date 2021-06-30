@@ -392,16 +392,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "port.sink_field",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)[a]",
@@ -418,8 +415,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -442,16 +438,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "port.star_arg",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(*rest1)[1][a]",
@@ -477,15 +470,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "port.star_arg_wrapper",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(*rest1)[1][a]",
@@ -511,15 +502,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "port.star_star_arg",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(**kw)[arg][a]",
@@ -545,15 +534,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "port.star_star_arg_wrapper",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(**kw)[arg][a]",
@@ -579,7 +566,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

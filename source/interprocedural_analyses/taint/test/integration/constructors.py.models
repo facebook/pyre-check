@@ -149,7 +149,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -180,8 +179,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{constructors.BothNewAndInit::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -199,7 +196,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{constructors.ChildWithNew::__new__}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(input)",
@@ -257,7 +253,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -288,8 +283,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{constructors.ParentWithInit::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -307,8 +300,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{constructors.SomeAPI::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(oauth_token_secret)",
@@ -369,7 +360,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -419,7 +409,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(oauth_token_secret)",
@@ -476,7 +465,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{type::__new__}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(input)",
@@ -529,7 +517,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -547,8 +534,6 @@
   "kind": "model",
   "data": {
     "callable": "constructors.BothNewAndInit.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -566,7 +551,6 @@
   "kind": "model",
   "data": {
     "callable": "constructors.ChildWithNew.__new__",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(input)",
@@ -625,7 +609,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -657,8 +640,6 @@
   "kind": "model",
   "data": {
     "callable": "constructors.ParentWithInit.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -676,8 +657,6 @@
   "kind": "model",
   "data": {
     "callable": "constructors.SomeAPI.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(oauth_token_secret)",
@@ -721,7 +700,6 @@
   "kind": "model",
   "data": {
     "callable": "constructors.SomeAPI.async_get_authenticated_user",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[AUTHENTICATE_URL]",
@@ -737,16 +715,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "constructors.SomeAPI.from_default_keys",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(oauth_token_secret)",
@@ -813,7 +788,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -831,8 +805,6 @@
   "kind": "model",
   "data": {
     "callable": "constructors.test_construction",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(request)[POST][1]",

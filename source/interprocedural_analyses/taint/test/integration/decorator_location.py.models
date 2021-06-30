@@ -285,7 +285,6 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.baz",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -312,15 +311,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.baz.__inlined_with_logging2",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -340,15 +337,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.foo",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -375,15 +370,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.foo.__inlined_with_logging",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -443,15 +436,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.foo.__inlined_with_logging.some_helper",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -471,15 +462,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.foo.__inlined_with_logging2",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -517,15 +506,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.foo.__original_function",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -545,8 +532,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -670,7 +656,6 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.skip_this_decorator.inner",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -690,15 +675,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging.inner",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -738,15 +721,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging.some_helper",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -766,15 +747,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging2.inner",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -794,7 +773,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

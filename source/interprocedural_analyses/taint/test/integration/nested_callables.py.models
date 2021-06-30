@@ -111,7 +111,6 @@
   "data": {
     "callable":
       "nested_callables.outer_calling_other_function.inner_calling_other_function",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -136,8 +135,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -160,16 +158,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "nested_callables.outer",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -194,15 +189,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "nested_callables.outer.inner",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -222,15 +215,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "nested_callables.outer_calling_other_function",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -257,15 +248,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "nested_callables.some_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -285,7 +274,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

@@ -3,14 +3,12 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{obscure_tito.C::taint_parameter}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -18,8 +16,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{obscure_tito.C::update}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(parameter)",
@@ -35,14 +31,12 @@
   "kind": "model",
   "data": {
     "callable": "obscure_tito.C.taint_parameter",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -50,8 +44,6 @@
   "kind": "model",
   "data": {
     "callable": "obscure_tito.C.update",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(parameter)",
@@ -87,16 +79,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "obscure_tito.test_obscure_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(parameter)",
@@ -117,8 +106,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -145,8 +133,6 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

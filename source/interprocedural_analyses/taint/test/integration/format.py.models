@@ -3,7 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "format.sink_via_format",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -23,8 +22,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -50,17 +48,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "format.tito_via_format",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg2)",

@@ -676,9 +676,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_a_sink.attribute}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sinks": [ "TestA" ] }
   }
 }
@@ -686,9 +683,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_a_sink.instance}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sinks": [ "TestA" ] }
   }
 }
@@ -696,9 +690,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_a_source.attribute}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestA" ] }
   }
 }
@@ -706,9 +697,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_a_source.instance}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestA" ] }
   }
 }
@@ -716,9 +704,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_ab_sinks.attribute}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sinks": [ "TestA", "TestB" ] }
   }
 }
@@ -726,9 +711,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_ab_sinks.instance}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sinks": [ "TestA", "TestB" ] }
   }
 }
@@ -742,8 +724,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestA", "TestB" ] }
   }
 }
@@ -757,8 +737,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestA", "TestB" ] }
   }
 }
@@ -766,14 +744,12 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_all_sinks.attribute}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": [],
     "sanitize": { "sinks": "All" }
   }
 }
@@ -781,14 +757,12 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_all_sinks.instance}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": [],
     "sanitize": { "sinks": "All" }
   }
 }
@@ -796,9 +770,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_all_sources.attribute}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": "All" }
   }
 }
@@ -806,9 +777,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_all_sources.instance}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": "All" }
   }
 }
@@ -816,9 +784,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_b_sink.attribute}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sinks": [ "TestB" ] }
   }
 }
@@ -826,9 +791,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_b_sink.instance}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sinks": [ "TestB" ] }
   }
 }
@@ -836,9 +798,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_b_source.attribute}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestB" ] }
   }
 }
@@ -846,9 +805,6 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_b_source.instance}",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestB" ] }
   }
 }
@@ -856,7 +812,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(value)",
@@ -911,8 +866,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{sanitize.C_sanitized_a_sink::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -942,8 +895,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{sanitize.C_sanitized_a_source::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -973,8 +924,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{sanitize.C_sanitized_ab_sinks::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1004,8 +953,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{sanitize.C_sanitized_ab_sources::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1035,7 +982,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{sanitize.C_sanitized_all_sinks::__init__}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(value)",
@@ -1090,8 +1036,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{sanitize.C_sanitized_all_sources::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1121,8 +1065,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{sanitize.C_sanitized_b_sink::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1152,8 +1094,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{sanitize.C_sanitized_b_source::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1183,8 +1123,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.C_sanitized_a_sink.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1214,8 +1152,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.C_sanitized_a_source.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1245,8 +1181,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.C_sanitized_ab_sinks.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1276,8 +1210,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.C_sanitized_ab_sources.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1307,7 +1239,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.C_sanitized_all_sinks.__init__",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(value)",
@@ -1372,8 +1303,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.C_sanitized_all_sources.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1403,8 +1332,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.C_sanitized_b_sink.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1434,8 +1361,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.C_sanitized_b_source.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1465,14 +1390,12 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.a_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
       }
     ],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -1486,8 +1409,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -1495,14 +1416,12 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.b_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
       }
     ],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -1516,8 +1435,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -1525,7 +1442,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.propagation_of_b_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -1543,8 +1459,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1568,18 +1483,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "sanitize.return_taint_sanitize",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }
@@ -1587,9 +1497,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_and_b_sinks",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sinks": [ "TestA", "TestB" ] }
   }
 }
@@ -1597,9 +1504,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_and_b_source",
-    "sources": [],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestA", "TestB" ] }
   }
 }
@@ -1607,7 +1511,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -1624,7 +1527,6 @@
         ]
       }
     ],
-    "tito": [],
     "sanitize": { "sinks": [ "TestA" ] }
   }
 }
@@ -1632,7 +1534,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_sink_attribute",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(c)[attribute]",
@@ -1648,15 +1549,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_sink_instance",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(c)[instance]",
@@ -1672,16 +1571,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_sink_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -1700,8 +1596,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -1720,7 +1614,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_tito_with_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -1755,7 +1648,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_b_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -1772,7 +1664,6 @@
         ]
       }
     ],
-    "tito": [],
     "sanitize": { "sinks": [ "TestB" ] }
   }
 }
@@ -1780,7 +1671,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_b_sink_attribute",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(c)[attribute]",
@@ -1796,15 +1686,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_b_sink_instance",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(c)[instance]",
@@ -1820,8 +1708,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1846,7 +1733,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -1867,7 +1753,6 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_sources",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -1921,8 +1806,6 @@
         ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestA" ] }
   }
 }
@@ -1946,8 +1829,6 @@
         ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "sanitize": { "sources": [ "TestB" ] }
   }
 }
@@ -1990,7 +1871,6 @@
         ]
       }
     ],
-    "tito": [],
     "sanitize": { "tito": "All" }
   }
 }
@@ -2004,7 +1884,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",

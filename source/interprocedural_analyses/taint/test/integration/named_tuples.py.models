@@ -189,8 +189,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{named_tuples.MyNamedTuple::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(bad)",
@@ -253,8 +251,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{named_tuples.OldSchoolNamedTuple::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(bad)",
@@ -316,8 +312,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{typing.NamedTuple::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(bad)",
@@ -380,8 +374,6 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.MyNamedTuple.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(bad)",
@@ -444,8 +436,6 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.OldSchoolNamedTuple.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(bad)",
@@ -527,9 +517,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -556,9 +544,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -585,8 +571,6 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

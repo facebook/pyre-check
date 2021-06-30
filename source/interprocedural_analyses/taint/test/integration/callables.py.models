@@ -64,8 +64,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.AbstractEventProcessor::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(benign)",
@@ -105,7 +103,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.AbstractEventProcessor::async_call_tainted}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[tainted]",
@@ -122,15 +119,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.AbstractEventProcessor::async_run}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[benign]",
@@ -147,15 +142,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.ConcreteEventProcessor::async_call_tainted}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[tainted]",
@@ -172,15 +165,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.ConcreteEventProcessor::async_run}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[benign]",
@@ -197,16 +188,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.ProcessorInfo::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(processor_type)",
@@ -239,8 +227,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{type::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(benign)",
@@ -295,8 +281,6 @@
   "kind": "model",
   "data": {
     "callable": "callables.AbstractEventProcessor.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(benign)",
@@ -336,7 +320,6 @@
   "kind": "model",
   "data": {
     "callable": "callables.ConcreteEventProcessor.async_call_tainted",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[tainted]",
@@ -353,15 +336,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "callables.ConcreteEventProcessor.async_run",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[benign]",
@@ -378,16 +359,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "callables.ProcessorInfo.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(processor_type)",

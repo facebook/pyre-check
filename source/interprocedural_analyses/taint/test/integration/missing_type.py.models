@@ -3,14 +3,12 @@
   "kind": "model",
   "data": {
     "callable": "Obj{missing_type.UnknownSinkAttribute.unknown}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -22,23 +20,19 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "missing_type.UnknownSinkDef.unknown",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -52,8 +46,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [],
     "modes": [ "Obscure" ]
   }
 }
@@ -61,7 +53,6 @@
   "kind": "model",
   "data": {
     "callable": "missing_type.test_unknown_source_attribute",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[unknown]",
@@ -81,8 +72,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -144,7 +134,6 @@
   "kind": "model",
   "data": {
     "callable": "missing_type.test_unknown_source_def",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[unknown]",
@@ -164,7 +153,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

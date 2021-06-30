@@ -363,17 +363,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -404,8 +400,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.Class::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -440,7 +434,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -480,7 +473,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -533,17 +525,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.Derived::uses_property_but_no_tito_taint}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -581,16 +569,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.DerivedTaintedSetter::my_property$setter}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(value)",
@@ -625,8 +610,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.GrandDerived::my_property$setter}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -660,17 +643,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.PropertySetterInConstructor::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -701,8 +680,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.SetterMutatesValue::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -812,16 +789,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "properties.Class.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -839,8 +813,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.Class.my_property",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -880,7 +852,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(other)[tainted]",
@@ -935,9 +906,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -966,7 +935,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -997,9 +965,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1026,17 +992,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "properties.Derived.uses_property_but_no_tito_taint",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -1056,7 +1018,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.DerivedTaintedSetter.my_property$setter",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(value)",
@@ -1091,8 +1052,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.GrandDerived.my_property$setter",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -1126,9 +1085,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1156,17 +1113,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -1199,8 +1152,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.x",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[underlying]",
@@ -1218,8 +1169,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.x$setter",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x_value)",
@@ -1248,8 +1197,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -1267,8 +1214,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.p",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[_p]",
@@ -1286,8 +1231,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.p$setter",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1338,8 +1281,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1372,7 +1314,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1444,16 +1385,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "properties.test_type_variable_properties_are_resolved",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)[tainted]",

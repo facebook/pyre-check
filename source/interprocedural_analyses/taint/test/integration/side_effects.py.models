@@ -3,8 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.MyList.append",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -19,8 +17,6 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.change_arg0",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg1)",
@@ -36,8 +32,6 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.change_arg1",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg0)",
@@ -73,9 +67,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -102,9 +94,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -133,9 +123,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -162,16 +150,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "side_effects.to_sink_via_side_effect",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(y)",
@@ -192,7 +177,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

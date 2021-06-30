@@ -19,9 +19,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -74,16 +72,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "list.zipped_element_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -100,7 +95,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

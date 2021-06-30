@@ -57,7 +57,6 @@
   "kind": "model",
   "data": {
     "callable": "optionals.Client.offer",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(message)",
@@ -74,7 +73,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

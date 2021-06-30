@@ -546,16 +546,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "taint_broadening.sink_a",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(d)[a]",
@@ -576,16 +573,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -603,7 +597,6 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_collapse_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(a)",
@@ -628,8 +621,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -658,16 +650,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "taint_broadening.widen_collapse_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(d)[a][a][a][a]",
@@ -706,8 +695,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -748,8 +736,6 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

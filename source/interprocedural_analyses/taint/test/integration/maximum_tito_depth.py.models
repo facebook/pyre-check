@@ -57,8 +57,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_max_consecutive",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -82,8 +80,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_min_disjoint",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -106,8 +102,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_min_disjoint_max_consecutive",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -132,8 +126,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_obscure",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -153,8 +145,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_one",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -174,8 +164,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_three",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -195,8 +183,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_two",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -216,8 +202,6 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_zero",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",

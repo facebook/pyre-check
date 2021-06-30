@@ -112,7 +112,6 @@
   "kind": "model",
   "data": {
     "callable": "locals.named_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -129,8 +128,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -142,9 +140,7 @@
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {

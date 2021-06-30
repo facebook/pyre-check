@@ -46,10 +46,6 @@ module Forward = struct
       ~next:{ source_taint = next }
     =
     ForwardState.less_or_equal ~left:next ~right:previous
-
-
-  let to_json ~filename_lookup { source_taint } =
-    ForwardState.to_external_json ~filename_lookup source_taint
 end
 
 module Backward = struct
@@ -105,14 +101,6 @@ module Backward = struct
     =
     BackwardState.less_or_equal ~left:sink_taint_next ~right:sink_taint_previous
     && BackwardState.less_or_equal ~left:tito_next ~right:tito_previous
-
-
-  let to_json_sinks ~filename_lookup { sink_taint; _ } =
-    BackwardState.to_external_json ~filename_lookup sink_taint
-
-
-  let to_json_tito ~filename_lookup { taint_in_taint_out; _ } =
-    BackwardState.to_external_json ~filename_lookup taint_in_taint_out
 end
 
 module Sanitize = struct
@@ -414,25 +402,40 @@ module ResultArgument = struct
     { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
 
 
-  let model_to_json ~filename_lookup callable model =
+  let model_to_json
+      ~filename_lookup
+      callable
+      { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
+    =
     let callable_name = Interprocedural.Callable.external_target_name callable in
+    let model_json = ["callable", `String callable_name] in
     let model_json =
-      [
-        "callable", `String callable_name;
-        "sources", Forward.to_json ~filename_lookup model.forward;
-        "sinks", Backward.to_json_sinks ~filename_lookup model.backward;
-        "tito", Backward.to_json_tito ~filename_lookup model.backward;
-      ]
-    in
-    let model_json =
-      if not (Sanitize.is_empty model.sanitize) then
-        model_json @ ["sanitize", Sanitize.to_json model.sanitize]
+      if not (ForwardState.is_empty source_taint) then
+        model_json @ ["sources", ForwardState.to_external_json ~filename_lookup source_taint]
       else
         model_json
     in
     let model_json =
-      if not (ModeSet.is_empty model.modes) then
-        model_json @ ["modes", ModeSet.to_json model.modes]
+      if not (BackwardState.is_empty sink_taint) then
+        model_json @ ["sinks", BackwardState.to_external_json ~filename_lookup sink_taint]
+      else
+        model_json
+    in
+    let model_json =
+      if not (BackwardState.is_empty taint_in_taint_out) then
+        model_json @ ["tito", BackwardState.to_external_json ~filename_lookup taint_in_taint_out]
+      else
+        model_json
+    in
+    let model_json =
+      if not (Sanitize.is_empty sanitize) then
+        model_json @ ["sanitize", Sanitize.to_json sanitize]
+      else
+        model_json
+    in
+    let model_json =
+      if not (ModeSet.is_empty modes) then
+        model_json @ ["modes", ModeSet.to_json modes]
       else
         model_json
     in

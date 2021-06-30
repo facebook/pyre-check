@@ -165,7 +165,6 @@
   "kind": "model",
   "data": {
     "callable": "partial.a_flows_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(a)",
@@ -182,7 +181,6 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
