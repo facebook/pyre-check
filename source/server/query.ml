@@ -112,6 +112,7 @@ module Response = struct
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundPath of string
+      | FunctionDefinition of Statement.Define.t
       | Help of string
       | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
       | Success of string
@@ -197,6 +198,14 @@ module Response = struct
           in
           `List (List.map defines ~f:define_to_yojson)
       | FoundPath path -> `Assoc ["path", `String path]
+      | FunctionDefinition define ->
+          `Assoc
+            [
+              ( "definition",
+                `String
+                  (Statement.show
+                     (Statement.Statement.Define define |> Node.create_with_default_location)) );
+            ]
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping ->
           let reference_to_yojson reference = `String (Reference.show reference) in
@@ -370,6 +379,25 @@ let parse_request query =
   try Result.Ok (parse_request_exn query) with
   | InvalidQuery reason -> Result.Error reason
 
+
+module InlineDecorators = struct
+  let inline_decorators ~environment function_reference =
+    let open Interprocedural.DecoratorHelper in
+    let define =
+      GlobalResolution.define
+        (TypeEnvironment.ReadOnly.global_resolution environment)
+        function_reference
+    in
+    match define with
+    | Some define ->
+        let decorator_bodies = all_decorator_bodies environment in
+        Response.Single
+          (FunctionDefinition
+             (inline_decorators_for_define ~decorator_bodies ~location:Location.any define))
+    | None ->
+        Response.Error
+          (Format.asprintf "Could not find function `%s`" (Reference.show function_reference))
+end
 
 let rec process_request ~environment ~configuration request =
   let process_request () =
@@ -716,9 +744,10 @@ let rec process_request ~environment ~configuration request =
             Single (Base.ModelVerificationErrors errors)
         with
         | error -> Error (Exn.to_string error) )
-    | InlineDecorators _ ->
-        (* TODO(T69755379):. *)
-        Error "inline_decorators is not yet supported"
+    | InlineDecorators function_reference ->
+        InlineDecorators.inline_decorators
+          ~environment:(TypeEnvironment.read_only environment)
+          function_reference
   in
   try process_request () with
   | ClassHierarchy.Untracked untracked ->

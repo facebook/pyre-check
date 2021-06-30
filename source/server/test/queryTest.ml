@@ -1117,11 +1117,130 @@ let test_handle_query_pysa context =
   ()
 
 
+let test_inline_decorators context =
+  let configuration, environment =
+    let project =
+      ScratchProject.setup
+        ~context
+        ~show_error_traces:true
+        ~include_helper_builtins:false
+        [
+          ( "test.py",
+            {|
+              from logging import with_logging
+              from decorators import identity, not_inlinable
+
+              @with_logging
+              @not_inlinable
+              @identity
+              def foo(a: int) -> int:
+                return a
+
+              def not_decorated(a: int) -> int:
+                return a
+            |}
+          );
+          ( "logging.py",
+            {|
+              def with_logging(f):
+                def inner( *args, **kwargs) -> int:
+                  print(args, kwargs)
+                  return f( *args, **kwargs)
+
+                return inner
+            |}
+          );
+          ( "decorators.py",
+            {|
+              def identity(f):
+                def inner( *args, **kwargs) -> int:
+                  return f( *args, **kwargs)
+
+                return inner
+
+              def not_inlinable(f):
+                return f
+            |}
+          );
+        ]
+    in
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.build_type_environment project
+    in
+    ScratchProject.configuration_of project, type_environment
+  in
+  let assert_response request expected_response =
+    let actual_response =
+      Query.process_request ~environment ~configuration request
+      |> Query.Response.to_yojson
+      |> Yojson.Safe.to_string
+    in
+    let indentation = 6 in
+    let expected_response =
+      expected_response
+      |> String.split ~on:'\n'
+      |> List.map ~f:(fun s -> String.drop_prefix s indentation)
+      |> String.concat ~sep:"\n"
+      |> Yojson.Safe.from_string
+      |> Yojson.Safe.to_string
+    in
+    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
+  in
+  assert_response
+    (Query.Request.InlineDecorators (Reference.create "test.foo"))
+    ( {|
+        {
+        "response": {
+          "definition": "def test.foo($parameter$a: int) -> int:
+        def $local_test?foo$__original_function($parameter$a: int) -> int:
+          return $parameter$a|}
+    ^ "\n        "
+    ^ {|
+        def $local_test?foo$__inlined_identity($parameter$a: int) -> int:
+          $local_test?foo?__inlined_identity$__args = ($parameter$a)
+          $local_test?foo?__inlined_identity$__kwargs = { \"a\":$parameter$a }
+          return $local_test?foo$__original_function($parameter$a)|}
+    ^ "\n        "
+    ^ {|
+        def $local_test?foo$__inlined_with_logging($parameter$a: int) -> int:
+          $local_test?foo?__inlined_with_logging$__args = ($parameter$a)
+          $local_test?foo?__inlined_with_logging$__kwargs = { \"a\":$parameter$a }
+          print($local_test?foo?__inlined_with_logging$__args, $local_test?foo?__inlined_with_logging$__kwargs)
+          return $local_test?foo$__inlined_identity($parameter$a)|}
+    ^ "\n        "
+    ^ {|
+        return $local_test?foo$__inlined_with_logging($parameter$a)
+      "
+        }
+        }
+      |}
+    );
+  assert_response
+    (Query.Request.InlineDecorators (Reference.create "test.non_existent"))
+    {|
+      {
+        "error": "Could not find function `test.non_existent`"
+      }
+|};
+  assert_response
+    (Query.Request.InlineDecorators (Reference.create "test.not_decorated"))
+    {|
+      {
+      "response": {
+        "definition": "def test.not_decorated($parameter$a: int) -> int:
+        return $parameter$a
+      "  }
+      }
+|};
+  ()
+
+
 let () =
   "query"
   >::: [
          "parse_query" >:: test_parse_query;
          "handle_query_basic" >:: test_handle_query_basic;
          "handle_query_pysa" >:: test_handle_query_pysa;
+         "inline_decorators" >:: test_inline_decorators;
        ]
   |> Test.run

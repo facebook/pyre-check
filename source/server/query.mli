@@ -104,6 +104,7 @@ module Response : sig
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundPath of string
+      | FunctionDefinition of Statement.Define.t
       | Help of string
       | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
       | Success of string
