@@ -554,7 +554,7 @@ let overrides class_name ~resolution ~name =
   successors class_name ~resolution |> List.find_map ~f:find_override
 
 
-let get_decorator_define resolution decorator_name =
+let define resolution decorator_name =
   (* Nested function bodies are empty by default. We have to fill them in. *)
   let rec get_define define_name =
     function_definition resolution define_name

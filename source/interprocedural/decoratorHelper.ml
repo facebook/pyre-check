@@ -95,9 +95,7 @@ let all_decorators environment =
 let all_decorator_bodies environment =
   all_decorators environment
   |> List.filter_map ~f:(fun { decorator; module_reference } ->
-         GlobalResolution.get_decorator_define
-           (TypeEnvironment.ReadOnly.global_resolution environment)
-           decorator
+         GlobalResolution.define (TypeEnvironment.ReadOnly.global_resolution environment) decorator
          >>| fun decorator_define -> decorator, { decorator_define; module_reference })
   |> Reference.Map.of_alist
   |> function

@@ -2473,14 +2473,14 @@ let test_extract_type_parameter context =
   ()
 
 
-let test_decorator_body context =
-  let assert_decorator_body ~decorator_name ~source ~expected_define_source =
+let test_define context =
+  let assert_define ?expected_define_source ~define_name ~source =
     let expected_source =
-      parse ~handle:"test.py" expected_define_source |> Preprocessing.preprocess
+      expected_define_source >>| parse ~handle:"test.py" >>| Preprocessing.preprocess
     in
     let expected_define =
-      match List.last_exn expected_source.statements with
-      | { Node.value = Statement.Define define; _ } -> Some define
+      match expected_source >>| Source.statements >>= List.last with
+      | Some { Node.value = Statement.Define define; _ } -> Some define
       | _ -> None
     in
     let resolution =
@@ -2492,12 +2492,19 @@ let test_decorator_body context =
       ~pp_diff:
         (diff ~print:(fun format x -> Format.fprintf format "%s" ([%show: Define.t option] x)))
       expected_define
-      (GlobalResolution.get_decorator_define resolution decorator_name)
+      (GlobalResolution.define resolution define_name)
+  in
+  let assert_no_define_found ~define_name ~source =
+    assert_define ~define_name ~source ?expected_define_source:None
   in
   let source =
     {|
     from builtins import __test_sink
     from typing import Callable
+
+    def simple_function(x: int) -> str:
+      print(x)
+      return "hello"
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
@@ -2528,8 +2535,19 @@ let test_decorator_body context =
       return wrapper
   |}
   in
-  assert_decorator_body
-    ~decorator_name:!&"test.with_logging"
+  assert_define
+    ~define_name:!&"test.simple_function"
+    ~source
+    ~expected_define_source:
+      {|
+    def simple_function(x: int) -> str:
+      print(x)
+      return "hello"
+    |};
+  assert_no_define_found ~define_name:!&"test.non_existent" ~source;
+  (* Functions containing nested functions. *)
+  assert_define
+    ~define_name:!&"test.with_logging"
     ~source
     ~expected_define_source:
       {|
@@ -2543,8 +2561,8 @@ let test_decorator_body context =
 
       return inner
     |};
-  assert_decorator_body
-    ~decorator_name:!&"test.two_inner_functions"
+  assert_define
+    ~define_name:!&"test.two_inner_functions"
     ~source
     ~expected_define_source:
       {|
@@ -2561,8 +2579,8 @@ let test_decorator_body context =
 
       return inner2
     |};
-  assert_decorator_body
-    ~decorator_name:!&"test.decorator_factory"
+  assert_define
+    ~define_name:!&"test.decorator_factory"
     ~source
     ~expected_define_source:
       {|
@@ -2600,6 +2618,6 @@ let () =
          "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;
          "test_join" >:: test_join;
-         "decorator_body" >:: test_decorator_body;
+         "define" >:: test_define;
        ]
   |> Test.run
