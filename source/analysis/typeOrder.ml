@@ -333,7 +333,8 @@ module OrderImplementation = struct
             | (Type.Primitive _ as annotation) ->
                 join order (Type.parametric "tuple" [Single unbounded_element]) annotation
             | _ -> Type.union [left; right] )
-        | Type.Tuple (Concrete parameters), (Type.Parametric _ as annotation) ->
+        | Type.Tuple (Concrete parameters), (Type.Parametric _ as annotation)
+        | (Type.Parametric _ as annotation), Type.Tuple (Concrete parameters) ->
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
             let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
             join order (Type.parametric "tuple" [Single parameter]) annotation

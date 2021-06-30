@@ -1869,7 +1869,10 @@ let test_join context =
     in
     assert_type_equal
       (parse_annotation expected)
-      (join ~attributes order (parse_annotation left) (parse_annotation right))
+      (join ~attributes order (parse_annotation left) (parse_annotation right));
+    assert_type_equal
+      (parse_annotation expected)
+      (join ~attributes order (parse_annotation right) (parse_annotation left))
   in
   (* Primitive types. *)
   assert_join "list" "typing.Sized" "typing.Sized";
