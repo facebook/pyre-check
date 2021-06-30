@@ -419,20 +419,21 @@ let parse_request query =
 
 
 module InlineDecorators = struct
-  let inline_decorators ~environment function_reference =
+  let inline_decorators ~environment ~decorators_to_skip function_reference =
     let open Interprocedural.DecoratorHelper in
     let define =
       GlobalResolution.define
         (TypeEnvironment.ReadOnly.global_resolution environment)
         function_reference
     in
+    let decorator_bodies =
+      all_decorator_bodies environment
+      |> Map.filter_keys ~f:(fun decorator -> Set.mem decorators_to_skip decorator |> not)
+    in
     match define with
     | Some define -> (
         let define_with_inlining =
-          inline_decorators_for_define
-            ~decorator_bodies:(all_decorator_bodies environment)
-            ~location:Location.any
-            define
+          inline_decorators_for_define ~decorator_bodies ~location:Location.any define
         in
         match Statement.Statement.Define define_with_inlining |> Transform.sanitize_statement with
         | Statement.Statement.Define define -> Response.Single (FunctionDefinition define)
@@ -787,9 +788,10 @@ let rec process_request ~environment ~configuration request =
             Single (Base.ModelVerificationErrors errors)
         with
         | error -> Error (Exn.to_string error) )
-    | InlineDecorators { function_reference; _ } ->
+    | InlineDecorators { function_reference; decorators_to_skip } ->
         InlineDecorators.inline_decorators
           ~environment:(TypeEnvironment.read_only environment)
+          ~decorators_to_skip:(Reference.Set.of_list decorators_to_skip)
           function_reference
   in
   try process_request () with

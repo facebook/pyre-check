@@ -1242,6 +1242,32 @@ let test_inline_decorators context =
       "  }
       }
 |};
+  assert_response
+    (Query.Request.InlineDecorators
+       {
+         function_reference = Reference.create "test.foo";
+         decorators_to_skip = [!&"decorators.identity"; !&"some.non_existent.decorator"];
+       })
+    ( {|
+      {
+        "response": {
+          "definition": "def test.foo(a: int) -> int:
+        def __original_function(a: int) -> int:
+          return a|}
+    ^ "\n        "
+    ^ {|
+        def __inlined_with_logging(a: int) -> int:
+          __args = (a)
+          __kwargs = { \"a\":a }
+          print(__args, __kwargs)
+          return __original_function(a)|}
+    ^ "\n        "
+    ^ {|
+        return __inlined_with_logging(a)
+      "
+        }
+      }
+    |} );
   ()
 
 
