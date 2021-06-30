@@ -113,6 +113,8 @@ class Initialize(CommandParser):
                     f"No typeshed directory found at `{typeshed}`."
                 )
             configuration["typeshed"] = str(typeshed)
+        else:
+            LOG.info(f"Typeshed found at `{typeshed}``")
 
         taint_models_path = find_taint_models_directory()
         if taint_models_path is not None:
