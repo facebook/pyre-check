@@ -178,6 +178,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           =
           let taint_to_propagate =
             match sanitize with
+            | { tito = Some AllTito; _ } -> ForwardState.Tree.bottom
             | { tito = Some (SpecificTito { sanitized_tito_sources; _ }); _ } ->
                 ForwardState.Tree.partition
                   ForwardTaint.leaf

@@ -284,13 +284,22 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
           in
           let taint_in_taint_out =
-            let taint_in_taint_out =
-              List.fold
-                tito_matches
-                ~f:(combine_tito argument.Node.location)
-                ~init:BackwardState.Tree.empty
-            in
+            List.fold
+              tito_matches
+              ~f:(combine_tito argument.Node.location)
+              ~init:BackwardState.Tree.empty
+          in
+          let taint_in_taint_out =
+            BackwardState.Tree.transform
+              FlowDetails.tito_position_element
+              Add
+              ~f:argument.Node.location
+              obscure_taint
+            |> BackwardState.Tree.join taint_in_taint_out
+          in
+          let taint_in_taint_out =
             match sanitize with
+            | { tito = Some AllTito; _ } -> BackwardState.Tree.bottom
             | { tito = Some (SpecificTito { sanitized_tito_sinks; _ }); _ } ->
                 BackwardState.Tree.partition
                   BackwardTaint.leaf
@@ -306,17 +315,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        BackwardState.Tree.join sink_state state)
             | _ -> taint_in_taint_out
           in
-          let obscure_taint =
-            BackwardState.Tree.transform
-              FlowDetails.tito_position_element
-              Add
-              ~f:argument.Node.location
-              obscure_taint
-          in
-          let argument_taint =
-            BackwardState.Tree.join sink_taint taint_in_taint_out
-            |> BackwardState.Tree.join obscure_taint
-          in
+          let argument_taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
           let state =
             match AccessPath.of_expression ~resolution argument with
             | Some { AccessPath.root; path } ->

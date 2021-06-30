@@ -91,7 +91,7 @@ def test1():
 
 def test2(tainted_other):
     tainted = return_taint_sanitize(tainted_other)
-    __test_sink(tainted.id)  # This shouldn't be a flow, but it is
+    __test_sink(tainted.id)
 
 
 def test3(colliding_name):
