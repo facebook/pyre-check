@@ -34,8 +34,7 @@ val all_decorator_bodies
   define_and_originating_module Reference.Map.t
 
 val inline_decorators
-  :  environment:TypeEnvironment.ReadOnly.t ->
-  decorator_bodies:define_and_originating_module Reference.Map.t ->
+  :  decorator_bodies:define_and_originating_module Reference.Map.t ->
   Source.t ->
   Source.t
 

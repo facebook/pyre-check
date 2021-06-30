@@ -798,7 +798,7 @@ let postprocess
   | _ -> None
 
 
-let inline_decorators ~environment:_ ~decorator_bodies source =
+let inline_decorators ~decorator_bodies source =
   let module Transform = Transform.Make (struct
     type t = unit
 
@@ -868,8 +868,7 @@ let type_environment_with_decorators_inlined
   in
   let environment =
     AstEnvironment.create
-      ~additional_preprocessing:
-        (inline_decorators ~environment:(TypeEnvironment.read_only environment) ~decorator_bodies)
+      ~additional_preprocessing:(inline_decorators ~decorator_bodies)
       (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
     |> AnnotatedGlobalEnvironment.create
     |> TypeEnvironment.create

@@ -93,7 +93,7 @@ let test_inline_decorators context =
   let assert_inlined ?(additional_sources = []) ?(handle = "test.py") source expected =
     let source, environment = setup ~additional_sources ~context ~handle source in
     let decorator_bodies = DecoratorHelper.all_decorator_bodies environment in
-    let actual = DecoratorHelper.inline_decorators ~environment ~decorator_bodies source in
+    let actual = DecoratorHelper.inline_decorators ~decorator_bodies source in
     (* Using the same setup code instead of `parse` because the SourcePath `priority` is different
        otherwise. *)
     let expected =
@@ -1581,7 +1581,7 @@ let test_decorator_location context =
     =
     let source, environment = setup ~additional_sources ~context ~handle source in
     let decorator_bodies = DecoratorHelper.all_decorator_bodies environment in
-    let actual = DecoratorHelper.inline_decorators ~environment ~decorator_bodies source in
+    let actual = DecoratorHelper.inline_decorators ~decorator_bodies source in
     (* Using the same setup code instead of `parse` because the SourcePath `priority` is different
        otherwise. *)
     let expected =
