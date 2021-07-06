@@ -28,14 +28,14 @@
     "lint": "tslint --force -p ."
   },
   "dependencies": {
-    "vscode-languageclient": "^3.5.0"
+    "std-pour": "^1.1.0",
+    "vscode-languageclient": "^7.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.44",
     "@types/node": "^8.0.53",
     "cson": "^4.1.0",
     "tslint": "^5.8.0",
-    "tslint-microsoft-contrib": "^5.0.1",
     "typescript": "^3.5.1",
     "vscode": "^1.1.7"
   },
@@ -78,6 +78,21 @@
         "scopeName": "source.pysa.config",
         "path": "./syntaxes/PysaConfig.tmLanguage"
       }
-    ]
+    ],
+    "commands": [
+      {
+        "command": "pysa.generateModel",
+        "title": "Generate Pysa Model"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorTextFocus",
+          "command": "pysa.generateModel",
+          "group": "navigation"
+        }
+      ]
+    }
   }
 }
