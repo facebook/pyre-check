@@ -97,7 +97,6 @@ module Analysis : sig
 
   type t = {
     infer: bool;
-    uninitialized_local: bool;
     configuration_file_hash: string option;
     parallel: bool;
     analyze_external_sources: bool;
@@ -131,7 +130,6 @@ module Analysis : sig
 
   val create
     :  ?infer:bool ->
-    ?uninitialized_local:bool ->
     ?configuration_file_hash:string ->
     ?parallel:bool ->
     ?analyze_external_sources:bool ->

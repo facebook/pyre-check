@@ -256,7 +256,6 @@ module Analysis = struct
 
   type t = {
     infer: bool;
-    uninitialized_local: bool;
     configuration_file_hash: string option;
     parallel: bool;
     analyze_external_sources: bool;
@@ -296,7 +295,6 @@ module Analysis = struct
 
   let create
       ?(infer = false)
-      ?(uninitialized_local = true)
       ?configuration_file_hash
       ?(parallel = true)
       ?(analyze_external_sources = false)
@@ -331,7 +329,6 @@ module Analysis = struct
     =
     {
       infer;
-      uninitialized_local;
       configuration_file_hash;
       parallel;
       analyze_external_sources;
