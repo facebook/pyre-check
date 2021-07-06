@@ -3,10 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import subprocess
 import sqlite3
+import subprocess
+import requests
 from flask import Flask
-import request
 from lxml import etree
 
 app = Flask(__name__)
@@ -36,7 +36,7 @@ def definite_pt(payload: str) -> str:
 
 @app.route("/xss/<string:payload>")
 def definite_xss(payload: str) -> None:
-    flask.Markup(payload)
+    Flask.Markup(payload)
 
 
 @app.route("/sql/<string:payload>")
