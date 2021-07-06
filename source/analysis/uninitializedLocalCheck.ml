@@ -165,7 +165,7 @@ let extract_reads_statement { Node.value; _ } =
 module InitializedVariables = Identifier.Set
 
 module type Context = sig
-  val uninitialized_usage : Identifier.t Node.t list Int.Table.t
+  val fixpoint_post_statement : (Statement.t * InitializedVariables.t) Int.Table.t
 end
 
 module State (Context : Context) = struct
@@ -210,7 +210,14 @@ module State (Context : Context) = struct
     let in_local_scope { Node.value = identifier; _ } =
       identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
     in
-    Int.Table.data Context.uninitialized_usage
+    let uninitialized_usage (statement, initialized) =
+      let is_uninitialized { Node.value = identifier; _ } =
+        not (InitializedVariables.mem initialized (Identifier.sanitized identifier))
+      in
+      extract_reads_statement statement |> List.filter ~f:is_uninitialized
+    in
+    Int.Table.data Context.fixpoint_post_statement
+    |> List.map ~f:uninitialized_usage
     |> List.concat
     |> List.filter ~f:in_local_scope
     |> List.map ~f:emit_error
@@ -230,13 +237,7 @@ module State (Context : Context) = struct
       |> InitializedVariables.of_list
       |> InitializedVariables.union state
     in
-    let is_uninitialized { Node.value = identifier; _ } =
-      not (InitializedVariables.mem new_state (Identifier.sanitized identifier))
-    in
-    let uninitialized_usage =
-      extract_reads_statement statement |> List.filter ~f:is_uninitialized
-    in
-    Hashtbl.set Context.uninitialized_usage ~key ~data:uninitialized_usage;
+    Hashtbl.set Context.fixpoint_post_statement ~key ~data:(statement, new_state);
     new_state
 
 
@@ -245,7 +246,7 @@ end
 
 let run_on_define ~qualifier define =
   let module Context = struct
-    let uninitialized_usage = Int.Table.create ()
+    let fixpoint_post_statement = Int.Table.create ()
   end
   in
   let module State = State (Context) in
