@@ -232,7 +232,6 @@
   "data": {
     "callable":
       "decorator_location.handle_request.__inlined_pass_local_variable_to_x",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(request)",
@@ -249,8 +248,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -276,9 +274,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -539,7 +535,6 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.handle_request",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(request)",
@@ -563,15 +558,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.handle_request.__original_function",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -591,16 +584,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "decorator_location.identity.inner",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(**kw)[*]",
@@ -631,7 +621,6 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.pass_local_variable_to_x.inner",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(request)",
@@ -648,8 +637,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
