@@ -1724,36 +1724,37 @@ def f(xs: List[int]) -> None:
 
 #### Initialized in `try` block
 ```python
-def f(x: int) -> None:
+def f(divisor: int) -> None:
+  answer_good = None
   try:
-    answer = 5 / x
+    answer_bad = 5 / divisor
+    answer_good = 5 / divisor
+    answer_also_good = 5 / divisor
+    print(f"5 divided by {divisor} is {answer_also_good}")   # OK
   except ZeroDivisionError:
     pass
-  print(f"5 divided by {x} is {answer}")   # Error
+  print(f"5 divided by {divisor} is {answer_bad}")    # Error
+  print(f"5 divided by {divisor} is {answer_good}")   # OK
 ```
-Here, `f(0)` leads to a runtime error. Potential fixes are:
+Here, `f(0)` leads to an error on access of `answer_bad`. Suggested approaches to address this:
 
-- Initialize `answer` to `None` outside the `try` block.
-- Keep the access to `answer` inside the `try` block.
+- Initialize any variables needed after the `try` block to a default value before entering the `try` block.
+- Keep the access to variables initialized inside the `try` block within the `try` block.
+- Consider if pulling the initialization as-is before the `try` block is possible. It is generally considered a good practice to minimize the code inside a try block, and keep it to exception throwing code. This also helps with Pyre, as it does not reason about which operations might throw exceptions.
 
-There is a slight variation of the above which cannot throw a runtime error but where Pyre will still report an error:
 ```python
-def f(x: int) -> None:
+def bad(divisor: int) -> Optional[int]:
   try:
-    y = 5
-    answer = y / x
-    print(f"{y} divided by {x} is {answer}")
+    dividend = 5
+    return dividend // divisor
   except ZeroDivisionError:
-    print(f"Cannot divide {y} by 0")    # Error (according to Pyre)
-```
-Pyre currently does not reason that `y = 5` cannont raise a `ZeroDivisionError`. Thus, it is unable conclude that `y` will always be initialized in the `except` block. It is generally considered a good practice to minimize the code inside a try block, and keep it to only have the exception throwing code. Thus, we recommend initializing the variables outside the `try` block in this case:
-```python
-def f(x: int) -> None:
-  y = 5       # Moved outside the try block
+    print(f"Cannot divide {dividend} by 0")    # Error (according to Pyre)
+def good(divisor: int) -> Optional[int]:
+  dividend = 5
   try:
-    print("{y} divided by {x} is ", y / x)
+    return dividend // divisor
   except ZeroDivisionError:
-    print(f"Cannot divide {y} by 0")    # OK
+    print(f"Cannot divide {dividend} by 0")    # OK
 ```
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
