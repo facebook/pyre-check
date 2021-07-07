@@ -311,10 +311,11 @@ module DefineAnnotation = struct
 
 
   let add_inferred_parameter define name type_ =
+    let sanitized_name = name |> Reference.sanitized in
     {
       define with
       parameters =
-        Parameters.ByName.update_exn define.parameters name (fun parameter ->
+        Parameters.ByName.update_exn define.parameters sanitized_name (fun parameter ->
             { parameter with annotation = TypeAnnotation.from_inferred type_ });
     }
 end
@@ -361,7 +362,7 @@ module LocalResult = struct
           =
           DefineAnnotation.Parameters.Value.
             {
-              name = name |> Reference.create;
+              name = name |> Identifier.sanitized |> Reference.create;
               annotation = TypeAnnotation.from_given ~global_resolution annotation;
               value;
               index;

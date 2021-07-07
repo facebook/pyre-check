@@ -216,31 +216,6 @@ let test_check_missing_parameter context =
   let assert_inference_errors = assert_inference_errors ~context in
   assert_inference_errors
     {|
-      def foo(x = 5) -> int:
-        return x
-    |}
-    ~expected:
-      ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
-  assert_inference_errors
-    {|
-      def foo(x: typing.Any) -> None:
-        x = 5
-    |}
-    ~expected:
-      [
-        "Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified.";
-      ];
-  assert_inference_errors
-    {|
-      def foo(x: typing.Any = 5) -> None:
-        pass
-    |}
-    ~expected:
-      [
-        "Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified.";
-      ];
-  assert_inference_errors
-    {|
       def foo(x) -> int:
         return x
     |}

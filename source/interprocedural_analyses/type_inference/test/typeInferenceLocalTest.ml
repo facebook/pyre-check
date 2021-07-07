@@ -126,12 +126,12 @@ let test_inferred_returns context =
       |}
 
 
-let test_inferred_parameters context =
+let test_inferred_function_parameters context =
   let check_inference_results = check_inference_results ~context in
   check_inference_results
     {|
-      def foo(x) -> int:
-        return x
+      def foo(x = 5) -> int:
+          return x
     |}
     ~target:"test.foo"
     ~expected:
@@ -144,7 +144,7 @@ let test_inferred_parameters context =
             "parent": null,
             "return": "int",
             "parameters": [
-              { "name": "x", "annotation": "int", "value": null, "index": 0 }
+              { "name": "x", "annotation": "int", "value": "5", "index": 0 }
             ],
             "decorators": [],
             "location": { "qualifier": "test", "path": "test.py", "line": 2 },
@@ -152,7 +152,58 @@ let test_inferred_parameters context =
           },
           "abstract": false
         }
-      |}
+      |};
+  check_inference_results
+    {|
+      def foo(x: typing.Any) -> None:
+          x = 5
+    |}
+    ~target:"test.foo"
+    ~expected:
+      {|
+      {
+        "globals": [],
+        "attributes": [],
+        "define": {
+          "name": "test.foo",
+          "parent": null,
+          "return": "None",
+          "parameters": [
+            { "name": "x", "annotation": "int", "value": null, "index": 0 }
+          ],
+          "decorators": [],
+          "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+          "async": false
+        },
+        "abstract": false
+      }
+     |};
+  check_inference_results
+    {|
+      def foo(x: typing.Any = 5) -> None:
+          pass
+    |}
+    ~target:"test.foo"
+    ~expected:
+      {|
+      {
+        "globals": [],
+        "attributes": [],
+        "define": {
+          "name": "test.foo",
+          "parent": null,
+          "return": "None",
+          "parameters": [
+            { "name": "x", "annotation": "int", "value": "5", "index": 0 }
+          ],
+          "decorators": [],
+          "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+          "async": false
+        },
+        "abstract": false
+      }
+     |};
+  ()
 
 
 let test_inferred_globals context =
@@ -300,7 +351,7 @@ let () =
   "typeInferenceLocalTest"
   >::: [
          "test_inferred_returns" >:: test_inferred_returns;
-         "test_inferred_parameters" >:: test_inferred_parameters;
+         "test_inferred_function_parameters" >:: test_inferred_function_parameters;
          "test_inferred_globals" >:: test_inferred_globals;
          "test_inferred_attributes" >:: test_inferred_attributes;
        ]
