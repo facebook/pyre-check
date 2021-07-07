@@ -212,109 +212,6 @@ let assert_inference_errors ~context ~expected source =
   Memory.reset_shared_memory ()
 
 
-let test_check_missing_parameter context =
-  let assert_inference_errors = assert_inference_errors ~context in
-  assert_inference_errors
-    {|
-        class A:
-          def foo(self, x: int) -> int: ...
-        class B(A):
-          def foo(self, x):
-            return x
-    |}
-    ~expected:
-      ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
-  assert_inference_errors
-    {|
-        class A:
-          def foo(self, x: int, y: str) -> int: ...
-        class B(A):
-          def foo(self, x, y: str):
-            return x
-    |}
-    ~expected:
-      ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
-  assert_inference_errors
-    {|
-        from typing import Any
-        class A:
-          def foo(self, x: Any) -> int: ...
-        class B(A):
-          def foo(self, x):
-            return x
-    |}
-    ~expected:[];
-  assert_inference_errors
-    {|
-        from typing import TypeVar
-        T = TypeVar("T")
-        class A:
-          def foo(self, x: T) -> T: ...
-        class B(A):
-          def foo(self, x):
-            return x
-    |}
-    ~expected:[];
-  assert_inference_errors
-    {|
-        class A:
-          def foo(self, x: "A") -> "A": ...
-        class B(A):
-          def foo(self, x):
-            return x
-    |}
-    ~expected:
-      ["Missing parameter annotation [2]: Parameter `x` has type `A` but no type is specified."];
-  assert_inference_errors
-    {|
-        class A:
-          def foo(self: "A") -> str: ...
-        class B(A):
-          def foo(self):
-            return x
-    |}
-    ~expected:[];
-  (* We don't generate errors if there are already (possibly inconsistent) annotations. *)
-  assert_inference_errors
-    {|
-        class A:
-          def foo(self, x: int) -> int: ...
-        class B(A):
-          def foo(self, x: str) -> str:
-            return x
-    |}
-    ~expected:[];
-  assert_inference_errors
-    {|
-        class A:
-          def foo(self, *args: str, **kwargs: float) -> int: ...
-        class B(A):
-          def foo(self, *args, **kwargs):
-            return x
-    |}
-    ~expected:
-      [
-        "Missing parameter annotation [2]: Parameter `*args` has type `str` but no type is \
-         specified.";
-        "Missing parameter annotation [2]: Parameter `**kwargs` has type `float` but no type is \
-         specified.";
-      ];
-  (* We only add annotations on direct overrides for now. *)
-  assert_inference_errors
-    {|
-        class A:
-          def foo(self, x: int) -> int: ...
-        class B(A):
-          def foo(self, x):
-            return x
-        class C(B):
-          def foo(self, x):
-            return x + 1
-    |}
-    ~expected:
-      ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."]
-
-
 let test_check_missing_return context =
   let assert_inference_errors = assert_inference_errors ~context in
   assert_inference_errors
@@ -674,7 +571,6 @@ let () =
   "inference"
   >::: [
          "backward" >:: test_backward;
-         "missing_parameter" >:: test_check_missing_parameter;
          "missing_return" >:: test_check_missing_return;
          "missing_global" >:: test_check_missing_global;
          "infer_fields" >:: test_infer_error_fields;

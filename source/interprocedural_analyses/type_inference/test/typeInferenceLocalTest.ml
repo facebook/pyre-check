@@ -72,7 +72,11 @@ module Setup = struct
     let is_target { LocalResult.define = { name; _ }; _ } =
       Reference.equal name (Reference.create target)
     in
-    module_results |> List.filter ~f:is_target |> List.hd_exn
+    let first = function
+      | head :: _ -> head
+      | [] -> failwith ("Could not find target define " ^ target)
+    in
+    module_results |> List.filter ~f:is_target |> first
 end
 
 let assert_json_equal ~context ~expected result =
@@ -126,6 +130,10 @@ let test_inferred_returns context =
       |}
 
 
+let option_to_json string_option =
+  string_option |> Option.map ~f:(Format.asprintf "\"%s\"") |> Option.value ~default:"null"
+
+
 let test_inferred_function_parameters context =
   let check_inference_results = check_inference_results ~context in
   let single_parameter
@@ -137,9 +145,6 @@ let test_inferred_function_parameters context =
       ~return
       ()
     =
-    let default_value =
-      default |> Option.map ~f:(Format.asprintf "\"%s\"") |> Option.value ~default:"null"
-    in
     Format.asprintf
       {|
       {
@@ -163,7 +168,7 @@ let test_inferred_function_parameters context =
       return
       name
       type_
-      default_value
+      (option_to_json default)
       line
   in
   check_inference_results
@@ -440,6 +445,201 @@ let test_inferred_function_parameters context =
   ()
 
 
+let test_inferred_method_parameters context =
+  let check_inference_results = check_inference_results ~context in
+  let single_parameter_method ?(class_name = "test.B") ~type_ ~return ~line () =
+    Format.asprintf
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "define": {
+            "name": "%s.foo",
+            "parent": "%s",
+            "return": %s,
+            "parameters": [
+              { "name": "self", "annotation": null, "value": null, "index": 0 },
+              { "name": "x", "annotation": %s, "value": null, "index": 1 }
+            ],
+            "decorators": [],
+            "location": { "qualifier": "test", "path": "test.py", "line": %d },
+            "async": false
+          },
+          "abstract": false
+        }
+      |}
+      class_name
+      class_name
+      (option_to_json return)
+      (option_to_json type_)
+      line
+  in
+  check_inference_results
+    {|
+      class A:
+          def foo(self, x: int) -> None: ...
+      class B(A):
+          def foo(self, x) -> None:
+              return x
+    |}
+    ~target:"test.B.foo"
+    ~expected:(single_parameter_method ~type_:(Some "int") ~line:5 ~return:(Some "None") ());
+  check_inference_results
+    {|
+      class A:
+          def foo(self, x: "A") -> "A": ...
+      class B(A):
+          def foo(self, x):
+              return x
+    |}
+    ~target:"test.B.foo"
+    ~expected:(single_parameter_method ~type_:(Some "A") ~line:5 ~return:None ());
+  (* Don't override explicit annotations if they clash with parent class *)
+  check_inference_results
+    {|
+      class A:
+          def foo(self, x: int) -> int: ...
+      class B(A):
+          def foo(self, x: str) -> str:
+              return x
+    |}
+    ~target:"test.B.foo"
+    ~expected:(single_parameter_method ~type_:(Some "str") ~line:5 ~return:(Some "str") ());
+  let no_inferences = single_parameter_method ~type_:None ~return:None in
+  check_inference_results
+    {|
+      from typing import Any
+      class A:
+          def foo(self, x: Any) -> int: ...
+      class B(A):
+          def foo(self, x):
+              return x
+    |}
+    ~target:"test.B.foo"
+    ~expected:(no_inferences ~line:6 ());
+  check_inference_results
+    {|
+      from typing import TypeVar
+      T = TypeVar("T")
+      class A:
+          def foo(self, x: T) -> T: ...
+      class B(A):
+          def foo(self, x):
+              return x
+    |}
+    ~target:"test.B.foo"
+    ~expected:(no_inferences ~line:7 ());
+  check_inference_results
+    {|
+      class A:
+          def foo(self, x: int) -> int: ...
+      class B(A):
+          def foo(self, x):
+              return x
+      class C(B):
+          def foo(self, x):
+              return x + 1
+    |}
+    ~target:"test.C.foo"
+    ~expected:(no_inferences ~class_name:"test.C" ~line:8 ());
+  (* Do not propagate types on `self` *)
+  check_inference_results
+    {|
+      class A:
+          def foo(self: "A") -> str: ...
+      class B(A):
+          def foo(self):
+              return x
+    |}
+    ~target:"test.B.foo"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "define": {
+            "name": "test.B.foo",
+            "parent": "test.B",
+            "return": null,
+            "parameters": [
+              { "name": "self", "annotation": null, "value": null, "index": 0 }
+            ],
+            "decorators": [],
+            "location": { "qualifier": "test", "path": "test.py", "line": 5 },
+            "async": false
+          },
+          "abstract": false
+        }
+     |};
+  (* Do not propagate types on `self` *)
+  check_inference_results
+    {|
+      class A:
+          def foo(self, x: int, y: str) -> int: ...
+      class B(A):
+          def foo(self, x, y: str):
+              return x
+    |}
+    ~target:"test.B.foo"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "define": {
+            "name": "test.B.foo",
+            "parent": "test.B",
+            "return": null,
+            "parameters": [
+              { "name": "self", "annotation": null, "value": null, "index": 0 },
+              { "name": "x", "annotation": "int", "value": null, "index": 1 },
+              { "name": "y", "annotation": "str", "value": null, "index": 2 }
+            ],
+            "decorators": [],
+            "location": { "qualifier": "test", "path": "test.py", "line": 5 },
+            "async": false
+          },
+          "abstract": false
+        }
+     |};
+  check_inference_results
+    {|
+      class A:
+          def foo(self, *args: str, **kwargs: float) -> int: ...
+      class B(A):
+          def foo(self, *args, **kwargs):
+              return x
+    |}
+    ~target:"test.B.foo"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "define": {
+            "name": "test.B.foo",
+            "parent": "test.B",
+            "return": null,
+            "parameters": [
+              { "name": "self", "annotation": null, "value": null, "index": 0 },
+              { "name": "*args", "annotation": "str", "value": null, "index": 1 },
+              {
+                "name": "**kwargs",
+                "annotation": "float",
+                "value": null,
+                "index": 2
+              }
+            ],
+            "decorators": [],
+            "location": { "qualifier": "test", "path": "test.py", "line": 5 },
+            "async": false
+          },
+          "abstract": false
+        }
+     |};
+  ()
+
+
 let test_inferred_globals context =
   let check_inference_results = check_inference_results ~context in
   check_inference_results
@@ -586,6 +786,7 @@ let () =
   >::: [
          "test_inferred_returns" >:: test_inferred_returns;
          "test_inferred_function_parameters" >:: test_inferred_function_parameters;
+         "test_inferred_method_parameters" >:: test_inferred_method_parameters;
          "test_inferred_globals" >:: test_inferred_globals;
          "test_inferred_attributes" >:: test_inferred_attributes;
        ]
