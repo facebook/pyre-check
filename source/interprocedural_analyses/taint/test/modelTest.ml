@@ -1380,6 +1380,19 @@ let test_invalid_models context =
       "`Decorator` is not a valid constraint for model queries with find clause of kind \
        `attributes`."
     ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = parent.matches("foo"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`parent.matches` is not a valid constraint for model queries with find clause of kind \
+       `functions`."
+    ();
 
   assert_invalid_model
     ~model_source:
