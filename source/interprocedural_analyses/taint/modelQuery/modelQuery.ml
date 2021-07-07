@@ -155,7 +155,8 @@ let matches_annotation_constraint ~annotation_constraint ~annotation =
 let rec normalized_parameter_matches_constraint
     ~resolution
     ~parameter:
-      ((_, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as parameter)
+      ( (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
+      parameter )
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
@@ -166,6 +167,10 @@ let rec normalized_parameter_matches_constraint
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint (Identifier.sanitized parameter_name)
+  | ModelQuery.ParameterConstraint.IndexConstraint index -> (
+      match root with
+      | AccessPath.Root.PositionalParameter { position; _ } when position = index -> true
+      | _ -> false )
   | ModelQuery.ParameterConstraint.AnyOf constraints ->
       List.exists constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->

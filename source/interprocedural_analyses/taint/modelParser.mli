@@ -66,6 +66,7 @@ module T : sig
       type t =
         | AnnotationConstraint of annotation_constraint
         | NameConstraint of name_constraint
+        | IndexConstraint of int
         | AnyOf of t list
         | Not of t
       [@@deriving compare, show]
