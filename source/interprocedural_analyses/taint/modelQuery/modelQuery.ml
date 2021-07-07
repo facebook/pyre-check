@@ -337,7 +337,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             List.filter_map productions ~f:(fun production ->
                 production_to_taint ~annotation:return_annotation ~production
                 >>| fun taint -> ReturnAnnotation, taint)
-        | ModelQuery.ParameterTaint { name; taint = productions } -> (
+        | ModelQuery.NamedParameterTaint { name; taint = productions } -> (
             let parameter =
               List.find_map
                 normalized_parameters

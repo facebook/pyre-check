@@ -192,7 +192,7 @@ let test_apply_rule context =
         productions =
           [
             ReturnTaint [TaintAnnotation (source "Test")];
-            ParameterTaint { name = "x"; taint = [TaintAnnotation (source "Test")] };
+            NamedParameterTaint { name = "x"; taint = [TaintAnnotation (source "Test")] };
           ];
         rule_kind = MethodModel;
       }
@@ -449,7 +449,7 @@ let test_apply_rule context =
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
           [
-            ParameterTaint
+            NamedParameterTaint
               {
                 name = "b";
                 taint =
@@ -531,7 +531,7 @@ let test_apply_rule context =
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
           [
-            ParameterTaint
+            NamedParameterTaint
               {
                 name = "b";
                 taint =

@@ -122,7 +122,7 @@ module T : sig
           excludes: string list;
           taint: produced_taint list;
         }
-      | ParameterTaint of {
+      | NamedParameterTaint of {
           name: string;
           taint: produced_taint list;
         }

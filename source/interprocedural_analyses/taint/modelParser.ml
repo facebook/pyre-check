@@ -150,7 +150,7 @@ module T = struct
           excludes: string list;
           taint: produced_taint list;
         }
-      | ParameterTaint of {
+      | NamedParameterTaint of {
           name: string;
           taint: produced_taint list;
         }
@@ -1354,7 +1354,7 @@ let parse_model_clause ~path ~configuration ~find_clause ({ Node.value; location
         } -> (
         match is_callable_clause_kind find_clause with
         | false -> Error (invalid_model_query_model_clause ~path ~location callee)
-        | _ -> parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { name; taint } )
+        | _ -> parse_taint taint >>| fun taint -> ModelQuery.NamedParameterTaint { name; taint } )
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "PositionalParameter"); _ } as callee;
