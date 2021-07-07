@@ -147,6 +147,8 @@ let matches_decorator_constraint ~name_constraint ~arguments_constraint decorato
 let matches_annotation_constraint ~annotation_constraint ~annotation =
   match annotation_constraint, annotation with
   | ModelQuery.IsAnnotatedTypeConstraint, Type.Annotated _ -> true
+  | ModelQuery.AnnotationNameConstraint name_constraint, _ ->
+      matches_name_constraint ~name_constraint (Type.show annotation)
   | _ -> false
 
 

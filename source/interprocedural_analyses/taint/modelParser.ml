@@ -61,8 +61,6 @@ module T = struct
   [@@deriving show, compare]
 
   module ModelQuery = struct
-    type annotation_constraint = IsAnnotatedTypeConstraint [@@deriving compare, show]
-
     type name_constraint =
       | Equals of string
       | Matches of Re2.t
@@ -76,6 +74,11 @@ module T = struct
 
 
     let show_name_constraint = Format.asprintf "%a" pp_name_constraint
+
+    type annotation_constraint =
+      | IsAnnotatedTypeConstraint
+      | AnnotationNameConstraint of name_constraint
+    [@@deriving compare, show]
 
     module ArgumentsConstraint = struct
       type t =

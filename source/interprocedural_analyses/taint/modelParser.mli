@@ -52,11 +52,14 @@ module T : sig
   [@@deriving show, compare]
 
   module ModelQuery : sig
-    type annotation_constraint = IsAnnotatedTypeConstraint [@@deriving compare, show]
-
     type name_constraint =
       | Equals of string
       | Matches of Re2.t
+    [@@deriving compare, show]
+
+    type annotation_constraint =
+      | IsAnnotatedTypeConstraint
+      | AnnotationNameConstraint of name_constraint
     [@@deriving compare, show]
 
     module ParameterConstraint : sig
