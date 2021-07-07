@@ -144,6 +144,32 @@ let matches_decorator_constraint ~name_constraint ~arguments_constraint decorato
   decorator_name_matches decorator && decorator_arguments_matches decorator
 
 
+let matches_annotation_constraint ~annotation_constraint ~annotation =
+  match annotation_constraint, annotation with
+  | ModelQuery.IsAnnotatedTypeConstraint, Type.Annotated _ -> true
+  | _ -> false
+
+
+let rec normalized_parameter_matches_constraint
+    ~resolution
+    ~parameter:
+      ((_, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as parameter)
+  = function
+  | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
+      annotation
+      >>| (fun annotation ->
+            matches_annotation_constraint
+              ~annotation_constraint
+              ~annotation:(GlobalResolution.parse_annotation resolution annotation))
+      |> Option.value ~default:false
+  | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
+      matches_name_constraint ~name_constraint (Identifier.sanitized parameter_name)
+  | ModelQuery.ParameterConstraint.AnyOf constraints ->
+      List.exists constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
+  | ModelQuery.ParameterConstraint.Not query_constraint ->
+      not (normalized_parameter_matches_constraint ~resolution ~parameter query_constraint)
+
+
 let rec callable_matches_constraint query_constraint ~resolution ~callable =
   let get_callable_type =
     Memo.unit (fun () ->
@@ -151,13 +177,6 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
         if Option.is_none callable_type then
           Log.error "Could not find callable type for callable: `%s`" (Callable.show callable);
         callable_type)
-  in
-  let matches_annotation_constraint ~annotation_constraint ~annotation =
-    match annotation_constraint with
-    | ModelQuery.IsAnnotatedTypeConstraint -> (
-        match annotation with
-        | Type.Annotated _ -> true
-        | _ -> false )
   in
   match query_constraint with
   | ModelQuery.DecoratorConstraint { name_constraint; arguments_constraint } -> (
@@ -194,7 +213,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
             ~annotation_constraint
             ~annotation:(GlobalResolution.parse_annotation resolution annotation)
       | _ -> false )
-  | ModelQuery.AnyParameterConstraint (ModelQuery.AnnotationConstraint annotation_constraint) -> (
+  | ModelQuery.AnyParameterConstraint parameter_constraint -> (
       let callable_type = get_callable_type () in
       match callable_type with
       | Some
@@ -203,15 +222,9 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
               { Statement.Define.signature = { Statement.Define.Signature.parameters; _ }; _ };
             _;
           } ->
-          List.exists
-            parameters
-            ~f:(fun { Node.value = { Expression.Parameter.annotation; _ }; _ } ->
-              match annotation with
-              | Some annotation ->
-                  matches_annotation_constraint
-                    ~annotation_constraint
-                    ~annotation:(GlobalResolution.parse_annotation resolution annotation)
-              | None -> false)
+          AccessPath.Root.normalize_parameters parameters
+          |> List.exists ~f:(fun parameter ->
+                 normalized_parameter_matches_constraint ~resolution ~parameter parameter_constraint)
       | _ -> false )
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(callable_matches_constraint ~resolution ~callable)

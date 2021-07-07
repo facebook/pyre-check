@@ -63,9 +63,6 @@ module T = struct
   module ModelQuery = struct
     type annotation_constraint = IsAnnotatedTypeConstraint [@@deriving compare, show]
 
-    type parameter_constraint = AnnotationConstraint of annotation_constraint
-    [@@deriving compare, show]
-
     type name_constraint =
       | Equals of string
       | Matches of Re2.t
@@ -84,6 +81,15 @@ module T = struct
       type t =
         | Equals of Ast.Expression.Call.Argument.t list
         | Contains of Ast.Expression.Call.Argument.t list
+      [@@deriving compare, show]
+    end
+
+    module ParameterConstraint = struct
+      type t =
+        | AnnotationConstraint of annotation_constraint
+        | NameConstraint of name_constraint
+        | AnyOf of t list
+        | Not of t
       [@@deriving compare, show]
     end
 
@@ -108,7 +114,7 @@ module T = struct
     type model_constraint =
       | NameConstraint of name_constraint
       | ReturnConstraint of annotation_constraint
-      | AnyParameterConstraint of parameter_constraint
+      | AnyParameterConstraint of ParameterConstraint.t
       | AnyOf of model_constraint list
       | ParentConstraint of class_constraint
       | DecoratorConstraint of {
@@ -930,7 +936,8 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         parse_annotation_constraint
           ~name:parameter_constraint
           ~arguments:parameter_constraint_arguments
-        >>| fun annotation_constraint -> ModelQuery.AnnotationConstraint annotation_constraint
+        >>| fun annotation_constraint ->
+        ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint
     | _ ->
         Error
           (invalid_model_error
