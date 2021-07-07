@@ -1,0 +1,84 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+from builtins import __test_sink
+from typing import Annotated, List
+
+
+class C:
+    ...
+
+
+def test1_alarm1(a: int, b: str, c: C, d):
+    __test_sink(a)
+
+
+def test1_alarm2(a: int, b: str, c: C, d):
+    __test_sink(b)
+
+
+def test1_alarm3(a: int, b: str, c: C, d):
+    __test_sink(c)
+
+
+def test1_alarm4(a: int, b: str, c: C, d):
+    __test_sink(d)
+
+
+def test2_noalarm1(foo_1, foo_2):
+    __test_sink(foo_1)
+
+
+def test2_noalarm2(foo_1, foo_2):
+    __test_sink(foo_2)
+
+
+def test3_noalarm1(a: int, b: str, c: C, d):
+    __test_sink(a)
+
+
+def test3_noalarm2(a: int, b: str, c: C, d):
+    __test_sink(b)
+
+
+def test3_alarm1(a: int, b: str, c: C, d):
+    __test_sink(c)
+
+
+def test3_alarm2(a: int, b: str, c: C, d):
+    __test_sink(d)
+
+
+def test4_alarm1(a: List[str], b: List[int], c: C, d):
+    __test_sink(a)
+
+
+def test4_noalarm1(a: List[str], b: List[int], c: C, d):
+    __test_sink(b)
+
+
+def test4_alarm2(a: int, b: str, c: C, d):
+    __test_sink(c)
+
+
+def test4_noalarm2(a: int, b: str, c: C, d):
+    __test_sink(d)
+
+
+class Test5:
+    def test5_alarm1(self, x: List[str]):
+        pass
+
+    def test5_alarm2(self, x: List[int]):
+        pass
+
+    def test5_alarm3(self, x: C):
+        pass
+
+    def test5_alarm4(self, x: Annotated[str, "test"]):
+        pass
+
+    def test5_noalarm1(self, x: int):
+        pass

@@ -3209,6 +3209,78 @@ let test_query_parsing context =
         };
       ]
     ();
+
+  (* Parameters *)
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+       name = "get_POST_annotated_sources",
+       find = "functions",
+       where = [Decorator(name.matches("api_view"))],
+       model = [
+         Parameters(
+           TaintSink[Test],
+           where=[
+              Not(AnyOf(
+                name.matches("self"),
+                name.matches("cls"),
+                type_annotation.matches("IGWSGIRequest"),
+                type_annotation.matches("HttpRequest"),
+              ))
+           ]
+         )
+       ]
+    )
+    |}
+    ~expect:
+      [
+        {
+          name = Some "get_POST_annotated_sources";
+          query =
+            [
+              DecoratorConstraint
+                {
+                  name_constraint = Matches (Re2.create_exn "api_view");
+                  arguments_constraint = None;
+                };
+            ];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              ParameterTaint
+                {
+                  where =
+                    [
+                      Not
+                        (AnyOf
+                           [
+                             ParameterConstraint.NameConstraint (Matches (Re2.create_exn "self"));
+                             ParameterConstraint.NameConstraint (Matches (Re2.create_exn "cls"));
+                             ParameterConstraint.AnnotationConstraint
+                               (AnnotationNameConstraint (Matches (Re2.create_exn "IGWSGIRequest")));
+                             ParameterConstraint.AnnotationConstraint
+                               (AnnotationNameConstraint (Matches (Re2.create_exn "HttpRequest")));
+                           ]);
+                    ];
+                  taint =
+                    [
+                      TaintAnnotation
+                        (Model.Sink
+                           {
+                             sink = Sinks.NamedSink "Test";
+                             breadcrumbs = [];
+                             path = [];
+                             leaf_names = [];
+                             leaf_name_provided = false;
+                           });
+                    ];
+                };
+            ];
+        };
+      ]
+    ();
   ()
 
 

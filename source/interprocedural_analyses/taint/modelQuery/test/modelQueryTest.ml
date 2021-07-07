@@ -274,6 +274,295 @@ let test_apply_rule context =
           source "Test" );
       ];
 
+  (* Parameter taint. *)
+  assert_applied_rules
+    ~source:{|
+      class C:
+        def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [NameConstraint (Matches (Re2.create_exn "x"))];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "x"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      class C:
+        def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [Not (NameConstraint (Matches (Re2.create_exn "y")))];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "x"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      class C:
+        def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where =
+                  [
+                    ParameterConstraint.AnnotationConstraint
+                      (AnnotationNameConstraint (Matches (Re2.create_exn "int")));
+                  ];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "x"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      class C:
+        def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where =
+                  [
+                    Not
+                      (ParameterConstraint.AnnotationConstraint
+                         (AnnotationNameConstraint (Equals "int")));
+                  ];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "y"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:
+      {|
+      from typing import Annotated
+      class C:
+        def foo(x: int, y: Annotated[str, "foo"]): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = MethodModel;
+      }
+    ~callable:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" })
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "y"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [NameConstraint (Matches (Re2.create_exn "x"))];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "x"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [Not (NameConstraint (Matches (Re2.create_exn "y")))];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "x"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where =
+                  [
+                    ParameterConstraint.AnnotationConstraint
+                      (AnnotationNameConstraint (Matches (Re2.create_exn "int")));
+                  ];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "x"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      def foo(x: int, y: str): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where =
+                  [
+                    Not
+                      (ParameterConstraint.AnnotationConstraint
+                         (AnnotationNameConstraint (Equals "int")));
+                  ];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "y"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:
+      {|
+      from typing import Annotated
+      def foo(x: int, y: Annotated[str, "foo"]): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "y"; positional_only = false }),
+          source "Test" );
+      ];
+
   (* Annotated returns. *)
   assert_applied_rules
     ~source:
