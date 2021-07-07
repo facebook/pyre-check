@@ -150,12 +150,19 @@ module AnnotationsByName = struct
         SerializableReference.Map.add_exn map ~key:identifying_name ~data:value
 
 
-      let update_exn map value transform =
+      let update_exn map name transform =
         let transform_or_raise = function
           | Some value -> transform value
-          | None -> failwith "Did not expect to update with a missing name"
+          | None ->
+              failwith
+                (Format.asprintf
+                   "Did not expect an update with name %a (expected one of %a)"
+                   Reference.pp
+                   name
+                   pp
+                   map)
         in
-        SerializableReference.Map.update map value ~f:transform_or_raise
+        SerializableReference.Map.update map name ~f:transform_or_raise
     end
   end
 
