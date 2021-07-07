@@ -393,6 +393,24 @@ let apply_callable_productions ~resolution ~productions ~callable =
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
+        | ModelQuery.ParameterTaint { where; taint; _ } ->
+            let apply_parameter_production
+                ( ( (root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
+                  parameter ),
+                  production )
+              =
+              if
+                List.for_all
+                  where
+                  ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
+              then
+                production_to_taint ~annotation ~production
+                >>| fun taint -> ParameterAnnotation root, taint
+              else
+                None
+            in
+            List.cartesian_product normalized_parameters taint
+            |> List.filter_map ~f:apply_parameter_production
         | ModelQuery.AttributeTaint _ -> failwith "impossible case"
       in
       List.concat_map productions ~f:apply_production

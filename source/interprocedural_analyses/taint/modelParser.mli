@@ -131,6 +131,10 @@ module T : sig
           index: int;
           taint: produced_taint list;
         }
+      | ParameterTaint of {
+          where: ParameterConstraint.t list;
+          taint: produced_taint list;
+        }
       | ReturnTaint of produced_taint list
       | AttributeTaint of produced_taint list
     [@@deriving show, compare]
