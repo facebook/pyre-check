@@ -1355,6 +1355,31 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
                  ~path
                  ~location
                  (InvalidModelQueryClauseArguments { callee; arguments })) )
+    | Expression.Call
+        {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Name (Name.Identifier "index"); _ };
+                      attribute = "equals" as attribute;
+                      _;
+                    });
+              _;
+            } as callee;
+          arguments;
+        } -> (
+        match attribute, arguments with
+        | "equals", [{ Call.Argument.value = { Node.value = Expression.Integer index; _ }; _ }] ->
+            Ok (ModelQuery.ParameterConstraint.IndexConstraint index)
+        | _ ->
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidModelQueryClauseArguments { callee; arguments })) )
     | Expression.Call { Call.callee; _ } ->
         Error
           (model_verification_error

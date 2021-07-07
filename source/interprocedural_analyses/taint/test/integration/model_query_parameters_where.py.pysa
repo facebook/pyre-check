@@ -79,3 +79,42 @@ ModelQuery(
     )
   ]
 )
+
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test6_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        AnyOf(
+          index.equals(0),
+          Not(AnyOf(
+            index.equals(0),
+            index.equals(1),
+            index.equals(3),
+          ))
+        )
+      ]
+    )
+  ]
+)
+
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.matches("Test7"),
+    name.matches("test7_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        index.equals(1)
+      ]
+    )
+  ]
+)

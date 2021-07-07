@@ -50,6 +50,18 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query_parameters_where.Test7.test7_alarm1",
+    "sources": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query_parameters_where.test1_alarm1",
     "sources": [
       {
@@ -936,6 +948,238 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 67,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.test6_alarm1",
+    "sources": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "root": {
+              "filename": "model_query_parameters_where.py",
+              "line": 88,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test6_alarm1",
+    "callable_line": 87,
+    "code": 5002,
+    "line": 88,
+    "start": 16,
+    "end": 17,
+    "filename": "model_query_parameters_where.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_where.py",
+              "line": 87,
+              "start": 17,
+              "end": 18
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_where.test6_alarm1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_where.py",
+              "line": 88,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.test6_alarm2",
+    "sources": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(c)",
+        "taint": [
+          {
+            "root": {
+              "filename": "model_query_parameters_where.py",
+              "line": 96,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test6_alarm2",
+    "callable_line": 95,
+    "code": 5002,
+    "line": 96,
+    "start": 16,
+    "end": 17,
+    "filename": "model_query_parameters_where.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_where.py",
+              "line": 95,
+              "start": 23,
+              "end": 24
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_where.test6_alarm2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_where.py",
+              "line": 96,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.test6_noalarm1",
+    "sources": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "root": {
+              "filename": "model_query_parameters_where.py",
+              "line": 92,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.test6_noalarm2",
+    "sources": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "root": {
+              "filename": "model_query_parameters_where.py",
+              "line": 100,
               "start": 16,
               "end": 17
             },

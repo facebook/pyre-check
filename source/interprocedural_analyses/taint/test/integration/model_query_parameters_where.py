@@ -82,3 +82,27 @@ class Test5:
 
     def test5_noalarm1(self, x: int):
         pass
+
+
+def test6_alarm1(a, b, c, d):
+    __test_sink(a)
+
+
+def test6_noalarm1(a, b, c, d):
+    __test_sink(b)
+
+
+def test6_alarm2(a, b, c, d):
+    __test_sink(c)
+
+
+def test6_noalarm2(a, b, c, d):
+    __test_sink(d)
+
+
+class Test7:
+    def test7_alarm1(self, x):
+        pass
+
+    def test7_noalarm1(self):
+        pass

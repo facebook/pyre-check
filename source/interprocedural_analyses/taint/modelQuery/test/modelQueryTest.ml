@@ -562,6 +562,58 @@ let test_apply_rule context =
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
+  assert_applied_rules
+    ~source:{|
+      def foo(x, y): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [ParameterConstraint.IndexConstraint 0];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 0; name = "x"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+      def foo(x, y): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [ParameterConstraint.IndexConstraint 1];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "y"; positional_only = false }),
+          source "Test" );
+      ];
 
   (* Annotated returns. *)
   assert_applied_rules
