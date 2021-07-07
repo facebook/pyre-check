@@ -1554,18 +1554,26 @@ let parse_model_clause ~path ~configuration ~find_clause ({ Node.value; location
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "Parameters"); _ } as callee;
-          arguments =
+          arguments;
+        } -> (
+        match is_callable_clause_kind find_clause, arguments with
+        | false, _ -> Error (invalid_model_query_model_clause ~path ~location callee)
+        | _, [{ Call.Argument.value = taint; _ }] ->
+            parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { where = []; taint }
+        | ( _,
             [
               { Call.Argument.value = taint; _ };
               { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-            ];
-        } -> (
-        match is_callable_clause_kind find_clause with
-        | false -> Error (invalid_model_query_model_clause ~path ~location callee)
-        | _ ->
+            ] ) ->
             parse_parameter_where_clause ~path where_clause
             >>= fun where ->
-            parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { where; taint } )
+            parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { where; taint }
+        | _ ->
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidModelQueryClauseArguments { callee; arguments })) )
     | _ ->
         Error
           (invalid_model_error

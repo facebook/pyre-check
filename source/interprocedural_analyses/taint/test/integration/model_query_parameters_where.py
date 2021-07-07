@@ -106,3 +106,19 @@ class Test7:
 
     def test7_noalarm1(self):
         pass
+
+
+def test8_alarm1(a, b, c, d):
+    __test_sink(a)
+
+
+def test8_alarm2(a, b, c, d):
+    __test_sink(b)
+
+
+def test8_alarm3(a, b, c, d):
+    __test_sink(c)
+
+
+def test8_alarm4(a, b, c, d):
+    __test_sink(d)

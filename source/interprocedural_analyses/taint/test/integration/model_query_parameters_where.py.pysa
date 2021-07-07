@@ -118,3 +118,13 @@ ModelQuery(
     )
   ]
 )
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test8_")
+  ],
+  model = [
+    Parameters(TaintSource[Test])
+  ]
+)
