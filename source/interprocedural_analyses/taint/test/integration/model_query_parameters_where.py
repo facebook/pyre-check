@@ -122,3 +122,11 @@ def test8_alarm3(a, b, c, d):
 
 def test8_alarm4(a, b, c, d):
     __test_sink(d)
+
+
+def test9_f(a, b):
+    pass
+
+
+def test10_f(a: Annotated[int, "foo"], b: str, c_foo, d: List[str]):
+    pass
