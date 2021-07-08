@@ -84,7 +84,28 @@ let assert_json_equal ~context ~expected result =
   assert_equal ~ctxt:context ~printer:Yojson.Safe.pretty_to_string expected result
 
 
-let check_inference_results ~context ~target ~expected code =
+let access_by_field_name field body =
+  match body with
+  | `Assoc list -> List.Assoc.find ~equal:String.equal list field |> Option.value ~default:`Null
+  | _ ->
+      failwith
+        (Format.asprintf
+           "TEST FAIL: ERROR ACCESSING FIELD %s IN JSON %s"
+           field
+           (Yojson.Safe.pretty_to_string body))
+
+
+let access_by_path field_path body =
+  let rec go path_so_far body_so_far =
+    match path_so_far with
+    | [] -> body_so_far
+    | field_name :: rest_of_path ->
+        body_so_far |> access_by_field_name field_name |> go rest_of_path
+  in
+  go field_path body
+
+
+let check_inference_results ?(field_path = []) ~context ~target ~expected code =
   let result = Setup.run_inference ~context ~target code |> LocalResult.to_yojson in
   (* Filter out toplevel and __init__ defines, which are verbose and uninteresting *)
   let actual =
@@ -98,36 +119,214 @@ let check_inference_results ~context ~target ~expected code =
     else
       result
   in
-  assert_json_equal ~context ~expected actual
+  actual |> access_by_path field_path |> assert_json_equal ~context ~expected
 
 
 let test_inferred_returns context =
-  let check_inference_results = check_inference_results ~context in
+  let check_inference_results = check_inference_results ~field_path:["define"; "return"] ~context in
+  check_inference_results
+    {|
+      def foo():
+        pass
+    |}
+    ~target:"test.foo"
+    ~expected:{|"None"|};
   check_inference_results
     {|
       def foo(x: int):
         return x
     |}
     ~target:"test.foo"
-    ~expected:
-      {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "test.foo",
-            "parent": null,
-            "return": "int",
-            "parameters": [
-              { "name": "x", "annotation": "int", "value": null, "index": 0 }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
-            "async": false
-          },
-          "abstract": false
-        }
-      |}
+    ~expected:{|"int"|};
+  check_inference_results
+    {|
+      def foo() -> int:
+        pass
+    |}
+    ~target:"test.foo"
+    ~expected:{|"int"|};
+  check_inference_results
+    {|
+      def foo():
+        x = 1
+        return x
+    |}
+    ~target:"test.foo"
+    ~expected:{|"int"|};
+  check_inference_results
+    {|
+      def foo():
+        return
+    |}
+    ~target:"test.foo"
+    ~expected:{|"None"|};
+  check_inference_results
+    {|
+      def foo():
+        return None
+    |}
+    ~target:"test.foo"
+    ~expected:{|"None"|};
+  check_inference_results
+    {|
+      def foo(b: bool):
+        if b:
+          return "hello"
+        else:
+          return 0
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.Union[int, str]"|};
+  check_inference_results
+    {|
+      def other() -> int:
+        return 1
+
+      def foo():
+        x = "string"
+        x = other()
+        return x
+    |}
+    ~target:"test.foo"
+    ~expected:{|"int"|};
+  check_inference_results
+    {|
+      def foo():
+        x = undefined
+    |}
+    ~target:"test.foo"
+    ~expected:{|"None"|};
+  check_inference_results
+    {|
+      def foo(a):
+          x, _, z = a.b(':')
+          return z, x
+    |}
+    ~target:"test.foo"
+    ~expected:{|null|};
+  check_inference_results
+    {|
+    def foo():
+      if 1 > 2:
+        x = 2
+      else:
+        assert not True
+      return x
+    |}
+    ~target:"test.foo"
+    ~expected:{|"int"|};
+  check_inference_results
+    {|
+      class Test(object):
+          def ret_self(self):
+              return self
+    |}
+    ~target:"test.Test.ret_self"
+    ~expected:{|"Test"|};
+  check_inference_results
+    {|
+      def foo():
+        return [1]
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.List[int]"|};
+  (* TODO(T84365830): Implement support for empty containers. *)
+  check_inference_results
+    {|
+      def foo():
+        return []
+    |}
+    ~target:"test.foo"
+    ~expected:{|null|};
+  check_inference_results
+    {|
+      def foo():
+        return {}
+    |}
+    ~target:"test.foo"
+    ~expected:{|null|};
+  (* TODO(T84365830): Do a bit more guessing for containers of Any *)
+  check_inference_results
+    {|
+      from typing import Any
+      def foo(x: Any):
+        return {"": x}
+    |}
+    ~target:"test.foo"
+    ~expected:{|null|};
+  check_inference_results
+    {|
+      def foo(y: bool):
+          x = {}
+          if y:
+              x["a"] = 1
+          return x
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.Dict[str, int]"|};
+  check_inference_results
+    {|
+      def foo():
+          y = {}
+          list = [1, 2, 3]
+          for num in list:
+              y["a"] = num
+          return y
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.Dict[str, int]"|};
+  check_inference_results
+    {|
+        def foo():
+            x = []
+            x.append("")
+            x.append(1)
+            return x
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.List[typing.Union[int, str]]"|};
+  check_inference_results
+    {|
+      class A:
+          @abstractmethod
+          def foo():
+              pass
+    |}
+    ~target:"test.A.foo"
+    ~expected:{|null|};
+  check_inference_results
+    {|
+      def foo():
+          return ("", "", "", "")
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.Tuple[str, ...]"|};
+  check_inference_results
+    {|
+      def foo():
+          return ("", "", "", 2)
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.Tuple[str, str, str, int]"|};
+  check_inference_results
+    {|
+      def foo():
+          def bar(x: int) -> str:
+              return ""
+          return bar
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.Callable[[int], str]"|};
+  check_inference_results
+    {|
+      def foo():
+        def bar(x: int, y: str) -> bool:
+            pass
+        return [bar]
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.List[typing.Callable[[int, str], bool]]"|};
+  ()
 
 
 let option_to_json string_option =
