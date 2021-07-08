@@ -5,8 +5,9 @@
 
 import sqlite3
 import subprocess
+
 import requests
-from flask import Flask
+from flask import Flask, render_template
 from lxml import etree
 
 app = Flask(__name__)
@@ -36,14 +37,15 @@ def definite_pt(payload: str) -> str:
 
 @app.route("/xss/<string:payload>")
 def definite_xss(payload: str) -> None:
-    Flask.Markup(payload)
+    content = Flask.Markup(payload)
+    return render_template(content)
 
 
 @app.route("/sql/<string:payload>")
 def definite_sql(payload: str) -> None:
     con = sqlite3.connect()
     cur = con.cursor()
-    cur.execute(payload)
+    cur.execute(f"SELECT info FROM users WHERE name={payload}")
 
 
 @app.route("/ssrf/<string:payload>")
