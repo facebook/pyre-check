@@ -106,20 +106,11 @@ let access_by_path field_path body =
 
 
 let check_inference_results ?(field_path = []) ~context ~target ~expected code =
-  let result = Setup.run_inference ~context ~target code |> LocalResult.to_yojson in
-  (* Filter out toplevel and __init__ defines, which are verbose and uninteresting *)
-  let actual =
-    if
-      String.is_suffix target ~suffix:"__init__" or String.is_substring target ~substring:"toplevel"
-    then
-      match result with
-      | `Assoc pairs ->
-          `Assoc (pairs |> List.filter ~f:(fun (key, _) -> not (String.equal key "define")))
-      | json -> json
-    else
-      result
-  in
-  actual |> access_by_path field_path |> assert_json_equal ~context ~expected
+  code
+  |> Setup.run_inference ~context ~target
+  |> LocalResult.to_yojson
+  |> access_by_path field_path
+  |> assert_json_equal ~context ~expected
 
 
 let test_inferred_returns context =
@@ -840,27 +831,23 @@ let test_inferred_method_parameters context =
 
 
 let test_inferred_globals context =
-  let check_inference_results = check_inference_results ~context in
+  let check_inference_results = check_inference_results ~context ~field_path:["globals"] in
   check_inference_results
     {|
       def foo() -> int:
-        return 1234
+          return 1234
       x = foo()
     |}
     ~target:"test.$toplevel"
     ~expected:
       {|
-        {
-          "globals": [
-              {
-                "name": "x",
-                "location": { "qualifier": "test", "path": "test.py", "line": 4 },
-                "annotation": "int"
-              }
-          ],
-          "attributes": [],
-          "abstract": false
-        }
+        [
+            {
+              "name": "x",
+              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
+              "annotation": "int"
+            }
+        ]
       |};
   check_inference_results
     {|
@@ -869,50 +856,32 @@ let test_inferred_globals context =
     ~target:"test.$toplevel"
     ~expected:
       {|
-        {
-          "globals": [
-            {
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
-              "annotation": "int"
-            }
-          ],
-          "attributes": [],
-          "abstract": false
-        }
+        [
+          {
+            "name": "x",
+            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+            "annotation": "int"
+          }
+        ]
       |};
   check_inference_results
     {|
       x = unknown
       def foo() -> int:
-        return x
+          return x
     |}
     ~target:"test.$toplevel"
-    ~expected:
-      {|
-        {
-          "globals": [],
-          "attributes": [],
-          "abstract": false
-        }
-      |};
+    ~expected:{|[]|};
   (* TODO(T84365830): Implement support for global inference due to local usage. *)
   check_inference_results
     {|
       x = unknown
       def foo() -> None:
-        global x
-        x = 1
+          global x
+          x = 1
     |}
     ~target:"test.$toplevel"
-    ~expected:
-      {|
-        {
-          "globals": [],
-          "attributes": [],
-          "abstract": false
-        }
-      |};
+    ~expected:{|[]|};
   (* TODO(T84365830): Be more intelligent about inferring None type. *)
   check_inference_results
     {|
@@ -921,135 +890,111 @@ let test_inferred_globals context =
     ~target:"test.$toplevel"
     ~expected:
       {|
-        {
-          "globals": [
-            {
-              "name": "foo",
-              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
-              "annotation": "None"
-            }
-          ],
-          "attributes": [],
-          "abstract": false
-        }
+        [
+          {
+            "name": "foo",
+            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+            "annotation": "None"
+          }
+        ]
       |};
   ()
 
 
 let test_inferred_attributes context =
-  let check_inference_results = check_inference_results ~context in
+  let check_inference_results = check_inference_results ~context ~field_path:["attributes"] in
   check_inference_results
     {|
       def foo() -> int:
-        return 1
-      class Foo:
-        x = foo()
-    |}
-    ~target:"test.Foo.$class_toplevel"
-    ~expected:
-      {|
-        {
-          "globals": [],
-          "attributes": [
-            {
-              "parent": "Foo",
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 5 },
-              "annotation": "int"
-            }
-          ],
-          "abstract": false
-        }
-      |};
-  check_inference_results
-    {|
-      class Foo:
-        x = 1 + 1
-    |}
-    ~target:"test.Foo.$class_toplevel"
-    ~expected:
-      {|
-        {
-          "globals": [],
-          "attributes": [
-            {
-              "parent": "Foo",
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
-              "annotation": "int"
-            }
-          ],
-          "abstract": false
-        }
-      |};
-  check_inference_results
-    {|
-      class Foo:
-        def __init__(self) -> None:
-          self.x = 1 + 1
-    |}
-    ~target:"test.Foo.__init__"
-    ~expected:
-      {|
-        {
-          "globals": [],
-          "attributes": [
-            {
-              "parent": "Foo",
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
-              "annotation": "int"
-            }
-          ],
-          "abstract": false
-        }
-      |};
-  check_inference_results
-    {|
-      class Foo:
-        def __init__(self) -> None:
-          self.x = self.foo()
-
-        def foo(self) -> int:
           return 1
+      class Foo:
+          x = foo()
+    |}
+    ~target:"test.Foo.$class_toplevel"
+    ~expected:
+      {|
+        [
+          {
+            "parent": "Foo",
+            "name": "x",
+            "location": { "qualifier": "test", "path": "test.py", "line": 5 },
+            "annotation": "int"
+          }
+        ]
+      |};
+  check_inference_results
+    {|
+      class Foo:
+          x = 1 + 1
+    |}
+    ~target:"test.Foo.$class_toplevel"
+    ~expected:
+      {|
+        [
+          {
+            "parent": "Foo",
+            "name": "x",
+            "location": { "qualifier": "test", "path": "test.py", "line": 3 },
+            "annotation": "int"
+          }
+        ]
+      |};
+  check_inference_results
+    {|
+      class Foo:
+          def __init__(self) -> None:
+              self.x = 1 + 1
     |}
     ~target:"test.Foo.__init__"
     ~expected:
       {|
-        {
-          "globals": [],
-          "attributes": [
-            {
-              "parent": "Foo",
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
-              "annotation": "int"
-            }
-          ],
-          "abstract": false
-        }
+        [
+          {
+            "parent": "Foo",
+            "name": "x",
+            "location": { "qualifier": "test", "path": "test.py", "line": 4 },
+            "annotation": "int"
+          }
+        ]
+      |};
+  check_inference_results
+    {|
+      class Foo:
+          def __init__(self) -> None:
+              self.x = self.foo()
+
+          def foo(self) -> int:
+              return 1
+    |}
+    ~target:"test.Foo.__init__"
+    ~expected:
+      {|
+        [
+          {
+            "parent": "Foo",
+            "name": "x",
+            "location": { "qualifier": "test", "path": "test.py", "line": 4 },
+            "annotation": "int"
+          }
+        ]
       |};
   (* TODO(T84365830): Be more intelligent about inferring None type. *)
   check_inference_results
     {|
-    class Foo:
-      foo = None
+      class Foo:
+          foo = None
     |}
     ~target:"test.Foo.$class_toplevel"
     ~expected:
       {|
-        {
-          "globals": [],
-          "attributes": [
-            {
-              "parent": "Foo",
-              "name": "foo",
-              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
-              "annotation": "None"
-            }
-          ],
-          "abstract": false
-        }
+        [
+          {
+            "parent": "Foo",
+            "name": "foo",
+            "location": { "qualifier": "test", "path": "test.py", "line": 3 },
+            "annotation": "None"
+          }
+        ]
       |};
   ()
 
