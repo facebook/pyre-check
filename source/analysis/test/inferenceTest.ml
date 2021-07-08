@@ -423,56 +423,6 @@ let test_check_missing_return context =
       ]
 
 
-let test_check_missing_global context =
-  let assert_inference_errors = assert_inference_errors ~context in
-  assert_inference_errors
-    {|
-      def foo() -> int:
-        return 1234
-      x = foo()
-    |}
-    ~expected:
-      [
-        "Missing global annotation [5]: Globally accessible variable `x` has type `int` but no \
-         type is specified.";
-      ];
-  assert_inference_errors
-    {|
-      x = 1 + 1
-    |}
-    ~expected:
-      [
-        "Missing global annotation [5]: Globally accessible variable `x` has type `int` but no \
-         type is specified.";
-      ];
-  (* TODO(T84365830): Implement support for global inference due to local usage. *)
-  assert_inference_errors
-    {|
-      x = unknown
-      def foo() -> None:
-        global x
-        x = 1
-    |}
-    ~expected:[];
-  assert_inference_errors
-    {|
-      x = unknown
-      def foo() -> int:
-        return x
-    |}
-    ~expected:[];
-  (* TODO(T84365830): Be more intelligent about inferring None type. *)
-  assert_inference_errors
-    {|
-      foo = None
-    |}
-    ~expected:
-      [
-        "Missing global annotation [5]: Globally accessible variable `foo` has type `None` but no \
-         type is specified.";
-      ]
-
-
 let test_infer_error_fields context =
   let assert_infer ?(fields = ["description"]) source errors =
     let fields_of_error error =
@@ -572,7 +522,6 @@ let () =
   >::: [
          "backward" >:: test_backward;
          "missing_return" >:: test_check_missing_return;
-         "missing_global" >:: test_check_missing_global;
          "infer_fields" >:: test_infer_error_fields;
        ]
   |> Test.run

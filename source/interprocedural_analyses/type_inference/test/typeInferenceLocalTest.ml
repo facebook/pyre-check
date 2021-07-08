@@ -644,7 +644,28 @@ let test_inferred_globals context =
   let check_inference_results = check_inference_results ~context in
   check_inference_results
     {|
-      x = None
+      def foo() -> int:
+        return 1234
+      x = foo()
+    |}
+    ~target:"test.$toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [
+              {
+                "name": "x",
+                "location": { "qualifier": "test", "path": "test.py", "line": 4 },
+                "annotation": "int"
+              }
+          ],
+          "attributes": [],
+          "abstract": false
+        }
+      |};
+  check_inference_results
+    {|
+      x = 1 + 1
     |}
     ~target:"test.$toplevel"
     ~expected:
@@ -654,13 +675,66 @@ let test_inferred_globals context =
             {
               "name": "x",
               "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+              "annotation": "int"
+            }
+          ],
+          "attributes": [],
+          "abstract": false
+        }
+      |};
+  check_inference_results
+    {|
+      x = unknown
+      def foo() -> int:
+        return x
+    |}
+    ~target:"test.$toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "abstract": false
+        }
+      |};
+  (* TODO(T84365830): Implement support for global inference due to local usage. *)
+  check_inference_results
+    {|
+      x = unknown
+      def foo() -> None:
+        global x
+        x = 1
+    |}
+    ~target:"test.$toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "abstract": false
+        }
+      |};
+  (* TODO(T84365830): Be more intelligent about inferring None type. *)
+  check_inference_results
+    {|
+      foo = None
+    |}
+    ~target:"test.$toplevel"
+    ~expected:
+      {|
+        {
+          "globals": [
+            {
+              "name": "foo",
+              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
               "annotation": "None"
             }
           ],
           "attributes": [],
           "abstract": false
         }
-      |}
+      |};
+  ()
 
 
 let test_inferred_attributes context =
