@@ -636,33 +636,18 @@ let test_inferred_function_parameters context =
 
 
 let test_inferred_method_parameters context =
-  let check_inference_results = check_inference_results ~context in
-  let single_parameter_method ?(class_name = "test.B") ~type_ ~return ~line () =
+  let check_inference_results =
+    check_inference_results ~context ~field_path:["define"; "parameters"]
+  in
+  let single_parameter_method type_ =
     Format.asprintf
       {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "%s.foo",
-            "parent": "%s",
-            "return": %s,
-            "parameters": [
-              { "name": "self", "annotation": null, "value": null, "index": 0 },
-              { "name": "x", "annotation": %s, "value": null, "index": 1 }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": %d },
-            "async": false
-          },
-          "abstract": false
-        }
+        [
+          { "name": "self", "annotation": null, "value": null, "index": 0 },
+          { "name": "x", "annotation": %s, "value": null, "index": 1 }
+        ]
       |}
-      class_name
-      class_name
-      (option_to_json return)
       (option_to_json type_)
-      line
   in
   check_inference_results
     {|
@@ -673,7 +658,7 @@ let test_inferred_method_parameters context =
               return x
     |}
     ~target:"test.B.foo"
-    ~expected:(single_parameter_method ~type_:(Some "int") ~line:5 ~return:(Some "None") ());
+    ~expected:(single_parameter_method (Some "int"));
   check_inference_results
     {|
       class A:
@@ -683,7 +668,7 @@ let test_inferred_method_parameters context =
               return x
     |}
     ~target:"test.B.foo"
-    ~expected:(single_parameter_method ~type_:(Some "A") ~line:5 ~return:None ());
+    ~expected:(single_parameter_method (Some "A"));
   (* Don't override explicit annotations if they clash with parent class *)
   check_inference_results
     {|
@@ -694,8 +679,8 @@ let test_inferred_method_parameters context =
               return x
     |}
     ~target:"test.B.foo"
-    ~expected:(single_parameter_method ~type_:(Some "str") ~line:5 ~return:(Some "str") ());
-  let no_inferences = single_parameter_method ~type_:None ~return:None in
+    ~expected:(single_parameter_method (Some "str"));
+  let no_inferences = single_parameter_method None in
   check_inference_results
     {|
       from typing import Any
@@ -706,7 +691,7 @@ let test_inferred_method_parameters context =
               return x
     |}
     ~target:"test.B.foo"
-    ~expected:(no_inferences ~line:6 ());
+    ~expected:no_inferences;
   check_inference_results
     {|
       from typing import TypeVar
@@ -718,7 +703,7 @@ let test_inferred_method_parameters context =
               return x
     |}
     ~target:"test.B.foo"
-    ~expected:(no_inferences ~line:7 ());
+    ~expected:no_inferences;
   check_inference_results
     {|
       class A:
@@ -731,7 +716,7 @@ let test_inferred_method_parameters context =
               return x + 1
     |}
     ~target:"test.C.foo"
-    ~expected:(no_inferences ~class_name:"test.C" ~line:8 ());
+    ~expected:no_inferences;
   (* Do not propagate types on `self` *)
   check_inference_results
     {|
@@ -742,24 +727,8 @@ let test_inferred_method_parameters context =
               return x
     |}
     ~target:"test.B.foo"
-    ~expected:
-      {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "test.B.foo",
-            "parent": "test.B",
-            "return": null,
-            "parameters": [
-              { "name": "self", "annotation": null, "value": null, "index": 0 }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": 5 },
-            "async": false
-          },
-          "abstract": false
-        }
+    ~expected:{|
+        [{ "name": "self", "annotation": null, "value": null, "index": 0 }]
      |};
   (* Do not propagate types on `self` *)
   check_inference_results
@@ -773,25 +742,12 @@ let test_inferred_method_parameters context =
     ~target:"test.B.foo"
     ~expected:
       {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "test.B.foo",
-            "parent": "test.B",
-            "return": null,
-            "parameters": [
-              { "name": "self", "annotation": null, "value": null, "index": 0 },
-              { "name": "x", "annotation": "int", "value": null, "index": 1 },
-              { "name": "y", "annotation": "str", "value": null, "index": 2 }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": 5 },
-            "async": false
-          },
-          "abstract": false
-        }
-     |};
+        [
+          { "name": "self", "annotation": null, "value": null, "index": 0 },
+          { "name": "x", "annotation": "int", "value": null, "index": 1 },
+          { "name": "y", "annotation": "str", "value": null, "index": 2 }
+        ]
+      |};
   check_inference_results
     {|
       class A:
@@ -803,29 +759,16 @@ let test_inferred_method_parameters context =
     ~target:"test.B.foo"
     ~expected:
       {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "test.B.foo",
-            "parent": "test.B",
-            "return": null,
-            "parameters": [
-              { "name": "self", "annotation": null, "value": null, "index": 0 },
-              { "name": "*args", "annotation": "str", "value": null, "index": 1 },
-              {
-                "name": "**kwargs",
-                "annotation": "float",
-                "value": null,
-                "index": 2
-              }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": 5 },
-            "async": false
-          },
-          "abstract": false
-        }
+        [
+          { "name": "self", "annotation": null, "value": null, "index": 0 },
+          { "name": "*args", "annotation": "str", "value": null, "index": 1 },
+          {
+            "name": "**kwargs",
+            "annotation": "float",
+            "value": null,
+            "index": 2
+          }
+        ]
      |};
   ()
 
