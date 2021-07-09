@@ -16,18 +16,22 @@ let module_of_path ~configuration ~module_tracker path =
   | _ -> None
 
 
+let instantiate_path ~build_system ~configuration ~ast_environment qualifier =
+  AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier
+  |> Option.bind ~f:(BuildSystem.lookup_source build_system)
+  |> Option.map ~f:Path.absolute
+
+
 let instantiate_error
     ~build_system
     ~configuration:({ Configuration.Analysis.show_error_traces; _ } as configuration)
     ~ast_environment
     error
   =
-  let lookup qualifier =
-    AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier
-    |> Option.bind ~f:(BuildSystem.lookup_source build_system)
-    |> Option.map ~f:Path.absolute
-  in
-  AnalysisError.instantiate ~show_error_traces ~lookup error
+  AnalysisError.instantiate
+    ~show_error_traces
+    ~lookup:(instantiate_path ~build_system ~configuration ~ast_environment)
+    error
 
 
 let instantiate_errors ~build_system ~configuration ~ast_environment errors =

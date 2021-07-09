@@ -224,7 +224,81 @@ let run_infer_local ~configuration () =
   Lwt.return ExitStatus.Ok
 
 
-let run_infer_interprocedural ~configuration:_ ~build_system:_ () = failwith "Coming soon..."
+let with_performance_tracking f =
+  let timer = Timer.start () in
+  let result = f () in
+  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+  Statistics.performance
+    ~name:"analyze"
+    ~timer
+    ~integers:
+      [
+        "gc_minor_collections", minor_collections;
+        "gc_major_collections", major_collections;
+        "gc_compactions", compactions;
+      ]
+    ();
+  result
+
+
+let run_infer_interprocedural ~configuration ~build_system () =
+  let static_analysis_configuration =
+    {
+      Configuration.StaticAnalysis.configuration;
+      result_json_path = None;
+      dump_call_graph = false;
+      verify_models = false;
+      rule_filter = None;
+      find_missing_flows = None;
+      dump_model_query_results = false;
+      use_cache = false;
+      maximum_trace_length = None;
+      maximum_tito_depth = None;
+    }
+  in
+  let analysis_kind = TypeInference.Analysis.abstract_kind in
+  with_performance_tracking (fun () ->
+      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          Interprocedural.Analysis.initialize_configuration
+            ~static_analysis_configuration
+            analysis_kind;
+          let environment =
+            Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache:false
+          in
+          let qualifiers =
+            Analysis.TypeEnvironment.module_tracker environment
+            |> Analysis.ModuleTracker.tracked_explicit_modules
+          in
+          let environment = Analysis.TypeEnvironment.read_only environment in
+          let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
+          let initial_callables =
+            Service.StaticAnalysis.fetch_initial_callables
+              ~scheduler
+              ~configuration
+              ~environment
+              ~qualifiers
+              ~use_cache:false
+          in
+          let filename_lookup path_reference =
+            Newserver.RequestHandler.instantiate_path
+              ~build_system
+              ~configuration
+              ~ast_environment
+              path_reference
+          in
+          Service.StaticAnalysis.analyze
+            ~scheduler
+            ~analysis:analysis_kind
+            ~static_analysis_configuration
+            ~filename_lookup
+            ~environment
+            ~qualifiers
+            ~initial_callables
+            ~initial_models:Interprocedural.Callable.Map.empty
+            ~skip_overrides:Ast.Reference.Set.empty
+            ()));
+  Lwt.return ExitStatus.Ok
+
 
 let run_infer infer_configuration =
   let { InferConfiguration.source_paths; infer_mode; _ } = infer_configuration in
