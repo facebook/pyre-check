@@ -136,6 +136,65 @@ module InferConfiguration = struct
     | Undefined (message, _) ->
         Result.Error message
     | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let _analysis_configuration_of
+      {
+        source_paths;
+        search_paths;
+        excludes;
+        checked_directory_allowlist;
+        checked_directory_blocklist;
+        ignore_infer;
+        extensions;
+        log_path;
+        global_root;
+        local_root;
+        infer_mode = _;
+        debug;
+        python_version = { Configuration.PythonVersion.major; minor; micro };
+        parallel;
+        number_of_workers;
+        shared_memory =
+          { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+        remote_logging = _;
+        profiling_output = _;
+        memory_profiling_output = _;
+      }
+    =
+    let source_path =
+      match source_paths with
+      | Configuration.SourcePaths.Simple source_paths -> source_paths
+      | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
+    in
+    Configuration.Analysis.create
+      ~infer:true
+      ~ignore_infer
+      ~parallel
+      ~analyze_external_sources:false
+      ~filter_directories:checked_directory_allowlist
+      ~ignore_all_errors:checked_directory_blocklist
+      ~number_of_workers
+      ~local_root:(Option.value local_root ~default:global_root)
+      ~project_root:global_root
+      ~search_path:(List.map search_paths ~f:SearchPath.normalize)
+      ~strict:false
+      ~debug
+      ~show_error_traces:false
+      ~excludes
+      ~extensions
+      ~incremental_style:Configuration.Analysis.FineGrained
+      ~include_hints:false
+      ~perform_autocompletion:false
+      ~log_directory:(Path.absolute log_path)
+      ~python_major_version:major
+      ~python_minor_version:minor
+      ~python_micro_version:micro
+      ~shared_memory_heap_size:heap_size
+      ~shared_memory_dependency_table_power:dependency_table_power
+      ~shared_memory_hash_table_power:hash_table_power
+      ~source_path
+      ()
 end
 
 let run_infer _configuration_file = Log.warning "Comming soon..."
