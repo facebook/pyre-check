@@ -212,7 +212,17 @@ module InferConfiguration = struct
       ()
 end
 
-let run_infer_local ~configuration:_ () = failwith "Coming soon..."
+let run_infer_local ~configuration () =
+  let result =
+    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        Service.Infer.infer_v2 ~configuration ~scheduler ())
+  in
+  if configuration.debug then
+    Memory.report_statistics ();
+  Yojson.Safe.pretty_to_string (`List [TypeInference.Data.GlobalResult.to_yojson result])
+  |> Log.print "%s";
+  Lwt.return ExitStatus.Ok
+
 
 let run_infer_interprocedural ~configuration:_ ~build_system:_ () = failwith "Coming soon..."
 
