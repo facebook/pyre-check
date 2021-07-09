@@ -2697,6 +2697,37 @@ let test_check_union_shorthand context =
   ()
 
 
+let test_check_broadcast_features context =
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_default_type_errors {|
+      from pyre_extensions import Broadcast
+    |} [];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast, Unpack
+      from typing import Tuple
+      from typing_extensions import Literal as L
+
+      def foo(x: Broadcast[Tuple[L[2], L[1]], Tuple[L[2]]]) -> None:
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Tuple[typing_extensions.Literal[2], \
+       typing_extensions.Literal[2]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast, Unpack
+      from typing import Tuple
+      from typing_extensions import Literal as L
+
+      def foo(x: Broadcast[Tuple[L[2], L[1]], Tuple[L[3], L[2]]]) -> None:
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `undefined`."];
+  ()
+
+
 let () =
   "annotation"
   >::: [
@@ -2723,5 +2754,6 @@ let () =
          "check_typevar_division_simplify" >:: test_check_typevar_division_simplify;
          "check_annotated" >:: test_check_annotated;
          "check_union_shorthand" >:: test_check_union_shorthand;
+         "check_broadcast_features" >:: test_check_broadcast_features;
        ]
   |> Test.run

@@ -3372,6 +3372,24 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     | Call
         {
           callee =
+            { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } as callee;
+          arguments =
+            [
+              {
+                Call.Argument.name = None;
+                value = { Node.value = Expression.Tuple arguments; _ };
+                _;
+              };
+            ];
+        }
+      when name_is ~name:"pyre_extensions.Broadcast.__getitem__" callee ->
+        ( match List.map ~f:create_logic arguments with
+        | [left_type; right_type] -> OrderedTypes.broadcast left_type right_type
+        | _ -> Bottom )
+        |> resolve_aliases
+    | Call
+        {
+          callee =
             { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
             callee;
           arguments =

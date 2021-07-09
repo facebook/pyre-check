@@ -1434,6 +1434,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _T = TypeVar("_T")
         _A = TypeVar("_A", bound=int)
         _B = TypeVar("_B", bound=int)
+        _T1 = TypeVar("_T1")
+        _T2 = TypeVar("_T2")
+
 
         def none_throws(optional: Optional[_T]) -> _T: ...
         def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
@@ -1458,6 +1461,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             ) -> None: ...
 
         class Unpack(Generic[_T]): ...
+        class Broadcast(Generic[_T1, _T2]): ...
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",

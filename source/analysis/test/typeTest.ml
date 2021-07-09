@@ -572,6 +572,84 @@ let test_create_variadic_tuple _ =
             ~annotation:Type.integer
             ())
        ());
+
+  (* Broadcasting. *)
+  let variable_t1 =
+    Type.Variable.Unary.create ~constraints:(Type.Record.Variable.Bound (Type.Primitive "int")) "T1"
+  in
+  let variable_t2 =
+    Type.Variable.Unary.create ~constraints:(Type.Record.Variable.Bound (Type.Primitive "int")) "T2"
+  in
+  let literal_tuple = List.map ~f:Type.literal_integer in
+
+  assert_create
+    {|
+      pyre_extensions.Broadcast[
+        pyre_extensions.Broadcast[
+          typing.Tuple[int, ...],
+          typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2]],
+        ],
+        typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
+      ]
+    |}
+    (Type.Tuple
+       (Concatenation (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer)));
+  assert_create
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[typing_extensions.Literal[5], typing_extensions.Literal[2]],
+        typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[1]]
+      ]
+    |}
+    (Type.tuple (literal_tuple [5; 2]));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic2))
+      | _ -> None)
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2]],
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+      ]
+    |}
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+             ~prefix:[]
+             ~suffix:[]
+             ~concrete:(literal_tuple [1; 2])
+             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic2))
+      | _ -> None)
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+      ]
+    |}
+    (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
+  let aliases = function
+    | "T1" -> Some (Type.Variable variable_t1)
+    | "T2" -> Some (Type.Variable variable_t2)
+    | _ -> None
+  in
+  let aliases = create_type_alias_table aliases in
+  assert_create
+    ~aliases
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[T1, typing_extensions.Literal[5]],
+        typing.Tuple[T2, typing_extensions.Literal[5]],
+      ]
+    |}
+    Type.Bottom;
+  assert_create {|
+      pyre_extensions.Broadcast[1, 2]
+    |} Type.Bottom;
   ()
 
 
