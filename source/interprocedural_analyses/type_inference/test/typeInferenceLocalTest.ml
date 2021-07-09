@@ -118,72 +118,72 @@ let test_inferred_returns context =
   check_inference_results
     {|
       def foo():
-        pass
+          pass
     |}
     ~target:"test.foo"
     ~expected:{|"None"|};
   check_inference_results
     {|
       def foo(x: int):
-        return x
+          return x
     |}
     ~target:"test.foo"
     ~expected:{|"int"|};
   check_inference_results
     {|
       def foo() -> int:
-        pass
+          pass
     |}
     ~target:"test.foo"
     ~expected:{|"int"|};
   check_inference_results
     {|
       def foo():
-        x = 1
-        return x
+          x = 1
+          return x
     |}
     ~target:"test.foo"
     ~expected:{|"int"|};
   check_inference_results
     {|
       def foo():
-        return
+          return
     |}
     ~target:"test.foo"
     ~expected:{|"None"|};
   check_inference_results
     {|
       def foo():
-        return None
+          return None
     |}
     ~target:"test.foo"
     ~expected:{|"None"|};
   check_inference_results
     {|
       def foo(b: bool):
-        if b:
-          return "hello"
-        else:
-          return 0
+          if b:
+              return "hello"
+          else:
+              return 0
     |}
     ~target:"test.foo"
     ~expected:{|"typing.Union[int, str]"|};
   check_inference_results
     {|
       def other() -> int:
-        return 1
+          return 1
 
       def foo():
-        x = "string"
-        x = other()
-        return x
+          x = "string"
+          x = other()
+          return x
     |}
     ~target:"test.foo"
     ~expected:{|"int"|};
   check_inference_results
     {|
       def foo():
-        x = undefined
+          x = undefined
     |}
     ~target:"test.foo"
     ~expected:{|"None"|};
@@ -198,11 +198,11 @@ let test_inferred_returns context =
   check_inference_results
     {|
     def foo():
-      if 1 > 2:
-        x = 2
-      else:
-        assert not True
-      return x
+        if 1 > 2:
+            x = 2
+        else:
+            assert not True
+        return x
     |}
     ~target:"test.foo"
     ~expected:{|"int"|};
@@ -217,7 +217,7 @@ let test_inferred_returns context =
   check_inference_results
     {|
       def foo():
-        return [1]
+          return [1]
     |}
     ~target:"test.foo"
     ~expected:{|"typing.List[int]"|};
@@ -225,14 +225,14 @@ let test_inferred_returns context =
   check_inference_results
     {|
       def foo():
-        return []
+          return []
     |}
     ~target:"test.foo"
     ~expected:{|null|};
   check_inference_results
     {|
       def foo():
-        return {}
+          return {}
     |}
     ~target:"test.foo"
     ~expected:{|null|};
@@ -241,7 +241,7 @@ let test_inferred_returns context =
     {|
       from typing import Any
       def foo(x: Any):
-        return {"": x}
+          return {"": x}
     |}
     ~target:"test.foo"
     ~expected:{|null|};
@@ -311,9 +311,9 @@ let test_inferred_returns context =
   check_inference_results
     {|
       def foo():
-        def bar(x: int, y: str) -> bool:
-            pass
-        return [bar]
+          def bar(x: int, y: str) -> bool:
+              pass
+          return [bar]
     |}
     ~target:"test.foo"
     ~expected:{|"typing.List[typing.Callable[[int, str], bool]]"|};
