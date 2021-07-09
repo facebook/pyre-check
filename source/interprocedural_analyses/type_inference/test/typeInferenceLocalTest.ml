@@ -325,41 +325,19 @@ let option_to_json string_option =
 
 
 let test_inferred_function_parameters context =
-  let check_inference_results = check_inference_results ~context in
-  let single_parameter
-      ?(define_name = "test.foo")
-      ?(name = "x")
-      ?default
-      ?(type_ = "int")
-      ?(line = 2)
-      ~return
-      ()
-    =
+  let check_inference_results =
+    check_inference_results ~field_path:["define"; "parameters"] ~context
+  in
+  let single_parameter ?(name = "x") ?default type_ =
     Format.asprintf
       {|
-      {
-        "globals": [],
-        "attributes": [],
-        "define": {
-          "name": "%s",
-          "parent": null,
-          "return": "%s",
-          "parameters": [
-            { "name": "%s", "annotation": "%s", "value": %s, "index": 0 }
-          ],
-          "decorators": [],
-          "location": { "qualifier": "test", "path": "test.py", "line": %d },
-          "async": false
-        },
-        "abstract": false
-      }
-    |}
-      define_name
-      return
+        [
+          { "name": "%s", "annotation": "%s", "value": %s, "index": 0 }
+        ]
+      |}
       name
       type_
       (option_to_json default)
-      line
   in
   check_inference_results
     {|
@@ -367,14 +345,14 @@ let test_inferred_function_parameters context =
           x = 5
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"None" ());
+    ~expected:(single_parameter "int");
   check_inference_results
     {|
       def foo(x) -> int:
           return x
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"int" ());
+    ~expected:(single_parameter "int");
   check_inference_results
     {|
       def foo(x) -> None:
@@ -382,7 +360,7 @@ let test_inferred_function_parameters context =
           x = y
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"None" ());
+    ~expected:(single_parameter "int");
   check_inference_results
     {|
       def foo(x) -> int:
@@ -390,7 +368,7 @@ let test_inferred_function_parameters context =
           return y
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"int" ());
+    ~expected:(single_parameter "int");
   check_inference_results
     {|
       def foo(x) -> int:
@@ -399,7 +377,7 @@ let test_inferred_function_parameters context =
           return x
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"int" ());
+    ~expected:(single_parameter "int");
   check_inference_results
     {|
       def foo(y) -> int:
@@ -408,21 +386,21 @@ let test_inferred_function_parameters context =
           return x
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~name:"y" ~return:"int" ());
+    ~expected:(single_parameter ~name:"y" "int");
   check_inference_results
     {|
       def foo(x = 5) -> int:
           return x
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"int" ~default:"5" ());
+    ~expected:(single_parameter ~default:"5" "int");
   check_inference_results
     {|
       def foo(x: typing.Any = 5) -> None:
           pass
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"None" ~default:"5" ());
+    ~expected:(single_parameter ~default:"5" "int");
   (* TODO(T84365830): Ensure we correctly qualify inferred parameter types. *)
   check_inference_results
     {|
@@ -431,7 +409,7 @@ let test_inferred_function_parameters context =
           return x
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"typing.Optional[str]" ~type_:"Optional[str]" ~line:3 ());
+    ~expected:(single_parameter "Optional[str]");
   check_inference_results
     {|
       def foo(y) -> typing.Tuple[int, float]:
@@ -440,7 +418,7 @@ let test_inferred_function_parameters context =
           return (x, z)
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~name:"y" ~return:"typing.Tuple[int, float]" ());
+    ~expected:(single_parameter ~name:"y" "int");
   check_inference_results
     {|
       def foo(x) -> typing.Tuple[int, float]:
@@ -449,7 +427,7 @@ let test_inferred_function_parameters context =
           return (x, z)
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"typing.Tuple[int, float]" ());
+    ~expected:(single_parameter "int");
   (* TODO(T84365830): Handle union with default values *)
   check_inference_results
     {|
@@ -458,7 +436,7 @@ let test_inferred_function_parameters context =
               x = ""
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"None" ~type_:"str" ~default:"None" ());
+    ~expected:(single_parameter ~default:"None" "str");
   check_inference_results
     {|
       from typing import Optional
@@ -469,7 +447,7 @@ let test_inferred_function_parameters context =
           foo(x)
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~return:"Optional[str]" ~type_:"typing.Optional[str]" ~line:3 ());
+    ~expected:(single_parameter "typing.Optional[str]");
   check_inference_results
     {|
       from typing import Optional
@@ -480,36 +458,11 @@ let test_inferred_function_parameters context =
           foo(x)
     |}
     ~target:"test.bar"
-    ~expected:
-      (single_parameter
-         ~define_name:"test.bar"
-         ~return:"None"
-         ~default:"None"
-         ~type_:"Optional[str]"
-         ~line:6
-         ());
-  let no_inferences_json ?(line = 2) ?(return = "None") () =
-    Format.asprintf
-      {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "test.foo",
-            "parent": null,
-            "return": "%s",
-            "parameters": [
-              { "name": "x", "annotation": null, "value": null, "index": 0 }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": %d },
-            "async": false
-          },
-          "abstract": false
-        }
-      |}
-      return
-      line
+    ~expected:(single_parameter ~default:"None" "Optional[str]");
+  let no_inferences =
+    {|
+      [{ "name": "x", "annotation": null, "value": null, "index": 0 }]
+    |}
   in
   (* TODO(T84365830): Support inference on addition. *)
   check_inference_results
@@ -518,7 +471,7 @@ let test_inferred_function_parameters context =
           x += 1
     |}
     ~target:"test.foo"
-    ~expected:(no_inferences_json ());
+    ~expected:no_inferences;
   (* Ensure analysis doesn't crash when __iadd__ is called with non-simple names. *)
   check_inference_results
     {|
@@ -526,7 +479,7 @@ let test_inferred_function_parameters context =
           x[0] += y[3]
     |}
     ~target:"test.foo"
-    ~expected:(no_inferences_json ());
+    ~expected:no_inferences;
   (* TODO(T84365830): Implement support for partial annotations *)
   check_inference_results
     {|
@@ -536,7 +489,7 @@ let test_inferred_function_parameters context =
           x = y
     |}
     ~target:"test.foo"
-    ~expected:(no_inferences_json ~line:3 ());
+    ~expected:no_inferences;
   check_inference_results
     {|
       def foo(x) -> int:
@@ -545,7 +498,7 @@ let test_inferred_function_parameters context =
           return z
     |}
     ~target:"test.foo"
-    ~expected:(no_inferences_json ~return:"int" ());
+    ~expected:no_inferences;
   check_inference_results
     {|
       def foo(x, y) -> int:
@@ -557,24 +510,11 @@ let test_inferred_function_parameters context =
     ~target:"test.foo"
     ~expected:
       {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "test.foo",
-            "parent": null,
-            "return": "int",
-            "parameters": [
-              { "name": "x", "annotation": "int", "value": null, "index": 0 },
-              { "name": "y", "annotation": "int", "value": null, "index": 1 }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
-            "async": false
-          },
-          "abstract": false
-        }
-     |};
+        [
+          { "name": "x", "annotation": "int", "value": null, "index": 0 },
+          { "name": "y", "annotation": "int", "value": null, "index": 1 }
+        ]
+      |};
   (* TODO(T84365830): Handle nested tuples. *)
   check_inference_results
     {|
@@ -584,24 +524,11 @@ let test_inferred_function_parameters context =
     ~target:"test.foo"
     ~expected:
       {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "test.foo",
-            "parent": null,
-            "return": "typing.Tuple[typing.Tuple[str, int], bool]",
-            "parameters": [
-              { "name": "x", "annotation": null, "value": null, "index": 0 },
-              { "name": "y", "annotation": null, "value": null, "index": 1 },
-              { "name": "z", "annotation": "bool", "value": null, "index": 2 }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
-            "async": false
-          },
-          "abstract": false
-        }
+        [
+          { "name": "x", "annotation": null, "value": null, "index": 0 },
+          { "name": "y", "annotation": null, "value": null, "index": 1 },
+          { "name": "z", "annotation": "bool", "value": null, "index": 2 }
+        ]
      |};
   check_inference_results
     {|
@@ -614,23 +541,10 @@ let test_inferred_function_parameters context =
     ~target:"test.foo"
     ~expected:
       {|
-        {
-          "globals": [],
-          "attributes": [],
-          "define": {
-            "name": "test.foo",
-            "parent": null,
-            "return": "None",
-            "parameters": [
-              { "name": "a", "annotation": null, "value": null, "index": 0 },
-              { "name": "x", "annotation": "int", "value": "15", "index": 1 }
-            ],
-            "decorators": [],
-            "location": { "qualifier": "test", "path": "test.py", "line": 2 },
-            "async": false
-          },
-          "abstract": false
-        }
+        [
+          { "name": "a", "annotation": null, "value": null, "index": 0 },
+          { "name": "x", "annotation": "int", "value": "15", "index": 1 }
+        ]
      |};
   ()
 
