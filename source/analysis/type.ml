@@ -141,6 +141,8 @@ module Record = struct
   module OrderedTypes = struct
     let concatenate_public_name = "pyre_extensions.type_variable_operators.Concatenate"
 
+    let unpack_public_name = "pyre_extensions.Unpack"
+
     let show_type_list types ~pp_type =
       Format.asprintf
         "%a"
@@ -149,11 +151,23 @@ module Record = struct
 
 
     module Concatenation = struct
-      let unpack_public_name = "pyre_extensions.Unpack"
-
       type 'annotation record_unpackable =
         | Variadic of 'annotation Variable.RecordVariadic.Tuple.record
         | UnboundedElements of 'annotation
+        | Broadcast of 'annotation record_broadcast
+      [@@deriving compare, eq, sexp, show, hash]
+
+      (* No need for concrete against concrete case, since that should be normalized to Bottom or an answer.
+         Only need one concrete against concatenation case because `Broadcast` is a commutative operator. *)
+      and 'annotation record_broadcast =
+        | ConcreteAgainstConcatenation of {
+            concrete: 'annotation list;
+            concatenation: 'annotation t;
+          }
+        | ConcatenationAgainstConcatenation of {
+            left_concatenation: 'annotation t;
+            right_concatenation: 'annotation t;
+          }
       [@@deriving compare, eq, sexp, show, hash]
 
       (* We guarantee that there is exactly one top-level unpacked variadic in this concatenation.
@@ -161,7 +175,7 @@ module Record = struct
          Note that there may be unpacked variadics within the prefix or suffix, but they are not
          unpacked at the top-level. So, `Tuple[int, *Ts, Tuple[str, *Rs]]` will consider only the
          `*Ts` as the top-level unpacked variadic. *)
-      type 'annotation t = {
+      and 'annotation t = {
         prefix: 'annotation list;
         middle: 'annotation record_unpackable;
         suffix: 'annotation list;
@@ -184,13 +198,52 @@ module Record = struct
         create_from_unpackable ?prefix ?suffix (UnboundedElements annotation)
 
 
-      let pp_unpackable ~pp_type format = function
+      let create_unpackable_from_concrete_against_concatenation ~concrete ~concatenation =
+        Broadcast (ConcreteAgainstConcatenation { concrete; concatenation })
+
+
+      let create_unpackable_from_concatenation_against_concatenation
+          left_concatenation
+          right_concatenation
+        =
+        Broadcast (ConcatenationAgainstConcatenation { left_concatenation; right_concatenation })
+
+
+      let create_from_concrete_against_concatenation
+          ?(prefix = [])
+          ?(suffix = [])
+          ~concrete
+          ~concatenation
+        =
+        create_from_unpackable
+          ~prefix
+          ~suffix
+          (create_unpackable_from_concrete_against_concatenation ~concrete ~concatenation)
+
+
+      let create_from_concatenation_against_concatenation
+          ?(prefix = [])
+          ?(suffix = [])
+          left_concatenation
+          right_concatenation
+        =
+        create_from_unpackable
+          ~prefix
+          ~suffix
+          (create_unpackable_from_concatenation_against_concatenation
+             left_concatenation
+             right_concatenation)
+
+
+      let rec pp_unpackable ~pp_type format = function
         | Variadic variadic ->
             Format.fprintf format "*%a" Variable.RecordVariadic.Tuple.pp_concise variadic
         | UnboundedElements annotation -> Format.fprintf format "*Tuple[%a, ...]" pp_type annotation
+        | Broadcast broadcast ->
+            Format.fprintf format "*Broadcast[%a]" (pp_broadcast ~pp_type) broadcast
 
 
-      let pp_concatenation format { prefix; middle; suffix } ~pp_type =
+      and pp_concatenation format { prefix; middle; suffix } ~pp_type =
         Format.fprintf
           format
           "%s%s%a%s%s"
@@ -200,6 +253,24 @@ module Record = struct
           middle
           (if List.is_empty suffix then "" else ", ")
           (show_type_list ~pp_type suffix)
+
+
+      and pp_broadcast ~pp_type format = function
+        | ConcreteAgainstConcatenation { concrete; concatenation } ->
+            Format.fprintf
+              format
+              "%s, %a"
+              (show_type_list concrete ~pp_type)
+              (pp_concatenation ~pp_type)
+              concatenation
+        | ConcatenationAgainstConcatenation { left_concatenation; right_concatenation } ->
+            Format.fprintf
+              format
+              "%a, %a"
+              (pp_concatenation ~pp_type)
+              left_concatenation
+              (pp_concatenation ~pp_type)
+              right_concatenation
 
 
       let extract_sole_variadic = function
@@ -216,7 +287,7 @@ module Record = struct
         extract_sole_unbounded_annotation concatenation |> Option.is_some
 
 
-      let unpackable_to_expression ~expression ~location unpackable =
+      let rec unpackable_to_expression ~expression ~location unpackable =
         let argument =
           match unpackable with
           | Variadic variadic ->
@@ -229,6 +300,33 @@ module Record = struct
                 ~location
                 "typing.Tuple"
                 [expression annotation; Expression.Ellipsis |> Node.create ~location]
+          | Broadcast broadcast ->
+              let concatenation_to_expression { prefix; middle; suffix } =
+                List.map ~f:expression prefix
+                @ [unpackable_to_expression ~expression ~location middle]
+                @ List.map ~f:expression suffix
+                |> get_item_call ~location "typing.Tuple"
+              in
+              let broadcast_to_expression = function
+                | ConcreteAgainstConcatenation { concrete; concatenation } ->
+                    get_item_call
+                      ~location
+                      "pyre_extensions.Broadcast"
+                      [
+                        get_item_call ~location "typing.Tuple" (List.map ~f:expression concrete)
+                        |> Node.create ~location;
+                        concatenation_to_expression concatenation |> Node.create ~location;
+                      ]
+                | ConcatenationAgainstConcatenation { left_concatenation; right_concatenation } ->
+                    get_item_call
+                      ~location
+                      "pyre_extensions.Broadcast"
+                      [
+                        concatenation_to_expression left_concatenation |> Node.create ~location;
+                        concatenation_to_expression right_concatenation |> Node.create ~location;
+                      ]
+              in
+              broadcast_to_expression broadcast
         in
         Expression.Call
           {
@@ -240,7 +338,7 @@ module Record = struct
                     (Name.Attribute
                        {
                          base =
-                           Expression.Name (create_name ~location unpack_public_name)
+                           Expression.Name (create_name ~location "pyre_extensions.Unpack")
                            |> Node.create ~location;
                          attribute = "__getitem__";
                          special = true;
@@ -2054,23 +2152,33 @@ module Transform = struct
     let rec visit_annotation ~state annotation =
       let visit_children annotation =
         let visit_all = List.map ~f:(visit_annotation ~state) in
-        let visit_concatenation { Record.OrderedTypes.Concatenation.prefix; middle; suffix } =
+        let rec visit_concatenation { Record.OrderedTypes.Concatenation.prefix; middle; suffix } =
           let middle =
             match middle with
             | Variadic _ -> middle
             | UnboundedElements annotation -> UnboundedElements (visit_annotation annotation ~state)
+            | Broadcast broadcast -> Broadcast (visit_broadcast broadcast)
           in
           {
             Record.OrderedTypes.Concatenation.prefix = visit_all prefix;
             middle;
             suffix = visit_all suffix;
           }
-        in
-        let visit_ordered_types ordered_types =
+        and visit_ordered_types ordered_types =
           match ordered_types with
           | Record.OrderedTypes.Concrete concretes ->
               Record.OrderedTypes.Concrete (visit_all concretes)
           | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
+        and visit_broadcast = function
+          | ConcreteAgainstConcatenation { concrete; concatenation } ->
+              ConcreteAgainstConcatenation
+                { concrete = visit_all concrete; concatenation = visit_concatenation concatenation }
+          | ConcatenationAgainstConcatenation { left_concatenation; right_concatenation } ->
+              ConcatenationAgainstConcatenation
+                {
+                  left_concatenation = visit_concatenation left_concatenation;
+                  right_concatenation = visit_concatenation right_concatenation;
+                }
         in
         let visit_parameters parameter =
           let visit_defined = function
@@ -2122,6 +2230,7 @@ module Transform = struct
               | Unpacked (Variadic _) as unpacked -> unpacked
               | Unpacked (UnboundedElements annotation) ->
                   Unpacked (UnboundedElements (visit_annotation annotation ~state))
+              | Unpacked (Broadcast broadcast) -> Unpacked (Broadcast (visit_broadcast broadcast))
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
         | RecursiveType { name; body } ->
@@ -2723,13 +2832,15 @@ module OrderedTypes = struct
     | { Concatenation.prefix = []; middle; suffix = [] } ->
         Concatenation.unpackable_to_expression ~expression ~location:Location.any middle
     | concatenation ->
-        parametric Concatenation.unpack_public_name (to_parameters (Concatenation concatenation))
+        parametric
+          Record.OrderedTypes.unpack_public_name
+          (to_parameters (Concatenation concatenation))
         |> expression
 
 
   let concatenation_from_annotations ~variable_aliases annotations =
     let unpacked_element_index index = function
-      | Parametric { name; _ } when Identifier.equal name Concatenation.unpack_public_name ->
+      | Parametric { name; _ } when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
           Some index
       | _ -> None
     in
@@ -2740,7 +2851,7 @@ module OrderedTypes = struct
         | middle :: suffix -> (
             match middle with
             | Parametric { name; parameters = [Single (Primitive variable_name)] }
-              when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name -> (
+              when Identifier.equal name Record.OrderedTypes.unpack_public_name -> (
                 variable_aliases variable_name
                 >>= function
                 | Record.Variable.TupleVariadic variadic ->
@@ -2756,7 +2867,7 @@ module OrderedTypes = struct
                           (Concatenation { prefix = inner_prefix; middle; suffix = inner_suffix }));
                     ];
                 }
-              when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
+              when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
                 Some { prefix = prefix @ inner_prefix; middle; suffix = inner_suffix @ suffix }
             | _ -> None )
         | _ -> None )
@@ -2774,7 +2885,7 @@ module OrderedTypes = struct
             };
         _;
       } as annotation
-      when name_is ~name:Concatenation.unpack_public_name base -> (
+      when name_is ~name:Record.OrderedTypes.unpack_public_name base -> (
         let location = Location.any in
         let wrapped_in_tuple =
           get_item_call ~location "typing.Tuple" [annotation] |> Node.create ~location
@@ -2797,10 +2908,10 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
   in
   match annotation with
   | Parametric { name; parameters = [Single (Primitive _ as element)] }
-    when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
+    when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
       unpacked_variadic_to_parameter element >>| fun parameter -> [parameter]
   | Parametric { name; parameters = [Single (Tuple ordered_type)] }
-    when Identifier.equal name Record.OrderedTypes.Concatenation.unpack_public_name ->
+    when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
       OrderedTypes.to_parameters ordered_type |> Option.some
   | _ -> None
 

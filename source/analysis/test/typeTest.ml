@@ -847,6 +847,42 @@ let test_expression _ =
   assert_expression
     (Type.Tuple
        (Type.OrderedTypes.Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+             ~prefix:[]
+             ~suffix:[]
+             ~concrete:[Type.literal_integer 5]
+             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))))
+    {|
+      typing.Tuple[
+        pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[(
+            typing.Tuple[typing_extensions.Literal[5]],
+            typing.Tuple[pyre_extensions.Unpack[Ts]]
+          )]
+        ]
+      ]
+    |};
+  assert_expression
+    (Type.Tuple
+       (Type.OrderedTypes.Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concatenation_against_concatenation
+             ~prefix:[]
+             ~suffix:[]
+             (Type.OrderedTypes.Concatenation.create variadic)
+             (Type.OrderedTypes.Concatenation.create variadic))))
+    {|
+      typing.Tuple[
+        pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[(
+            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[pyre_extensions.Unpack[Ts]]
+          )]
+        ]
+      ]
+    |};
+  assert_expression
+    (Type.Tuple
+       (Type.OrderedTypes.Concatenation
           (Type.OrderedTypes.Concatenation.create
              ~prefix:[Type.integer]
              ~suffix:[Type.string]
@@ -1618,7 +1654,40 @@ let test_visit _ =
   let end_state, transformed = CountTransform.visit 0 (create "typing.Literal[test.MyEnum.ONE]") in
   assert_types_equal transformed Type.integer;
   assert_equal ~printer:string_of_int 2 end_state;
+  let ts = Type.Variable.Variadic.Tuple.create "Ts" in
+  let mixed_t =
+    Type.OrderedTypes.Concatenation.create_from_unpackable
+      (Type.OrderedTypes.Concatenation.create_unpackable_from_concrete_against_concatenation
+         ~concrete:[Type.literal_integer 1]
+         ~concatenation:(Type.OrderedTypes.Concatenation.create ts))
+  in
+  let end_state, _ = CountTransform.visit 0 (Tuple (Type.OrderedTypes.Concatenation mixed_t)) in
+  assert_equal ~printer:string_of_int 2 end_state;
+  let end_state, _ =
+    CountTransform.visit
+      0
+      (Tuple
+         (Type.OrderedTypes.Concatenation
+            (Type.OrderedTypes.Concatenation.create_from_unpackable
+               (Type.OrderedTypes.Concatenation
+                .create_unpackable_from_concatenation_against_concatenation
+                  (Type.OrderedTypes.Concatenation.create ts)
+                  (Type.OrderedTypes.Concatenation.create ts)))))
+  in
+  assert_equal ~printer:string_of_int 1 end_state;
+  let end_state, _ =
+    CountTransform.visit
+      0
+      (Tuple
+         (Type.OrderedTypes.Concatenation
+            (Type.OrderedTypes.Concatenation.create_from_unpackable
+               (Type.OrderedTypes.Concatenation
+                .create_unpackable_from_concrete_against_concatenation
+                  ~concrete:[Type.literal_integer 1]
+                  ~concatenation:mixed_t))))
+  in
 
+  assert_equal ~printer:string_of_int 3 end_state;
   let module SubstitutionTransform = Type.Transform.Make (struct
     type state = int
 

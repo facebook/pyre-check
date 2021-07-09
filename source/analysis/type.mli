@@ -67,7 +67,7 @@ module Record : sig
 
       type 'annotation t [@@deriving compare, eq, sexp, show, hash]
 
-      val unpack_public_name : string
+      type 'annotation record_broadcast [@@deriving compare, eq, sexp, show, hash]
 
       val pp_unpackable
         :  pp_type:(Format.formatter -> 'annotation -> unit) ->
@@ -105,6 +105,30 @@ module Record : sig
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
         'annotation ->
+        'annotation t
+
+      val create_unpackable_from_concrete_against_concatenation
+        :  concrete:'annotation list ->
+        concatenation:'annotation t ->
+        'annotation record_unpackable
+
+      val create_unpackable_from_concatenation_against_concatenation
+        :  'annotation t ->
+        'annotation t ->
+        'annotation record_unpackable
+
+      val create_from_concrete_against_concatenation
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        concrete:'annotation list ->
+        concatenation:'annotation t ->
+        'annotation t
+
+      val create_from_concatenation_against_concatenation
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        'annotation t ->
+        'annotation t ->
         'annotation t
     end
 
