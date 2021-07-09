@@ -8,6 +8,21 @@
 open Core
 module Path = PyrePath
 
+module ExitStatus = struct
+  type t =
+    | Ok
+    | PyreError
+    | BuckInternalError
+    | BuckUserError
+  [@@deriving sexp, compare, hash]
+
+  let exit_code = function
+    | Ok -> 0
+    | PyreError -> 1
+    | BuckInternalError -> 2
+    | BuckUserError -> 3
+end
+
 module InferMode = struct
   type t =
     | Local
@@ -138,7 +153,7 @@ module InferConfiguration = struct
     | other_exception -> Result.Error (Exn.to_string other_exception)
 
 
-  let _analysis_configuration_of
+  let analysis_configuration_of
       {
         source_paths;
         search_paths;
@@ -197,7 +212,78 @@ module InferConfiguration = struct
       ()
 end
 
-let run_infer _configuration_file = Log.warning "Comming soon..."
+let run_infer_local ~configuration:_ () = failwith "Coming soon..."
+
+let run_infer_interprocedural ~configuration:_ ~build_system:_ () = failwith "Coming soon..."
+
+let run_infer infer_configuration =
+  let { InferConfiguration.source_paths; infer_mode; _ } = infer_configuration in
+  Newserver.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+      let configuration = InferConfiguration.analysis_configuration_of infer_configuration in
+      match infer_mode with
+      | InferMode.Local -> run_infer_local ~configuration ()
+      | InferMode.Interprocedural -> run_infer_interprocedural ~configuration ~build_system ())
+
+
+let on_infer_exception = function
+  | Buck.Raw.BuckError { arguments; description; exit_code } ->
+      Log.error
+        "Cannot build the project: %s. To reproduce this error, run `%s`."
+        description
+        (Buck.Raw.ArgumentList.to_buck_command arguments);
+      let exit_status =
+        match exit_code with
+        | Some exit_code when exit_code < 10 -> ExitStatus.BuckUserError
+        | _ -> ExitStatus.BuckInternalError
+      in
+      Lwt.return exit_status
+  | Buck.Builder.JsonError message ->
+      Log.error "Cannot build the project because Buck returns malformed JSON: %s" message;
+      Lwt.return ExitStatus.BuckUserError
+  | Buck.Builder.LinkTreeConstructionError message ->
+      Log.error
+        "Cannot build the project because Pyre encounters a fatal error while constructing a link \
+         tree: %s"
+        message;
+      Lwt.return ExitStatus.BuckUserError
+  | _ as exn ->
+      Log.error "Pyre encountered an internal exception: %s" (Exn.to_string exn);
+      Lwt.return ExitStatus.PyreError
+
+
+let run_infer configuration_file =
+  let exit_status =
+    match
+      NewCommandStartup.read_and_parse_json configuration_file ~f:InferConfiguration.of_yojson
+    with
+    | Result.Error message ->
+        Log.error "%s" message;
+        ExitStatus.PyreError
+    | Result.Ok
+        ( {
+            InferConfiguration.global_root;
+            local_root;
+            debug;
+            remote_logging;
+            profiling_output;
+            memory_profiling_output;
+            _;
+          } as infer_configuration ) ->
+        NewCommandStartup.setup_global_states
+          ~global_root
+          ~local_root
+          ~debug
+          ~additional_logging_sections:[]
+          ~remote_logging
+          ~profiling_output
+          ~memory_profiling_output
+          ();
+
+        Lwt_main.run (Lwt.catch (fun () -> run_infer infer_configuration) on_infer_exception)
+  in
+  Statistics.flush ();
+  exit (ExitStatus.exit_code exit_status)
+
 
 let command =
   let filename_argument = Command.Param.(anon ("filename" %: Filename.arg_type)) in
