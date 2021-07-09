@@ -100,6 +100,8 @@ def ListVariadic(name) -> object:
 
 _A = TypeVar("_A", bound=int)
 _B = TypeVar("_B", bound=int)
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
 _Ts = ListVariadic("_Ts")
 
 
@@ -132,4 +134,8 @@ class TypeVarTuple:
 
 
 class Unpack(Generic[_T]):
+    pass
+
+
+class Broadcast(Generic[_T1, _T2]):
     pass
