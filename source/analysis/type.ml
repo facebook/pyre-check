@@ -157,8 +157,9 @@ module Record = struct
         | Broadcast of 'annotation record_broadcast
       [@@deriving compare, eq, sexp, show, hash]
 
-      (* No need for concrete against concrete case, since that should be normalized to Bottom or an answer.
-         Only need one concrete against concatenation case because `Broadcast` is a commutative operator. *)
+      (* No need for concrete against concrete case, since that should be normalized to Bottom or an
+         answer. Only need one concrete against concatenation case because `Broadcast` is a
+         commutative operator. *)
       and 'annotation record_broadcast =
         | ConcreteAgainstConcatenation of {
             concrete: 'annotation list;
@@ -203,34 +204,40 @@ module Record = struct
 
 
       let create_unpackable_from_concatenation_against_concatenation
+          ~compare_t
           left_concatenation
           right_concatenation
         =
-        Broadcast (ConcatenationAgainstConcatenation { left_concatenation; right_concatenation })
+        if compare compare_t left_concatenation right_concatenation < 0 then
+          Broadcast (ConcatenationAgainstConcatenation { left_concatenation; right_concatenation })
+        else
+          Broadcast
+            (ConcatenationAgainstConcatenation
+               {
+                 left_concatenation = right_concatenation;
+                 right_concatenation = left_concatenation;
+               })
 
 
-      let create_from_concrete_against_concatenation
-          ?(prefix = [])
-          ?(suffix = [])
-          ~concrete
-          ~concatenation
-        =
+      let create_from_concrete_against_concatenation ?prefix ?suffix ~concrete ~concatenation =
         create_from_unpackable
-          ~prefix
-          ~suffix
+          ?prefix
+          ?suffix
           (create_unpackable_from_concrete_against_concatenation ~concrete ~concatenation)
 
 
       let create_from_concatenation_against_concatenation
-          ?(prefix = [])
-          ?(suffix = [])
+          ?prefix
+          ?suffix
+          ~compare_t
           left_concatenation
           right_concatenation
         =
         create_from_unpackable
-          ~prefix
-          ~suffix
+          ?prefix
+          ?suffix
           (create_unpackable_from_concatenation_against_concatenation
+             ~compare_t
              left_concatenation
              right_concatenation)
 
@@ -259,14 +266,14 @@ module Record = struct
         | ConcreteAgainstConcatenation { concrete; concatenation } ->
             Format.fprintf
               format
-              "%s, %a"
+              "typing.Tuple[%s], typing.Tuple[%a]"
               (show_type_list concrete ~pp_type)
               (pp_concatenation ~pp_type)
               concatenation
         | ConcatenationAgainstConcatenation { left_concatenation; right_concatenation } ->
             Format.fprintf
               format
-              "%a, %a"
+              "typing.Tuple[%a], typing.Tuple[%a]"
               (pp_concatenation ~pp_type)
               left_concatenation
               (pp_concatenation ~pp_type)
@@ -2894,6 +2901,106 @@ module OrderedTypes = struct
         | Tuple (Concatenation concatenation) -> Some concatenation
         | _ -> None )
     | _ -> None
+
+
+  let broadcast left_type right_type =
+    let match_broadcasted_dimensions left_dimensions right_dimensions =
+      let pad_with_ones ~length list =
+        List.init (max 0 (length - List.length list)) ~f:(fun _ -> Literal (Integer 1)) @ list
+      in
+      let simplify_type input =
+        match input with
+        | Any
+        | Primitive "int"
+        | Literal (Integer _)
+        | Variable { constraints = Record.Variable.Bound (Primitive "int"); _ } ->
+            input
+        | _ -> Bottom
+      in
+      let broadcast_concrete_dimensions left_dimension right_dimension =
+        match simplify_type left_dimension, simplify_type right_dimension with
+        | Bottom, _
+        | _, Bottom ->
+            None
+        | Any, _
+        | _, Any ->
+            Some Any
+        | Primitive "int", _
+        | _, Primitive "int" ->
+            Some (Primitive "int")
+        | Literal (Integer 1), _ -> Some right_dimension
+        | _, Literal (Integer 1) -> Some left_dimension
+        | Literal (Integer i), Literal (Integer j) when i = j -> Some left_dimension
+        | Variable left_variable, Variable right_variable
+          when [%equal: type_t Record.Variable.RecordUnary.record] left_variable right_variable ->
+            Some (Variable left_variable)
+        | _ -> None
+      in
+      let length = max (List.length left_dimensions) (List.length right_dimensions) in
+      match
+        List.map2
+          (pad_with_ones ~length left_dimensions)
+          (pad_with_ones ~length right_dimensions)
+          ~f:broadcast_concrete_dimensions
+      with
+      | Ok result -> Option.all result
+      | Unequal_lengths -> None
+    in
+    match left_type, right_type with
+    | Any, _
+    | _, Any ->
+        Any
+    | Tuple (Concrete left_dimensions), Tuple (Concrete right_dimensions) ->
+        match_broadcasted_dimensions left_dimensions right_dimensions
+        >>| (fun new_dimensions -> Tuple (Concrete new_dimensions))
+        |> Option.value ~default:Bottom
+    | ( Tuple (Concrete concrete),
+        Tuple
+          (Concatenation { prefix = []; middle = UnboundedElements (Primitive "int"); suffix = [] })
+      )
+    | ( Tuple
+          (Concatenation { prefix = []; middle = UnboundedElements (Primitive "int"); suffix = [] }),
+        Tuple (Concrete concrete) ) ->
+        let is_numeric = function
+          | Literal (Integer _)
+          | Primitive "int"
+          | Variable { constraints = Record.Variable.Bound (Primitive "int"); _ } ->
+              true
+          | _ -> false
+        in
+        if List.for_all ~f:is_numeric concrete then
+          Tuple
+            (Concatenation
+               { prefix = []; middle = UnboundedElements (Primitive "int"); suffix = [] })
+        else
+          Bottom
+    | ( Tuple (Concrete _),
+        Tuple (Concatenation { prefix = []; middle = UnboundedElements Any; suffix = [] }) )
+    | ( Tuple (Concatenation { prefix = []; middle = UnboundedElements Any; suffix = [] }),
+        Tuple (Concrete _) ) ->
+        Tuple (Concatenation { prefix = []; middle = UnboundedElements Any; suffix = [] })
+    | Tuple (Concrete concrete), Tuple (Concatenation concatenation)
+    | Tuple (Concatenation concatenation), Tuple (Concrete concrete) ->
+        Tuple
+          (Concatenation
+             (Concatenation.create_from_concrete_against_concatenation
+                ~prefix:[]
+                ~suffix:[]
+                ~concrete
+                ~concatenation))
+    | Tuple (Concatenation left_concatenation), Tuple (Concatenation right_concatenation)
+      when [%eq: type_t Concatenation.t] left_concatenation right_concatenation ->
+        Tuple (Concatenation left_concatenation)
+    | Tuple (Concatenation left_concatenation), Tuple (Concatenation right_concatenation) ->
+        Tuple
+          (Concatenation
+             (Concatenation.create_from_concatenation_against_concatenation
+                ~prefix:[]
+                ~suffix:[]
+                ~compare_t:compare_type_t
+                left_concatenation
+                right_concatenation))
+    | _ -> Bottom
 end
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =

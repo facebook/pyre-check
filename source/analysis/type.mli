@@ -113,7 +113,8 @@ module Record : sig
         'annotation record_unpackable
 
       val create_unpackable_from_concatenation_against_concatenation
-        :  'annotation t ->
+        :  compare_t:('annotation -> 'annotation -> int) ->
+        'annotation t ->
         'annotation t ->
         'annotation record_unpackable
 
@@ -127,6 +128,7 @@ module Record : sig
       val create_from_concatenation_against_concatenation
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
+        compare_t:('annotation -> 'annotation -> int) ->
         'annotation t ->
         'annotation t ->
         'annotation t
@@ -734,6 +736,8 @@ module OrderedTypes : sig
     :  parse_annotation:(Expression.t -> type_t) ->
     Expression.t ->
     type_t Concatenation.t option
+
+  val broadcast : type_t -> type_t -> type_t
 end
 
 val split : t -> t * Parameter.t list

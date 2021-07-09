@@ -868,6 +868,7 @@ let test_expression _ =
           (Type.OrderedTypes.Concatenation.create_from_concatenation_against_concatenation
              ~prefix:[]
              ~suffix:[]
+             ~compare_t:Type.compare
              (Type.OrderedTypes.Concatenation.create variadic)
              (Type.OrderedTypes.Concatenation.create variadic))))
     {|
@@ -1671,6 +1672,7 @@ let test_visit _ =
             (Type.OrderedTypes.Concatenation.create_from_unpackable
                (Type.OrderedTypes.Concatenation
                 .create_unpackable_from_concatenation_against_concatenation
+                  ~compare_t:Type.compare
                   (Type.OrderedTypes.Concatenation.create ts)
                   (Type.OrderedTypes.Concatenation.create ts)))))
   in
@@ -2569,6 +2571,175 @@ let test_concatenation_from_unpack_expression _ =
           ~suffix:[Type.string]
           variadic));
   assert_concatenation "int" None;
+  ()
+
+
+let test_broadcast _ =
+  let assert_broadcast left_type right_type expected =
+    (* Broadcast is a commutative operator. *)
+    assert_equal
+      ~printer:[%show: Type.t]
+      ~cmp:[%equal: Type.t]
+      (Type.OrderedTypes.broadcast left_type right_type)
+      expected;
+    assert_equal
+      ~printer:[%show: Type.t]
+      ~cmp:[%equal: Type.t]
+      (Type.OrderedTypes.broadcast right_type left_type)
+      expected
+  in
+  let literal_tuple input = Type.tuple (List.map ~f:Type.literal_integer input) in
+  let unbounded_int =
+    Type.Tuple
+      (Concatenation (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer))
+  in
+  let unbounded_any =
+    Type.Tuple
+      (Concatenation (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.Any))
+  in
+  let x =
+    Type.Variable
+      (Type.Variable.Unary.create
+         ~constraints:(Type.Record.Variable.Bound (Type.Primitive "int"))
+         "x")
+  in
+  let y =
+    Type.Variable
+      (Type.Variable.Unary.create
+         ~constraints:(Type.Record.Variable.Bound (Type.Primitive "int"))
+         "y")
+  in
+  let z = Type.Variable (Type.Variable.Unary.create "z") in
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variadic_t = Type.OrderedTypes.Concatenation.create variadic in
+  let variadic2_t = Type.OrderedTypes.Concatenation.create variadic2 in
+  let x_and_unbounded_int =
+    Type.OrderedTypes.Concatenation.create_from_unbounded_element ~prefix:[x] Type.integer
+  in
+  let x_and_variadic = Type.OrderedTypes.Concatenation.create ~prefix:[x] variadic in
+  (* Basic *)
+  assert_broadcast (literal_tuple [1]) (literal_tuple [5]) (literal_tuple [5]);
+  assert_broadcast (literal_tuple [5]) (literal_tuple [3]) Bottom;
+  assert_broadcast (Type.tuple []) (literal_tuple [5]) (literal_tuple [5]);
+
+  (* Any *)
+  assert_broadcast (literal_tuple [1; 3]) Type.Any Any;
+  assert_broadcast
+    (literal_tuple [1; 3])
+    (Type.tuple [Any; Type.literal_integer 1])
+    (Type.tuple [Any; Type.literal_integer 3]);
+  assert_broadcast (literal_tuple [1; 3]) unbounded_any unbounded_any;
+
+  (* Integers *)
+  assert_broadcast Type.integer (literal_tuple [1; 3]) Bottom;
+  assert_broadcast
+    (Type.tuple [Type.literal_integer 1; Type.integer])
+    (literal_tuple [1; 3])
+    (Type.tuple [Type.literal_integer 1; Type.integer]);
+  assert_broadcast (literal_tuple [1; 3]) unbounded_int unbounded_int;
+  assert_broadcast (Type.tuple [Type.string]) unbounded_int Bottom;
+
+  (* Broadcast[Tuple[x, *Ts], Tuple[x, *Ts]] *)
+  assert_broadcast
+    (Type.Tuple (Concatenation x_and_variadic))
+    (Type.Tuple (Concatenation x_and_variadic))
+    (Type.Tuple (Concatenation x_and_variadic));
+  (* Broadcast[Tuple[x, *Ts], Tuple[x, *Ts2]] *)
+  assert_broadcast
+    (Type.Tuple (Concatenation x_and_variadic))
+    (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create ~prefix:[x] variadic2)))
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concatenation_against_concatenation
+             ~compare_t:Type.compare
+             x_and_variadic
+             (Type.OrderedTypes.Concatenation.create ~prefix:[x] variadic2))));
+  (* Broadcast[Tuple[x, *Tuple[int, ...]], Tuple[x, *Tuple[int, ...]]] *)
+  assert_broadcast
+    (Type.Tuple (Concatenation x_and_unbounded_int))
+    (Type.Tuple (Concatenation x_and_unbounded_int))
+    (Type.Tuple (Concatenation x_and_unbounded_int));
+  (* Broadcast[Tuple[x, *Tuple[int, ...]], Tuple[x, *Tuple[Any, ...]]] *)
+  assert_broadcast
+    (Type.Tuple (Concatenation x_and_unbounded_int))
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_unbounded_element ~prefix:[x] Type.Any)))
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concatenation_against_concatenation
+             ~compare_t:Type.compare
+             x_and_unbounded_int
+             (Type.OrderedTypes.Concatenation.create_from_unbounded_element ~prefix:[x] Type.Any))));
+  let first_concrete_against_concatenation =
+    Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+      ~prefix:[x]
+      ~suffix:[]
+      ~concrete:[y]
+      ~concatenation:variadic_t
+  in
+  let second_concrete_against_concatenation =
+    Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+      ~prefix:[y]
+      ~suffix:[]
+      ~concrete:[y]
+      ~concatenation:variadic_t
+  in
+  (* Broadcast[ Tuple[x, *Broadcast[Tuple[y], Tuple[*Ts]], Tuple[x, *Broadcast[Tuple[y],
+     Tuple[*Ts]]] ] *)
+  assert_broadcast
+    (Type.Tuple (Concatenation first_concrete_against_concatenation))
+    (Type.Tuple (Concatenation first_concrete_against_concatenation))
+    (Type.Tuple (Concatenation first_concrete_against_concatenation));
+  (* Broadcast[ Tuple[x, *Broadcast[Tuple[y], Tuple[*Ts]], Tuple[y, *Broadcast[Tuple[y],
+     Tuple[*Ts]]] ] *)
+  assert_broadcast
+    (Type.Tuple (Concatenation first_concrete_against_concatenation))
+    (Type.Tuple (Concatenation second_concrete_against_concatenation))
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concatenation_against_concatenation
+             ~compare_t:Type.compare
+             first_concrete_against_concatenation
+             second_concrete_against_concatenation)));
+  let first_concatenation_against_concatenation =
+    Type.OrderedTypes.Concatenation.create_from_concatenation_against_concatenation
+      ~prefix:[x]
+      ~suffix:[]
+      ~compare_t:Type.compare
+      variadic_t
+      variadic_t
+  in
+  let second_concatenation_against_concatenation =
+    Type.OrderedTypes.Concatenation.create_from_concatenation_against_concatenation
+      ~prefix:[x]
+      ~suffix:[]
+      ~compare_t:Type.compare
+      variadic_t
+      variadic2_t
+  in
+  assert_broadcast
+    (Type.Tuple (Concatenation first_concatenation_against_concatenation))
+    (Type.Tuple (Concatenation second_concatenation_against_concatenation))
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concatenation_against_concatenation
+             ~compare_t:Type.compare
+             first_concatenation_against_concatenation
+             second_concatenation_against_concatenation)));
+
+  (* Variables *)
+  assert_broadcast (Type.tuple [x]) (literal_tuple [1]) (Type.tuple [x]);
+  assert_broadcast (Type.tuple [x]) (Type.tuple [x]) (Type.tuple [x]);
+  assert_broadcast (Type.tuple [x]) (Type.tuple [y]) Bottom;
+  assert_broadcast (Type.tuple [z]) (Type.tuple [z]) Bottom;
+
+  (* Literals *)
+  assert_broadcast (literal_tuple [1; 3; 5]) (literal_tuple [1; 3]) Bottom;
+  assert_broadcast (literal_tuple [1; 3; 5]) (literal_tuple [5; 3; 1]) (literal_tuple [5; 3; 5]);
+  assert_broadcast (literal_tuple [1; 3; 5]) (literal_tuple [3; 5]) (literal_tuple [1; 3; 5]);
+  assert_broadcast (literal_tuple [5; 3; 1]) (literal_tuple [3; 1]) (literal_tuple [5; 3; 1]);
   ()
 
 
@@ -3681,6 +3852,7 @@ let () =
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
          "starred_annotation_expression" >:: test_starred_annotation_expression;
          "concatenation_from_unpack_expression" >:: test_concatenation_from_unpack_expression;
+         "broadcast" >:: test_broadcast;
          "split_ordered_types" >:: test_split_ordered_types;
          "zip_variables_with_parameters" >:: test_zip_variables_with_parameters;
          "zip_on_two_parameter_lists" >:: test_zip_on_two_parameter_lists;
