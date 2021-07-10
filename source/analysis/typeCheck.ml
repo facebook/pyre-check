@@ -3648,10 +3648,15 @@ module State (Context : Context) = struct
           let parser = GlobalResolution.annotation_parser global_resolution in
           Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
         in
-        if async && not generator then
-          Type.coroutine_value annotation |> Option.value ~default:Type.Top
-        else
-          annotation
+        let annotation =
+          if async && not generator then
+            Type.coroutine_value annotation |> Option.value ~default:Type.Top
+          else
+            annotation
+        in
+        match annotation with
+        | Type.Parametric { name = "typing.TypeGuard"; _ } -> Type.bool
+        | _ -> annotation
       in
       let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
       let actual =
@@ -5308,6 +5313,30 @@ module State (Context : Context) = struct
                 forward_statement ~resolution ~statement:(Statement.assume target)
               in
               resolution, errors
+          | Call
+              {
+                arguments =
+                  { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _;
+                _;
+              }
+            when is_simple_name name -> (
+              let { Annotation.annotation = callee_type; _ } =
+                resolve_expression ~resolution test
+              in
+              match callee_type with
+              | Type.Parametric
+                  {
+                    name = "typing.TypeGuard";
+                    parameters = [Type.Record.Parameter.Single guard_type];
+                  } ->
+                  let resolution =
+                    Resolution.set_local_with_attributes
+                      resolution
+                      ~name
+                      ~annotation:(Annotation.create guard_type)
+                  in
+                  Some resolution, errors
+              | _ -> Some resolution, errors )
           | _ -> Some resolution, errors
         in
         (* Ignore type errors from the [assert (not foo)] in the else-branch because it's the same
