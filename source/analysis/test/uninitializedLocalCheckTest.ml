@@ -22,7 +22,6 @@ let assert_uninitialized_errors ~context =
 
 let test_simple context =
   let assert_uninitialized_errors = assert_uninitialized_errors ~context in
-
   assert_uninitialized_errors
     {|
       def f():
@@ -30,13 +29,11 @@ let test_simple context =
         y = 5
     |}
     ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
-
   assert_uninitialized_errors {|
       def f(y):
         x = y
         y = 5
     |} [];
-
   assert_uninitialized_errors
     {|
       def f(x):
@@ -47,7 +44,6 @@ let test_simple context =
         return z   # OK
     |}
     ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
-
   assert_uninitialized_errors
     {|
       def f(x):
@@ -56,7 +52,6 @@ let test_simple context =
         return y
     |}
     ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
-
   assert_uninitialized_errors
     {|
       def f() -> int:
@@ -67,7 +62,6 @@ let test_simple context =
               return x
     |}
     ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
-
   assert_uninitialized_errors
     {|
       x, y, z = 0, 0, 0
@@ -80,7 +74,6 @@ let test_simple context =
         _ = z      # Refers to global `z`, implicitly
     |}
     ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
-
   assert_uninitialized_errors
     {|
       class Foo(object):
@@ -89,7 +82,6 @@ let test_simple context =
         return Foo()
     |}
     [];
-
   assert_uninitialized_errors
     {|
       def f():
@@ -98,13 +90,11 @@ let test_simple context =
         g()
     |}
     [];
-
   assert_uninitialized_errors {|
       def f():
         x, y = 0, 0
         return x, y
     |} [];
-
   assert_uninitialized_errors
     {|
       def f( *args, **kwargs) -> None:
@@ -112,7 +102,6 @@ let test_simple context =
         print(list(kwargs.items()))
     |}
     [];
-
   assert_uninitialized_errors
     {|
       x = 0
@@ -122,12 +111,10 @@ let test_simple context =
           x = 1
     |}
     [];
-
   assert_uninitialized_errors {|
       def f(x: str) -> None:
         assert True, x
     |} [];
-
   assert_uninitialized_errors
     {|
       from media import something
@@ -136,12 +123,10 @@ let test_simple context =
         media = 1
     |}
     [];
-
   assert_uninitialized_errors {|
       def f():
         (x := 0)
     |} [];
-
   assert_uninitialized_errors {|
       def f():
         ((x := 0) and (y := x))
@@ -203,7 +188,6 @@ let test_simple context =
         x, y = None, None
     |}
     ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
-
   assert_uninitialized_errors
     {|
       def f():
