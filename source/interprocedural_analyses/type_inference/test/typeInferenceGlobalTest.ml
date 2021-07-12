@@ -108,6 +108,8 @@ let type_inference_serialization_test context =
       [
         ( "test.py",
           {|
+          import functools
+
           x = 1 + 1
 
           class C:
@@ -116,6 +118,7 @@ let type_inference_serialization_test context =
           def no_errors(x: int) -> int:
               return x
 
+          @functools.lru_cache(4)
           def needs_return(y: int, x: int):
               return x
         |}
@@ -129,7 +132,7 @@ let type_inference_serialization_test context =
           "globals": [
             {
               "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
+              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
               "annotation": "int"
             }
           ],
@@ -137,7 +140,7 @@ let type_inference_serialization_test context =
             {
               "parent": "C",
               "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 5 },
+              "location": { "qualifier": "test", "path": "test.py", "line": 7 },
               "annotation": "None"
             }
           ],
@@ -150,8 +153,8 @@ let type_inference_serialization_test context =
                 { "name": "y", "annotation": "int", "value": null, "index": 0 },
                 { "name": "x", "annotation": "int", "value": null, "index": 1 }
               ],
-              "decorators": [],
-              "location": { "qualifier": "test", "path": "test.py", "line": 10 },
+              "decorators": [ "functools.lru_cache(4)" ],
+              "location": { "qualifier": "test", "path": "test.py", "line": 13 },
               "async": false
             }
           ]

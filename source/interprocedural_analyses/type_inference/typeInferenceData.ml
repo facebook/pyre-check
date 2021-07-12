@@ -36,6 +36,16 @@ module SerializableReference = struct
   module Set = Set.Make (Reference)
 end
 
+module SerializableDecorator = struct
+  type t = Statement.Decorator.t [@@deriving compare, eq, sexp, hash, show]
+
+  let to_yojson decorator =
+    Ast.Statement.Decorator.to_expression decorator
+    |> Expression.sanitized
+    |> Expression.show
+    |> fun shown -> `String shown
+end
+
 module DefaultValue = struct
   type t = Expression.t option [@@deriving show, eq]
 
@@ -293,7 +303,7 @@ module DefineAnnotation = struct
     parent: SerializableReference.t option;
     return: TypeAnnotation.t; [@compare.ignore]
     parameters: Parameters.ByName.t; [@compare.ignore]
-    decorators: Ast.Statement.Decorator.t list;
+    decorators: SerializableDecorator.t list;
     location: AnnotationLocation.t;
     async: bool;
   }
