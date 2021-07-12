@@ -1093,7 +1093,7 @@ Static methods cannot be overwritten by non-static methods, and final methods ca
 ```python
 class A:
     @staticmethod
-    def foo(self) -> int:
+    def foo() -> int:
         pass
 
 class B(A):
