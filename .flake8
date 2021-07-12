@@ -22,4 +22,6 @@ exclude =
   _ig_fbcode_wheel/*,
   buck-out/*,
   third-party-buck/*,
-  third-party2/*
+  third-party2/*,
+  source/interprocedural_analyses/taint/test/integration/*,
+  source/command/test/integration/fake_repository/*
