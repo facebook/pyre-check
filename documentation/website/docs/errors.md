@@ -1119,6 +1119,8 @@ class Bar(Foo):
 Pyre will error on assignments to final attributes, read-only properties, and class variables from a class instance. For example,
 
 ```python
+from typing import Final, Optional
+
 class Foo:
   field: Final[Optional[int]] = 1
 
