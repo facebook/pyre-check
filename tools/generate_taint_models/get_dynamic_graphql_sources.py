@@ -7,7 +7,10 @@
 
 from typing import Any, Callable, Iterable, List, Optional, Type
 
-from graphql3 import GraphQLSchema
+try:
+    from graphql3 import GraphQLSchema
+except ModuleNotFoundError:
+    from graphql import GraphQLSchema
 
 from .function_tainter import taint_callable_functions
 from .generator_specifications import AllParametersAnnotation, AnnotationSpecification
