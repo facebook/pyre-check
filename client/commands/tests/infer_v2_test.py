@@ -360,6 +360,42 @@ class StubGenerationTest(unittest.TestCase):
                 def a(self) -> Union[Dict[str, int], str]: ...
             """,
         )
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "typing.Union[typing.Dict[str, int], str]",
+                        "name": "f",
+                        "parent": "test.TestA",
+                        "parameters": [
+                            {"name": "self", "annotation": None, "value": None}
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    },
+                    {
+                        "return": "typing.Union[typing.Dict[str, int], str]",
+                        "name": "f",
+                        "parent": "test.TestB",
+                        "parameters": [
+                            {"name": "self", "annotation": None, "value": None}
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    },
+                ],
+            },
+            """\
+            from typing import Dict, Union
+
+
+            class TestA:
+                def f(self) -> Union[Dict[str, int], str]: ...
+
+            class TestB:
+                def f(self) -> Union[Dict[str, int], str]: ...
+            """,
+        )
 
     def test_stubs_attributes_and_globals(self) -> None:
         self._assert_stubs(

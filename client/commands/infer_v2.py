@@ -378,9 +378,10 @@ class ModuleAnnotations:
         classname: str,
         annotations: Sequence[AttributeAnnotation | MethodAnnotation],
     ) -> str:
-        return f"class {classname}:\n" + "\n".join(
+        body = "\n".join(
             self._indent(annotation.to_stub()) for annotation in annotations
         )
+        return f"class {classname}:\n{body}\n"
 
     @staticmethod
     def _indent(stub: str) -> str:
