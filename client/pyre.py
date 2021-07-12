@@ -838,7 +838,6 @@ def infer(
 
 
 @pyre.command()
-@click.pass_context
 @click.argument(
     "paths_to_modify",
     type=filesystem.file_or_directory_exists,
@@ -888,6 +887,7 @@ def infer(
         "Will be slower, but may give better results."
     ),
 )
+@click.pass_context
 def infer_v2(
     context: click.Context,
     paths_to_modify: Iterable[str],
