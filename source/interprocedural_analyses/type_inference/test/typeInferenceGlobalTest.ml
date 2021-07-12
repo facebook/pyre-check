@@ -160,6 +160,85 @@ let type_inference_serialization_test context =
     ()
 
 
+let type_inference_duplicate_define_test context =
+  (* This is a made-up example because overloads should have empty bodies, but normal libraries can
+     implement similar decorator-based behavior that infer needs to handle. Note that whether we
+     filter duplicates does not depend on whether there are duplicate _inference_ results; _any_
+     duplicates should trigger us to skip _all_ inference results for a given name. *)
+  assert_fixpoint_result
+    ~context
+    ~sources:
+      [
+        ( "test.py",
+          {|
+          import typing
+
+          @typing.overload
+          def f(x: int, y) -> int:
+              y = "y"
+              return x
+
+          @typing.overload
+          def f(x: str, y) -> str:
+              y = "y"
+              return x
+
+          @typing.overload
+          def f(x: float, y) -> float:
+              y = "y"
+              return x
+          |}
+        );
+      ]
+    ~callable_names:["test.f"]
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "defines": []
+        }
+      |}
+    ();
+  (* The previous commit ensures we ignore duplicate defines when more than one has type inference
+     results. This test verifies that even if just one of the defines has inference results, we
+     still ignore it (because the codegen logic in python won't know how to annotate correctly even
+     if there's only one stub to generate) *)
+  assert_fixpoint_result
+    ~context
+    ~sources:
+      [
+        ( "test.py",
+          {|
+          import typing
+
+          @typing.overload
+          def f(x: int) -> int:
+              return x
+
+          @typing.overload
+          def f(x: str) -> str:
+              return x
+
+          @typing.overload
+          def f(x) -> float:
+              return x
+          |}
+        );
+      ]
+    ~callable_names:["test.f"]
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "defines": []
+        }
+      |}
+    ();
+  ()
+
+
 let type_inference_attribute_widen_test context =
   assert_fixpoint_result
     ~context
@@ -241,6 +320,7 @@ let () =
   "typeInferenceAnalysisTest"
   >::: [
          "serialization" >:: type_inference_serialization_test;
+         "duplicates" >:: type_inference_duplicate_define_test;
          "attribute_widen" >:: type_inference_attribute_widen_test;
          "ignore_infer" >:: type_inference_ignore_infer_test;
        ]

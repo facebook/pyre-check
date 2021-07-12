@@ -143,6 +143,4 @@ let run_infer_v2 ~scheduler ~configuration ~global_resolution qualifiers =
 let infer_v2 ~configuration ~scheduler () =
   let { global_resolution; qualifiers; _ } = build_environment_data ~configuration ~scheduler () in
   run_infer_v2 ~scheduler ~configuration ~global_resolution qualifiers
-  |> List.fold
-       ~init:TypeInference.Data.GlobalResult.empty
-       ~f:(TypeInference.Data.GlobalResult.add_local_result ~global_resolution)
+  |> TypeInference.Data.GlobalResult.from_local_results ~global_resolution

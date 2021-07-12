@@ -33,6 +33,7 @@ module SerializableReference = struct
   let to_yojson reference = `String (Reference.show_sanitized reference)
 
   module Map = Reference.Map.Tree
+  module Set = Set.Make (Reference)
 end
 
 module DefaultValue = struct
@@ -476,9 +477,26 @@ module GlobalResult = struct
     }
 
 
+  let add_define ~define_names ~defines define =
+    let name = DefineAnnotationsByName.Value.identifying_name define in
+    (* Duplicate defines can occur, for example with certain decorator-based tools like
+       typing.overloads. If we encounter a duplicate we skip that define entirely. *)
+    if SerializableReference.Set.mem define_names name then
+      define_names, SerializableReference.Map.remove defines name
+    else
+      let define_names = SerializableReference.Set.add define_names name in
+      let defines =
+        if DefineAnnotation.is_inferred define then
+          DefineAnnotationsByName.add_exn defines define
+        else
+          defines
+      in
+      define_names, defines
+
+
   let add_local_result
       ~global_resolution
-      { globals; attributes; defines }
+      (define_names, { globals; attributes; defines })
       {
         LocalResult.globals = globals_from_local;
         LocalResult.attributes = attributes_from_local;
@@ -486,16 +504,20 @@ module GlobalResult = struct
         _;
       }
     =
-    let defines =
-      if DefineAnnotation.is_inferred define then
-        DefineAnnotationsByName.add_exn defines define
-      else
-        defines
-    in
-    {
-      globals = GlobalAnnotation.ByName.merge ~global_resolution globals globals_from_local;
-      attributes =
-        AttributeAnnotation.ByName.merge ~global_resolution attributes attributes_from_local;
-      defines;
-    }
+    let define_names, defines = add_define ~define_names ~defines define in
+    ( define_names,
+      {
+        globals = GlobalAnnotation.ByName.merge ~global_resolution globals globals_from_local;
+        attributes =
+          AttributeAnnotation.ByName.merge ~global_resolution attributes attributes_from_local;
+        defines;
+      } )
+
+
+  let from_local_results ~global_resolution local_results =
+    local_results
+    |> List.fold
+         ~init:(SerializableReference.Set.empty, empty)
+         ~f:(add_local_result ~global_resolution)
+    |> snd
 end

@@ -14,13 +14,7 @@ open Interprocedural
 let get_result callable = Fixpoint.get_result callable |> Result.get_result TypeInferenceResult.kind
 
 let make_global_result ~global_resolution ~callables =
-  let add_local_result global_result callable =
-    callable
-    |> get_result
-    >>| GlobalResult.add_local_result ~global_resolution global_result
-    |> Option.value ~default:global_result
-  in
-  callables |> List.fold ~init:GlobalResult.empty ~f:add_local_result
+  callables |> List.filter_map ~f:get_result |> GlobalResult.from_local_results ~global_resolution
 
 
 let log_performance ~fixpoint_timer ~fixpoint_iterations ~inference_count =
