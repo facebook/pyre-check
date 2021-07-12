@@ -11,9 +11,6 @@ open Ast
 open Analysis
 open TypeInference.Data
 open Test
-module Callable = Interprocedural.Callable
-
-let setup_scratch_project ~context ?(sources = []) () = ScratchProject.setup ~context sources
 
 let setup_environment scratch_project =
   let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -23,31 +20,6 @@ let setup_environment scratch_project =
 
 
 module Setup = struct
-  let make_function name : Callable.real_target =
-    name |> Reference.create |> Callable.create_function
-
-
-  let find_target ~resolution target =
-    let qualifier, define =
-      match target |> Callable.get_module_and_definition ~resolution with
-      | Some module_and_definition -> module_and_definition
-      | None ->
-          let all_defines =
-            resolution
-            |> GlobalResolution.unannotated_global_environment
-            |> UnannotatedGlobalEnvironment.ReadOnly.all_defines
-          in
-          raise
-            (Failure
-               (Format.asprintf
-                  "No such define %a in %s"
-                  Callable.pp_real_target
-                  target
-                  (all_defines |> List.map ~f:Reference.show |> String.concat ~sep:",")))
-    in
-    qualifier, define
-
-
   let set_up_project ~context code =
     let ({ ScratchProject.configuration; _ } as project) =
       ScratchProject.setup ~context ["test.py", code] ~infer:true
