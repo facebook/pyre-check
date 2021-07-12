@@ -17,7 +17,7 @@ from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast, Dict, List, Optional, Sequence
+from typing import cast, Callable, Dict, List, Optional, Sequence
 
 import libcst
 from libcst.codemod import CodemodContext
@@ -389,17 +389,22 @@ class ModuleAnnotations:
 
 
 def _create_module_annotations(
-    infer_output: RawInferOutput,
+    infer_output: RawInferOutput, sanitize_path: Callable[[str], str | None]
 ) -> Sequence[ModuleAnnotations]:
     infer_output_by_path = RawInferOutput.split_by_path(
         infer_output=infer_output,
     )
+    infer_output_sanitized = {
+        path: data
+        for raw_path, data in infer_output_by_path.items()
+        if (path := sanitize_path(raw_path)) is not None
+    }
     return [
         ModuleAnnotations.from_infer_output(
             path=path,
             infer_output=infer_output_for_path,
         )
-        for path, infer_output_for_path in infer_output_by_path.items()
+        for path, infer_output_for_path in infer_output_sanitized.items()
     ]
 
 
@@ -490,26 +495,16 @@ class Infer(Reporting):
         self._read_stdin = read_stdin
         self._type_directory: Path = Path(
             os.path.join(self._configuration.log_directory, "types")
-        )
+        ).absolute()
+        self._analysis_root: Path = Path(
+            os.path.realpath(self._analysis_directory.get_root())
+        ).absolute()
         self._interprocedural = interprocedural
         if self._annotate_from_existing_stubs and not self._in_place:
             raise ValueError(
                 "The --in-place flag is required when using "
                 + "--annotate-from-existing-stubs"
             )
-
-    @property
-    def project_root(self) -> Path:
-        """
-        Get the prefix of the analysis directory root, relative to
-        the current working directory (self._original_directory).
-        """
-        return Path(
-            os.path.relpath(
-                os.path.realpath(self._analysis_directory.get_root_path().get_root()),
-                self._original_directory,
-            )
-        )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -562,6 +557,7 @@ class Infer(Reporting):
         infer_output = RawInferOutput(data=json.loads(self._load_infer_output())[0])
         module_annotations = _create_module_annotations(
             infer_output=infer_output,
+            sanitize_path=self.project_relative_path,
         )
         if self._print_only:
             return self._print_inferences(
@@ -570,6 +566,28 @@ class Infer(Reporting):
         self._write_stubs(module_annotations=module_annotations)
         if self._in_place:
             self._annotate_in_place()
+
+    def project_relative_path(self, raw_path: str) -> str | None:
+        """
+        Transform paths from the server into relative paths from the working
+        directory. There are two stages to this:
+        - concatenate the path returned with the analysis root (which, in
+          the case of a buck project, can be a temporary directory of symlinks).
+        - follow symlinks (which will be almost everything in a buck project)
+          to the real path, and then filter out anything that isn't actually
+          part of the project root.
+
+        Filtered paths are transformed to None so that the inference information
+        will be discarded.
+        """
+        full_path = str((self._analysis_root / raw_path).resolve())
+        exists = os.path.exists(full_path)
+        in_project = full_path.startswith(self._configuration.project_root)
+        return (
+            os.path.relpath(full_path, self._original_directory)
+            if in_project and exists
+            else None
+        )
 
     def _load_infer_output(self) -> str:
         if self._read_stdin:
@@ -606,7 +624,6 @@ class Infer(Reporting):
             module.write_stubs(type_directory=type_directory)
 
     def _annotate_in_place(self) -> None:
-        project_root = self.project_root
         formatter = self._configuration.formatter
         type_directory = self._type_directory
         debug_infer = self._debug_infer
@@ -616,9 +633,9 @@ class Infer(Reporting):
         for full_stub_path in type_directory.rglob("*.pyi"):
             stub_path = full_stub_path.relative_to(type_directory)
             code_path = stub_path.with_suffix(".py")
-            full_code_path = project_root / code_path
+            full_code_path = self._original_directory / code_path
 
-            if self._should_annotate_in_place(full_code_path):
+            if self._should_annotate_in_place(code_path):
                 tasks.append(
                     AnnotateModuleInPlace(
                         full_stub_path=str(full_stub_path),

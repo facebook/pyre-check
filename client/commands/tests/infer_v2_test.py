@@ -50,6 +50,7 @@ def _create_test_module_annotations(
 ) -> ModuleAnnotations:
     all_module_annotations = _create_module_annotations(
         infer_output=_raw_infer_output(data=data),
+        sanitize_path=lambda path: path,
     )
     if len(all_module_annotations) != 1:
         raise AssertionError("Expected exactly one module!")
