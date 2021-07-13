@@ -84,7 +84,7 @@ def run_pysa_integration_test(
     passthrough_args: Sequence[str],
     skip_model_verification: bool,
     filter_issues: bool,
-    run_from_source=False,
+    run_from_source: bool = False,
 ) -> None:
     """
     Runs pysa and compares the output to that in full_results.json. Creates
@@ -113,6 +113,7 @@ def run_pysa_integration_test(
 
     command += passthrough_args
     LOG.debug(f"Using command: {command}")
+    pysa_results: str
     try:
         pysa_results = subprocess.check_output(
             command, text=True, cwd=current_directory
