@@ -9,9 +9,10 @@ This is an implementation of Pysa's language server. It is a refactored
 version of persistent.py.
 """
 
-from pathlib import Path
 import asyncio
 import logging
+from pathlib import Path
+from typing import List, Sequence, Dict
 
 from ... import (
     json_rpc,
@@ -34,9 +35,8 @@ from .persistent import (
     InitializationSuccess,
     InitializationFailure,
 )
-from api import query, connection as api_connection
-from api.connection import PyreQueryError
-from typing import List, Sequence, Dict
+from ....api import query, connection as api_connection
+from ....api.connection import PyreQueryError
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -102,6 +102,7 @@ class PysaServer:
         return result
 
     async def update_errors(self, document_path: Path) -> None:
+        # Publishing empty diagnostics to clear errors in VSCode
         await _publish_diagnostics(self.output_channel, document_path, [])
         pyre_connection = api_connection.PyreConnection(
             Path(self.pyre_arguments.global_root)
