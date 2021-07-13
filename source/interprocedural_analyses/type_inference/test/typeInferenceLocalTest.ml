@@ -711,7 +711,8 @@ let test_inferred_globals context =
     |}
     ~target:"test.$toplevel"
     ~expected:{|[]|};
-  (* TODO(T84365830): Be more intelligent about inferring None type. *)
+  (* Note: locally-inferred None annotations like this are either widenened into Optional types or
+     suppressed by GlobalResult *)
   check_inference_results
     {|
       foo = None
@@ -807,7 +808,8 @@ let test_inferred_attributes context =
           }
         ]
       |};
-  (* TODO(T84365830): Be more intelligent about inferring None type. *)
+  (* Note: locally-inferred None annotations like this are either widenened into Optional types or
+     suppressed by GlobalResult *)
   check_inference_results
     {|
       class Foo:

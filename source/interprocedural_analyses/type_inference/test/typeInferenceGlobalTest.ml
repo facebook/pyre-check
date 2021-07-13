@@ -113,7 +113,7 @@ let type_inference_serialization_test context =
           x = 1 + 1
 
           class C:
-              x = None
+              x = 1 + 1
 
           def no_errors(x: int) -> int:
               return x
@@ -141,7 +141,7 @@ let type_inference_serialization_test context =
               "parent": "C",
               "name": "x",
               "location": { "qualifier": "test", "path": "test.py", "line": 7 },
-              "annotation": "None"
+              "annotation": "int"
             }
           ],
           "defines": [
@@ -242,6 +242,28 @@ let type_inference_duplicate_define_test context =
   ()
 
 
+let type_inference_suppress_test context =
+  assert_fixpoint_result
+    ~context
+    ~sources:
+      ["test.py", {|
+          x = None
+
+          class Foo:
+            x = None
+          |}]
+    ~callable_names:["test.Foo.$class_toplevel"; "test.Foo.__init__"]
+    ~expected:
+      {|
+        {
+          "globals": [],
+          "attributes": [],
+          "defines": []
+        }
+      |}
+    ()
+
+
 let type_inference_attribute_widen_test context =
   assert_fixpoint_result
     ~context
@@ -324,6 +346,7 @@ let () =
   >::: [
          "serialization" >:: type_inference_serialization_test;
          "duplicates" >:: type_inference_duplicate_define_test;
+         "suppress" >:: type_inference_suppress_test;
          "attribute_widen" >:: type_inference_attribute_widen_test;
          "ignore_infer" >:: type_inference_ignore_infer_test;
        ]

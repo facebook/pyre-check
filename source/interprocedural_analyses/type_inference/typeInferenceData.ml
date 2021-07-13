@@ -174,6 +174,9 @@ module AnnotationsByName = struct
                    map)
         in
         SerializableReference.Map.update map name ~f:transform_or_raise
+
+
+      let filter_not ~f = SerializableReference.Map.filter ~f:(fun value -> not (f value))
     end
   end
 
@@ -236,6 +239,8 @@ module GlobalAnnotation = struct
 
   module ByName = AnnotationsByName.Make (Value)
   include Value
+
+  let suppress { annotation; _ } = Type.is_none annotation
 end
 
 module AttributeAnnotation = struct
@@ -267,6 +272,8 @@ module AttributeAnnotation = struct
 
   module ByName = AnnotationsByName.Make (Value)
   include Value
+
+  let suppress { annotation; _ } = Type.is_none annotation
 end
 
 module DefineAnnotation = struct
@@ -524,10 +531,20 @@ module GlobalResult = struct
       } )
 
 
+  let suppress_unhelpful_types { globals; attributes; defines } =
+    {
+      globals = globals |> GlobalAnnotation.ByName.filter_not ~f:GlobalAnnotation.suppress;
+      attributes =
+        attributes |> AttributeAnnotation.ByName.filter_not ~f:AttributeAnnotation.suppress;
+      defines;
+    }
+
+
   let from_local_results ~global_resolution local_results =
     local_results
     |> List.fold
          ~init:(SerializableReference.Set.empty, empty)
          ~f:(add_local_result ~global_resolution)
     |> snd
+    |> suppress_unhelpful_types
 end
