@@ -517,7 +517,7 @@ class Infer(Reporting):
         dequalify: bool,
         interprocedural: bool,
     ) -> None:
-        if annotate_from_existing_stubs and in_place is None:
+        if annotate_from_existing_stubs and not in_place:
             raise ValueError(
                 "--annotate-from-existing-stubs cannot be used without the \
                 --in-place argument"
@@ -542,11 +542,6 @@ class Infer(Reporting):
         ).absolute()
         self._dequalify = dequalify
         self._interprocedural = interprocedural
-        if self._annotate_from_existing_stubs and not self._in_place:
-            raise ValueError(
-                "The --in-place flag is required when using "
-                + "--annotate-from-existing-stubs"
-            )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
