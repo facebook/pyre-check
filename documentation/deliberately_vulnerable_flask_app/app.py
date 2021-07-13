@@ -6,6 +6,7 @@
 import sqlite3
 import subprocess
 
+import flask
 import requests
 from flask import Flask, render_template
 from lxml import etree
@@ -37,7 +38,7 @@ def definite_pt(payload: str) -> str:
 
 @app.route("/xss/<string:payload>")
 def definite_xss(payload: str) -> None:
-    content = Flask.Markup(payload)
+    content = flask.Markup(payload)
     return render_template(content)
 
 
