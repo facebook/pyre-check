@@ -75,6 +75,25 @@ class InferUtilsTestSuite(unittest.TestCase):
             dequalify_and_fix_pathlike("typing.Union[typing.List[int]]"),
             "Union[List[int]]",
         )
+        self.assertEqual(
+            dequalify_and_fix_pathlike("PathLike[str]"),
+            "'os.PathLike[str]'",
+        )
+        self.assertEqual(
+            dequalify_and_fix_pathlike("os.PathLike[str]"),
+            "os.PathLike[str]",
+        )
+        self.assertEqual(
+            dequalify_and_fix_pathlike("Union[PathLike[bytes], PathLike[str], str]"),
+            "Union['os.PathLike[bytes]', 'os.PathLike[str]', str]",
+        )
+        # The libcst code throws an exception on this annotation because it is
+        # invalid; this unit test verifies that we try/catch as expected rather than
+        # crashing infer.
+        self.assertEqual(
+            dequalify_and_fix_pathlike("PathLike[Variable[AnyStr <: [str, bytes]]]"),
+            "PathLike[Variable[AnyStr <: [str, bytes]]]",
+        )
 
 
 class AnnotateModuleInPlaceTest(unittest.TestCase):
@@ -424,107 +443,6 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
-    def test_stubs_with_pathlike(self) -> None:
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "Union[PathLike[bytes],"
-                        + " PathLike[str], bytes, str]",
-                        "name": "test.bar",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "x", "annotation": "int", "value": None}
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            "def bar(x: int) -> Union['os.PathLike[bytes]',"
-            + " 'os.PathLike[str]', bytes, str]: ...",
-        )
-
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "PathLike[str]",
-                        "name": "test.bar",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "x", "annotation": "int", "value": None}
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            "def bar(x: int) -> 'os.PathLike[str]': ...",
-        )
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "os.PathLike[str]",
-                        "name": "test.bar",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "x", "annotation": "int", "value": None}
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            "def bar(x: int) -> os.PathLike[str]: ...",
-        )
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "typing.Union[os.PathLike[str]]",
-                        "name": "test.bar",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "x", "annotation": "int", "value": None}
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            """\
-            from typing import Union
-
-
-            def bar(x: int) -> Union[os.PathLike[str]]: ...
-            """,
-        )
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "PathLike[Variable[typing.AnyStr <:"
-                        + " [str, bytes]]]",
-                        "name": "test.bar",
-                        "parent": None,
-                        "parameters": [
-                            {"name": "x", "annotation": "int", "value": None}
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            """\
-            from typing import AnyStr
-
-
-            def bar(x: int) -> PathLike[Variable[AnyStr <: [str, bytes]]]: ...
-            """,
-        )
-
     def test_stubs_no_typing_import(self) -> None:
         """
         Make sure we don't spuriously import from typing
@@ -561,6 +479,27 @@ class StubGenerationTest(unittest.TestCase):
 
             def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...
             """,
+        )
+
+    def test_stubs_with_pathlike(self) -> None:
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "Union[PathLike[bytes],"
+                        + " PathLike[str], bytes, str]",
+                        "name": "test.bar",
+                        "parent": None,
+                        "parameters": [
+                            {"name": "x", "annotation": "int", "value": None}
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "def bar(x: int) -> Union['os.PathLike[bytes]',"
+            + " 'os.PathLike[str]', bytes, str]: ...",
         )
 
 

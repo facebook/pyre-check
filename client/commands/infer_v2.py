@@ -97,6 +97,12 @@ class AnnotationFixer(libcst.CSTTransformer):
 
 
 def dequalify_and_fix_pathlike(annotation: str) -> str:
+    """
+    Transform raw annotations in two ways:
+    - Dequalify any imports from typing (e.g. convert `typing.Optional` to `Optional`)
+    - Convert annotations using a bare `PathLike` type to use 'os.PathLike',
+      quoted with the os prefix.
+    """
     if annotation.find("PathLike") >= 0:
         try:
             tree = libcst.parse_module(annotation)
