@@ -14,12 +14,8 @@ import {
   LanguageClient,
   LanguageClientOptions,
   DidChangeConfigurationNotification,
-} from "vscode-languageclient";
+} from "vscode-languageclient/node";
 
-import * as childProcess from "child_process";
-
-// let exec = childProcess.exec;
-let exec = require('child_process').exec;
 let languageClient: LanguageClient;
 
 namespace Configuration {
@@ -54,7 +50,7 @@ export async function activate(_: vscode.ExtensionContext) {
     },
   };
 
-  const languageClient = new LanguageClient(
+  languageClient = new LanguageClient(
     "pyre",
     "Pyre Language Client",
     serverOptions,
@@ -71,9 +67,6 @@ export async function activate(_: vscode.ExtensionContext) {
   const commandHandler = (path: string) => {
     console.log(`Generating model from ${path}...`);
     copyModel(path);
-    vscode.window.showInformationMessage(
-      "Generated model copied to clipboard!"
-    );
   };
   _.subscriptions.push(
     vscode.commands.registerCommand("pysa.generateModel", commandHandler)
@@ -86,43 +79,23 @@ export function deactivate() {
 
 async function copyModel(path: string) {
   try {
-    let cp = exec(
-      "pyre query \"types('./test.py')\"",
-      {
-        cwd: path,
-      },
-      (error, stdout, stderr) => {
-        if (error) {
-          console.log(`${error.name}: ${error.message}`);
-          console.log(`[STACK] ${error.stack}`);
-        }
-        console.log(stdout);
-        console.log(stderr);
-      }
-    );
-    cp.stdout.on("data", (data) => console.log(data));
-
-    // const terminal = vscode.window.createTerminal(
-    //   `Ext Terminal #${NEXT_TERM_ID++}`
-    // );
-    // terminal.sendText("echo 'testing'");
-
-    // vscode.window.onDidWriteTerminalData((e) => {})
-    // alternatively, parse the JSON and check the start and end positions
-    //  let line = 1;
-    //  let char = 1;
-    //  let functionRange = new vscode.Range (vscode.Position(line, char), vscode.Position(line, char));
-    //  if (functionRange.contains(active)){
-    //     // copy the Pysa model
-    //  }
-
-    var active = await vscode.window.activeTextEditor.selection.active;
-    await vscode.env.clipboard.writeText(
-      `Selected function at ${active.line}:${active.character}`
-    );
+    var active = vscode.window.activeTextEditor.selection.active;
+    languageClient
+      .sendRequest("copyModel", {
+        path: path,
+        position: { line: active.line, character: active.character },
+      })
+      .then((response: any) => {
+        vscode.env.clipboard.writeText(response);
+        vscode.window.showInformationMessage(
+          "Generated model copied to clipboard!"
+        );
+        console.log(response);
+      });
   } catch (error) {
     vscode.window.showErrorMessage(
       `Generating model failed. Error: ${JSON.stringify(error)}`
     );
+    console.error(error);
   }
 }

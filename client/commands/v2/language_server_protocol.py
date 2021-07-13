@@ -424,3 +424,18 @@ class WorkspaceDidChangeConfigurationParameters:
         return _parse_parameters(
             parameters, target=WorkspaceDidChangeConfigurationParameters
         )
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class DidCopyModelParameters:
+    path: Path
+    position: Position
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DidCopyModelParameters":
+        return _parse_parameters(parameters, target=DidCopyModelParameters)

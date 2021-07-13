@@ -115,6 +115,27 @@ class PysaServer:
                 f"Error querying Pyre: {e}", lsp.MessageType.WARNING
             )
 
+    async def copy_model(self, document_path: Path, position: lsp.Position) -> None:
+        pyre_connection = api_connection.PyreConnection(
+            Path(self.pyre_arguments.global_root)
+        )
+        try:
+            types = query.types(pyre_connection, [document_path])
+            for type in types[0].types:
+                stop = lsp.Position(
+                    line=type.location["stop"]["line"],
+                    character=type.location["stop"]["column"],
+                )
+                if stop.line > position.lline or (
+                    stop.line == position.line and stop.character > position.character
+                ):
+                    function_model = type.extract_function_model()
+                    return function_model
+        except PyreQueryError as e:
+            await self.log_and_show_message_to_client(
+                f"Error querying Pyre: {e}", lsp.MessageType.WARNING
+            )
+
     async def show_message_to_client(
         self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
     ) -> None:
@@ -193,6 +214,16 @@ class PysaServer:
             )
         await self.update_errors(document_path)
 
+    async def process_copy_model_request(
+        self, parameters: lsp.DidCopyModelParameters
+    ) -> None:
+        document_path = parameters.path
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document path is not a file: {parameters.path}"
+            )
+        await self.copy_model(document_path, parameters.position)
+
     async def run(self) -> int:
         while True:
             async with _read_lsp_request(
@@ -239,6 +270,19 @@ class PysaServer:
                         lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
                             parameters
                         )
+                    )
+                elif request.method == "copyModel":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for copyModel method"
+                        )
+                    copied_model = await self.process_copy_model_request(
+                        lsp.DidCopyModelParameters.from_json_rpc_parameters(parameters)
+                    )
+                    lsp.write_json_rpc(
+                        self.output_channel,
+                        json_rpc.SuccessResponse(id=request.id, result=copied_model),
                     )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")

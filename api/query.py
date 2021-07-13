@@ -47,6 +47,20 @@ class Location(NamedTuple):
     stop: Position
 
 
+class Type(NamedTuple):
+    location: Dict[str, Position]
+    annotation: str
+
+    def extract_function_model(self) -> str:
+        results = re.findall("\(.*?\)", self.annotation)
+        return results[0] if results else ""
+
+
+class Types(NamedTuple):
+    path: str
+    types: List[Type]
+
+
 class CallGraphTarget:
     def __init__(self, call: Dict[str, Any]) -> None:
         self.target: str = ""
@@ -253,3 +267,31 @@ def get_invalid_taint_models(
                 )
             )
     return errors
+
+
+def types(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Types]:
+    query = "types({})".format(",".join(modules))
+    result = pyre_connection.query_server(query)
+
+    return [
+        Types(
+            path=module_result["path"],
+            types=[
+                Type(
+                    location={
+                        "start": Position(
+                            line=element["location"]["start"]["line"],
+                            column=element["location"]["start"]["column"],
+                        ),
+                        "end": Position(
+                            line=element["location"]["stop"]["line"],
+                            column=element["location"]["stop"]["column"],
+                        ),
+                    },
+                    annotation=element["annotation"],
+                )
+                for element in module_result["response"]
+            ],
+        )
+        for module_result in result["response"]
+    ]
