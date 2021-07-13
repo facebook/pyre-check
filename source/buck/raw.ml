@@ -62,7 +62,7 @@ let create () =
                later. *)
             Lwt.return ""
         | Some line ->
-            Log.log ~section:`Progress "[Buck] %s" line;
+            Log.info "[Buck] %s" line;
             consume_line channel
       in
       consume_line stderr_channel
