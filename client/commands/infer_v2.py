@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import logging
 import multiprocessing
-import os
 import re
 import shutil
 import subprocess
@@ -534,14 +533,12 @@ class Infer(Reporting):
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
         self._read_stdin = read_stdin
-        self._type_directory: Path = Path(
-            os.path.join(self._configuration.log_directory, "types")
-        ).absolute()
-        self._analysis_root: Path = Path(
-            os.path.realpath(self._analysis_directory.get_root())
-        ).absolute()
         self._dequalify = dequalify
         self._interprocedural = interprocedural
+        self._type_directory: Path = (
+            Path(self._configuration.log_directory) / "types"
+        ).absolute()
+        self._analysis_root: Path = Path(self._analysis_directory.get_root()).resolve()
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
@@ -617,12 +614,11 @@ class Infer(Reporting):
         Filtered paths are transformed to None so that the inference information
         will be discarded.
         """
-        full_path = str((self._analysis_root / raw_path).resolve())
-        exists = os.path.exists(full_path)
-        in_project = full_path.startswith(self._configuration.project_root)
+        full_path = (self._analysis_root / raw_path).resolve()
+        in_project = str(full_path).startswith(self._configuration.project_root)
         return (
-            os.path.relpath(full_path, self._original_directory)
-            if in_project and exists
+            str(full_path.relative_to(self._original_directory))
+            if in_project and full_path.exists
             else None
         )
 
