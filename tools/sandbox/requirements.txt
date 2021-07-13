@@ -33,7 +33,7 @@ promise==2.3
 prompt-toolkit==3.0.8
 psutil==5.8.0
 ptyprocess==0.6.0
-Pygments==2.7.3
+Pygments==2.7.4
 pyre-check-nightly==0.0.101608763182
 pyre-extensions==0.0.19
 pywatchman==1.4.1
