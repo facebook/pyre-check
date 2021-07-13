@@ -1143,7 +1143,7 @@ To fix this error, change the definition of this attribute to something that is 
 
 Pyre will throw this error if a source module specifies one or more overloads via [`typing.overload`](https://fburl.com/d7b8cd2h) but fails to provide an implementation, for example:
 ```python
-import typing overload
+from typing import overload
 
 @overload
 def f(x: int) -> float:
@@ -1157,7 +1157,7 @@ Missing implementations are allowed in `.pyi` stub files.
 
 To fix it, provide exactly one implementation (a function of the same name without the `typing.overload` decorator). For example above we could implement `f` as follows:
 ```python
-import typing overload, Union
+from typing import overload, Union
 
 @overload
 def f(x: int) -> float:
