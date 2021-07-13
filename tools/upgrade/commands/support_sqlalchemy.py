@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import json
 import logging
 import re
 from logging import Logger
@@ -15,7 +14,7 @@ import libcst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
 
-from ..commands.command import Command, CommandArguments, ErrorSuppressingCommand
+from ..commands.command import CommandArguments, ErrorSuppressingCommand
 from ..configuration import Configuration
 from ..errors import PathsToErrors, PyreError, UserError
 from ..filesystem import path_exists
@@ -35,24 +34,6 @@ def _is_sqlalchemy_error(error: PyreError) -> bool:
             r"has type .*?Column\[.*but no type is specified.", error["description"]
         )
     )
-
-
-def _dequalify(type_name: str) -> str:
-    match = re.fullmatch(r"([^.]*?\.)*?([^.]+)(\[.*\])", type_name)
-    if match is None:
-        return type_name
-
-    return f"{match.group(2)}{match.group(3)}"
-
-
-def _dequalify_sqlalchemy_type(error: PyreError) -> PyreError:
-    return {
-        **error,
-        "inference": {
-            **error["inference"],
-            "annotation": _dequalify(error["inference"]["annotation"]),
-        },
-    }
 
 
 class SupportSqlalchemy(ErrorSuppressingCommand):
@@ -126,26 +107,21 @@ class SupportSqlalchemy(ErrorSuppressingCommand):
         self, configuration: Configuration, sqlalchemy_path_wise_errors: PathsToErrors
     ) -> None:
         paths = [str(path) for path in sqlalchemy_path_wise_errors.keys()]
-        errors = [
-            _dequalify_sqlalchemy_type(error)
-            for errors in sqlalchemy_path_wise_errors.values()
-            for error in errors
-        ]
         pyre_output = configuration.run_pyre(
             arguments=[
                 "--strict",
                 "-l",
                 str(self._local_root),
                 "--noninteractive",
-                "infer",
-                "--json",
+                "infer-v2",
                 "--in-place",
+                "--dequalify",
                 *paths,
             ],
-            description="Running `pyre infer`",
+            description="Running `pyre infer-v2`",
             should_clean=self._should_clean,
             stderr_flag=None,
-            command_input=json.dumps(errors),
+            command_input=None,
         )
         if pyre_output is None:
             raise UserError("Couldn't annotate sqlalchemy files.")
