@@ -31,7 +31,7 @@ from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import LegacyError
 from .command import Command, Result
-from .infer_v2 import dequalify_and_fix_pathlike, split_imports, AnnotateModuleInPlace
+from .infer_v2 import sanitize_annotation, split_imports, AnnotateModuleInPlace
 from .reporting import Reporting
 
 LOG: Logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class FunctionStub:
         return self.name.split(".")[-1] if self.name.split(".") else ""
 
     def _get_annotation(self) -> str:
-        return " -> " + dequalify_and_fix_pathlike(self.actual) if self.actual else ""
+        return " -> " + sanitize_annotation(self.actual) if self.actual else ""
 
     def _get_parameter_string(self) -> str:
         """Depending on if an argument has a type, the style for default values
@@ -74,7 +74,7 @@ class FunctionStub:
         for parameter in self.parameters:
             name = parameter["name"]
             if parameter["type"]:
-                name += ": " + dequalify_and_fix_pathlike(parameter["type"])
+                name += ": " + sanitize_annotation(parameter["type"])
                 if parameter["value"]:
                     name += " = " + parameter["value"]
             elif parameter["value"]:
@@ -144,7 +144,7 @@ class FieldStub:
         return self.name.split(".")[-1] if self.name.split(".") else ""
 
     def to_string(self) -> str:
-        return f"{self._get_name()}: {dequalify_and_fix_pathlike(self.actual)} = ..."  # noqa
+        return f"{self._get_name()}: {sanitize_annotation(self.actual)} = ..."  # noqa
 
     @functools.lru_cache(maxsize=1)
     def get_typing_imports(self) -> Set[str]:

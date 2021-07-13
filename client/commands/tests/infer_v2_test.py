@@ -17,7 +17,7 @@ from ... import commands, find_directories, configuration as configuration_modul
 from ...analysis_directory import AnalysisDirectory
 from ...commands.infer_v2 import (
     _create_module_annotations,
-    dequalify_and_fix_pathlike,
+    sanitize_annotation,
     AnnotateModuleInPlace,
     Infer,
     ModuleAnnotations,
@@ -69,29 +69,58 @@ def _assert_stubs_equal(actual: str, expected: str) -> None:
 
 
 class InferUtilsTestSuite(unittest.TestCase):
-    def test_dequalify_and_fix_pathlike(self) -> None:
-        self.assertEqual(dequalify_and_fix_pathlike("typing.List"), "List")
+    def test_sanitize_annotation__dequalify_typing(self) -> None:
+        self.assertEqual(sanitize_annotation("typing.List"), "List")
         self.assertEqual(
-            dequalify_and_fix_pathlike("typing.Union[typing.List[int]]"),
+            sanitize_annotation("typing.Union[typing.List[int]]"),
             "Union[List[int]]",
         )
         self.assertEqual(
-            dequalify_and_fix_pathlike("PathLike[str]"),
+            sanitize_annotation("typing.List", dequalify_typing=False), "typing.List"
+        )
+        self.assertEqual(
+            sanitize_annotation(
+                "typing.Union[typing.List[int]]", dequalify_typing=False
+            ),
+            "typing.Union[typing.List[int]]",
+        )
+
+    def test_sanitize_annotation__dequalify_all(self) -> None:
+        self.assertEqual(sanitize_annotation("int", dequalify_all=True), "int")
+        self.assertEqual(
+            sanitize_annotation("sql.Column[int]", dequalify_all=True), "Column[int]"
+        )
+        self.assertEqual(
+            sanitize_annotation(
+                "sqlalchemy.sql.schema.Column[int]", dequalify_all=True
+            ),
+            "Column[int]",
+        )
+        self.assertEqual(
+            sanitize_annotation(
+                "sqlalchemy.sql.schema.Column[Optional[int]]", dequalify_all=True
+            ),
+            "Column[Optional[int]]",
+        )
+
+    def test_sanitize_annotation__fix_PathLike(self) -> None:
+        self.assertEqual(
+            sanitize_annotation("PathLike[str]"),
             "'os.PathLike[str]'",
         )
         self.assertEqual(
-            dequalify_and_fix_pathlike("os.PathLike[str]"),
+            sanitize_annotation("os.PathLike[str]"),
             "os.PathLike[str]",
         )
         self.assertEqual(
-            dequalify_and_fix_pathlike("Union[PathLike[bytes], PathLike[str], str]"),
+            sanitize_annotation("Union[PathLike[bytes], PathLike[str], str]"),
             "Union['os.PathLike[bytes]', 'os.PathLike[str]', str]",
         )
         # The libcst code throws an exception on this annotation because it is
         # invalid; this unit test verifies that we try/catch as expected rather than
         # crashing infer.
         self.assertEqual(
-            dequalify_and_fix_pathlike("PathLike[Variable[AnyStr <: [str, bytes]]]"),
+            sanitize_annotation("PathLike[Variable[AnyStr <: [str, bytes]]]"),
             "PathLike[Variable[AnyStr <: [str, bytes]]]",
         )
 
@@ -132,7 +161,7 @@ class StubGenerationTest(unittest.TestCase):
         module_annotations = _create_test_module_annotations(
             data=data,
         )
-        actual = module_annotations.to_stubs()
+        actual = module_annotations.to_stubs(dequalify=False)
         _assert_stubs_equal(actual, expected)
 
     def test_stubs_defines(self) -> None:
@@ -538,6 +567,7 @@ class InferV2Test(unittest.TestCase):
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
+                dequalify=False,
                 interprocedural=False,
             )
             self.assertEqual(expected, infer._should_annotate_in_place(path))
@@ -605,6 +635,7 @@ class InferV2Test(unittest.TestCase):
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
+                dequalify=False,
                 interprocedural=False,
             )
             self.assertEqual(
@@ -646,6 +677,7 @@ class InferV2Test(unittest.TestCase):
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
                 read_stdin=False,
+                dequalify=False,
                 interprocedural=True,
             )
             self.assertEqual(
@@ -689,6 +721,7 @@ class InferV2Test(unittest.TestCase):
                     annotate_from_existing_stubs=False,
                     debug_infer=False,
                     read_stdin=True,
+                    dequalify=False,
                     interprocedural=False,
                 )
                 command.run()

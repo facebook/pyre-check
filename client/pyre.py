@@ -849,8 +849,8 @@ def infer(
     is_flag=True,
     default=False,
     help=(
-        "Print raw JSON errors to standard output, without converting to stubs "
-        "or annnotating."
+        "Print raw JSON inference data to standard output, without "
+        "converting to stubs or annnotating."
     ),
 )
 @click.option(
@@ -879,6 +879,18 @@ def infer(
     help="Read input from stdin instead of running a full infer.",
 )
 @click.option(
+    "--dequalify",
+    is_flag=True,
+    default=False,
+    help=(
+        "Dequalify all annotations? This is a temporary flag, used to "
+        "force fully-qualified names (e.g. sqlalchemy.sql.schema.Column) "
+        "to be dqualified (e.g. Column). It is needed now because pyre "
+        "infer doesn't yet know how to handle imports and qualified names "
+        "in a principled way."
+    ),
+)
+@click.option(
     "--interprocedural",
     is_flag=True,
     default=False,
@@ -896,6 +908,7 @@ def infer_v2(
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
     read_stdin: bool,
+    dequalify: bool,
     interprocedural: bool,
 ) -> int:
     """
@@ -920,6 +933,7 @@ def infer_v2(
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
             read_stdin=read_stdin,
+            dequalify=dequalify,
             interprocedural=interprocedural,
         ),
         configuration,

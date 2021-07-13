@@ -72,7 +72,7 @@ class RawInferOutput:
         return self.data[attribute]
 
 
-class AnnotationFixer(libcst.CSTTransformer):
+class PathLikeAnnotationFixer(libcst.CSTTransformer):
     def leave_Subscript(
         self,
         original_node: libcst.Subscript,
@@ -96,21 +96,50 @@ class AnnotationFixer(libcst.CSTTransformer):
         return updated_node
 
 
-def dequalify_and_fix_pathlike(annotation: str) -> str:
+def sanitize_annotation(
+    annotation: str,
+    dequalify_all: bool = False,
+    dequalify_typing: bool = True,
+) -> str:
     """
-    Transform raw annotations in two ways:
-    - Dequalify any imports from typing (e.g. convert `typing.Optional` to `Optional`)
-    - Convert annotations using a bare `PathLike` type to use 'os.PathLike',
-      quoted with the os prefix.
+    Transform raw annotations in an attempt to reduce incorrectly-imported
+    annotations in generated code.
+
+    TODO(T93381000): Handle qualification in a principled way and remove
+    this: all of these transforms are attempts to hack simple fixes to the
+    problem of us not actually understanding qualified types and existing
+    imports.
+
+    (1) If `dequalify_typing` is set, then remove all uses of `typing.`, for
+    example `typing.Optional[int]` becomes `Optional[int]`. We do this because
+    we automatically add a `from typing import ...` if necessary.
+
+    (2) If `dequalify_all` is set, then remove all qualifiers from any
+    top-level type (by top-level I mean outside the outermost brackets). For
+    example, convert `sqlalchemy.sql.schema.Column[typing.Optional[int]]`
+    into `Column[typing.Optional[int]]`.
+
+    (3) Fix PathLike annotations: convert all bare `PathLike` uses to
+    `'os.PathLike'`; the ocaml side of pyre currently spits out an unqualified
+    type here which is incorrect, and quoting makes the use of os safer
+    given that we don't handle imports correctly yet.
     """
+    if dequalify_all:
+        match = re.fullmatch(r"([^.]*?\.)*?([^.]+)(\[.*\])", annotation)
+        if match is not None:
+            annotation = f"{match.group(2)}{match.group(3)}"
+
+    if dequalify_typing:
+        annotation = annotation.replace("typing.", "")
+
     if annotation.find("PathLike") >= 0:
         try:
             tree = libcst.parse_module(annotation)
-            annotation = tree.visit(AnnotationFixer()).code
+            annotation = tree.visit(PathLikeAnnotationFixer()).code
         except libcst._exceptions.ParserSyntaxError:
             pass
 
-    return annotation.replace("typing.", "")
+    return annotation
 
 
 def split_imports(types_list: list[str]) -> set[str]:
@@ -134,11 +163,13 @@ class TypeAnnotation:
         else:
             raise ValueError("Expected str | None for annotation")
 
-    def sanitized(self, prefix: str = "") -> str:
+    def sanitized(self, dequalify: bool, prefix: str = "") -> str:
         if self.annotation is None:
             return ""
         else:
-            return prefix + dequalify_and_fix_pathlike(self.annotation)
+            return prefix + sanitize_annotation(
+                self.annotation, dequalify_all=dequalify
+            )
 
     def split(self) -> list[str]:
         """Split an annotation into its tokens"""
@@ -158,10 +189,10 @@ class Parameter:
     annotation: TypeAnnotation
     value: str | None
 
-    def to_stub(self) -> str:
+    def to_stub(self, dequalify: bool) -> str:
         delimiter = "=" if self.annotation.missing else " = "
         value = f"{delimiter}{self.value}" if self.value else ""
-        return f"{self.name}{self.annotation.sanitized(prefix=': ')}{value}"
+        return f"{self.name}{self.annotation.sanitized(dequalify, prefix=': ')}{value}"
 
 
 @dataclass(frozen=True)
@@ -172,12 +203,14 @@ class FunctionAnnotation:
     decorators: Sequence[str]
     is_async: bool
 
-    def to_stub(self) -> str:
+    def to_stub(self, dequalify: bool) -> str:
         name = _sanitize_name(self.name)
         decorators = "".join(f"@{decorator}\n" for decorator in self.decorators)
         async_ = "async " if self.is_async else ""
-        parameters = ", ".join(parameter.to_stub() for parameter in self.parameters)
-        return_ = self.return_annotation.sanitized(prefix=" -> ")
+        parameters = ", ".join(
+            parameter.to_stub(dequalify) for parameter in self.parameters
+        )
+        return_ = self.return_annotation.sanitized(dequalify, prefix=" -> ")
         return f"{decorators}{async_}def {name}({parameters}){return_}: ..."
 
     def typing_imports(self) -> set[str]:
@@ -207,9 +240,9 @@ class FieldAnnotation(ABC):
         if self.annotation.missing:
             raise RuntimeError(f"Illegal missing FieldAnnotation for {self.name}")
 
-    def to_stub(self) -> str:
+    def to_stub(self, dequalify: bool) -> str:
         name = _sanitize_name(self.name)
-        return f"{name}: {self.annotation.sanitized()} = ..."
+        return f"{name}: {self.annotation.sanitized(dequalify)} = ..."
 
     def typing_imports(self) -> set[str]:
         return split_imports(self.annotation.split())
@@ -339,27 +372,27 @@ class ModuleAnnotations:
             + len(self.methods)
         ) == 0
 
-    def to_stubs(self) -> str:
+    def to_stubs(self, dequalify: bool) -> str:
         """
         Output annotation information as a stub file.
         """
         return "\n".join(
             [
                 self._typing_imports(),
-                *(global_.to_stub() for global_ in self.globals_),
-                *(function.to_stub() for function in self.functions),
+                *(global_.to_stub(dequalify) for global_ in self.globals_),
+                *(function.to_stub(dequalify) for function in self.functions),
                 *(
-                    self._class_stub(classname, annotations)
+                    self._class_stub(classname, annotations, dequalify)
                     for classname, annotations in self.classes.items()
                 ),
                 "",
             ]
         )
 
-    def write_stubs(self, type_directory: Path) -> None:
+    def write_stubs(self, type_directory: Path, dequalify: bool) -> None:
         path = self.stubs_path(type_directory)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(self.to_stubs())
+        path.write_text(self.to_stubs(dequalify))
 
     def _typing_imports(self) -> str:
         all_imports = (
@@ -383,9 +416,10 @@ class ModuleAnnotations:
         self,
         classname: str,
         annotations: Sequence[AttributeAnnotation | MethodAnnotation],
+        dequalify: bool,
     ) -> str:
         body = "\n".join(
-            self._indent(annotation.to_stub()) for annotation in annotations
+            self._indent(annotation.to_stub(dequalify)) for annotation in annotations
         )
         return f"class {classname}:\n{body}\n"
 
@@ -480,6 +514,7 @@ class Infer(Reporting):
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
         read_stdin: bool,
+        dequalify: bool,
         interprocedural: bool,
     ) -> None:
         if annotate_from_existing_stubs and in_place is None:
@@ -505,6 +540,7 @@ class Infer(Reporting):
         self._analysis_root: Path = Path(
             os.path.realpath(self._analysis_directory.get_root())
         ).absolute()
+        self._dequalify = dequalify
         self._interprocedural = interprocedural
         if self._annotate_from_existing_stubs and not self._in_place:
             raise ValueError(
@@ -604,16 +640,18 @@ class Infer(Reporting):
             result.check()
             return result.output
 
-    @staticmethod
     def _print_inferences(
-        infer_output: RawInferOutput, module_annotations: Sequence[ModuleAnnotations]
+        self,
+        infer_output: RawInferOutput,
+        module_annotations: Sequence[ModuleAnnotations],
     ) -> None:
         json.dump(infer_output.data, log.stdout, indent=2)
         LOG.log(
             log.SUCCESS,
             "Generated stubs:\n\n"
             + "\n\n".join(
-                f"*{module.path}*\n{module.to_stubs()}" for module in module_annotations
+                f"*{module.path}*\n{module.to_stubs(self._dequalify)}"
+                for module in module_annotations
             ),
         )
         return
@@ -627,7 +665,7 @@ class Infer(Reporting):
 
         LOG.log(log.SUCCESS, f"Outputting inferred stubs to {type_directory}")
         for module in module_annotations:
-            module.write_stubs(type_directory=type_directory)
+            module.write_stubs(type_directory=type_directory, dequalify=self._dequalify)
 
     def _annotate_in_place(self) -> None:
         formatter = self._configuration.formatter
