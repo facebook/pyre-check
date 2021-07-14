@@ -444,7 +444,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     =
     if must_widen_depth widen_depth then
       (* Collapse left_tree and right_tree to achieve depth limit. Note that left_tree is a leaf,
-         only if the widen depth was exactly the depth of left_tree.  *)
+         only if the widen depth was exactly the depth of left_tree. *)
       let collapsed_left_element =
         collapse ~transform:transform_on_collapse ~widen_depth left_tree
       in
@@ -495,7 +495,6 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
          joined.[l] = left_tree[l] merge right_star if l in L
          joined.[r] = right_tree[r] merge left_star if r in R
          joined.[<keys>] = left_tree[<keys>] merge right_tree[<keys>]
-
     *)
     let left_star = LabelMap.find_opt Label.AnyIndex left_tree in
     let right_star = LabelMap.find_opt Label.AnyIndex right_tree in

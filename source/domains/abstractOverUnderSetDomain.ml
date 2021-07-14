@@ -18,8 +18,7 @@ type 'a approximation = {
 module type S = sig
   include AbstractSetDomain.S
 
-  type _ AbstractDomainCore.part +=
-    | ElementAndUnder : element approximation AbstractDomainCore.part
+  type _ AbstractDomainCore.part += ElementAndUnder : element approximation AbstractDomainCore.part
 
   val empty : t
 
@@ -56,7 +55,9 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
     type element = Element.t
 
     type _ part +=
-      | Self : t part | Element : Element.t part | ElementAndUnder : Element.t approximation part
+      | Self : t part
+      | Element : Element.t part
+      | ElementAndUnder : Element.t approximation part
 
     let bottom = Bottom
 

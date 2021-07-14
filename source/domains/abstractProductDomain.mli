@@ -14,12 +14,12 @@ module type PRODUCT_CONFIG = sig
      type _ slot =
        | Left: LeftDomain.t AbstractDomainCore.abstract_domain slot
        | Right: RightDomain.t AbstractDomainCore.abstract_domain slot
-   *)
+  *)
   type 'a slot
 
   (* Cardinality of type 'a slot, i.e., distinct constants. If this is wrong, code will crash.
      E.g. let slots = 2
-   *)
+  *)
   val slots : int
 
   (* Name of the product slot, e.g., "Left", "Right". Must be distinct for each slot. *)
@@ -29,7 +29,7 @@ module type PRODUCT_CONFIG = sig
 
      let slot_domain (type a) (a slot) =
        | Left -> (module LeftDomain : AbstractDomainCore.S with type t = a) ...
-   *)
+  *)
   val slot_domain : 'a slot -> 'a AbstractDomainCore.abstract_domain
 
   (* If a slot is strict, then the entire product is bottom when that slot is bottom. *)

@@ -1104,13 +1104,7 @@ module PairStringMapIntToString = struct
   let test_additional _ =
     let () =
       assert_equal
-        "Product [\n\
-        \  left\n\
-        \    Set(strings)\n\
-        \  right\n\
-        \    ints -> (strict)\n\
-        \      Set(strings)\n\
-         ]"
+        "Product [\n  left\n    Set(strings)\n  right\n    ints -> (strict)\n      Set(strings)\n]"
         (introspect Structure |> String.concat ~sep:"\n")
         ~printer:Fn.id
     in
@@ -2309,9 +2303,7 @@ module TreeOfStringSets = struct
     assert_show ~expected:"[a]" (parse_tree ["", ["a"]]);
     assert_show ~expected:"[a, b]" (parse_tree ["", ["a"; "b"]]);
     assert_show ~expected:"{\n   [a] -> [a]\n}" (parse_tree ["a", ["a"]]);
-    assert_show
-      ~expected:"{\n   [a] -> [a]\n   [b] -> [b]\n}"
-      (parse_tree ["a", ["a"]; "b", ["b"]]);
+    assert_show ~expected:"{\n   [a] -> [a]\n   [b] -> [b]\n}" (parse_tree ["a", ["a"]; "b", ["b"]]);
     assert_show
       ~expected:"{\n   [a]\n   [b] -> [b]\n   [c][d] -> [c]\n}"
       (parse_tree ["", ["a"]; "b", ["b"]; "c.d", ["c"]]);
