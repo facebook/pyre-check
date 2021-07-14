@@ -1526,7 +1526,7 @@ def decorator_factory(x: T) -> Callable[[Callable[[int], str]], Callable[[str], 
 #  `complex_expression()` to decorator factory `decorator_factory`.
 @decorator_factory(complex_expression())
 def foo(x: int) -> str:
-  ...
+    ...
 
 
 argument: float = complex_expression()
@@ -1571,8 +1571,10 @@ def bar() -> None:
 These errors are emitted from attempting to pass the resolved factory arguments to the factory, as with any other function call.
 
 ```python
+from typing import Callable
+
 def factory(x: str) -> Callable[[object], object]:
-  ...
+    ...
 
 # pyre-fixme[56]: While applying decorator factory `factory`:
 # Expected `str` for 1st param but got `int`.
@@ -1586,8 +1588,10 @@ def foo() -> None:
 Correspondingly, these errors are emitted from trying to pass the decorated function as an argument to the resolved decorator type.
 
 ```python
+from typing import Callable
+
 def decorator(f: Callable[[int], str]) -> int:
-  ...
+    ...
 
 # pyre-fixme[56]: While applying decorator `decorator`:
 # Expected `Callable[[int], str]` for 1st param but got `Callable[[str], int]`.
@@ -1601,10 +1605,11 @@ def foo(x: str) -> int:
 An async generator function is an `async` function that contains at least one `yield` statement. The Python runtime ensures that all async generator would return an async generator object. Therefore, the return type of async generator functions should always be `typing.AsyncGenerator` or one of its supertypes.
 
 ```python
+from typing import AsyncGenerator
+
 async def f() -> int:  # Error
     yield 0
 
-from typing import AsyncGenerator
 async def g() -> AsyncGenerator[int, None]:  # OK
     if False:
         yield 1
@@ -1619,6 +1624,8 @@ In Python, an infix operator is converted to a method call on either of the oper
 For example,
 
 ```python
+from typing import Optional
+
 def foo(x: Optional[int]) -> bool:
     return x < 0  # type error: Optional[int] is not a supported operand
 
@@ -1636,13 +1643,14 @@ This occurs when the same type variable is provided more than once to a `Generic
 ```python
 from typing import TypeVar, Generic
 
-T = TypeVar("T")
-S = TypeVar("S")
+T0 = TypeVar("T0")
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
 
-class A(Generic[T, S, T]):  # Error
+class A(Generic[T0, T1, T0]):  # Error
     pass
 
-class B(Generic[T, S]):  # OK
+class B(Generic[T0, T1, T2]):  # OK
     pass
 ```
 
@@ -1654,9 +1662,9 @@ This can occur if during concatenation of a tuple one tries to unpack a non-iter
 
 ```python
 def foo(x: int, not_iterable: int, iterable: list[int]) -> None:
-  y = (x, *not_iterable)  # Error
-  z = (x, not_iterable) # OK
-  w = (x, *iterable)  # OK
+    y = (x, *not_iterable)  # Error
+    z = (x, not_iterable) # OK
+    w = (x, *iterable)  # OK
 ```
 
 #### "Concatenation not yet supported for multiple variadic tuples ..."
@@ -1670,7 +1678,7 @@ from pyre_extensions import TypeVarTuple
 Ts = TypeVarTuple("Ts")
 
 def foo(xs: Tuple[*Ts]) -> None:
-  y = (*xs, *xs)  # Error
+    y = (*xs, *xs)  # Error
 ```
 
 ### 61: Uninitialized Local
@@ -1681,12 +1689,12 @@ This indicates that there are code paths along which a local variable may not be
 
 ```python
 def f(x: int) -> None:
-  z = None
-  if x > 5:
-    y = 2
-    z = 2
-  print(y)   # Error
-  print(z)   # OK
+    z = None
+    if x > 5:
+        y = 2
+        z = 2
+    print(y)  # Error
+    print(z)  # OK
 ```
 `y` is not defined when the `if` condition is not met. For instance, `f(4)` will result in a runtime error. Possible ways to address this:
 
@@ -1696,47 +1704,47 @@ def f(x: int) -> None:
 Pyre static analysis does not reason about runtime values or potential side effects of interleaving calls, so for instance, in the example below we cannot guarantee that the two if statements will always be consistent and, hence, throw the same error:
 ```python
 def f(x: int) -> None:
-  if x > 5:
-    y = 2
-  # ...some operations...
-  if x > 5:
-    print(y)    # Error
+    if x > 5:
+        y = 2
+    # ...some operations...
+    if x > 5:
+        print(y)    # Error
 ```
 
 #### Initialized only inside a `for` loop
 ```python
 def f(xs: List[int]) -> None
-  for x in xs:
-    y = "yes"
-  print("Last element is: ", x)   # Error
-  print("Did we enter the loop?", y)  # Error
+    for x in xs:
+        y = "yes"
+    print("Last element is: ", x)  # Error
+    print("Did we enter the loop?", y)  # Error
 ```
 Here, if one calls `f([])`, it will result in errors.
 
 One way to remediate is to initialize outside the loop. For instance,
 ```python
 def f(xs: List[int]) -> None:
-  x = None
-  y = "no"
-  for x in xs:
-    y = "yes"
-  print("Last element is: ", x)   # OK
-  print("Did we enter the loop?", y)  # OK
+    x = None
+    y = "no"
+    for x in xs:
+        y = "yes"
+    print("Last element is: ", x)  # OK
+    print("Did we enter the loop?", y)  # OK
 ```
 
 #### Initialized in `try` block
 ```python
 def f(divisor: int) -> None:
-  answer_good = None
-  try:
-    answer_bad = 5 / divisor
-    answer_good = 5 / divisor
-    answer_also_good = 5 / divisor
-    print(f"5 divided by {divisor} is {answer_also_good}")   # OK
-  except ZeroDivisionError:
-    pass
-  print(f"5 divided by {divisor} is {answer_bad}")    # Error
-  print(f"5 divided by {divisor} is {answer_good}")   # OK
+    answer_good = None
+    try:
+        answer_bad = 5 / divisor
+        answer_good = 5 / divisor
+        answer_also_good = 5 / divisor
+        print(f"5 divided by {divisor} is {answer_also_good}")   # OK
+    except ZeroDivisionError:
+        pass
+    print(f"5 divided by {divisor} is {answer_bad}")  # Error
+    print(f"5 divided by {divisor} is {answer_good}")  # OK
 ```
 Here, `f(0)` leads to an error on access of `answer_bad`. Suggested approaches to address this:
 
@@ -1746,17 +1754,18 @@ Here, `f(0)` leads to an error on access of `answer_bad`. Suggested approaches t
 
 ```python
 def bad(divisor: int) -> Optional[int]:
-  try:
-    dividend = 5
-    return dividend // divisor
-  except ZeroDivisionError:
-    print(f"Cannot divide {dividend} by 0")    # Error (according to Pyre)
+    try:
+        dividend = 5
+        return dividend // divisor
+    except ZeroDivisionError:
+        print(f"Cannot divide {dividend} by 0")  # Error (according to Pyre)
+
 def good(divisor: int) -> Optional[int]:
-  dividend = 5
-  try:
-    return dividend // divisor
-  except ZeroDivisionError:
-    print(f"Cannot divide {dividend} by 0")    # OK
+    dividend = 5
+    try:
+        return dividend // divisor
+    except ZeroDivisionError:
+        print(f"Cannot divide {dividend} by 0")  # OK
 ```
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
