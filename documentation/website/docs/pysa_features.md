@@ -133,8 +133,8 @@ such as `"via-type": "str"`, `"via-type": "typing.List[str]"`, or `"via-type":
 
 `ViaTypeOf` is useful for sinks such as `subprocess.run`, which accepts
 `Union[bytes, str, Sequence]` for it's `arg` parameter. The `via-type` feature
-can help identify which type the argument to `arg` actaully had. Knowning the
-type of the arugument can help asses the severity of a given issue (user
+can help identify which type the argument to `arg` actaully had. Knowing the
+type of the argument can help assess the severity of a given issue (user
 controlled input in a `str` passed to `arg` is much easier to exploit for RCE
 than user controlled input in one element of a `Sequence` passed to `arg`).
 
