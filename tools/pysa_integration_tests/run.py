@@ -7,18 +7,20 @@ import argparse
 import logging
 import os
 from pathlib import Path
+from typing import List
 
+# pyre-ignore[21]
 from utils import run_pysa_integration_test
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def main(
-    run_directory,
-    filter_issues,
-    skip_model_verification,
-    run_from_source,
-    passthrough_args,
+    run_directory: Path,
+    filter_issues: bool,
+    skip_model_verification: bool,
+    run_from_source: bool,
+    passthrough_args: List[str],
 ) -> None:
     """
     Entry point function which checks if full_result.json is there, calls
@@ -56,15 +58,15 @@ if __name__ == "__main__":
     parser.add_argument("--run-from-source", action="store_true")
     parser.add_argument("--passthrough-args", nargs="+")
 
-    parsed = parser.parse_args()
+    parsed: argparse.Namespace = parser.parse_args()
 
-    run_directory = parsed.run_directory
+    run_directory: Path = parsed.run_directory
     if run_directory is None:
         run_directory = Path(os.getcwd())
-    filter_issues = parsed.filter_issues
-    skip_model_verification = parsed.skip_model_verification
-    run_from_source = parsed.run_from_source
-    passthrough_args = parsed.passthrough_args
+    filter_issues: bool = parsed.filter_issues
+    skip_model_verification: bool = parsed.skip_model_verification
+    run_from_source: bool = parsed.run_from_source
+    passthrough_args: List[str] = parsed.passthrough_args
     if passthrough_args is None:
         passthrough_args = []
 
