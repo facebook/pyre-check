@@ -402,6 +402,36 @@ let test_check_local_refinement context =
   assert_type_errors
     {|
       import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if (y := x):
+          reveal_type(x)
+          reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if (y := x) is not None:
+          reveal_type(x)
+          reveal_type(y)
+        if (y := x) is None:
+          reveal_type(x)
+          reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      (* TODO(T95581122): should be None *)
+      "Revealed type [-1]: Revealed type for `y` is `typing.Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
       def foo(x: typing.Union[int, str, None]) -> None:
         if x:
           reveal_type(x)

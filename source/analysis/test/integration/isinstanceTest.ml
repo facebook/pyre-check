@@ -372,6 +372,19 @@ let test_check_isinstance context =
           print(exception)
     |}
     [];
+  (* TODO(T95581122): `y` should be narrowed to `int`. *)
+  assert_type_errors
+    {|
+      import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if isinstance(y := x, int):
+          reveal_type(x)
+          reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Optional[int]`.";
+    ];
   ()
 
 
