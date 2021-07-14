@@ -3648,14 +3648,10 @@ module State (Context : Context) = struct
           let parser = GlobalResolution.annotation_parser global_resolution in
           Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
         in
-        let annotation =
-          if async && not generator then
-            Type.coroutine_value annotation |> Option.value ~default:Type.Top
-          else
-            annotation
-        in
         match annotation with
         | Type.Parametric { name = "typing.TypeGuard"; _ } -> Type.bool
+        | _ when async && not generator ->
+            Type.coroutine_value annotation |> Option.value ~default:Type.Top
         | _ -> annotation
       in
       let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
