@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 from ... import commands, find_directories, configuration as configuration_module
 from ...analysis_directory import AnalysisDirectory
-from ...commands.infer_v2 import (
+from ...commands.infer import (
     _create_module_annotations,
     sanitize_annotation,
     AnnotateModuleInPlace,
@@ -543,7 +543,7 @@ class InferV2Test(unittest.TestCase):
         configuration.get_existent_ignore_infer_paths = lambda: []
         return configuration
 
-    def test_infer_v2_should_annotate_in_place(self) -> None:
+    def test_infer_should_annotate_in_place(self) -> None:
         def check_should_annotate_in_place(
             paths_to_modify: set[Path],
             path: Path,
@@ -609,7 +609,7 @@ class InferV2Test(unittest.TestCase):
     )
     # pyre-ignore[56]
     @patch.object(AnalysisDirectory, "get_filter_roots", return_value=set())
-    def test_infer_v2_commandline_calls(
+    def test_infer_commandline_calls(
         self,
         analysis_directory_get_filter_roots: MagicMock,
         json_loads: MagicMock,

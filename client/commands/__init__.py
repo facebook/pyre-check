@@ -5,7 +5,6 @@
 
 from typing import List, Type
 
-from . import infer_v2  # noqa
 from .analyze import Analyze as Analyze
 from .check import Check as Check
 from .command import (  # noqa; noqa; noqa
@@ -18,6 +17,7 @@ from .command import (  # noqa; noqa; noqa
 )
 from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
+from .infer import Infer as Infer
 from .initialize import Initialize as Initialize
 from .kill import Kill as Kill
 from .persistent import Persistent as Persistent
@@ -37,6 +37,7 @@ COMMANDS: List[Type[CommandParser]] = [
     Check,
     Deobfuscate,
     Incremental,
+    Infer,
     Initialize,
     Kill,
     Persistent,

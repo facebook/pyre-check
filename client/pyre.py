@@ -836,7 +836,7 @@ def infer(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     return run_pyre_command(
-        commands.infer_v2.Infer(
+        commands.Infer(
             command_argument,
             original_directory=os.getcwd(),
             configuration=configuration,
@@ -940,7 +940,7 @@ def infer_v2(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     return run_pyre_command(
-        commands.infer_v2.Infer(
+        commands.Infer(
             command_argument,
             original_directory=os.getcwd(),
             configuration=configuration,
