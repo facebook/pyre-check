@@ -4506,23 +4506,37 @@ end = struct
 
       let mark_as_escaped variable = { variable with state = Free { escaped = true } }
 
-      let local_collect = function
+      let rec local_collect annotation =
+        let collect_unpackable = function
+          | Record.OrderedTypes.Concatenation.Variadic variadic -> [variadic]
+          | Broadcast (ConcreteAgainstConcatenation { concrete; concatenation }) ->
+              local_collect (Tuple (Concrete concrete))
+              @ local_collect (Tuple (Concatenation concatenation))
+          | Broadcast
+              (ConcatenationAgainstConcatenation { left_concatenation; right_concatenation }) ->
+              local_collect (Tuple (Concatenation left_concatenation))
+              @ local_collect (Tuple (Concatenation right_concatenation))
+          | _ -> []
+        in
+        match annotation with
         | Parametric { parameters; _ } ->
             let extract = function
-              | Parameter.Unpacked (Variadic variadic) -> Some variadic
-              | _ -> None
+              | Parameter.Unpacked unpackable -> collect_unpackable unpackable
+              | _ -> []
             in
-            List.filter_map parameters ~f:extract
-        | Tuple (Concatenation { middle = Variadic variadic; _ }) -> [variadic]
+            List.concat_map parameters ~f:extract
+        | Tuple (Concatenation { middle = unpackable; _ }) -> collect_unpackable unpackable
         | Callable { implementation; overloads; _ } ->
             let extract = function
               | { parameters = Defined parameters; _ } ->
                   List.find_map parameters ~f:(function
-                      | Variable (Concatenation { middle = Variadic variadic; _ }) -> Some variadic
+                      | Variable (Concatenation { middle = unpackable; _ }) ->
+                          Some (collect_unpackable unpackable)
                       | _ -> None)
-              | _ -> None
+                  |> Option.value ~default:[]
+              | _ -> []
             in
-            List.filter_map (implementation :: overloads) ~f:extract
+            List.concat_map (implementation :: overloads) ~f:extract
         | _ -> []
 
 

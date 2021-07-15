@@ -2573,6 +2573,86 @@ let test_collect_all _ =
     "typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts], str)], \
      typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts2], str)], bool]]"
     [variadic2; variadic];
+  assert_collected
+    {|
+      typing.Tuple[
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[typing_extensions.Literal[1]],
+        ],
+      ]
+    |}
+    [variadic];
+  assert_collected
+    {|
+      typing.Tuple[
+        pyre_extensions.Broadcast[
+          typing.Tuple[int, ...],
+          typing.Tuple[typing_extensions.Literal[1]],
+        ],
+      ]
+    |}
+    [];
+  assert_collected
+    {|
+      typing.Tuple[
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[pyre_extensions.Unpack[Ts2]],
+        ],
+      ]
+    |}
+    [variadic2; variadic];
+  assert_collected
+    {|
+      typing.Tuple[
+        pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[
+            typing.Tuple[
+              pyre_extensions.Unpack[
+                pyre_extensions.Broadcast[
+                  typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2]],
+                  typing.Tuple[pyre_extensions.Unpack[Ts]]
+                ]
+              ]
+            ],
+            typing.Tuple[pyre_extensions.Unpack[Ts2]]
+          ]
+        ]
+      ]
+    |}
+    [variadic; variadic2];
+  assert_collected
+    {|
+      typing.Callable[
+        [pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[
+            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            pyre_extensions.Broadcast[
+              typing.Tuple[pyre_extensions.Unpack[Ts]],
+              typing.Tuple[pyre_extensions.Unpack[Ts2]]
+            ]
+          ]
+        ]],
+        str
+      ]
+    |}
+    [variadic2; variadic; variadic];
+  assert_collected
+    {|
+      Foo[
+        pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[
+            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            pyre_extensions.Broadcast[
+              typing.Tuple[pyre_extensions.Unpack[Ts]],
+              typing.Tuple[pyre_extensions.Unpack[Ts2]]
+            ]
+          ]
+        ]
+      ]
+    |}
+    [variadic2; variadic; variadic];
   ()
 
 
