@@ -2724,7 +2724,12 @@ let test_check_broadcast_features context =
       def foo(x: Broadcast[Tuple[L[2], L[1]], Tuple[L[3], L[2]]]) -> None:
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `undefined`."];
+    [
+      "Revealed type [-1]: Revealed type for `x` is \
+       `pyre_extensions.BroadcastError[Tuple[typing_extensions.Literal[2], \
+       typing_extensions.Literal[1]], Tuple[typing_extensions.Literal[3], \
+       typing_extensions.Literal[2]]]`.";
+    ];
   ()
 
 

@@ -2953,7 +2953,17 @@ module OrderedTypes = struct
     | Tuple (Concrete left_dimensions), Tuple (Concrete right_dimensions) ->
         match_broadcasted_dimensions left_dimensions right_dimensions
         >>| (fun new_dimensions -> Tuple (Concrete new_dimensions))
-        |> Option.value ~default:Bottom
+        |> Option.value
+             ~default:
+               (Parametric
+                  {
+                    name = "pyre_extensions.BroadcastError";
+                    parameters =
+                      ( if [%compare: type_t] left_type right_type < 0 then
+                          [Parameter.Single left_type; Parameter.Single right_type]
+                      else
+                        [Parameter.Single right_type; Parameter.Single left_type] );
+                  })
     | ( Tuple (Concrete concrete),
         Tuple
           (Concatenation { prefix = []; middle = UnboundedElements (Primitive "int"); suffix = [] })

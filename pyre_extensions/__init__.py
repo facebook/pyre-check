@@ -139,3 +139,7 @@ class Unpack(Generic[_T]):
 
 class Broadcast(Generic[_T1, _T2]):
     pass
+
+
+class BroadcastError(Generic[_T1, _T2]):
+    pass

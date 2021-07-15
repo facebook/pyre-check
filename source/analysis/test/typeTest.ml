@@ -632,6 +632,22 @@ let test_create_variadic_tuple _ =
       ]
     |}
     (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic2))
+      | _ -> None)
+    {|
+      typing.Tuple[
+        pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[
+            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[pyre_extensions.Unpack[Ts]],
+          ]
+        ]
+      ]
+    |}
+    (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
   let aliases = function
     | "T1" -> Some (Type.Variable variable_t1)
     | "T2" -> Some (Type.Variable variable_t2)
@@ -646,7 +662,15 @@ let test_create_variadic_tuple _ =
         typing.Tuple[T2, typing_extensions.Literal[5]],
       ]
     |}
-    Type.Bottom;
+    (Type.Parametric
+       {
+         name = "pyre_extensions.BroadcastError";
+         parameters =
+           [
+             Type.Parameter.Single (Type.tuple [Type.Variable variable_t1; Type.literal_integer 5]);
+             Type.Parameter.Single (Type.tuple [Type.Variable variable_t2; Type.literal_integer 5]);
+           ];
+       });
   assert_create {|
       pyre_extensions.Broadcast[1, 2]
     |} Type.Bottom;
@@ -2776,9 +2800,19 @@ let test_broadcast _ =
     Type.OrderedTypes.Concatenation.create_from_unbounded_element ~prefix:[x] Type.integer
   in
   let x_and_variadic = Type.OrderedTypes.Concatenation.create ~prefix:[x] variadic in
+  let broadcast_error left right =
+    Type.Parametric
+      {
+        name = "pyre_extensions.BroadcastError";
+        parameters = [Type.Parameter.Single left; Type.Parameter.Single right];
+      }
+  in
   (* Basic *)
   assert_broadcast (literal_tuple [1]) (literal_tuple [5]) (literal_tuple [5]);
-  assert_broadcast (literal_tuple [5]) (literal_tuple [3]) Bottom;
+  assert_broadcast
+    (literal_tuple [5])
+    (literal_tuple [3])
+    (broadcast_error (literal_tuple [3]) (literal_tuple [5]));
   assert_broadcast (Type.tuple []) (literal_tuple [5]) (literal_tuple [5]);
 
   (* Any *)
@@ -2890,11 +2924,18 @@ let test_broadcast _ =
   (* Variables *)
   assert_broadcast (Type.tuple [x]) (literal_tuple [1]) (Type.tuple [x]);
   assert_broadcast (Type.tuple [x]) (Type.tuple [x]) (Type.tuple [x]);
-  assert_broadcast (Type.tuple [x]) (Type.tuple [y]) Bottom;
-  assert_broadcast (Type.tuple [z]) (Type.tuple [z]) Bottom;
+  assert_broadcast
+    (Type.tuple [x])
+    (Type.tuple [y])
+    (broadcast_error (Type.tuple [x]) (Type.tuple [y]));
+  assert_broadcast
+    (Type.tuple [z])
+    (Type.tuple [z])
+    (broadcast_error (Type.tuple [z]) (Type.tuple [z]));
 
   (* Literals *)
-  assert_broadcast (literal_tuple [1; 3; 5]) (literal_tuple [1; 3]) Bottom;
+  let left, right = literal_tuple [1; 3; 5], literal_tuple [1; 3] in
+  assert_broadcast left right (broadcast_error right left);
   assert_broadcast (literal_tuple [1; 3; 5]) (literal_tuple [5; 3; 1]) (literal_tuple [5; 3; 5]);
   assert_broadcast (literal_tuple [1; 3; 5]) (literal_tuple [3; 5]) (literal_tuple [1; 3; 5]);
   assert_broadcast (literal_tuple [5; 3; 1]) (literal_tuple [3; 1]) (literal_tuple [5; 3; 1]);
