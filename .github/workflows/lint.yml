@@ -14,13 +14,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
 
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install black==20.8b1
+      - name: Install black
+        run: pip install black==21.4b2
 
-      - name: Run Black
-        run: |
-          black --check --diff .
+      - name: Run black
+        run: black --diff .
+
+  usort:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+
+      - name: Install black
+        run: pip install usort==0.6.4
+
+      - name: Run black
+        run: usort diff .
