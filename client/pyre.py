@@ -751,30 +751,20 @@ def incremental(
 
 
 @pyre.command()
-@click.argument("modify_paths", type=filesystem.file_or_directory_exists, nargs=-1)
+@click.argument(
+    "paths_to_modify",
+    type=filesystem.file_or_directory_exists,
+    nargs=-1,
+)
 @click.option(
     "-p",
     "--print-only",
     is_flag=True,
     default=False,
     help=(
-        "Print raw JSON errors to standard output, without converting to stubs "
-        "or annnotating."
+        "Print raw JSON inference data to standard output, without "
+        "converting to stubs or annnotating."
     ),
-)
-@click.option(
-    "-f",
-    "--full-only",
-    is_flag=True,
-    default=False,
-    help="Only output fully annotated functions.",
-)
-@click.option(
-    "-r",
-    "--recursive",
-    is_flag=True,
-    default=False,
-    help="Recursively run infer until no new annotations are generated.",
 )
 @click.option(
     "-i",
@@ -782,12 +772,6 @@ def incremental(
     is_flag=True,
     default=False,
     help="Modifies original files and add inferred annotations to all functions.",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    default=False,
-    help="Accept JSON input instead of running full check.",
 )
 @click.option(
     "--annotate-from-existing-stubs",
@@ -801,36 +785,69 @@ def incremental(
     default=False,
     help="Print error message when file fails to annotate.",
 )
+@click.option(
+    "--read-stdin",
+    is_flag=True,
+    default=False,
+    help="Read input from stdin instead of running a full infer.",
+)
+@click.option(
+    "--dequalify",
+    is_flag=True,
+    default=False,
+    help=(
+        "Dequalify all annotations? This is a temporary flag, used to "
+        "force fully-qualified names (e.g. sqlalchemy.sql.schema.Column) "
+        "to be dqualified (e.g. Column). It is needed now because pyre "
+        "infer doesn't yet know how to handle imports and qualified names "
+        "in a principled way."
+    ),
+)
+@click.option(
+    "--interprocedural",
+    is_flag=True,
+    default=False,
+    help=(
+        "Use (experimental) interprocedural inference. "
+        "Will be slower, but may give better results."
+    ),
+)
 @click.pass_context
 def infer(
     context: click.Context,
-    modify_paths: Iterable[str],
+    paths_to_modify: Iterable[str],
     print_only: bool,
-    full_only: bool,
-    recursive: bool,
     in_place: bool,
-    json: bool,
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
+    read_stdin: bool,
+    dequalify: bool,
+    interprocedural: bool,
 ) -> int:
     """
-    Try adding type annotations to untyped codebase.
+    Run pyre infer.
+
+    The optional PATHS_TO_MODIFY argument is a list of directory or file
+    paths to include when annotating in-place.
+
+    If empty, then we'll annotate all relevant modules in-place, and it is
+    ignored unless the `--in-place` flag is set.
     """
-    in_place_paths = list(modify_paths) if in_place else None
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     return run_pyre_command(
-        commands.Infer(
+        commands.infer_v2.Infer(
             command_argument,
             original_directory=os.getcwd(),
             configuration=configuration,
-            print_errors=print_only,
-            full_only=full_only,
-            recursive=recursive,
-            in_place=in_place_paths,
-            errors_from_stdin=json,
+            print_only=print_only,
+            in_place=in_place,
+            paths_to_modify={Path(path) for path in paths_to_modify},
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
+            read_stdin=read_stdin,
+            dequalify=dequalify,
+            interprocedural=interprocedural,
         ),
         configuration,
         command_argument.noninteractive,

@@ -660,7 +660,7 @@ class InferV2Test(unittest.TestCase):
                 ],
             )
             command.run()
-            call_client.assert_called_once_with(command=commands.Infer.NAME)
+            call_client.assert_called_once_with(command=Infer.NAME)
 
         configuration.get_existent_ignore_infer_paths = lambda: ["path1.py", "path2.py"]
         # pyre-ignore[8]
@@ -706,7 +706,7 @@ class InferV2Test(unittest.TestCase):
                 ],
             )
             command.run()
-            call_client.assert_called_once_with(command=commands.Infer.NAME)
+            call_client.assert_called_once_with(command=Infer.NAME)
 
         with patch.object(commands.Command, "_call_client") as call_client:
             with patch.object(sys.stdin, "read", return_value=""):
