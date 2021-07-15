@@ -2421,6 +2421,175 @@ let test_replace_all _ =
     ~replace:replace_with_concatenation
     "typing.Callable[[int, pyre_extensions.Unpack[Ts], str], None]"
     "typing.Callable[[int, bool, pyre_extensions.Unpack[Ts], bool, str], None]";
+
+  (* Broadcasts. *)
+  let replace_with_concrete = function
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
+        Some (Type.OrderedTypes.Concrete [Type.literal_integer 5])
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic2 ->
+        Some (Type.OrderedTypes.Concrete [Type.literal_integer 1; Type.literal_integer 4])
+    | _ -> None
+  in
+  let replace_with_concatenation = function
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
+        Some
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer))
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic2 ->
+        Some (Type.OrderedTypes.Concatenation (Type.OrderedTypes.Concatenation.create variadic))
+    | _ -> None
+  in
+  (* Concrete against concatenation. *)
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[typing_extensions.Literal[5]],
+      ]
+    |}
+    "typing.Tuple[typing_extensions.Literal[5]]";
+  assert_replaced
+    ~replace:replace_with_concatenation
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[typing_extensions.Literal[5]],
+      ]
+    |}
+    "typing.Tuple[int, ...]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[
+          typing_extensions.Literal[2],
+          typing_extensions.Literal[1],
+        ],
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+      ]
+    |}
+    {|
+      typing.Tuple[
+        typing_extensions.Literal[2],
+        typing_extensions.Literal[5],
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[
+          typing_extensions.Literal[2],
+          typing_extensions.Literal[2],
+        ],
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+      ]
+    |}
+    "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[2], \
+     typing_extensions.Literal[2]], typing.Tuple[typing_extensions.Literal[5]]]";
+
+  (* Concatenation against concatenation. *)
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+        ]
+    |}
+    "typing.Tuple[typing_extensions.Literal[5]]";
+  assert_replaced
+    ~replace:replace_with_concatenation
+    {|
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+        ]
+    |}
+    "typing.Tuple[int, ...]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[pyre_extensions.Unpack[Ts2]],
+      ]
+  |}
+    "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[1], \
+     typing_extensions.Literal[4]], typing.Tuple[typing_extensions.Literal[5]]]";
+
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[
+          typing_extensions.Literal[6],
+          typing_extensions.Literal[1],
+          typing_extensions.Literal[5],
+        ],
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[pyre_extensions.Unpack[Ts2], typing_extensions.Literal[5]],
+        ]
+      ]
+    |}
+    {|
+      typing.Tuple[
+        typing_extensions.Literal[6],
+        typing_extensions.Literal[4],
+        typing_extensions.Literal[5],
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concatenation
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[
+          typing_extensions.Literal[6],
+          typing_extensions.Literal[1],
+          typing_extensions.Literal[5],
+        ],
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[pyre_extensions.Unpack[Ts2]],
+        ]
+      ]
+    |}
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[
+          typing_extensions.Literal[6],
+          typing_extensions.Literal[1],
+          typing_extensions.Literal[5]
+        ],
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[int, ...]
+        ]
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[
+          typing_extensions.Literal[6],
+          typing_extensions.Literal[2],
+          typing_extensions.Literal[5],
+        ],
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[pyre_extensions.Unpack[Ts2]],
+        ]
+      ]
+    |}
+    {|
+      pyre_extensions.BroadcastError[
+        typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[4]],
+        typing.Tuple[typing_extensions.Literal[5]]
+      ]
+    |};
   ()
 
 

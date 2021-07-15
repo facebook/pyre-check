@@ -2950,6 +2950,8 @@ module OrderedTypes = struct
     | Any, _
     | _, Any ->
         Any
+    | Parametric {name = "pyre_extensions.BroadcastError"; _}, _ -> left_type
+    | _, Parametric {name = "pyre_extensions.BroadcastError"; _} -> right_type
     | Tuple (Concrete left_dimensions), Tuple (Concrete right_dimensions) ->
         match_broadcasted_dimensions left_dimensions right_dimensions
         >>| (fun new_dimensions -> Tuple (Concrete new_dimensions))
@@ -3011,6 +3013,12 @@ module OrderedTypes = struct
                 left_concatenation
                 right_concatenation))
     | _ -> Bottom
+
+
+  let expand_in_concatenation ~prefix ~suffix = function
+    | Concrete dimensions -> Tuple (Concrete (prefix @ dimensions @ suffix))
+    | Concatenation { prefix = new_prefix; middle; suffix = new_suffix } ->
+        Tuple (Concatenation { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix })
 end
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =
@@ -4550,7 +4558,33 @@ end = struct
         | _ -> []
 
 
-      let local_replace replacement = function
+      let rec local_replace replacement annotation =
+        let promote_to_tuple concatenation = Tuple (Concatenation concatenation) in
+        let replace_unpackable = function
+          | OrderedTypes.Concatenation.Broadcast
+              (ConcreteAgainstConcatenation { concrete; concatenation }) ->
+              promote_to_tuple concatenation
+              |> local_replace replacement
+              |> Option.value ~default:(promote_to_tuple concatenation)
+              |> OrderedTypes.broadcast (Tuple (Concrete concrete))
+              |> Option.some
+          | Broadcast
+              (ConcatenationAgainstConcatenation { left_concatenation; right_concatenation }) ->
+              let left_record =
+                promote_to_tuple left_concatenation
+                |> local_replace replacement
+                |> Option.value ~default:(promote_to_tuple left_concatenation)
+              in
+              let right_record =
+                promote_to_tuple right_concatenation
+                |> local_replace replacement
+                |> Option.value ~default:(promote_to_tuple right_concatenation)
+              in
+              Some (OrderedTypes.broadcast left_record right_record)
+          | Variadic variadic -> replacement variadic >>| fun result -> Tuple result
+          | _ -> None
+        in
+        match annotation with
         | Parametric ({ parameters; _ } as parametric) ->
             let replace parameter =
               let replaced =
@@ -4564,16 +4598,15 @@ end = struct
             Parametric { parametric with parameters = List.concat_map parameters ~f:replace }
             |> Option.some
         | Tuple (Concatenation { prefix; middle = Variadic variadic; suffix }) ->
-            let expand_ordered_type_within_concatenation = function
-              | OrderedTypes.Concrete annotations ->
-                  OrderedTypes.Concrete (prefix @ annotations @ suffix)
-              | Concatenation { prefix = new_prefix; middle; suffix = new_suffix } ->
-                  Concatenation
-                    { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix }
-            in
             replacement variadic
-            >>| expand_ordered_type_within_concatenation
-            >>| fun ordered_type -> Tuple ordered_type
+            >>| OrderedTypes.expand_in_concatenation ~prefix ~suffix
+        | Tuple (Concatenation { prefix; middle = unpackable; suffix }) ->
+            let handle_broadcasted ~f = function
+              | Tuple record -> f record
+              | other -> other
+            in
+            replace_unpackable unpackable
+            >>| handle_broadcasted ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
         | Callable callable ->
             let replace_variadic parameters_so_far parameters =
               let expanded_parameters =

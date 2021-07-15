@@ -2730,6 +2730,29 @@ let test_check_broadcast_features context =
        typing_extensions.Literal[1]], Tuple[typing_extensions.Literal[3], \
        typing_extensions.Literal[2]]]`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast, Unpack, TypeVarTuple
+      from typing import Tuple
+      from typing_extensions import Literal as L
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(x: Tuple[*Ts]) -> Tuple[L[1], *Broadcast[Tuple[*Ts], Tuple[L[2], L[3]]]]: ...
+
+      res1 = foo((1, 3))
+      res2 = foo((3, 3))
+      reveal_type(res1)
+      reveal_type(res2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res1` is `Tuple[typing_extensions.Literal[1], \
+       typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
+      "Revealed type [-1]: Revealed type for `res2` is \
+       `pyre_extensions.BroadcastError[Tuple[typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]], Tuple[typing_extensions.Literal[3], \
+       typing_extensions.Literal[3]]]`.";
+    ];
   ()
 
 
