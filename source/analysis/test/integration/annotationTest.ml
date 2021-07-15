@@ -2753,6 +2753,37 @@ let test_check_broadcast_features context =
        typing_extensions.Literal[3]], Tuple[typing_extensions.Literal[3], \
        typing_extensions.Literal[3]]]`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast, Unpack, TypeVarTuple
+      from typing import Tuple, Generic, TypeVar
+      from typing_extensions import Literal as L
+
+      DType = TypeVar("DType")
+      Ts = TypeVarTuple("Ts")
+      Rs = TypeVarTuple("Rs")
+      Qs = TypeVarTuple("Qs")
+
+
+      class NewTensor(Generic[DType, *Ts]):
+        def __add__(self: NewTensor[DType, *Rs], other: NewTensor[DType, *Qs]) -> NewTensor[DType, *Broadcast[Tuple[*Rs], Tuple[*Qs]]]: ...
+
+      t1: NewTensor[int, L[1], L[2], L[3]]
+      t2: NewTensor[int, L[2], L[3]]
+      t3: NewTensor[int, L[2], L[4]]
+      t4 = t1 + t2
+      t5 = t1 + t3
+      reveal_type(t4)
+      reveal_type(t5)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `t4` is `NewTensor[int, typing_extensions.Literal[1], \
+       typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
+      "Revealed type [-1]: Revealed type for `t5` is \
+       `pyre_extensions.BroadcastError[Tuple[typing_extensions.Literal[1], \
+       typing_extensions.Literal[2], typing_extensions.Literal[3]], \
+       Tuple[typing_extensions.Literal[2], typing_extensions.Literal[4]]]`.";
+    ];
   ()
 
 

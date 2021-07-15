@@ -2950,8 +2950,8 @@ module OrderedTypes = struct
     | Any, _
     | _, Any ->
         Any
-    | Parametric {name = "pyre_extensions.BroadcastError"; _}, _ -> left_type
-    | _, Parametric {name = "pyre_extensions.BroadcastError"; _} -> right_type
+    | Parametric { name = "pyre_extensions.BroadcastError"; _ }, _ -> left_type
+    | _, Parametric { name = "pyre_extensions.BroadcastError"; _ } -> right_type
     | Tuple (Concrete left_dimensions), Tuple (Concrete right_dimensions) ->
         match_broadcasted_dimensions left_dimensions right_dimensions
         >>| (fun new_dimensions -> Tuple (Concrete new_dimensions))
@@ -4589,17 +4589,25 @@ end = struct
             let replace parameter =
               let replaced =
                 match parameter with
-                | Parameter.Unpacked (Variadic variadic) ->
-                    replacement variadic >>| OrderedTypes.to_parameters
+                | Parameter.Unpacked unpackable -> (
+                    replace_unpackable unpackable
+                    >>| function
+                    | Tuple record -> OrderedTypes.to_parameters record
+                    | other -> [Parameter.Single other] )
                 | _ -> None
               in
               Option.value ~default:[parameter] replaced
             in
-            Parametric { parametric with parameters = List.concat_map parameters ~f:replace }
-            |> Option.some
-        | Tuple (Concatenation { prefix; middle = Variadic variadic; suffix }) ->
-            replacement variadic
-            >>| OrderedTypes.expand_in_concatenation ~prefix ~suffix
+            let parameters = List.concat_map parameters ~f:replace in
+            let default = Parametric { parametric with parameters } |> Option.some in
+            let extract_broadcast_error = function
+              | Parameter.Single
+                  (Parametric { name = "pyre_extensions.BroadcastError"; _ } as parametric) ->
+                  Some parametric
+              | _ -> None
+            in
+            List.find_map ~f:extract_broadcast_error parameters
+            |> fun result -> Option.first_some result default
         | Tuple (Concatenation { prefix; middle = unpackable; suffix }) ->
             let handle_broadcasted ~f = function
               | Tuple record -> f record
