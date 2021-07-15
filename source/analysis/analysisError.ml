@@ -403,6 +403,12 @@ and kind =
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t
   | UnawaitedAwaitable of unawaited_awaitable
+  (* Errors from type operators *)
+  | BroadcastError of {
+      expression: Expression.t;
+      left: Type.t;
+      right: Type.t;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 let code = function
@@ -472,10 +478,13 @@ let code = function
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
   | DeadStore _ -> 1003
+  (* Errors from type operators *)
+  | BroadcastError _ -> 2001
 
 
 let name = function
   | AnalysisFailure _ -> "Analysis failure"
+  | BroadcastError _ -> "Broadcast error"
   | DuplicateTypeVariables _ -> "Duplicate type variables"
   | ParserFailure _ -> "Parsing failure"
   | DeadStore _ -> "Dead store"
@@ -697,6 +706,16 @@ let rec messages ~concise ~signature location kind =
       [Format.asprintf "Terminating analysis - type `%s` not defined." annotation]
   | AnalysisFailure annotation ->
       [Format.asprintf "Terminating analysis because type `%s` is not defined." annotation]
+  | BroadcastError { expression; left; right } ->
+      [
+        Format.asprintf
+          "Broadcast error at expression `%s`; types `%a` and `%a` cannot be broadcasted together."
+          (show_sanitized_expression expression)
+          pp_type
+          left
+          pp_type
+          right;
+      ]
   | ParserFailure message -> [message]
   | DeadStore name -> [Format.asprintf "Value assigned to `%a` is never used." pp_identifier name]
   | Deobfuscation source -> [Format.asprintf "\n%a" Source.pp source]
@@ -2413,6 +2432,7 @@ let due_to_analysis_limitations { kind; _ } =
   | Top -> true
   | UndefinedAttribute { origin = Class annotation; _ } -> Type.contains_unknown annotation
   | AnalysisFailure _
+  | BroadcastError _
   | ParserFailure _
   | DeadStore _
   | Deobfuscation _
@@ -2474,6 +2494,11 @@ let less_or_equal ~resolution left right =
   &&
   match left.kind, right.kind with
   | AnalysisFailure left, AnalysisFailure right -> String.equal left right
+  | ( BroadcastError { expression = left_expression; left = first_left; right = first_right },
+      BroadcastError { expression = right_expression; left = second_left; right = second_right } )
+    when Expression.equal left_expression right_expression ->
+      GlobalResolution.less_or_equal resolution ~left:first_left ~right:first_right
+      && GlobalResolution.less_or_equal resolution ~left:second_left ~right:second_right
   | ParserFailure left_message, ParserFailure right_message ->
       String.equal left_message right_message
   | DeadStore left, DeadStore right -> Identifier.equal left right
@@ -2720,6 +2745,7 @@ let less_or_equal ~resolution left right =
       | _ -> false )
   | _, Top -> true
   | AnalysisFailure _, _
+  | BroadcastError _, _
   | ParserFailure _, _
   | DeadStore _, _
   | Deobfuscation _, _
@@ -2813,6 +2839,15 @@ let join ~resolution left right =
     match left.kind, right.kind with
     | AnalysisFailure left, AnalysisFailure right when String.equal left right ->
         AnalysisFailure left
+    | ( BroadcastError { expression = left_expression; left = first_left; right = first_right },
+        BroadcastError { expression = right_expression; left = second_left; right = second_right } )
+      when Expression.equal left_expression right_expression ->
+        BroadcastError
+          {
+            expression = left_expression;
+            left = GlobalResolution.join resolution first_left second_left;
+            right = GlobalResolution.join resolution first_right second_right;
+          }
     | ParserFailure left_message, ParserFailure right_message
       when String.equal left_message right_message ->
         ParserFailure left_message
@@ -3150,6 +3185,7 @@ let join ~resolution left right =
     | _, Top ->
         Top
     | AnalysisFailure _, _
+    | BroadcastError _, _
     | ParserFailure _, _
     | DeadStore _, _
     | Deobfuscation _, _
@@ -3602,6 +3638,8 @@ let dequalify
   let kind =
     match kind with
     | AnalysisFailure annotation -> AnalysisFailure annotation
+    | BroadcastError { expression; left; right } ->
+        BroadcastError { expression; left = dequalify left; right = dequalify right }
     | DeadStore name -> DeadStore name
     | Deobfuscation left -> Deobfuscation left
     | IllegalAnnotationTarget { target = left; kind } ->

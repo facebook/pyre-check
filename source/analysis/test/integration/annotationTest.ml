@@ -2746,12 +2746,13 @@ let test_check_broadcast_features context =
       reveal_type(res2)
     |}
     [
+      "Broadcast error [2001]: Broadcast error at expression `test.foo((3, 3))`; types \
+       `Tuple[typing_extensions.Literal[2], typing_extensions.Literal[3]]` and \
+       `Tuple[typing_extensions.Literal[3], typing_extensions.Literal[3]]` cannot be broadcasted \
+       together.";
       "Revealed type [-1]: Revealed type for `res1` is `Tuple[typing_extensions.Literal[1], \
        typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
-      "Revealed type [-1]: Revealed type for `res2` is \
-       `pyre_extensions.BroadcastError[Tuple[typing_extensions.Literal[2], \
-       typing_extensions.Literal[3]], Tuple[typing_extensions.Literal[3], \
-       typing_extensions.Literal[3]]]`.";
+      "Revealed type [-1]: Revealed type for `res2` is `typing.Any`.";
     ];
   assert_default_type_errors
     {|
@@ -2773,16 +2774,57 @@ let test_check_broadcast_features context =
       t3: NewTensor[int, L[2], L[4]]
       t4 = t1 + t2
       t5 = t1 + t3
+      t6 = t5 + t1
       reveal_type(t4)
       reveal_type(t5)
     |}
     [
+      "Broadcast error [2001]: Broadcast error at expression `t1.__add__(t3)`; types \
+       `Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]]` and `Tuple[typing_extensions.Literal[2], \
+       typing_extensions.Literal[4]]` cannot be broadcasted together.";
       "Revealed type [-1]: Revealed type for `t4` is `NewTensor[int, typing_extensions.Literal[1], \
        typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
-      "Revealed type [-1]: Revealed type for `t5` is \
-       `pyre_extensions.BroadcastError[Tuple[typing_extensions.Literal[1], \
-       typing_extensions.Literal[2], typing_extensions.Literal[3]], \
-       Tuple[typing_extensions.Literal[2], typing_extensions.Literal[4]]]`.";
+      "Revealed type [-1]: Revealed type for `t5` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast, Unpack, TypeVarTuple
+      from typing import Tuple, Generic, TypeVar, List
+      from typing_extensions import Literal as L
+
+      Ts = TypeVarTuple("Ts")
+      Rs = TypeVarTuple("Rs")
+      Qs = TypeVarTuple("Qs")
+
+      def foo(
+        x: Tuple[Unpack[Ts]],
+        y: Tuple[Unpack[Rs]],
+        z: Tuple[Unpack[Qs]]
+      ) -> Tuple[
+        Broadcast[
+          Tuple[Unpack[Ts]],
+          Tuple[Unpack[Rs]]
+        ],
+        Broadcast[
+          Tuple[Unpack[Rs]],
+          Tuple[Unpack[Qs]]
+        ]
+      ]: ...
+
+      res = foo((2, 2), (3, 3), (4, 4))
+      reveal_type(res)
+    |}
+    [
+      "Broadcast error [2001]: Broadcast error at expression `test.foo((2, 2), (3, 3), (4, 4))`; \
+       types `Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]]` and \
+       `Tuple[typing_extensions.Literal[3], typing_extensions.Literal[3]]` cannot be broadcasted \
+       together.";
+      "Broadcast error [2001]: Broadcast error at expression `test.foo((2, 2), (3, 3), (4, 4))`; \
+       types `Tuple[typing_extensions.Literal[3], typing_extensions.Literal[3]]` and \
+       `Tuple[typing_extensions.Literal[4], typing_extensions.Literal[4]]` cannot be broadcasted \
+       together.";
+      "Revealed type [-1]: Revealed type for `res` is `typing.Any`.";
     ];
   ()
 

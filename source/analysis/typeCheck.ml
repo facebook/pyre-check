@@ -2141,62 +2141,101 @@ module State (Context : Context) = struct
         | SignatureSelectionTypes.NotFound _, _ -> true
         | _ -> false
       in
-      match signatures >>| List.partition_tf ~f:not_found with
-      (* Prioritize missing signatures for union type checking. *)
-      | Some
-          ( ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
-              unpacked_callable_and_self_argument )
-            :: _,
-            _ ) ->
-          let errors =
-            let error_kinds =
-              let { callable; self_argument } = unpacked_callable_and_self_argument in
-              errors_from_not_found
-                ~reason
-                ~callable
-                ~self_argument
-                ~global_resolution
-                ?original_target:target
-                ~callee_expression:(Callee.expression callee)
-                ~arguments:(Some arguments)
+      let resolve_signatures = function
+        (* Prioritize missing signatures for union type checking. *)
+        | Some
+            ( ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
+                unpacked_callable_and_self_argument )
+              :: _,
+              _ ) ->
+            let errors =
+              let error_kinds =
+                let { callable; self_argument } = unpacked_callable_and_self_argument in
+                errors_from_not_found
+                  ~reason
+                  ~callable
+                  ~self_argument
+                  ~global_resolution
+                  ?original_target:target
+                  ~callee_expression:(Callee.expression callee)
+                  ~arguments:(Some arguments)
+              in
+              let emit errors (more_specific_error_location, kind) =
+                let location = Option.value more_specific_error_location ~default:location in
+                emit_error ~errors ~location ~kind
+              in
+              List.fold error_kinds ~init:errors ~f:emit
             in
-            let emit errors (more_specific_error_location, kind) =
-              let location = Option.value more_specific_error_location ~default:location in
-              emit_error ~errors ~location ~kind
+            {
+              Resolved.resolution;
+              errors;
+              resolved = closest_return_annotation;
+              resolved_annotation = None;
+              base = None;
+            }
+        | Some ([], head :: tail) ->
+            let resolved =
+              let extract = function
+                | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
+                    selected_return_annotation
+                | _ -> failwith "Not all signatures were found."
+              in
+              List.map tail ~f:extract
+              |> List.fold ~f:(GlobalResolution.join global_resolution) ~init:(extract head)
             in
-            List.fold error_kinds ~init:errors ~f:emit
-          in
-          {
-            Resolved.resolution;
-            errors;
-            resolved = closest_return_annotation;
-            resolved_annotation = None;
-            base = None;
-          }
-      | Some ([], head :: tail) ->
-          let resolved =
-            let extract = function
-              | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
-                  selected_return_annotation
-              | _ -> failwith "Not all signatures were found."
+            { resolution; errors; resolved; resolved_annotation = None; base = None }
+        | _ ->
+            let errors =
+              let resolved_callee = Callee.resolved callee in
+              match resolved_callee, potential_missing_operator_error with
+              | Type.Top, Some kind -> emit_error ~errors ~location ~kind
+              | Parametric { name = "type"; parameters = [Single Any] }, _
+              | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
+              | Type.Any, _
+              | Type.Top, _ ->
+                  errors
+              | _ -> emit_error ~errors ~location ~kind:(Error.NotCallable resolved_callee)
             in
-            List.map tail ~f:extract
-            |> List.fold ~f:(GlobalResolution.join global_resolution) ~init:(extract head)
-          in
-          { resolution; errors; resolved; resolved_annotation = None; base = None }
-      | _ ->
-          let errors =
-            let resolved_callee = Callee.resolved callee in
-            match resolved_callee, potential_missing_operator_error with
-            | Type.Top, Some kind -> emit_error ~errors ~location ~kind
-            | Parametric { name = "type"; parameters = [Single Any] }, _
-            | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
-            | Type.Any, _
-            | Type.Top, _ ->
-                errors
-            | _ -> emit_error ~errors ~location ~kind:(Error.NotCallable resolved_callee)
-          in
-          { resolution; errors; resolved = Type.Any; resolved_annotation = None; base = None }
+            { resolution; errors; resolved = Type.Any; resolved_annotation = None; base = None }
+      in
+      let check_for_error ({ Resolved.resolved; errors; _ } as input) =
+        let is_broadcast_error = function
+          | Type.Parametric
+              {
+                name = "pyre_extensions.BroadcastError";
+                parameters = [Type.Parameter.Single _; Type.Parameter.Single _];
+              } ->
+              true
+          | _ -> false
+        in
+        match Type.collect resolved ~predicate:is_broadcast_error with
+        | [] -> input
+        | broadcast_errors ->
+            let new_errors =
+              List.fold broadcast_errors ~init:errors ~f:(fun current_errors error_type ->
+                  match error_type with
+                  | Type.Parametric
+                      {
+                        name = "pyre_extensions.BroadcastError";
+                        parameters =
+                          [Type.Parameter.Single left_type; Type.Parameter.Single right_type];
+                      } ->
+                      emit_error
+                        ~errors:current_errors
+                        ~location
+                        ~kind:
+                          (Error.BroadcastError
+                             {
+                               expression = { location; value };
+                               left = left_type;
+                               right = right_type;
+                             })
+                  | _ -> current_errors)
+            in
+
+            { input with resolved = Type.Any; errors = new_errors }
+      in
+      signatures >>| List.partition_tf ~f:not_found |> resolve_signatures |> check_for_error
     in
     match value with
     | Await expression -> (

@@ -821,6 +821,23 @@ let test_forward_expression context =
   assert_forward "yield undefined" (Type.generator Type.Top);
   assert_forward "yield" (Type.generator Type.none);
 
+  (* Broadcasts *)
+  assert_forward
+    ~environment:
+      {|
+      Ts = pyre_extensions.TypeVarTuple("Ts")
+      Rs = pyre_extensions.TypeVarTuple("Rs")
+      def foo(
+        x: typing.Tuple[pyre_extensions.Unpack[Ts]],
+        y: typing.Tuple[pyre_extensions.Unpack[Rs]]
+      ) -> pyre_extensions.Broadcast[
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[pyre_extensions.Unpack[Rs]],
+      ]: ...
+    |}
+    "foo((2, 2), (3, 3))"
+    Type.Any;
+
   (* Meta-types *)
   assert_forward
     "typing.Optional[int]"
