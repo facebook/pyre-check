@@ -47,7 +47,6 @@ class ReportingTest(unittest.TestCase):
                     "code": 3,
                     "name": "Error",
                     "description": "description",
-                    "inference": "inference",
                 }
             ]
         }

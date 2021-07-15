@@ -193,7 +193,6 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 "code": 7,
                 "name": "Kind",
                 "concise_description": "Error",
-                "inference": {},
                 "ignore_error": False,
                 "external_to_global_root": False,
             }
