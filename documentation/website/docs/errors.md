@@ -293,6 +293,8 @@ incompatible type later on in the same function.
 If you are constructing an object that is generic over an invariant type, you may run into an error:
 
 ```python
+from typing import TypeVar
+
 _T = TypeVar('_T')
 
 class Foo(Generic[_T]):
@@ -354,6 +356,9 @@ INT_OR_STR: TypeAlias = Union[int, str]
 If you use a name as an annotation that is not a valid type or valid alias, you will see this error:
 
 ```python
+from typing import Callable, List
+from typing_extensions import Final, Literal
+
 GLOBAL_VALUE = "string"
 
 def f0() -> GLOBAL_VALUE: ... # Error! `GLOBAL_VALUE` is a value, not a type.
@@ -364,15 +369,12 @@ def f2() -> [int]: ...  # Error! `[int]` is not a valid type. If you mean a list
 
 def f3() -> (int, str): ...  # Error! `(int, str)` is not a valid type. If you mean a pair of int and str, use `typing.Tuple[int, str]`.
 
-from typing import Callable
 def f4() -> Callable[[int]]: ...  # Error! `Callable[[int]]` is not a valid type because the return type of the callable is missing. Good example: `Callable[[int], int]`.
 
 def f5() -> Callable[int, int]: ...  # Error! `Callable[int, int]` is not a valid type. The parameter types of the callable must be enclosed in square brackets. Good example: `Callable[[int], int]`.
 
-from typing_extensions import Final
 def f6() -> List[Final[int]]: ...  # Error! `Final` may only be used as the outermost type in annotations. See PEP 591.
 
-from typing_extensions import Literal
 def f7() -> Literal[GLOBAL_VALUE]: ...  # Error! Only literals are allowed as parameters for `Literal`. See PEP586. Good example: `Literal[42]` or `Literal["string"]`.
 ```
 
@@ -689,18 +691,20 @@ Type parameters are only meaningful if the container type is generic. Passing in
 
 ```python
 class Container:
-  def add(element: int) -> None: ...
-  def get_element() -> int: ...
+    def add(element: int) -> None: ...
+    def get_element() -> int: ...
 
 x: Container[int] = Container() # Invalid type parameter error
 ```
 
 ```python
+from typing import TypeVar
+
 T = TypeVar('T')
 
 class Container(Generic[T]):
-  def add(element: T) -> None: ...
-  def get_element() -> T: ...
+    def add(element: T) -> None: ...
+    def get_element() -> T: ...
 
 x: Container[int] = Container()
 x.get_element() # returns int
@@ -714,11 +718,13 @@ y.get_element() # returns str
 If a container class is generic over a type variable with given type bounds, any type parameter used must comply with those type bounds. For example,
 
 ```python
+from typing import TypeVar
+
 T = TypeVar('T', bound=Union[int, bool])
 
 class Container(Generic[T]):
-  def add(element: T) -> None: ...
-  def get_element() -> T: ...
+    def add(element: T) -> None: ...
+    def get_element() -> T: ...
 
 x: Container[int] = Container() # No error
 
@@ -814,14 +820,10 @@ P = ParameterSpecification("P")
 def decorator(f: Callable[P, int]) -> Callable[P, None]:
 
     def foo(*args: P.args, **kwargs: P.kwargs) -> None:
-
-      f(*args, **kwargs)    # Accepted, should resolve to int
-
-      f(*args)              # Rejected
-
-      f(*kwargs, **args)    # Rejected
-
-      f(1, *args, **kwargs) # Rejected
+        f(*args, **kwargs)    # Accepted, should resolve to int
+        f(*args)              # Rejected
+        f(*kwargs, **args)    # Rejected
+        f(1, *args, **kwargs) # Rejected
 
     return foo
 ```
@@ -870,11 +872,11 @@ print(*x)   # invalid use of x, which is not iterable
 ```
 or using an invalid keyword parameter (informally a "double-splat"):
 ```python
-import typing
+from typing import Dict
 
 x: int = 5
 
-d: typing.Dict[int, int] = {**x}  # invalid use of x, which is not a mapping
+d: Dict[int, int] = {**x}  # invalid use of x, which is not a mapping
 
 dict(**d)  # invalid use of d; function kwargs must be a mapping with string keys
 ```
@@ -898,6 +900,8 @@ A type variable can be placed into scope via:
 For example:
 
 ```python
+from typing import List
+
 class Base:
     foo: List[T] = []
 
@@ -916,6 +920,8 @@ Invalid type variable [34]: The type variable `Variable[T]` isn't present in the
 Suggested fix:
 
 ```python
+from typing import Generic, List
+
 class Base(Generic[T]):
     foo: List[T] = []
 
@@ -1070,6 +1076,8 @@ Pyre does not support dynamic expressions as base classes, even if they may eval
 3. You are defining a typed dictionary that does not inherit from another typed dictionary.
 
 ```python
+from typing import TypedDict
+
 class NonTypedDict:
     ...
 
@@ -1105,6 +1113,7 @@ class B(A):
 
 ```python
 from typing import final
+
 class Foo:
     @final
     def bar(self) -> None:
@@ -1277,9 +1286,11 @@ For example (note: int is a subclass of float in the type system and in these ex
 Writes taking covariants:
 
 ```python
-_T_co = typing.TypeVar("_T_co", covariant=True)
+from typing import TypeVar, Generic
 
-class MyList(typing.Generic[_T_co]):
+_T_co = TypeVar("_T_co", covariant=True)
+
+class MyList(Generic[_T_co]):
     def write(self, element: _T_co) -> None:
         ... # adds element to list
 
@@ -1294,9 +1305,11 @@ takes_float_list(int_list)  # this call is OK because MyList is covariant: MyLis
 Reads returning contravariants:
 
 ```python
-_T_cont = typing.TypeVar("_T_cont", contravariant=True)
+from typing import TypeVar, Generic
 
-class MyList(typing.Generic[_T_cont]):
+_T_cont = TypeVar("_T_cont", contravariant=True)
+
+class MyList(Generic[_T_cont]):
     def read(self) -> _T_cont:
         ... # returns first element from list
 
@@ -1329,6 +1342,8 @@ class Foo:
 Only type variables with compatible bounds can be used to annotate the `self` or `cls` parameter. For example,
 
 ```python
+from typing import TypeVar
+
 P = TypeVar("T", bound="Parent")
 A = TypeVar("S", bound="ChildA")
 B = TypeVar("S", bound="ChildB")
@@ -1363,9 +1378,11 @@ def f(x: int) -> None:
 ```
 
 ### 49: Unsafe Cast
-Pyre supports `typing.cast` to force the type checker to accept a given type for your expression, no matter what it would otherwise infer that type to be. This is a good escape hatch but can also hide type inconsistencies and introduce unsoundness. For example:
+Pyre supports `cast` to force the type checker to accept a given type for your expression, no matter what it would otherwise infer that type to be. This is a good escape hatch but can also hide type inconsistencies and introduce unsoundness. For example:
 
 ```python
+from typing import cast
+
 def foo(x: int) -> str:
     y = cast(str, x)
     return y # No type error, even though this is unsound.
@@ -1374,6 +1391,8 @@ def foo(x: int) -> str:
 It is safe to broaden the inferred type of a variable. In other words, casting an expression to a more general type than the type checker thinks it has is sound. If you wish to broaden the inferred type without running the risk of introducing type inconsistencies, you can use `pyre_extensions.safe_cast`. This will warn if the type you are casting to is not greater than or equal to the inferred type of the expression.
 
 ```python
+from pyre_extensions import safe_cast
+
 def foo(x: int) -> str:
     y = safe_cast(str, x) # Unsafe cast error
     z = safe_cast(Union[int, str], x) # No error
@@ -1518,7 +1537,10 @@ We support resolving literals and simple globals as arguments, but using anythin
 To work around this, you can statically type your arguments to the decorator factory as separate globals, which can be validated later in the type-checking pipeline.
 
 ```python
+from typing import TypeVar
+
 T = TypeVar("T")
+
 def decorator_factory(x: T) -> Callable[[Callable[[int], str]], Callable[[str], T]]:
     ...
 
@@ -1527,7 +1549,6 @@ def decorator_factory(x: T) -> Callable[[Callable[[int], str]], Callable[[str], 
 @decorator_factory(complex_expression())
 def foo(x: int) -> str:
     ...
-
 
 argument: float = complex_expression()
 
