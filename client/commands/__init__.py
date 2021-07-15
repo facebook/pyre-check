@@ -18,7 +18,6 @@ from .command import (  # noqa; noqa; noqa
 )
 from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
-from .infer import Infer as Infer
 from .initialize import Initialize as Initialize
 from .kill import Kill as Kill
 from .persistent import Persistent as Persistent
@@ -38,7 +37,6 @@ COMMANDS: List[Type[CommandParser]] = [
     Check,
     Deobfuscate,
     Incremental,
-    Infer,
     Initialize,
     Kill,
     Persistent,
