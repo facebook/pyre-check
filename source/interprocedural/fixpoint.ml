@@ -6,7 +6,6 @@
  *)
 
 open Core
-module Result = InterproceduralResult
 module SharedMemory = Memory
 
 module Epoch = struct
@@ -26,16 +25,16 @@ type step = {
 type state = {
   is_partial: bool;
   (* Whether to reanalyze this and its callers. *)
-  model: Result.model_t;
+  model: AnalysisResult.model_t;
   (* Model to use at call sites. *)
-  result: Result.result_t; (* The result of the analysis. *)
+  result: AnalysisResult.result_t; (* The result of the analysis. *)
 }
 
 module SharedModels =
   SharedMemory.WithCache.Make
     (Callable.Key)
     (struct
-      type t = Result.model_t
+      type t = AnalysisResult.model_t
 
       let prefix = Prefix.make ()
 
@@ -48,7 +47,7 @@ module SharedResults =
   SharedMemory.WithCache.Make
     (Callable.Key)
     (struct
-      type t = Result.result_t
+      type t = AnalysisResult.result_t
 
       let prefix = Prefix.make ()
 
@@ -98,7 +97,7 @@ let get_model callable =
 
 let get_result callable =
   let callable = (callable :> Callable.t) in
-  SharedResults.get callable |> Option.value ~default:Result.empty_result
+  SharedResults.get callable |> Option.value ~default:AnalysisResult.empty_result
 
 
 let get_is_partial callable =

@@ -47,7 +47,7 @@ let assert_taint ?models ~context source expect =
             Callable.Map.empty
         in
         assert_bool "Error while parsing models." (List.is_empty errors);
-        Callable.Map.map models ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+        Callable.Map.map models ~f:(Interprocedural.AnalysisResult.make_model Taint.Result.kind)
         |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
   let defines = source |> Preprocessing.defines |> List.rev in
@@ -68,8 +68,8 @@ let assert_taint ?models ~context source expect =
         ~existing_model:Taint.Result.empty_model
     in
     let model = { Taint.Result.empty_model with forward } in
-    Result.empty_model
-    |> Result.with_model Taint.Result.kind model
+    AnalysisResult.empty_model
+    |> AnalysisResult.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in

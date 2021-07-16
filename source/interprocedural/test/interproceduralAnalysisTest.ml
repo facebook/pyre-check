@@ -37,7 +37,7 @@ let static_analysis_configuration { ScratchProject.configuration; _ } =
   }
 
 
-module ResultA = Interprocedural.Result.Make (struct
+module ResultA = Interprocedural.AnalysisResult.Make (struct
   type result = string
 
   type call_model = int [@@deriving show]
@@ -67,7 +67,7 @@ module AnalysisA = ResultA.Register (struct
       ~functions:_
       ~stubs:_
     =
-    Result.InitializedModels.empty
+    AnalysisResult.InitializedModels.empty
 
 
   let analyze ~environment:_ ~callable:_ ~qualifier:_ ~define:_ ~existing:_ = "A", 5
@@ -85,13 +85,13 @@ module AnalysisA = ResultA.Register (struct
     let get_model callable : Yojson.Safe.json =
       let model =
         Fixpoint.get_model callable
-        >>= Result.get_model ResultA.kind
+        >>= AnalysisResult.get_model ResultA.kind
         >>| (fun r -> `Int r)
         |> Option.value ~default:`Null
       in
       let result =
         Fixpoint.get_result callable
-        |> Result.get_result ResultA.kind
+        |> AnalysisResult.get_result ResultA.kind
         >>| (fun r -> `String r)
         |> Option.value ~default:`Null
       in
@@ -135,7 +135,7 @@ let test_unknown_function_analysis context =
     | None ->
         Format.sprintf "no model stored for target %s" (Callable.show target) |> assert_failure
     | Some models ->
-        assert_equal (Result.get_model ResultA.kind models) (Some ResultA.obscure_model)
+        assert_equal (AnalysisResult.get_model ResultA.kind models) (Some ResultA.obscure_model)
   in
   List.iter ~f:check_obscure_model targets;
   (* Make sure result extraction works (this verifies a lot of the type magic) *)

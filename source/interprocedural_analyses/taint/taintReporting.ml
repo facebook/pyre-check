@@ -11,9 +11,9 @@ open Ast
 open Interprocedural
 module Json = Yojson.Safe
 
-let get_result callable = Fixpoint.get_result callable |> Result.get_result TaintResult.kind
+let get_result callable = Fixpoint.get_result callable |> AnalysisResult.get_result TaintResult.kind
 
-let get_model callable = Fixpoint.get_model callable >>= Result.get_model TaintResult.kind
+let get_model callable = Fixpoint.get_model callable >>= AnalysisResult.get_model TaintResult.kind
 
 let get_errors result = List.map ~f:Flow.generate_error result
 

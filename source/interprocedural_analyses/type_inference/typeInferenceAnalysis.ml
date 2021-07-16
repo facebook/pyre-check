@@ -23,7 +23,7 @@ module Analyzer = struct
       ~functions:_
       ~stubs:_
     =
-    Result.InitializedModels.empty
+    AnalysisResult.InitializedModels.empty
 
 
   let analyze ~environment ~callable:_ ~qualifier ~define ~existing:_ =

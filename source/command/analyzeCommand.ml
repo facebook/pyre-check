@@ -175,8 +175,8 @@ let run_analysis
             if inline_decorators then (
               Log.info "Inlining decorators for taint analysis...";
               let timer = Timer.start () in
-              let { Interprocedural.Result.InitializedModels.initial_models; _ } =
-                Interprocedural.Result.InitializedModels.get_models initialized_models
+              let { Interprocedural.AnalysisResult.InitializedModels.initial_models; _ } =
+                Interprocedural.AnalysisResult.InitializedModels.get_models initialized_models
               in
               let updated_environment =
                 Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
@@ -209,8 +209,8 @@ let run_analysis
           let environment = Analysis.TypeEnvironment.read_only environment in
           let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
 
-          let { Interprocedural.Result.InitializedModels.initial_models; skip_overrides } =
-            Interprocedural.Result.InitializedModels.get_models_including_generated_models
+          let { Interprocedural.AnalysisResult.InitializedModels.initial_models; skip_overrides } =
+            Interprocedural.AnalysisResult.InitializedModels.get_models_including_generated_models
               initialized_models
               ~updated_environment:(Some environment)
           in

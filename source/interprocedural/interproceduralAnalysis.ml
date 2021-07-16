@@ -10,10 +10,9 @@ open Ast
 open Pyre
 open Statement
 module Kind = AnalysisKind
-module Result = InterproceduralResult
 
 let initialize_configuration kind ~static_analysis_configuration =
-  let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis kind in
+  let (AnalysisResult.Analysis { analysis; _ }) = AnalysisResult.get_abstract_analysis kind in
   let module Analysis = (val analysis) in
   Analysis.initialize_configuration ~static_analysis_configuration
 
@@ -21,7 +20,9 @@ let initialize_configuration kind ~static_analysis_configuration =
 (* Initialize models for the given analysis.
  * For the taint analysis, this parses taint stubs into models and queries. *)
 let initialize_models kind ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
-  let (Result.Analysis { analysis; kind = storable_kind }) = Result.get_abstract_analysis kind in
+  let (AnalysisResult.Analysis { analysis; kind = storable_kind }) =
+    AnalysisResult.get_abstract_analysis kind
+  in
   let module Analysis = (val analysis) in
   (* We call initialize_models outside the returned lambda so that initial models are computed
      eagerly. *)
@@ -34,14 +35,14 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
       ~stubs
   in
   let specialize_models
-      { Result.InitializedModels.initial_models = analysis_initial_models; skip_overrides }
+      { AnalysisResult.InitializedModels.initial_models = analysis_initial_models; skip_overrides }
     =
     let to_model_t model =
-      let pkg = Result.Pkg { kind = ModelPart storable_kind; value = model } in
-      { Result.models = Kind.Map.add kind pkg Kind.Map.empty; is_obscure = false }
+      let pkg = AnalysisResult.Pkg { kind = ModelPart storable_kind; value = model } in
+      { AnalysisResult.models = Kind.Map.add kind pkg Kind.Map.empty; is_obscure = false }
     in
     {
-      Result.InitializedModels.initial_models =
+      AnalysisResult.InitializedModels.initial_models =
         analysis_initial_models |> Callable.Map.map ~f:to_model_t;
       skip_overrides;
     }
@@ -49,12 +50,12 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
   let get_specialized_models ~updated_environment =
     (* We call get_models_including_generated_models within the lambda so that callable-specific
        models are generated only on demand. *)
-    Result.InitializedModels.get_models_including_generated_models
+    AnalysisResult.InitializedModels.get_models_including_generated_models
       ~updated_environment
       initialized_models
     |> specialize_models
   in
-  Result.InitializedModels.create get_specialized_models
+  AnalysisResult.InitializedModels.create get_specialized_models
 
 
 (* Save initial models in the shared memory. *)
@@ -69,12 +70,12 @@ let record_initial_models ~functions ~stubs models =
   let add_missing_initial_models models =
     List.filter functions ~f:(fun callable -> not (Callable.Map.mem models callable))
     |> List.fold ~init:models ~f:(fun models callable ->
-           Callable.Map.set models ~key:callable ~data:Result.empty_model)
+           Callable.Map.set models ~key:callable ~data:AnalysisResult.empty_model)
   in
   let add_missing_obscure_models models =
     List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
     |> List.fold ~init:models ~f:(fun models callable ->
-           Callable.Map.set models ~key:callable ~data:Result.obscure_model)
+           Callable.Map.set models ~key:callable ~data:AnalysisResult.obscure_model)
   in
   models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
 
@@ -91,36 +92,36 @@ let analysis_failed step ~exn callable ~message =
   raise exn
 
 
-let get_empty_model (type a) (kind : < model : a ; .. > Result.storable_kind) : a =
+let get_empty_model (type a) (kind : < model : a ; .. > AnalysisResult.storable_kind) : a =
   (* Existentially abstract unspecified analysis data *)
-  let (Result.ModelPart k1) = Result.ModelPart kind in
-  let module Analysis = (val Result.get_analysis k1) in
+  let (AnalysisResult.ModelPart k1) = AnalysisResult.ModelPart kind in
+  let module Analysis = (val AnalysisResult.get_analysis k1) in
   Analysis.empty_model
 
 
 let get_obscure_models abstract_analysis =
   let models =
-    let (Result.Analysis { kind; analysis }) = abstract_analysis in
+    let (AnalysisResult.Analysis { kind; analysis }) = abstract_analysis in
     let module Analysis = (val analysis) in
     let obscure_model = Analysis.obscure_model in
     Kind.Map.add
       (Kind.abstract kind)
-      (Result.Pkg { kind = ModelPart kind; value = obscure_model })
+      (AnalysisResult.Pkg { kind = ModelPart kind; value = obscure_model })
       Kind.Map.empty
   in
-  Result.{ models; is_obscure = true }
+  AnalysisResult.{ models; is_obscure = true }
 
 
 let non_fixpoint_witness
     (type a)
-    (kind : < model : a ; .. > Result.storable_kind)
+    (kind : < model : a ; .. > AnalysisResult.storable_kind)
     ~(iteration : int)
     ~(previous : a)
     ~(next : a)
   =
   (* Existentially abstract unspecified analysis data *)
-  let (Result.ModelPart k1) = Result.ModelPart kind in
-  let module Analysis = (val Result.get_analysis k1) in
+  let (AnalysisResult.ModelPart k1) = AnalysisResult.ModelPart kind in
+  let module Analysis = (val AnalysisResult.get_analysis k1) in
   if Analysis.reached_fixpoint ~iteration ~previous ~next then
     None
   else
@@ -131,7 +132,7 @@ let non_fixpoint_witness
 
 (* Find witnesses where next </= previous. *)
 let non_fixpoint_witness ~iteration _kind left right =
-  let open Result in
+  let open AnalysisResult in
   match left, right with
   | None, None -> failwith "impossible"
   | None, Some (Pkg { kind = ModelPart kind; value = next }) ->
@@ -152,7 +153,7 @@ let reached_fixpoint_model_only ~iteration ~previous ~next =
 
 
 let join_models ~iteration left right =
-  let open Result in
+  let open AnalysisResult in
   let join_pkg
       _
       (Pkg { kind = ModelPart left_kind; value = left })
@@ -160,7 +161,7 @@ let join_models ~iteration left right =
     =
     match Kind.are_equal left_kind right_kind with
     | Kind.Equal ->
-        let module Analysis = (val Result.get_analysis left_kind) in
+        let module Analysis = (val get_analysis left_kind) in
         Some (Pkg { kind = ModelPart left_kind; value = Analysis.join ~iteration left right })
     | Kind.Distinct -> failwith "Wrong kind matched up in join."
   in
@@ -171,7 +172,7 @@ let join_models ~iteration left right =
 
 
 let widen_models ~iteration ~previous ~next =
-  let open Result in
+  let open AnalysisResult in
   let widen_pkg
       _
       (Pkg { kind = ModelPart k1; value = previous })
@@ -179,7 +180,7 @@ let widen_models ~iteration ~previous ~next =
     =
     match Kind.are_equal k1 k2 with
     | Kind.Equal ->
-        let module Analysis = (val Result.get_analysis k1) in
+        let module Analysis = (val AnalysisResult.get_analysis k1) in
         Some (Pkg { kind = ModelPart k1; value = Analysis.widen ~iteration ~previous ~next })
     | Kind.Distinct -> failwith "Wrong kind matched up in widen."
   in
@@ -190,7 +191,7 @@ let widen_models ~iteration ~previous ~next =
 
 
 let explain_non_fixpoint ~iteration ~previous ~next =
-  let open Result in
+  let open AnalysisResult in
   let witnesses = Kind.Map.merge (non_fixpoint_witness ~iteration) previous next in
   let print_witness key () =
     Log.log ~section:`Interprocedural "%s is non-fixpoint" (Kind.show key)
@@ -199,7 +200,7 @@ let explain_non_fixpoint ~iteration ~previous ~next =
 
 
 let show_models models =
-  let open Result in
+  let open AnalysisResult in
   (* list them to make the type system do its work *)
   let to_string (abstract_kind, Pkg { kind = ModelPart kind; value = model }) =
     let module Analysis = (val get_analysis kind) in
@@ -233,8 +234,8 @@ let widen ~iteration ~previous ~next =
 
 let reached_fixpoint
     ~iteration
-    ~previous:{ Result.models = previous_model; is_obscure = previous_obscure }
-    ~next:{ Result.models = next_model; is_obscure = next_obscure }
+    ~previous:{ AnalysisResult.models = previous_model; is_obscure = previous_obscure }
+    ~next:{ AnalysisResult.models = next_model; is_obscure = next_obscure }
   =
   if (not previous_obscure) && next_obscure then
     false
@@ -244,10 +245,10 @@ let reached_fixpoint
 
 let widen
     ~iteration
-    ~previous:{ Result.models = previous_model; is_obscure = previous_obscure }
-    ~next:{ Result.models = next_model; is_obscure = next_obscure }
+    ~previous:{ AnalysisResult.models = previous_model; is_obscure = previous_obscure }
+    ~next:{ AnalysisResult.models = next_model; is_obscure = next_obscure }
   =
-  Result.
+  AnalysisResult.
     {
       is_obscure = previous_obscure || next_obscure;
       models = widen ~iteration ~previous:previous_model ~next:next_model;
@@ -262,7 +263,7 @@ let widen_if_necessary step callable ~old_model ~new_model result =
       "Reached fixpoint for %a\n%a"
       Callable.pretty_print
       callable
-      Result.pp_model_t
+      AnalysisResult.pp_model_t
       old_model;
     Fixpoint.{ is_partial = false; model = old_model; result } )
   else
@@ -272,11 +273,11 @@ let widen_if_necessary step callable ~old_model ~new_model result =
       "Widened fixpoint for %a\nold: %anew: %a\nwidened: %a"
       Callable.pretty_print
       callable
-      Result.pp_model_t
+      AnalysisResult.pp_model_t
       old_model
-      Result.pp_model_t
+      AnalysisResult.pp_model_t
       new_model
-      Result.pp_model_t
+      AnalysisResult.pp_model_t
       model;
     Fixpoint.{ is_partial = true; model; result }
 
@@ -299,7 +300,7 @@ let analyze_define
             "Analyzing %a, with initial model %a"
             Callable.pp_real_target
             callable
-            Result.pp_model_t
+            AnalysisResult.pp_model_t
             model
         in
         model
@@ -308,11 +309,11 @@ let analyze_define
   in
   let models, results =
     try
-      let (Result.Analysis { Result.kind; analysis }) = abstract_analysis in
-      let open Result in
+      let (AnalysisResult.Analysis { AnalysisResult.kind; analysis }) = abstract_analysis in
+      let open AnalysisResult in
       let abstract_kind = Kind.abstract kind in
       let module Analysis = (val analysis) in
-      let existing = Result.get (ModelPart kind) old_model.models in
+      let existing = AnalysisResult.get (ModelPart kind) old_model.models in
       let result, model = Analysis.analyze ~callable ~environment ~qualifier ~define ~existing in
       ( Kind.Map.add abstract_kind (Pkg { kind = ModelPart kind; value = model }) Kind.Map.empty,
         Kind.Map.add abstract_kind (Pkg { kind = ResultPart kind; value = result }) Kind.Map.empty )
@@ -324,23 +325,23 @@ let analyze_define
           Reference.pp
           (Node.value name)
           annotation;
-        Result.Kind.Map.empty, Result.Kind.Map.empty
+        AnalysisResult.Kind.Map.empty, AnalysisResult.Kind.Map.empty
     | Sys.Break as exn -> analysis_failed step ~exn ~message:"Hit Ctrl+C" callable
     | _ as exn -> analysis_failed step ~exn ~message:"Analysis failed" callable
   in
-  let new_model = { Result.models; is_obscure = false } in
+  let new_model = { AnalysisResult.models; is_obscure = false } in
   widen_if_necessary step callable ~old_model ~new_model results
 
 
 let strip_for_callsite model =
-  let open Result in
+  let open AnalysisResult in
   (* list them to make the type system do its work *)
   let strip abstract_kind (Pkg { kind = ModelPart kind; value = model }) models =
     let module Analysis = (val get_analysis kind) in
     let model = Analysis.strip_for_callsite model in
     Kind.Map.add abstract_kind (Pkg { kind = ModelPart kind; value = model }) models
   in
-  let models = Kind.Map.fold strip model.InterproceduralResult.models Kind.Map.empty in
+  let models = Kind.Map.fold strip model.models Kind.Map.empty in
   { model with models }
 
 
@@ -352,7 +353,7 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     |> List.map ~f:(fun at_type -> Callable.create_derived_override callable ~at_type)
   in
   let model =
-    let lookup_and_join ({ Result.is_obscure; models } as result) override =
+    let lookup_and_join ({ AnalysisResult.is_obscure; models } as result) override =
       match Fixpoint.get_model override with
       | None ->
           Log.log
@@ -370,7 +371,7 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     in
     let direct_model =
       Fixpoint.get_model (Callable.get_corresponding_method callable)
-      |> Option.value ~default:Result.empty_model
+      |> Option.value ~default:AnalysisResult.empty_model
       |> strip_for_callsite
     in
     List.fold overrides ~f:lookup_and_join ~init:direct_model
@@ -381,7 +382,7 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     | None ->
         Format.asprintf "No initial model found for %a" Callable.pretty_print callable |> failwith
   in
-  widen_if_necessary step callable ~old_model ~new_model:model Result.empty_result
+  widen_if_necessary step callable ~old_model ~new_model:model AnalysisResult.empty_result
 
 
 let callables_to_dump =
@@ -429,7 +430,7 @@ let analyze_callable analysis step callable environment =
             {
               is_partial = false;
               model = get_obscure_models analysis;
-              result = Result.empty_result;
+              result = AnalysisResult.empty_result;
             }
       | Some (qualifier, ({ Node.value; _ } as define)) ->
           if Define.dump value then
@@ -453,7 +454,7 @@ type result = {
 
 (* Called on a worker with a set of functions to analyze. *)
 let one_analysis_pass ~analysis ~step ~environment ~callables =
-  let analysis = Result.get_abstract_analysis analysis in
+  let analysis = AnalysisResult.get_abstract_analysis analysis in
   let analyze_and_cache expensive_callables callable =
     let timer = Timer.start () in
     let result = analyze_callable analysis step callable environment in
@@ -680,12 +681,12 @@ let compute_fixpoint
             |> fun value -> Option.value_exn value
         | _ -> failwith "No real target to dump"
       in
-      let model = Fixpoint.get_model callable |> Option.value ~default:Result.empty_model in
+      let model = Fixpoint.get_model callable |> Option.value ~default:AnalysisResult.empty_model in
       Log.dump
         "Model for `%s` after %d iterations:\n%a"
         (Log.Color.yellow (Reference.show (Node.value name)))
         iterations
-        Result.pp_model_t
+        AnalysisResult.pp_model_t
         model
     in
     Callable.Set.iter dump_callable !callables_to_dump;
@@ -710,7 +711,7 @@ let report_results
     ~fixpoint_timer
     ~fixpoint_iterations
   =
-  let report_analysis (Result.Analysis { analysis; _ }) =
+  let report_analysis (AnalysisResult.Analysis { analysis; _ }) =
     let module Analysis = (val analysis) in
     Analysis.report
       ~scheduler
@@ -722,4 +723,4 @@ let report_results
       ~fixpoint_timer
       ~fixpoint_iterations
   in
-  Result.get_abstract_analysis analysis |> report_analysis
+  AnalysisResult.get_abstract_analysis analysis |> report_analysis

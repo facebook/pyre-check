@@ -11,7 +11,9 @@ open TypeInferenceData
 module TypeEnvironment = Analysis.TypeEnvironment
 open Interprocedural
 
-let get_result callable = Fixpoint.get_result callable |> Result.get_result TypeInferenceResult.kind
+let get_result callable =
+  Fixpoint.get_result callable |> AnalysisResult.get_result TypeInferenceResult.kind
+
 
 let make_global_result ~global_resolution ~callables =
   callables |> List.filter_map ~f:get_result |> GlobalResult.from_local_results ~global_resolution

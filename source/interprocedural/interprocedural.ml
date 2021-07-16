@@ -15,4 +15,4 @@ module DependencyGraph = DependencyGraph
 module DependencyGraphSharedMemory = DependencyGraphSharedMemory
 module Error = Error
 module Fixpoint = Fixpoint
-module Result = InterproceduralResult
+module AnalysisResult = AnalysisResult

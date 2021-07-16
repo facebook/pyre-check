@@ -55,13 +55,13 @@ val fetch_initial_callables
 
 val analyze
   :  scheduler:Scheduler.t ->
-  analysis:Interprocedural.AnalysisKind.abstract ->
+  analysis:AnalysisKind.abstract ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   filename_lookup:(Reference.t -> string option) ->
   environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
   initial_callables:initial_callables ->
-  initial_models:Interprocedural.Result.model_t Callable.Map.t ->
+  initial_models:AnalysisResult.model_t Callable.Map.t ->
   skip_overrides:Ast.Reference.Set.t ->
   unit ->
   unit

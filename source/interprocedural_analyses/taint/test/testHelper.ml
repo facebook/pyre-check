@@ -75,7 +75,9 @@ let get_model callable =
       (OUnitTest.OUnit_failure (Format.asprintf "model not found for %a" Callable.pp callable))
   in
   let model = Fixpoint.get_model callable |> Option.value_exn ?here:None ~error ?message:None in
-  ( model |> Result.get_model Taint.Result.kind |> Option.value ~default:Taint.Result.empty_model,
+  ( model
+    |> AnalysisResult.get_model Taint.Result.kind
+    |> Option.value ~default:Taint.Result.empty_model,
     model.is_obscure )
 
 
@@ -312,7 +314,7 @@ let check_expectation
   (* Check errors *)
   let actual_errors =
     Fixpoint.get_result callable
-    |> Result.get_result Taint.Result.kind
+    |> AnalysisResult.get_result Taint.Result.kind
     >>| List.map ~f:Flow.generate_error
     |> Option.value ~default:[]
   in
@@ -371,7 +373,7 @@ let run_with_taint_models tests ~name =
          "The models shouldn't have any parsing errors: %s."
          (List.to_string errors ~f:Taint.Model.display_verification_error))
       (List.is_empty errors);
-    Callable.Map.map models ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+    Callable.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
     |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[]
   in
   let decorated_tests =
@@ -418,7 +420,7 @@ let type_environment_with_decorators_inlined ~configuration ~taint_configuration
         models
   in
   let decorators_to_skip =
-    Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind) models
+    Callable.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind) models
     |> Taint.Result.decorators_to_skip
   in
   DecoratorHelper.type_environment_with_decorators_inlined
@@ -577,7 +579,7 @@ let initialize
     Fixpoint.remove_new keys;
     Fixpoint.remove_old keys;
     initial_models
-    |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+    |> Callable.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind)
     |> Interprocedural.Analysis.record_initial_models ~functions:callables ~stubs
   in
   { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }

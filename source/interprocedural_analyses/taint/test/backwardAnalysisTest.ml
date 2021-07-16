@@ -45,8 +45,8 @@ let assert_taint ~context source expected =
         ~triggered_sinks:(Ast.Location.Table.create ())
     in
     let model = { Taint.Result.empty_model with backward } in
-    Result.empty_model
-    |> Result.with_model Taint.Result.kind model
+    AnalysisResult.empty_model
+    |> AnalysisResult.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in

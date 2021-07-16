@@ -102,7 +102,7 @@ let register_unknown_callee_model callable =
   Interprocedural.Fixpoint.add_predefined
     Interprocedural.Fixpoint.Epoch.predefined
     callable
-    (Interprocedural.Result.make_model
+    (Interprocedural.AnalysisResult.make_model
        TaintResult.kind
        {
          TaintResult.forward = Forward.empty;
@@ -181,7 +181,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
         }
       in
       let taint_model =
-        Interprocedural.Result.get_model TaintResult.kind model
+        Interprocedural.AnalysisResult.get_model TaintResult.kind model
         |> Option.value ~default:TaintResult.empty_model
         |> expand_via_value_of
       in

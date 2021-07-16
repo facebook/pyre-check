@@ -97,7 +97,7 @@ val should_externalize_model : call_model -> bool
 type result = Flow.issue list
 
 include
-  Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
+  Interprocedural.AnalysisResult.ANALYSIS_RESULT_WITH_REGISTRATION
     with type result := result
      and type call_model := call_model
 
@@ -108,5 +108,5 @@ val model_to_json
   Yojson.Safe.t
 
 val decorators_to_skip
-  :  Interprocedural.Result.model_t Interprocedural.Callable.Map.t ->
+  :  Interprocedural.AnalysisResult.model_t Interprocedural.Callable.Map.t ->
   Ast.Reference.Set.t

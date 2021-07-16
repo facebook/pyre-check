@@ -608,7 +608,7 @@ let build_dependency_graph ~callables_with_dependency_information ~callgraph ~ov
       Interprocedural.Fixpoint.add_predefined
         Interprocedural.Fixpoint.Epoch.initial
         callable
-        Interprocedural.Result.empty_model
+        Interprocedural.AnalysisResult.empty_model
     in
     List.iter override_targets ~f:add_predefined
   in

@@ -51,7 +51,8 @@ include Taint.Result.Register (struct
   }
 
   type parse_sources_result = {
-    initialize_result: call_model Interprocedural.Result.InitializedModels.initialize_result;
+    initialize_result:
+      call_model Interprocedural.AnalysisResult.InitializedModels.initialize_result;
     query_data: model_query_data option;
   }
 
@@ -63,7 +64,7 @@ include Taint.Result.Register (struct
       ~functions
       ~stubs
       ~initialize_result:
-        { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides }
+        { Interprocedural.AnalysisResult.InitializedModels.initial_models = models; skip_overrides }
       { queries; taint_configuration }
     =
     let resolution =
@@ -117,7 +118,7 @@ include Taint.Result.Register (struct
         | Some Type -> models |> remove_sinks
         | None -> models
       in
-      { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides }
+      { Interprocedural.AnalysisResult.InitializedModels.initial_models = models; skip_overrides }
     with
     | exception_ -> log_and_reraise_taint_model_exception exception_
 
@@ -237,7 +238,10 @@ include Taint.Result.Register (struct
         in
         {
           initialize_result =
-            { Interprocedural.Result.InitializedModels.initial_models = models; skip_overrides };
+            {
+              Interprocedural.AnalysisResult.InitializedModels.initial_models = models;
+              skip_overrides;
+            };
           query_data = Some { queries; taint_configuration };
         }
       with
@@ -249,7 +253,7 @@ include Taint.Result.Register (struct
         {
           initialize_result =
             {
-              Interprocedural.Result.InitializedModels.initial_models;
+              Interprocedural.AnalysisResult.InitializedModels.initial_models;
               skip_overrides = Ast.Reference.Set.empty;
             };
           query_data = None;
@@ -295,7 +299,7 @@ include Taint.Result.Register (struct
           models
       | _ -> initialize_result
     in
-    Interprocedural.Result.InitializedModels.create get_taint_models
+    Interprocedural.AnalysisResult.InitializedModels.create get_taint_models
 
 
   let analyze ~environment ~callable ~qualifier ~define ~sanitize ~modes existing_model =

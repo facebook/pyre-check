@@ -28,4 +28,4 @@ module ResultArgument = struct
 end
 
 include ResultArgument
-include Interprocedural.Result.Make (ResultArgument)
+include Interprocedural.AnalysisResult.Make (ResultArgument)

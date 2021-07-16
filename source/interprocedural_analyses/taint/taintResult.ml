@@ -448,11 +448,13 @@ let should_externalize_model = ResultArgument.should_externalize_model
 
 let model_to_json = ResultArgument.model_to_json
 
-include Interprocedural.Result.Make (ResultArgument)
+include Interprocedural.AnalysisResult.Make (ResultArgument)
 
 (* Patch the forward reference to access the final summaries in trace info generation. *)
 let has_significant_summary root path target =
-  let model = Interprocedural.Fixpoint.get_model target >>= Interprocedural.Result.get_model kind in
+  let model =
+    Interprocedural.Fixpoint.get_model target >>= Interprocedural.AnalysisResult.get_model kind
+  in
   match model with
   | None -> false
   | Some { forward; backward; _ } -> (
@@ -473,7 +475,7 @@ let has_significant_summary root path target =
 
 let decorators_to_skip models =
   let skippable_decorator_reference (callable, model) =
-    match callable, Interprocedural.Result.get_model kind model with
+    match callable, Interprocedural.AnalysisResult.get_model kind model with
     | `Function callable_name, Some { modes; _ }
       when ModeSet.contains Mode.SkipDecoratorWhenInlining modes ->
         Some (Ast.Reference.create callable_name)
