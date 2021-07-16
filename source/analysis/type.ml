@@ -438,7 +438,7 @@ module Record = struct
           match List.zip left right with
           | Ok prefix_pairs ->
               Some { prefix_pairs; middle_pair = Concrete [], Concrete []; suffix_pairs = [] }
-          | Unequal_lengths -> None )
+          | Unequal_lengths -> None)
       | Concrete left, Concatenation concatenation ->
           split_concrete_against_concatenation ~is_left_concrete:true ~concrete:left ~concatenation
       | Concatenation concatenation, Concrete right ->
@@ -488,8 +488,8 @@ module Record = struct
                           suffix = right_suffix_rest;
                         } )
                   in
-                  Some { prefix_pairs; middle_pair; suffix_pairs } )
-          | _ -> None )
+                  Some { prefix_pairs; middle_pair; suffix_pairs })
+          | _ -> None)
   end
 
   module Callable = struct
@@ -920,8 +920,8 @@ end = struct
               { Monomial.constant_factor = operation 0 constant_factor; variables })
       | ( ({ Monomial.constant_factor = left_factor; variables = left_variables } as left_monomial)
           :: left_polynomial,
-          ( { Monomial.constant_factor = right_factor; variables = right_variables } as
-          right_monomial )
+          ({ Monomial.constant_factor = right_factor; variables = right_variables } as
+          right_monomial)
           :: right_polynomial ) ->
           let comparison = Monomial.compare_normal left_monomial right_monomial ~compare_t in
           if comparison = 0 then
@@ -1387,7 +1387,7 @@ let is_dictionary ?(with_key = None) = function
   | Parametric { name = "dict"; parameters } -> (
       match with_key, parameters with
       | Some key, [Single key_parameter; _] -> equal key key_parameter
-      | _ -> true )
+      | _ -> true)
   | _ -> false
 
 
@@ -2011,7 +2011,7 @@ let rec expression annotation =
                   };
                 arguments = [{ Call.Argument.name = None; value = overloads }];
               }
-        | None -> base_callable )
+        | None -> base_callable)
     | Any -> create_name "typing.Any"
     | Literal literal ->
         let literal =
@@ -2608,8 +2608,8 @@ module Callable = struct
         callee
     | Expression.Name
         (Name.Attribute
-          ( { base = { Node.value = Name name; location } as base; attribute = "__getitem__"; _ } as
-          attribute )) ->
+          ({ base = { Node.value = Name name; location } as base; attribute = "__getitem__"; _ } as
+          attribute)) ->
         Ast.Expression.name_to_reference name
         >>| Reference.show
         >>| (fun name ->
@@ -2716,7 +2716,7 @@ let create_literal = function
                     enumeration_type = Primitive (Reference.show_sanitized reference);
                     member_name = attribute;
                   }))
-      | _ -> None )
+      | _ -> None)
   | Expression.Name (Identifier "None") -> Some none
   | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
   | _ -> None
@@ -2822,8 +2822,8 @@ module OrderedTypes = struct
         | Unpacked middle :: suffix -> (
             match Parameter.all_singles prefix, Parameter.all_singles suffix with
             | Some prefix, Some suffix -> Some (Concatenation { prefix; middle; suffix })
-            | _ -> None )
-        | _ -> None )
+            | _ -> None)
+        | _ -> None)
     | _ -> None
 
 
@@ -2863,7 +2863,7 @@ module OrderedTypes = struct
                 >>= function
                 | Record.Variable.TupleVariadic variadic ->
                     Some (Concatenation.create ~prefix ~suffix variadic)
-                | _ -> None )
+                | _ -> None)
             | Parametric
                 {
                   name;
@@ -2876,8 +2876,8 @@ module OrderedTypes = struct
                 }
               when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
                 Some { prefix = prefix @ inner_prefix; middle; suffix = inner_suffix @ suffix }
-            | _ -> None )
-        | _ -> None )
+            | _ -> None)
+        | _ -> None)
     | _ -> None
 
 
@@ -2899,7 +2899,7 @@ module OrderedTypes = struct
         in
         match parse_annotation wrapped_in_tuple with
         | Tuple (Concatenation concatenation) -> Some concatenation
-        | _ -> None )
+        | _ -> None)
     | _ -> None
 
 
@@ -2961,10 +2961,10 @@ module OrderedTypes = struct
                   {
                     name = "pyre_extensions.BroadcastError";
                     parameters =
-                      ( if [%compare: type_t] left_type right_type < 0 then
-                          [Parameter.Single left_type; Parameter.Single right_type]
+                      (if [%compare: type_t] left_type right_type < 0 then
+                         [Parameter.Single left_type; Parameter.Single right_type]
                       else
-                        [Parameter.Single right_type; Parameter.Single left_type] );
+                        [Parameter.Single right_type; Parameter.Single left_type]);
                   })
     | ( Tuple (Concrete concrete),
         Tuple
@@ -3028,7 +3028,7 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
         match variable_aliases variable_name with
         | Some (Record.Variable.TupleVariadic variadic) ->
             Some (Parameter.Unpacked (Variadic variadic))
-        | _ -> None )
+        | _ -> None)
     | _ -> None
   in
   match annotation with
@@ -3047,7 +3047,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         match variable_aliases name with
         | Some (Record.Variable.ParameterVariadic variable) ->
             Some { Record.Callable.variable; head = [] }
-        | _ -> None )
+        | _ -> None)
     | Parametric { name; parameters }
       when Identifier.equal name Record.OrderedTypes.concatenate_public_name -> (
         match List.rev parameters with
@@ -3056,7 +3056,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             Parameter.all_singles reversed_head
             >>| List.rev
             >>| fun head -> { Record.Callable.variable; head }
-        | _ -> None )
+        | _ -> None)
     | _ -> None
   in
   let extract_parameter ~create_logic index parameter =
@@ -3126,7 +3126,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               | _ -> Top
             in
             Keywords annotation
-        | _ -> PositionalOnly { index; annotation = Top; default = false } )
+        | _ -> PositionalOnly { index; annotation = Top; default = false })
     | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
   in
 
@@ -3239,7 +3239,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                 | _ -> (
                     match parsed with
                     | Primitive "..." -> make_signature ~parameters:Undefined
-                    | _ -> undefined ) ) )
+                    | _ -> undefined)))
         | _ -> undefined
       in
       let implementation =
@@ -3291,7 +3291,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                           Record.Parameter.CallableParameters
                             (ParameterVariadicTypeVariable variable);
                         ]
-                    | _ -> [Record.Parameter.Single parsed] ) )
+                    | _ -> [Record.Parameter.Single parsed]))
           in
           match argument with
           | { Node.value = Expression.Tuple elements; _ } ->
@@ -3401,9 +3401,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             ];
         }
       when name_is ~name:"pyre_extensions.Broadcast.__getitem__" callee ->
-        ( match List.map ~f:create_logic arguments with
+        (match List.map ~f:create_logic arguments with
         | [left_type; right_type] -> OrderedTypes.broadcast left_type right_type
-        | _ -> Bottom )
+        | _ -> Bottom)
         |> resolve_aliases
     | Call
         {
@@ -3421,9 +3421,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         }
       when name_is ~name:"pyre_extensions.Add.__getitem__" callee ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Add in
-        ( match created_type with
+        (match created_type with
         | Top -> create_parametric ~base ~argument
-        | _ -> created_type )
+        | _ -> created_type)
         |> resolve_aliases
     | Call
         {
@@ -3441,9 +3441,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         }
       when name_is ~name:"pyre_extensions.Multiply.__getitem__" callee ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Multiply in
-        ( match created_type with
+        (match created_type with
         | Top -> create_parametric ~base ~argument
-        | _ -> created_type )
+        | _ -> created_type)
         |> resolve_aliases
     | Call
         {
@@ -3461,9 +3461,9 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         }
       when name_is ~name:"pyre_extensions.Divide.__getitem__" callee ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
-        ( match created_type with
+        (match created_type with
         | Top -> create_parametric ~base ~argument
-        | _ -> created_type )
+        | _ -> created_type)
         |> resolve_aliases
     | Call
         {
@@ -3522,7 +3522,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             [{ Call.Argument.name = None; value = argument; _ }] ) ->
             (* TODO(T84854853): Add back support for `Length` and `Product`. *)
             create_parametric ~base ~argument
-        | _ -> Top )
+        | _ -> Top)
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
         if String.equal sanitized "None" then
@@ -3533,7 +3533,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         let attribute = Identifier.sanitized attribute in
         match create_logic base with
         | Primitive primitive -> Primitive (primitive ^ "." ^ attribute) |> resolve_aliases
-        | _ -> Primitive (Expression.show base ^ "." ^ attribute) )
+        | _ -> Primitive (Expression.show base ^ "." ^ attribute))
     | Ellipsis -> Primitive "..."
     | String { StringLiteral.value; _ } ->
         let expression =
@@ -3561,7 +3561,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
   | Primitive name -> (
       match Identifier.Table.find primitive_substitution_map name with
       | Some substitute -> substitute
-      | None -> result )
+      | None -> result)
   | Parametric { name = "typing.Tuple"; parameters }
   | Parametric { name = "tuple"; parameters } -> (
       match Parameter.all_singles parameters with
@@ -3571,7 +3571,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | None ->
           OrderedTypes.concatenation_from_parameters parameters
           >>| (fun concatenation -> Tuple concatenation)
-          |> Option.value ~default:Top )
+          |> Option.value ~default:Top)
   | Parametric { name; parameters } -> (
       match
         Identifier.Table.find parametric_substitution_map name, Parameter.all_singles parameters
@@ -3585,8 +3585,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               annotated (List.hd_exn parameters)
           | "typing.Optional" when List.length parameters = 1 -> optional (List.hd_exn parameters)
           | "typing.Union" -> union parameters
-          | _ -> result )
-      | _, None -> result )
+          | _ -> result)
+      | _, None -> result)
   | Union elements -> union elements
   | Callable ({ implementation; overloads; _ } as callable) ->
       let collect_unpacked_parameters_if_any ({ parameters; _ } as overload) =
@@ -4440,7 +4440,7 @@ end = struct
             | Primitive positionals_base, Primitive keywords_base
               when Identifier.equal positionals_base keywords_base ->
                 get_variable positionals_base
-            | _ -> None )
+            | _ -> None)
         | _ -> None
 
 
@@ -4593,7 +4593,7 @@ end = struct
                     replace_unpackable unpackable
                     >>| function
                     | Tuple record -> OrderedTypes.to_parameters record
-                    | other -> [Parameter.Single other] )
+                    | other -> [Parameter.Single other])
                 | _ -> None
               in
               Option.value ~default:[parameter] replaced
@@ -4831,7 +4831,7 @@ end = struct
     | None -> (
         match Variadic.Tuple.parse_declaration expression ~target with
         | Some variable -> Some (TupleVariadic variable)
-        | None -> None )
+        | None -> None)
 
 
   let dequalify dequalify_map = function
@@ -5056,7 +5056,7 @@ end = struct
     | [] -> (
         match List.map2 variables parameters ~f:make_variable_pair with
         | Ok pairs -> Some pairs
-        | Unequal_lengths -> None )
+        | Unequal_lengths -> None)
     | _ ->
         (* Reject multiple variadic generics. *)
         None
@@ -5134,7 +5134,7 @@ let resolve_aliases ~aliases annotation =
                   in
                   mark_recursive_alias_as_visited alias;
                   alias
-              | _ -> annotation )
+              | _ -> annotation)
           | Parametric { name = alias_name; parameters = given_parameters } ->
               let deduplicate_preserving_order list =
                 List.fold list ~init:([], Variable.Set.empty) ~f:(fun (sofar, seen_set) x ->
@@ -5149,8 +5149,8 @@ let resolve_aliases ~aliases annotation =
                 let variable_pairs =
                   Variable.zip_variables_with_parameters
                     ~parameters:given_parameters
-                    ( Variable.all_free_variables uninstantiated_alias_annotation
-                    |> deduplicate_preserving_order )
+                    (Variable.all_free_variables uninstantiated_alias_annotation
+                    |> deduplicate_preserving_order)
                 in
                 match variable_pairs with
                 | Some variable_pairs ->
@@ -5193,7 +5193,7 @@ let resolve_aliases ~aliases annotation =
           | RecursiveType _ ->
               mark_recursive_alias_as_visited annotation;
               annotation
-          | _ -> annotation )
+          | _ -> annotation)
       in
       let transformed_annotation = resolve annotation in
       { Transform.transformed_annotation; new_state = () }
@@ -5647,8 +5647,8 @@ let infer_transform annotation =
             else
               shorten_tuple_type types |> Option.value ~default:annotation
         | Callable
-            ( { implementation = { parameters = Defined parameters; _ } as implementation; _ } as
-            callable ) ->
+            ({ implementation = { parameters = Defined parameters; _ } as implementation; _ } as
+            callable) ->
             let parameters =
               let transform_parameter index parameter =
                 match parameter with
@@ -5773,7 +5773,7 @@ let resolve_class annotation =
         match split annotation |> fst |> primitive_name with
         | Some class_name ->
             Some [{ instantiated = original_annotation; accessed_through_class = meta; class_name }]
-        | None -> None )
+        | None -> None)
   in
   extract ~meta:false annotation
 

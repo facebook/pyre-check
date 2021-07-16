@@ -83,15 +83,15 @@ let process_display_type_error_request
 
 let process_incremental_update_request
     ~state:
-      ( {
-          ServerState.server_configuration;
-          configuration;
-          type_environment;
-          error_table;
-          subscriptions;
-          build_system;
-          _;
-        } as state )
+      ({
+         ServerState.server_configuration;
+         configuration;
+         type_environment;
+         error_table;
+         subscriptions;
+         build_system;
+         _;
+       } as state)
     paths
   =
   let open Lwt.Infix in
@@ -140,13 +140,13 @@ let process_incremental_update_request
           in
           List.map subscriptions ~f:(fun subscription -> Subscription.send ~response subscription)
           |> Lwt.join
-          >>= fun () -> Lwt.return state )
+          >>= fun () -> Lwt.return state)
 
 
 let process_request
     ~state:
-      ( { ServerState.socket_path; server_configuration; configuration; type_environment; _ } as
-      state )
+      ({ ServerState.socket_path; server_configuration; configuration; type_environment; _ } as
+      state)
     request
   =
   match request with

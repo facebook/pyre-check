@@ -315,7 +315,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
           | Element -> Format.sprintf "OverAndUnderSet(%s).Element" Element.name
           | ElementAndUnder -> Format.sprintf "OverAndUnderSet(%s).ElementAndUnder" Element.name
           | Self -> Format.sprintf "OverAndUnderSet(%s).Self" Element.name
-          | _ -> Base.introspect op )
+          | _ -> Base.introspect op)
 
 
     let create parts : t =

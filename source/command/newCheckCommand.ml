@@ -309,16 +309,16 @@ let run_check configuration_file =
         Log.error "%s" message;
         ExitStatus.PyreError
     | Result.Ok
-        ( {
-            CheckConfiguration.global_root;
-            local_root;
-            debug;
-            additional_logging_sections;
-            remote_logging;
-            profiling_output;
-            memory_profiling_output;
-            _;
-          } as check_configuration ) ->
+        ({
+           CheckConfiguration.global_root;
+           local_root;
+           debug;
+           additional_logging_sections;
+           remote_logging;
+           profiling_output;
+           memory_profiling_output;
+           _;
+         } as check_configuration) ->
         NewCommandStartup.setup_global_states
           ~global_root
           ~local_root

@@ -458,19 +458,19 @@ let initialize
       (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
     |> fun option -> Option.value_exn option
   in
-  ( if not (List.is_empty errors) then
-      let errors =
-        errors
-        |> List.map ~f:(fun error ->
-               AnalysisError.instantiate
-                 ~show_error_traces:false
-                 ~lookup:
-                   (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
-                 error
-               |> AnalysisError.Instantiated.description)
-        |> String.concat ~sep:"\n"
-      in
-      failwithf "Pyre errors were found in `%s`:\n%s" handle errors () );
+  (if not (List.is_empty errors) then
+     let errors =
+       errors
+       |> List.map ~f:(fun error ->
+              AnalysisError.instantiate
+                ~show_error_traces:false
+                ~lookup:
+                  (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
+                error
+              |> AnalysisError.Instantiated.description)
+       |> String.concat ~sep:"\n"
+     in
+     failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
 
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let resolution =

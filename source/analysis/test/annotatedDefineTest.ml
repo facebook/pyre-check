@@ -87,8 +87,8 @@ let test_decorate context =
       in
       ( Option.value_exn
           (AstEnvironment.ReadOnly.get_processed_source
-             ( AnnotatedGlobalEnvironment.ast_environment global_environment
-             |> AstEnvironment.read_only )
+             (AnnotatedGlobalEnvironment.ast_environment global_environment
+             |> AstEnvironment.read_only)
              (Reference.create "test")),
         global_environment )
     in

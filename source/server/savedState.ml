@@ -126,7 +126,7 @@ let load
     | Some (Load (LoadFromProject { project_name; metadata })) -> (
         if Option.is_none expected_version then (
           Log.warning "An expected version must be passed in in order to load from saved states.";
-          raise (IncompatibleState "version mismatch") );
+          raise (IncompatibleState "version mismatch"));
         Log.log ~section:`Server "Loading from saved state project `%s`..." project_name;
         let target_path = Constants.Server.saved_state_path configuration in
         Log.log ~section:`Server "Loading saved state to `%s`..." (Path.absolute target_path);
@@ -149,7 +149,7 @@ let load
             (* Heuristic: If saved states with metadata are enabled, we need to deal with
                non-checked in generated code, so ignore watchman's response. *)
             saved_state_path, changed_files
-        | None -> raise (IncompatibleState "unable to fetch state") )
+        | None -> raise (IncompatibleState "unable to fetch state"))
     | _ -> raise (IncompatibleState "unexpected saved state parameters")
   in
   let scheduler = Scheduler.create ~configuration () in

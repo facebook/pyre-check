@@ -160,9 +160,9 @@ let test_updates context =
            ~f:SharedMemoryKeys.DependencyKey.RegisteredSet.union
            ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty
       |> SharedMemoryKeys.DependencyKey.RegisteredSet.filter (function registered ->
-             ( match SharedMemoryKeys.DependencyKey.get_key registered with
+             (match SharedMemoryKeys.DependencyKey.get_key registered with
              | SharedMemoryKeys.TypeCheckDefine _ -> true
-             | _ -> false ))
+             | _ -> false))
     in
     assert_equal ~printer expected_triggers triggered_type_check_define_dependencies;
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()

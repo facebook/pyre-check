@@ -225,7 +225,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 | Sinks.ParameterUpdate n -> (
                     match List.nth arguments n with
                     | None -> BackwardState.Tree.empty
-                    | Some argument -> get_argument_taint ~resolution ~argument state )
+                    | Some argument -> get_argument_taint ~resolution ~argument state)
                 | _ -> failwith "unexpected tito sink"
               in
               let compute_tito_depth leaf depth =
@@ -407,7 +407,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           match call_expression with
           | Expression.Call { callee; _ } ->
               analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
-          | _ -> state )
+          | _ -> state)
       | call_targets ->
           List.map call_targets ~f:analyze_call_target
           |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
@@ -917,7 +917,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               (* Use implicit self *)
               match FunctionContext.first_parameter () with
               | Some root -> store_weak_taint ~root ~path:[] taint state
-              | None -> state ) )
+              | None -> state))
       | _ -> (
           let taint =
             match Node.value callee with
@@ -957,7 +957,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     ~callee
                     ~arguments
                     ~taint
-                    (Some higher_order_function) )
+                    (Some higher_order_function))
           | Some (ConstructorTargets { new_targets; init_targets }) ->
               analyze_constructor_call
                 ~resolution
@@ -968,7 +968,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~taint
                 ~callee
                 ~arguments
-          | None -> analyze_regular_targets ~state ~callee ~arguments ~taint None )
+          | None -> analyze_regular_targets ~state ~callee ~arguments ~taint None)
 
 
     and analyze_string_literal ~resolution ~taint ~state ~location { StringLiteral.value; kind } =
@@ -1029,7 +1029,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   taint
               in
               analyze_expression ~resolution ~taint ~state ~expression:right
-              |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left )
+              |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left)
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state ~callee ~arguments
       | Complex _ -> state
@@ -1134,7 +1134,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 BackwardState.Tree.prepend [field] (add_tito_features taint)
                 |> apply_attribute_sanitizers
               in
-              analyze_expression ~resolution ~taint ~state ~expression:base )
+              analyze_expression ~resolution ~taint ~state ~expression:base)
       | Set set ->
           let element_taint = read_tree [Abstract.TreeDomain.Label.AnyIndex] taint in
           List.fold
@@ -1247,7 +1247,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                         BackwardState.Tree.empty
                         state.taint;
                   }
-              | None -> state )
+              | None -> state)
         in
         clear_taint state target
       in
@@ -1288,8 +1288,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       state
                       taint
                       targets
-                | _ -> analyze_assignment ~resolution ~target ~value state )
-            | _ -> analyze_assignment ~resolution ~target ~value state )
+                | _ -> analyze_assignment ~resolution ~target ~value state)
+            | _ -> analyze_assignment ~resolution ~target ~value state)
       | Assert _
       | Break
       | Class _
@@ -1486,10 +1486,10 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
 
 let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model ~triggered_sinks =
   let timer = Timer.start () in
-  let ( {
-          Node.value = { Statement.Define.signature = { name = { Node.value = name; _ }; _ }; _ };
-          _;
-        } as define )
+  let ({
+         Node.value = { Statement.Define.signature = { name = { Node.value = name; _ }; _ }; _ };
+         _;
+       } as define)
     =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = TypeEnvironment.ReadOnly.global_resolution environment in

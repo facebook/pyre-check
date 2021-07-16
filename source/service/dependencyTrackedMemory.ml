@@ -270,12 +270,13 @@ struct
   module Table = WithCache.Make (Key) (Value)
   include Table
 
-  include DependencyTracking.Make
-            (DependencyKey)
-            (struct
-              include Table
-              module Value = Value
-            end)
+  include
+    DependencyTracking.Make
+      (DependencyKey)
+      (struct
+        include Table
+        module Value = Value
+      end)
 end
 
 module DependencyTrackedTableNoCache
@@ -286,10 +287,11 @@ struct
   module Table = NoCache.Make (Key) (Value)
   include Table
 
-  include DependencyTracking.Make
-            (DependencyKey)
-            (struct
-              include Table
-              module Value = Value
-            end)
+  include
+    DependencyTracking.Make
+      (DependencyKey)
+      (struct
+        include Table
+        module Value = Value
+      end)
 end

@@ -181,8 +181,8 @@ let is_invariance_mismatch resolution ~left ~right =
                 | Ok zipped ->
                     List.map zipped ~f:(fun ((left, right), variance) -> variance, left, right)
                     |> Option.some
-                | _ -> None )
-            | _ -> None )
+                | _ -> None)
+            | _ -> None)
         | _ -> None
       in
       let due_to_invariant_variable (variance, left, right) =
@@ -252,7 +252,7 @@ let attribute_from_class_name
               ~undecorated_signature:None
               ~problem:None
             |> Option.some
-        | None -> None )
+        | None -> None)
   in
   AttributeResolution.ReadOnly.attribute
     ~instantiated

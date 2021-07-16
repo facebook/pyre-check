@@ -198,8 +198,8 @@ module BuildMap : sig
       - [d] contains an artifact path [p] with tag [New], but [p] already has an associated source
         path in [original].
       - [d] contains an aritfact path [p] with tag [Changed], but [p] already has an associated
-        source path in [original]. This is what makes this operation "strict": we do not allow {b
-        any} pre-existing bindings in [original] to be redirected, even with the [Changed] tag.
+        source path in [original]. This is what makes this operation "strict": we do not allow
+        {b any} pre-existing bindings in [original] to be redirected, even with the [Changed] tag.
 
       Time complexity of this operation is O(n + m), where n is the size of the original build map
       and m is the size of the difference. *)

@@ -1003,8 +1003,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
-            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.Kind.CurrentScope) );
         "y", None;
       ];
 
@@ -1019,12 +1019,12 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
         ( "y",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (4, 2) (4, 3))
-            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (4, 2) (4, 3))
+            |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 
   assert_bindings
@@ -1038,8 +1038,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (4, 2) (4, 3))
-            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (4, 2) (4, 3))
+            |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 
   assert_bindings
@@ -1054,8 +1054,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global) ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global)) );
       ];
 
   assert_bindings
@@ -1071,8 +1071,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (4, 2) (4, 3))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (4, 2) (4, 3))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
       ];
 
   assert_bindings
@@ -1088,8 +1088,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (6, 4) (6, 5))
-            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (6, 4) (6, 5))
+            |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 
   assert_bindings
@@ -1106,8 +1106,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global) ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global)) );
       ];
 
   assert_bindings
@@ -1124,8 +1124,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (4, 2) (4, 3))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Nonlocal) ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (4, 2) (4, 3))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Nonlocal)) );
       ];
 
   (* Global search will ignore local/nonlocal bindings *)
@@ -1179,8 +1179,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
       ];
   assert_bindings
     {|
@@ -1196,8 +1196,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (3, 2) (3, 3))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (3, 2) (3, 3))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
       ];
   assert_bindings
     {|
@@ -1212,8 +1212,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (6, 4) (6, 5))
-            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (6, 4) (6, 5))
+            |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
   assert_bindings
     {|
@@ -1229,8 +1229,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (7, 6) (7, 7))
-            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (7, 6) (7, 7))
+            |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 
   (* Demonstrate that we are able to find annotations of captured local variables *)
@@ -1247,18 +1247,18 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create
-                (Binding.Kind.AssignTarget (Some (int_annotation (3, 5) (3, 8))))
-                (location (3, 2) (3, 3))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+            (ExpectBinding.create
+               (Binding.Kind.AssignTarget (Some (int_annotation (3, 5) (3, 8))))
+               (location (3, 2) (3, 3))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
         ( "y",
           Some
-            ( ExpectBinding.create
-                Binding.Kind.(
-                  ParameterName
-                    { star = None; index = 0; annotation = Some (int_annotation (4, 13) (4, 16)) })
-                (location (4, 10) (4, 11))
-            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+            (ExpectBinding.create
+               Binding.Kind.(
+                 ParameterName
+                   { star = None; index = 0; annotation = Some (int_annotation (4, 13) (4, 16)) })
+               (location (4, 10) (4, 11))
+            |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 
   (* Demonstrate that we are able to find annotations of captured parameters *)
@@ -1274,20 +1274,20 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create
-                Binding.Kind.(
-                  ParameterName
-                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-                (location (2, 8) (2, 9))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+            (ExpectBinding.create
+               Binding.Kind.(
+                 ParameterName
+                   { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
+               (location (2, 8) (2, 9))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
         ( "y",
           Some
-            ( ExpectBinding.create
-                Binding.Kind.(
-                  ParameterName
-                    { star = None; index = 0; annotation = Some (int_annotation (3, 13) (3, 16)) })
-                (location (3, 10) (3, 11))
-            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+            (ExpectBinding.create
+               Binding.Kind.(
+                 ParameterName
+                   { star = None; index = 0; annotation = Some (int_annotation (3, 13) (3, 16)) })
+               (location (3, 10) (3, 11))
+            |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 
   (* Demonstrate that we are able to correctly handle global declarations that does not follow
@@ -1306,8 +1306,8 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global) ) );
+            (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global)) );
       ];
 
   (* Demonstrate that we are able to correctly find bindings that does not follow control flow *)
@@ -1324,10 +1324,10 @@ let test_scope_stack_lookup _ =
       [
         ( "x",
           Some
-            ( ExpectBinding.create
-                (Binding.Kind.AssignTarget (Some (int_annotation (5, 5) (5, 8))))
-                (location (5, 2) (5, 3))
-            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+            (ExpectBinding.create
+               (Binding.Kind.AssignTarget (Some (int_annotation (5, 5) (5, 8))))
+               (location (5, 2) (5, 3))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
       ];
 
   ()

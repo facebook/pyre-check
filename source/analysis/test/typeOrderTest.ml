@@ -913,7 +913,7 @@ let test_less_or_equal context =
       | annotation -> (
           match attributes with
           | Some attributes -> attributes annotation
-          | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation) )
+          | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation))
     in
     let aliases = create_type_alias_table aliases in
     less_or_equal

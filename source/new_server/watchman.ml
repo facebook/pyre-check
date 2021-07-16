@@ -126,7 +126,7 @@ module Raw = struct
                 let message =
                   Format.sprintf "Cannot parse JSON from watchman response: %s" message
                 in
-                Lwt.return (Response.Error message) )
+                Lwt.return (Response.Error message))
       in
       let shutdown () =
         Log.info "Shutting down watchman connection...";
@@ -170,11 +170,11 @@ module Filter = struct
       |> fun set ->
       Set.add set ".pyre_configuration.local"
       |> fun set ->
-      ( match source_paths with
+      (match source_paths with
       | Configuration.SourcePaths.Buck _ ->
           let set = Set.add set "TARGETS" in
           Set.add set "BUCK"
-      | Configuration.SourcePaths.Simple _ -> set )
+      | Configuration.SourcePaths.Simple _ -> set)
       |> Set.to_list
     in
     let extension_of = function
@@ -260,14 +260,14 @@ module Subscriber = struct
                       "Cannot determinte the initial clock from response %s"
                       (Yojson.Safe.to_string error)
                   in
-                  raise (SubscriptionError message) )
+                  raise (SubscriptionError message))
           | _ as error ->
               let message =
                 Format.sprintf
                   "Subscription rejected by watchman. Response: %s"
                   (Yojson.Safe.to_string error)
               in
-              raise (SubscriptionError message) )
+              raise (SubscriptionError message))
     in
     Lwt.catch do_subscribe (fun exn ->
         (* Make sure the connection is properly shut down when an exception is raised. *)
@@ -327,7 +327,7 @@ module Subscriber = struct
                           (Yojson.Safe.to_string json)
                           message
                       in
-                      raise (SubscriptionError message) ) ) )
+                      raise (SubscriptionError message))))
     in
     Lwt.finalize do_listen (fun () -> Raw.Connection.shutdown connection ())
 

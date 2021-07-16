@@ -370,7 +370,7 @@ let rec parse_request_exn query =
                   (Format.asprintf
                      "inline_decorators: invalid decorators `%s`"
                      ([%show: Expression.t list] invalid_decorators))
-                |> raise )
+                |> raise)
         | _ ->
             raise
               (InvalidQuery
@@ -407,7 +407,7 @@ let rec parse_request_exn query =
       | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] -> Request.ValidateTaintModels (Some (string argument))
       | "inline_decorators", arguments -> parse_inline_decorators arguments
-      | _ -> raise (InvalidQuery "unexpected query") )
+      | _ -> raise (InvalidQuery "unexpected query"))
   | Ok _ when String.equal query "help" -> Help (help ())
   | Ok _ -> raise (InvalidQuery "unexpected query")
   | Error _ -> raise (InvalidQuery "failed to parse query")
@@ -437,7 +437,7 @@ module InlineDecorators = struct
         in
         match Statement.Statement.Define define_with_inlining |> Transform.sanitize_statement with
         | Statement.Statement.Define define -> Response.Single (FunctionDefinition define)
-        | _ -> failwith "Expected define" )
+        | _ -> failwith "Expected define")
     | None ->
         Response.Error
           (Format.asprintf "Could not find function `%s`" (Reference.show function_reference))
@@ -488,7 +488,7 @@ let rec process_request ~environment ~configuration request =
                 Type.parametric
                   annotation
                   (List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any))
-            | _ -> Type.Primitive annotation )
+            | _ -> Type.Primitive annotation)
         | _ -> annotation
       in
       if ClassHierarchy.is_instantiated order annotation then
@@ -562,8 +562,8 @@ let rec process_request ~environment ~configuration request =
         (* We don't yet support a syntax for fetching property setters. *)
         Single
           (Base.Callees
-             ( Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
-             |> List.map ~f:(fun { Callgraph.callee; _ } -> callee) ))
+             (Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
+             |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)))
     | CalleesWithLocation caller ->
         let instantiate =
           Location.WithModule.instantiate
@@ -607,10 +607,10 @@ let rec process_request ~environment ~configuration request =
             >>| List.concat_map ~f:Analysis.FunctionDefinition.all_bodies
             >>| List.filter ~f:(fun { Node.value = define; _ } ->
                     not
-                      ( Statement.Define.is_toplevel define
+                      (Statement.Define.is_toplevel define
                       || Statement.Define.is_class_toplevel define
                       || Statement.Define.is_overloaded_function define
-                      || filter_define define ))
+                      || filter_define define))
             |> Option.value ~default:[]
           in
           let represent
@@ -787,7 +787,7 @@ let rec process_request ~environment ~configuration request =
           else
             Single (Base.ModelVerificationErrors errors)
         with
-        | error -> Error (Exn.to_string error) )
+        | error -> Error (Exn.to_string error))
     | InlineDecorators { function_reference; decorators_to_skip } ->
         InlineDecorators.inline_decorators
           ~environment:(TypeEnvironment.read_only environment)

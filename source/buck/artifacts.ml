@@ -90,7 +90,7 @@ let update ~source_root ~artifact_root difference =
           | Result.Error _ as error -> Lwt.return error
           | Result.Ok () ->
               let source_path = Path.create_relative ~root:source_root ~relative:source in
-              create_parent_directory_and_symlink ~target:source_path artifact_path )
+              create_parent_directory_and_symlink ~target:source_path artifact_path)
     in
     BuildMap.Difference.to_alist difference
     |> List.map ~f:process_update

@@ -148,7 +148,7 @@ let method_resolution_order_linearize ~get_successors class_name =
   let rec linearize ~visited class_name =
     if Hash_set.mem visited class_name then (
       Log.error "Order is cyclic:\nTrace: {%s}" (Hash_set.to_list visited |> String.concat ~sep:", ");
-      raise (Cyclic visited) );
+      raise (Cyclic visited));
     let visited = Hash_set.copy visited in
     Hash_set.add visited class_name;
     let linearized_successors =
@@ -280,7 +280,7 @@ let is_transitive_successor
               true
             else (
               Option.iter (Handler.edges current) ~f:(Queue.enqueue_all worklist);
-              iterate worklist ) )
+              iterate worklist))
   in
   iterate worklist
 
@@ -377,7 +377,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                 | _ -> instantiated_successors >>= get_generic_parameters ~generic_index
               else (
                 instantiated_successors >>| List.iter ~f:(Queue.enqueue worklist) |> ignore;
-                iterate worklist )
+                iterate worklist)
           | None -> None
         in
         iterate worklist
@@ -391,7 +391,7 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
     let raise_if_none value =
       if Option.is_none value then (
         Log.error "Inconsistency in type order: No value for key %s" (IndexTracker.show key);
-        raise Incomplete )
+        raise Incomplete)
     in
     raise_if_none (Handler.edges key)
   in
@@ -405,7 +405,7 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
         if List.mem ~equal:IndexTracker.equal reverse_visited index then (
           let trace = List.rev_map ~f:IndexTracker.annotation (index :: reverse_visited) in
           Log.error "Order is cyclic:\nTrace: %s" (String.concat ~sep:" -> " trace);
-          raise (Cyclic (String.Hash_set.of_list trace)) )
+          raise (Cyclic (String.Hash_set.of_list trace)))
         else if not (Set.mem !started_from index) then (
           started_from := Set.add !started_from index;
           match Handler.edges index with
@@ -413,7 +413,7 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
               successors
               |> List.map ~f:Target.target
               |> List.iter ~f:(visit (index :: reverse_visited))
-          | None -> () )
+          | None -> ())
       in
       visit [] start
   in

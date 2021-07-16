@@ -88,7 +88,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
     if Obj.repr slot |> Obj.is_int then (
       let i = Obj.magic slot in
       assert (i >= 0 && i < Array.length slots);
-      i )
+      i)
     else
       failwith "slots must be a datatype with 0-ary constructors"
 
@@ -369,7 +369,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
             |> ListLabels.mapi ~f:(fun i sl -> islot_name i :: indent "  " sl)
             |> List.concat
           in
-          ("Product [" :: indent "  " tuples) @ ["]"]
+          "Product [" :: indent "  " tuples @ ["]"]
       | Name part -> (
           match part with
           | Self ->
@@ -382,7 +382,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
                 D.introspect op
               in
               let route = get_route part in
-              introspect slots.(route) )
+              introspect slots.(route))
 
 
     let create parts =

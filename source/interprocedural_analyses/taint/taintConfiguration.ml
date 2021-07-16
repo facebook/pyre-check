@@ -154,11 +154,12 @@ module PartialSinkConverter = struct
 
   let merge left right =
     String.Map.Tree.merge
-      ~f:(fun ~key:_ -> function
-        | `Left value
-        | `Right value ->
-            Some value
-        | `Both (left, right) -> Some (left @ right))
+      ~f:
+        (fun ~key:_ -> function
+          | `Left value
+          | `Right value ->
+              Some value
+          | `Both (left, right) -> Some (left @ right))
       left
       right
 
@@ -304,13 +305,14 @@ let parse source_jsons =
               code;
               message_format;
             }
-            :: {
-                 Rule.sources = second_sources;
-                 sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
-                 name;
-                 code;
-                 message_format;
-               }
+            ::
+            {
+              Rule.sources = second_sources;
+              sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
+              name;
+              code;
+              message_format;
+            }
             :: rules,
             PartialSinkConverter.add
               partial_sink_converter
@@ -412,7 +414,7 @@ let parse source_jsons =
       | options -> (
           match member name options with
           | `Null -> None
-          | value -> Some (Json.Util.to_int value) )
+          | value -> Some (Json.Util.to_int value))
     in
     List.filter_map source_jsons ~f:parse_single_json
     |> function

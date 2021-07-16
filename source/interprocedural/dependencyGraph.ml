@@ -68,7 +68,7 @@ let depth_first_search edges nodes =
     else (
       Hashtbl.add_exn visited ~key:node ~data:();
       let successors = Callable.Map.find edges node |> Option.value ~default:[] in
-      node :: List.fold successors ~init:accumulator ~f:visit )
+      node :: List.fold successors ~init:accumulator ~f:visit)
   in
   let partition accumulator node =
     match visit [] node with
@@ -152,7 +152,7 @@ let dump call_graph ~configuration =
       |> List.sort ~compare:String.compare
       |> List.iter ~f:add_edge;
       remove_trailing_comma ();
-      Buffer.add_string buffer "  ],\n" )
+      Buffer.add_string buffer "  ],\n")
   in
   Map.iteri call_graph ~f:add_edges;
   remove_trailing_comma ();

@@ -176,7 +176,7 @@ end = struct
         ReadOnly { getter = { self = right_self; return = right_return } } ) -> (
         match Option.compare Expression.location_insensitive_compare left_self right_self with
         | x when not (Int.equal x 0) -> x
-        | _ -> Option.compare Expression.location_insensitive_compare left_return right_return )
+        | _ -> Option.compare Expression.location_insensitive_compare left_return right_return)
     | ( ReadWrite
           {
             getter = { self = left_getter_self; return = left_getter_return };
@@ -211,7 +211,7 @@ end = struct
                     Option.compare
                       Expression.location_insensitive_compare
                       left_setter_value
-                      right_setter_value ) ) )
+                      right_setter_value)))
     | _ -> -1
 
 
@@ -221,7 +221,7 @@ end = struct
     | _ -> (
         match Bool.compare left.class_property right.class_property with
         | x when not (Int.equal x 0) -> x
-        | _ -> location_insensitive_compare_property_kind left.kind right.kind )
+        | _ -> location_insensitive_compare_property_kind left.kind right.kind)
 
 
   let location_insensitive_compare_method left right =
@@ -252,7 +252,7 @@ end = struct
               | 0 -> Expression.location_insensitive_compare left_expression right_expression
               | nonzero -> nonzero
             in
-            List.compare compare_expression_and_origin left.values right.values )
+            List.compare compare_expression_and_origin left.values right.values)
 
 
   let location_insensitive_compare_kind left right =
@@ -375,7 +375,7 @@ module ClassAttributes = struct
                 ~init:map
                 ~f:(fun map target -> simple_attribute ~map ~target ~annotation)
                 targets
-          | _ -> map )
+          | _ -> map)
       | _ -> map
     in
     let merge_attributes name = function
@@ -527,11 +527,11 @@ module ClassAttributes = struct
 
     let create
         ~location
-        ( {
-            Define.signature =
-              { name = { Node.value = name; _ }; return_annotation; parameters; parent; _ };
-            _;
-          } as define )
+        ({
+           Define.signature =
+             { name = { Node.value = name; _ }; return_annotation; parameters; parent; _ };
+           _;
+         } as define)
       =
       let inspect_decorators name =
         let async = Define.is_async define in
@@ -683,7 +683,7 @@ module ClassAttributes = struct
                     ()
                 in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute
-            | _ -> map )
+            | _ -> map)
         | _ -> map
       in
       List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
@@ -722,7 +722,7 @@ module ClassAttributes = struct
                     | Getter getter -> Some getter, existing_setter
                   in
                   Identifier.SerializableMap.set map ~key:name ~data
-              | None -> map )
+              | None -> map)
           | _ -> map
         in
         let consolidate = function
@@ -801,8 +801,8 @@ module ClassAttributes = struct
         let callable_attributes map { Node.location; value } =
           match value with
           | Statement.Define
-              ( { Define.signature = { name = { Node.value = target; _ }; _ } as signature; _ } as
-              define ) ->
+              ({ Define.signature = { name = { Node.value = target; _ }; _ } as signature; _ } as
+              define) ->
               Attribute.name (Expression.from_reference ~location target) ~parent:name
               >>| (fun name ->
                     let attribute =
@@ -1040,8 +1040,8 @@ module ClassSummary = struct
 
   let create
       ~qualifier
-      ( { Ast.Statement.Class.name = { Node.value = name; _ }; bases; decorators; _ } as
-      class_definition )
+      ({ Ast.Statement.Class.name = { Node.value = name; _ }; bases; decorators; _ } as
+      class_definition)
     =
     {
       name;

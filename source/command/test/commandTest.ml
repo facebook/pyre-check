@@ -135,7 +135,7 @@ let poll_for_deletion path =
   let rec poll () =
     if Path.file_exists path then (
       Unix.nanosleep 0.1 |> ignore;
-      poll () )
+      poll ())
     else
       ()
   in

@@ -430,7 +430,7 @@ let code = function
   | InconsistentOverride { override; _ } -> (
       match override with
       | StrengthenedPrecondition _ -> 14
-      | WeakenedPostcondition _ -> 15 )
+      | WeakenedPostcondition _ -> 15)
   | UndefinedAttribute _ -> 16
   | IncompatibleConstructorAnnotation _ -> 17
   | TooManyArguments _ -> 19
@@ -588,8 +588,8 @@ let weaken_literals kind =
           attribute with
           incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch };
         }
-  | IncompatibleVariableType ({ incompatible_type = { mismatch; _ } as incompatible; _ } as variable)
-    ->
+  | IncompatibleVariableType
+      ({ incompatible_type = { mismatch; _ } as incompatible; _ } as variable) ->
       IncompatibleVariableType
         {
           variable with
@@ -811,7 +811,7 @@ let rec messages ~concise ~signature location kind =
       | DifferingDecorators ->
           ["This definition does not have the same decorators as the preceding overload(s)."]
       | MisplacedOverloadDecorator ->
-          ["The @overload decorator must be the topmost decorator if present."] )
+          ["The @overload decorator must be the topmost decorator if present."])
   | IncompatibleParameterType
       { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } -> (
       let trace =
@@ -850,7 +850,7 @@ let rec messages ~concise ~signature location kind =
             target
             pp_type
             actual
-          :: trace )
+          :: trace)
   | IncompatibleConstructorAnnotation _ when concise -> ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->
       [
@@ -1031,7 +1031,7 @@ let rec messages ~concise ~signature location kind =
               "Concatenating multiple variadic tuples for variable `%a` is not yet supported."
               Type.OrderedTypes.pp_concise
               variable;
-          ] )
+          ])
   | InvalidArgument argument -> (
       match argument with
       | Keyword { expression; annotation; require_string_keys } ->
@@ -1085,7 +1085,7 @@ let rec messages ~concise ~signature location kind =
               (Type.Record.OrderedTypes.pp_concise ~pp_type)
               variable
               unconcatenatable;
-          ] )
+          ])
   | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolve } ->
       let name = Node.value name |> Reference.sanitized |> Reference.show in
       [Format.asprintf "Pyre was not able to infer the type of the decorator `%s`." name]
@@ -1126,7 +1126,7 @@ let rec messages ~concise ~signature location kind =
       match inner_reason >>| recurse >>= List.hd with
       | Some inner_message ->
           [Format.asprintf "While applying decorator factory `%s`: %s" name inner_message]
-      | None -> [Format.asprintf "Decorator factory `%s` failed to apply." name] )
+      | None -> [Format.asprintf "Decorator factory `%s` failed to apply." name])
   | InvalidDecoration { decorator = { name; arguments }; reason = ApplicationFailed inner_reason }
     -> (
       let name = Node.value name |> Reference.sanitized |> Reference.show in
@@ -1135,7 +1135,7 @@ let rec messages ~concise ~signature location kind =
       match inner_reason >>| recurse >>= List.hd with
       | Some inner_message ->
           [Format.asprintf "While applying decorator `%s%s`: %s" name arguments inner_message]
-      | None -> [Format.asprintf "Decorator `%s%s` failed to apply." name arguments] )
+      | None -> [Format.asprintf "Decorator `%s%s` failed to apply." name arguments])
   | InvalidDecoration { decorator = { name; _ }; reason = SetterNameMismatch { expected; actual } }
     ->
       let name = Node.value name |> Reference.sanitized |> Reference.show in
@@ -1201,7 +1201,7 @@ let rec messages ~concise ~signature location kind =
               (Type.expression variable);
           ]
       | InvalidLiteral reference ->
-          [Format.asprintf "Expression `%a` is not a literal value." Reference.pp reference] )
+          [Format.asprintf "Expression `%a` is not a literal value." Reference.pp reference])
   | InvalidTypeParameters
       {
         name;
@@ -1306,7 +1306,7 @@ let rec messages ~concise ~signature location kind =
           [Format.asprintf format name]
       | Type.Variable.TupleVariadic variable ->
           let name = Type.Variable.Variadic.Tuple.name variable in
-          [Format.asprintf format name] )
+          [Format.asprintf format name])
   | InvalidTypeVariable { annotation; origin } -> (
       (* The explicit annotation is necessary to appease the compiler. *)
       let format : ('b, Format.formatter, unit, string) format4 =
@@ -1339,13 +1339,13 @@ let rec messages ~concise ~signature location kind =
       | Type.Variable.TupleVariadic variable ->
           (* We don't give hints for the more complicated cases. *)
           let name = Type.Variable.Variadic.Tuple.name variable in
-          [Format.asprintf format name] )
+          [Format.asprintf format name])
   | InvalidTypeVariance { origin; _ } when concise -> (
       match origin with
       | Parameter -> ["Parameter type cannot be covariant."]
       | Return -> ["Return type cannot be contravariant."]
       | Inheritance _ ->
-          ["Subclasses cannot use more permissive type variables than their superclasses."] )
+          ["Subclasses cannot use more permissive type variables than their superclasses."])
   | InvalidTypeVariance { annotation; origin } ->
       let formatted =
         match origin with
@@ -1386,10 +1386,10 @@ let rec messages ~concise ~signature location kind =
               "`%a` is not a valid parent class%s."
               pp_type
               annotation
-              ( if is_parent_class_typed_dictionary then
-                  " for a typed dictionary. Expected a typed dictionary"
+              (if is_parent_class_typed_dictionary then
+                 " for a typed dictionary. Expected a typed dictionary"
               else
-                "" );
+                "");
           ]
       | TypedDictionarySuperclassCollision mismatch -> (
           match mismatch with
@@ -1418,7 +1418,7 @@ let rec messages ~concise ~signature location kind =
                   pp_type
                   annotation2
                   parent2;
-              ] ) )
+              ]))
   | InvalidOverride { parent; decorator } ->
       let preamble, message =
         match decorator with
@@ -1457,7 +1457,7 @@ let rec messages ~concise ~signature location kind =
               "`%a` cannot be reassigned. It is a read-only property."
               pp_reference
               name;
-          ] )
+          ])
   | InvalidClassInstantiation kind -> (
       match kind with
       | ProtocolInstantiation class_name ->
@@ -1487,7 +1487,7 @@ let rec messages ~concise ~signature location kind =
               pp_reference
               class_name
               (if concise then "." else method_message);
-          ] )
+          ])
   | MissingArgument { parameter = Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { parameter = PositionalOnly index; _ } when concise ->
@@ -1542,7 +1542,7 @@ let rec messages ~concise ~signature location kind =
                   name
                   pp_type
                   parent;
-              ] )
+              ])
       | { name; annotation = Some annotation; evidence_locations; given_annotation; _ } -> (
           let trace =
             let evidence_string =
@@ -1597,7 +1597,7 @@ let rec messages ~concise ~signature location kind =
                   pp_type
                   annotation;
                 trace;
-              ] )
+              ])
       | { name; annotation = None; _ } ->
           [
             Format.asprintf
@@ -1606,7 +1606,7 @@ let rec messages ~concise ~signature location kind =
               name
               pp_type
               parent;
-          ] )
+          ])
   | MissingCaptureAnnotation name when concise ->
       [Format.asprintf "Captured variable `%a` is not annotated." Identifier.pp_sanitized name]
   | MissingCaptureAnnotation name ->
@@ -1684,7 +1684,7 @@ let rec messages ~concise ~signature location kind =
               pp_type
               annotation
               evidence_string;
-          ] )
+          ])
   | MissingGlobalAnnotation { name; given_annotation; _ } -> (
       match given_annotation with
       | Some given_annotation when Type.is_any given_annotation ->
@@ -1708,7 +1708,7 @@ let rec messages ~concise ~signature location kind =
               "Globally accessible variable `%a` has no type specified."
               pp_reference
               name;
-          ] )
+          ])
   | MissingOverloadImplementation name ->
       [Format.asprintf "Overloaded function `%a` must have an implementation." pp_reference name]
   | MissingParameterAnnotation { given_annotation; _ } when concise ->
@@ -1748,7 +1748,7 @@ let rec messages ~concise ~signature location kind =
               name
               pp_type
               annotation;
-          ] )
+          ])
   | MissingParameterAnnotation { name; given_annotation; _ } -> (
       match given_annotation with
       | Some given_annotation when Type.is_any given_annotation ->
@@ -1760,7 +1760,7 @@ let rec messages ~concise ~signature location kind =
               pp_reference
               name;
           ]
-      | _ -> [Format.asprintf "Parameter `%a` has no type specified." pp_reference name] )
+      | _ -> [Format.asprintf "Parameter `%a` has no type specified." pp_reference name])
   | MissingReturnAnnotation { given_annotation; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Return annotation cannot be `Any`."]
@@ -1801,14 +1801,14 @@ let rec messages ~concise ~signature location kind =
           [
             Format.asprintf "Returning `%a` but no return type is specified." pp_type annotation;
             trace;
-          ] )
+          ])
   | MissingReturnAnnotation { given_annotation; _ } -> (
       match given_annotation with
       | Some given_annotation when Type.is_any given_annotation ->
           ["Return type must be specified as type other than `Any`."]
       | Some given_annotation when Type.contains_any given_annotation ->
           ["Return type must be specified as type that does not contain `Any`."]
-      | _ -> ["Return type is not specified."] )
+      | _ -> ["Return type is not specified."])
   | MutuallyRecursiveTypeVariables callee ->
       let callee =
         match callee with
@@ -1817,8 +1817,8 @@ let rec messages ~concise ~signature location kind =
       in
       [Format.asprintf "Solving type variables for %s led to infinite recursion." callee]
   | NotCallable
-      ( Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ } as
-      annotation ) ->
+      (Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ } as
+      annotation) ->
       [
         Format.asprintf
           "`%a` cannot be safely called because the types and kinds of its parameters depend on a \
@@ -1856,17 +1856,17 @@ let rec messages ~concise ~signature location kind =
               name
               pp_type
               annotation;
-          ] )
+          ])
   | ProhibitedAny { is_type_alias = false; missing_annotation = { name; given_annotation; _ } } -> (
       match given_annotation with
       | Some given_annotation when Type.is_any given_annotation ->
           [Format.asprintf "Explicit annotation for `%a` cannot be `Any`." pp_reference name]
       | _ ->
-          [Format.asprintf "Explicit annotation for `%a` cannot contain `Any`." pp_reference name] )
+          [Format.asprintf "Explicit annotation for `%a` cannot contain `Any`." pp_reference name])
   | ProhibitedAny { is_type_alias = true; missing_annotation = { name; given_annotation; _ } } -> (
       match given_annotation with
       | Some Type.Any -> [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
-      | _ -> [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name] )
+      | _ -> [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name])
   | RedefinedClass { shadowed_class; _ } when concise ->
       [Format.asprintf "Class `%a` redefined" pp_reference shadowed_class]
   | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported } ->
@@ -2000,10 +2000,10 @@ let rec messages ~concise ~signature location kind =
             "Cannot %s required field `%s` from TypedDict%s."
             (if String.equal method_name "pop" then "`pop`" else "delete")
             field_name
-            ( if String.equal typed_dictionary_name "$anonymous" then
-                ""
+            (if String.equal typed_dictionary_name "$anonymous" then
+               ""
             else
-              Format.asprintf " `%s`" typed_dictionary_name );
+              Format.asprintf " `%s`" typed_dictionary_name);
         ]
       else
         [
@@ -2032,7 +2032,7 @@ let rec messages ~concise ~signature location kind =
               actual_type;
           ]
       | UndefinedField { field_name; class_name } ->
-          [Format.asprintf "TypedDict `%s` has no field `%s`." class_name field_name] )
+          [Format.asprintf "TypedDict `%s` has no field `%s`." class_name field_name])
   | Unpack { expected_count; unpack_problem } -> (
       match unpack_problem with
       | UnacceptableType bad_type ->
@@ -2044,7 +2044,7 @@ let rec messages ~concise ~signature location kind =
             else
               Format.sprintf "%d values" actual_count
           in
-          [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count] )
+          [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count])
   | UnawaitedAwaitable { references = []; expression } ->
       [
         Format.asprintf "`%s` is never awaited." (show_sanitized_expression expression);
@@ -2081,7 +2081,7 @@ let rec messages ~concise ~signature location kind =
           [Format.asprintf format name]
       | Type.Variable.TupleVariadic variable ->
           let name = Type.Variable.Variadic.Tuple.name variable in
-          [Format.asprintf format name] )
+          [Format.asprintf format name])
   | UnboundName name when concise ->
       [Format.asprintf "Name `%a` is used but not defined." Identifier.pp_sanitized name]
   | UnboundName name ->
@@ -2113,7 +2113,7 @@ let rec messages ~concise ~signature location kind =
           -> (
             match kind with
             | Anonymous -> "Anonymous callable"
-            | Named name -> Format.asprintf "Callable `%a`" pp_reference name )
+            | Named name -> Format.asprintf "Callable `%a`" pp_reference name)
         | Class annotation ->
             let annotation, _ = Type.split annotation in
             let name =
@@ -2364,7 +2364,7 @@ let inference_information
       match annotation with
       | Some annotation ->
           `Assoc (("annotation", `String (print_annotation annotation)) :: attributes)
-      | None -> `Assoc attributes )
+      | None -> `Assoc attributes)
   | MissingGlobalAnnotation { annotation = Some NoneType; _ } -> `Assoc []
   | MissingGlobalAnnotation { name; annotation; _ } -> (
       let attributes =
@@ -2373,7 +2373,7 @@ let inference_information
       match annotation with
       | Some annotation ->
           `Assoc (("annotation", `String (print_annotation annotation)) :: attributes)
-      | None -> `Assoc attributes )
+      | None -> `Assoc attributes)
   | _ -> `Assoc []
 
 
@@ -2509,7 +2509,7 @@ let less_or_equal ~resolution left right =
       | InvalidExpression, InvalidExpression
       | Reassignment, Reassignment ->
           Expression.equal left_target right_target
-      | _, _ -> false )
+      | _, _ -> false)
   | IncompatibleAsyncGeneratorReturnType left, IncompatibleAsyncGeneratorReturnType right ->
       GlobalResolution.less_or_equal resolution ~left ~right
   | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
@@ -2528,7 +2528,7 @@ let less_or_equal ~resolution left right =
           && Type.equal left.overload_annotation right.overload_annotation
           && Reference.equal left.name right.name
       | Unmatchable left, Unmatchable right -> Reference.equal left.name right.name
-      | _, _ -> false )
+      | _, _ -> false)
   | ( IncompleteType
         { target = left_target; annotation = left; attempted_action = left_attempted_action },
       IncompleteType
@@ -2553,7 +2553,7 @@ let less_or_equal ~resolution left right =
           StrengthenedPrecondition (Found right_mismatch) )
       | WeakenedPostcondition left_mismatch, WeakenedPostcondition right_mismatch ->
           less_or_equal_mismatch left_mismatch right_mismatch
-      | _ -> false )
+      | _ -> false)
   | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
     when Option.equal Expression.equal left.expression right.expression ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
@@ -2564,7 +2564,7 @@ let less_or_equal ~resolution left right =
       match left.annotation, right.annotation with
       | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
       | None, None -> true
-      | _ -> false )
+      | _ -> false)
   | InvalidType (FinalParameter left), InvalidType (FinalParameter right)
   | InvalidType (NestedAlias left), InvalidType (NestedAlias right) ->
       Identifier.equal left right
@@ -2586,7 +2586,7 @@ let less_or_equal ~resolution left right =
       | ClassName left, ClassName right
       | NonMethodFunction left, NonMethodFunction right ->
           Identifier.equal_sanitized left right
-      | _, _ -> false )
+      | _, _ -> false)
   | ( InvalidOverride { parent = left_parent; decorator = left_decorator },
       InvalidOverride { parent = right_parent; decorator = right_decorator } ) -> (
       match left_decorator, right_decorator with
@@ -2594,7 +2594,7 @@ let less_or_equal ~resolution left right =
       | StaticSuper, StaticSuper
       | StaticOverride, StaticOverride ->
           Identifier.equal_sanitized left_parent right_parent
-      | _, _ -> false )
+      | _, _ -> false)
   | InvalidAssignment left, InvalidAssignment right -> (
       match left, right with
       | ReadOnly left, ReadOnly right
@@ -2603,7 +2603,7 @@ let less_or_equal ~resolution left right =
       | ClassVariable left, ClassVariable right ->
           Identifier.equal left.class_variable right.class_variable
           && Identifier.equal left.class_name right.class_name
-      | _, _ -> false )
+      | _, _ -> false)
   | ( MissingArgument { callee = left_callee; parameter = Named left_name },
       MissingArgument { callee = right_callee; parameter = Named right_name } ) ->
       Option.equal Reference.equal_sanitized left_callee right_callee
@@ -2622,7 +2622,7 @@ let less_or_equal ~resolution left right =
       | AbstractClassInstantiation { class_name = left_name; _ }, ProtocolInstantiation right_name
         ->
           Reference.equal left_name right_name
-      | _, _ -> false )
+      | _, _ -> false)
   | ProhibitedAny { missing_annotation = left; _ }, ProhibitedAny { missing_annotation = right; _ }
   | MissingParameterAnnotation left, MissingParameterAnnotation right
   | MissingReturnAnnotation left, MissingReturnAnnotation right
@@ -2633,7 +2633,7 @@ let less_or_equal ~resolution left right =
       match left.annotation, right.annotation with
       | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
       | None, None -> true
-      | _ -> false )
+      | _ -> false)
   | MissingOverloadImplementation left, MissingOverloadImplementation right ->
       Reference.equal left right
   | NotCallable left, NotCallable right -> GlobalResolution.less_or_equal resolution ~left ~right
@@ -2689,13 +2689,13 @@ let less_or_equal ~resolution left right =
       | GenericBase, GenericBase
       | ProtocolBase, ProtocolBase ->
           Type.Variable.equal left right
-      | _ -> false )
+      | _ -> false)
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
       match left.origin, right.origin with
       | Class left, Class right -> GlobalResolution.less_or_equal resolution ~left ~right
       | Module left, Module right -> Reference.equal_sanitized left right
-      | _ -> false )
+      | _ -> false)
   | UndefinedType left, UndefinedType right -> Type.equal left right
   | UnexpectedKeyword left, UnexpectedKeyword right ->
       Option.equal Reference.equal_sanitized left.callee right.callee
@@ -2742,7 +2742,7 @@ let less_or_equal ~resolution left right =
       | UnacceptableType left, UnacceptableType right ->
           GlobalResolution.less_or_equal resolution ~left ~right
       | CountMismatch left, CountMismatch right -> left = right
-      | _ -> false )
+      | _ -> false)
   | _, Top -> true
   | AnalysisFailure _, _
   | BroadcastError _, _
@@ -2995,7 +2995,7 @@ let join ~resolution left right =
             let mismatch = join_mismatch left_mismatch right_mismatch in
             InconsistentOverride { left with override = StrengthenedPrecondition (Found mismatch) }
         | NotFound _, _ -> InconsistentOverride left
-        | _, NotFound _ -> InconsistentOverride right )
+        | _, NotFound _ -> InconsistentOverride right)
     | ( InconsistentOverride ({ override = WeakenedPostcondition left_mismatch; _ } as left),
         InconsistentOverride { override = WeakenedPostcondition right_mismatch; _ } ) ->
         let mismatch = join_mismatch left_mismatch right_mismatch in
@@ -3092,11 +3092,11 @@ let join ~resolution left right =
         UndefinedImport left
     | ( UnsupportedOperand
           (Binary
-            ( {
-                operator_name = left_operator_name;
-                left_operand = left_operand_for_left;
-                right_operand = right_operand_for_left;
-              } as left )),
+            ({
+               operator_name = left_operator_name;
+               left_operand = left_operand_for_left;
+               right_operand = right_operand_for_left;
+             } as left)),
         UnsupportedOperand
           (Binary
             {
@@ -3150,12 +3150,12 @@ let join ~resolution left right =
         TypedDictionaryInvalidOperation { left with mismatch }
     | ( TypedDictionaryInitializationError
           (FieldTypeMismatch
-            ( {
-                field_name = left_field_name;
-                class_name = left_class_name;
-                actual_type = left_actual_type;
-                expected_type = left_expected_type;
-              } as mismatch )),
+            ({
+               field_name = left_field_name;
+               class_name = left_class_name;
+               actual_type = left_actual_type;
+               expected_type = left_expected_type;
+             } as mismatch)),
         TypedDictionaryInitializationError
           (FieldTypeMismatch
             {
@@ -3410,7 +3410,7 @@ let filter ~resolution errors =
                 resolution
                 ~left:(Type.Callable.create ~annotation:Type.Top ())
                 ~right:expected
-          | _ -> false )
+          | _ -> false)
       | _ -> false
     in
     let is_callable_attribute_error { kind; _ } =
@@ -3437,7 +3437,7 @@ let filter ~resolution errors =
           let ast_environment = GlobalResolution.ast_environment resolution in
           match AstEnvironment.ReadOnly.get_source_path ast_environment path with
           | Some { SourcePath.is_stub; _ } -> is_stub
-          | _ -> false )
+          | _ -> false)
       | _ -> false
     in
     let is_invalid_abstract_error { kind; _ } =
@@ -3448,7 +3448,7 @@ let filter ~resolution errors =
           | "float"
           | "bool" ->
               true
-          | _ -> false )
+          | _ -> false)
       | _ -> false
     in
     is_stub_error error
@@ -3504,8 +3504,8 @@ let suppress ~mode ~ignore_codes error =
         due_to_analysis_limitations error
         || Define.Signature.is_untyped signature
            && not
-                ( Define.Signature.is_toplevel signature
-                || Define.Signature.is_class_toplevel signature )
+                (Define.Signature.is_toplevel signature
+                || Define.Signature.is_class_toplevel signature)
   in
   let suppress_in_infer { kind; _ } =
     match kind with
@@ -3536,11 +3536,11 @@ let suppress ~mode ~ignore_codes error =
 let dequalify
     dequalify_map
     ~resolution
-    ( {
-        kind;
-        signature = { Node.location; value = { parameters; return_annotation; _ } as signature };
-        _;
-      } as error )
+    ({
+       kind;
+       signature = { Node.location; value = { parameters; return_annotation; _ } as signature };
+       _;
+     } as error)
   =
   let dequalify = Type.dequalify dequalify_map in
   let dequalify_identifier = Type.dequalify_identifier dequalify_map in
@@ -3566,7 +3566,7 @@ let dequalify
         UninheritableType { annotation = dequalify annotation; is_parent_class_typed_dictionary }
     | TypedDictionarySuperclassCollision mismatch ->
         TypedDictionarySuperclassCollision
-          ( match mismatch with
+          (match mismatch with
           | RequirednessMismatch { required_field_class; non_required_field_class; field_name } ->
               RequirednessMismatch
                 {
@@ -3587,7 +3587,7 @@ let dequalify
                     { annotation = dequalify annotation1; parent = dequalify_identifier parent1 };
                   annotation_and_parent2 =
                     { annotation = dequalify annotation2; parent = dequalify_identifier parent2 };
-                } )
+                })
   in
   let dequalify_invalid_assignment = function
     | FinalAttribute attribute -> FinalAttribute (dequalify_reference attribute)
@@ -3764,8 +3764,8 @@ let dequalify
               { variable.incompatible_type with mismatch = dequalify_mismatch mismatch };
           }
     | InconsistentOverride
-        ( { override = StrengthenedPrecondition (Found mismatch); parent; overridden_method; _ } as
-        inconsistent_override ) ->
+        ({ override = StrengthenedPrecondition (Found mismatch); parent; overridden_method; _ } as
+        inconsistent_override) ->
         InconsistentOverride
           {
             inconsistent_override with
@@ -3774,8 +3774,8 @@ let dequalify
             override = StrengthenedPrecondition (Found (dequalify_mismatch mismatch));
           }
     | InconsistentOverride
-        ( { override = StrengthenedPrecondition (NotFound access); parent; overridden_method; _ } as
-        inconsistent_override ) ->
+        ({ override = StrengthenedPrecondition (NotFound access); parent; overridden_method; _ } as
+        inconsistent_override) ->
         InconsistentOverride
           {
             inconsistent_override with
@@ -3784,8 +3784,8 @@ let dequalify
             override = StrengthenedPrecondition (NotFound access);
           }
     | InconsistentOverride
-        ( { override = WeakenedPostcondition mismatch; parent; overridden_method; _ } as
-        inconsistent_override ) ->
+        ({ override = WeakenedPostcondition mismatch; parent; overridden_method; _ } as
+        inconsistent_override) ->
         InconsistentOverride
           {
             inconsistent_override with

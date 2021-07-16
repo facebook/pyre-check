@@ -448,7 +448,7 @@ module State (Context : Context) = struct
                 errors =
                   List.fold statement_errors ~init:errors ~f:(fun errors error ->
                       ErrorMap.add ~errors error);
-              } )
+              })
 
 
   let return_reference = Reference.create "$return"
@@ -490,7 +490,7 @@ module State (Context : Context) = struct
                   annotation_store
                   ~key:(make_parameter_name name)
                   ~data:(RefinementUnit.create ~base:(Annotation.create Type.Bottom) ())
-            | _ -> annotation_store )
+            | _ -> annotation_store)
       in
       List.foldi ~init:(Resolution.annotation_store resolution) ~f:reset_parameter parameters
     in
@@ -503,8 +503,8 @@ module State (Context : Context) = struct
       let { Node.value = { Define.signature; _ }; _ } = Context.define in
       RefinementUnit.create
         ~base:
-          ( Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
-          |> Annotation.create )
+          (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+          |> Annotation.create)
         ()
     in
     let backward_initial_state =
@@ -633,7 +633,7 @@ module State (Context : Context) = struct
               >>| Annotation.annotation
               >>= function
               | Type.Callable callable -> Some callable
-              | _ -> None )
+              | _ -> None)
           | _ -> None
         in
         match callable with
@@ -666,7 +666,7 @@ module State (Context : Context) = struct
                           ~f:infer_annotation
                           parameter_annotations
                           arguments
-                    | _ -> resolution )
+                    | _ -> resolution)
                 | _ -> resolution
               in
               match parameters, arguments with
@@ -756,7 +756,7 @@ module State (Context : Context) = struct
               let resolved =
                 forward_expression ~state:{ state with resolution } ~expression:target
               in
-              propagate_assign resolution resolved value )
+              propagate_assign resolution resolved value)
       | Return { Return.expression = Some { Node.value = Name name; _ }; _ }
         when is_simple_name name ->
           let return_annotation =
@@ -780,7 +780,7 @@ module State (Context : Context) = struct
                   | Name name when is_simple_name name ->
                       add_local ~resolution ~name ~annotation:(Annotation.create annotation)
                   | _ -> resolution)
-          | _ -> resolution )
+          | _ -> resolution)
       | _ -> annotate_call_accesses statement resolution
     in
     { state with resolution }
@@ -794,10 +794,10 @@ let infer_local
     ~global_resolution
     ~source:{ Source.source_path = { SourcePath.qualifier; _ }; _ }
     ~define:
-      ( {
-          Node.location;
-          value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
-        } as define_node )
+      ({
+         Node.location;
+         value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
+       } as define_node)
   =
   let module State = State (struct
     let configuration = configuration
@@ -814,7 +814,7 @@ let infer_local
   let dump = Define.dump define in
   if dump then (
     Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
-    Log.dump "AST:\n%s" (AnnotatedDefine.create define_node |> AnnotatedDefine.show) );
+    Log.dump "AST:\n%s" (AnnotatedDefine.create define_node |> AnnotatedDefine.show));
   let print_state name state =
     if dump then
       Log.dump "%s state:\n%a" name State.pp state;
@@ -914,7 +914,7 @@ let infer_parameters_from_parent
                               thrown_at_source = true;
                             })
                        ~define)
-              | _ -> None )
+              | _ -> None)
           | `Left _ -> None
           | `Right _ -> None
         in
@@ -959,8 +959,8 @@ let infer_for_define
     ~global_resolution
     ~source:({ Source.source_path = { SourcePath.qualifier; relative; _ }; _ } as source)
     ~define:
-      ( { Node.location; value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } }
-      as define )
+      ({ Node.location; value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } }
+      as define)
   =
   try
     let local_errors = infer_local ~configuration ~global_resolution ~source ~define in
@@ -1005,4 +1005,4 @@ let run ~configuration ~global_resolution ~source:({ Source.source_path; _ } as 
     let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
     List.concat results
     |> Error.join_at_source ~resolution:global_resolution
-    |> List.sort ~compare:Error.compare )
+    |> List.sort ~compare:Error.compare)

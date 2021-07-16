@@ -191,8 +191,8 @@ let same_module_compare
           match left_is_init, right_is_init with
           | true, false -> 1
           | false, true -> -1
-          | _, _ -> extension_priority () )
-      | _ as result -> result )
+          | _, _ -> extension_priority ())
+      | _ as result -> result)
 
 
 let is_stub { is_stub; _ } = is_stub

@@ -87,7 +87,7 @@ module ClientRequest = struct
       | Result.Error _ -> (
           match Request.of_yojson json with
           | Result.Ok request -> Request request
-          | Result.Error _ -> Error "Malformed JSON request" )
+          | Result.Error _ -> Error "Malformed JSON request")
     with
     | Yojson.Json_error message -> Error message
 end
@@ -204,8 +204,8 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
 let initialize_server_state
     ?watchman_subscriber
     ?build_system_initializer
-    ( { ServerConfiguration.log_path; saved_state_action; critical_files; source_paths; _ } as
-    server_configuration )
+    ({ ServerConfiguration.log_path; saved_state_action; critical_files; source_paths; _ } as
+    server_configuration)
   =
   let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
   (* This is needed to initialize shared memory. *)
@@ -421,7 +421,7 @@ let initialize_server_state
                 Statistics.event ~name:"saved state success" ();
                 Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
                 |> RequestHandler.process_request ~state:loaded_state
-                >>= fun (new_state, _) -> Lwt.return new_state ) )
+                >>= fun (new_state, _) -> Lwt.return new_state))
   in
   let open Lwt.Infix in
   let get_initial_state ~build_system_initializer () =

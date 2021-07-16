@@ -231,8 +231,8 @@ let create define =
         Node.connect_option orelse join;
         Node.connect split join;
         create statements jumps join
-    | ( { Ast.Node.value = Statement.If ({ If.test; body; orelse; _ } as conditional); _ } as
-      statement )
+    | ({ Ast.Node.value = Statement.If ({ If.test; body; orelse; _ } as conditional); _ } as
+      statement)
       :: statements ->
         (* -> [split] -> [body]
          *       |          |
@@ -379,7 +379,7 @@ let create define =
         | { Ast.Node.value = Yield _; _ } ->
             Node.connect node jumps.yield;
             create statements jumps node
-        | _ -> create statements jumps node )
+        | _ -> create statements jumps node)
     | [] -> Some predecessor
   in
   let jumps = { break = normal; continue = normal; error; normal; yield } in

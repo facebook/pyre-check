@@ -923,7 +923,7 @@ let test_forward_statement context =
         | statement :: rest -> (
             match Resolution.resolve_statement resolution statement with
             | Resolution.Unreachable -> None
-            | Resolution.Reachable { resolution; _ } -> process_statement resolution rest )
+            | Resolution.Reachable { resolution; _ } -> process_statement resolution rest)
       in
       process_statement resolution parsed
     in

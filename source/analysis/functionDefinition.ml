@@ -48,7 +48,7 @@ let collect_typecheck_units { Source.statements; _ } =
             "Dropping the body of class %a as it is nested inside a function"
             Reference.pp
             name;
-          sofar )
+          sofar)
         else
           let sofar =
             let define = Class.toplevel_define class_ |> Node.create ~location in
@@ -157,7 +157,7 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as 
       | None -> (
           match sibling with
           | Some sibling -> None, [sibling]
-          | None -> Some define_node, [] )
+          | None -> Some define_node, [])
       | Some (body, siblings) -> (
           match sibling with
           | Some sibling -> body, sibling :: siblings
@@ -168,9 +168,9 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as 
                   Reference.pp
                   define_name;
                 (* Last definition wins -- collector returns functions in reverse order *)
-                body, siblings )
+                body, siblings)
               else
-                Some define_node, siblings )
+                Some define_node, siblings)
     in
     Hashtbl.update table define_name ~f:update
   in

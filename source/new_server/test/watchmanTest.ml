@@ -123,9 +123,9 @@ let test_subscription _ =
           assert_failure "Expected an exception to raise but did not get one";
         Lwt.return_unit)
       (fun exn ->
-        ( if not should_raise then
-            let message = Format.sprintf "Unexpected exception: %s" (Exn.to_string exn) in
-            assert_failure message );
+        (if not should_raise then
+           let message = Format.sprintf "Unexpected exception: %s" (Exn.to_string exn) in
+           assert_failure message);
         Lwt.return_unit)
   in
 

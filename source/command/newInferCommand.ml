@@ -344,15 +344,15 @@ let run_infer configuration_file =
         Log.error "%s" message;
         ExitStatus.PyreError
     | Result.Ok
-        ( {
-            InferConfiguration.global_root;
-            local_root;
-            debug;
-            remote_logging;
-            profiling_output;
-            memory_profiling_output;
-            _;
-          } as infer_configuration ) ->
+        ({
+           InferConfiguration.global_root;
+           local_root;
+           debug;
+           remote_logging;
+           profiling_output;
+           memory_profiling_output;
+           _;
+         } as infer_configuration) ->
         NewCommandStartup.setup_global_states
           ~global_root
           ~local_root

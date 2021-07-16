@@ -123,7 +123,7 @@ module Make (Element : BUCKETED_ELEMENT) = struct
           match part with
           | Element -> Format.sprintf "BucketedSet(%s).Element" Element.name
           | Self -> Format.sprintf "BucketedSet(%s).Self" Element.name
-          | _ -> Base.introspect op )
+          | _ -> Base.introspect op)
 
 
     let create parts =

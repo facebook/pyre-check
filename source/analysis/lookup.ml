@@ -72,7 +72,7 @@ module NodeVisitor = struct
                 resolve ~resolution ~expression:base
                 >>| Type.class_name
                 >>| (fun prefix -> Reference.create ~prefix attribute)
-                >>= find_definition )
+                >>= find_definition)
         | _ -> None
       in
       let store_lookup ~table ~location ~data =
@@ -249,10 +249,10 @@ let create_of_module type_environment qualifier =
   let definitions_lookup = Location.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
-      ( {
-          Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
-          _;
-        } as define_node )
+      ({
+         Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
+         _;
+       } as define_node)
     =
     let annotation_lookup =
       TypeCheck.get_or_recompute_local_annotations ~environment:type_environment name

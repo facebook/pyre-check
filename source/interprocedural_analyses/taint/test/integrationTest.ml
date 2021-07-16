@@ -51,10 +51,10 @@ let test_integration path context =
     | Some expected ->
         if String.equal expected actual then (
           remove_old_output ~suffix;
-          None )
+          None)
         else (
           write_output ~suffix actual;
-          Some { path; suffix; expected; actual } )
+          Some { path; suffix; expected; actual })
   in
   let error_on_actual_files { path; suffix; expected; actual } =
     Printf.printf

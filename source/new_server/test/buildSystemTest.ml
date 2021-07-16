@@ -414,7 +414,7 @@ let test_buck_update_without_rebuild context =
           File.create source_database_path ~content |> File.write;
           is_rebuild := true;
           Format.asprintf {| { "//foo:bar#source-db": "%a" } |} Path.pp source_database_path
-          |> Lwt.return )
+          |> Lwt.return)
         else
           assert_failure "`buck build` is not expected to be invoked again after the initial build"
       in

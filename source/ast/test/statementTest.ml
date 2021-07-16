@@ -562,7 +562,7 @@ let test_pp _ =
         x = "hello world"
     |}
     ~expected:
-      ( {|
+      ({|
       def foo(bar):
         def inner(bar):
           y = "hello world"|}
@@ -581,7 +581,7 @@ let test_pp _ =
       ^ "\n  "
       ^ {|
         x = "hello world"
-        |} );
+        |});
   ()
 
 

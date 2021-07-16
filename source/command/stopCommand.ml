@@ -40,22 +40,22 @@ let stop ~log_directory ~local_root =
     |> fun (Handshake.ServerConnected _) ->
     Socket.write socket Handshake.ClientConnected;
     Socket.write socket Protocol.Request.StopRequest;
-    ( match Socket.read socket with
+    (match Socket.read socket with
     | StopResponse -> Log.info "Server stopped, polling for deletion of socket."
-    | _ -> Log.error "Invalid response from server to stop request" );
+    | _ -> Log.error "Invalid response from server to stop request");
     let poll_for_deletion paths =
       let start_time = Unix.time () in
       let timeout = 3.0 in
       let rec poll () =
         if Float.(Unix.time () -. start_time >=. timeout) then (
           Log.warning "Timed out while polling for server to stop.";
-          1 )
+          1)
         else if List.exists ~f:Path.file_exists paths then (
           Unix.nanosleep 0.1 |> ignore;
-          poll () )
+          poll ())
         else (
           Log.info "Server successfully stopped.";
-          0 )
+          0)
       in
       poll ()
     in

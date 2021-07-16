@@ -38,9 +38,9 @@ let send ~response { name; output_channel } =
     |> Lwt_io.write_line output_channel
     >>= fun () ->
     Log.log ~section:`Server "Update sent to subscription `%s`" name;
-    Lwt.return_unit )
+    Lwt.return_unit)
   else (
     Log.warning
       "Trying to send updates to subscription `%s` whose output channel is already closed."
       name;
-    Lwt.return_unit )
+    Lwt.return_unit)

@@ -57,10 +57,10 @@ let test_attributes _ =
       ~cmp:(List.equal (fun left right -> Attribute.location_insensitive_compare left right = 0))
       ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
       expected
-      ( parse_single_define source
+      (parse_single_define source
       |> ClassAttributes.Private.assigned_by_define ~definition
       |> Identifier.SerializableMap.bindings
-      |> List.map ~f:snd )
+      |> List.map ~f:snd)
   in
   assert_assigned_by_define "def foo(): pass" [];
   assert_assigned_by_define
@@ -256,11 +256,11 @@ let test_attributes _ =
       ~cmp:(List.equal equal)
       ~printer
       expected
-      ( parse_single_class source
+      (parse_single_class source
       |> ClassAttributes.create
       |> ClassAttributes.attributes ~in_test ~include_generated_attributes
       |> Identifier.SerializableMap.bindings
-      |> List.map ~f:snd )
+      |> List.map ~f:snd)
   in
   let attribute
       ~name

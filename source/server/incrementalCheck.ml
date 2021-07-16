@@ -57,7 +57,7 @@ let recheck
               | SharedMemoryKeys.TypeCheckDefine name -> (
                   match Reference.Map.add sofar ~key:name ~data:registered with
                   | `Duplicate -> sofar
-                  | `Ok updated -> updated )
+                  | `Ok updated -> updated)
               | _ -> sofar
             in
             SharedMemoryKeys.DependencyKey.RegisteredSet.fold filter keyset sofar

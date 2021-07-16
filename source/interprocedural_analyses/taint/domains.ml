@@ -89,10 +89,11 @@ module TraceInfo = struct
   (* See implementation in TaintResult. *)
   let has_significant_summary =
     ref
-      (fun (_ : AccessPath.Root.t)
-           (_ : Abstract.TreeDomain.Label.path)
-           (_ : Interprocedural.Callable.non_override_target)
-           -> true)
+      (fun
+        (_ : AccessPath.Root.t)
+        (_ : Abstract.TreeDomain.Label.path)
+        (_ : Interprocedural.Callable.non_override_target)
+      -> true)
 
 
   (* Only called when emitting models before we compute the json so we can dedup *)
@@ -211,7 +212,8 @@ module FlowDetails = struct
     let slot_domain (type a) (slot : a slot) =
       match slot with
       | SimpleFeature -> (module Features.SimpleSet : Abstract.Domain.S with type t = a)
-      | ReturnAccessPath -> (module Features.ReturnAccessPathSet : Abstract.Domain.S with type t = a)
+      | ReturnAccessPath ->
+          (module Features.ReturnAccessPathSet : Abstract.Domain.S with type t = a)
       | TraceLength -> (module TraceLength : Abstract.Domain.S with type t = a)
       | TitoPosition -> (module Features.TitoPositionSet : Abstract.Domain.S with type t = a)
       | LeafName -> (module Features.LeafNameSet : Abstract.Domain.S with type t = a)
@@ -545,16 +547,15 @@ module ForwardTaint = MakeTaint (Sources)
 module BackwardTaint = MakeTaint (Sinks)
 
 module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
-  include Abstract.TreeDomain.Make
-            (struct
-              let max_tree_depth_after_widening () =
-                TaintConfiguration.maximum_tree_depth_after_widening
+  include
+    Abstract.TreeDomain.Make
+      (struct
+        let max_tree_depth_after_widening () = TaintConfiguration.maximum_tree_depth_after_widening
 
-
-              let check_invariants = true
-            end)
-            (Taint)
-            ()
+        let check_invariants = true
+      end)
+      (Taint)
+      ()
 
   let apply_call location ~callees ~port taint_tree =
     let transform_path (path, tip) =
@@ -639,15 +640,16 @@ end
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   module Tree = MakeTaintTree (Taint) ()
 
-  include Abstract.MapDomain.Make
-            (struct
-              let name = "env"
+  include
+    Abstract.MapDomain.Make
+      (struct
+        let name = "env"
 
-              include AccessPath.Root
+        include AccessPath.Root
 
-              let absence_implicitly_maps_to_bottom = true
-            end)
-            (Tree)
+        let absence_implicitly_maps_to_bottom = true
+      end)
+      (Tree)
 
   let create_json ~taint_to_json environment =
     let element_to_json json_list (root, tree) =

@@ -137,11 +137,11 @@ module Make (Kind : Kind) = struct
 
     let create
         ~location:
-          ( {
-              Location.WithPath.path;
-              start = { Location.line = start_line; column = start_column };
-              stop = { Location.line = stop_line; column = stop_column };
-            } as location )
+          ({
+             Location.WithPath.path;
+             start = { Location.line = start_line; column = start_column };
+             stop = { Location.line = stop_line; column = stop_column };
+           } as location)
         ~kind
         ~signature:({ Node.value = signature; _ } as signature_node)
         ~show_error_traces
@@ -153,10 +153,10 @@ module Make (Kind : Kind) = struct
           "%s [%d]: %s"
           (Kind.name kind)
           (Kind.code kind)
-          ( if show_error_traces then
-              String.concat ~sep:separator messages
+          (if show_error_traces then
+             String.concat ~sep:separator messages
           else
-            List.nth_exn messages 0 )
+            List.nth_exn messages 0)
       in
       {
         line = start_line;

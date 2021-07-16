@@ -132,7 +132,7 @@ end = struct
       with
       | error ->
           is_initialized := false;
-          raise error )
+          raise error)
 
 
   let save_shared_memory ~configuration =
@@ -380,11 +380,11 @@ let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifier
   in
   let map result qualifiers =
     let make_callables
-        ( {
-            callables_with_dependency_information = existing_callables;
-            stubs = existing_stubs;
-            filtered_callables = existing_filtered_callables;
-          } as result )
+        ({
+           callables_with_dependency_information = existing_callables;
+           stubs = existing_stubs;
+           filtered_callables = existing_filtered_callables;
+         } as result)
         qualifier
       =
       get_source ~environment qualifier
@@ -538,7 +538,8 @@ let record_overrides_for_qualifiers
 let build_call_graph
     ~scheduler
     ~static_analysis_configuration:
-      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as static_analysis_configuration)
+      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as
+      static_analysis_configuration)
     ~environment
     ~qualifiers
   =
@@ -619,7 +620,8 @@ let analyze
     ~scheduler
     ~analysis
     ~static_analysis_configuration:
-      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as static_analysis_configuration)
+      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as
+      static_analysis_configuration)
     ~filename_lookup
     ~environment
     ~qualifiers

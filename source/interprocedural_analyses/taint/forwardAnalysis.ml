@@ -338,28 +338,27 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           Map.Poly.find tito_effects Sinks.LocalReturn
           |> Option.value ~default:ForwardState.Tree.empty
         in
-        ( if not (Hash_set.is_empty triggered_sinks) then
-            let add_sink (key, taint) roots_and_sinks =
-              let add roots_and_sinks = function
-                | Sinks.PartialSink sink ->
-                    if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
-                      (key, Sinks.TriggeredPartialSink sink) :: roots_and_sinks
-                    else
-                      roots_and_sinks
-                | _ -> roots_and_sinks
-              in
-              BackwardTaint.leaves
-                (BackwardState.Tree.collapse
-                   ~transform:(BackwardTaint.add_features Features.issue_broadening)
-                   taint)
-              |> List.fold ~f:add ~init:roots_and_sinks
-            in
-            let triggered_sinks =
-              BackwardState.fold BackwardState.KeyValue backward.sink_taint ~init:[] ~f:add_sink
-            in
-            let { Location.WithModule.start; stop; _ } = call_location in
-            FunctionContext.add_triggered_sinks ~location:{ Location.start; stop } ~triggered_sinks
-        );
+        (if not (Hash_set.is_empty triggered_sinks) then
+           let add_sink (key, taint) roots_and_sinks =
+             let add roots_and_sinks = function
+               | Sinks.PartialSink sink ->
+                   if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
+                     (key, Sinks.TriggeredPartialSink sink) :: roots_and_sinks
+                   else
+                     roots_and_sinks
+               | _ -> roots_and_sinks
+             in
+             BackwardTaint.leaves
+               (BackwardState.Tree.collapse
+                  ~transform:(BackwardTaint.add_features Features.issue_broadening)
+                  taint)
+             |> List.fold ~f:add ~init:roots_and_sinks
+           in
+           let triggered_sinks =
+             BackwardState.fold BackwardState.KeyValue backward.sink_taint ~init:[] ~f:add_sink
+           in
+           let { Location.WithModule.start; stop; _ } = call_location in
+           FunctionContext.add_triggered_sinks ~location:{ Location.start; stop } ~triggered_sinks);
         let apply_tito_side_effects tito_effects state =
           (* We also have to consider the cases when the updated parameter has a global model, in
              which case we need to capture the flow. *)
@@ -392,7 +391,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 (* Side effect on argument n *)
                 match List.nth arguments n with
                 | None -> state
-                | Some argument -> apply_argument_effect ~argument ~source_tree:taint state )
+                | Some argument -> apply_argument_effect ~argument ~source_tree:taint state)
             | Attach -> state (* These synthetic nodes should be ignored for analysis.*)
             | _ -> failwith "unexpected sink in tito"
           in
@@ -809,7 +808,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             with
             | Some (RegularTargets targets) ->
                 analyze_regular_targets ~state ~callee ~arguments targets
-            | _ -> taint, state )
+            | _ -> taint, state)
         (* We special object.__setattr__, which is sometimes used in order to work around
            dataclasses being frozen post-initialization. *)
         | {
@@ -997,7 +996,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                         ~non_lambda_arguments
                         ~higher_order_function
                         ~callable_argument
-                  | _ -> analyze_regular_targets ~state ~callee ~arguments higher_order_function )
+                  | _ -> analyze_regular_targets ~state ~callee ~arguments higher_order_function)
               | Some (ConstructorTargets { new_targets; init_targets }) ->
                   analyze_constructor_call
                     ~resolution
@@ -1213,7 +1212,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        Add
                        ~f:Features.type_bool
                 in
-                taint, state )
+                taint, state)
         | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
         | Complex _ -> ForwardState.Tree.empty, state
         | Dictionary { Dictionary.entries; keywords } ->
@@ -1267,7 +1266,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             | Some (RegularTargets { targets; _ }) ->
                 let arguments = [{ Call.Argument.name = None; value = base }] in
                 apply_call_targets ~resolution ~callee:expression location arguments state targets
-            | _ -> analyze_attribute_access ~resolution ~state ~location base attribute )
+            | _ -> analyze_attribute_access ~resolution ~state ~location base attribute)
         | Set set ->
             List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
         | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state
@@ -1388,7 +1387,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 { taint = ForwardState.assign ~root ~path ForwardState.Tree.bottom state.taint }
               else
                 state
-          | _ -> state )
+          | _ -> state)
       | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
           let location_with_module =
             Location.with_module ~qualifier:FunctionContext.qualifier location
@@ -1425,10 +1424,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     store_taint_option (AccessPath.of_expression ~resolution base) taint state
                 | _ ->
                     let taint, state = analyze_expression ~resolution ~state ~expression:value in
-                    analyze_assignment ~resolution target taint taint state )
+                    analyze_assignment ~resolution target taint taint state)
             | _ ->
                 let taint, state = analyze_expression ~resolution ~state ~expression:value in
-                analyze_assignment ~resolution target taint taint state )
+                analyze_assignment ~resolution target taint taint state)
       | Assert { test; _ } -> analyze_condition ~resolution test state
       | Break
       | Class _

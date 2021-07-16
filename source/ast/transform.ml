@@ -484,12 +484,12 @@ let sanitize_statement statement =
       | {
           Node.value =
             Statement.Define
-              ( {
-                  Define.signature =
-                    { Define.Signature.name = { Node.value = name; _ } as name_node; parameters; _ }
-                    as signature;
-                  _;
-                } as define );
+              ({
+                 Define.signature =
+                   { Define.Signature.name = { Node.value = name; _ } as name_node; parameters; _ }
+                   as signature;
+                 _;
+               } as define);
           _;
         } as statement ->
           let transform_parameter

@@ -107,8 +107,8 @@ let test_search_for_path context =
   let assert_path ~search_paths ~path ~expected =
     assert_equal
       (Some expected)
-      ( SearchPath.search_for_path ~search_paths path
-      >>| fun SearchPath.{ relative_path; _ } -> Path.RelativePath.relative relative_path )
+      (SearchPath.search_for_path ~search_paths path
+      >>| fun SearchPath.{ relative_path; _ } -> Path.RelativePath.relative relative_path)
   in
   let search_paths =
     [

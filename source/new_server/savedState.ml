@@ -69,7 +69,7 @@ let query_exn
               Format.asprintf "Watchman detects changes in critical file `%a`" Path.pp critical_file
             in
             raise (SavedStateQueryFailure message)
-        | None -> { Queried.bucket; path; changed_files; target; commit_id } )
+        | None -> { Queried.bucket; path; changed_files; target; commit_id })
   in
   Log.info "Querying watchman for a saved state";
   Watchman.SinceQuery.

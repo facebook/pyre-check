@@ -36,4 +36,4 @@ let infer_for_module
     let check define =
       infer_for_define ~configuration ~global_resolution ~source ~qualifier ~define
     in
-    source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check )
+    source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check)

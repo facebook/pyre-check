@@ -42,15 +42,15 @@ let parent_definition { Node.value = { Define.signature = { parent; _ }; _ }; _ 
 
 
 let decorate
-    ( {
-        Node.value =
-          {
-            Define.signature =
-              { Define.Signature.decorators; parameters = original_parameters; _ } as signature;
-            _;
-          } as define;
-        location;
-      } as define_node )
+    ({
+       Node.value =
+         {
+           Define.signature =
+             { Define.Signature.decorators; parameters = original_parameters; _ } as signature;
+           _;
+         } as define;
+       location;
+     } as define_node)
     ~resolution
   =
   match decorators with
@@ -128,7 +128,7 @@ let decorate
           |> Node.create ~location
       | _ ->
           (* We should really signal this somehow *)
-          define_node )
+          define_node)
 
 
 let is_constructor

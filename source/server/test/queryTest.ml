@@ -325,8 +325,8 @@ let test_handle_query_basic context =
          class B(A): ...
       |}
     ~query:
-      ( "is_compatible_with(typing.Type[test.B],"
-      ^ "typing.Coroutine[typing.Any, typing.Any, typing.Type[test.A]])" )
+      ("is_compatible_with(typing.Type[test.B],"
+      ^ "typing.Coroutine[typing.Any, typing.Any, typing.Type[test.A]])")
     ~actual:(Type.meta (Type.Primitive "test.B"))
     ~expected:(Type.meta (Type.Primitive "test.A"))
     true;
@@ -1199,7 +1199,7 @@ let test_inline_decorators context =
   in
   assert_response
     (Query.Request.inline_decorators (Reference.create "test.foo"))
-    ( {|
+    ({|
       {
       "response": {
         "definition": "def test.foo(a: int) -> int:
@@ -1224,7 +1224,7 @@ let test_inline_decorators context =
       "
       }
       }
-    |} );
+    |});
   assert_response
     (Query.Request.inline_decorators (Reference.create "test.non_existent"))
     {|
@@ -1248,7 +1248,7 @@ let test_inline_decorators context =
          function_reference = Reference.create "test.foo";
          decorators_to_skip = [!&"decorators.identity"; !&"some.non_existent.decorator"];
        })
-    ( {|
+    ({|
       {
         "response": {
           "definition": "def test.foo(a: int) -> int:
@@ -1267,7 +1267,7 @@ let test_inline_decorators context =
       "
         }
       }
-    |} );
+    |});
   ()
 
 

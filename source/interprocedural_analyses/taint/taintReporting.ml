@@ -86,10 +86,10 @@ let save_results_to_directory
     fun json ->
       if !seen_element then (
         Bi_outbuf.add_string out_buffer "\n";
-        Json.to_outbuf out_buffer json )
+        Json.to_outbuf out_buffer json)
       else (
         seen_element := true;
-        Json.to_outbuf out_buffer json )
+        Json.to_outbuf out_buffer json)
   in
   let timer = Timer.start () in
   let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
@@ -170,7 +170,7 @@ let report
   let errors = extract_errors scheduler (Callable.Set.elements callables) in
   (* Log and record stats *)
   Log.info "Found %d issues" (List.length errors);
-  ( match fixpoint_iterations with
+  (match fixpoint_iterations with
   | Some iterations ->
       Log.info "Fixpoint iterations: %d" iterations;
       Statistics.performance
@@ -184,7 +184,7 @@ let report
             "pysa issues", List.length errors;
           ]
         ()
-  | None -> () );
+  | None -> ());
   (* Dump results to output directory if one was provided, and return a list of json (empty whenever
      we dumped to a directory) to summarize *)
   match result_json_path with

@@ -148,10 +148,10 @@ let set_local_with_attributes ({ annotation_store; _ } as resolution) ~name ~ann
         annotation_store
         ~key:object_reference
         ~data:
-          ( Map.find annotation_store object_reference
+          (Map.find annotation_store object_reference
           |> Option.value ~default:(RefinementUnit.create ())
           |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation
-          |> set_base ~base );
+          |> set_base ~base);
   }
 
 
@@ -322,7 +322,7 @@ let fallback_attribute ?(accessed_through_class = false) ~resolution ~name class
                  ~property:false
                  ~undecorated_signature:None
                  ~problem:None)
-        | _ -> None )
+        | _ -> None)
     | _ -> None
   in
   match compound_backup with

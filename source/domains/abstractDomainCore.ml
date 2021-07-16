@@ -251,7 +251,7 @@ end) : BASE with type t := D.t = struct
     | D.Self, ByFilter -> (
         match f d with
         | None -> Core_kernel.Map.Poly.empty
-        | Some key -> Core_kernel.Map.Poly.singleton key d )
+        | Some key -> Core_kernel.Map.Poly.singleton key d)
     | _, Nest (nested_part, op) -> D.partition nested_part op ~f d
     | _, Context (D.Self, op) -> D.partition part op ~f:(f d) d
     | _, Context (p, _) -> unhandled_context p "partition"

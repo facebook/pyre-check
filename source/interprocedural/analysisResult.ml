@@ -210,7 +210,7 @@ let get_analysis (type a b) (kind_to_find : (a, b) analysis_data Kind.storable_k
   | Some (Analysis { kind; analysis; _ }) -> (
       match Kind.are_equal kind kind_to_find with
       | Kind.Equal -> (analysis : (a, b) analysis_data analysis_module)
-      | Kind.Distinct -> failwith ("analysis kind mismatch: " ^ Kind.show abstract_kind) )
+      | Kind.Distinct -> failwith ("analysis kind mismatch: " ^ Kind.show abstract_kind))
 
 
 let get_abstract_analysis analysis_kind =
@@ -226,8 +226,8 @@ let get_abstract_analysis analysis_kind =
    on the partial_kind. *)
 type ('part, 'a, 'b) partial_kind_function = {
   f:
-    'model 'result. < model : 'model ; result : 'result > storable_kind ->
-    ('part, 'a) partial_kind -> 'b;
+    'model 'result.
+    < model : 'model ; result : 'result > storable_kind -> ('part, 'a) partial_kind -> 'b;
 }
 
 (* Equality for partial kinds. *)
@@ -238,11 +238,11 @@ let are_equal (type part a b) (a : (part, a) partial_kind) (b : (part, b) partia
   | ModelPart k1, ModelPart k2 -> (
       match Kind.are_equal k1 k2 with
       | Kind.Equal -> Kind.Equal (* Necessary because the types of these Equal are different. *)
-      | Kind.Distinct -> Kind.Distinct )
+      | Kind.Distinct -> Kind.Distinct)
   | ResultPart k1, ResultPart k2 -> (
       match Kind.are_equal k1 k2 with
       | Kind.Equal -> Kind.Equal
-      | Kind.Distinct -> Kind.Distinct )
+      | Kind.Distinct -> Kind.Distinct)
 
 
 (* Note: no other cases are necessary, because statically, the 'part' makes sure that both kinds
@@ -268,7 +268,7 @@ let get (type part a) (partial_kind : (part, a) partial_kind) (values : part pkg
     | Some (Pkg { kind = kind1; value }), kind2 -> (
         match are_equal kind1 kind2 with
         | Kind.Equal -> Some (value : a)
-        | Kind.Distinct -> failwith "kind mismatch in results." )
+        | Kind.Distinct -> failwith "kind mismatch in results.")
   in
   apply_to_partial_kind partial_kind { f = get }
 

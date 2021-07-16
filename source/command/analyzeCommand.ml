@@ -166,8 +166,8 @@ let run_analysis
               ~scheduler
               ~environment:(Analysis.TypeEnvironment.read_only environment)
               ~functions:
-                ( List.map callables_with_dependency_information ~f:fst
-                  :> Interprocedural.Callable.t list )
+                (List.map callables_with_dependency_information ~f:fst
+                  :> Interprocedural.Callable.t list)
               ~stubs:(stubs :> Interprocedural.Callable.t list)
           in
 
@@ -201,7 +201,7 @@ let run_analysis
                   ~qualifiers
                   ~use_cache:false
               in
-              updated_environment, updated_initial_callables )
+              updated_environment, updated_initial_callables)
             else
               environment, initial_callables
           in

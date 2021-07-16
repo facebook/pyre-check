@@ -150,7 +150,7 @@ module Make (Element : ELEMENT) = struct
           match part with
           | Element -> Format.sprintf "Set(%s).Element" Element.name
           | Self -> Format.sprintf "Set(%s).Self" Element.name
-          | _ -> Base.introspect op )
+          | _ -> Base.introspect op)
 
 
     let create parts =

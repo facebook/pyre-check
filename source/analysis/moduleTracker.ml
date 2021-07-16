@@ -42,7 +42,7 @@ let insert_source_path ~configuration ~inserted existing_files =
             (* Duplicate entry detected. Do nothing *)
             existing_files
         | x when x > 0 -> List.rev_append sofar (inserted :: existing)
-        | _ -> insert (current_file :: sofar) rest )
+        | _ -> insert (current_file :: sofar) rest)
   in
   insert [] existing_files
 
@@ -67,7 +67,7 @@ let remove_source_path ~configuration ~removed existing_files =
             in
             List.rev_append sofar rest
         | x when x > 0 -> existing_files
-        | _ -> remove (current_file :: sofar) rest )
+        | _ -> remove (current_file :: sofar) rest)
   in
   remove [] existing_files
 
@@ -161,12 +161,12 @@ let lookup_path ~configuration tracker path =
       match lookup_source_path tracker qualifier with
       | None -> PathLookup.NotFound
       | Some
-          ({ SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as source_path)
-        ->
+          ({ SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as
+          source_path) ->
           if String.equal relative tracked_relative && Int.equal priority tracked_priority then
             PathLookup.Found source_path
           else
-            PathLookup.ShadowedBy source_path )
+            PathLookup.ShadowedBy source_path)
 
 
 let lookup { module_to_files; submodule_refcounts } module_name =
@@ -175,7 +175,7 @@ let lookup { module_to_files; submodule_refcounts } module_name =
   | _ -> (
       match Hashtbl.mem submodule_refcounts module_name with
       | true -> Some (ModuleLookup.Implicit module_name)
-      | false -> None )
+      | false -> None)
 
 
 let source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
@@ -249,7 +249,7 @@ let update_explicit_modules ~configuration ~paths module_to_files =
                   (* Updating a shadowing file means the module gets changed *)
                   Some (IncrementalExplicitUpdate.Changed source_path)
                 else (* Updating a shadowed file should not trigger any reanalysis *)
-                  None ) )
+                  None))
     | FileSystemEvent.Remove path -> (
         match SourcePath.create ~configuration path with
         | None ->
@@ -275,7 +275,7 @@ let update_explicit_modules ~configuration ~paths module_to_files =
                       (* Removing a shadowed file should not trigger any reanalysis *)
                       None
                     else (* Removing source_path un-shadows another source file. *)
-                      Some (IncrementalExplicitUpdate.Changed new_source_path) ) ) )
+                      Some (IncrementalExplicitUpdate.Changed new_source_path))))
   in
   (* Make sure we have only one update per module *)
   let merge_updates updates =
@@ -394,7 +394,7 @@ let update_submodules ~events submodule_refcounts =
               if Int.equal original_refcount 0 then
                 IncrementalImplicitUpdate.New key :: sofar
               else
-                sofar )
+                sofar)
     in
     Hashtbl.fold update_table ~init:[] ~f:commit_update
   in

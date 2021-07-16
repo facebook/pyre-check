@@ -36,7 +36,8 @@ let return_annotation_without_applying_decorators
 
 
 let create_overload_without_applying_decorators
-    ~parser:({ parse_annotation; parse_as_parameter_specification_instance_annotation; _ } as parser)
+    ~parser:
+      ({ parse_annotation; parse_as_parameter_specification_instance_annotation; _ } as parser)
     ~variables
     ({ Define.Signature.parameters; parent; _ } as signature)
   =
@@ -98,8 +99,8 @@ let create_overload_without_applying_decorators
               in
               match parsed_head with
               | Some head -> ParameterVariadicTypeVariable { head; variable }
-              | None -> default () )
-          | None -> default () )
+              | None -> default ())
+          | None -> default ())
       | _ -> Defined (List.map parameters ~f:parse)
     in
     List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
@@ -118,7 +119,8 @@ let create_overload_without_applying_decorators
             |> Option.value ~default:(Type.Primitive class_annotation)
           in
           let annotation = if meta then Type.meta parent_type else parent_type in
-          Type.Callable.Defined (Named { Type.Callable.Parameter.name; annotation; default } :: tail)
+          Type.Callable.Defined
+            (Named { Type.Callable.Parameter.name; annotation; default } :: tail)
         in
         if String.equal (Define.Signature.unqualified_name signature) "__new__" then
           replacement ~meta:true

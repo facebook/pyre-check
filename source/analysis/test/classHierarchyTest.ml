@@ -147,22 +147,22 @@ let test_is_transitive_successor _ =
   connect order ~predecessor ~successor;
 
   let no_placeholder_subclasses_handler order =
-    ( module struct
+    (module struct
       let edges = Hashtbl.find order.edges
 
       let extends_placeholder_stub _ = false
 
       let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
-    end : ClassHierarchy.Handler )
+    end : ClassHierarchy.Handler)
   in
   let all_placeholder_subclasses_handler order =
-    ( module struct
+    (module struct
       let edges = Hashtbl.find order.edges
 
       let extends_placeholder_stub _ = true
 
       let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
-    end : ClassHierarchy.Handler )
+    end : ClassHierarchy.Handler)
   in
   assert_true
     (is_transitive_successor
@@ -267,7 +267,7 @@ let test_to_dot _ =
   in
   assert_equal
     ~printer:ident
-    ( {|
+    ({|
       digraph {
         343776663[label="object"]
         453441034[label="1"]
@@ -277,7 +277,7 @@ let test_to_dot _ =
         680650890 -> 564400327
       }
     |}
-    |> Test.trim_extra_indentation )
+    |> Test.trim_extra_indentation)
     ("\n" ^ to_dot order ~indices:keys)
 
 

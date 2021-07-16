@@ -24,9 +24,9 @@ let test_lines context =
   let path, _ = bracket_tmpfile context in
   assert_equal
     ~cmp:(List.equal String.equal)
-    ( File.create ~content:"foo\nbar" (Path.create_absolute path)
+    (File.create ~content:"foo\nbar" (Path.create_absolute path)
     |> File.lines
-    |> fun lines -> Option.value_exn lines )
+    |> fun lines -> Option.value_exn lines)
     ["foo"; "bar"]
 
 

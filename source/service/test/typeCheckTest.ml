@@ -54,8 +54,8 @@ let assert_errors
              ~lookup:
                (Analysis.AstEnvironment.ReadOnly.get_real_path_relative
                   ~configuration
-                  ( Analysis.TypeEnvironment.ast_environment environment
-                  |> Analysis.AstEnvironment.read_only ))
+                  (Analysis.TypeEnvironment.ast_environment environment
+                  |> Analysis.AstEnvironment.read_only))
              error
            |> Analysis.AnalysisError.Instantiated.description)
   in

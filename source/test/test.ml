@@ -2864,13 +2864,13 @@ let assert_errors
     source
     errors
   =
-  ( if SourcePath.qualifier_of_relative handle |> Reference.is_empty then
-      let message =
-        Format.sprintf
-          "Cannot use %s as test file name: Empty qualifier in test is no longer acceptable."
-          handle
-      in
-      failwith message );
+  (if SourcePath.qualifier_of_relative handle |> Reference.is_empty then
+     let message =
+       Format.sprintf
+         "Cannot use %s as test file name: Empty qualifier in test is no longer acceptable."
+         handle
+     in
+     failwith message);
 
   let descriptions =
     let errors =
@@ -2915,9 +2915,9 @@ let assert_errors
         AnalysisError.Instantiated.description error
     in
     let found_any = not (List.is_empty errors_with_any_location) in
-    ( if found_any then
-        let errors = List.map ~f:(show_description ~concise) errors |> String.concat ~sep:"\n" in
-        Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore );
+    (if found_any then
+       let errors = List.map ~f:(show_description ~concise) errors |> String.concat ~sep:"\n" in
+       Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore);
     assert_false found_any;
     let to_string error =
       let description = show_description ~concise error in
@@ -3033,13 +3033,13 @@ module MockClassHierarchyHandler = struct
   let set table ~key ~data = Hashtbl.set table ~key ~data
 
   let handler order =
-    ( module struct
+    (module struct
       let edges = Hashtbl.find order.edges
 
       let extends_placeholder_stub _ = false
 
       let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
-    end : ClassHierarchy.Handler )
+    end : ClassHierarchy.Handler)
 
 
   let connect ?(parameters = []) order ~predecessor ~successor =

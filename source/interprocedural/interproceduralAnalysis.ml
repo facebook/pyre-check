@@ -145,7 +145,7 @@ let non_fixpoint_witness ~iteration _kind left right =
       Some (Pkg { kind = ModelPart k2; value = next }) ) -> (
       match Kind.are_equal k1 k2 with
       | Kind.Equal -> non_fixpoint_witness k1 ~iteration ~previous ~next
-      | Kind.Distinct -> failwith "Wrong kind matched up in fixpoint test." )
+      | Kind.Distinct -> failwith "Wrong kind matched up in fixpoint test.")
 
 
 let reached_fixpoint_model_only ~iteration ~previous ~next =
@@ -217,13 +217,13 @@ let widen ~iteration ~previous ~next =
         "WIDEN DOES NOT RESPECT JOIN: previous = %s\nwiden = %s\n"
         (show_models previous)
         (show_models result);
-      explain_non_fixpoint ~iteration ~previous:result ~next:previous );
+      explain_non_fixpoint ~iteration ~previous:result ~next:previous);
     if not (reached_fixpoint_model_only ~iteration ~previous:result ~next) then (
       Log.error
         "WIDEN DOES NOT RESPECT JOIN: next = %s\nwiden = %s\n"
         (show_models next)
         (show_models result);
-      explain_non_fixpoint ~iteration ~previous:result ~next );
+      explain_non_fixpoint ~iteration ~previous:result ~next);
     result
   in
   if phys_equal previous next then
@@ -265,7 +265,7 @@ let widen_if_necessary step callable ~old_model ~new_model result =
       callable
       AnalysisResult.pp_model_t
       old_model;
-    Fixpoint.{ is_partial = false; model = old_model; result } )
+    Fixpoint.{ is_partial = false; model = old_model; result })
   else
     let model = widen ~iteration:step.Fixpoint.iteration ~previous:old_model ~next:new_model in
     Log.log
@@ -424,7 +424,7 @@ let analyze_callable analysis step callable environment =
                   (Fixpoint.show_step step)
               in
               Log.error "%s" message;
-              failwith message )
+              failwith message)
           in
           Fixpoint.
             {
@@ -435,7 +435,7 @@ let analyze_callable analysis step callable environment =
       | Some (qualifier, ({ Node.value; _ } as define)) ->
           if Define.dump value then
             callables_to_dump := Callable.Set.add callable !callables_to_dump;
-          analyze_define step analysis callable environment qualifier define )
+          analyze_define step analysis callable environment qualifier define)
   | #Callable.override_target as callable -> analyze_overrides step callable
   | #Callable.object_target as path ->
       Format.asprintf "Found object %a in fixpoint analysis" Callable.pp path |> failwith
@@ -587,7 +587,7 @@ let compute_fixpoint
           (if bucket_len > max_to_show then "..." else "")
       in
       Log.error "%s" message;
-      failwith message )
+      failwith message)
     else
       let timer = Timer.start () in
       let step = Fixpoint.{ epoch; iteration } in
@@ -636,12 +636,12 @@ let compute_fixpoint
             ~section:`Performance
             "Expensive callables for iteration %d: %s"
             iteration
-            ( iteration_expensive_callables
+            (iteration_expensive_callables
             |> List.sort ~compare:(fun left right ->
                    Int.compare right.time_to_analyze_in_ms left.time_to_analyze_in_ms)
             |> List.map ~f:(fun { time_to_analyze_in_ms; callable } ->
                    Format.sprintf "`%s`: %d ms" (Callable.show callable) time_to_analyze_in_ms)
-            |> String.concat ~sep:", " )
+            |> String.concat ~sep:", ")
       in
       let callables_to_analyze =
         compute_callables_to_reanalyze

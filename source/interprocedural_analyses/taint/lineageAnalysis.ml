@@ -21,7 +21,7 @@ let get_panda_type resolution = function
       in
       match class_name with
       | "DataFrame" -> Some DataFrame
-      | _ -> None )
+      | _ -> None)
   | _ -> None
 
 
@@ -152,14 +152,14 @@ let analyze_dataFrame analyze_expression resolution callee arguments taint state
       | [{ Call.Argument.value = index; _ }] ->
           let base_taint, state = analyze_expression ~resolution ~state ~expression:base in
           analyze_dataFrame_getitem base_taint index, state
-      | _ -> taint, state )
+      | _ -> taint, state)
   | { Node.value = Expression.Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } -> (
       match arguments with
       | [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in
           let state = analyze_dataFrame_setitem resolution base taint index state in
           ForwardState.Tree.empty, state
-      | _ -> taint, state )
+      | _ -> taint, state)
   | { Node.value = Expression.Name (Name.Attribute { base; attribute = "apply"; _ }); _ } -> (
       let taint, state = analyze_expression ~resolution ~state ~expression:base in
       match arguments with
@@ -173,8 +173,7 @@ let analyze_dataFrame analyze_expression resolution callee arguments taint state
           in
           taint, state
       | _ ->
-          ForwardState.Tree.collapse ~transform:Fn.id taint |> ForwardState.Tree.create_leaf, state
-      )
+          ForwardState.Tree.collapse ~transform:Fn.id taint |> ForwardState.Tree.create_leaf, state)
   | _ -> taint, state
 
 

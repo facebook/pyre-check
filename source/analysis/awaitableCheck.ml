@@ -290,7 +290,7 @@ module State (Context : Context) = struct
                     | None -> Map.set locals ~key:(Reference name) ~data:awaitable_locations
                   in
                   List.rev_append new_awaitables awaitables, { state with locals }
-              | _ -> awaitables, state )
+              | _ -> awaitables, state)
           | _ ->
               let need_to_await = state.need_to_await in
               (* Don't introduce awaitables for the arguments of a call, as they will be consumed by
@@ -335,7 +335,7 @@ module State (Context : Context) = struct
                       unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression);
                       locals;
                       need_to_await;
-                    } ) )
+                    } ))
           | _ ->
               ( awaitables,
                 {
@@ -354,8 +354,8 @@ module State (Context : Context) = struct
                       locals = Map.set locals ~key:(Location location) ~data:locations;
                       need_to_await;
                     } )
-              | None -> awaitables, state )
-          | _ -> awaitables, state )
+              | None -> awaitables, state)
+          | _ -> awaitables, state)
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let awaitables, state = forward_expression ~resolution ~state ~expression:left in
         forward_expression ~resolution ~state ~expression:right |>> awaitables
@@ -482,7 +482,7 @@ module State (Context : Context) = struct
               else
                 locals
             in
-            { unawaited; locals; need_to_await } )
+            { unawaited; locals; need_to_await })
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (
@@ -534,7 +534,7 @@ module State (Context : Context) = struct
         | _ ->
             (* Right now, if we don't have a concrete tuple to break down, we won't introduce new
                unawaited awaitables. *)
-            state )
+            state)
     | _ -> state
 
 

@@ -51,7 +51,7 @@ let compare_sig_t left right =
           equal_invalid_argument left.value right.value
       | Mismatch left, Mismatch right ->
           SignatureSelectionTypes.equal_mismatch left.value right.value
-      | _ -> default )
+      | _ -> default)
   | _ -> default
 
 
@@ -138,8 +138,8 @@ let test_unresolved_select context =
         let arguments, expression =
           match
             AstEnvironment.ReadOnly.get_processed_source
-              ( AnnotatedGlobalEnvironment.ast_environment global_environment
-              |> AstEnvironment.read_only )
+              (AnnotatedGlobalEnvironment.ast_environment global_environment
+              |> AstEnvironment.read_only)
               (Reference.create "test")
             >>| Source.statements
             >>| List.rev
@@ -923,9 +923,9 @@ let test_resolved_select context =
                (* Only "local" variables should be marked as escaped *)
                Single
                  (Variable
-                    ( Type.Variable.Unary.create "X"
+                    (Type.Variable.Unary.create "X"
                     |> Type.Variable.Unary.mark_as_escaped
-                    |> Type.Variable.Unary.namespace ~namespace ));
+                    |> Type.Variable.Unary.namespace ~namespace));
              ];
        });
   ()

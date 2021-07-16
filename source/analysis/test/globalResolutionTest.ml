@@ -242,9 +242,9 @@ let test_constructors context =
     |}
     "Foo"
     (Some
-       ( "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo), Named(a, int)], \
-          test.Foo]"
-       ^ "[[[Named(self, test.Foo), Named(b, str)], test.Foo]], test.Foo]" ));
+       ("BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo), Named(a, int)], \
+         test.Foo]"
+       ^ "[[[Named(self, test.Foo), Named(b, str)], test.Foo]], test.Foo]"));
 
   (* Generic classes. *)
   assert_constructor
@@ -556,10 +556,10 @@ let test_class_attributes context =
       ~cmp:attribute_list_equal
       ~printer:print_attributes
       ~pp_diff:(diff ~print)
-      ( GlobalResolution.attributes ~resolution definition
+      (GlobalResolution.attributes ~resolution definition
       |> (fun a -> Option.value_exn a)
       |> List.map
-           ~f:(GlobalResolution.instantiate_attribute ~resolution ~accessed_through_class:false) )
+           ~f:(GlobalResolution.instantiate_attribute ~resolution ~accessed_through_class:false))
       attributes
   in
   let uninstantiated_constructor =
@@ -1029,9 +1029,10 @@ let test_invalid_type_parameters context =
     ];
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   assert_invalid_type_parameters
-    ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
-      | _ -> None)
+    ~aliases:
+      (fun ?replace_unbound_parameters_with_any:_ -> function
+        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | _ -> None)
     ~given_type:"typing.List[pyre_extensions.Unpack[Ts]]"
     ~expected_transformed_type:"typing.List[typing.Any]"
     [
@@ -1084,9 +1085,10 @@ let test_invalid_type_parameters context =
     ~expected_transformed_type:"test.Foo[int, str]"
     [];
   assert_invalid_type_parameters
-    ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
-      | _ -> None)
+    ~aliases:
+      (fun ?replace_unbound_parameters_with_any:_ -> function
+        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | _ -> None)
     ~source:
       {|
       from typing import Generic
@@ -1138,9 +1140,10 @@ let test_invalid_type_parameters context =
       };
     ];
   assert_invalid_type_parameters
-    ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
-      | _ -> None)
+    ~aliases:
+      (fun ?replace_unbound_parameters_with_any:_ -> function
+        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | _ -> None)
     ~source:
       {|
       from typing import Generic, TypeVar

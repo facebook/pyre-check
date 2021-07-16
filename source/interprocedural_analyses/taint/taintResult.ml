@@ -190,17 +190,17 @@ module Sanitize = struct
     let to_string name = `String name in
     let sources_to_json sources =
       `List
-        ( sources
+        (sources
         |> List.dedup_and_sort ~compare:Sources.compare
         |> List.map ~f:Sources.show
-        |> List.map ~f:to_string )
+        |> List.map ~f:to_string)
     in
     let sinks_to_json sinks =
       `List
-        ( sinks
+        (sinks
         |> List.dedup_and_sort ~compare:Sinks.compare
         |> List.map ~f:Sinks.show
-        |> List.map ~f:to_string )
+        |> List.map ~f:to_string)
     in
     let sources_json =
       match sources with
@@ -470,7 +470,7 @@ let has_significant_summary root path target =
             BackwardState.read_tree_raw ~use_precise_labels:true ~root ~path backward.sink_taint
           in
           let taint = BackwardState.Tree.get_root tree in
-          not (BackwardTaint.is_bottom taint) )
+          not (BackwardTaint.is_bottom taint))
 
 
 let decorators_to_skip models =

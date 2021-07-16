@@ -94,7 +94,10 @@ module AccessCollector = struct
 
   (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
   and from_comprehension :
-        'a. (NameAccessSet.t -> 'a -> NameAccessSet.t) -> NameAccessSet.t -> 'a Comprehension.t ->
+        'a.
+        (NameAccessSet.t -> 'a -> NameAccessSet.t) ->
+        NameAccessSet.t ->
+        'a Comprehension.t ->
         NameAccessSet.t
     =
    fun from_element collected { Comprehension.element; generators } ->

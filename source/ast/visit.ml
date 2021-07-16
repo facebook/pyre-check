@@ -99,7 +99,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           match starred with
           | Starred.Once expression
           | Starred.Twice expression ->
-              visit_expression expression )
+              visit_expression expression)
       | String { StringLiteral.kind = Format expressions; _ } ->
           List.iter expressions ~f:visit_expression
       | String { kind = Mixed substrings; _ } ->
@@ -298,7 +298,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
             List.iter ~f:visit_statement body;
             List.iter ~f:visit_handler handlers;
             List.iter ~f:visit_statement orelse;
-            List.iter ~f:visit_statement finally )
+            List.iter ~f:visit_statement finally)
       else
         ();
       state := Visitor.statement source !state { Node.location; value }

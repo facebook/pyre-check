@@ -126,15 +126,15 @@ include Taint.Result.Register (struct
   let parse_models_and_queries_from_sources
       ~scheduler
       ~static_analysis_configuration:
-        ( {
-            Configuration.StaticAnalysis.verify_models;
-            configuration = { taint_model_paths; _ };
-            rule_filter;
-            find_missing_flows;
-            maximum_trace_length;
-            maximum_tito_depth;
-            _;
-          } as static_analysis_configuration )
+        ({
+           Configuration.StaticAnalysis.verify_models;
+           configuration = { taint_model_paths; _ };
+           rule_filter;
+           find_missing_flows;
+           maximum_trace_length;
+           maximum_tito_depth;
+           _;
+         } as static_analysis_configuration)
       ~environment
       ~functions
       ~stubs
@@ -377,11 +377,11 @@ include Taint.Result.Register (struct
       ~callable
       ~qualifier
       ~define:
-        ( {
-            Ast.Node.value =
-              { Ast.Statement.Define.signature = { name = { Ast.Node.value = name; _ }; _ }; _ };
-            _;
-          } as define )
+        ({
+           Ast.Node.value =
+             { Ast.Statement.Define.signature = { name = { Ast.Node.value = name; _ }; _ }; _ };
+           _;
+         } as define)
       ~existing
     =
     let define_qualifier = Ast.Reference.delocalize name in

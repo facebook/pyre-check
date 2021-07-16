@@ -155,8 +155,8 @@ let matches_annotation_constraint ~annotation_constraint ~annotation =
 let rec normalized_parameter_matches_constraint
     ~resolution
     ~parameter:
-      ( (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
-      parameter )
+      ((root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
+      parameter)
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
@@ -170,7 +170,7 @@ let rec normalized_parameter_matches_constraint
   | ModelQuery.ParameterConstraint.IndexConstraint index -> (
       match root with
       | AccessPath.Root.PositionalParameter { position; _ } when position = index -> true
-      | _ -> false )
+      | _ -> false)
   | ModelQuery.ParameterConstraint.AnyOf constraints ->
       List.exists constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
@@ -200,7 +200,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
           } ->
           List.exists decorators ~f:(fun decorator ->
               matches_decorator_constraint ~name_constraint ~arguments_constraint decorator)
-      | _ -> false )
+      | _ -> false)
   | ModelQuery.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint (Callable.external_target_name callable)
   | ModelQuery.ReturnConstraint annotation_constraint -> (
@@ -219,7 +219,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
           matches_annotation_constraint
             ~annotation_constraint
             ~annotation:(GlobalResolution.parse_annotation resolution annotation)
-      | _ -> false )
+      | _ -> false)
   | ModelQuery.AnyParameterConstraint parameter_constraint -> (
       let callable_type = get_callable_type () in
       match callable_type with
@@ -232,7 +232,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
           AccessPath.Root.normalize_parameters parameters
           |> List.exists ~f:(fun parameter ->
                  normalized_parameter_matches_constraint ~resolution ~parameter parameter_constraint)
-      | _ -> false )
+      | _ -> false)
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(callable_matches_constraint ~resolution ~callable)
   | ModelQuery.Not query_constraint ->
@@ -284,8 +284,8 @@ let apply_callable_productions ~resolution ~productions ~callable =
                      };
                     ] ->
                         Some annotation
-                    | _ -> None )
-                | _ -> None )
+                    | _ -> None)
+                | _ -> None)
             | _ -> None
           in
           match get_annotation_of_type annotation with
@@ -346,10 +346,11 @@ let apply_callable_productions ~resolution ~productions ~callable =
             let parameter =
               List.find_map
                 normalized_parameters
-                ~f:(fun ( root,
-                          parameter_name,
-                          { Node.value = { Expression.Parameter.annotation; _ }; _ } )
-                        ->
+                ~f:(fun
+                     ( root,
+                       parameter_name,
+                       { Node.value = { Expression.Parameter.annotation; _ }; _ } )
+                   ->
                   if Identifier.equal_sanitized parameter_name name then
                     Some (root, annotation)
                   else
@@ -360,7 +361,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 List.filter_map productions ~f:(fun production ->
                     production_to_taint ~annotation ~production
                     >>| fun taint -> ParameterAnnotation parameter, taint)
-            | None -> [] )
+            | None -> [])
         | ModelQuery.PositionalParameterTaint { index; taint = productions } -> (
             let parameter =
               List.find_map
@@ -376,7 +377,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 List.filter_map productions ~f:(fun production ->
                     production_to_taint ~annotation ~production
                     >>| fun taint -> ParameterAnnotation parameter, taint)
-            | None -> [] )
+            | None -> [])
         | ModelQuery.AllParametersTaint { excludes; taint } ->
             let apply_parameter_production
                 ( (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }),
@@ -395,8 +396,8 @@ let apply_callable_productions ~resolution ~productions ~callable =
             |> List.filter_map ~f:apply_parameter_production
         | ModelQuery.ParameterTaint { where; taint; _ } ->
             let apply_parameter_production
-                ( ( (root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
-                  parameter ),
+                ( ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
+                  parameter),
                   production )
               =
               if
@@ -584,7 +585,7 @@ let apply_all_rules
             Log.error
               "Error while executing model query: %s"
               (Model.display_verification_error error);
-            models )
+            models)
       else
         models
     in
@@ -645,7 +646,7 @@ let apply_all_rules
             Log.error
               "Error while executing model query: %s"
               (Model.display_verification_error error);
-            models )
+            models)
       else
         models
     in
@@ -684,6 +685,6 @@ let apply_all_rules
       | Some path -> DumpModelQueryResults.dump ~path ~models:new_models
       | None -> ()
     end;
-    merge_models new_models models )
+    merge_models new_models models)
   else
     models

@@ -88,7 +88,7 @@ module SavedStateAction = struct
                    shared_memory_path = Path.create_absolute shared_memory_path;
                    changed_files_path = None;
                  })
-        | _, _ -> parsing_failed () )
+        | _, _ -> parsing_failed ())
     | `List [`String "load_from_project"; load_from_project_options] -> (
         match
           ( member "project_name" load_from_project_options,
@@ -98,12 +98,12 @@ module SavedStateAction = struct
             Result.Ok (LoadFromProject { project_name; project_metadata = Some project_metadata })
         | `String project_name, `Null ->
             Result.Ok (LoadFromProject { project_name; project_metadata = None })
-        | _, _ -> parsing_failed () )
+        | _, _ -> parsing_failed ())
     | `List [`String "save_to_file"; save_to_file_options] -> (
         match member "shared_memory_path" save_to_file_options with
         | `String shared_memory_path ->
             Result.Ok (SaveToFile { shared_memory_path = Path.create_absolute shared_memory_path })
-        | _ -> parsing_failed () )
+        | _ -> parsing_failed ())
     | _ -> parsing_failed ()
 
 

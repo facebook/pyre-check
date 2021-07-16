@@ -2648,7 +2648,7 @@ let test_expand_implicit_returns _ =
     | { Node.value = Define { body; _ }; _ } :: _ -> (
         match List.rev body with
         | return :: _ -> assert_equal ~printer:Location.show expected_location return.location
-        | _ -> failwith "Preprocessed source's Define body is empty" )
+        | _ -> failwith "Preprocessed source's Define body is empty")
     | _ -> failwith "Preprocessed source failed"
   in
   assert_implicit_return_location
@@ -2741,8 +2741,8 @@ let test_defines _ =
     assert_equal
       ~cmp:Int.equal
       ~printer:Int.to_string
-      ( Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
-      |> List.length )
+      (Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
+      |> List.length)
       (Preprocessing.count_defines source)
   in
   let create_define name =
@@ -2923,7 +2923,7 @@ let test_replace_lazy_import _ =
     | Expression.Name name -> (
         match name_to_reference name with
         | Some reference when Reference.equal reference (Reference.create "lazy_import") -> true
-        | _ -> false )
+        | _ -> false)
     | _ -> false
   in
   let assert_replaced source expected =

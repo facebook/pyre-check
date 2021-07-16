@@ -185,7 +185,7 @@ let errors_from_not_found
                     actual, self_annotation
                 in
                 Error.UnsupportedOperand (Binary { operator_name; left_operand; right_operand })
-            | _ -> normal )
+            | _ -> normal)
         | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
             GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
             >>| typed_dictionary_error ~method_name ~position
@@ -696,7 +696,7 @@ module State (Context : Context) = struct
                         _;
                       } ->
                       let sofar = List.rev_append (type_variables_of_define signature) sofar in
-                      walk_nesting_define sofar nesting_define )
+                      walk_nesting_define sofar nesting_define)
             in
             walk_nesting_define [] nesting_define
           in
@@ -1009,9 +1009,9 @@ module State (Context : Context) = struct
               (* __new__ does not require an annotation for __cls__, even though it is a static
                  method. *)
                 when not
-                       ( Define.is_class_toplevel define
+                       (Define.is_class_toplevel define
                        || Define.is_static_method define
-                          && not (String.equal (Define.unqualified_name define) "__new__") ) -> (
+                          && not (String.equal (Define.unqualified_name define) "__new__")) -> (
                   let resolved, is_class_method =
                     let parent_annotation = type_of_parent ~global_resolution parent in
                     if Define.is_class_method define || Define.is_class_property define then
@@ -1073,7 +1073,7 @@ module State (Context : Context) = struct
                           errors
                       in
                       errors, Annotation.create annotation
-                  | None -> errors, Annotation.create resolved )
+                  | None -> errors, Annotation.create resolved)
               | _ -> (
                   let errors, parsed_annotation =
                     match annotation with
@@ -1140,7 +1140,7 @@ module State (Context : Context) = struct
                         Annotation.create Type.Any )
                   | None, None ->
                       ( add_missing_parameter_annotation_error ~errors ~given_annotation:None None,
-                        Annotation.create Type.Any ) )
+                        Annotation.create Type.Any ))
             in
             let apply_starred_annotations annotation =
               if String.is_prefix ~prefix:"**" name then
@@ -1265,7 +1265,7 @@ module State (Context : Context) = struct
                 List.foldi
                   ~init:(errors, Resolution.annotation_store resolution)
                   ~f:check_parameter
-                  parameters )
+                  parameters)
         | _ ->
             List.foldi
               ~init:(errors, Resolution.annotation_store resolution)
@@ -1298,10 +1298,10 @@ module State (Context : Context) = struct
               if
                 is_current_class_typed_dictionary
                 && not
-                     ( GlobalResolution.is_typed_dictionary
-                         ~resolution:global_resolution
-                         (Primitive base_name)
-                     || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name )
+                     (GlobalResolution.is_typed_dictionary
+                        ~resolution:global_resolution
+                        (Primitive base_name)
+                     || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name)
               then
                 emit_error
                   ~errors
@@ -1598,7 +1598,7 @@ module State (Context : Context) = struct
                           with
                           | ClassHierarchy.Untracked _ ->
                               (* TODO(T27409168): Error here. *)
-                              errors )
+                              errors)
                       | None ->
                           let has_keyword_and_anonymous_starred_parameters =
                             List.exists overriding_parameters ~f:(function
@@ -1638,12 +1638,12 @@ module State (Context : Context) = struct
                           | _, None ->
                               (* TODO(T53997072): There is no reasonable way to compare Variable
                                  (Concatenation _). For now, let's just ignore this. *)
-                              errors )
+                              errors)
                       | `Left overridden_parameter -> (
                           match Type.Callable.RecordParameter.annotation overridden_parameter with
                           | Some expected ->
                               validate_match ~errors ~overridden_parameter ~expected None
-                          | None -> errors )
+                          | None -> errors)
                       | `Right _ -> errors
                     in
                     let overriden_parameters =
@@ -1651,7 +1651,7 @@ module State (Context : Context) = struct
                     in
                     Type.Callable.Parameter.zip overriden_parameters overriding_parameters
                     |> List.fold ~init:errors ~f:check_parameter
-                | _ -> errors )
+                | _ -> errors)
             | _ -> None
           end
           |> Option.value ~default:errors
@@ -1678,7 +1678,7 @@ module State (Context : Context) = struct
                   emit_error
                     ~errors
                     ~location
-                    ~kind:(Error.IncompatibleConstructorAnnotation annotation) )
+                    ~kind:(Error.IncompatibleConstructorAnnotation annotation))
         | _ -> errors
     in
     let resolution, errors =
@@ -1876,7 +1876,7 @@ module State (Context : Context) = struct
             | Some (Callable { implementation = signature; _ }) when correct_getattr_arity signature
               ->
                 Some (create_annotation signature)
-            | _ -> None )
+            | _ -> None)
         | _ -> None
       in
       match annotation with
@@ -1910,7 +1910,7 @@ module State (Context : Context) = struct
               in
               { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None }
           | _ ->
-              { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None } )
+              { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None })
     in
     let forward_callable ~resolution ~errors ~target ~dynamic ~callee ~arguments =
       let original_arguments = arguments in
@@ -1963,7 +1963,7 @@ module State (Context : Context) = struct
                 >>= get_call_attribute
                 >>= function
                 | Callable callable -> Some { callable; self_argument }
-                | _ -> None ) )
+                | _ -> None))
         | _ -> None
       in
 
@@ -2026,7 +2026,7 @@ module State (Context : Context) = struct
                          ~default:(None, arguments, false)
                          ~f:(fun (callables, arguments, was_operator_inverted) ->
                            Some callables, arguments, was_operator_inverted)
-                | _ -> None, arguments, false )
+                | _ -> None, arguments, false)
             | Callee.Attribute { attribute = { resolved; _ }; _ }
             | Callee.NonAttribute { resolved; _ } -> (
                 match resolved with
@@ -2043,7 +2043,7 @@ module State (Context : Context) = struct
                     in
                     get_callables callee
                 | annotation ->
-                    (callable annotation >>| fun callable -> [callable]), arguments, false )
+                    (callable annotation >>| fun callable -> [callable]), arguments, false)
           in
           get_callables callee
         in
@@ -2095,7 +2095,7 @@ module State (Context : Context) = struct
                           (* Make sure we emit errors against the inverse function, not the original *)
                           unpacked_callable_and_self_argument ))
                   |> Option.value ~default:(signature, unpacked_callable_and_self_argument)
-              | _ -> signature, unpacked_callable_and_self_argument )
+              | _ -> signature, unpacked_callable_and_self_argument)
           | Found { selected_return_annotation; _ }, { kind = Named access; _ }
             when String.equal "__init__" (Reference.last access) ->
               Type.split selected_return_annotation
@@ -2265,7 +2265,7 @@ module State (Context : Context) = struct
                   emit_error ~errors ~location ~kind:(Error.IncompatibleAwaitableType resolved)
                 in
                 { resolution; resolved = Type.Any; errors; resolved_annotation = None; base = None }
-            ) )
+            ))
     | BooleanOperator { BooleanOperator.left; operator; right } ->
         let assume =
           let assume =
@@ -2350,7 +2350,7 @@ module State (Context : Context) = struct
               ~target:None
               ~callee:(Callee.NonAttribute { expression = callee; resolved })
               ~dynamic:false
-              ~arguments )
+              ~arguments)
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "type"); _ };
@@ -2909,8 +2909,8 @@ module State (Context : Context) = struct
                                global_resolution
                                ~left:Type.integer
                                ~right:
-                                 ( Type.Callable.Parameter.annotation index_parameter
-                                 |> Option.value ~default:Type.Bottom ) ->
+                                 (Type.Callable.Parameter.annotation index_parameter
+                                 |> Option.value ~default:Type.Bottom) ->
                           true
                       | _ -> false
                     in
@@ -2939,7 +2939,7 @@ module State (Context : Context) = struct
                                       operand = resolved;
                                     }))
                         in
-                        { getitem_resolution with Resolved.resolved = Type.Any; errors } ) )
+                        { getitem_resolution with Resolved.resolved = Type.Any; errors }))
           in
           resolution, errors, GlobalResolution.join global_resolution joined_annotation resolved
         in
@@ -2983,7 +2983,7 @@ module State (Context : Context) = struct
               resolved = Type.bool;
               resolved_annotation = None;
               base = None;
-            } )
+            })
     | Complex _ ->
         {
           resolution;
@@ -3056,7 +3056,7 @@ module State (Context : Context) = struct
                                       require_string_keys = false;
                                     }))
                         in
-                        None, resolution, errors ) )
+                        None, resolution, errors))
           in
           List.fold keywords ~f:forward_keyword ~init:(Some (key, value), resolution, errors)
         in
@@ -3375,7 +3375,7 @@ module State (Context : Context) = struct
                       resolved_annotation = Some annotation;
                       base = None;
                     }
-                | None -> access_as_attribute () )
+                | None -> access_as_attribute ())
             | _ ->
                 (* Attribute access. *)
                 access_as_attribute ()
@@ -3564,7 +3564,7 @@ module State (Context : Context) = struct
                                 ~kind:
                                   (Error.TupleConcatenationError
                                      (UnpackingNonIterable { annotation = resolved_element })),
-                              Type.OrderedTypes.create_unbounded_concatenation Type.Any ) )
+                              Type.OrderedTypes.create_unbounded_concatenation Type.Any ))
                   in
                   resolution, new_errors, ordered_type
               | _ ->
@@ -3609,7 +3609,7 @@ module State (Context : Context) = struct
         | Some expression -> forward_expression ~resolution ~expression
         | None ->
             let resolved = forward_expression ~resolution ~expression:operand in
-            { resolved with resolved = Type.bool; resolved_annotation = None; base = None } )
+            { resolved with resolved = Type.bool; resolved_annotation = None; base = None })
     | WalrusOperator { value; target } ->
         let statement =
           {
@@ -3908,7 +3908,7 @@ module State (Context : Context) = struct
                         ~source:annotation
                     with
                     | Some [element_type] -> element_type
-                    | _ -> Type.Any )
+                    | _ -> Type.Any)
               in
               let nonuniform_sequence_parameters expected_size annotation =
                 match annotation with
@@ -4111,7 +4111,7 @@ module State (Context : Context) = struct
                                 } ->
                                 Type.Callable.Parameter.annotation value_parameter
                                 |> Option.value_map ~default:false ~f:Type.is_any
-                            | _ -> false )
+                            | _ -> false)
                         | _ -> false
                       in
                       not is_setattr_any_defined
@@ -4150,7 +4150,7 @@ module State (Context : Context) = struct
                                 | ReadOnly _, false, _ ->
                                     Some (AnalysisError.FinalAttribute reference)
                                 | ReadOnly _, true, _ -> Some (ReadOnly reference)
-                                | _ -> None )
+                                | _ -> None)
                           in
                           let check_assignment_compatibility errors =
                             let is_valid_enumeration_assignment =
@@ -4365,8 +4365,8 @@ module State (Context : Context) = struct
                               in
                               is_immutable
                               && (not (Type.contains_unknown expected))
-                              && ( String.equal attribute sanitized
-                                 || String.equal attribute ("_" ^ sanitized) )
+                              && (String.equal attribute sanitized
+                                 || String.equal attribute ("_" ^ sanitized))
                           | _ -> false
                         in
                         match annotation with
@@ -4384,8 +4384,8 @@ module State (Context : Context) = struct
                                   Type.Primitive.equal
                                     (Reference.show parent)
                                     (AnnotatedAttribute.parent attribute)
-                                  && ( Define.is_class_toplevel define
-                                     || Define.is_constructor define )
+                                  && (Define.is_class_toplevel define
+                                     || Define.is_constructor define)
                               | _ -> false
                             in
                             ( Type.equal expected Type.Top || Type.contains_prohibited_any expected,
@@ -4585,7 +4585,7 @@ module State (Context : Context) = struct
                                          }),
                                   true )
                               else
-                                errors, true )
+                                errors, true)
                       | _ ->
                           if explicit then
                             ( emit_error
@@ -4673,10 +4673,10 @@ module State (Context : Context) = struct
                               match resolved_base, attribute with
                               | `Attribute (_, parent), Some (attribute, _)
                                 when not
-                                       ( Annotated.Attribute.defined attribute
-                                       || is_undefined_attribute parent ) ->
+                                       (Annotated.Attribute.defined attribute
+                                       || is_undefined_attribute parent) ->
                                   Resolution.set_local_with_attributes resolution ~name ~annotation
-                              | _ -> resolution )
+                              | _ -> resolution)
                           | _ -> resolution
                         in
                         resolution, errors
@@ -4711,7 +4711,7 @@ module State (Context : Context) = struct
                       let _, errors = List.fold types ~init:(resolution, errors) ~f:propagate in
                       (* We process type as union again to populate resolution *)
                       propagate (resolution, errors) (Union types)
-                  | resolved -> inner_assignment resolution errors resolved )
+                  | resolved -> inner_assignment resolution errors resolved)
               | List elements
               | Tuple elements
                 when is_uniform_sequence guide ->
@@ -4821,7 +4821,7 @@ module State (Context : Context) = struct
                               in
                               errors, List.map assignees ~f:(fun _ -> Type.Any)
                             else
-                              errors, annotations )
+                              errors, annotations)
                   in
                   List.zip_exn assignees annotations
                   |> List.fold
@@ -4853,7 +4853,7 @@ module State (Context : Context) = struct
                 ~resolved_value
                 ~expression:(Some value)
             in
-            Some resolution, errors )
+            Some resolution, errors)
     | Assert { Assert.test; origin; _ } ->
         let resolution, errors =
           let resolution, errors =
@@ -4878,7 +4878,7 @@ module State (Context : Context) = struct
                             else
                               None)
                       |> Option.value ~default:Type.Top
-                  | _ -> Type.Top )
+                  | _ -> Type.Top)
               | annotation -> annotation
             in
             match annotation with
@@ -4936,7 +4936,7 @@ module State (Context : Context) = struct
                     attribute >>| AnnotatedAttribute.annotation )
                 with
                 | Some (ReadOnly (Refinable _)), Some true, Some annotation -> Some annotation
-                | _ -> None )
+                | _ -> None)
             | _ -> None
           in
           let set_local name annotation =
@@ -5101,7 +5101,7 @@ module State (Context : Context) = struct
               | true, _ -> None, errors
               | _, { Node.value = Name name; _ } when is_simple_name name ->
                   Some (resolve ~name), errors
-              | _ -> Some resolution, errors )
+              | _ -> Some resolution, errors)
           | UnaryOperator
               {
                 UnaryOperator.operator = UnaryOperator.Not;
@@ -5179,7 +5179,7 @@ module State (Context : Context) = struct
                         { annotation with Annotation.annotation = Type.union refined_annotation }
                   in
                   Some resolution, errors
-              | _ -> Some resolution, errors )
+              | _ -> Some resolution, errors)
           | BooleanOperator { BooleanOperator.left; operator; right } -> (
               let update resolution expression =
                 forward_statement ~resolution ~statement:(Statement.assume expression)
@@ -5221,7 +5221,7 @@ module State (Context : Context) = struct
                          (Resolution.with_annotation_store
                             resolution
                             ~annotation_store:right_annotation_store)),
-                    errors ) )
+                    errors ))
           | ComparisonOperator
               {
                 ComparisonOperator.left;
@@ -5257,7 +5257,7 @@ module State (Context : Context) = struct
                        not <= refined and refined is not <= previous, as this is an obvious
                        contradiction. *)
                     Some resolution, errors
-              | None -> Some resolution, errors )
+              | None -> Some resolution, errors)
           | ComparisonOperator
               {
                 ComparisonOperator.left = { Node.value = Name name; _ };
@@ -5309,8 +5309,8 @@ module State (Context : Context) = struct
                           ~annotation:(Annotation.create element_type)
                       in
                       Some resolution, errors
-                  | _ -> Some resolution, errors )
-              | _ -> Some resolution, errors )
+                  | _ -> Some resolution, errors)
+              | _ -> Some resolution, errors)
           | ComparisonOperator
               {
                 ComparisonOperator.left = { Node.value = Name (Name.Identifier "None"); _ };
@@ -5341,8 +5341,8 @@ module State (Context : Context) = struct
                             { annotation with Annotation.annotation = Type.list parameter }
                       in
                       Some resolution, errors
-                  | _ -> Some resolution, errors )
-              | _ -> Some resolution, errors )
+                  | _ -> Some resolution, errors)
+              | _ -> Some resolution, errors)
           | WalrusOperator { target; _ } ->
               let resolution, _ =
                 forward_statement ~resolution ~statement:(Statement.assume target)
@@ -5371,7 +5371,7 @@ module State (Context : Context) = struct
                       ~annotation:(Annotation.create guard_type)
                   in
                   Some resolution, errors
-              | _ -> Some resolution, errors )
+              | _ -> Some resolution, errors)
           | _ -> Some resolution, errors
         in
         (* Ignore type errors from the [assert (not foo)] in the else-branch because it's the same
@@ -5511,7 +5511,7 @@ module State (Context : Context) = struct
                   | false -> (
                       match GlobalResolution.is_suppressed_module global_resolution name with
                       | true -> None
-                      | false -> Some (Error.UndefinedModule name) ))
+                      | false -> Some (Error.UndefinedModule name)))
           | Some { Node.value = from; _ } -> (
               match GlobalResolution.get_module_metadata global_resolution from with
               | None ->
@@ -5544,7 +5544,7 @@ module State (Context : Context) = struct
                               then
                                 None
                               else
-                                Some (Error.UndefinedName { from; name }) )) )
+                                Some (Error.UndefinedName { from; name }))))
         in
         ( Some resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
@@ -5567,7 +5567,7 @@ module State (Context : Context) = struct
                       ~kind:
                         (Error.InvalidTypeVariance
                            { annotation = extended; origin = Error.Inheritance actual })
-                | _ -> errors )
+                | _ -> errors)
             | _, _ -> errors
           in
           let check_duplicate_typevars errors parameters base =
@@ -5774,11 +5774,11 @@ let resolution_with_key ~global_resolution ~local_annotations ~parent ~key conte
 
 
 let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () =
-  let ( {
-          Node.value =
-            { Define.signature = { name = { Node.value = name; _ }; _ } as signature; _ } as define;
-          location;
-        } as define_node )
+  let ({
+         Node.value =
+           { Define.signature = { name = { Node.value = name; _ }; _ } as signature; _ } as define;
+         location;
+       } as define_node)
     =
     Context.define
   in
@@ -5913,10 +5913,11 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           in
           uninitialized_attributes
           |> List.filter_map
-               ~f:(fun ( name,
-                         (annotation, { class_name = original_class_name; is_protocol; is_abstract })
-                       )
-                       ->
+               ~f:(fun
+                    ( name,
+                      (annotation, { class_name = original_class_name; is_protocol; is_abstract })
+                    )
+                  ->
                  let parent = Type.Primitive (ClassSummary.name definition |> Reference.show) in
                  let expected = annotation in
                  if Type.is_top expected then
@@ -6098,12 +6099,12 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                       if
                         Ast.Expression.is_private_attribute
                           (Annotated.Attribute.name overridden_attribute)
-                        || ( GlobalResolution.less_or_equal
-                               global_resolution
-                               ~left:actual
-                               ~right:expected
+                        || (GlobalResolution.less_or_equal
+                              global_resolution
+                              ~left:actual
+                              ~right:expected
                            || Type.is_top actual
-                           || Type.contains_variable actual )
+                           || Type.contains_variable actual)
                            && overridable
                       then (* TODO(T53997072): Support type variable instantiation for overrides. *)
                         None
@@ -6404,7 +6405,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         with
         | Some (attribute, Some undecorated_signature) ->
             handle ~undecorated_signature ~problem:(AnnotatedAttribute.problem attribute)
-        | _ -> errors )
+        | _ -> errors)
   in
 
   class_initialization_errors errors_sofar |> overload_errors
@@ -6457,27 +6458,27 @@ let exit_state ~resolution (module Context : Context) =
         (Define.show_json define);
     if Define.dump define then (
       Log.dump "AST of %a:\n----%a\n----" Reference.pp name Define.pp define;
-      Option.iter exit ~f:(Log.dump "Exit state:\n%a" State.pp) );
-    ( if Define.dump_cfg define then
-        let precondition table id =
-          match Hashtbl.find table id with
-          | Some { State.resolution = Some exit_resolution; _ } ->
-              let stringify ~key ~data label =
-                let annotation_string =
-                  Type.show (Annotation.annotation data) |> String.strip ~drop:(Char.equal '`')
-                in
-                label ^ " " ^ Reference.show key ^ ": " ^ annotation_string
-              in
-              Resolution.annotation_store exit_resolution
-              |> Map.filter_map ~f:RefinementUnit.base
-              |> Map.fold ~f:stringify ~init:""
-          | _ -> ""
-        in
-        Log.dump
-          "CFG for %a in dot syntax for graphviz:\n----\n%s\n----"
-          Reference.pp
-          name
-          (Cfg.to_dot ~precondition:(precondition fixpoint) ~single_line:true cfg) );
+      Option.iter exit ~f:(Log.dump "Exit state:\n%a" State.pp));
+    (if Define.dump_cfg define then
+       let precondition table id =
+         match Hashtbl.find table id with
+         | Some { State.resolution = Some exit_resolution; _ } ->
+             let stringify ~key ~data label =
+               let annotation_string =
+                 Type.show (Annotation.annotation data) |> String.strip ~drop:(Char.equal '`')
+               in
+               label ^ " " ^ Reference.show key ^ ": " ^ annotation_string
+             in
+             Resolution.annotation_store exit_resolution
+             |> Map.filter_map ~f:RefinementUnit.base
+             |> Map.fold ~f:stringify ~init:""
+         | _ -> ""
+       in
+       Log.dump
+         "CFG for %a in dot syntax for graphviz:\n----\n%s\n----"
+         Reference.pp
+         name
+         (Cfg.to_dot ~precondition:(precondition fixpoint) ~single_line:true cfg));
 
     let callees = Context.Builder.get_all_callees () in
     let errors, local_annotations =
@@ -6490,7 +6491,7 @@ let exit_state ~resolution (module Context : Context) =
             |> filter_errors (module Context) ~global_resolution,
             Some resolution_fixpoint )
     in
-    errors, local_annotations, Some callees )
+    errors, local_annotations, Some callees)
 
 
 let check_define
@@ -6498,10 +6499,10 @@ let check_define
     ~resolution
     ~qualifier
     ~call_graph_builder:(module Builder : Callgraph.Builder)
-    ( {
-        Node.location;
-        value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
-      } as define_node )
+    ({
+       Node.location;
+       value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
+     } as define_node)
   =
   try
     let errors, local_annotations, callees =
@@ -6517,14 +6518,14 @@ let check_define
       in
       exit_state ~resolution (module Context)
     in
-    ( if not (Define.is_overloaded_function define) then
-        let caller =
-          if Define.is_property_setter define then
-            Callgraph.PropertySetterCaller name
-          else
-            Callgraph.FunctionCaller name
-        in
-        Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees) );
+    (if not (Define.is_overloaded_function define) then
+       let caller =
+         if Define.is_property_setter define then
+           Callgraph.PropertySetterCaller name
+         else
+           Callgraph.FunctionCaller name
+       in
+       Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees));
     { CheckResult.errors; local_annotations }
   with
   | ClassHierarchy.Untracked annotation ->
@@ -6570,7 +6571,7 @@ let get_or_recompute_local_annotations ~environment name =
             in
             exit_state ~resolution (module Context)
           in
-          local_annotations >>| LocalAnnotationMap.read_only )
+          local_annotations >>| LocalAnnotationMap.read_only)
 
 
 let check_function_definition

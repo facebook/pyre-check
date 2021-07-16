@@ -63,7 +63,7 @@ let delocalize reference =
           Str.matched_group 1 head |> String.substr_replace_all ~pattern:"?" ~with_:"." |> create
         else (
           Log.debug "Unable to extract qualifier from %s" head;
-          [] )
+          [])
       in
       qualifier @ [Identifier.sanitized head] @ tail
   | _ -> reference

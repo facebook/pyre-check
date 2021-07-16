@@ -17,17 +17,17 @@ let run_server configuration_file =
       Log.error "%s" message;
       exit 1
   | Result.Ok
-      ( {
-          Newserver.ServerConfiguration.log_path;
-          global_root;
-          local_root;
-          debug;
-          additional_logging_sections;
-          remote_logging;
-          profiling_output;
-          memory_profiling_output;
-          _;
-        } as server_configuration ) ->
+      ({
+         Newserver.ServerConfiguration.log_path;
+         global_root;
+         local_root;
+         debug;
+         additional_logging_sections;
+         remote_logging;
+         profiling_output;
+         memory_profiling_output;
+         _;
+       } as server_configuration) ->
       NewCommandStartup.setup_global_states
         ~global_root
         ~local_root

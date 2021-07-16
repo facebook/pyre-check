@@ -75,7 +75,7 @@ let create_directory_recursively ?permission path =
         | Result.Error _ as error -> error
         | Result.Ok () ->
             Unix.mkdir path ?perm:permission;
-            Result.Ok () )
+            Result.Ok ())
     | path when Caml.Sys.is_directory path -> Result.Ok ()
     | path ->
         let message = Format.sprintf "A non-directory already exists: %s" path in
@@ -188,7 +188,7 @@ let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~roo
               Array.fold ~init:sofar ~f:collect entries
           | exception Sys_error _ ->
               Log.error "Could not list `%s`" path;
-              sofar )
+              sofar)
         else
           sofar
     | _ when file_filter path -> create_relative ~root ~relative:path :: sofar

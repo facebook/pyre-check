@@ -41,7 +41,7 @@ module ImportEntry = struct
         | "future.builtins"
         | "builtins" ->
             Reference.create target
-        | _ -> Reference.create target |> Reference.combine from )
+        | _ -> Reference.create target |> Reference.combine from)
 end
 
 type t =

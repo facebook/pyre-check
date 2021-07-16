@@ -201,7 +201,7 @@ let get_module_and_definition ~resolution callable =
             List.find bodies ~f:is_setter >>| fun body -> qualifier, body
           else
             List.hd bodies >>| fun body -> qualifier, body
-      | None -> None )
+      | None -> None)
 
 
 let resolve_method ~resolution ~class_type ~method_name =

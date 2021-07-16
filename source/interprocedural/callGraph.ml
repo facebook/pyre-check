@@ -135,7 +135,7 @@ let rec resolve_ignoring_optional ~resolution expression =
         match defining_attribute ~resolution base_type attribute with
         | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
         | None -> resolve_expression_to_type expression
-        (* Lookup the base_type for the attribute you were interested in *) )
+        (* Lookup the base_type for the attribute you were interested in *))
     | _ -> resolve_expression_to_type expression
   in
   Type.optional_value annotation |> Option.value ~default:annotation
@@ -184,7 +184,7 @@ let rec callee_kind ~resolution callee callee_type =
             Method { is_direct_call = false }
           else
             Function
-      | _ -> Function )
+      | _ -> Function)
   | Type.Union (callee_type :: _) -> callee_kind ~resolution callee callee_type
   | _ ->
       (* We must be dealing with a callable class. *)
@@ -311,7 +311,7 @@ let rec resolve_callees_from_type
             | Method _ -> Callable.create_method name
             | _ -> Callable.create_function name
           in
-          Some (RegularTargets { implicit_self = false; targets = [target]; collapse_tito }) )
+          Some (RegularTargets { implicit_self = false; targets = [target]; collapse_tito }))
   | Type.Callable { kind = Anonymous; _ } -> None
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
@@ -365,7 +365,7 @@ let rec resolve_callees_from_type
               ~collapse_tito
               annotation
           else
-            None )
+            None)
 
 
 and resolve_constructor_callee ~resolution class_type =
@@ -397,7 +397,7 @@ and resolve_constructor_callee ~resolution class_type =
       | ( Some (RegularTargets { targets = new_targets; _ }),
           Some (RegularTargets { targets = init_targets; _ }) ) ->
           Some (ConstructorTargets { new_targets; init_targets })
-      | _ -> None )
+      | _ -> None)
 
 
 let resolve_callee_from_defining_expression
@@ -466,7 +466,7 @@ let resolve_callee_from_defining_expression
             ~callee_kind:(Method { is_direct_call = false })
             ~collapse_tito:true
             callable_type
-      | _ -> None )
+      | _ -> None)
 
 
 let transform_special_calls ~resolution { Call.callee; arguments } =
@@ -585,8 +585,8 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
                      targets = [`Method { Callable.class_name; method_name = attribute }];
                      collapse_tito;
                    })
-          | _ -> None )
-      | _ -> None )
+          | _ -> None)
+      | _ -> None)
   | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
       (* Resolve `base.attribute` by looking up the type of `base`. *)
       match resolve_ignoring_optional ~resolution base with
@@ -605,8 +605,8 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
                      targets = [`Method { Callable.class_name; method_name = attribute }];
                      collapse_tito;
                    })
-          | _ -> None )
-      | _ -> None )
+          | _ -> None)
+      | _ -> None)
   | _ -> None
 
 
@@ -619,7 +619,7 @@ let resolve_regular_callees ~resolution ~callee =
       let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
       match resolve_callees_from_type ~callee_kind ~resolution ~collapse_tito callee_type with
       | Some callees -> Some callees
-      | None -> resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee )
+      | None -> resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee)
 
 
 let resolve_callees ~resolution ~call =
@@ -652,7 +652,7 @@ let get_property_defining_parents ~resolution ~base ~attribute =
         match defining_attribute ~resolution annotation attribute with
         | Some property when Annotated.Attribute.property property ->
             [Annotated.Attribute.parent property |> Reference.create]
-        | _ -> [] )
+        | _ -> [])
   in
   get_defining_parents annotation
 
@@ -754,7 +754,7 @@ struct
           | Some { Node.value = Expression.Call call; _ } ->
               resolve_callees ~resolution ~call |> register_targets ~callee_name:(call_name call);
               state
-          | _ -> state )
+          | _ -> state)
       | _ -> state
 
 
@@ -890,17 +890,18 @@ let call_graph_of_define
 
 
 module SharedMemory = struct
-  include Memory.WithCache.Make
-            (Callable.RealKey)
-            (struct
-              type t = callees Location.Map.Tree.t
+  include
+    Memory.WithCache.Make
+      (Callable.RealKey)
+      (struct
+        type t = callees Location.Map.Tree.t
 
-              let prefix = Prefix.make ()
+        let prefix = Prefix.make ()
 
-              let description = "call graphs of defines"
+        let description = "call graphs of defines"
 
-              let unmarshall value = Marshal.from_string value 0
-            end)
+        let unmarshall value = Marshal.from_string value 0
+      end)
 
   let add ~callable ~callees = add callable (Location.Map.to_tree callees)
 

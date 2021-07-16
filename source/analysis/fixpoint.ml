@@ -95,7 +95,7 @@ module Make (State : State) = struct
                 if not converged then (
                   Hashtbl.set fixpoint ~key:successor_id ~data:widened;
                   Hashtbl.set iterations ~key:successor_id ~data:(iteration + 1);
-                  Queue.enqueue worklist successor_id )
+                  Queue.enqueue worklist successor_id)
             | None ->
                 Hashtbl.set fixpoint ~key:successor_id ~data:postcondition;
                 Hashtbl.set iterations ~key:successor_id ~data:0;

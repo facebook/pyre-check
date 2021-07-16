@@ -114,4 +114,4 @@ let send_telemetry ~f () =
         f () |> Message.to_normals |> Statistics.server_telemetry;
         budget := current_budget - 1
       with
-      | _ -> () )
+      | _ -> ())

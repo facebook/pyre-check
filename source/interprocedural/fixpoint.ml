@@ -107,7 +107,7 @@ let get_is_partial callable =
   | None -> (
       match SharedFixpoint.get_old callable with
       | None -> true
-      | Some { is_partial; _ } -> is_partial )
+      | Some { is_partial; _ } -> is_partial)
 
 
 let get_meta_data callable =

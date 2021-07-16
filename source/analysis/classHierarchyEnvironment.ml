@@ -65,7 +65,7 @@ let get_parents alias_environment name ~dependency =
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype;
             None
         | Type.Primitive supertype -> Some (supertype, parameters)
-        | _ -> None )
+        | _ -> None)
     | _ -> None
   in
   let bases ({ Node.value = { ClassSummary.bases; _ }; _ } as definition) =
@@ -213,7 +213,7 @@ module ReadOnly = struct
       unannotated_global_environment |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
     in
     let class_hierarchy =
-      ( module struct
+      (module struct
         let edges = get_edges read_only ?dependency:None
 
         let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency:None
@@ -223,7 +223,7 @@ module ReadOnly = struct
             unannotated_global_environment
             key
           |> Option.is_some
-      end : ClassHierarchy.Handler )
+      end : ClassHierarchy.Handler)
     in
     ClassHierarchy.check_integrity class_hierarchy ~indices
 
@@ -233,7 +233,7 @@ module ReadOnly = struct
     let unannotated_global_environment =
       AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
     in
-    ( module struct
+    (module struct
       let edges = get_edges read_only ?dependency
 
       let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency
@@ -243,7 +243,7 @@ module ReadOnly = struct
           unannotated_global_environment
           ?dependency
           key
-    end : ClassHierarchy.Handler )
+    end : ClassHierarchy.Handler)
 
 
   let variables ?(default = None) read_only ?dependency class_name =

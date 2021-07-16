@@ -150,9 +150,9 @@ let test_shutdown context =
     ~request:(Protocol.Request.ClientShutdownRequest (int_request_id 1))
     (Some
        (Protocol.LanguageServerProtocolResponse
-          ( LanguageServer.Protocol.ShutdownResponse.default (int_request_id 1)
+          (LanguageServer.Protocol.ShutdownResponse.default (int_request_id 1)
           |> LanguageServer.Protocol.ShutdownResponse.to_yojson
-          |> Yojson.Safe.to_string )))
+          |> Yojson.Safe.to_string)))
 
 
 let test_language_scheduler_shutdown context =
@@ -171,9 +171,9 @@ let test_language_scheduler_shutdown context =
        |})
     (Some
        (Protocol.LanguageServerProtocolResponse
-          ( LanguageServer.Protocol.ShutdownResponse.default (int_request_id 2)
+          (LanguageServer.Protocol.ShutdownResponse.default (int_request_id 2)
           |> LanguageServer.Protocol.ShutdownResponse.to_yojson
-          |> Yojson.Safe.to_string )))
+          |> Yojson.Safe.to_string)))
 
 
 let test_protocol_type_check context =
@@ -439,9 +439,9 @@ let test_incremental_repopulate context =
         return_annotation
     | _ -> None
   in
-  ( match get_annotation state "foo" with
+  (match get_annotation state "foo" with
   | Some expression -> assert_equal ~printer:Fn.id (Expression.show expression) "int"
-  | None -> assert_unreached () );
+  | None -> assert_unreached ());
   let path = Path.create_relative ~root:local_root ~relative:handle in
   let file =
     File.create

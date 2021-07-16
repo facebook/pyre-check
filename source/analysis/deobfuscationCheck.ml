@@ -217,7 +217,7 @@ module ConstantPropagationState (Context : Context) = struct
           let reference = name_to_reference_exn name in
           match propagate with
           | Some expression -> Map.set constants ~key:reference ~data:(Constant expression)
-          | None -> Map.remove constants reference )
+          | None -> Map.remove constants reference)
       | _ -> constants
     in
     let state = { state with constants } in
@@ -384,7 +384,7 @@ let run
       if String.length last > 15 then (
         let replacement = generate_identifier () in
         Hashtbl.set replacements ~key:last ~data:replacement;
-        Reference.create ?prefix:(Reference.prefix reference) replacement )
+        Reference.create ?prefix:(Reference.prefix reference) replacement)
       else
         reference
     in
@@ -395,7 +395,7 @@ let run
       if String.length (Identifier.sanitized identifier) > 15 then (
         let replacement = generate_identifier () in
         Hashtbl.set replacements ~key:identifier ~data:replacement;
-        replacement )
+        replacement)
       else
         identifier
     in
@@ -407,8 +407,8 @@ let run
           let value =
             match Node.value statement with
             | Statement.Define
-                ( { Define.signature = { name; parameters; _ }; captures; unbound_names; body } as
-                define ) ->
+                ({ Define.signature = { name; parameters; _ }; captures; unbound_names; body } as
+                define) ->
                 (* Scope parameters to the function. *)
                 let names = String.Hash_set.create () in
                 let scope_name identifier =

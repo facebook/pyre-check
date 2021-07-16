@@ -1448,9 +1448,9 @@ let test_unfold_recursive_type _ =
       ~cmp:Type.equal
       ~printer:Type.show
       expected
-      ( match recursive_type with
+      (match recursive_type with
       | Type.RecursiveType record -> Type.RecursiveType.unfold_recursive_type record
-      | _ -> failwith "expected RecursiveType" )
+      | _ -> failwith "expected RecursiveType")
   in
   let tree_name, tree_body =
     "Tree", Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; Type.Primitive "Tree"]]

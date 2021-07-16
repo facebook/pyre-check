@@ -105,7 +105,7 @@ module OrderImplementation = struct
               >>| List.rev
               >>| fun parameters -> Defined parameters
             with
-            | _ -> None )
+            | _ -> None)
         | Undefined, Defined right -> Some (Defined right)
         | Defined left, Undefined -> Some (Defined left)
         | _ -> None
@@ -116,13 +116,13 @@ module OrderImplementation = struct
 
 
     and join
-        ( {
-            ConstraintsSet.class_hierarchy =
-              { least_upper_bound; instantiate_successors_parameters; variables; _ };
-            is_protocol;
-            assumptions = { protocol_assumptions; _ };
-            _;
-          } as order )
+        ({
+           ConstraintsSet.class_hierarchy =
+             { least_upper_bound; instantiate_successors_parameters; variables; _ };
+           is_protocol;
+           assumptions = { protocol_assumptions; _ };
+           _;
+         } as order)
         left
         right
       =
@@ -185,11 +185,11 @@ module OrderImplementation = struct
                 | [head] -> (
                     match join order head new_element with
                     | Type.Union _ -> [head; new_element]
-                    | joined -> [joined] )
+                    | joined -> [joined])
                 | head :: tail -> (
                     match join order head new_element with
                     | Type.Union _ -> head :: flat_join tail new_element
-                    | joined -> joined :: tail )
+                    | joined -> joined :: tail)
               in
               Type.union (List.fold ~f:flat_join ~init:[] (other :: elements))
         | Type.IntExpression (Data polynomial), other when Type.Polynomial.is_base_case polynomial
@@ -255,7 +255,7 @@ module OrderImplementation = struct
                       | left, right, { variance = Contravariant; _ } -> (
                           match meet order left right with
                           | Type.Bottom -> None
-                          | not_bottom -> Some not_bottom )
+                          | not_bottom -> Some not_bottom)
                       | left, right, { variance = Invariant; _ } ->
                           if
                             always_less_or_equal order ~left ~right
@@ -263,7 +263,7 @@ module OrderImplementation = struct
                           then
                             Some left
                           else
-                            None )
+                            None)
                   | Type.Variable.TupleVariadicPair _, Type.Variable.TupleVariadicPair _
                   | Type.Variable.ParameterVariadicPair _, Type.Variable.ParameterVariadicPair _ ->
                       (* TODO(T47348395): Implement joining for variadics *)
@@ -321,7 +321,7 @@ module OrderImplementation = struct
                   [
                     Tuple (Concrete concrete);
                     Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation unbounded_element);
-                  ] )
+                  ])
         | other, Type.Tuple (Concatenation concatenation)
         | Type.Tuple (Concatenation concatenation), other -> (
             let unbounded_element =
@@ -332,7 +332,7 @@ module OrderImplementation = struct
             | (Type.Parametric _ as annotation)
             | (Type.Primitive _ as annotation) ->
                 join order (Type.parametric "tuple" [Single unbounded_element]) annotation
-            | _ -> Type.union [left; right] )
+            | _ -> Type.union [left; right])
         | Type.Tuple (Concrete parameters), (Type.Parametric _ as annotation)
         | (Type.Parametric _ as annotation), Type.Tuple (Concrete parameters) ->
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
@@ -371,7 +371,7 @@ module OrderImplementation = struct
               ConstraintsSet.resolve_callable_protocol ~order ~assumption:(Callable callable) other
             with
             | Some other_callable -> join order other_callable (Type.Callable callable)
-            | None -> Type.union [left; right] )
+            | None -> Type.union [left; right])
         | (Type.Literal _ as literal), other
         | other, (Type.Literal _ as literal) ->
             join order other (Type.weaken_literals literal)
@@ -391,7 +391,7 @@ module OrderImplementation = struct
                   Type.Primitive right
                 else
                   union
-            | None -> union )
+            | None -> union)
 
 
     and meet_callable_implementations
@@ -442,7 +442,7 @@ module OrderImplementation = struct
             in
             match List.fold2 ~init:(Some []) ~f:add_meet_of_parameters left right with
             | Ok parameters -> parameters >>| fun parameters -> Defined (List.rev parameters)
-            | Unequal_lengths -> None )
+            | Unequal_lengths -> None)
         | Undefined, Defined _
         | Defined _, Undefined ->
             Some Undefined
@@ -505,7 +505,7 @@ module OrderImplementation = struct
                 Type.Tuple
                   (Type.OrderedTypes.create_unbounded_concatenation
                      (meet order left_unbounded_element right_unbounded_element))
-            | _ -> Type.Bottom )
+            | _ -> Type.Bottom)
         | Type.Tuple (Concrete concrete), Type.Tuple (Concatenation concatenation)
         | Type.Tuple (Concatenation concatenation), Type.Tuple (Concrete concrete) -> (
             match
@@ -516,7 +516,7 @@ module OrderImplementation = struct
               when List.for_all ~f:(fun element -> Type.equal element concrete_head) tail
                    && always_less_or_equal order ~left:concrete_head ~right:unbounded_element ->
                 Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation concrete_head)
-            | _ -> Type.Bottom )
+            | _ -> Type.Bottom)
         | (Type.Tuple _ as tuple), (Type.Parametric _ as parametric)
         | (Type.Parametric _ as parametric), (Type.Tuple _ as tuple) ->
             if always_less_or_equal order ~left:tuple ~right:parametric then
@@ -634,7 +634,7 @@ let rec is_compatible_with order ~left ~right =
       | Some unbounded_element ->
           List.for_all bounded ~f:(fun bounded_type ->
               is_compatible_with order ~left:bounded_type ~right:unbounded_element)
-      | None -> fallback () )
+      | None -> fallback ())
   (* Union *)
   | Type.Union left, right ->
       List.fold
@@ -654,7 +654,7 @@ let rec is_compatible_with order ~left ~right =
       | Some left_parameters, Some right_parameters ->
           List.for_all2_exn left_parameters right_parameters ~f:(fun left right ->
               is_compatible_with order ~left ~right)
-      | _ -> fallback () )
+      | _ -> fallback ())
   | _, _ -> fallback ()
 
 

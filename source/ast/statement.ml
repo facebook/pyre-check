@@ -29,7 +29,7 @@ module Assign = struct
         | _ -> (
             match Expression.location_insensitive_compare left.value right.value with
             | x when not (Int.equal x 0) -> x
-            | _ -> [%compare: Reference.t option] left.parent right.parent ) )
+            | _ -> [%compare: Reference.t option] left.parent right.parent))
 end
 
 module Import = struct
@@ -157,7 +157,7 @@ end = struct
       | If left, If right -> (
           match Statement.location_insensitive_compare left.statement right.statement with
           | x when not (Int.equal x 0) -> x
-          | _ -> Bool.compare left.true_branch right.true_branch )
+          | _ -> Bool.compare left.true_branch right.true_branch)
       | While left, While right -> Bool.compare left.true_branch right.true_branch
       | Assertion, _ -> -1
       | If _, _ -> -1
@@ -177,7 +177,7 @@ end = struct
     | _ -> (
         match Option.compare Expression.location_insensitive_compare left.message right.message with
         | x when not (Int.equal x 0) -> x
-        | _ -> Origin.location_insensitive_compare left.origin right.origin )
+        | _ -> Origin.location_insensitive_compare left.origin right.origin)
 end
 
 and Class : sig
@@ -238,7 +238,7 @@ end = struct
                     List.compare
                       Define.NameAccess.compare
                       left.top_level_unbound_names
-                      right.top_level_unbound_names ) ) )
+                      right.top_level_unbound_names)))
 
 
   let toplevel_define { name = { Node.value; _ }; top_level_unbound_names; body; _ } =
@@ -504,7 +504,7 @@ end = struct
                               | _ ->
                                   [%compare: Reference.t option]
                                     left.nesting_define
-                                    right.nesting_define ) ) ) ) ) )
+                                    right.nesting_define))))))
 
 
     let create_toplevel ~qualifier =
@@ -580,8 +580,8 @@ end = struct
     let is_class_method ({ parent; _ } as signature) =
       let valid_names = ["__init_subclass__"; "__new__"; "__class_getitem__"] in
       Option.is_some parent
-      && ( Set.exists Recognized.classmethod_decorators ~f:(has_decorator signature)
-         || List.mem valid_names (unqualified_name signature) ~equal:String.equal )
+      && (Set.exists Recognized.classmethod_decorators ~f:(has_decorator signature)
+         || List.mem valid_names (unqualified_name signature) ~equal:String.equal)
 
 
     let is_class_property ({ parent; _ } as signature) =
@@ -707,7 +707,7 @@ end = struct
                 right.unbound_names
             with
             | x when not (Int.equal x 0) -> x
-            | _ -> List.compare Statement.location_insensitive_compare left.body right.body ) )
+            | _ -> List.compare Statement.location_insensitive_compare left.body right.body))
 
 
   let create_toplevel ~unbound_names ~qualifier ~statements =
@@ -906,7 +906,7 @@ end = struct
                   List.compare Statement.location_insensitive_compare left.orelse right.orelse
                 with
                 | x when not (Int.equal x 0) -> x
-                | _ -> Bool.compare left.async right.async ) ) )
+                | _ -> Bool.compare left.async right.async)))
 end
 
 and If : sig
@@ -932,7 +932,7 @@ end = struct
     | _ -> (
         match List.compare Statement.location_insensitive_compare left.body right.body with
         | x when not (Int.equal x 0) -> x
-        | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse )
+        | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse)
 end
 
 and Try : sig
@@ -973,7 +973,7 @@ end = struct
       | _ -> (
           match [%compare: Identifier.t option] left.name right.name with
           | x when not (Int.equal x 0) -> x
-          | _ -> List.compare Statement.location_insensitive_compare left.body right.body )
+          | _ -> List.compare Statement.location_insensitive_compare left.body right.body)
   end
 
   type t = {
@@ -1042,8 +1042,7 @@ end = struct
         | _ -> (
             match List.compare Statement.location_insensitive_compare left.orelse right.orelse with
             | x when not (Int.equal x 0) -> x
-            | _ -> List.compare Statement.location_insensitive_compare left.finally right.finally )
-        )
+            | _ -> List.compare Statement.location_insensitive_compare left.finally right.finally))
 end
 
 and While : sig
@@ -1069,7 +1068,7 @@ end = struct
     | _ -> (
         match List.compare Statement.location_insensitive_compare left.body right.body with
         | x when not (Int.equal x 0) -> x
-        | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse )
+        | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse)
 end
 
 and With : sig
@@ -1103,7 +1102,7 @@ end = struct
     | _ -> (
         match List.compare Statement.location_insensitive_compare left.body right.body with
         | x when not (Int.equal x 0) -> x
-        | _ -> Bool.compare left.async right.async )
+        | _ -> Bool.compare left.async right.async)
 
 
   let preamble { items; async; _ } =

@@ -29,7 +29,7 @@ let read_and_parse_json ~f file_path =
       | Result.Error message ->
           let message = Format.sprintf "Malformed server specification JSON. %s" message in
           Result.Error message
-      | Result.Ok _ as result -> result )
+      | Result.Ok _ as result -> result)
 
 
 (* A convenient wrapper to set up all relevant global states for a Pyre command. *)

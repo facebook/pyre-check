@@ -100,7 +100,7 @@ let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_p
               (* These attributes are all we need to locate the source and artifact relative paths. *)
               ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
             ]
-          |> Raw.query ?isolation_prefix raw )
+          |> Raw.query ?isolation_prefix raw)
 
 
 let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targets =
@@ -386,7 +386,7 @@ module BuckChangedTargetsQueryOutput = struct
                   { BuildMap.Partial.MergeResult.IncompatibleItem.key; _ } ->
                   let message = Format.sprintf "Overlapping artifact file detected: %s" key in
                   Result.Error message
-              | BuildMap.Partial.MergeResult.Ok sofar -> merge ~sofar rest ) )
+              | BuildMap.Partial.MergeResult.Ok sofar -> merge ~sofar rest))
     in
     merge ~sofar:BuildMap.Partial.empty outputs
 end
@@ -507,7 +507,7 @@ let build_map_and_difference_from_paths
           | Result.Ok build_map -> Lwt.return_ok (build_map, difference)
           | Result.Error artifact_path ->
               Format.sprintf "Cannot determine source path for artifact `%s`" artifact_path
-              |> Lwt.return_error ) )
+              |> Lwt.return_error))
 
 
 let fast_incremental_build_with_normalized_targets

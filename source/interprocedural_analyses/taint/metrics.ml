@@ -42,7 +42,7 @@ let with_alarm name f () =
         Reference.pp
         name
         current_time_in_seconds
-        pid )
+        pid)
   in
   let id = register_alarm callback in
   let () = start_alarm callable_max_time_in_seconds in

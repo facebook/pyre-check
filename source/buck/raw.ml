@@ -106,7 +106,7 @@ let create () =
             let description =
               Format.sprintf "Buck stopped with %s signal" (PrintSignal.string_of_signal signal)
             in
-            fail_with_error description )
+            fail_with_error description)
   in
   let query ?isolation_prefix arguments = invoke_buck ?isolation_prefix ("query" :: arguments) in
   let build ?isolation_prefix arguments = invoke_buck ?isolation_prefix ("build" :: arguments) in

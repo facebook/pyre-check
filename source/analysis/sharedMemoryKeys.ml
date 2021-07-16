@@ -214,7 +214,7 @@ module In = struct
           let payload = map sofar inputs in
           match !global with
           | Worker keys -> payload, keys
-          | Master _ -> failwith "can't set worker back to master" )
+          | Master _ -> failwith "can't set worker back to master")
       in
       let reduce (payload, keys) sofar =
         let register key =

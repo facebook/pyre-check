@@ -51,8 +51,8 @@ let test_all_decorators context =
       ~printer:[%show: DecoratorHelper.decorator_reference_and_module list]
       (List.map expected ~f:(fun (decorator, module_reference) ->
            { DecoratorHelper.decorator; module_reference }))
-      ( DecoratorHelper.all_decorators environment
-      |> List.sort ~compare:[%compare: DecoratorHelper.decorator_reference_and_module] )
+      (DecoratorHelper.all_decorators environment
+      |> List.sort ~compare:[%compare: DecoratorHelper.decorator_reference_and_module])
   in
   assert_decorators
     {|
@@ -2070,9 +2070,9 @@ let test_uniquify_names _ =
       ~cmp:[%equal: Reference.t list]
       ~printer:[%show: Reference.t list]
       (List.map expected ~f:Reference.create)
-      ( List.map given ~f:Reference.create
+      (List.map given ~f:Reference.create
       |> DecoratorHelper.uniquify_names ~get_reference:Fn.id ~set_reference:(fun reference _ ->
-             reference) )
+             reference))
   in
   assert_uniquified
     ["a.b"; "a.c"; "a.b"; "a.b"; "a.c"; "foo"]

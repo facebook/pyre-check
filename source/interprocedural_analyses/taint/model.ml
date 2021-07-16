@@ -56,7 +56,7 @@ let add_obscure_sink ~resolution ~call_target model =
           let sink_taint =
             List.fold_left ~init:model.backward.sink_taint ~f:add_parameter_sink parameters
           in
-          { model with backward = { model.backward with sink_taint } } )
+          { model with backward = { model.backward with sink_taint } })
 
 
 let unknown_callee ~location ~call =

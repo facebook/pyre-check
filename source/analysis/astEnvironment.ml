@@ -220,7 +220,7 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
                       ()
                   | Some (Result.Ok source) ->
                       wildcard_exports_of source |> List.iter ~f:(Hash_set.add transitive_exports);
-                      Visitor.visit [] source |> Queue.enqueue_all worklist )
+                      Visitor.visit [] source |> Queue.enqueue_all worklist)
             in
             search_wildcard_imports ()
       in
@@ -251,7 +251,7 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
                     |> fun value -> [{ statement with Node.value }]
               in
               state, expanded_import
-          | None -> state, [statement] )
+          | None -> state, [statement])
       | _ -> state, [statement]
   end)
   in
@@ -370,7 +370,7 @@ let update
               (RawSources.KeySet.of_list changed_modules)
             |> RawSources.KeySet.elements
           in
-          { UpdateResult.triggered_dependencies; invalidated_modules } )
+          { UpdateResult.triggered_dependencies; invalidated_modules })
   | ColdStart ->
       let timer = Timer.start () in
       Log.info

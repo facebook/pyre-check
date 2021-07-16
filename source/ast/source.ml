@@ -155,7 +155,7 @@ module Metadata = struct
                   Int.Map.set
                     ~key:(line_index + 1)
                     ~data:(List.map ~f:Ignore.increment ignores)
-                    ignore_lines )
+                    ignore_lines)
           | None -> ignore_lines
         else
           ignore_lines
@@ -220,8 +220,7 @@ let location_insensitive_compare left right =
           with
           | x when x <> 0 -> x
           | _ ->
-              List.compare Statement.location_insensitive_compare left.statements right.statements )
-      )
+              List.compare Statement.location_insensitive_compare left.statements right.statements))
 
 
 let show source = Format.asprintf "%a" pp source

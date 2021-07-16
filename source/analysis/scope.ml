@@ -203,7 +203,7 @@ module Binding = struct
               | None ->
                   (* `import a.b` actually binds name a *)
                   let name = Reference.as_list name |> List.hd_exn in
-                  { kind = Kind.ImportName; name; location } :: sofar )
+                  { kind = Kind.ImportName; name; location } :: sofar)
         in
         List.fold imports ~init:sofar ~f:binding_of_import
     | Statement.Raise { Raise.expression; from } ->
@@ -507,7 +507,7 @@ module Scope = struct
     | false -> (
         match Set.mem nonlocals name with
         | true -> Some Lookup.Nonlocal
-        | false -> Map.find bindings name >>| fun binding -> Lookup.Binding binding )
+        | false -> Map.find bindings name >>| fun binding -> Lookup.Binding binding)
 end
 
 module Access = struct
@@ -561,7 +561,7 @@ module ScopeStack = struct
           match Scope.lookup scope name with
           | Some (Scope.Lookup.Binding binding) -> Some (scope, binding)
           | Some Scope.Lookup.Global -> lookup_outer_scopes ~exclude_global []
-          | _ -> lookup_outer_scopes ~exclude_global rest )
+          | _ -> lookup_outer_scopes ~exclude_global rest)
     in
     match locals with
     | [] ->
@@ -584,7 +584,7 @@ module ScopeStack = struct
         | None ->
             lookup_outer_scopes ~exclude_global:false rest
             >>| fun (scope, binding) ->
-            { Access.binding; scope; kind = Access.(Kind.OuterScope Locality.Local) } )
+            { Access.binding; scope; kind = Access.(Kind.OuterScope Locality.Local) })
 
 
   let extend ~with_ { global; locals } = { global; locals = with_ :: locals }
