@@ -13,6 +13,6 @@ module CallResolution = CallResolution
 module DecoratorHelper = DecoratorHelper
 module DependencyGraph = DependencyGraph
 module DependencyGraphSharedMemory = DependencyGraphSharedMemory
-module Error = InterproceduralError
+module Error = Error
 module Fixpoint = Fixpoint
 module Result = InterproceduralResult
