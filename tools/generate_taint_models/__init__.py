@@ -12,7 +12,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Dict, List, Optional, Set
 
 from typing_extensions import Final
 

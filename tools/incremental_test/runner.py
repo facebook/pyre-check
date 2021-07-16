@@ -258,7 +258,7 @@ def compare_server_to_full(
 
         LOG.info("Running pyre incremental check...")
         incremental_check_output = pyre_runner.run_incremental()
-        LOG.debug(f"Stopping pyre server...")
+        LOG.debug("Stopping pyre server...")
         pyre_runner.run_stop()
         LOG.info(
             f"Pyre incremental check successfully finished (with {len(incremental_check_output)} errors)."  # noqa: line too long
@@ -291,7 +291,7 @@ def benchmark_server(
 
         LOG.info("Running pyre incremental check...")
         incremental_check_output = pyre_runner.run_incremental()
-        LOG.debug(f"Stopping pyre server...")
+        LOG.debug("Stopping pyre server...")
         pyre_runner.run_stop()
         LOG.info(
             f"Pyre incremental check successfully finished (with {len(incremental_check_output)} errors)."  # noqa: line too long

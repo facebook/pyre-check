@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import re
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import islice

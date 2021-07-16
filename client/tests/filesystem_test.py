@@ -38,7 +38,6 @@ from ..filesystem import (
     find_python_paths,
     remove_if_exists,
 )
-from ..find_directories import FoundRoot
 
 
 class FilesystemTest(unittest.TestCase):

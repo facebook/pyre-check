@@ -51,7 +51,7 @@ class Pyre:
 
         LOG.debug(f"Starting server in `{self._directory}`...")
         pyre_configuration = textwrap.dedent(
-            f"""
+            """
                 {{
                     "source_directories": ["."]
                 }}
@@ -61,14 +61,14 @@ class Pyre:
         pyre_configuration_path = self._directory / ".pyre_configuration"
         pyre_configuration_path.write_text(pyre_configuration)
 
-        LOG.debug(f"Writing watchman configuration")
+        LOG.debug("Writing watchman configuration")
         watchman_configuration_path = self._directory / ".watchmanconfig"
         watchman_configuration_path.write_text("{}\n")
 
-        LOG.debug(f"Starting watchman")
+        LOG.debug("Starting watchman")
         subprocess.check_call(["watchman", "watch", str(self._directory)])
 
-        LOG.debug(f"Priming the server")
+        LOG.debug("Priming the server")
         # TODO(T82114844): incremental is borked on Ubuntu 20.04.
         subprocess.check_call(
             ["pyre", "--noninteractive", "check"], cwd=self._directory

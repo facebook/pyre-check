@@ -102,7 +102,7 @@ def main(arguments: argparse.Namespace) -> int:
         LOG.exception(f"Cannot parse JSON at {specification_path}")
         return ExitCode.FAILURE
     except InvalidSpecificationException:
-        LOG.exception(f"Invalid specification JSON")
+        LOG.exception("Invalid specification JSON")
         return ExitCode.FAILURE
     except Exception:
         LOG.exception("Exception occurs in the check")

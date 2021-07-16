@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from pathlib import Path
 
 from ... import command_arguments, commands, configuration as configuration_module
 from . import incremental, stop, remote_logging
