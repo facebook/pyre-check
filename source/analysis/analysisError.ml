@@ -2107,7 +2107,7 @@ let rec messages ~concise ~signature location kind =
           name;
         "Check if along control flows the variable is defined.";
       ]
-  | UndefinedAttribute { attribute; origin } ->
+  | UndefinedAttribute { attribute; origin } -> (
       let target =
         match origin with
         | Class
@@ -2136,22 +2136,34 @@ let rec messages ~concise ~signature location kind =
             in
             Format.asprintf "Module `%a`" pp_reference name
       in
-      [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute]
+      match origin with
+      | Module (ExplicitModule { SourcePath.relative; is_stub = true; _ }) ->
+          let stub_trace =
+            Format.asprintf
+              "This module is shadowed by a stub file at `%s`. Ensure `%a` is defined in the stub \
+               file."
+              relative
+              pp_identifier
+              attribute
+          in
+          [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute; stub_trace]
+      | _ -> [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute])
   | UndefinedImport (UndefinedModule reference) when concise ->
       [Format.asprintf "Could not find module `%a`." Reference.pp_sanitized reference]
   | UndefinedImport (UndefinedName { from; name }) when concise ->
-      let from_name =
+      let from_name, is_stub =
         match from with
-        | ExplicitModule { SourcePath.qualifier; _ } -> qualifier
-        | ImplicitModule qualifier -> qualifier
+        | ExplicitModule { SourcePath.qualifier; is_stub; _ } -> qualifier, is_stub
+        | ImplicitModule qualifier -> qualifier, false
       in
       [
         Format.asprintf
-          "Could not find name `%a` in `%a`."
+          "Could not find name `%a` in `%a`%s."
           pp_identifier
           name
           Reference.pp_sanitized
-          from_name;
+          from_name
+          (if is_stub then " (stubbed)" else "");
       ]
   | UndefinedImport (UndefinedModule reference) ->
       [
@@ -2163,10 +2175,22 @@ let rec messages ~concise ~signature location kind =
          https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
       ]
   | UndefinedImport (UndefinedName { from; name }) ->
-      let from_name =
+      let from_name, trace =
+        let common_reasons_trace =
+          "For common reasons, see \
+           https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import"
+        in
         match from with
-        | ExplicitModule { SourcePath.qualifier; _ } -> qualifier
-        | ImplicitModule qualifier -> qualifier
+        | ExplicitModule { SourcePath.qualifier; relative; is_stub = true; _ } ->
+            ( qualifier,
+              Format.asprintf
+                "This module is shadowed by a stub file at `%s`. Ensure `%a` is defined in the \
+                 stub file."
+                relative
+                pp_identifier
+                name )
+        | ExplicitModule { SourcePath.qualifier; _ } -> qualifier, common_reasons_trace
+        | ImplicitModule qualifier -> qualifier, common_reasons_trace
       in
       [
         Format.asprintf
@@ -2175,8 +2199,7 @@ let rec messages ~concise ~signature location kind =
           name
           Reference.pp_sanitized
           from_name;
-        "For common reasons, see \
-         https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
+        trace;
       ]
   | UndefinedType annotation ->
       [Format.asprintf "Annotation `%a` is not defined as a type." pp_type annotation]
