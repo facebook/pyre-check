@@ -548,6 +548,16 @@ let test_misc context =
           reveal_type(obj.field)
     |}
     ["Revealed type [-1]: Revealed type for `obj.field` is `int`."];
+  (* Test supported from typing_extensions as well. *)
+  assert_type_errors
+    {|
+      from typing import List
+      from typing_extensions import TypeGuard
+
+      def is_str_list(val: List[int | str]) -> TypeGuard[List[str]]:
+        return all(isinstance(x, str) for x in val)
+    |}
+    [];
   ()
 
 

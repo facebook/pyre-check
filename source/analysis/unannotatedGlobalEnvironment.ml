@@ -741,6 +741,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make "typing_extensions.Literal" ~bases:catch_all_generic;
       make "typing_extensions.Annotated" ~bases:catch_all_generic;
       make "typing_extensions.TypeAlias";
+      make "typing_extensions.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
     ]
   in
   let builtin_classes =

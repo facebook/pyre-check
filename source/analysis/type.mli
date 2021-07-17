@@ -694,6 +694,8 @@ val awaitable_value : t -> t option
 
 val coroutine_value : t -> t option
 
+val typeguard_annotation : t -> t option
+
 val parameters : t -> Parameter.t list option
 
 val type_parameters_for_bounded_tuple_union : t -> t list option

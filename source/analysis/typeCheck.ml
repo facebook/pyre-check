@@ -3688,7 +3688,8 @@ module State (Context : Context) = struct
           Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
         in
         match annotation with
-        | Type.Parametric { name = "typing.TypeGuard"; _ } -> Type.bool
+        | Type.Parametric { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; _ } ->
+            Type.bool
         | _ when async && not generator ->
             Type.coroutine_value annotation |> Option.value ~default:Type.Top
         | _ -> annotation
@@ -5358,12 +5359,8 @@ module State (Context : Context) = struct
               let { Annotation.annotation = callee_type; _ } =
                 resolve_expression ~resolution test
               in
-              match callee_type with
-              | Type.Parametric
-                  {
-                    name = "typing.TypeGuard";
-                    parameters = [Type.Record.Parameter.Single guard_type];
-                  } ->
+              match Type.typeguard_annotation callee_type with
+              | Some guard_type ->
                   let resolution =
                     Resolution.set_local_with_attributes
                       resolution
@@ -5371,7 +5368,7 @@ module State (Context : Context) = struct
                       ~annotation:(Annotation.create guard_type)
                   in
                   Some resolution, errors
-              | _ -> Some resolution, errors)
+              | None -> Some resolution, errors)
           | _ -> Some resolution, errors
         in
         (* Ignore type errors from the [assert (not foo)] in the else-branch because it's the same

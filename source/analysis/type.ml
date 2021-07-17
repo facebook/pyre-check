@@ -3775,6 +3775,16 @@ let coroutine_value = function
   | _ -> None
 
 
+let typeguard_annotation = function
+  | Parametric
+      {
+        name = "typing.TypeGuard" | "typing_extensions.TypeGuard";
+        parameters = [Single guard_type];
+      } ->
+      Some guard_type
+  | _ -> None
+
+
 let parameters = function
   | Parametric { parameters; _ } -> Some parameters
   | _ -> None
