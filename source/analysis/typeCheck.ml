@@ -1895,15 +1895,18 @@ module State (Context : Context) = struct
                 match Reference.prefix reference with
                 | Some qualifier when not (Reference.is_empty qualifier) ->
                     if GlobalResolution.module_exists global_resolution qualifier then
+                      let origin =
+                        let ast_environment = GlobalResolution.ast_environment global_resolution in
+                        match AstEnvironment.ReadOnly.get_source_path ast_environment qualifier with
+                        | Some source_path -> Error.ExplicitModule source_path
+                        | None -> Error.ImplicitModule qualifier
+                      in
                       emit_error
                         ~errors
                         ~location
                         ~kind:
                           (Error.UndefinedAttribute
-                             {
-                               attribute = Reference.last reference;
-                               origin = Error.Module qualifier;
-                             })
+                             { attribute = Reference.last reference; origin = Error.Module origin })
                     else
                       errors
                 | _ -> errors
@@ -5517,6 +5520,7 @@ module State (Context : Context) = struct
                   else
                     [Error.UndefinedModule from]
               | Some module_metadata ->
+                  let ast_environment = GlobalResolution.ast_environment global_resolution in
                   List.filter_map
                     imports
                     ~f:(fun { Import.name = { Node.value = name_reference; _ }; _ } ->
@@ -5541,7 +5545,14 @@ module State (Context : Context) = struct
                               then
                                 None
                               else
-                                Some (Error.UndefinedName { from; name }))))
+                                let origin_module =
+                                  match
+                                    AstEnvironment.ReadOnly.get_source_path ast_environment from
+                                  with
+                                  | Some source_path -> Error.ExplicitModule source_path
+                                  | None -> Error.ImplicitModule from
+                                in
+                                Some (Error.UndefinedName { from = origin_module; name }))))
         in
         ( Some resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->

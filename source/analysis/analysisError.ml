@@ -41,9 +41,14 @@ type invalid_class_instantiation =
   | ProtocolInstantiation of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
+type module_reference =
+  | ExplicitModule of SourcePath.t
+  | ImplicitModule of Reference.t
+[@@deriving compare, eq, sexp, show, hash]
+
 type origin =
   | Class of Type.t
-  | Module of Reference.t
+  | Module of module_reference
 
 and mismatch = {
   actual: Type.t;
@@ -177,7 +182,7 @@ and unawaited_awaitable = {
 and undefined_import =
   | UndefinedModule of Reference.t
   | UndefinedName of {
-      from: Reference.t;
+      from: module_reference;
       name: Identifier.t;
     }
 
@@ -2123,19 +2128,30 @@ let rec messages ~concise ~signature location kind =
                 Format.asprintf "`%a`" pp_type annotation
             in
             name
-        | Module name -> Format.asprintf "Module `%a`" pp_reference name
+        | Module module_reference ->
+            let name =
+              match module_reference with
+              | ExplicitModule { SourcePath.qualifier; _ } -> qualifier
+              | ImplicitModule qualifier -> qualifier
+            in
+            Format.asprintf "Module `%a`" pp_reference name
       in
       [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute]
   | UndefinedImport (UndefinedModule reference) when concise ->
       [Format.asprintf "Could not find module `%a`." Reference.pp_sanitized reference]
   | UndefinedImport (UndefinedName { from; name }) when concise ->
+      let from_name =
+        match from with
+        | ExplicitModule { SourcePath.qualifier; _ } -> qualifier
+        | ImplicitModule qualifier -> qualifier
+      in
       [
         Format.asprintf
           "Could not find name `%a` in `%a`."
           pp_identifier
           name
           Reference.pp_sanitized
-          from;
+          from_name;
       ]
   | UndefinedImport (UndefinedModule reference) ->
       [
@@ -2147,13 +2163,18 @@ let rec messages ~concise ~signature location kind =
          https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
       ]
   | UndefinedImport (UndefinedName { from; name }) ->
+      let from_name =
+        match from with
+        | ExplicitModule { SourcePath.qualifier; _ } -> qualifier
+        | ImplicitModule qualifier -> qualifier
+      in
       [
         Format.asprintf
           "Could not find a name `%a` defined in module `%a`."
           pp_identifier
           name
           Reference.pp_sanitized
-          from;
+          from_name;
         "For common reasons, see \
          https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
       ]
@@ -2694,7 +2715,10 @@ let less_or_equal ~resolution left right =
     when Identifier.equal_sanitized left.attribute right.attribute -> (
       match left.origin, right.origin with
       | Class left, Class right -> GlobalResolution.less_or_equal resolution ~left ~right
-      | Module left, Module right -> Reference.equal_sanitized left right
+      | Module (ImplicitModule left), Module (ImplicitModule right)
+      | ( Module (ExplicitModule { SourcePath.qualifier = left; _ }),
+          Module (ExplicitModule { SourcePath.qualifier = right; _ }) ) ->
+          Reference.equal_sanitized left right
       | _ -> false)
   | UndefinedType left, UndefinedType right -> Type.equal left right
   | UnexpectedKeyword left, UnexpectedKeyword right ->
@@ -3077,11 +3101,16 @@ let join ~resolution left right =
       when Identifier.equal_sanitized left_attribute right_attribute ->
         let annotation = GlobalResolution.join resolution left right in
         UndefinedAttribute { origin = Class annotation; attribute = left_attribute }
-    | ( UndefinedAttribute { origin = Module left; attribute = left_attribute },
-        UndefinedAttribute { origin = Module right; attribute = right_attribute } )
+    | ( UndefinedAttribute { origin = Module (ImplicitModule left); attribute = left_attribute },
+        UndefinedAttribute { origin = Module (ImplicitModule right); attribute = right_attribute } )
       when Identifier.equal_sanitized left_attribute right_attribute
            && Reference.equal_sanitized left right ->
-        UndefinedAttribute { origin = Module left; attribute = left_attribute }
+        UndefinedAttribute { origin = Module (ImplicitModule left); attribute = left_attribute }
+    | ( UndefinedAttribute { origin = Module (ExplicitModule left); attribute = left_attribute },
+        UndefinedAttribute { origin = Module (ExplicitModule right); attribute = right_attribute } )
+      when Identifier.equal_sanitized left_attribute right_attribute && SourcePath.equal left right
+      ->
+        UndefinedAttribute { origin = Module (ExplicitModule left); attribute = left_attribute }
     | UndefinedType left, UndefinedType right when Type.equal left right -> UndefinedType left
     | UnexpectedKeyword left, UnexpectedKeyword right
       when Option.equal Reference.equal_sanitized left.callee right.callee
@@ -3313,10 +3342,15 @@ let join_at_source ~resolution errors =
     | { kind = UndefinedImport (UndefinedModule name); _ } ->
         Format.asprintf "Unknown[%a]" Reference.pp_sanitized name
     | { kind = UndefinedImport (UndefinedName { name; from }); _ } ->
+        let module_qualifier =
+          match from with
+          | ExplicitModule { SourcePath.qualifier; _ } -> qualifier
+          | ImplicitModule qualifier -> qualifier
+        in
         Format.asprintf
           "Unknown[%a]"
           Reference.pp_sanitized
-          (Reference.create name |> Reference.combine from)
+          (Reference.create name |> Reference.combine module_qualifier)
     | { kind = UnboundName name; _ }
     | { kind = UndefinedType (Type.Primitive name); _ } ->
         Format.asprintf "Unbound[%s]" name
@@ -3862,7 +3896,9 @@ let dequalify
                   dequalify annotation
               in
               Class annotation
-          | Module module_name -> Module (dequalify_reference module_name)
+          | Module (ExplicitModule source_path) -> Module (ExplicitModule source_path)
+          | Module (ImplicitModule module_name) ->
+              Module (ImplicitModule (dequalify_reference module_name))
         in
         UndefinedAttribute { attribute; origin }
     | UndefinedType annotation -> UndefinedType (dequalify annotation)

@@ -32,9 +32,14 @@ type invalid_class_instantiation =
   | ProtocolInstantiation of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
+type module_reference =
+  | ExplicitModule of SourcePath.t
+  | ImplicitModule of Reference.t
+[@@deriving compare, eq, sexp, show, hash]
+
 type origin =
   | Class of Type.t
-  | Module of Reference.t
+  | Module of module_reference
 
 and mismatch = {
   actual: Type.t;
@@ -168,7 +173,7 @@ and unawaited_awaitable = {
 and undefined_import =
   | UndefinedModule of Reference.t
   | UndefinedName of {
-      from: Reference.t;
+      from: module_reference;
       name: Identifier.t;
     }
 
