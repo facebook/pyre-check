@@ -93,7 +93,7 @@ class PysaServer:
         for model in invalid_models:
             if model.path is None:
                 self.log_and_show_message_to_client(
-                    "Path cannot be None", lsp.MessageType.WARNING
+                    f"{model.full_error_message}", lsp.MessageType.WARNING
                 )
             else:
                 result.setdefault(Path(model.path), []).append(
