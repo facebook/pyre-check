@@ -48,8 +48,10 @@ module.exports = {
           // Sidebars file relative to website dir.
           sidebarPath: require.resolve('./sidebars.js'),
           // Where to point users when they click "Edit this page"
-          editUrl:
-            'https://github.com/facebook/pyre-check/tree/master/documentation/website',
+          editUrl: fbContent({
+            internal: 'https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/',
+            external: 'https://github.com/facebook/pyre-check/tree/master/documentation/website'
+          }),
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
