@@ -1,0 +1,38 @@
+\ProvidesPackage{DejaVuSansMono} [2011/06/01 Style file for DejaVuSansMono.]
+%%
+%% Options:
+%%  [scaled]       --> Scale = 0.95
+%%  [scaled=0.9]   --> Scale = 0.90
+%%
+\RequirePackage{keyval}
+\define@key{DejaVuSansMono}{scaled}[0.95]{%
+  \def\DejaVuSansMono@scale{#1}}
+\def\ProcessOptionsWithKV#1{%
+  \let\@tempc\relax
+  \let\DejaVuSansMono@tempa\@empty
+  \@for\CurrentOption:=\@classoptionslist\do{%
+    \@ifundefined{KV@#1@\CurrentOption}%
+    {}%
+    {%
+      \edef\DejaVuSansMono@tempa{\DejaVuSansMono@tempa,\CurrentOption,}%
+      \@expandtwoargs\@removeelement\CurrentOption
+        \@unusedoptionlist\@unusedoptionlist
+    }%
+  }%
+  \edef\DejaVuSansMono@tempa{%
+    \noexpand\setkeys{#1}{%
+      \DejaVuSansMono@tempa\@ptionlist{\@currname.\@currext}%
+    }%
+  }%
+  \DejaVuSansMono@tempa
+  \let\CurrentOption\@empty
+}
+\ProcessOptionsWithKV{DejaVuSansMono}
+\AtEndOfPackage{%
+  \let\@unprocessedoptions\relax
+}
+    
+
+\renewcommand{\ttdefault}{DejaVuSansMono-TLF}
+
+\endinput

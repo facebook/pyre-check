@@ -1,0 +1,256 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/* replace unicode */
+
+.id[repl] .hidden {
+  font-size: 0;
+}
+
+.id[repl]:before{
+  content: attr(repl);
+}
+
+/* folding proofs */
+
+@keyframes show-proof {
+    0% {
+      max-height: 1.2em;
+      opacity: 1;
+    }
+    99% {
+      max-height: 1000em;
+    }
+    100%{
+    }
+}
+
+@keyframes hide-proof {
+    from {
+      visibility: visible;
+      max-height: 10em;
+      opacity: 1;
+    }
+    to {
+      max-height: 1.2em;
+    }
+}
+
+.proof {
+  cursor: pointer;
+}
+.proof * {
+  cursor: pointer;
+}
+
+.proof {
+  overflow: hidden;
+  position: relative;
+  display: inline-block;
+}
+
+.proof[show="false"] {
+  max-height: 1.2em;
+  visibility: visible;
+  opacity: 0.5;
+}
+
+.proof[show="false"][animate] {
+  animation-name: hide-proof;
+  animation-duration: 0.25s;
+}
+
+.proof[show=true] {
+  animation-name: show-proof;
+  animation-duration: 10s;
+}
+
+.proof[show="false"]:before {
+  position: absolute;
+  visibility: visible;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  content: "M";
+}
+.proof[show="false"]:hover:before {
+  content: "";
+}
+
+.proof[show="false"] + br + br {
+  display: none;
+}
+
+.proof[show="false"]:hover {
+  visibility: visible;
+  opacity: 0.5;
+}
+
+#toggle-proofs[proof-status="no-proofs"] {
+  display: none;
+}
+
+#toggle-proofs[proof-status="some-hidden"]:before {
+  content: "Show Proofs";
+}
+
+#toggle-proofs[proof-status="all-shown"]:before {
+  content: "Hide Proofs";
+}
+
+
+/* page layout */
+
+html, body {
+  height: 100%;
+  margin:0;
+  padding:0;
+}
+
+@media only screen {
+/* no div with internal scrolling to allow printing of whole content */
+    body {
+        display: flex;
+        flex-direction: column
+    }
+
+    #content {
+        flex: 1;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+#content:focus {
+  outline: none; /* prevent glow in OS X */
+}
+
+#main {
+    display: block;
+    padding: 16px;
+    padding-top: 1em;
+    padding-bottom: 2em;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 60em;
+    flex: 1 0 auto;
+}
+
+.libtitle {
+  display: none;
+}
+
+/* header */
+#header {
+  width:100%;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  background-color: rgb(21,57,105);
+  color: white;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+
+.button {
+  cursor: pointer;
+}
+
+#header * {
+    text-decoration: none;
+    vertical-align: middle;
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+#header > .right, #header > .left {
+  display: flex;
+  flex: 1;
+  align-items: center;
+}
+#header > .left {
+  text-align: left;
+}
+#header > .right {
+  flex-direction: row-reverse;
+}
+
+#header a, #header .button {
+    color: white;
+    box-sizing: border-box;
+}
+
+#header a {
+  border-radius: 0;
+  padding: 0.2em;
+}
+
+#header .button {
+  background-color: rgb(63, 103, 156);
+  border-radius: 1em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  margin: 0.2em;
+}
+
+#header a:hover, #header .button:hover {
+    background-color: rgb(181, 213, 255);
+    color: black;
+}
+
+#header h1 { padding: 0;
+             margin: 0;}
+
+/* footer */
+#footer {
+  text-align: center;
+  opacity: 0.5;
+  font-size: 75%;
+}
+
+/* hyperlinks */
+
+@keyframes highlight {
+    50%{
+      background-color: black;
+    }
+}
+
+:target * {
+  animation-name: highlight;
+  animation-duration: 1s;
+}
+
+a[name]:empty {
+  float: right;
+}
+
+/* Proviola */
+
+div.code {
+  width: auto;
+  float: none;
+}
+
+div.goal {
+  position: fixed;
+  left: 75%;
+  width: 25%;
+  top: 3em;
+}
+
+div.doc {
+  clear: both;
+}
+
+span.command:hover {
+  background-color: inherit;
+}

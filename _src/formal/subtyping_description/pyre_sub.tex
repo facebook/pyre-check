@@ -1,0 +1,339 @@
+%%
+% Copyright (c) 2018-present, Facebook, Inc.
+%
+% This source code is licensed under the MIT license found in the
+% LICENSE file in the root directory of this source tree.
+%%
+
+\documentclass[a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{comment}
+\usepackage{mathpartir}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage[scaled=0.85]{DejaVuSansMono}
+\usepackage{hyperref}
+
+% local ocaml style
+\usepackage{lstocaml}
+
+% bunch of macros to mimic type.ml definitions
+\newcounter{pyrule}
+\setcounter{pyrule}{1}
+
+\newcommand{\pyList}[1]{#1_{\ldots}}
+\newcommand{\pyTok}[1]{\texttt{#1}}
+\newcommand{\ruleName}[1]{\small\textsc{\thepyrule-#1}\stepcounter{pyrule}}
+
+\newcommand{\pyAny}{\pyTok{Any}}
+\newcommand{\pyTop}{\pyTok{Top}}
+\newcommand{\pyBottom}{\pyTok{Bottom}}
+\newcommand{\pyUndeclared}{\pyTok{Undeclared}}
+\newcommand{\pyPrimitive}[1]{\pyTok{Primitive}[\text{``#1''}]}
+\newcommand{\pyObject}{\pyPrimitive{object}}
+\newcommand{\pyVariable}[1]{\pyTok{Variable}[#1]}
+\newcommand{\pyPVC}[1]{\pyTok{ParameterVariadicComponent}[#1]}
+\newcommand{\pyAnnotated}[1]{\pyTok{Annotated}[#1]}
+\newcommand{\pyOptional}[1]{\pyTok{Optional}[#1]}
+\newcommand{\pyTuple}[1]{\pyTok{Tuple}[#1]}
+\newcommand{\pyBoundedTuple}[1]{\pyTuple{\pyTok{Bounded} (#1)}}
+\newcommand{\pyConcreteTuple}[1]{\pyBoundedTuple{\pyTok{Concrete}[#1]}}
+\newcommand{\pyUnboundedTuple}[1]{\pyTuple{#1, \ldots}}
+\newcommand{\pyParametric}[2]{\pyTok{Parametric}[\text{``#1''}][#2]}
+\newcommand{\pyRawCallable}[3]{\pyTok{Callable}[#1, #2, #3]}
+\newcommand{\pyCallable}[1]{\pyTok{Callable}[#1]}
+\newcommand{\pyFun}[1]{\pyRawCallable{\pyTok{Named}[\text{``#1''}]}{\_}{\_}}
+\newcommand{\pyTypedDictionary}[1]{\pyTok{TypedDictionary}[#1]}
+\newcommand{\pyLiteral}[1]{\pyTok{Literal}[#1]}
+
+\newcommand{\PyreRevision}{a9b640f6953f0d41d8c96c595ae60ea2952bdce5}
+\begin{document}
+
+\title{Pyre subtyping relation}
+\date{July 4th, 2019}
+\author{Vincent Siles}
+
+\maketitle
+
+\section{Forewords}
+As Pyre is a fast moving target, this file has been written using the revision
+\texttt{\PyreRevision}.  This code can be found
+at \href{https://github.com/facebook/pyre-check}{Facebook's github repository}.
+
+\section{Type definitions and helper functions}
+All type definitions and helper functions can be found in the
+\href{https://github.com/facebook/pyre-check/tree/\PyreRevision/analysis/type.ml}{\texttt{analysis/type.ml}}
+file.
+
+\section{Subtyping algorithm}
+
+The following algorithm is a description of the typing rules checked by
+the \texttt{less\_or\_equal} function (see
+\href{https://github.com/facebook/pyre-check/tree/\PyreRevision/analysis/typeOrder.ml}{\texttt{analysis/typeOrder.ml}}).
+
+The algorithm is performing some sanity checks (types are actually
+tracked, expected variance is actually a valid one, \ldots). In case where
+these tests are failing, an exception is raised. We won't discuss these
+cases here.
+
+The following rules must be used in the described order. The first rule that
+matches must be used.
+\\
+
+\begin{center}
+\begin{tabular}{ccc}
+    \inferrule{S = T}{S\le T} \\
+    \ruleName{struct.eq} \\ \\
+
+    \inferrule{~}{T \le\pyAny} \\
+    \ruleName{any.right} \\ \\
+
+    \inferrule{\pyUndeclared\notin{} S}{S \le\pyTop} \\
+    \ruleName{top.right} \\ \\
+
+    \inferrule{Top \le{} T}{\bot} \\
+    \ruleName{top.left} \\ \\
+
+    \inferrule{\texttt{Config[any\_is\_bottom]} = true}{\pyAny\le{} T} \\
+    \ruleName{any.left} \\ \\
+
+    \inferrule{~}{\pyBottom\le{} T} \\
+    \ruleName{bot.left} \\ \\
+
+    \inferrule{S \le\pyBottom}{\bot} \\
+    \ruleName{bot.right} \\ \\
+
+    \inferrule{~}{S \le\pyObject} \\
+    \ruleName{object.right} \\ \\
+
+    \inferrule{S \le\pyVariable{T}}{\bot} \\
+    \ruleName{Variable.right} \\ \\
+
+    \inferrule{\pyPVC{\_}\le{} \_}{\bot} \\
+    \ruleName{pvc.left} \\ \\
+
+    \inferrule{\_ \le\pyPVC{\_}}{\bot} \\
+    \ruleName{pvc.right} \\ \\
+
+    \inferrule{S \le{} T}{\pyAnnotated{S} \le{} T} \\
+    \ruleName{annotated.left}
+\end{tabular}
+\end{center}
+
+
+
+\begin{center}
+\begin{tabular}{ccc}
+    \inferrule{S \le{} T}{S \le\pyAnnotated{T}} \\
+    \ruleName{annotated.right} \\ \\
+
+    \inferrule{\text{See next section}}
+        {\pyParametric{S}{\pyList{X}}\le\pyParametric{T}{\pyList{Y}}} \\
+    \ruleName{parametric} \\ \\
+
+    \inferrule{\forall{} i, A_i \le{} B}{\bigcup_i{A_i} \le{} B} \\
+    \ruleName{union.left} \\ \\
+
+    \inferrule{\exists{} k, \pyVariable{S}\le{} B_k~\|~\texttt{upper\_bound} (\pyVariable{S}) \le\bigcup_i{B_i}}
+        {\pyVariable{S}\le\bigcup_i{B_i}} \\
+    \ruleName{variable.union} \\ \\
+
+    \inferrule{\exists{} k, A \le{} B_k}{A \le\bigcup_i{B_i}} \\
+    \ruleName{union.right} \\ \\
+
+    \inferrule{\pyVariable{S}\le{} T~\|~\texttt{upper\_bound} (\pyVariable{S}) \le\pyOptional{T}}
+        {\pyVariable{S}\le\pyOptional{T}} \\
+    \ruleName{variable.optional} \\ \\
+
+    \inferrule{S \le{} T}{\pyOptional{S} \le\pyOptional{T}} \\
+    \ruleName{optional} \\ \\
+
+    \inferrule{S \le{} T}{S \le\pyOptional{T}} \\
+    \ruleName{optional.right} \\ \\
+
+    \inferrule{\pyOptional{S} \le{} T}{\bot} \\
+    \ruleName{optional.fallback} \\ \\
+
+    \inferrule{\texttt{upper\_bound} (\pyVariable{S}) \le{} T}{\pyVariable{S}\le{} T} \\
+    \ruleName{variable.fallback} \\ \\
+
+    \inferrule{~}{\pyTuple{\_} \le\pyBoundedTuple{\pyAny}} \\
+    \ruleName{tuple.any.right}
+\end{tabular}
+\end{center}
+
+
+
+\begin{center}
+\begin{tabular}{ccc}
+    \inferrule{~}{\pyBoundedTuple{\pyAny}\le\pyTuple{\_}} \\
+    \ruleName{tuple.any.left} \\ \\
+
+    \inferrule{|S| = |T| \\ \forall{} i, S_i \le{} T_i}
+        {\pyConcreteTuple{\pyList{S}}\le\pyConcreteTuple{\pyList{T}}} \\
+    \ruleName{tuple.concrete} \\ \\
+
+    %% vsiles notes: I don't get this rule. What could be bigger than object ?
+    \inferrule{\pyUnboundedTuple{\pyObject}\le{} T}
+        {\pyBoundedTuple{\pyVariable{\_}}\le{} T} \\
+    \ruleName{tuple.variable.left} \\ \\
+
+    \inferrule{S \le\pyBoundedTuple{\pyVariable{\_}}}{\bot} \\
+    \ruleName{tuple.variable.right} \\ \\
+
+    \inferrule{S \le{} T}{\pyUnboundedTuple{S}\le\pyUnboundedTuple{T}} \\
+    \ruleName{tuple.unbounded} \\ \\
+
+    %% vsiles notes: When do we encounter Concrete [] ? Only with explicit ()
+    %% or in some internal routine ?
+    \inferrule{~}{\pyConcreteTuple{~}\le\pyUnboundedTuple{T}} \\
+    \ruleName{tuple.empty.unbounded} \\ \\
+
+    \inferrule{\pyList{S}\not= [] \\ \texttt{join} (\pyList{S})\le{} T}
+        {\pyConcreteTuple{\pyList{S}}\le\pyUnboundedTuple{T}} \\
+    \ruleName{tuple.concrete.unbounded} \\ \\
+
+    \inferrule{\pyParametric{tuple}{\texttt{union\_upper\_bound} (S)}\le\pyParametric{name}{args}}
+        {\pyBoundedTuple{S}\le\pyParametric{name}{args}} \\
+    \ruleName{tuple.bounded.parametric} \\ \\
+
+    \inferrule{\pyParametric{tuple}{[S]}\le\pyParametric{name}{args}}
+        {\pyUnboundedTuple{S}\le\pyParametric{name}{args}} \\
+    \ruleName{tuple.unbounded.parametric} \\ \\
+
+    \inferrule{\pyParametric{tuple}{[S]}\le\pyPrimitive{T}}
+        {\pyUnboundedTuple{S}\le\pyPrimitive{T}} \\
+    \ruleName{tuple.primitive.unbounded} \\ \\
+
+    \inferrule{\pyList{S}\not= [] \\ \pyParametric{tuple}{\texttt{join} (\pyList{S})}\le\pyPrimitive{T}}
+        {\pyConcreteTuple{\pyList{S}}\le\pyPrimitive{T}} \\
+    \ruleName{tuple.primitive.concrete} \\ \\
+
+    \inferrule{~}{\pyPrimitive{tuple}\le\pyTuple{\_}} \\
+    \ruleName{primitive.tuple}
+\end{tabular}
+\end{center}
+
+
+
+
+\begin{center}
+\begin{tabular}{ccc}
+    \inferrule{\pyTuple{\_}\le{}T}{\bot} \\
+    \ruleName{tuple.sink.left} \\ \\
+
+    \inferrule{S\le\pyTuple{\_}}{\bot} \\
+    \ruleName{tuple.sink.right} \\ \\
+
+    \inferrule{\text{``f''} = \text{``g''}}{\pyFun{f}\le\pyFun{g}} \\
+    \ruleName{callable.named} \\ \\
+
+    \inferrule{F\approx{} implem \\ \forall{}i, F\approx{}overloads_i}
+        {\pyCallable{F}\le\pyRawCallable{\_}{implem}{\pyList{overloads}}} \\
+    \ruleName{callable.compat} \\ \\
+
+    %% vsiles notes: I have absolutely no clue about that one
+    \inferrule{\pyTok{is\_meta} (S) \\ |S|.params = 1 \\ S' = \pyTok{constructor}
+        (\texttt{protocol\_assuptions}, S.params[0]) \\ S'\le\pyCallable{F}}
+        {S\le\pyCallable{F}} \\
+    \ruleName{callable.protocol} \\ \\
+
+    \inferrule{\pyPrimitive{F}\le\pyPrimitive{G}}
+        {\pyParametric{F}{\pyList{X}}\le\pyPrimitive{G}} \\
+    \ruleName{parametric.primitive} \\ \\
+
+    \inferrule{\pyParametric{F}{[~]}\le\pyParametric{G}{\pyList{Y}}}
+        {\pyPrimitive{F}\le\pyParametric{G}{\pyList{Y}}} \\
+    \ruleName{primitive.parametric} \\ \\
+
+    \inferrule{\texttt{join} (\pyParametric{typing.Callable}{[\pyBottom]}, S)=
+        \pyParametric{typing.Callable}{[S']} \\ S' \le{}\pyCallable{F}}
+        {S \le\pyCallable{F}} \\
+    \ruleName{callable.join} \\ \\
+
+    \inferrule{\_\le\pyCallable{\_}}{\bot} \\
+    \ruleName{callable.sink.right} \\ \\
+
+    \inferrule{\pyCallable{\_}\le\_}{\bot} \\
+    \ruleName{callable.sink.left} \\ \\
+
+    \inferrule{\pyTypedDictionary{S}.total = \pyTypedDictionary{T}.total \\
+        \texttt{same\_fields} (\pyTypedDictionary{S}, \pyTypedDictionary{T})}
+        {\pyTypedDictionary{S}\le\pyTypedDictionary{T}} \\
+    \ruleName{typeddictionary}
+\end{tabular}
+\end{center}
+
+
+
+
+\begin{center}
+\begin{tabular}{ccc}
+    \inferrule{\pyPrimitive{TypedDictionary}\le{} T}{\pyTypedDictionary{\_}\le{} T} \\
+    \ruleName{typeddictionary.left} \\ \\
+
+    \inferrule{S \le\pyPrimitive{TypedDictionary}}{S \le\pyTypedDictionary{\_}} \\
+    \ruleName{typeddictionary.right} \\ \\
+
+    \inferrule{S \le\pyLiteral{\_}}{\bot} \\
+    \ruleName{literal.right} \\ \\
+
+    \inferrule{\texttt{weaken\_literal} (\pyLiteral{S})\le{} T}{\pyLiteral{S}\le{} T} \\
+    \ruleName{literal.left}
+\end{tabular}
+\end{center}
+
+
+
+If all the above steps fail, the \texttt{Handler} module/struct is used
+to look into the type hierarchy and check if the left hand side is a
+nominal subtype of the right hand side (as described by \texttt{class}
+inheritance).
+
+\subsection{\textsc{parametric} rule}
+
+In this section we are trying to test if
+$\pyParametric{S}{\pyList{X}}\le\pyParametric{T}{\pyList{Y}}$.
+Since the rule is a bit too complex, we'll describe it here with some details.
+
+\begin{enumerate}
+    \item An auxiliary function \pyTok{compare\_parameter (S, T, v)}
+        compares two types \pyTok{S} and \pyTok{T}, taking into account the
+        variance \pyTok{v} (usually the variance of \pyTok{S}).
+        \begin{itemize}
+            \item There are some shady cases that need to be discussed, which forces
+                the result of $\le$ compared to $\pyTop$ and $\pyBottom$,
+                disregarding the variance.
+            \item If \pyTok{v} is \pyTok{Covariant}, we test if
+                $\pyTok{S}\le\pyTok{T}$.
+            \item If \pyTok{v} is \pyTok{Contraviant}, we test if
+                $\pyTok{T}\le\pyTok{S}$.
+            \item If \pyTok{v} is \pyTok{Invariant}, we test equality
+                $\pyTok{S}\le\pyTok{T} \wedge \pyTok{T}\le\pyTok{S}$.
+        \end{itemize}
+
+
+      \item \pyTok{S} and \pyTok{T} are checked to be related in the
+        class hierarchy (implemanted by \texttt{Hander}). If a valid relation
+        is spotted, their arguments are check by the comparison function:
+        \begin{itemize}
+            \item They must have the same length.
+            \item The variance list must be of the same length then
+                $\pyList{X}$.
+            \item Folding \pyTok{compare\_parameter} on all three lists must
+                succeed
+        \end{itemize}
+\end{enumerate}
+
+
+\subsection{About $\approx$}
+
+$F \approx Sig$ means that $F$ is compatible (as in could be used as, see
+\texttt{simulate\_signature\_select} in \texttt{analysis/type.ml}) with
+the specified signature.
+
+\end{document}

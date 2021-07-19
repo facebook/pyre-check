@@ -1,0 +1,8 @@
+Setup:
+
+This project is developed using Coq 8.10.
+You can install it using `opam2`:
+- opam switch create coq ocaml-base-compiler.4.08.1
+- eval $(opam env)
+- opam install coq # should be 8.10 as the time of writing
+- make

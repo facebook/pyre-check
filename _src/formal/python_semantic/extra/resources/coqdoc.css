@@ -1,0 +1,208 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:400,700);
+
+body{
+    font-family: 'Open Sans', sans-serif;
+    font-size: 14px;
+    color: #2D2D2D
+}
+
+a {
+    text-decoration: none;
+    border-radius: 3px;
+    padding-left: 3px;
+    padding-right: 3px;
+    margin-left: -3px;
+    margin-right: -3px;
+    color: inherit;
+    font-weight: bold;
+}
+
+#main .code a, #main .inlinecode a, #toc a {
+    font-weight: inherit;
+}
+
+a[href]:hover, [clickable]:hover{
+    background-color: rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
+h, h1, h2, h3, h4, h5 {
+    line-height: 1;
+    color: black;
+    text-rendering: optimizeLegibility;
+    font-weight: normal;
+    letter-spacing: 0.1em;
+    text-align: left;
+}
+
+div + br {
+  display: none;
+}
+
+div:empty{ display: none;}
+
+#main h1 {
+    font-size: 2em;
+}
+
+#main h2 {
+    font-size: 1.667rem;
+}
+
+#main h3 {
+    font-size: 1.333em;
+}
+
+#main h4, #main h5, #main h6 {
+    font-size: 1em;
+}
+
+#toc h2 {
+    padding-bottom: 0;
+}
+
+#main .doc {
+    margin: 0;
+    text-align: justify;
+}
+
+.inlinecode, .code, #main pre {
+    font-family: monospace;
+}
+
+.code > br:first-child {
+  display: none;
+}
+
+.doc + .code{
+  margin-top:0.5em;
+}
+
+.block{
+    display: block;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding: 10px;
+    text-align: center;
+}
+
+.block img{
+    margin: 15px;
+}
+
+table.infrule {
+  border: 0px;
+  margin-left: 50px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+td.infrule {
+    font-family: "Droid Sans Mono", "DejaVu Sans Mono", monospace;
+    text-align: center;
+    padding: 0;
+    line-height: 1;
+}
+
+tr.infrulemiddle hr {
+    margin: 1px 0 1px 0;
+}
+
+.infrulenamecol {
+    color: rgb(60%,60%,60%);
+    padding-left: 1em;
+    padding-bottom: 0.1em
+}
+
+.id[type="constructor"], .id[type="projection"], .id[type="method"],
+.id[title="constructor"], .id[title="projection"], .id[title="method"]  {
+    color: #A30E16;
+}
+
+.id[type="var"], .id[type="variable"],
+.id[title="var"], .id[title="variable"] {
+    color: inherit;
+}
+
+.id[type="definition"], .id[type="record"], .id[type="class"],
+.id[type="instance"], .id[type="inductive"], .id[type="library"],
+.id[title="definition"], .id[title="record"], .id[title="class"],
+.id[title="instance"], .id[title="inductive"], .id[title="library"] {
+    color: #A6650F;
+}
+
+.id[type="lemma"],
+.id[title="lemma"]{
+    color: #188B0C;
+}
+
+.id[type="keyword"], .id[type="notation"], .id[type="abbreviation"],
+.id[title="keyword"], .id[title="notation"], .id[title="abbreviation"]{
+ color : #2874AE;
+}
+
+.comment {
+  color: #808080;
+}
+
+/* TOC */
+
+#toc h2{
+  letter-spacing: 0;
+  font-size: 1.333em;
+}
+
+/* Index */
+
+#index {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+#index #frontispiece {
+    margin: 1em auto;
+    padding: 1em;
+    width: 60%;
+}
+
+.booktitle { font-size : 140%  }
+.authors {
+    font-size : 90%;
+    line-height: 115%;
+}
+.moreauthors { font-size : 60%  }
+
+#index #entrance {
+    text-align: center;
+}
+
+#index #entrance .spacer {
+    margin: 0 30px 0 30px;
+}
+
+ul.doclist {
+    margin-top: 0em;
+    margin-bottom: 0em;
+}
+
+#toc > * {
+    clear: both;
+}
+
+#toc > a {
+    display: block;
+    float: left;
+    margin-top: 1em;
+}
+
+#toc a h2{
+    display: inline;
+}
