@@ -3430,22 +3430,9 @@ let suppress ~mode ~ignore_codes error =
                 (Define.Signature.is_toplevel signature
                 || Define.Signature.is_class_toplevel signature)
   in
-  let suppress_in_infer { kind; _ } =
-    match kind with
-    | MissingReturnAnnotation { annotation = Some actual; _ }
-    | MissingParameterAnnotation { annotation = Some actual; _ }
-    | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
-    | MissingGlobalAnnotation { annotation = Some actual; _ } ->
-        Type.is_untyped actual
-        || Type.contains_unknown actual
-        || Type.Variable.convert_all_escaped_free_variables_to_anys actual
-           |> Type.contains_prohibited_any
-    | _ -> true
-  in
   try
     let suppress_by_code error = List.exists ignore_codes ~f:(( = ) (code error)) in
     match mode with
-    | Source.Infer -> suppress_in_infer error || suppress_by_code error
     | Source.Debug -> false
     | Source.Strict -> suppress_in_strict error || suppress_by_code error
     | Source.Unsafe -> suppress_in_default error || suppress_by_code error

@@ -10,7 +10,6 @@ type mode =
   | Strict
   | Unsafe
   | Declare
-  | Infer
 [@@deriving compare, eq, show, sexp, hash]
 
 type local_mode =

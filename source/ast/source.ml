@@ -13,7 +13,6 @@ type mode =
   | Strict
   | Unsafe
   | Declare
-  | Infer
 [@@deriving compare, eq, show, sexp, hash]
 
 type local_mode =
@@ -228,7 +227,6 @@ let show source = Format.asprintf "%a" pp source
 let mode ~configuration ~local_mode : mode =
   match local_mode, configuration with
   | _, { Configuration.Analysis.debug = true; _ } -> Debug
-  | _, { Configuration.Analysis.infer = true; _ } -> Infer
   | Some { Node.value = Strict; _ }, _ -> Strict
   | Some { Node.value = Unsafe; _ }, _ -> Unsafe
   | Some { Node.value = Declare; _ }, _

@@ -931,20 +931,7 @@ let infer_parameters_from_parent
   overridden_callable >>| missing_parameter_errors |> Option.value ~default:[]
 
 
-let merge_errors
-    ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
-    ~global_resolution
-    ~source:({ Source.metadata = { local_mode; ignore_codes; _ }; _ } as source)
-    errors
-  =
-  let errors =
-    if debug then
-      errors
-    else
-      let mode = Source.mode ~configuration ~local_mode in
-      let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
-      List.filter ~f:keep_error errors
-  in
+let merge_errors ~global_resolution ~source errors =
   let dequalify_map = Preprocessing.dequalify_map source in
   errors
   |> List.map ~f:(Error.dequalify dequalify_map ~resolution:global_resolution)
@@ -966,7 +953,7 @@ let legacy_infer_for_define
     let local_errors = infer_local ~configuration ~global_resolution ~source ~define in
     let global_errors = infer_parameters_from_parent ~global_resolution ~source ~define in
     let errors = List.rev_append global_errors local_errors in
-    merge_errors ~configuration ~global_resolution ~source errors
+    merge_errors ~global_resolution ~source errors
   with
   | ClassHierarchy.Untracked annotation ->
       Statistics.event
