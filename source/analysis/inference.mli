@@ -42,9 +42,3 @@ val infer_for_define
   InferenceError.t list
 
 val skip_infer : configuration:Configuration.Analysis.t -> SourcePath.t -> bool
-
-val run
-  :  configuration:Configuration.Analysis.t ->
-  global_resolution:GlobalResolution.t ->
-  source:Source.t ->
-  InferenceError.t list
