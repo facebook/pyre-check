@@ -12,6 +12,7 @@ version of persistent.py.
 import asyncio
 import logging
 from pathlib import Path
+from collections import defaultdict
 from typing import List, Sequence, Dict
 
 from ... import (
@@ -64,6 +65,9 @@ class PysaServer:
         self.pyre_arguments = pyre_arguments
         self.binary_location = binary_location
         self.server_identifier = server_identifier
+        self.pyre_connection = api_connection.PyreConnection(
+            Path(self.pyre_arguments.global_root)
+        )
 
     def invalid_model_to_diagnostic(
         self,
@@ -89,26 +93,22 @@ class PysaServer:
         self,
         invalid_models: Sequence[query.InvalidModel],
     ) -> Dict[Path, List[lsp.Diagnostic]]:
-        result: Dict[Path, List[lsp.Diagnostic]] = {}
+        result: Dict[Path, List[lsp.Diagnostic]] = defaultdict(list)
         for model in invalid_models:
             if model.path is None:
                 self.log_and_show_message_to_client(
-                    f"{model.full_error_message}", lsp.MessageType.WARNING
+                    f"{model.full_error_message}", lsp.MessageType.ERROR
                 )
             else:
-                result.setdefault(Path(model.path), []).append(
-                    self.invalid_model_to_diagnostic(model)
-                )
+                result[Path(model.path)].append(self.invalid_model_to_diagnostic(model))
         return result
 
     async def update_errors(self, document_path: Path) -> None:
         # Publishing empty diagnostics to clear errors in VSCode
         await _publish_diagnostics(self.output_channel, document_path, [])
-        pyre_connection = api_connection.PyreConnection(
-            Path(self.pyre_arguments.global_root)
-        )
+
         try:
-            model_errors = query.get_invalid_taint_models(pyre_connection)
+            model_errors = query.get_invalid_taint_models(self.pyre_connection)
             diagnostics = self.invalid_models_to_diagnostics(model_errors)
             await self.show_model_errors_to_client(diagnostics)
         except PyreQueryError as e:
