@@ -120,7 +120,6 @@ let test_type_errors context =
             ( "concise_description",
               `String
                 "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
-            "inference", `Assoc [];
             "define", `String "test.$toplevel";
           ])
       |> Result.ok_or_failwith
@@ -215,7 +214,6 @@ let test_update context =
             ( "concise_description",
               `String
                 "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
-            "inference", `Assoc [];
             "define", `String "test.$toplevel";
           ])
       |> Result.ok_or_failwith

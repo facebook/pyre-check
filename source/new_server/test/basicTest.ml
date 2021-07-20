@@ -44,7 +44,6 @@ let test_basic client =
                Type `str` expected on line 3, specified on line 2." );
           ( "concise_description",
             `String "Incompatible return type [7]: Expected `str` but got `int`." );
-          "inference", `Assoc [];
           "define", `String "test.foo";
         ])
     |> Result.ok_or_failwith
@@ -70,7 +69,6 @@ let test_basic client =
                type `int`." );
           ( "concise_description",
             `String "Incompatible variable type [9]: bar has type `str`; used as `int`." );
-          "inference", `Assoc [];
           "define", `String "test2.$toplevel";
         ])
     |> Result.ok_or_failwith
@@ -197,7 +195,6 @@ let test_watchman_integration ~watchman_mailbox client =
                Type `str` expected on line 3, specified on line 2." );
           ( "concise_description",
             `String "Incompatible return type [7]: Expected `str` but got `int`." );
-          "inference", `Assoc [];
           "define", `String "test.foo";
         ])
     |> Result.ok_or_failwith
@@ -255,7 +252,6 @@ let test_watchman_integration ~watchman_mailbox client =
                type `int`." );
           ( "concise_description",
             `String "Incompatible variable type [9]: bar has type `str`; used as `int`." );
-          "inference", `Assoc [];
           "define", `String "test2.$toplevel";
         ])
     |> Result.ok_or_failwith
@@ -359,7 +355,6 @@ let test_subscription_responses client =
                Type `str` expected on line 3, specified on line 2." );
           ( "concise_description",
             `String "Incompatible return type [7]: Expected `str` but got `int`." );
-          "inference", `Assoc [];
           "define", `String "test.foo";
         ])
     |> Result.ok_or_failwith
