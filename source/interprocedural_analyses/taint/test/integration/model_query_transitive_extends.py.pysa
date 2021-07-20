@@ -16,6 +16,6 @@ ModelQuery(
     Not(parent.extends("model_query_transitive_extends.Test2_C", is_transitive=True))
   ],
   model = [
-    AllParameters(TaintSink[Test], exclude="self")
+    Parameters(TaintSink[Test], where=[Not(name.equals("self"))])
   ]
 )
