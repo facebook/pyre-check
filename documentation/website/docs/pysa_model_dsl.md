@@ -367,51 +367,110 @@ ModelQuery(
 
 ### Parameter taint
 
-Parameter taint can be specified by name or by position.
-
-Named parameter taint takes the form of `NamedParameter(name=..., taint = TaintSpecification)`, and positional parameter taint takes the form of `PositionalParameter(index=..., taint = TaintSpecification)`:
+Parameters can be tainted using the `Parameters()` clause. By default, all parameters will be tained with the supplied taint specification. If you would like to only taint specific parameters matching certain conditions, an optional `where` clause can be specified to accomplish this, allowing for constraints on parameter names, the annotation type of the parameter, or parameter position. For example:
 
 ```python
 ModelQuery(
   find = "methods",
   where = ...,
   model = [
-    NamedParameter(name="x", taint = TaintSource[Test, Via[foo]]),
-    PositionalParameter(index=0, taint = TaintSink[Test, Via[bar]]),
+    Parameters(TaintSource[A]), # will taint all parameters by default
+    Parameters(
+      TaintSource[B],
+      where=[
+        Not(index.equals(0))   # will only taint parameters that are not the first parameter
+      ]
+    ),
   ]
 )
 ```
 
-### Tainting all parameters
+#### `name` clauses
 
-One final convenience we provide is the ability to taint all parameters of a callable. The syntax is `AlllParameters(TaintSpecification)`.
+To specify a constraint on parameter name, the `name.equals()` or `name.matches()` clauses can be used. As in the main `where` clause of the model query, `equals()` searches for an exact match on the specified string, while `matches()` allows a regex to be supplied as a pattern to match against.
+
+Example:
 
 ```python
 ModelQuery(
-  find = "functions",
+  find = "methods",
   where = ...,
   model = [
-    AllParameters(TaintSource[Test])
+    Parameters(
+      TaintSource[Test],
+      where=[
+        name.equals("request"),
+        name.matches("data$")
+      ]
+    )
   ]
 )
 ```
 
-You can choose to exclude a single parameter or a list of parameters in order to avoid overtainting.
+#### `index` clause
+
+To specify a constraint on parameter position, the `index.equals()` clause can be used. It takes a single integer denoting the position of the parameter.
+
+Example:
 
 ```python
 ModelQuery(
-  find = "functions",
+  find = "methods",
   where = ...,
   model = [
-    AllParameters(TaintSource[Test], exclude="self")
+    Parameters(
+      TaintSource[Test],
+      where=[
+        index.equals(1)
+      ]
+    )
   ]
 )
+```
 
+#### `type_annotation` clause
+
+This clause is used to specify a constraint on parameter type annotation. Currently the clauses supported are: `type_annotation.equals()`, which takes the fully-qualified name of a Python type or class and matches when there is an exact match, `type_annotation.matches()`, which takes a regex pattern to match type annotations against, and `type_annotation.is_annotated_type()`, which will match parameters of type [`typing.Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated).
+
+Example:
+
+```python
 ModelQuery(
-  find = "functions",
+  find = "methods",
   where = ...,
   model = [
-    AllParameters(TaintSource[Test], exclude=["self", "other"])
+    Parameters(
+      TaintSource[Test],
+      where=[
+        type_annotation.equals("foo.bar.C"),  # exact match
+        type_annotation.matches("^List\["),   # regex match
+        type_annotation.is_annotated_type(),  # matches Annotated[T, x]
+      ]
+    )
+  ]
+)
+```
+
+#### `Not` and `AnyOf` clauses
+
+The `Not` and `AnyOf` clauses can be used in the same way as they are in the main `where` clause of the model query. `Not` can be used to negate any existing clause, and `AnyOf` can be used to match when any one of several supplied clauses match.
+
+Example:
+
+```python
+ModelQuery(
+  find = "methods",
+  where = ...,
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        Not(AnyOf(
+          name.equals("self"),
+          name.equals("cls")
+        ))
+      ]
+    )
   ]
 )
 ```
