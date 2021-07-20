@@ -215,7 +215,7 @@ end
 let run_infer_local ~configuration () =
   let result =
     Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-        Service.Infer.infer_v2 ~configuration ~scheduler ())
+        Service.Infer.infer ~configuration ~scheduler ())
   in
   if configuration.debug then
     Memory.report_statistics ();
