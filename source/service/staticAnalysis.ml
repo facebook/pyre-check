@@ -632,7 +632,7 @@ let analyze
   =
   Log.info "Recording initial models in shared memory...";
   let timer = Timer.start () in
-  Interprocedural.Analysis.record_initial_models
+  Interprocedural.FixpointAnalysis.record_initial_models
     ~functions:
       (List.map callables_with_dependency_information ~f:fst :> Interprocedural.Callable.t list)
     ~stubs:(stubs :> Interprocedural.Callable.t list)
@@ -682,7 +682,7 @@ let analyze
   let callables_to_analyze = List.rev_append override_targets callables_to_analyze in
   let fixpoint_timer = Timer.start () in
   let compute_fixpoint () =
-    Interprocedural.Analysis.compute_fixpoint
+    Interprocedural.FixpointAnalysis.compute_fixpoint
       ~scheduler
       ~environment
       ~analysis
@@ -695,7 +695,7 @@ let analyze
     let callables =
       Callable.Set.of_list (List.rev_append (Callable.Map.keys initial_models) callables_to_analyze)
     in
-    Interprocedural.Analysis.report_results
+    Interprocedural.FixpointAnalysis.report_results
       ~scheduler
       ~static_analysis_configuration
       ~environment

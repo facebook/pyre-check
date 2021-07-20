@@ -374,7 +374,7 @@ let run_with_taint_models tests ~name =
          (List.to_string errors ~f:Taint.Model.display_verification_error))
       (List.is_empty errors);
     Callable.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
-    |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[]
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~functions:[] ~stubs:[]
   in
   let decorated_tests =
     List.map tests ~f:(fun (name, test) ->
@@ -580,6 +580,6 @@ let initialize
     Fixpoint.remove_old keys;
     initial_models
     |> Callable.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind)
-    |> Interprocedural.Analysis.record_initial_models ~functions:callables ~stubs
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~functions:callables ~stubs
   in
   { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }

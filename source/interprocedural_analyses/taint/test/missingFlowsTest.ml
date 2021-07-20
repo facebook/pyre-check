@@ -37,7 +37,7 @@ let assert_fixpoint
     |> DependencyGraph.reverse
   in
   let iterations =
-    Analysis.compute_fixpoint
+    FixpointAnalysis.compute_fixpoint
       ~scheduler
       ~environment
       ~analysis:TaintAnalysis.abstract_kind

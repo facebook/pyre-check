@@ -9,7 +9,7 @@ open Core
 open Pyre
 open OUnit2
 open Ast
-module TypeAnalysis = Analysis
+open Analysis
 open Interprocedural
 open Test
 
@@ -123,12 +123,10 @@ let test_unknown_function_analysis context =
   let targets = List.map ["fun_a"; "fun_b"] ~f:callable_of_string in
   let scratch_project = setup_scratch_project ~context () in
   let environment =
-    setup_environment scratch_project
-    |> TypeAnalysis.TypeEnvironment.create
-    |> TypeAnalysis.TypeEnvironment.read_only
+    setup_environment scratch_project |> TypeEnvironment.create |> TypeEnvironment.read_only
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0 } in
-  let _ = Analysis.one_analysis_pass ~step ~analysis ~environment ~callables:targets in
+  let _ = FixpointAnalysis.one_analysis_pass ~step ~analysis ~environment ~callables:targets in
   (* Make sure obscure models are correctly handled *)
   let check_obscure_model target =
     match Fixpoint.get_model target with
@@ -141,7 +139,7 @@ let test_unknown_function_analysis context =
   (* Make sure result extraction works (this verifies a lot of the type magic) *)
   let report =
     let static_analysis_configuration = static_analysis_configuration scratch_project in
-    Analysis.report_results
+    FixpointAnalysis.report_results
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment
@@ -187,10 +185,12 @@ let test_meta_data context =
   let environment =
     setup_scratch_project ~context ()
     |> setup_environment
-    |> TypeAnalysis.TypeEnvironment.create
-    |> TypeAnalysis.TypeEnvironment.read_only
+    |> TypeEnvironment.create
+    |> TypeEnvironment.read_only
   in
-  let _ = Analysis.one_analysis_pass ~step:step1 ~analysis ~environment ~callables:targets in
+  let _ =
+    FixpointAnalysis.one_analysis_pass ~step:step1 ~analysis ~environment ~callables:targets
+  in
   (* All obscure functions should reach fixpoint in 1st step *)
   let () = List.iter ~f:(check_meta_data ~step:step1 ~is_partial:false) targets in
   ()

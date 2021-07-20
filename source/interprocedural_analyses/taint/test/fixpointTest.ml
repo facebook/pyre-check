@@ -27,7 +27,7 @@ let assert_fixpoint ?models ~context source ~expect:{ iterations = expect_iterat
     |> DependencyGraph.reverse
   in
   let iterations =
-    Analysis.compute_fixpoint
+    FixpointAnalysis.compute_fixpoint
       ~scheduler
       ~environment
       ~analysis:TaintAnalysis.abstract_kind

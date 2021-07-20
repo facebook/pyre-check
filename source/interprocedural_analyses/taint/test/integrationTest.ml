@@ -106,7 +106,7 @@ let test_integration path context =
       |> DependencyGraph.union overrides
       |> DependencyGraph.reverse
     in
-    Analysis.compute_fixpoint
+    FixpointAnalysis.compute_fixpoint
       ~scheduler:(Test.mock_scheduler ())
       ~environment
       ~analysis:TaintAnalysis.abstract_kind

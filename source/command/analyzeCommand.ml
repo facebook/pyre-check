@@ -134,7 +134,7 @@ let run_analysis
     (fun () ->
       let timer = Timer.start () in
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          Interprocedural.Analysis.initialize_configuration
+          Interprocedural.FixpointAnalysis.initialize_configuration
             ~static_analysis_configuration
             analysis_kind;
 
@@ -160,7 +160,7 @@ let run_analysis
             let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
               initial_callables
             in
-            Interprocedural.Analysis.initialize_models
+            Interprocedural.FixpointAnalysis.initialize_models
               analysis_kind
               ~static_analysis_configuration
               ~scheduler

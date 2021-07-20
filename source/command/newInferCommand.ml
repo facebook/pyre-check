@@ -259,7 +259,7 @@ let run_infer_interprocedural ~configuration ~build_system () =
   let analysis_kind = TypeInference.Analysis.abstract_kind in
   with_performance_tracking (fun () ->
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          Interprocedural.Analysis.initialize_configuration
+          Interprocedural.FixpointAnalysis.initialize_configuration
             ~static_analysis_configuration
             analysis_kind;
           let environment =

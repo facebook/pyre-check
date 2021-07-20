@@ -8,7 +8,7 @@
 open Core
 open OUnit2
 open Ast
-module TypeEnvironment = Analysis.TypeEnvironment
+open Analysis
 open Test
 open Interprocedural
 
@@ -52,12 +52,12 @@ let fixpoint_result ~context ~sources ~callable_names ~transform_configuration =
   let static_analysis_configuration =
     static_analysis_configuration ~transform_configuration scratch_project
   in
-  Analysis.initialize_configuration ~static_analysis_configuration analysis;
-  Analysis.record_initial_models ~functions:callables ~stubs:[] Callable.Map.empty;
+  FixpointAnalysis.initialize_configuration ~static_analysis_configuration analysis;
+  FixpointAnalysis.record_initial_models ~functions:callables ~stubs:[] Callable.Map.empty;
   let fixpoint_iterations =
     let iteration_limit = 1 in
     Some
-      (Analysis.compute_fixpoint
+      (FixpointAnalysis.compute_fixpoint
          ~scheduler
          ~environment
          ~analysis
@@ -66,7 +66,7 @@ let fixpoint_result ~context ~sources ~callable_names ~transform_configuration =
          ~all_callables:callables
          iteration_limit)
   in
-  Analysis.report_results
+  FixpointAnalysis.report_results
     ~scheduler
     ~static_analysis_configuration
     ~environment

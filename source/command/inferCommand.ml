@@ -107,7 +107,7 @@ let run_infer_interprocedural
     (fun () ->
       let timer = Timer.start () in
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          Interprocedural.Analysis.initialize_configuration
+          Interprocedural.FixpointAnalysis.initialize_configuration
             ~static_analysis_configuration
             analysis_kind;
           let environment = StaticAnalysis.type_check ~scheduler ~configuration ~use_cache:false in

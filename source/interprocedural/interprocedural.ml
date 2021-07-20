@@ -6,7 +6,7 @@
  *)
 
 module AnalysisKind = AnalysisKind
-module Analysis = InterproceduralAnalysis
+module FixpointAnalysis = FixpointAnalysis
 module Callable = Callable
 module CallGraph = CallGraph
 module CallResolution = CallResolution
