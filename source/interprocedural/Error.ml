@@ -38,6 +38,4 @@ include Analysis.BaseError.Make (struct
   let name { name; _ } = name
 
   let messages ~concise:_ ~signature:_ _ { messages; _ } = messages
-
-  let inference_information ~signature:_ _ = `Null
 end)

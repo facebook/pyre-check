@@ -22,8 +22,6 @@ module type Kind = sig
     Location.WithPath.t ->
     t ->
     string list
-
-  val inference_information : signature:Define.Signature.t Node.t -> t -> Yojson.Safe.json
 end
 
 module type Error = sig

@@ -22,8 +22,6 @@ module type Kind = sig
     Location.WithPath.t ->
     t ->
     string list
-
-  val inference_information : signature:Define.Signature.t Node.t -> t -> Yojson.Safe.json
 end
 
 module type Error = sig
@@ -112,8 +110,6 @@ module Make (Kind : Kind) = struct
       description: string;
       long_description: string;
       concise_description: string;
-      (* TODO (T70359404): This field does not belong here. *)
-      inference: (Yojson.Safe.t[@sexp.opaque] [@compare.ignore]);
       define: string;
     }
     [@@deriving sexp, compare, show, hash, yojson { strict = false }]
@@ -169,7 +165,6 @@ module Make (Kind : Kind) = struct
         description = description ~show_error_traces ~concise:false ~separator:" ";
         long_description = description ~show_error_traces:true ~concise:false ~separator:"\n";
         concise_description = description ~show_error_traces ~concise:true ~separator:"\n";
-        inference = Kind.inference_information ~signature:signature_node kind;
         define = Reference.show_sanitized (Reference.delocalize (Node.value signature.name));
       }
   end
