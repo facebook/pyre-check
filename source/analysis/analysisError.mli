@@ -38,7 +38,10 @@ type module_reference =
 [@@deriving compare, eq, sexp, show, hash]
 
 type origin =
-  | Class of Type.t
+  | Class of {
+      class_type: Type.t;
+      parent_source_path: SourcePath.t option;
+    }
   | Module of module_reference
 
 and mismatch = {

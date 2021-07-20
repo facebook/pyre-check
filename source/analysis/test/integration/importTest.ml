@@ -324,7 +324,10 @@ let test_check_stub_imports context =
         foo.a
         foo.b
     |}
-    ["Undefined attribute [16]: `Foo` has no attribute `b`."];
+    [
+      "Undefined attribute [16]: `Foo` has no attribute `b`. `Foo` is defined in a stub file at \
+       `stubbed.pyi`. Ensure attribute `b` is defined in the stub file.";
+    ];
   assert_strict_type_errors
     ~context
     ~show_error_traces:true
@@ -363,7 +366,8 @@ let test_check_stub_imports context =
         bar.b
     |}
     [
-      "Undefined attribute [16]: `Foo` has no attribute `b`.";
+      "Undefined attribute [16]: `Foo` has no attribute `b`. `Foo` is defined in a stub file at \
+       `stubbed.pyi`. Ensure attribute `b` is defined in the stub file.";
       "Undefined attribute [16]: `Bar` has no attribute `b`.";
     ];
   assert_strict_type_errors

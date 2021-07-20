@@ -1991,8 +1991,21 @@ module State (Context : Context) = struct
                 Some
                   (Error.UnsupportedOperand
                      (Binary { operator_name; left_operand = target; right_operand = resolved }))
-            | _ -> Some (Error.UndefinedAttribute { attribute = name; origin = Error.Class target })
-            )
+            | _ ->
+                let class_module =
+                  let ast_environment = GlobalResolution.ast_environment global_resolution in
+                  GlobalResolution.class_definition global_resolution target
+                  >>| Node.value
+                  >>= fun { ClassSummary.qualifier; _ } ->
+                  AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+                in
+                Some
+                  (Error.UndefinedAttribute
+                     {
+                       attribute = name;
+                       origin =
+                         Error.Class { class_type = target; parent_source_path = class_module };
+                     }))
         | _ -> None
       in
       let signatures =
@@ -3219,6 +3232,13 @@ module State (Context : Context) = struct
                   Some (class_data, attribute, undefined_target)
               | None -> None
             in
+            let source_path_of_parent_module class_type =
+              let ast_environment = GlobalResolution.ast_environment global_resolution in
+              GlobalResolution.class_definition global_resolution class_type
+              >>| Node.value
+              >>= fun { ClassSummary.qualifier; _ } ->
+              AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+            in
             match
               Type.resolve_class resolved_base >>| List.map ~f:find_attribute >>= Option.all
             with
@@ -3228,7 +3248,16 @@ module State (Context : Context) = struct
                     ~errors
                     ~location
                     ~kind:
-                      (Error.UndefinedAttribute { attribute; origin = Error.Class resolved_base })
+                      (Error.UndefinedAttribute
+                         {
+                           attribute;
+                           origin =
+                             Error.Class
+                               {
+                                 class_type = resolved_base;
+                                 parent_source_path = source_path_of_parent_module resolved_base;
+                               };
+                         })
                 in
                 {
                   Resolved.resolution;
@@ -3279,7 +3308,15 @@ module State (Context : Context) = struct
                           ~location
                           ~kind:
                             (Error.UndefinedAttribute
-                               { attribute = name; origin = Error.Class target })
+                               {
+                                 attribute = name;
+                                 origin =
+                                   Error.Class
+                                     {
+                                       class_type = target;
+                                       parent_source_path = source_path_of_parent_module target;
+                                     };
+                               })
                   | _ ->
                       let is_accessed_in_base_class =
                         let enclosing_class_reference =
@@ -3307,7 +3344,16 @@ module State (Context : Context) = struct
                           ~location
                           ~kind:
                             (Error.UndefinedAttribute
-                               { attribute = name; origin = Error.Class resolved_base })
+                               {
+                                 attribute = name;
+                                 origin =
+                                   Error.Class
+                                     {
+                                       class_type = resolved_base;
+                                       parent_source_path =
+                                         source_path_of_parent_module resolved_base;
+                                     };
+                               })
                       else
                         errors
                 in
@@ -4275,12 +4321,27 @@ module State (Context : Context) = struct
                                      an attribute from the TypedDictionary. *)
                                   errors
                                 else if is_undefined_attribute parent then
+                                  let parent_source_path =
+                                    let ast_environment =
+                                      GlobalResolution.ast_environment global_resolution
+                                    in
+                                    GlobalResolution.class_definition global_resolution parent
+                                    >>| Node.value
+                                    >>= fun { ClassSummary.qualifier; _ } ->
+                                    AstEnvironment.ReadOnly.get_source_path
+                                      ast_environment
+                                      qualifier
+                                  in
                                   emit_error
                                     ~errors
                                     ~location
                                     ~kind:
                                       (Error.UndefinedAttribute
-                                         { attribute = name; origin = Error.Class parent })
+                                         {
+                                           attribute = name;
+                                           origin =
+                                             Error.Class { class_type = parent; parent_source_path };
+                                         })
                                 else
                                   errors
                             | _ -> errors
