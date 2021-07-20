@@ -8,7 +8,7 @@ from functools import lru_cache
 from itertools import islice
 from typing import Any, Dict, Generator, Iterable, List, NamedTuple, Optional, TypeVar
 
-from .connection import PyreConnection, PyreQueryError
+from .connection import LOG, PyreConnection, PyreQueryError
 
 
 T = TypeVar("T")
@@ -52,8 +52,17 @@ class Type(NamedTuple):
     annotation: str
 
     def extract_function_model(self) -> str:
-        results = re.findall("\(.*?\)", self.annotation)
-        return results[0] if results else ""
+        
+        functions = re.findall("(?<=typing.Callable\().*?(?=\))", self.annotation)
+        params = re.findall("(?<=Named\().*?(?=\))", self.annotation)
+        
+        # if selected position is not a function
+        if not functions:
+            return Exception
+        
+        model = "def {}({}):".format(functions[0], (params if params else ""))
+
+        return model
 
 
 class Types(NamedTuple):
@@ -269,9 +278,11 @@ def get_invalid_taint_models(
     return errors
 
 
-def types(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Types]:
-    query = "types({})".format(",".join(modules))
+def types(pyre_connection: PyreConnection, paths: Iterable[str]) -> List[Types]:
+    query = "types('{}')".format(",".join(paths))
     result = pyre_connection.query_server(query)
+
+    LOG.info(list(result.items()))
 
     return [
         Types(
@@ -283,14 +294,14 @@ def types(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Types
                             line=element["location"]["start"]["line"],
                             column=element["location"]["start"]["column"],
                         ),
-                        "end": Position(
+                        "stop": Position(
                             line=element["location"]["stop"]["line"],
                             column=element["location"]["stop"]["column"],
                         ),
                     },
                     annotation=element["annotation"],
                 )
-                for element in module_result["response"]
+                for element in module_result["types"]
             ],
         )
         for module_result in result["response"]

@@ -12,6 +12,7 @@ version of persistent.py.
 from pathlib import Path
 import asyncio
 import logging
+from os.path import relpath
 
 from ... import (
     json_rpc,
@@ -115,26 +116,46 @@ class PysaServer:
                 f"Error querying Pyre: {e}", lsp.MessageType.WARNING
             )
 
-    async def copy_model(self, document_path: Path, position: lsp.Position) -> None:
+    async def copy_model(self, document_path: str, position: lsp.Position) -> None:
         pyre_connection = api_connection.PyreConnection(
             Path(self.pyre_arguments.global_root)
         )
+        rel_path = relpath(document_path, self.pyre_arguments.global_root)
         try:
-            types = query.types(pyre_connection, [document_path])
+            types = query.types(pyre_connection, [rel_path])
+
             for type in types[0].types:
-                stop = lsp.Position(
-                    line=type.location["stop"]["line"],
-                    character=type.location["stop"]["column"],
+                LOG.info("Type Annotation: %s", type.annotation)
+                LOG.info(list(type.location.items()))
+                start = lsp.Position(
+                    line=type.location["start"].line,
+                    character=type.location["start"].column,
                 )
-                if stop.line > position.lline or (
-                    stop.line == position.line and stop.character > position.character
-                ):
+                stop = lsp.Position(
+                    line=type.location["stop"].line,
+                    character=type.location["stop"].column,
+                )
+                
+                LOG.info("Position: %s %s", position.line, position.character)
+
+                is_after_start = position.line > start.line or (
+                    start.line == position.line and start.character <= position.character
+                )
+                
+                is_before_end = position.line < stop.line or (
+                    stop.line == position.line and stop.character >= position.character
+                )
+
+                if is_after_start and is_before_end:
                     function_model = type.extract_function_model()
                     return function_model
+
         except PyreQueryError as e:
             await self.log_and_show_message_to_client(
                 f"Error querying Pyre: {e}", lsp.MessageType.WARNING
             )
+        except Exception as e:
+            LOG.exception("Failed to query Pyre")
 
     async def show_message_to_client(
         self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
@@ -216,13 +237,14 @@ class PysaServer:
 
     async def process_copy_model_request(
         self, parameters: lsp.DidCopyModelParameters
-    ) -> None:
+    ) -> str:
         document_path = parameters.path
+        LOG.info("DidCopyParameters: %s %s %s", parameters.path, parameters.position.line, parameters.position.character)
         if document_path is None:
             raise json_rpc.InvalidRequestError(
                 f"Document path is not a file: {parameters.path}"
             )
-        await self.copy_model(document_path, parameters.position)
+        return await self.copy_model(document_path, parameters.position)
 
     async def run(self) -> int:
         while True:
@@ -273,6 +295,12 @@ class PysaServer:
                     )
                 elif request.method == "copyModel":
                     parameters = request.parameters
+                    LOG.info("Copying model...")
+                    LOG.info(list(request.parameters.values.items()))
+
+                    request.parameters.values['path'] = request.parameters.values['path']['path']
+                    request.parameters.values['position']['line'] = request.parameters.values['position']['line'] + 1
+
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
                             "Missing parameters for copyModel method"
@@ -280,9 +308,11 @@ class PysaServer:
                     copied_model = await self.process_copy_model_request(
                         lsp.DidCopyModelParameters.from_json_rpc_parameters(parameters)
                     )
-                    lsp.write_json_rpc(
+                    LOG.info("Copied model: {}".format(copied_model))
+                    await lsp.write_json_rpc(
                         self.output_channel,
                         json_rpc.SuccessResponse(id=request.id, result=copied_model),
+                        # json_rpc.SuccessResponse(id=request.id, result=copied_model),
                     )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")

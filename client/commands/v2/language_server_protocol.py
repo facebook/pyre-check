@@ -431,7 +431,7 @@ class WorkspaceDidChangeConfigurationParameters:
 )
 @dataclasses.dataclass(frozen=True)
 class DidCopyModelParameters:
-    path: Path
+    path: str
     position: Position
 
     @staticmethod
