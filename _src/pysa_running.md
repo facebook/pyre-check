@@ -142,7 +142,6 @@ Now let's run the static analysis:
       "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "concise_description":
       "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "inference": null,
     "define": "source.convert"
   }
 ]
