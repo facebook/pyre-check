@@ -81,7 +81,7 @@ ModelQuery(
     Decorator(name.matches("app.route")),
   ],
   model = [
-    AllParameters(TaintSource[UserControlled, UserControlled_Parameter]),
+    Parameters(TaintSource[UserControlled, UserControlled_Parameter]),
     Returns(TaintSink[ReturnedToUser])
   ]
 )
