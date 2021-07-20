@@ -61,6 +61,9 @@ ModelQuery(
     )
   ],
   model = [
-    AllParameters(TaintSource[UserControlled, UserControlled_Parameter], exclude="self")
+    Parameters(
+      TaintSource[UserControlled, UserControlled_Parameter],
+      where=Not(name.equals("self"))
+    )
   ]
 )
