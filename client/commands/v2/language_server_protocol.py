@@ -425,6 +425,7 @@ class WorkspaceDidChangeConfigurationParameters:
             parameters, target=WorkspaceDidChangeConfigurationParameters
         )
 
+
 @dataclasses_json.dataclass_json(
     letter_case=dataclasses_json.LetterCase.CAMEL,
     undefined=dataclasses_json.Undefined.EXCLUDE,

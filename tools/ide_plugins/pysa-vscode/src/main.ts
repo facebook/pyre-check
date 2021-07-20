@@ -63,9 +63,9 @@ export async function activate(_: vscode.ExtensionContext) {
   });
   languageClient.start();
 
-  // regsistering the command to generate model
+  // regsisters the command to generate model
   const commandHandler = (path: string) => {
-    console.log(`Generating model from ${path}...`);
+    vscode.window.showInformationMessage("Generating model...");
     copyModel(path);
   };
   _.subscriptions.push(
@@ -81,15 +81,13 @@ async function copyModel(path: string) {
   try {
     var active = vscode.window.activeTextEditor.selection.active;
     languageClient
-      .sendRequest("copyModel", {
+      .sendRequest("pysa/copyModel", {
         path: path,
         position: { line: active.line, character: active.character },
       })
       .then((response: any) => {
         vscode.env.clipboard.writeText(response);
-        vscode.window.showInformationMessage(
-          "Generated model copied to clipboard!"
-        );
+        vscode.window.showInformationMessage("Model copied to clipboard!");
         console.log(response);
       });
   } catch (error) {

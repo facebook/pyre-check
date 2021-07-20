@@ -52,16 +52,14 @@ class Type(NamedTuple):
     annotation: str
 
     def extract_function_model(self) -> str:
-        
-        functions = re.findall("(?<=typing.Callable\().*?(?=\))", self.annotation)
-        params = re.findall("(?<=Named\().*?(?=\))", self.annotation)
-        
+        functions = re.findall(
+            "(?<=typing.Callable\().*?(?=\))", self.annotation)
+        params = re.findall("(?<=Named\().*?(?=,)", self.annotation)
         # if selected position is not a function
         if not functions:
-            return Exception
-        
-        model = "def {}({}):".format(functions[0], (params if params else ""))
-
+            raise NotImplementedError(
+                "Selected position is not of type Callable")
+        model = "def {}({}):".format(functions[0], ", ".join(params))
         return model
 
 
@@ -281,8 +279,6 @@ def get_invalid_taint_models(
 def types(pyre_connection: PyreConnection, paths: Iterable[str]) -> List[Types]:
     query = "types('{}')".format(",".join(paths))
     result = pyre_connection.query_server(query)
-
-    LOG.info(list(result.items()))
 
     return [
         Types(
