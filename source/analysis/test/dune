@@ -6,7 +6,7 @@
    classHierarchyTest classHierarchyEnvironmentTest
    classMetadataEnvironmentTest constraintsSetTest customAnalysisTest
    deobfuscationCheckTest dataClassTest environmentTest fixpointTest
-   globalResolutionTest inferenceTest livenessCheckTest lookupTest
+   globalResolutionTest livenessCheckTest lookupTest
    moduleTrackerTest newTypeTest namedTupleTest preprocessingTest
    refinementUnitTest resolutionTest resolvedCallableTest scopeTest
    sqlAlchemyTest typeCheckTest typeConstraintsTest typeOrderTest typeTest

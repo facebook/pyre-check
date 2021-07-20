@@ -34,7 +34,7 @@ module Analyzer = struct
     let result =
       match maybe_source with
       | Some ({ Ast.Source.source_path; _ } as source)
-        when not (Inference.skip_infer ~configuration source_path) ->
+        when not (TypeInferenceLocal.skip_infer ~configuration source_path) ->
           TypeInferenceLocal.infer_for_define
             ~configuration
             ~global_resolution
