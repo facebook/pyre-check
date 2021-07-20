@@ -28,7 +28,7 @@ type step = {
 }
 [@@deriving show]
 
-type state = {
+type t = {
   is_partial: bool;
   (* Whether to reanalyze this and its callers. *)
   model: AnalysisResult.model_t;
@@ -61,7 +61,7 @@ val has_model : [< Callable.t ] -> bool
 
 val meta_data_to_string : meta_data -> string
 
-val add_state : step -> [< Callable.t ] -> state -> unit
+val add : step -> [< Callable.t ] -> t -> unit
 
 val add_predefined : Epoch.t -> [< Callable.t ] -> AnalysisResult.model_t -> unit
 

@@ -22,7 +22,7 @@ type step = {
 }
 [@@deriving show]
 
-type state = {
+type t = {
   is_partial: bool;
   (* Whether to reanalyze this and its callers. *)
   model: AnalysisResult.model_t;
@@ -126,7 +126,7 @@ let meta_data_to_string { is_partial; step = { epoch; iteration } } =
   Format.sprintf "{ partial: %b; epoch: %d; iteration: %d }" is_partial epoch iteration
 
 
-let add_state step callable state =
+let add step callable state =
   let callable = (callable :> Callable.t) in
   (* Separate diagnostics from state to speed up lookups, and cache fixpoint state separately. *)
   let () = SharedModels.add callable state.model in

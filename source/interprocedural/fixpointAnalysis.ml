@@ -459,7 +459,7 @@ let one_analysis_pass ~analysis ~step ~environment ~callables =
   let analyze_and_cache expensive_callables callable =
     let timer = Timer.start () in
     let result = analyze_callable analysis step callable environment in
-    FixpointState.add_state step callable result;
+    FixpointState.add step callable result;
     (* Log outliers. *)
     if Timer.stop_in_ms timer > 500 then begin
       Statistics.performance
