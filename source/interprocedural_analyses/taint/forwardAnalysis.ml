@@ -428,7 +428,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~location:call_location
                 ~call:(Expression.Call { callee; arguments })
             in
-            if not (Interprocedural.Fixpoint.has_model callable) then
+            if not (Interprocedural.FixpointState.has_model callable) then
               Model.register_unknown_callee_model callable;
             [callable]
         | _ -> call_targets

@@ -113,7 +113,7 @@ let test_integration path context =
       ~dependencies
       ~filtered_callables:Callable.Set.empty
       ~all_callables:callables_to_analyze
-      Fixpoint.Epoch.initial
+      FixpointState.Epoch.initial
     |> ignore;
     let serialized_model callable : string =
       let externalization =

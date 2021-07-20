@@ -12,7 +12,7 @@ module TypeEnvironment = Analysis.TypeEnvironment
 open Interprocedural
 
 let get_result callable =
-  Fixpoint.get_result callable |> AnalysisResult.get_result TypeInferenceResult.kind
+  FixpointState.get_result callable |> AnalysisResult.get_result TypeInferenceResult.kind
 
 
 let make_global_result ~global_resolution ~callables =

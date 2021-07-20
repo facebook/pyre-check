@@ -62,7 +62,7 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
 let record_initial_models ~functions ~stubs models =
   let record_models models =
     let add_model_to_memory ~key:call_target ~data:model =
-      Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
+      FixpointState.add_predefined FixpointState.Epoch.initial call_target model
     in
     Callable.Map.iteri models ~f:add_model_to_memory
   in
@@ -85,7 +85,7 @@ let analysis_failed step ~exn callable ~message =
   Log.error
     "%s in step %s while analyzing %s.\nException %s\nBacktrace: %s"
     message
-    (Fixpoint.show_step step)
+    (FixpointState.show_step step)
     (Callable.show callable)
     (Exn.to_string exn)
     (Printexc.get_backtrace ());
@@ -257,7 +257,8 @@ let widen
 
 let widen_if_necessary step callable ~old_model ~new_model result =
   (* Check if we've reached a fixed point *)
-  if reached_fixpoint ~iteration:step.Fixpoint.iteration ~previous:old_model ~next:new_model then (
+  if reached_fixpoint ~iteration:step.FixpointState.iteration ~previous:old_model ~next:new_model
+  then (
     Log.log
       ~section:`Interprocedural
       "Reached fixpoint for %a\n%a"
@@ -265,9 +266,9 @@ let widen_if_necessary step callable ~old_model ~new_model result =
       callable
       AnalysisResult.pp_model_t
       old_model;
-    Fixpoint.{ is_partial = false; model = old_model; result })
+    FixpointState.{ is_partial = false; model = old_model; result })
   else
-    let model = widen ~iteration:step.Fixpoint.iteration ~previous:old_model ~next:new_model in
+    let model = widen ~iteration:step.FixpointState.iteration ~previous:old_model ~next:new_model in
     Log.log
       ~section:`Interprocedural
       "Widened fixpoint for %a\nold: %anew: %a\nwidened: %a"
@@ -279,7 +280,7 @@ let widen_if_necessary step callable ~old_model ~new_model result =
       new_model
       AnalysisResult.pp_model_t
       model;
-    Fixpoint.{ is_partial = true; model; result }
+    FixpointState.{ is_partial = true; model; result }
 
 
 let analyze_define
@@ -292,7 +293,7 @@ let analyze_define
   =
   let () = Log.log ~section:`Interprocedural "Analyzing %a" Callable.pp_real_target callable in
   let old_model =
-    match Fixpoint.get_old_model callable with
+    match FixpointState.get_old_model callable with
     | Some model ->
         let () =
           Log.log
@@ -345,7 +346,7 @@ let strip_for_callsite model =
   { model with models }
 
 
-let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
+let analyze_overrides ({ FixpointState.iteration; _ } as step) callable =
   let overrides =
     DependencyGraphSharedMemory.get_overriding_types
       ~member:(Callable.get_override_reference callable)
@@ -354,7 +355,7 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
   in
   let model =
     let lookup_and_join ({ AnalysisResult.is_obscure; models } as result) override =
-      match Fixpoint.get_model override with
+      match FixpointState.get_model override with
       | None ->
           Log.log
             ~section:`Interprocedural
@@ -370,14 +371,14 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
           }
     in
     let direct_model =
-      Fixpoint.get_model (Callable.get_corresponding_method callable)
+      FixpointState.get_model (Callable.get_corresponding_method callable)
       |> Option.value ~default:AnalysisResult.empty_model
       |> strip_for_callsite
     in
     List.fold overrides ~f:lookup_and_join ~init:direct_model
   in
   let old_model =
-    match Fixpoint.get_old_model callable with
+    match FixpointState.get_old_model callable with
     | Some model -> model
     | None ->
         Format.asprintf "No initial model found for %a" Callable.pretty_print callable |> failwith
@@ -394,8 +395,8 @@ let analyze_callable analysis step callable environment =
   let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
   let () =
     (* Verify invariants *)
-    let open Fixpoint in
-    match Fixpoint.get_meta_data callable with
+    let open FixpointState in
+    match get_meta_data callable with
     | None -> ()
     | Some { step = { epoch; _ }; _ } when epoch <> step.epoch ->
         let message =
@@ -403,8 +404,8 @@ let analyze_callable analysis step callable environment =
             "Fixpoint inconsistency: callable %s analyzed during epoch %s, but stored metadata \
              from epoch %s"
             (Callable.show callable)
-            (Fixpoint.Epoch.show step.epoch)
-            (Fixpoint.Epoch.show epoch)
+            (Epoch.show step.epoch)
+            (Epoch.show epoch)
         in
         Log.error "%s" message;
         failwith message
@@ -416,17 +417,17 @@ let analyze_callable analysis step callable environment =
       | None ->
           let () = Log.error "Found no definition for %s" (Callable.show callable) in
           let () =
-            if not (Fixpoint.is_initial_iteration step) then (
+            if not (FixpointState.is_initial_iteration step) then (
               let message =
                 Format.sprintf
                   "Fixpoint inconsistency: Callable %s without body analyzed past initial step: %s"
                   (Callable.show callable)
-                  (Fixpoint.show_step step)
+                  (FixpointState.show_step step)
               in
               Log.error "%s" message;
               failwith message)
           in
-          Fixpoint.
+          FixpointState.
             {
               is_partial = false;
               model = get_obscure_models analysis;
@@ -458,7 +459,7 @@ let one_analysis_pass ~analysis ~step ~environment ~callables =
   let analyze_and_cache expensive_callables callable =
     let timer = Timer.start () in
     let result = analyze_callable analysis step callable environment in
-    Fixpoint.add_state step callable result;
+    FixpointState.add_state step callable result;
     (* Log outliers. *)
     if Timer.stop_in_ms timer > 500 then begin
       Statistics.performance
@@ -491,11 +492,11 @@ let compute_callables_to_reanalyze
     ~filtered_callables
     ~all_callables
   =
-  let open Fixpoint in
+  let open FixpointState in
   let reanalyze_caller caller accumulator = Callable.Set.add caller accumulator in
   let might_change_if_reanalyzed =
     List.fold previous_batch ~init:Callable.Set.empty ~f:(fun accumulator callable ->
-        if not (Fixpoint.get_is_partial callable) then
+        if not (get_is_partial callable) then
           accumulator
         else
           (* c must be re-analyzed next iteration because its result has changed, and therefore its
@@ -517,7 +518,7 @@ let compute_callables_to_reanalyze
         Callable.Set.diff might_change_if_reanalyzed (Callable.Set.of_list callables_to_reanalyze)
       in
       let check_missing callable =
-        match Fixpoint.get_meta_data callable with
+        match get_meta_data callable with
         | None -> () (* okay, caller is in a later epoch *)
         | Some _ when Callable.Set.mem callable filtered_callables ->
             (* This is fine - even though this function was called, it was filtered from the
@@ -533,8 +534,8 @@ let compute_callables_to_reanalyze
                  %s (meta: %s)"
                 step.iteration
                 (Callable.show callable)
-                (Fixpoint.Epoch.show step.epoch)
-                (Fixpoint.meta_data_to_string meta)
+                (Epoch.show step.epoch)
+                (meta_data_to_string meta)
             in
             Log.error "%s" message;
             failwith message
@@ -590,8 +591,8 @@ let compute_fixpoint
       failwith message)
     else
       let timer = Timer.start () in
-      let step = Fixpoint.{ epoch; iteration } in
-      let old_batch = Fixpoint.KeySet.of_list callables_to_analyze in
+      let step = FixpointState.{ epoch; iteration } in
+      let old_batch = FixpointState.KeySet.of_list callables_to_analyze in
       let reduce left right =
         let callables_processed = left.callables_processed + right.callables_processed in
         let () =
@@ -608,7 +609,7 @@ let compute_fixpoint
         }
       in
       let () =
-        Fixpoint.oldify old_batch;
+        FixpointState.oldify old_batch;
         let {
           callables_to_dump = iteration_callables_to_dump;
           expensive_callables = iteration_expensive_callables;
@@ -630,7 +631,7 @@ let compute_fixpoint
             ()
         in
         callables_to_dump := Callable.Set.union !callables_to_dump iteration_callables_to_dump;
-        Fixpoint.remove_old old_batch;
+        FixpointState.remove_old old_batch;
         if not (List.is_empty iteration_expensive_callables) then
           Log.log
             ~section:`Performance
@@ -681,7 +682,9 @@ let compute_fixpoint
             |> fun value -> Option.value_exn value
         | _ -> failwith "No real target to dump"
       in
-      let model = Fixpoint.get_model callable |> Option.value ~default:AnalysisResult.empty_model in
+      let model =
+        FixpointState.get_model callable |> Option.value ~default:AnalysisResult.empty_model
+      in
       Log.dump
         "Model for `%s` after %d iterations:\n%a"
         (Log.Color.yellow (Reference.show (Node.value name)))

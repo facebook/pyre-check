@@ -99,8 +99,8 @@ let register_unknown_callee_model callable =
          ~path:[]
          local_return
   in
-  Interprocedural.Fixpoint.add_predefined
-    Interprocedural.Fixpoint.Epoch.predefined
+  Interprocedural.FixpointState.add_predefined
+    Interprocedural.FixpointState.Epoch.predefined
     callable
     (Interprocedural.AnalysisResult.make_model
        TaintResult.kind
@@ -114,7 +114,7 @@ let register_unknown_callee_model callable =
 
 let get_callsite_model ~resolution ~call_target ~arguments =
   let call_target = (call_target :> Callable.t) in
-  match Interprocedural.Fixpoint.get_model call_target with
+  match Interprocedural.FixpointState.get_model call_target with
   | None -> { call_target; model = TaintResult.obscure_model }
   | Some model ->
       let expand_via_value_of

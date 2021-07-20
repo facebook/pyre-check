@@ -606,8 +606,8 @@ let build_dependency_graph ~callables_with_dependency_information ~callgraph ~ov
      these by joining models for all overrides *)
   let () =
     let add_predefined callable =
-      Interprocedural.Fixpoint.add_predefined
-        Interprocedural.Fixpoint.Epoch.initial
+      Interprocedural.FixpointState.add_predefined
+        Interprocedural.FixpointState.Epoch.initial
         callable
         Interprocedural.AnalysisResult.empty_model
     in
@@ -689,7 +689,7 @@ let analyze
       ~dependencies
       ~filtered_callables
       ~all_callables:callables_to_analyze
-      Interprocedural.Fixpoint.Epoch.initial
+      Interprocedural.FixpointState.Epoch.initial
   in
   let report_results fixpoint_iterations =
     let callables =

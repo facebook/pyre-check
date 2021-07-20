@@ -40,7 +40,7 @@ type result = {
 
 val one_analysis_pass
   :  analysis:Kind.abstract ->
-  step:Fixpoint.step ->
+  step:FixpointState.step ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   callables:Callable.t list ->
   result
@@ -53,7 +53,7 @@ val compute_fixpoint
   dependencies:DependencyGraph.t ->
   filtered_callables:Callable.Set.t ->
   all_callables:Callable.t list ->
-  Fixpoint.Epoch.t ->
+  FixpointState.Epoch.t ->
   int
 
 val strip_for_callsite : AnalysisResult.model_t -> AnalysisResult.model_t

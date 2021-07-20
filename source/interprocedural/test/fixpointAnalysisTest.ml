@@ -84,13 +84,13 @@ module AnalysisA = ResultA.Register (struct
     =
     let get_model callable : Yojson.Safe.json =
       let model =
-        Fixpoint.get_model callable
+        FixpointState.get_model callable
         >>= AnalysisResult.get_model ResultA.kind
         >>| (fun r -> `Int r)
         |> Option.value ~default:`Null
       in
       let result =
-        Fixpoint.get_result callable
+        FixpointState.get_result callable
         |> AnalysisResult.get_result ResultA.kind
         >>| (fun r -> `String r)
         |> Option.value ~default:`Null
@@ -125,11 +125,11 @@ let test_unknown_function_analysis context =
   let environment =
     setup_environment scratch_project |> TypeEnvironment.create |> TypeEnvironment.read_only
   in
-  let step = Fixpoint.{ epoch = 1; iteration = 0 } in
+  let step = FixpointState.{ epoch = 1; iteration = 0 } in
   let _ = FixpointAnalysis.one_analysis_pass ~step ~analysis ~environment ~callables:targets in
   (* Make sure obscure models are correctly handled *)
   let check_obscure_model target =
-    match Fixpoint.get_model target with
+    match FixpointState.get_model target with
     | None ->
         Format.sprintf "no model stored for target %s" (Callable.show target) |> assert_failure
     | Some models ->
@@ -160,7 +160,7 @@ let test_unknown_function_analysis context =
 
 
 let check_meta_data ~step ~is_partial target =
-  match Fixpoint.get_meta_data target with
+  match FixpointState.get_meta_data target with
   | None ->
       Format.sprintf "no meta data stored for target %s" (Callable.show target) |> assert_failure
   | Some { is_partial = stored_is_partial; step = stored_step } ->
@@ -174,14 +174,14 @@ let check_meta_data ~step ~is_partial target =
         step
         stored_step
         ~msg:(Format.sprintf "step %s" target_name)
-        ~printer:Fixpoint.show_step
+        ~printer:FixpointState.show_step
 
 
 let test_meta_data context =
   let targets =
     List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"] |> List.map ~f:Callable.create_function
   in
-  let step1 = Fixpoint.{ epoch = 1; iteration = 0 } in
+  let step1 = FixpointState.{ epoch = 1; iteration = 0 } in
   let environment =
     setup_scratch_project ~context ()
     |> setup_environment

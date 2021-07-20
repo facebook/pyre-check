@@ -453,7 +453,7 @@ include Interprocedural.AnalysisResult.Make (ResultArgument)
 (* Patch the forward reference to access the final summaries in trace info generation. *)
 let has_significant_summary root path target =
   let model =
-    Interprocedural.Fixpoint.get_model target >>= Interprocedural.AnalysisResult.get_model kind
+    Interprocedural.FixpointState.get_model target >>= Interprocedural.AnalysisResult.get_model kind
   in
   match model with
   | None -> false

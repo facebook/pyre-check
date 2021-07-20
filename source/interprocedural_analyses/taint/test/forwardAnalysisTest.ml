@@ -51,7 +51,9 @@ let assert_taint ?models ~context source expect =
         |> Interprocedural.FixpointAnalysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
   let defines = source |> Preprocessing.defines |> List.rev in
-  let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
+  let () =
+    List.map ~f:Callable.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
+  in
   let analyze_and_store_in_order define =
     let call_target = Callable.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
@@ -70,7 +72,7 @@ let assert_taint ?models ~context source expect =
     let model = { Taint.Result.empty_model with forward } in
     AnalysisResult.empty_model
     |> AnalysisResult.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
+    |> FixpointState.add_predefined FixpointState.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
   List.iter ~f:(check_expectation ~environment:(TypeEnvironment.read_only environment)) expect;

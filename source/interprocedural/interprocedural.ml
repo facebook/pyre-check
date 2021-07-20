@@ -14,5 +14,5 @@ module DecoratorHelper = DecoratorHelper
 module DependencyGraph = DependencyGraph
 module DependencyGraphSharedMemory = DependencyGraphSharedMemory
 module Error = Error
-module Fixpoint = Fixpoint
+module FixpointState = FixpointState
 module AnalysisResult = AnalysisResult

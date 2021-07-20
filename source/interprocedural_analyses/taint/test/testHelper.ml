@@ -74,7 +74,9 @@ let get_model callable =
     Base.Error.of_exn
       (OUnitTest.OUnit_failure (Format.asprintf "model not found for %a" Callable.pp callable))
   in
-  let model = Fixpoint.get_model callable |> Option.value_exn ?here:None ~error ?message:None in
+  let model =
+    FixpointState.get_model callable |> Option.value_exn ?here:None ~error ?message:None
+  in
   ( model
     |> AnalysisResult.get_model Taint.Result.kind
     |> Option.value ~default:Taint.Result.empty_model,
@@ -313,7 +315,7 @@ let check_expectation
 
   (* Check errors *)
   let actual_errors =
-    Fixpoint.get_result callable
+    FixpointState.get_result callable
     |> AnalysisResult.get_result Taint.Result.kind
     >>| List.map ~f:Flow.generate_error
     |> Option.value ~default:[]
@@ -575,9 +577,9 @@ let initialize
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   let () =
-    let keys = Fixpoint.KeySet.of_list callables_to_analyze in
-    Fixpoint.remove_new keys;
-    Fixpoint.remove_old keys;
+    let keys = FixpointState.KeySet.of_list callables_to_analyze in
+    FixpointState.remove_new keys;
+    FixpointState.remove_old keys;
     initial_models
     |> Callable.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind)
     |> Interprocedural.FixpointAnalysis.record_initial_models ~functions:callables ~stubs
