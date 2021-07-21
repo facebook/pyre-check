@@ -43,7 +43,7 @@ let fixpoint_result ~context ~sources ~callable_names ~transform_configuration =
     in
     callable_names |> List.map ~f:callable_of_string
   in
-  let scratch_project = ScratchProject.setup ~context ~infer:true sources in
+  let scratch_project = ScratchProject.setup ~context sources in
   let filtered_callables = Callable.Set.of_list callables in
   let environment =
     setup_environment scratch_project |> TypeEnvironment.create |> TypeEnvironment.read_only

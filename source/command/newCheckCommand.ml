@@ -180,7 +180,6 @@ module CheckConfiguration = struct
       | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
     in
     Configuration.Analysis.create
-      ~infer:false
       ~parallel
       ~analyze_external_sources:false
       ~filter_directories:checked_directory_allowlist

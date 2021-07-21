@@ -255,7 +255,6 @@ module Analysis = struct
   [@@deriving show]
 
   type t = {
-    infer: bool;
     configuration_file_hash: string option;
     parallel: bool;
     analyze_external_sources: bool;
@@ -288,13 +287,11 @@ module Analysis = struct
   [@@deriving show]
 
   let equal first second =
-    Bool.equal first.infer second.infer
-    && [%compare.equal: string option] first.expected_version second.expected_version
+    [%compare.equal: string option] first.expected_version second.expected_version
     && Bool.equal first.strict second.strict
 
 
   let create
-      ?(infer = false)
       ?configuration_file_hash
       ?(parallel = true)
       ?(analyze_external_sources = false)
@@ -328,7 +325,6 @@ module Analysis = struct
       ()
     =
     {
-      infer;
       configuration_file_hash;
       parallel;
       analyze_external_sources;

@@ -651,7 +651,6 @@ let run_start_command
     Configuration.Analysis.create
       ?expected_version
       ~debug
-      ~infer:false
       ?configuration_file_hash
       ~strict
       ~show_error_traces

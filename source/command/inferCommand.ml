@@ -68,7 +68,6 @@ let run_infer_interprocedural
         ~debug
         ~strict
         ~show_error_traces
-        ~infer:true
         ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories
@@ -212,7 +211,6 @@ let run_infer_local
         ~debug
         ~strict
         ~show_error_traces
-        ~infer:true
         ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories

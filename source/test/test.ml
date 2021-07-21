@@ -2686,7 +2686,6 @@ module ScratchProject = struct
       ?(show_error_traces = false)
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
-      ?(infer = false)
       sources
     =
     let add_source ~root (relative, content) =
@@ -2712,7 +2711,6 @@ module ScratchProject = struct
         ~features:{ Configuration.Features.default with go_to_definition = true }
         ~show_error_traces
         ~parallel:false
-        ~infer
         ()
     in
     let external_sources =
@@ -2855,7 +2853,6 @@ type test_update_environment_with_t = {
 let assert_errors
     ?(debug = true)
     ?(strict = false)
-    ?(infer = false)
     ?(show_error_traces = false)
     ?(concise = false)
     ?(handle = "test.py")
@@ -2892,7 +2889,7 @@ let assert_errors
           AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only,
           TypeEnvironment.create global_environment )
       in
-      let configuration = { configuration with debug; strict; infer } in
+      let configuration = { configuration with debug; strict } in
       let source =
         List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
             String.equal handle relative)

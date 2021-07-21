@@ -96,7 +96,6 @@ module Analysis : sig
   [@@deriving show]
 
   type t = {
-    infer: bool;
     configuration_file_hash: string option;
     parallel: bool;
     analyze_external_sources: bool;
@@ -129,8 +128,7 @@ module Analysis : sig
   [@@deriving show, eq]
 
   val create
-    :  ?infer:bool ->
-    ?configuration_file_hash:string ->
+    :  ?configuration_file_hash:string ->
     ?parallel:bool ->
     ?analyze_external_sources:bool ->
     ?filter_directories:Path.t list ->

@@ -183,7 +183,6 @@ module InferConfiguration = struct
       | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
     in
     Configuration.Analysis.create
-      ~infer:true
       ~ignore_infer
       ~parallel
       ~analyze_external_sources:false

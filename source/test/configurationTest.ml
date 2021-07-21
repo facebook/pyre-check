@@ -11,10 +11,6 @@ open Test
 open Pyre
 
 let test_equal _ =
-  assert_false
-    (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~infer:true ~source_path:[] ())
-       (Configuration.Analysis.create ~infer:false ~source_path:[] ()));
   assert_true
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~parallel:true ~source_path:[] ())

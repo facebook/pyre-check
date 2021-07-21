@@ -13,7 +13,7 @@ open TypeInference.Data
 open Test
 module State = TypeInference.Local.State
 
-let configuration = Configuration.Analysis.create ~infer:true ~source_path:[] ()
+let configuration = Configuration.Analysis.create ~source_path:[] ()
 
 let assert_backward ~resolution precondition statement postcondition =
   let module State = State (struct
@@ -189,7 +189,7 @@ let setup_environment scratch_project =
 module Setup = struct
   let set_up_project ~context code =
     let ({ ScratchProject.configuration; _ } as project) =
-      ScratchProject.setup ~context ["test.py", code] ~infer:true
+      ScratchProject.setup ~context ["test.py", code]
     in
     let environment =
       setup_environment project |> TypeEnvironment.create |> TypeEnvironment.read_only

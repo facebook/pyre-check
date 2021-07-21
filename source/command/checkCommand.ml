@@ -67,7 +67,6 @@ let run_check
         ~debug
         ~strict
         ~show_error_traces
-        ~infer:false
         ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
         ~parallel:(not sequential)
         ?filter_directories
