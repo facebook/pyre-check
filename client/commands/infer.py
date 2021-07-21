@@ -346,12 +346,17 @@ class ModuleAnnotations:
         ```
         """
         classes = defaultdict(list)
+        nested_class_count = 0
         for attribute in [*self.attributes, *self.methods]:
             parent = self._relativize(attribute.parent)
-            if len(parent) != 1:
-                LOG.warning("Unexpected parent with length != 1: %r", parent)
-            else:
+            if len(parent) == 1:
                 classes[parent[0]].append(attribute)
+            else:
+                nested_class_count += 1
+        if nested_class_count > 0:
+            LOG.warning(
+                "In file %s, ignored %d nested classes", self.path, nested_class_count
+            )
         return classes
 
     def _relativize(self, parent: str) -> Sequence[str]:
