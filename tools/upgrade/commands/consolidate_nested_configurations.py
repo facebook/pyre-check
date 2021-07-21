@@ -115,6 +115,11 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
 
         # Gather nesting structure of configurations
         nested_configurations = self.gather_nested_configuration_mapping(configurations)
+        if all(len(nested) == 0 for nested in nested_configurations.values()):
+            LOG.warning(
+                "Skipping consolidation. None of the configurations found are nested."
+            )
+            return
 
         # Consolidate targets
         for topmost, nested in nested_configurations.items():
