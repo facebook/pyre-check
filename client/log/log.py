@@ -69,6 +69,7 @@ class SectionFormatter(logging.Formatter):
         return re.sub(r"DEBUG \[(.*)\]", r"\1", formatted)
 
 
+# pyre-fixme[24]: Generic type `logging.StreamHandler` expects 1 type parameter.
 class TimedStreamHandler(logging.StreamHandler):
     THRESHOLD: float = 0.5
     LINE_BREAKING_LEVELS: Sequence[str] = ["ERROR", "WARNING", "SUCCESS"]
