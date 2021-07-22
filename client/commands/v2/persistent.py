@@ -42,6 +42,7 @@ CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
 
 class LSPEvent(enum.Enum):
     INITIALIZED = "initialized"
+    NOT_INITIALIZED = "not initialized"
     CONNECTED = "connected"
     NOT_CONNECTED = "not connected"
     NOT_CONFIGURED = "not configured"
@@ -163,8 +164,10 @@ async def try_initialize(
 
         initialized_notification = await lsp.read_json_rpc(input_channel)
         if initialized_notification.method != "initialized":
+            actual_message = json.dumps(initialized_notification.json())
             raise lsp.ServerNotInitializedError(
-                "Failed to receive an `initialized` request from client"
+                "Failed to receive an `initialized` request from client. "
+                + f"Got {log.truncate(actual_message, 100)}"
             )
 
         return InitializationSuccess(
@@ -862,6 +865,15 @@ async def run_persistent(
                 str(exception) if exception is not None else "ignoring notification"
             )
             LOG.info(f"Initialization failed: {message}")
+            _log_lsp_event(
+                remote_logging=remote_logging,
+                event=LSPEvent.NOT_INITIALIZED,
+                normals=(
+                    {
+                        "exception": message,
+                    }
+                ),
+            )
             # Loop until we get either InitializeExit or InitializeSuccess
         else:
             raise RuntimeError("Cannot determine the type of initialize_result")
