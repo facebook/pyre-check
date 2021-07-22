@@ -266,12 +266,6 @@ class ModuleAnnotations:
     methods: list[MethodAnnotation]
 
     @staticmethod
-    def empty(path: str) -> ModuleAnnotations:
-        return ModuleAnnotations(
-            path=path, globals_=[], attributes=[], functions=[], methods=[]
-        )
-
-    @staticmethod
     def from_infer_output(
         path: str,
         infer_output: RawInferOutput,
