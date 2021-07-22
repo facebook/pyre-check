@@ -68,6 +68,56 @@ def normalized_json_dump(
     return json.dumps(normalized, sort_keys=True, indent=2) + "\n"
 
 
+def compare_results(
+    actual_results: str,
+    expected_results: str,
+    current_directory: Path,
+    filter_issues: bool,
+) -> None:
+    normalized_pysa_results = normalized_json_dump(
+        actual_results, strip_locations=True, filter_issues=filter_issues
+    )
+    normalized_expected_results = normalized_json_dump(
+        expected_results, strip_locations=True, filter_issues=filter_issues
+    )
+    if normalized_pysa_results != normalized_expected_results:
+
+        actual_full_results_path = current_directory / "full_result.actual"
+        actual_full_results_path.write_text(
+            normalized_json_dump(
+                actual_results, strip_locations=False, filter_issues=filter_issues
+            )
+        )
+
+        actual_invariant_results_path = (
+            current_directory / "position_invariant_result.actual"
+        )
+        actual_invariant_results_path.write_text(normalized_pysa_results)
+
+        expected_invariant_results_path = (
+            current_directory / "position_invariant_result.json"
+        )
+        expected_invariant_results_path.write_text(normalized_expected_results)
+
+        result = subprocess.run(
+            [
+                "diff",
+                "-u",
+                expected_invariant_results_path,
+                actual_invariant_results_path,
+            ],
+            text=True,
+            stdout=subprocess.PIPE,
+        )
+        friendly_exit(
+            "Output differs from expected:",
+            result.stdout,
+            "output-differs-from-expected",
+        )
+    else:
+        LOG.info("Run produced expected results")
+
+
 def friendly_exit(error_message: str, logs: str, suggested_hash: str) -> None:
     """
     Error function to print error message using LOG and exit
@@ -129,45 +179,4 @@ def run_pysa_integration_test(
 
     expected_results = (current_directory / "full_result.json").read_text()
 
-    normalized_pysa_results = normalized_json_dump(
-        pysa_results, strip_locations=True, filter_issues=filter_issues
-    )
-    normalized_expected_results = normalized_json_dump(
-        expected_results, strip_locations=True, filter_issues=filter_issues
-    )
-    if normalized_pysa_results != normalized_expected_results:
-
-        actual_full_results_path = current_directory / "full_result.actual"
-        actual_full_results_path.write_text(
-            normalized_json_dump(
-                pysa_results, strip_locations=False, filter_issues=filter_issues
-            )
-        )
-
-        actual_invariant_results_path = (
-            current_directory / "position_invariant_result.actual"
-        )
-        actual_invariant_results_path.write_text(normalized_pysa_results)
-
-        expected_invariant_results_path = (
-            current_directory / "position_invariant_result.json"
-        )
-        expected_invariant_results_path.write_text(normalized_expected_results)
-
-        result = subprocess.run(
-            [
-                "diff",
-                "-u",
-                expected_invariant_results_path,
-                actual_invariant_results_path,
-            ],
-            text=True,
-            stdout=subprocess.PIPE,
-        )
-        friendly_exit(
-            "Output differs from expected:",
-            result.stdout,
-            "output-differs-from-expected",
-        )
-    else:
-        LOG.info("Run produced expected results")
+    compare_results(pysa_results, expected_results, current_directory, filter_issues)
