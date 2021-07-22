@@ -41,7 +41,7 @@ module Label : sig
   val is_prefix : prefix:path -> path -> bool
 end
 
-module Make (Config : CONFIG) (Element : ELEMENT) () : sig
+module Make (_ : CONFIG) (Element : ELEMENT) () : sig
   include AbstractDomainCore.S
 
   type _ AbstractDomainCore.part +=
