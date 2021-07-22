@@ -661,6 +661,8 @@ val contains_any : t -> bool
 
 val contains_unknown : t -> bool
 
+val contains_undefined : t -> bool
+
 val expression_contains_any : Expression.t -> bool
 
 (* Contains `Bottom` or variables. *)

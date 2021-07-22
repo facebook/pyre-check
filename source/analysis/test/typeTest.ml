@@ -1463,6 +1463,7 @@ let test_unfold_recursive_type _ =
 
 
 let test_contains_unknown _ =
+  assert_true (Type.contains_unknown Type.Top);
   assert_false (Type.contains_unknown Type.Bottom);
   assert_false (Type.contains_unknown Type.Any);
   assert_true (Type.contains_unknown (Type.optional Type.Top));
@@ -1482,6 +1483,31 @@ let test_contains_unknown _ =
     (Type.contains_unknown (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Top)));
   assert_false
     (Type.contains_unknown
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)))
+
+
+let test_contains_undefined _ =
+  assert_true (Type.contains_undefined Type.Bottom);
+  assert_false (Type.contains_undefined Type.Top);
+  assert_false (Type.contains_undefined Type.Any);
+  assert_true (Type.contains_undefined (Type.optional Type.Bottom));
+  assert_false (Type.contains_undefined (Type.optional Type.integer));
+  assert_true
+    (Type.contains_undefined (Type.optional (Type.parametric "foo" ![Type.integer; Type.Bottom])));
+  assert_true (Type.contains_undefined (Type.parametric "foo" ![Type.integer; Type.Bottom]));
+  assert_false (Type.contains_undefined (Type.parametric "foo" ![Type.integer]));
+  assert_false (Type.contains_undefined Type.integer);
+  assert_true (Type.contains_undefined Type.Bottom);
+  assert_true (Type.contains_undefined (Type.Union [Type.integer; Type.Bottom]));
+  assert_false (Type.contains_undefined (Type.Union [Type.integer; Type.string]));
+  assert_false (Type.contains_undefined (Type.variable "derp"));
+  assert_true (Type.contains_undefined (Type.Tuple (Concrete [Type.integer; Type.Bottom])));
+  assert_false (Type.contains_undefined (Type.Tuple (Concrete [Type.integer; Type.string])));
+  assert_true
+    (Type.contains_undefined
+       (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.Bottom)));
+  assert_false
+    (Type.contains_undefined
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer)))
 
 
@@ -4249,6 +4275,7 @@ let () =
          "create_recursive_type" >:: test_create_recursive_type;
          "unfold_recursive_type" >:: test_unfold_recursive_type;
          "contains_unknown" >:: test_contains_unknown;
+         "contains_undefined" >:: test_contains_undefined;
          "is_resolved" >:: test_is_resolved;
          "is_iterator" >:: test_is_iterator;
          "class_name" >:: test_class_name;

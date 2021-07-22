@@ -2335,6 +2335,8 @@ let contains_any annotation = exists annotation ~predicate:is_any
 
 let contains_unknown annotation = exists annotation ~predicate:is_top
 
+let contains_undefined annotation = exists annotation ~predicate:is_unbound
+
 let pp_type = pp
 
 module Callable = struct
