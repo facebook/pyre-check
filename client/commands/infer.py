@@ -330,6 +330,24 @@ class ModuleAnnotations:
             use_future_annotations=use_future_annotations,
         )
 
+    def is_empty(self) -> bool:
+        return (
+            len(self.globals_)
+            + len(self.attributes)
+            + len(self.functions)
+            + len(self.methods)
+        ) == 0
+
+    @staticmethod
+    def _indent(stub: str) -> str:
+        return "    " + stub.replace("\n", "\n    ")
+
+    def _relativize(self, parent: str) -> Sequence[str]:
+        path = (
+            str(self.path).split(".", 1)[0].replace("/", ".").replace(".__init__", "")
+        )
+        return parent.replace(path, "", 1).strip(".").split(".")
+
     @property
     def classes(self) -> dict[str, list[AttributeAnnotation | MethodAnnotation]]:
         """
@@ -356,51 +374,8 @@ class ModuleAnnotations:
             )
         return classes
 
-    def _relativize(self, parent: str) -> Sequence[str]:
-        path = (
-            str(self.path).split(".", 1)[0].replace("/", ".").replace(".__init__", "")
-        )
-        return parent.replace(path, "", 1).strip(".").split(".")
-
     def stubs_path(self, directory: Path) -> Path:
         return directory / Path(f"{self.path}i")
-
-    def is_empty(self) -> bool:
-        return (
-            len(self.globals_)
-            + len(self.attributes)
-            + len(self.functions)
-            + len(self.methods)
-        ) == 0
-
-    def to_stubs(self, dequalify: bool) -> str:
-        """
-        Output annotation information as a stub file.
-        """
-        return "\n".join(
-            [
-                self._imports(),
-                *(global_.to_stub(dequalify) for global_ in self.globals_),
-                *(function.to_stub(dequalify) for function in self.functions),
-                *(
-                    self._class_stub(classname, annotations, dequalify)
-                    for classname, annotations in self.classes.items()
-                ),
-                "",
-            ]
-        )
-
-    def write_stubs(self, type_directory: Path, dequalify: bool) -> None:
-        path = self.stubs_path(type_directory)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(self.to_stubs(dequalify))
-
-    def _imports(self) -> str:
-        import_statements = self._header_imports() + self._typing_imports()
-        imports_str = (
-            "" if import_statements == [] else "\n".join(import_statements) + "\n"
-        )
-        return imports_str
 
     def _header_imports(self) -> List[str]:
         return (
@@ -432,6 +407,13 @@ class ModuleAnnotations:
             else [f"from typing import {', '.join(from_typing)}"]
         )
 
+    def _imports(self) -> str:
+        import_statements = self._header_imports() + self._typing_imports()
+        imports_str = (
+            "" if import_statements == [] else "\n".join(import_statements) + "\n"
+        )
+        return imports_str
+
     def _class_stub(
         self,
         classname: str,
@@ -443,9 +425,27 @@ class ModuleAnnotations:
         )
         return f"class {classname}:\n{body}\n"
 
-    @staticmethod
-    def _indent(stub: str) -> str:
-        return "    " + stub.replace("\n", "\n    ")
+    def to_stubs(self, dequalify: bool) -> str:
+        """
+        Output annotation information as a stub file.
+        """
+        return "\n".join(
+            [
+                self._imports(),
+                *(global_.to_stub(dequalify) for global_ in self.globals_),
+                *(function.to_stub(dequalify) for function in self.functions),
+                *(
+                    self._class_stub(classname, annotations, dequalify)
+                    for classname, annotations in self.classes.items()
+                ),
+                "",
+            ]
+        )
+
+    def write_stubs(self, type_directory: Path, dequalify: bool) -> None:
+        path = self.stubs_path(type_directory)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(self.to_stubs(dequalify))
 
 
 def _create_module_annotations(
