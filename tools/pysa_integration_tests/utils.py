@@ -25,13 +25,13 @@ class PyreErrorException(Exception):
 
 
 def normalized_json_dump(
-    results: str, strip_locations: bool, filter_issues: bool
+    results: str, salient_keys_only: bool, filter_issues: bool
 ) -> str:
     """
     Returns a normalised JSON string from results keeping only essential items.
-    Filters issues down to issues that have the code we intend to test for if
-    filter_issues is true, and removes location information if strip_location
-    is set to True.
+    Removes all keys that are not salient to determining if results have changed
+    when 'salient_keys_only' is true. Filters issues down to issues that have
+    the code we intend to test for if 'filter_issues' is true.
     """
     normalized = json.loads(results)
     if "errors" in normalized:
@@ -58,12 +58,20 @@ def normalized_json_dump(
         ),
     )
 
-    if strip_locations:
-        stripped_keys = {"column", "line", "stop_column", "stop_line"}
-        normalized = [
-            {key: value for key, value in issue.items() if key not in stripped_keys}
-            for issue in normalized
-        ]
+    if salient_keys_only:
+        salient_keys = {"code", "define", "description", "path"}
+        stripped_issues = []
+        for issue in normalized:
+            stripped_issue = {
+                key: value for key, value in issue.items() if key in salient_keys
+            }
+            if set(stripped_issue.keys()) != salient_keys:
+                raise KeyError(
+                    f"Expected issue to contain {salient_keys} keys, "
+                    + f"but instead found: {issue}"
+                )
+            stripped_issues.append(stripped_issue)
+        normalized = stripped_issues
 
     return json.dumps(normalized, sort_keys=True, indent=2) + "\n"
 
@@ -75,17 +83,17 @@ def compare_results(
     filter_issues: bool,
 ) -> None:
     normalized_pysa_results = normalized_json_dump(
-        actual_results, strip_locations=True, filter_issues=filter_issues
+        actual_results, salient_keys_only=True, filter_issues=filter_issues
     )
     normalized_expected_results = normalized_json_dump(
-        expected_results, strip_locations=True, filter_issues=filter_issues
+        expected_results, salient_keys_only=True, filter_issues=filter_issues
     )
     if normalized_pysa_results != normalized_expected_results:
 
         actual_full_results_path = current_directory / "full_result.actual"
         actual_full_results_path.write_text(
             normalized_json_dump(
-                actual_results, strip_locations=False, filter_issues=filter_issues
+                actual_results, salient_keys_only=False, filter_issues=filter_issues
             )
         )
 
