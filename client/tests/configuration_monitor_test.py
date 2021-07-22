@@ -7,7 +7,7 @@ import unittest
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator, Optional
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from .. import configuration_monitor, watchman, configuration as configuration_module
 from ..analysis_directory import AnalysisDirectory

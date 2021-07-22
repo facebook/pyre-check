@@ -59,7 +59,7 @@ class RepositoryState(ABC):
                 )
             else:
                 raise InvalidSpecificationException(
-                    f"Cannot create RepositoryState due to unrecognized kind"
+                    "Cannot create RepositoryState due to unrecognized kind"
                 )
         except KeyError as key:
             raise InvalidSpecificationException(
@@ -118,7 +118,7 @@ class RepositoryUpdate(ABC):
                 return BatchRepositoryUpdate(parsed_updates)
             else:
                 raise InvalidSpecificationException(
-                    f"Cannot create RepositoryUpdate due to unrecognized kind"
+                    "Cannot create RepositoryUpdate due to unrecognized kind"
                 )
         except KeyError as key:
             raise InvalidSpecificationException(
@@ -154,7 +154,7 @@ class HgRepositoryState(RepositoryState):
     def _do_prepare(self, environment: Environment) -> Iterator[Path]:
         # Save the original commit hash.
         hg_output = environment.checked_run(
-            working_directory=self.repository, command=f"hg whereami"
+            working_directory=self.repository, command="hg whereami"
         ).stdout.strip()
         original_commit_hash = hg_output if len(hg_output) > 0 else None
         LOG.debug(f"Original hg commit = {original_commit_hash}")

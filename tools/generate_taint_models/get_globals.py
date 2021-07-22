@@ -38,7 +38,8 @@ class GlobalModelGenerator(ModelGenerator[Model]):
             blacklisted_global_directories or set()
         )
 
-    def _globals(self, root: str, path: str) -> Iterable[Model]:
+    # flake8 suggests to reduce the complexity of the function, hence the noqa line
+    def _globals(self, root: str, path: str) -> Iterable[Model]:  # noqa: C901
         globals = set()
         # The parent of the property needs to be stored as well, as we only store the
         # module qualifier.

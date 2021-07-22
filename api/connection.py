@@ -10,7 +10,7 @@ import logging
 import subprocess
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, List, NamedTuple, Optional
 
 from typing_extensions import TypedDict
 

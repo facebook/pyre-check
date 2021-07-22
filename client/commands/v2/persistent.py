@@ -452,7 +452,7 @@ async def _start_pyre_server(
             )
 
         return StartSuccess()
-    except Exception as error:
+    except Exception:
         detail = traceback.format_exc()
         LOG.error(f"Exception occured during server start. {detail}")
         return StartFailure(detail)
