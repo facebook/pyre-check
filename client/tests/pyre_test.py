@@ -6,20 +6,16 @@
 # pyre-unsafe
 
 import tempfile
-import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
 
 import testslide
 
 from .. import (
     command_arguments,
-    commands,
     configuration,
     pyre,
     recently_used_configurations,
 )
-from ..exceptions import EnvironmentException
 from .setup import (
     ensure_directories_exists,
     switch_working_directory,
