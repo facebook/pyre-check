@@ -176,10 +176,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.strict = True
         arguments.only_clean_targets = False
         find_targets.return_value = {
-            "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
+            "subdirectory/a/TARGETS": [
+                Target("target_one", strict=False, pyre=True, check_types=True)
+            ],
             "subdirectory/b/c/TARGETS": [
-                Target("target_three", strict=False, pyre=True),
-                Target("target_two", strict=False, pyre=True),
+                Target("target_three", strict=False, pyre=True, check_types=True),
+                Target("target_two", strict=False, pyre=True, check_types=True),
             ],
         }
         filesystem_list = MagicMock()
@@ -287,10 +289,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
             errors.Errors(pyre_errors),
         ]
         find_targets.return_value = {
-            "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
+            "subdirectory/a/TARGETS": [
+                Target("target_one", strict=False, pyre=True, check_types=True)
+            ],
             "subdirectory/b/c/TARGETS": [
-                Target("target_three", strict=False, pyre=True),
-                Target("target_two", strict=True, pyre=True),
+                Target("target_three", strict=False, pyre=True, check_types=True),
+                Target("target_two", strict=True, pyre=True, check_types=True),
             ],
         }
         with patch("json.dump") as dump_mock:
@@ -333,10 +337,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
             errors.Errors(pyre_errors),
         ]
         find_targets.return_value = {
-            "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
+            "subdirectory/a/TARGETS": [
+                Target("target_one", strict=False, pyre=True, check_types=True)
+            ],
             "subdirectory/b/c/TARGETS": [
-                Target("target_three", strict=False, pyre=True),
-                Target("target_two", strict=False, pyre=True),
+                Target("target_three", strict=False, pyre=True, check_types=True),
+                Target("target_two", strict=False, pyre=True, check_types=True),
             ],
         }
         with patch("json.dump") as dump_mock:
@@ -508,10 +514,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_targets.reset_mock()
         arguments.only_clean_targets = True
         find_targets.return_value = {
-            "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
+            "subdirectory/a/TARGETS": [
+                Target("target_one", strict=False, pyre=True, check_types=True)
+            ],
             "subdirectory/b/c/TARGETS": [
-                Target("target_three", strict=False, pyre=True),
-                Target("target_two", strict=False, pyre=True),
+                Target("target_three", strict=False, pyre=True, check_types=True),
+                Target("target_two", strict=False, pyre=True, check_types=True),
             ],
         }
         TargetsToConfiguration.from_arguments(arguments, repository).run()

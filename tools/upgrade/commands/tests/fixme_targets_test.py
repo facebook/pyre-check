@@ -75,8 +75,8 @@ class FixmeTargetsTest(unittest.TestCase):
             Path("."),
             "a/b",
             [
-                Target("derp", strict=False, pyre=True),
-                Target("herp", strict=False, pyre=True),
+                Target("derp", strict=False, pyre=True, check_types=True),
+                Target("herp", strict=False, pyre=True, check_types=True),
             ],
         )
         subprocess.assert_called_once_with(
@@ -100,8 +100,8 @@ class FixmeTargetsTest(unittest.TestCase):
             Path("."),
             "a/b",
             [
-                Target("derp", strict=False, pyre=True),
-                Target("herp", strict=False, pyre=True),
+                Target("derp", strict=False, pyre=True, check_types=True),
+                Target("herp", strict=False, pyre=True, check_types=True),
             ],
         )
         apply_suppressions.assert_not_called()
@@ -177,8 +177,8 @@ class FixmeTargetsTest(unittest.TestCase):
             Path("."),
             "a/b",
             [
-                Target("derp", strict=False, pyre=True),
-                Target("herp", strict=False, pyre=True),
+                Target("derp", strict=False, pyre=True, check_types=True),
+                Target("herp", strict=False, pyre=True, check_types=True),
             ],
         )
         apply_suppressions.assert_called_once_with(expected_errors)
@@ -193,7 +193,9 @@ class FixmeTargetsTest(unittest.TestCase):
         buck_query_return.stdout = b"//target/to:retry-pyre-typecheck"
         subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
         FixmeTargets.from_arguments(arguments, repository)._run_fixme_targets_file(
-            Path("."), "a/b", [Target("derp", strict=False, pyre=True)]
+            Path("."),
+            "a/b",
+            [Target("derp", strict=False, pyre=True, check_types=True)],
         )
         subprocess.assert_has_calls(
             [
@@ -247,7 +249,9 @@ class FixmeTargetsTest(unittest.TestCase):
         """
         subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
         FixmeTargets.from_arguments(arguments, repository)._run_fixme_targets_file(
-            Path("."), "a/b", [Target("derp", strict=False, pyre=True)]
+            Path("."),
+            "a/b",
+            [Target("derp", strict=False, pyre=True, check_types=True)],
         )
         subprocess.assert_has_calls(
             [

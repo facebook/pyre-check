@@ -185,6 +185,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             new_targets += [
                 "//" + path.replace("/TARGETS", "") + ":" + target.name
                 for target in targets
+                if target.check_types
             ]
         return new_targets
 
