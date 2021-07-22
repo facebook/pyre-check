@@ -174,6 +174,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.no_commit = False
         arguments.pyre_only = False
         arguments.strict = True
+        arguments.only_clean_targets = False
         find_targets.return_value = {
             "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
             "subdirectory/b/c/TARGETS": [
@@ -452,8 +453,17 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(
         f"{targets_to_configuration.__name__}.TargetsToConfiguration.convert_directory"
     )
+    @patch(f"{targets_to_configuration.__name__}.find_targets")
+    @patch(
+        f"{targets_to_configuration.__name__}.TargetsToConfiguration.remove_target_typing_fields"
+    )
     def test_run_targets_to_configuration(
-        self, convert_directory, gather_directories, commit_changes
+        self,
+        remove_typing_fields,
+        find_targets,
+        convert_directory,
+        gather_directories,
+        commit_changes,
     ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = "subdirectory"
@@ -461,6 +471,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.glob = None
         arguments.fixme_threshold = None
         arguments.no_commit = False
+        arguments.only_clean_targets = False
 
         gather_directories.return_value = [Path("subdirectory")]
         TargetsToConfiguration.from_arguments(arguments, repository).run()
@@ -484,6 +495,31 @@ class TargetsToConfigurationTest(unittest.TestCase):
         ]
         TargetsToConfiguration.from_arguments(arguments, repository).run()
         convert_directory.assert_called_once_with(Path("subdirectory/a"))
+
+        convert_directory.reset_mock()
+        arguments.only_clean_targets = True
+        find_targets.return_value = {}
+        TargetsToConfiguration.from_arguments(arguments, repository).run()
+        convert_directory.assert_not_called()
+        find_targets.assert_called_once()
+        remove_typing_fields.assert_not_called()
+
+        convert_directory.reset_mock()
+        find_targets.reset_mock()
+        arguments.only_clean_targets = True
+        find_targets.return_value = {
+            "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
+            "subdirectory/b/c/TARGETS": [
+                Target("target_three", strict=False, pyre=True),
+                Target("target_two", strict=False, pyre=True),
+            ],
+        }
+        TargetsToConfiguration.from_arguments(arguments, repository).run()
+        convert_directory.assert_not_called()
+        find_targets.assert_called_once()
+        remove_typing_fields.assert_called_once_with(
+            [Path("subdirectory/a/TARGETS"), Path("subdirectory/b/c/TARGETS")]
+        )
 
     @patch("subprocess.check_output")
     def test_deduplicate_targets(self, mock_check_output) -> None:
