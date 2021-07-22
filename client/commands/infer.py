@@ -264,11 +264,13 @@ class ModuleAnnotations:
     attributes: list[AttributeAnnotation]
     functions: list[FunctionAnnotation]
     methods: list[MethodAnnotation]
+    use_future_annotations: bool
 
     @staticmethod
     def from_infer_output(
         path: str,
         infer_output: RawInferOutput,
+        use_future_annotations: bool,
     ) -> ModuleAnnotations:
         return ModuleAnnotations(
             path=path,
@@ -325,6 +327,7 @@ class ModuleAnnotations:
                 for define in infer_output["defines"]
                 if define.get("parent") is not None
             ],
+            use_future_annotations=use_future_annotations,
         )
 
     @property
@@ -376,7 +379,7 @@ class ModuleAnnotations:
         """
         return "\n".join(
             [
-                self._typing_imports(),
+                self._imports(),
                 *(global_.to_stub(dequalify) for global_ in self.globals_),
                 *(function.to_stub(dequalify) for function in self.functions),
                 *(
@@ -392,23 +395,42 @@ class ModuleAnnotations:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(self.to_stubs(dequalify))
 
-    def _typing_imports(self) -> str:
-        all_imports = (
-            typing_import
-            for by_category in [
-                (global_.typing_imports() for global_ in self.globals_),
-                (function.typing_imports() for function in self.functions),
-                (
-                    attribute.typing_imports()
-                    for class_attributes in self.classes.values()
-                    for attribute in class_attributes
-                ),
-            ]
-            for by_annotation in by_category
-            for typing_import in by_annotation
+    def _imports(self) -> str:
+        import_statements = self._header_imports() + self._typing_imports()
+        imports_str = (
+            "" if import_statements == [] else "\n".join(import_statements) + "\n"
         )
-        imports = sorted(set(all_imports))
-        return "" if imports == [] else f"from typing import {', '.join(imports)}\n\n"
+        return imports_str
+
+    def _header_imports(self) -> List[str]:
+        return (
+            ["from __future__ import annotations"]
+            if self.use_future_annotations
+            else []
+        )
+
+    def _typing_imports(self) -> List[str]:
+        from_typing = sorted(
+            {
+                typing_import
+                for by_category in [
+                    (global_.typing_imports() for global_ in self.globals_),
+                    (function.typing_imports() for function in self.functions),
+                    (
+                        attribute.typing_imports()
+                        for class_attributes in self.classes.values()
+                        for attribute in class_attributes
+                    ),
+                ]
+                for by_annotation in by_category
+                for typing_import in by_annotation
+            }
+        )
+        return (
+            []
+            if from_typing == []
+            else [f"from typing import {', '.join(from_typing)}"]
+        )
 
     def _class_stub(
         self,
@@ -427,7 +449,9 @@ class ModuleAnnotations:
 
 
 def _create_module_annotations(
-    infer_output: RawInferOutput, sanitize_path: Callable[[str], str | None]
+    infer_output: RawInferOutput,
+    sanitize_path: Callable[[str], str | None],
+    use_future_annotations: bool,
 ) -> Sequence[ModuleAnnotations]:
     infer_output_by_path = RawInferOutput.split_by_path(
         infer_output=infer_output,
@@ -441,6 +465,7 @@ def _create_module_annotations(
         ModuleAnnotations.from_infer_output(
             path=path,
             infer_output=infer_output_for_path,
+            use_future_annotations=use_future_annotations,
         )
         for path, infer_output_for_path in infer_output_sanitized.items()
     ]
@@ -514,6 +539,7 @@ class Infer(Reporting):
         read_stdin: bool,
         dequalify: bool,
         interprocedural: bool,
+        use_future_annotations: bool,
     ) -> None:
         if annotate_from_existing_stubs and not in_place:
             raise ValueError(
@@ -534,6 +560,7 @@ class Infer(Reporting):
         self._read_stdin = read_stdin
         self._dequalify = dequalify
         self._interprocedural = interprocedural
+        self._use_future_annotations = use_future_annotations
         self._type_directory: Path = (
             Path(self._configuration.log_directory) / "types"
         ).absolute()
@@ -591,6 +618,7 @@ class Infer(Reporting):
         module_annotations = _create_module_annotations(
             infer_output=infer_output,
             sanitize_path=self.project_relative_path,
+            use_future_annotations=self._use_future_annotations,
         )
         if self._print_only:
             return self._print_inferences(

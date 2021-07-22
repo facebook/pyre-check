@@ -812,6 +812,19 @@ def incremental(
         "Will be slower, but may give better results."
     ),
 )
+@click.option(
+    "--no-future-annotations",
+    is_flag=True,
+    default=False,
+    help=(
+        "Infer assumes it can insert unquoted annotations anywhere in a "
+        "module. In python versions between 3.7 and 3.10, we can ensure this "
+        "is valid by inserting `from __future__ import annotations`, which"
+        "we do by default. You can use this flag to disable the import, which "
+        "is illegal in pre-3.7 python versions and is unnecessary (but allowed) "
+        "in python 3.10+. This flag disables inserting the import."
+    ),
+)
 @click.pass_context
 def infer(
     context: click.Context,
@@ -823,6 +836,7 @@ def infer(
     read_stdin: bool,
     dequalify: bool,
     interprocedural: bool,
+    no_future_annotations: bool,
 ) -> int:
     """
     Run pyre infer.
@@ -848,6 +862,7 @@ def infer(
             read_stdin=read_stdin,
             dequalify=dequalify,
             interprocedural=interprocedural,
+            use_future_annotations=not no_future_annotations,
         ),
         configuration,
         command_argument.noninteractive,

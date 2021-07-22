@@ -47,10 +47,12 @@ def _raw_infer_output(
 
 def _create_test_module_annotations(
     data: dict[str, object] | None,
+    use_future_annotations: bool,
 ) -> ModuleAnnotations:
     all_module_annotations = _create_module_annotations(
         infer_output=_raw_infer_output(data=data),
         sanitize_path=lambda path: path,
+        use_future_annotations=use_future_annotations,
     )
     if len(all_module_annotations) != 1:
         raise AssertionError("Expected exactly one module!")
@@ -157,9 +159,11 @@ class StubGenerationTest(unittest.TestCase):
         self,
         data: dict[str, object],
         expected: str,
+        use_future_annotations: bool = False,
     ) -> None:
         module_annotations = _create_test_module_annotations(
             data=data,
+            use_future_annotations=use_future_annotations,
         )
         actual = module_annotations.to_stubs(dequalify=False)
         _assert_stubs_equal(actual, expected)
@@ -370,7 +374,6 @@ class StubGenerationTest(unittest.TestCase):
             """\
             from typing import Dict
 
-
             class Test:
                 def ret_dict(self) -> Dict[int, str]: ...
             """,
@@ -402,7 +405,6 @@ class StubGenerationTest(unittest.TestCase):
             },
             """\
             from typing import Dict, Union
-
 
             class Test:
                 def b(self) -> Union[Dict[str, int], str]: ...
@@ -436,7 +438,6 @@ class StubGenerationTest(unittest.TestCase):
             },
             """\
             from typing import Dict, Union
-
 
             class TestA:
                 def f(self) -> Union[Dict[str, int], str]: ...
@@ -505,9 +506,36 @@ class StubGenerationTest(unittest.TestCase):
             """\
             from typing import List
 
-
             def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...
             """,
+        )
+
+    def test_stubs_use_future_annotations(self) -> None:
+        """
+        Test
+        """
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "Test",
+                        "name": "test.Test.f",
+                        "parent": "test.Test",
+                        "parameters": [
+                            {"name": "self", "annotation": None, "value": None},
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ],
+            },
+            """\
+            from __future__ import annotations
+
+            class Test:
+                def f(self) -> Test: ...
+            """,
+            use_future_annotations=True,
         )
 
     def test_stubs_with_pathlike(self) -> None:
@@ -569,6 +597,7 @@ class InferV2Test(unittest.TestCase):
                 read_stdin=False,
                 dequalify=False,
                 interprocedural=False,
+                use_future_annotations=True,
             )
             self.assertEqual(expected, infer._should_annotate_in_place(path))
 
@@ -637,6 +666,7 @@ class InferV2Test(unittest.TestCase):
                 read_stdin=False,
                 dequalify=False,
                 interprocedural=False,
+                use_future_annotations=True,
             )
             self.assertEqual(
                 command._flags(),
@@ -679,6 +709,7 @@ class InferV2Test(unittest.TestCase):
                 read_stdin=False,
                 dequalify=False,
                 interprocedural=True,
+                use_future_annotations=True,
             )
             self.assertEqual(
                 command._flags(),
@@ -723,6 +754,7 @@ class InferV2Test(unittest.TestCase):
                     read_stdin=True,
                     dequalify=False,
                     interprocedural=False,
+                    use_future_annotations=True,
                 )
                 command.run()
                 call_client.assert_not_called()
