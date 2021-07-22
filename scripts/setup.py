@@ -160,6 +160,14 @@ class Setup(NamedTuple):
         )
         opam_environment_variables = self.opam_environment_variables()
 
+        # This is required to work around a bug in pre-OCaml 4.12 that prevents
+        # `re2` from installing correctly.
+        # See https://github.com/janestreet/re2/issues/31
+        ocamlc_location = self.run(
+            ["ocamlc", "-where"], add_environment_variables=opam_environment_variables
+        )
+        self.run(["rm", "-f", f"{ocamlc_location}/version"])
+
         self.run(
             ["opam", "install", "--yes"] + DEPENDENCIES,
             add_environment_variables=opam_environment_variables,
