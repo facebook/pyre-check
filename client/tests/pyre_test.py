@@ -27,21 +27,6 @@ from .setup import (
 )
 
 
-class PyreTest(unittest.TestCase):
-    @patch.object(commands.Start, "run")
-    @patch.object(commands.Persistent, "run_null_server")
-    def test_persistent_integration(
-        self, run_null_server: MagicMock, run_start: MagicMock
-    ) -> None:
-        run_start.side_effect = commands.ClientException
-        self.assertEqual(pyre.main(["persistent"]), 2)
-        run_null_server.assert_not_called()
-
-        run_start.side_effect = EnvironmentException
-        self.assertEqual(pyre.main(["persistent"]), 0)
-        run_null_server.assert_has_calls([call(timeout=3600 * 12)])
-
-
 class CreateConfigurationWithRetryTest(testslide.TestCase):
     def test_create_configuration_with_retry_no_retry(self) -> None:
         with tempfile.TemporaryDirectory() as root:
