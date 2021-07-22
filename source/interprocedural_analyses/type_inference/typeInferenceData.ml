@@ -415,8 +415,8 @@ module LocalResult = struct
       error
     =
     let ignore type_ =
-      Type.is_untyped type_
-      || Type.contains_unknown type_
+      Type.contains_unknown type_
+      || Type.contains_undefined type_
       || Type.Variable.convert_all_escaped_free_variables_to_anys type_
          |> Type.contains_prohibited_any
     in

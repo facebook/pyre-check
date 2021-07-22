@@ -336,6 +336,13 @@ let test_inferred_returns context =
     ~expected:{|null|};
   check_inference_results
     {|
+      def foo(x):
+          return x, "hello"
+    |}
+    ~target:"test.foo"
+    ~expected:{|null|};
+  check_inference_results
+    {|
     def foo():
         if 1 > 2:
             x = 2
