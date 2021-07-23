@@ -1403,6 +1403,79 @@ let test_call_graph_of_define context =
                  targets = [`Function "test.foo"];
                }) );
       ];
+  (* Resolving __call__ via __getattr__ when a union including self type is involved. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from __future__ import annotations
+      from typing import Union
+
+      class CallViaGetattr:
+        def __getattr__(self, name: str) -> Union[None, CallViaGetattr]:
+          return None
+
+      def baz(x: CallViaGetattr) -> None:
+        y = print(x.attribute)
+    |}
+    ~define_name:"test.baz"
+    ~expected:
+      [
+        ( "10:6-10:24",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "print"];
+               }) );
+      ];
+  (* Detecting a __call__ picked up via __getattr__ redirection *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from __future__ import annotations
+      from typing import Union
+
+      class CallableClass:
+        def __call__(self) -> None:
+          return None
+
+      class CallViaGetattr:
+        def __getattr__(self, name: str) -> Union[None, CallableClass]:
+          return CallableClass()
+
+      def baz(x: CallViaGetattr) -> None:
+        y = print(x.attribute)
+    |}
+    ~define_name:"test.baz"
+    ~expected:
+      [
+        ( "14:6-14:24",
+          CallGraph.Callees
+            (CallGraph.HigherOrderTargets
+               {
+                 higher_order_function =
+                   {
+                     CallGraph.implicit_self = false;
+                     collapse_tito = true;
+                     targets = [`Function "print"];
+                   };
+                 callable_argument =
+                   ( 0,
+                     {
+                       implicit_self = true;
+                       collapse_tito = true;
+                       targets =
+                         [
+                           `Method
+                             {
+                               Callable.class_name = "test.CallableClass";
+                               method_name = "__call__";
+                             };
+                         ];
+                     } );
+               }) );
+      ];
   ()
 
 

@@ -295,6 +295,9 @@ let rec resolve_callees_from_type
     ~collapse_tito
     callable_type
   =
+  let resolve_callees_from_type ?(resolving_callable_class = resolving_callable_class) =
+    resolve_callees_from_type ~resolving_callable_class
+  in
   match callable_type with
   | Type.Callable { kind = Named name; _ } -> (
       match receiver_type with
