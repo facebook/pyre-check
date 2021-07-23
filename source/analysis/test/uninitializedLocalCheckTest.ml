@@ -143,35 +143,6 @@ let test_simple context =
         [y for x in [1,2,3] if (y:=x) > 2]
     |} [];
 
-  (* TODO (T93984519): Inconsistent handling of "assert False" and raising AssertionError. *)
-  assert_uninitialized_errors
-    {|
-      def f():
-        if True:
-          x = 1
-        else:
-          raise AssertionError("error")
-        return x
-
-      def g():
-        if True:
-          y = 1
-        else:
-          assert False, "error"
-        return y
-
-      def h():
-        if True:
-          z = 1
-        else:
-          assert True, "error"
-        return z
-    |}
-    [
-      "Uninitialized local [61]: Local variable `z` may not be initialized here.";
-      "Uninitialized local [61]: Local variable `y` may not be initialized here.";
-    ];
-
   (* TODO(T94414920): attribute reads *)
   assert_uninitialized_errors {|
       def f():
@@ -201,4 +172,52 @@ let test_simple context =
   ()
 
 
-let () = "uninitializedCheck" >::: ["simple" >:: test_simple] |> Test.run
+(* Tests documenting behavior, arguably, outside the scope of the check itself. Changes to the CFG
+   would automatically handle these cases. *)
+let test_cfg_weakness context =
+  let assert_uninitialized_errors = assert_uninitialized_errors ~context in
+
+  (* TODO (T93984519): Inconsistent handling of "assert False" and raising AssertionError. *)
+  assert_uninitialized_errors
+    {|
+      def f():
+        if True:
+          x = 1
+        else:
+          raise AssertionError("error")
+        return x
+
+      def g():
+        if True:
+          y = 1
+        else:
+          assert False, "error"
+        return y
+
+      def h():
+        if True:
+          z = 1
+        else:
+          assert True, "error"
+        return z
+    |}
+    [
+      "Uninitialized local [61]: Local variable `z` may not be initialized here.";
+      "Uninitialized local [61]: Local variable `y` may not be initialized here.";
+    ];
+  assert_uninitialized_errors
+    {|
+      def baz() -> int:
+          while True:
+              b = 1
+              break
+          return b
+    |}
+    ["Uninitialized local [61]: Local variable `b` may not be initialized here."];
+  ()
+
+
+let () =
+  "uninitializedCheck"
+  >::: ["simple" >:: test_simple; "cfg_weakness" >:: test_cfg_weakness]
+  |> Test.run
