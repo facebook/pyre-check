@@ -101,7 +101,7 @@ let assert_fixpoint_result
   assert_json_equal ~context (List.hd_exn result) ~expected
 
 
-let type_inference_serialization_test context =
+let serialization_test context =
   assert_fixpoint_result
     ~context
     ~sources:
@@ -163,7 +163,7 @@ let type_inference_serialization_test context =
     ()
 
 
-let type_inference_duplicate_define_test context =
+let duplicate_define_test context =
   (* This is a made-up example because overloads should have empty bodies, but normal libraries can
      implement similar decorator-based behavior that infer needs to handle. Note that whether we
      filter duplicates does not depend on whether there are duplicate _inference_ results; _any_
@@ -242,7 +242,7 @@ let type_inference_duplicate_define_test context =
   ()
 
 
-let type_inference_suppress_test context =
+let suppress_test context =
   assert_fixpoint_result
     ~context
     ~sources:
@@ -250,7 +250,7 @@ let type_inference_suppress_test context =
           x = None
 
           class Foo:
-            x = None
+              x = None
           |}]
     ~callable_names:["test.Foo.$class_toplevel"; "test.Foo.__init__"]
     ~expected:
@@ -264,7 +264,7 @@ let type_inference_suppress_test context =
     ()
 
 
-let type_inference_attribute_widen_test context =
+let attribute_widen_test context =
   assert_fixpoint_result
     ~context
     ~sources:
@@ -272,9 +272,9 @@ let type_inference_attribute_widen_test context =
         ( "test.py",
           {|
           class Foo:
-            x = None
-            def __init__(self) -> None:
-              self.x = 1 + 1
+              x = None
+              def __init__(self) -> None:
+                  self.x = 1 + 1
           |}
         );
       ]
@@ -297,7 +297,7 @@ let type_inference_attribute_widen_test context =
     ()
 
 
-let type_inference_ignore_infer_test context =
+let ignore_infer_test context =
   let assert_fixpoint_result =
     assert_fixpoint_result
       ~context
@@ -344,10 +344,10 @@ let type_inference_ignore_infer_test context =
 let () =
   "typeInferenceAnalysisTest"
   >::: [
-         "serialization" >:: type_inference_serialization_test;
-         "duplicates" >:: type_inference_duplicate_define_test;
-         "suppress" >:: type_inference_suppress_test;
-         "attribute_widen" >:: type_inference_attribute_widen_test;
-         "ignore_infer" >:: type_inference_ignore_infer_test;
+         "serialization" >:: serialization_test;
+         "duplicates" >:: duplicate_define_test;
+         "suppress" >:: suppress_test;
+         "attribute_widen" >:: attribute_widen_test;
+         "ignore_infer" >:: ignore_infer_test;
        ]
   |> Test.run
