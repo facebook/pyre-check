@@ -809,7 +809,8 @@ def incremental(
     default=False,
     help=(
         "Use (experimental) interprocedural inference. "
-        "Will be slower, but may give better results."
+        "Not recommended except for pyre developers, this work "
+        "is incomplete."
     ),
 )
 @click.option(
