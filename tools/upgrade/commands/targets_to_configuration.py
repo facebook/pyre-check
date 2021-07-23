@@ -324,7 +324,11 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
 
         if self._only_clean_targets:
-            LOG.info("Cleaning typecheck targets from `%s`", subdirectory)
+            LOG.info(
+                "Cleaning typecheck targets from `%s`.",
+                subdirectory,
+            )
+            LOG.info("No pyre configurations will be affected.")
             all_targets = find_targets(subdirectory, pyre_only=self._pyre_only)
             if not all_targets:
                 LOG.warning("No targets found.")
@@ -334,7 +338,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             return
 
         LOG.info(
-            "Converting typecheck targets to pyre configurations in `%s`. Will not affect pyre configurations.",
+            "Converting typecheck targets to pyre configurations in `%s`.",
             subdirectory,
         )
         configuration_directories = self._gather_directories(subdirectory)
