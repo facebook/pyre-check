@@ -546,6 +546,9 @@ class Infer(Reporting):
                 "--annotate-from-existing-stubs cannot be used without the \
                 --in-place argument"
             )
+        self._check_working_directory(
+            original_directory=original_directory, configuration=configuration
+        )
         super(Infer, self).__init__(
             command_arguments,
             original_directory,
@@ -565,6 +568,19 @@ class Infer(Reporting):
             Path(self._configuration.log_directory) / "types"
         ).absolute()
         self._analysis_root: Path = Path(self._analysis_directory.get_root()).resolve()
+
+    @staticmethod
+    def _check_working_directory(
+        original_directory: str, configuration: Configuration
+    ) -> None:
+        project_root = configuration.project_root
+        local_root = configuration.local_root
+        if not (original_directory == project_root or original_directory == local_root):
+            raise ValueError(
+                f"Infer must run from either the local root ({local_root}) or with"
+                f" --local-configuration from the project root ({project_root})."
+                f"cannot run from working directory {original_directory}"
+            )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(

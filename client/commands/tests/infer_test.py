@@ -571,15 +571,31 @@ class InferV2Test(unittest.TestCase):
         configuration.get_existent_ignore_infer_paths = lambda: []
         return configuration
 
+    def test_check_working_directory(self) -> None:
+        configuration = self.mock_configuration()
+        self.assertRaises(
+            ValueError,
+            lambda: Infer._check_working_directory(
+                original_directory="/some/other/directory", configuration=configuration
+            ),
+        )
+        # no error expected
+        Infer._check_working_directory(
+            original_directory=configuration.project_root, configuration=configuration
+        )
+        Infer._check_working_directory(
+            original_directory=configuration.local_root, configuration=configuration
+        )
+
     def test_infer_should_annotate_in_place(self) -> None:
         def check_should_annotate_in_place(
             paths_to_modify: set[Path],
             path: Path,
             expected: bool,
         ) -> None:
-            original_directory = "/original/directory"
             arguments = mock_arguments()
             configuration = self.mock_configuration()
+            original_directory = configuration.project_root
             configuration.get_typeshed.return_value = "stub"
             analysis_directory = AnalysisDirectory(
                 configuration_module.SimpleSearchPathElement(".")
@@ -644,9 +660,9 @@ class InferV2Test(unittest.TestCase):
         json_loads: MagicMock,
         find_global_and_local_root: MagicMock,
     ) -> None:
-        original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = self.mock_configuration()
+        original_directory = configuration.project_root
         configuration.get_typeshed.return_value = "stub"
         analysis_directory = AnalysisDirectory(
             configuration_module.SimpleSearchPathElement(".")
