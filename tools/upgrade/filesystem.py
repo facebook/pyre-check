@@ -107,6 +107,7 @@ class TargetCollector(builtin_ast.NodeVisitor):
             or field.arg == "typing_options"
             or field.arg == "check_types_options"
             or field.arg == "check_types"
+            or field.arg == "typing"
         )
 
     def result(self) -> List[Target]:

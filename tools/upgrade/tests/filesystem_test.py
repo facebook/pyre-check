@@ -44,6 +44,23 @@ class FilesystemTest(unittest.TestCase):
         python_binary(
             name = "target_name",
             main_module = "path.to.module",
+            typing = "False",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+        """
+        expected_targets = [
+            Target("target_name", strict=False, pyre=True, check_types=False),
+        ]
+        self.assert_collector(source, expected_targets, False)
+
+        source = """
+        load("@path:python_binary.bzl", "python_binary")
+
+        python_binary(
+            name = "target_name",
+            main_module = "path.to.module",
             check_types_options = "strict",
             deps = [
                 ":dependency_target_name",
