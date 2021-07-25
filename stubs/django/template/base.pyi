@@ -1,2 +1,2 @@
 class Template:
-  pass
+    pass
