@@ -12,7 +12,7 @@ Pyre comes with a built-in type inference feature. From the root of your project
 
 Note: There is currently a bug with using the above arguments with the infer feature. The workaround is to break it into two commands:
 ```
-pyre infer -r
+pyre infer
 pyre infer -i --annotate-from-existing-stubs
 ```
 
