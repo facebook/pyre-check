@@ -185,7 +185,8 @@ class Errors:
                 )
             else:
                 raise UserError(
-                    f"Encountered invalid output when checking for pyre errors: `{json_string}`."
+                    "Encountered invalid output when checking for pyre errors: "
+                    f"`{json_string}`."
                 )
 
     @staticmethod
