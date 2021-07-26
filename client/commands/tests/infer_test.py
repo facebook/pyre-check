@@ -159,11 +159,13 @@ class StubGenerationTest(unittest.TestCase):
         self,
         data: dict[str, object],
         expected: str,
+        annotate_attributes: bool = False,
         use_future_annotations: bool = False,
     ) -> None:
         module_annotations = _create_test_module_annotations(
             data=data,
             options=StubGenerationOptions(
+                annotate_attributes=annotate_attributes,
                 use_future_annotations=use_future_annotations,
                 dequalify=False,
             ),
@@ -450,7 +452,7 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
-    def test_stubs_attributes_and_globals(self) -> None:
+    def test_stubs_globals(self) -> None:
         self._assert_stubs(
             {
                 "globals": [{"annotation": "int", "name": "global", "parent": None}],
@@ -460,6 +462,23 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
+    def test_stubs_attributes(self) -> None:
+        self._assert_stubs(
+            {
+                "attributes": [
+                    {
+                        "annotation": "int",
+                        "name": "attribute_name",
+                        "parent": "test.test",
+                    }
+                ],
+            },
+            """\
+            class test:
+                attribute_name: int = ...
+            """,
+            annotate_attributes=True,
+        )
         self._assert_stubs(
             {
                 "attributes": [
@@ -471,9 +490,8 @@ class StubGenerationTest(unittest.TestCase):
                 ],
             },
             """\
-            class Test:
-                attribute_name: int = ...
             """,
+            annotate_attributes=False,
         )
 
     def test_stubs_no_typing_import(self) -> None:
@@ -616,6 +634,7 @@ class InferV2Test(unittest.TestCase):
                 read_stdin=False,
                 dequalify=False,
                 interprocedural=False,
+                annotate_attributes=False,
                 use_future_annotations=True,
             )
             self.assertEqual(expected, infer._should_annotate_in_place(path))
@@ -685,6 +704,7 @@ class InferV2Test(unittest.TestCase):
                 read_stdin=False,
                 dequalify=False,
                 interprocedural=False,
+                annotate_attributes=False,
                 use_future_annotations=True,
             )
             self.assertEqual(
@@ -728,6 +748,7 @@ class InferV2Test(unittest.TestCase):
                 read_stdin=False,
                 dequalify=False,
                 interprocedural=True,
+                annotate_attributes=False,
                 use_future_annotations=True,
             )
             self.assertEqual(
@@ -773,6 +794,7 @@ class InferV2Test(unittest.TestCase):
                     read_stdin=True,
                     dequalify=False,
                     interprocedural=False,
+                    annotate_attributes=False,
                     use_future_annotations=True,
                 )
                 command.run()

@@ -152,6 +152,7 @@ def split_imports(types_list: list[str]) -> set[str]:
 
 @dataclass(frozen=True)
 class StubGenerationOptions:
+    annotate_attributes: bool
     use_future_annotations: bool
     dequalify: bool
 
@@ -372,10 +373,14 @@ class ModuleAnnotations:
         """
         classes = defaultdict(list)
         nested_class_count = 0
-        for attribute in [*self.attributes, *self.methods]:
-            parent = self._relativize(attribute.parent)
+        if self.options.annotate_attributes:
+            class_annotations = [*self.attributes, *self.methods]
+        else:
+            class_annotations = self.methods
+        for annotation in class_annotations:
+            parent = self._relativize(annotation.parent)
             if len(parent) == 1:
-                classes[parent[0]].append(attribute)
+                classes[parent[0]].append(annotation)
             else:
                 nested_class_count += 1
         if nested_class_count > 0:
@@ -546,6 +551,7 @@ class Infer(Reporting):
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
         read_stdin: bool,
+        annotate_attributes: bool,
         use_future_annotations: bool,
         dequalify: bool,
         interprocedural: bool,
@@ -571,6 +577,7 @@ class Infer(Reporting):
         self._debug_infer = debug_infer
         self._read_stdin = read_stdin
         self._stub_generation_options = StubGenerationOptions(
+            annotate_attributes=annotate_attributes,
             use_future_annotations=use_future_annotations,
             dequalify=dequalify,
         )
