@@ -150,6 +150,36 @@ class PersistentTest(testslide.TestCase):
         result = await try_initialize(input_channel, output_channel)
         self.assertIsInstance(result, InitializationExit)
 
+    @setup.async_test
+    async def test_try_initialize_exit__shutdown_after_initialize(self) -> None:
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(
+                    id=0,
+                    method="initialize",
+                    parameters=json_rpc.ByNameParameters(
+                        {
+                            "processId": 42,
+                            "rootUri": None,
+                            "capabilities": {
+                                "textDocument": {
+                                    "publishDiagnostics": {},
+                                    "synchronization": {
+                                        "didSave": True,
+                                    },
+                                },
+                            },
+                        }
+                    ),
+                ),
+                json_rpc.Request(method="shutdown", parameters=None),
+                json_rpc.Request(method="exit", parameters=None),
+            ]
+        )
+        output_channel = create_memory_text_writer()
+        result = await try_initialize(input_channel, output_channel)
+        self.assertIsInstance(result, InitializationExit)
+
     def test_parse_subscription(self) -> None:
         def assert_parsed(response: str, expected: SubscriptionResponse) -> None:
             self.assertEqual(
