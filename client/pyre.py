@@ -792,13 +792,26 @@ def incremental(
     help="Read input from stdin instead of running a full infer.",
 )
 @click.option(
+    "--no-future-annotations",
+    is_flag=True,
+    default=False,
+    help=(
+        "Infer assumes it can insert unquoted annotations anywhere in a "
+        "module. In python versions between 3.7 and 3.10, we can ensure this "
+        "is valid by inserting `from __future__ import annotations`, which"
+        "we do by default. You can use this flag to disable the import, which "
+        "is illegal in pre-3.7 python versions and is unnecessary (but allowed) "
+        "in python 3.10+. This flag disables inserting the import."
+    ),
+)
+@click.option(
     "--dequalify",
     is_flag=True,
     default=False,
     help=(
         "Dequalify all annotations? This is a temporary flag, used to "
         "force fully-qualified names (e.g. sqlalchemy.sql.schema.Column) "
-        "to be dqualified (e.g. Column). It is needed now because pyre "
+        "to be dequalified (e.g. Column). It is needed now because pyre "
         "infer doesn't yet know how to handle imports and qualified names "
         "in a principled way."
     ),
@@ -813,19 +826,6 @@ def incremental(
         "is incomplete."
     ),
 )
-@click.option(
-    "--no-future-annotations",
-    is_flag=True,
-    default=False,
-    help=(
-        "Infer assumes it can insert unquoted annotations anywhere in a "
-        "module. In python versions between 3.7 and 3.10, we can ensure this "
-        "is valid by inserting `from __future__ import annotations`, which"
-        "we do by default. You can use this flag to disable the import, which "
-        "is illegal in pre-3.7 python versions and is unnecessary (but allowed) "
-        "in python 3.10+. This flag disables inserting the import."
-    ),
-)
 @click.pass_context
 def infer(
     context: click.Context,
@@ -835,9 +835,9 @@ def infer(
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
     read_stdin: bool,
+    no_future_annotations: bool,
     dequalify: bool,
     interprocedural: bool,
-    no_future_annotations: bool,
 ) -> int:
     """
     Run pyre infer.
@@ -861,9 +861,9 @@ def infer(
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
             read_stdin=read_stdin,
+            use_future_annotations=not no_future_annotations,
             dequalify=dequalify,
             interprocedural=interprocedural,
-            use_future_annotations=not no_future_annotations,
         ),
         configuration,
         command_argument.noninteractive,
