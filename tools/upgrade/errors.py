@@ -7,7 +7,6 @@ import itertools
 import json
 import logging
 import re
-import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -186,7 +185,8 @@ class Errors:
                 )
             else:
                 raise UserError(
-                    f"Encountered invalid output when checking for pyre errors: `{json_string}`."
+                    "Encountered invalid output when checking for pyre errors: "
+                    f"`{json_string}`."
                 )
 
     @staticmethod
