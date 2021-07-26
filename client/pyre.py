@@ -792,6 +792,16 @@ def incremental(
     help="Read input from stdin instead of running a full infer.",
 )
 @click.option(
+    "--annotate-attributes",
+    is_flag=True,
+    default=False,
+    help=(
+        "Allow infer to attempt to annotate class attributes? "
+        "The code-generation logic for this is incomplete, so the "
+        "default is False but you may manually enable it."
+    ),
+)
+@click.option(
     "--no-future-annotations",
     is_flag=True,
     default=False,
@@ -835,6 +845,7 @@ def infer(
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
     read_stdin: bool,
+    annotate_attributes: bool,
     no_future_annotations: bool,
     dequalify: bool,
     interprocedural: bool,
@@ -861,6 +872,7 @@ def infer(
             annotate_from_existing_stubs=annotate_from_existing_stubs,
             debug_infer=debug_infer,
             read_stdin=read_stdin,
+            annotate_attributes=annotate_attributes,
             use_future_annotations=not no_future_annotations,
             dequalify=dequalify,
             interprocedural=interprocedural,
