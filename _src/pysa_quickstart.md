@@ -94,7 +94,7 @@ Installing your project dependencies in your virtual environment will allow Pysa
 
 If your project uses Python 3.5 or later and isn't type annotated, running Pyre's type inference might improve your Pysa results. Note: this command will modify your code, but don't worry the type annotations won't affect your code at runtime if your project is running Python 3.5 or later.
 ```shell
-(pysa) $ pyre infer -r -i
+(pysa) $ pyre infer -i
 ```
 
 6. Set up SAPP with some high signal filters
