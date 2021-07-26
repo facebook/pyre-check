@@ -84,7 +84,7 @@ end
 module TypeAnnotation = struct
   type t =
     | Inferred of SerializableType.t
-    | Given of SerializableType.t
+    | Given of Expression.t
     | Missing
   [@@deriving show, eq]
 
@@ -95,10 +95,9 @@ module TypeAnnotation = struct
         false
 
 
-  let from_given ~global_resolution expression =
-    let parser = GlobalResolution.annotation_parser global_resolution in
-    match expression >>| parser.parse_annotation with
-    | Some type_ -> Given type_
+  let from_given maybe_expression =
+    match maybe_expression with
+    | Some expression -> Given expression
     | None -> Missing
 
 
@@ -110,9 +109,9 @@ module TypeAnnotation = struct
     | Inferred type_, _
     | _, Inferred type_ ->
         Inferred type_
-    | Given type_, _
-    | _, Given type_ ->
-        Given type_
+    | Given expression, _
+    | _, Given expression ->
+        Given expression
     | Missing, Missing -> Missing
 
 
@@ -121,9 +120,8 @@ module TypeAnnotation = struct
   let meet ~global_resolution = merge ~f:(GlobalResolution.meet global_resolution)
 
   let to_yojson = function
-    | Inferred type_
-    | Given type_ ->
-        SerializableType.to_yojson type_
+    | Inferred type_ -> SerializableType.to_yojson type_
+    | Given expression -> expression_to_json expression
     | Missing -> `Null
 end
 
@@ -372,7 +370,7 @@ module LocalResult = struct
     =
     let define =
       let open DefineAnnotation in
-      let return = TypeAnnotation.from_given ~global_resolution return_annotation in
+      let return = TypeAnnotation.from_given return_annotation in
       let parameters =
         let initialize_parameter
             index
@@ -381,7 +379,7 @@ module LocalResult = struct
           DefineAnnotation.Parameters.Value.
             {
               name = name |> Identifier.sanitized |> Reference.create;
-              annotation = TypeAnnotation.from_given ~global_resolution annotation;
+              annotation = TypeAnnotation.from_given annotation;
               value;
               index;
             }

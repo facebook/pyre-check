@@ -605,7 +605,8 @@ let test_inferred_function_parameters context =
     |}
     ~target:"test.bar"
     ~expected:(single_parameter ~default:"None" "Optional[str]");
-  (* TODO: Use literal expressions, not qualified types, for given annotations *)
+  (* For given annotations, use expressions rather than types so that the qualifier will match the
+     code rather than the fully qualified type name. This is important for aliased imports *)
   check_inference_results
     {|
       # This is an aliased import.
@@ -616,7 +617,7 @@ let test_inferred_function_parameters context =
           return None
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter "sqlalchemy.ext.declarative.api.DeclarativeMeta");
+    ~expected:(single_parameter "sqlalchemy.ext.declarative.DeclarativeMeta");
   let no_inferences =
     {|
       [{ "name": "x", "annotation": null, "value": null, "index": 0 }]
