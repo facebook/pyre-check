@@ -23,6 +23,7 @@ from ...commands.infer import (
     ModuleAnnotations,
     RawInferOutput,
     RawInferOutputDict,
+    StubGenerationOptions,
 )
 from .command_test import (
     mock_arguments,
@@ -46,13 +47,12 @@ def _raw_infer_output(
 
 
 def _create_test_module_annotations(
-    data: dict[str, object] | None,
-    use_future_annotations: bool,
+    data: dict[str, object] | None, options: StubGenerationOptions
 ) -> ModuleAnnotations:
     all_module_annotations = _create_module_annotations(
         infer_output=_raw_infer_output(data=data),
         sanitize_path=lambda path: path,
-        use_future_annotations=use_future_annotations,
+        options=options,
     )
     if len(all_module_annotations) != 1:
         raise AssertionError("Expected exactly one module!")
@@ -163,9 +163,12 @@ class StubGenerationTest(unittest.TestCase):
     ) -> None:
         module_annotations = _create_test_module_annotations(
             data=data,
-            use_future_annotations=use_future_annotations,
+            options=StubGenerationOptions(
+                use_future_annotations=use_future_annotations,
+                dequalify=False,
+            ),
         )
-        actual = module_annotations.to_stubs(dequalify=False)
+        actual = module_annotations.to_stubs()
         _assert_stubs_equal(actual, expected)
 
     def test_stubs_defines(self) -> None:
