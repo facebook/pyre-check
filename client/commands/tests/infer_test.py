@@ -24,6 +24,7 @@ from ...commands.infer import (
     RawInferOutput,
     RawInferOutputDict,
     StubGenerationOptions,
+    TypeAnnotation,
 )
 from .command_test import (
     mock_arguments,
@@ -125,6 +126,36 @@ class InferUtilsTestSuite(unittest.TestCase):
             sanitize_annotation("PathLike[Variable[AnyStr <: [str, bytes]]]"),
             "PathLike[Variable[AnyStr <: [str, bytes]]]",
         )
+
+
+class TypeAnnotationTest(unittest.TestCase):
+
+    no_dequalify_options: StubGenerationOptions = StubGenerationOptions(
+        annotate_attributes=False,
+        use_future_annotations=True,
+        dequalify=False,
+    )
+    dequalify_options: StubGenerationOptions = StubGenerationOptions(
+        annotate_attributes=False,
+        use_future_annotations=True,
+        dequalify=True,
+    )
+
+    def test_raises_on_invalid_type(self) -> None:
+        self.assertRaises(
+            ValueError, TypeAnnotation.from_raw, 0, self.no_dequalify_options
+        )
+
+    def test_sanitized(self) -> None:
+        actual = TypeAnnotation.from_raw(
+            "foo.Foo[int]", options=self.no_dequalify_options
+        )
+        self.assertEqual(actual.sanitized(), "foo.Foo[int]")
+        self.assertEqual(actual.sanitized(prefix=": "), ": foo.Foo[int]")
+
+        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=self.dequalify_options)
+        self.assertEqual(actual.sanitized(), "Foo[int]")
+        self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
 
 
 class AnnotateModuleInPlaceTest(unittest.TestCase):
