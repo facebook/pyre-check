@@ -705,6 +705,24 @@ let test_inferred_function_parameters context =
           { "name": "x", "annotation": "int", "value": "15", "index": 1 }
         ]
      |};
+  check_inference_results
+    {|
+      from typing import Any, Dict, Optional, TypeVar
+
+      # copied from typeshed
+      _T = TypeVar("_T")
+      def deepcopy(x: _T, memo: Optional[Dict[int, Any]] = ..., _nil: Any = ...) -> _T: ...
+
+      def foo(x):
+          return deepcopy(x)
+    |}
+    ~target:"test.foo"
+    ~expected:
+      {|
+        [
+          { "name": "x", "annotation": null, "value": null, "index": 0 }
+        ]
+     |};
   ()
 
 
