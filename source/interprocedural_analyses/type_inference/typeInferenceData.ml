@@ -354,7 +354,10 @@ module Inference = struct
       | _ -> false
     in
     let sanitized_type =
-      raw_type |> Type.Variable.convert_all_escaped_free_variables_to_anys |> Type.infer_transform
+      raw_type
+      |> Type.Variable.mark_all_free_variables_as_escaped
+      |> Type.Variable.convert_all_escaped_free_variables_to_anys
+      |> Type.infer_transform
     in
     let ignore =
       Type.contains_unknown sanitized_type
