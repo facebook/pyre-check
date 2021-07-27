@@ -336,6 +336,23 @@ module DefineAnnotation = struct
     }
 end
 
+module Inference = struct
+  type target =
+    | Global of {
+        name: Reference.t;
+        location: Location.WithModule.t;
+      }
+    | Attribute of {
+        parent: Reference.t;
+        name: Reference.t;
+        location: Location.WithModule.t;
+      }
+    | Return
+    | Parameter of { name: Reference.t }
+
+  type t = Type.t * target
+end
+
 module LocalResult = struct
   type t = {
     globals: GlobalAnnotation.ByName.t;
@@ -406,45 +423,14 @@ module LocalResult = struct
     }
 
 
-  let add_missing_annotation_error
+  let add_inference
       ~global_resolution
       ~lookup
-      ({ globals; attributes; define; abstract } as result)
-      error
+      ({ globals; attributes; define; _ } as result)
+      (type_, target)
     =
-    let ignore type_ =
-      Type.contains_unknown type_
-      || Type.contains_undefined type_
-      || Type.Variable.convert_all_escaped_free_variables_to_anys type_
-         |> Type.contains_prohibited_any
-    in
-    let open AnalysisError in
-    match error.kind with
-    | MissingReturnAnnotation { annotation = Some type_; _ } when not (ignore type_ || abstract) ->
-        {
-          result with
-          define = DefineAnnotation.add_inferred_return ~global_resolution define type_;
-        }
-    | MissingParameterAnnotation { name; annotation = Some type_; _ }
-      when not (ignore type_ || Type.equal type_ NoneType) ->
-        { result with define = DefineAnnotation.add_inferred_parameter define name type_ }
-    | MissingAttributeAnnotation
-        { parent; missing_annotation = { name; annotation = Some type_; _ } }
-      when not (ignore type_) ->
-        {
-          result with
-          attributes =
-            AttributeAnnotation.ByName.add
-              ~global_resolution
-              attributes
-              {
-                parent = type_to_reference parent;
-                name;
-                annotation = type_;
-                location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
-              };
-        }
-    | MissingGlobalAnnotation { name; annotation = Some type_; _ } when not (ignore type_) ->
+    match target with
+    | Inference.Global { name; location } ->
         {
           result with
           globals =
@@ -454,10 +440,59 @@ module LocalResult = struct
               {
                 name;
                 annotation = type_;
-                location = error.location |> AnnotationLocation.from_location_with_module ~lookup;
+                location = location |> AnnotationLocation.from_location_with_module ~lookup;
               };
         }
-    | _ -> result
+    | Inference.Attribute { parent; name; location } ->
+        {
+          result with
+          attributes =
+            AttributeAnnotation.ByName.add
+              ~global_resolution
+              attributes
+              {
+                parent;
+                name;
+                annotation = type_;
+                location = location |> AnnotationLocation.from_location_with_module ~lookup;
+              };
+        }
+    | Inference.Return ->
+        {
+          result with
+          define = DefineAnnotation.add_inferred_return ~global_resolution define type_;
+        }
+    | Inference.Parameter { name } ->
+        { result with define = DefineAnnotation.add_inferred_parameter define name type_ }
+
+
+  let error_to_inference ~result:{ abstract; _ } { AnalysisError.location; kind; _ } =
+    let ignore type_ =
+      Type.contains_unknown type_
+      || Type.contains_undefined type_
+      || Type.Variable.convert_all_escaped_free_variables_to_anys type_
+         |> Type.contains_prohibited_any
+    in
+    let open AnalysisError in
+    match kind with
+    | MissingReturnAnnotation { annotation = Some type_; _ } when not (ignore type_ || abstract) ->
+        Some (type_, Inference.Return)
+    | MissingParameterAnnotation { name; annotation = Some type_; _ }
+      when not (ignore type_ || Type.equal type_ NoneType) ->
+        Some (type_, Inference.Parameter { name })
+    | MissingAttributeAnnotation
+        { parent; missing_annotation = { name; annotation = Some type_; _ } }
+      when not (ignore type_) ->
+        Some (type_, Inference.Attribute { parent = type_to_reference parent; name; location })
+    | MissingGlobalAnnotation { name; annotation = Some type_; _ } when not (ignore type_) ->
+        Some (type_, Inference.Global { name; location })
+    | _ -> None
+
+
+  let add_missing_annotation_error ~global_resolution ~lookup result error =
+    match error_to_inference ~result error with
+    | Some inference -> add_inference ~global_resolution ~lookup result inference
+    | None -> result
 end
 
 module GlobalResult = struct
