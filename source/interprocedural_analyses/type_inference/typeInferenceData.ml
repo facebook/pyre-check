@@ -351,6 +351,24 @@ module Inference = struct
     | Parameter of { name: Reference.t }
 
   type t = Type.t * target
+
+  let validate_and_sanitize (type_, target) =
+    let is_return =
+      match target with
+      | Parameter _ -> true
+      | _ -> false
+    in
+    let ignore =
+      Type.contains_unknown type_
+      || Type.contains_undefined type_
+      || Type.Variable.convert_all_escaped_free_variables_to_anys type_
+         |> Type.contains_prohibited_any
+      || (is_return && Type.equal type_ NoneType)
+    in
+    if ignore then
+      None
+    else
+      Some (type_, target)
 end
 
 module LocalResult = struct
@@ -467,30 +485,22 @@ module LocalResult = struct
 
 
   let error_to_inference ~result:{ abstract; _ } { AnalysisError.location; kind; _ } =
-    let ignore type_ =
-      Type.contains_unknown type_
-      || Type.contains_undefined type_
-      || Type.Variable.convert_all_escaped_free_variables_to_anys type_
-         |> Type.contains_prohibited_any
-    in
     let open AnalysisError in
     match kind with
-    | MissingReturnAnnotation { annotation = Some type_; _ } when not (ignore type_ || abstract) ->
+    | MissingReturnAnnotation { annotation = Some type_; _ } when not abstract ->
         Some (type_, Inference.Return)
-    | MissingParameterAnnotation { name; annotation = Some type_; _ }
-      when not (ignore type_ || Type.equal type_ NoneType) ->
+    | MissingParameterAnnotation { name; annotation = Some type_; _ } ->
         Some (type_, Inference.Parameter { name })
     | MissingAttributeAnnotation
-        { parent; missing_annotation = { name; annotation = Some type_; _ } }
-      when not (ignore type_) ->
+        { parent; missing_annotation = { name; annotation = Some type_; _ } } ->
         Some (type_, Inference.Attribute { parent = type_to_reference parent; name; location })
-    | MissingGlobalAnnotation { name; annotation = Some type_; _ } when not (ignore type_) ->
+    | MissingGlobalAnnotation { name; annotation = Some type_; _ } ->
         Some (type_, Inference.Global { name; location })
     | _ -> None
 
 
   let add_missing_annotation_error ~global_resolution ~lookup result error =
-    match error_to_inference ~result error with
+    match error_to_inference ~result error >>= Inference.validate_and_sanitize with
     | Some inference -> add_inference ~global_resolution ~lookup result inference
     | None -> result
 end
