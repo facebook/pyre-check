@@ -546,9 +546,9 @@ class Infer(Reporting):
         *,
         configuration: Configuration,
         analysis_directory: AnalysisDirectory | None = None,
+        paths_to_modify: set[Path],
         print_only: bool,
         in_place: bool,
-        paths_to_modify: set[Path],
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
         read_stdin: bool,
@@ -571,9 +571,9 @@ class Infer(Reporting):
             configuration=configuration,
             analysis_directory=analysis_directory,
         )
+        self._paths_to_modify = paths_to_modify
         self._print_only = print_only
         self._in_place = in_place
-        self._paths_to_modify = paths_to_modify
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
         self._read_stdin = read_stdin
