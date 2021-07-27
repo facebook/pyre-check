@@ -10,12 +10,7 @@ open Pyre
 open Ast
 open Analysis
 
-let type_to_string type_ =
-  type_
-  |> Type.Variable.convert_all_escaped_free_variables_to_anys
-  |> Type.infer_transform
-  |> Format.asprintf "%a" Type.pp
-
+let type_to_string type_ = type_ |> Format.asprintf "%a" Type.pp
 
 let type_to_reference type_ = type_ |> type_to_string |> Reference.create
 
@@ -352,23 +347,25 @@ module Inference = struct
 
   type t = Type.t * target
 
-  let validate_and_sanitize (type_, target) =
+  let validate_and_sanitize (raw_type, target) =
     let is_return =
       match target with
       | Parameter _ -> true
       | _ -> false
     in
+    let sanitized_type =
+      raw_type |> Type.Variable.convert_all_escaped_free_variables_to_anys |> Type.infer_transform
+    in
     let ignore =
-      Type.contains_unknown type_
-      || Type.contains_undefined type_
-      || Type.Variable.convert_all_escaped_free_variables_to_anys type_
-         |> Type.contains_prohibited_any
-      || (is_return && Type.equal type_ NoneType)
+      Type.contains_unknown sanitized_type
+      || Type.contains_undefined sanitized_type
+      || Type.contains_prohibited_any sanitized_type
+      || (is_return && Type.equal sanitized_type NoneType)
     in
     if ignore then
       None
     else
-      Some (type_, target)
+      Some (sanitized_type, target)
 end
 
 module LocalResult = struct
