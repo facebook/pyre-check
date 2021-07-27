@@ -612,7 +612,7 @@ class StubGenerationTest(unittest.TestCase):
         )
 
 
-class InferV2Test(unittest.TestCase):
+class InferTest(unittest.TestCase):
     @staticmethod
     def mock_configuration() -> MagicMock:
         configuration = mock_configuration()
