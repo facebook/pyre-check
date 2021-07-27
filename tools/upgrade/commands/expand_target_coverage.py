@@ -85,7 +85,12 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             return
         LOG.info("Expanding typecheck targets in `%s`", local_configuration)
         configuration = Configuration(local_configuration)
-        configuration.add_targets(["//" + str(local_root) + "/..."])
+        existing_targets = configuration.targets
+        glob_target = "//{}/...".format(str(local_root))
+        if existing_targets == [glob_target]:
+            LOG.info("Configuration is already fully expanded.")
+            return
+        configuration.add_targets([glob_target])
         configuration.deduplicate_targets()
         configuration.write()
 
