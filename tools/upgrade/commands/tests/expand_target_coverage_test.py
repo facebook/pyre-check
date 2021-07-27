@@ -78,10 +78,26 @@ class ExpandTargetCoverageTest(unittest.TestCase):
         open_mock.assert_not_called()
         apply_suppressions.assert_not_called()
 
+        # Skip if target is already expanded
+        find_files.return_value = []
+        configuration_contents = json.dumps({"targets": ["//subdirectory/..."]})
+        apply_suppressions.reset_mock()
+        deduplicate_targets.reset_mock()
+        open_mock.reset_mock()
+        with patch("json.dump") as dump_mock:
+            mocks = [
+                mock_open(read_data=configuration_contents).return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+        ExpandTargetCoverage.from_arguments(arguments, repository).run()
+        deduplicate_targets.assert_not_called()
+        apply_suppressions.assert_not_called()
+        add_local_mode.assert_not_called()
+
         # Expand coverage and suppress errors
         apply_suppressions.reset_mock()
         open_mock.reset_mock()
-        find_files.return_value = []
         get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = json.dumps({"targets": ["//existing:target"]})
         with patch("json.dump") as dump_mock:
