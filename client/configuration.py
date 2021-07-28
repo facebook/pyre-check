@@ -1255,13 +1255,13 @@ def create_configuration(
         if found_root is None:
             raise InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
-                + f"{CONFIGURATION_FILE} file was found in {search_base}"
+                + f" {CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
         elif found_root.local_root is None:
             raise InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
-                + f"{LOCAL_CONFIGURATION_FILE} file was found in {search_base}"
+                + f" {LOCAL_CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
 
