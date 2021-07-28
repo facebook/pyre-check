@@ -342,10 +342,13 @@ module Inference = struct
       }
     | Return
     | Parameter of { name: Reference.t }
+  [@@deriving show]
 
-  type t = Type.t * target
+  type raw = Type.t * target [@@deriving show]
 
-  let validate_and_sanitize (raw_type, target) =
+  type t = (Type.t * target) option [@@deriving show]
+
+  let create (raw_type, target) =
     let is_return =
       match target with
       | Parameter _ -> true
@@ -445,43 +448,46 @@ module LocalResult = struct
       ~global_resolution
       ~lookup
       ({ globals; attributes; define; _ } as result)
-      (type_, target)
+      inference
     =
-    match target with
-    | Inference.Global { name; location } ->
-        {
-          result with
-          globals =
-            GlobalAnnotation.ByName.add
-              ~global_resolution
-              globals
-              {
-                name;
-                annotation = type_;
-                location = location |> AnnotationLocation.from_location_with_module ~lookup;
-              };
-        }
-    | Inference.Attribute { parent; name; location } ->
-        {
-          result with
-          attributes =
-            AttributeAnnotation.ByName.add
-              ~global_resolution
-              attributes
-              {
-                parent;
-                name;
-                annotation = type_;
-                location = location |> AnnotationLocation.from_location_with_module ~lookup;
-              };
-        }
-    | Inference.Return ->
-        {
-          result with
-          define = DefineAnnotation.add_inferred_return ~global_resolution define type_;
-        }
-    | Inference.Parameter { name } ->
-        { result with define = DefineAnnotation.add_inferred_parameter define name type_ }
+    let add_inferred_type (type_, target) =
+      match target with
+      | Inference.Global { name; location } ->
+          {
+            result with
+            globals =
+              GlobalAnnotation.ByName.add
+                ~global_resolution
+                globals
+                {
+                  name;
+                  annotation = type_;
+                  location = location |> AnnotationLocation.from_location_with_module ~lookup;
+                };
+          }
+      | Inference.Attribute { parent; name; location } ->
+          {
+            result with
+            attributes =
+              AttributeAnnotation.ByName.add
+                ~global_resolution
+                attributes
+                {
+                  parent;
+                  name;
+                  annotation = type_;
+                  location = location |> AnnotationLocation.from_location_with_module ~lookup;
+                };
+          }
+      | Inference.Return ->
+          {
+            result with
+            define = DefineAnnotation.add_inferred_return ~global_resolution define type_;
+          }
+      | Inference.Parameter { name } ->
+          { result with define = DefineAnnotation.add_inferred_parameter define name type_ }
+    in
+    inference |> Option.map ~f:add_inferred_type |> Option.value ~default:result
 
 
   let error_to_inference ~result:{ abstract; _ } { AnalysisError.location; kind; _ } =
@@ -500,9 +506,9 @@ module LocalResult = struct
 
 
   let add_missing_annotation_error ~global_resolution ~lookup result error =
-    match error_to_inference ~result error >>= Inference.validate_and_sanitize with
-    | Some inference -> add_inference ~global_resolution ~lookup result inference
-    | None -> result
+    error_to_inference ~result error
+    >>= Inference.create
+    |> add_inference ~global_resolution ~lookup result
 end
 
 module GlobalResult = struct
