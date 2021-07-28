@@ -24,10 +24,13 @@ module Inference : sig
       }
     | Return
     | Parameter of { name: Ast.Reference.t }
+  [@@deriving show]
 
-  type t = Analysis.Type.t * target
+  type raw = Type.t * target [@@deriving show]
 
-  val validate_and_sanitize : Type.type_t * target -> (Analysis.Type.t * target) option
+  type t [@@deriving show]
+
+  val create : raw -> t
 end
 
 module LocalResult : sig
@@ -46,7 +49,7 @@ module LocalResult : sig
     :  global_resolution:Analysis.GlobalResolution.t ->
     lookup:(Ast.Reference.t -> string option) ->
     t ->
-    Analysis.Type.t * Inference.target ->
+    Inference.t ->
     t
 
   val error_to_inference
