@@ -15,6 +15,8 @@ val type_to_reference : Type.t -> Ast.Reference.t
 
 module Inference : sig
   type target =
+    | Return
+    | Parameter of { name: Ast.Reference.t }
     | Global of {
         name: Ast.Reference.t;
         location: Ast.Location.WithModule.t;
@@ -24,11 +26,13 @@ module Inference : sig
         name: Ast.Reference.t;
         location: Ast.Location.WithModule.t;
       }
-    | Return
-    | Parameter of { name: Ast.Reference.t }
   [@@deriving show]
 
-  type raw = Type.t * target [@@deriving show]
+  type raw = {
+    type_: Type.t;
+    target: target;
+  }
+  [@@deriving show]
 
   type t [@@deriving show]
 

@@ -331,6 +331,8 @@ end
 
 module Inference = struct
   type target =
+    | Return
+    | Parameter of { name: Reference.t }
     | Global of {
         name: Reference.t;
         location: Location.WithModule.t;
@@ -340,16 +342,18 @@ module Inference = struct
         name: Reference.t;
         location: Location.WithModule.t;
       }
-    | Return
-    | Parameter of { name: Reference.t }
   [@@deriving show]
 
-  type raw = Type.t * target [@@deriving show]
+  type raw = {
+    type_: Type.t;
+    target: target;
+  }
+  [@@deriving show]
 
-  type t = (Type.t * target) option [@@deriving show]
+  type t = raw option [@@deriving show]
 
-  let create (raw_type, target) =
-    let is_return =
+  let create { type_ = raw_type; target } =
+    let is_parameter =
       match target with
       | Parameter _ -> true
       | _ -> false
@@ -364,12 +368,12 @@ module Inference = struct
       Type.contains_unknown sanitized_type
       || Type.contains_undefined sanitized_type
       || Type.contains_prohibited_any sanitized_type
-      || (is_return && Type.equal sanitized_type NoneType)
+      || (is_parameter && Type.equal sanitized_type NoneType)
     in
     if ignore then
       None
     else
-      Some (sanitized_type, target)
+      Some { type_ = sanitized_type; target }
 end
 
 module LocalResult = struct
@@ -447,8 +451,15 @@ module LocalResult = struct
       ({ globals; attributes; define; _ } as result)
       inference
     =
-    let add_inferred_type (type_, target) =
+    let add_inferred_type Inference.{ type_; target } =
       match target with
+      | Inference.Return ->
+          {
+            result with
+            define = DefineAnnotation.add_inferred_return ~global_resolution define type_;
+          }
+      | Inference.Parameter { name } ->
+          { result with define = DefineAnnotation.add_inferred_parameter define name type_ }
       | Inference.Global { name; location } ->
           {
             result with
@@ -476,13 +487,6 @@ module LocalResult = struct
                   location = location |> AnnotationLocation.from_location_with_module ~lookup;
                 };
           }
-      | Inference.Return ->
-          {
-            result with
-            define = DefineAnnotation.add_inferred_return ~global_resolution define type_;
-          }
-      | Inference.Parameter { name } ->
-          { result with define = DefineAnnotation.add_inferred_parameter define name type_ }
     in
     inference |> Option.map ~f:add_inferred_type |> Option.value ~default:result
 end

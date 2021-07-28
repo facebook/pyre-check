@@ -992,14 +992,16 @@ let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~defin
     let open AnalysisError in
     match kind with
     | MissingReturnAnnotation { annotation = Some type_; _ } when not abstract ->
-        Some (type_, Inference.Return)
+        Some Inference.{ type_; target = Return }
     | MissingParameterAnnotation { name; annotation = Some type_; _ } ->
-        Some (type_, Inference.Parameter { name })
+        Some Inference.{ type_; target = Parameter { name } }
+    | MissingGlobalAnnotation { name; annotation = Some type_; _ } ->
+        Some Inference.{ type_; target = Global { name; location } }
     | MissingAttributeAnnotation
         { parent; missing_annotation = { name; annotation = Some type_; _ } } ->
-        Some (type_, Inference.Attribute { parent = type_to_reference parent; name; location })
-    | MissingGlobalAnnotation { name; annotation = Some type_; _ } ->
-        Some (type_, Inference.Global { name; location })
+        Some
+          Inference.
+            { type_; target = Attribute { parent = type_to_reference parent; name; location } }
     | _ -> None
   in
   let add_missing_annotation_error ~global_resolution ~lookup result error =
