@@ -40,8 +40,6 @@ module LocalResult : sig
 
   val define_name : t -> Ast.Reference.t
 
-  val abstract : t -> bool
-
   val from_signature
     :  global_resolution:Analysis.GlobalResolution.t ->
     lookup:(Ast.Reference.t -> string option) ->

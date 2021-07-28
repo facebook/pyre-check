@@ -984,9 +984,12 @@ let skip_infer
 
 
 let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~define =
-  let error_to_inference ~result { AnalysisError.location; kind; _ } =
+  let abstract =
+    let { Node.value = { Define.signature; _ }; _ } = define in
+    Define.Signature.is_abstract_method signature
+  in
+  let error_to_inference { AnalysisError.location; kind; _ } =
     let open AnalysisError in
-    let abstract = LocalResult.abstract result in
     match kind with
     | MissingReturnAnnotation { annotation = Some type_; _ } when not abstract ->
         Some (type_, Inference.Return)
@@ -1000,7 +1003,7 @@ let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~defin
     | _ -> None
   in
   let add_missing_annotation_error ~global_resolution ~lookup result error =
-    match error_to_inference ~result error with
+    match error_to_inference error with
     | None -> result
     | Some raw ->
         raw |> Inference.create |> LocalResult.add_inference ~global_resolution ~lookup result
