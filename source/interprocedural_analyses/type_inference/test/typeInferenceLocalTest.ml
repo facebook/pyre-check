@@ -208,7 +208,8 @@ module Setup = struct
     let module_results =
       TypeInference.Local.infer_for_module ~configuration ~global_resolution ~source
     in
-    let is_target { LocalResult.define = { name; _ }; _ } =
+    let is_target local_result =
+      let name = LocalResult.define_name local_result in
       Reference.equal name (Reference.create target)
     in
     let first = function

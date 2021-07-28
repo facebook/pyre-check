@@ -1,0 +1,75 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+val lookup
+  :  configuration:Configuration.Analysis.t ->
+  global_resolution:Analysis.GlobalResolution.t ->
+  Ast.Reference.t ->
+  string option
+
+module Inference : sig
+  type target =
+    | Global of {
+        name: Ast.Reference.t;
+        location: Ast.Location.WithModule.t;
+      }
+    | Attribute of {
+        parent: Ast.Reference.t;
+        name: Ast.Reference.t;
+        location: Ast.Location.WithModule.t;
+      }
+    | Return
+    | Parameter of { name: Ast.Reference.t }
+
+  type t = Analysis.Type.t * target
+
+  val validate_and_sanitize : Type.type_t * target -> (Analysis.Type.t * target) option
+end
+
+module LocalResult : sig
+  type t [@@deriving show, to_yojson]
+
+  val define_name : t -> Ast.Reference.t
+
+  val from_signature
+    :  global_resolution:Analysis.GlobalResolution.t ->
+    lookup:(Ast.Reference.t -> string option) ->
+    qualifier:Ast.Reference.t ->
+    Ast.Statement.Define.t Ast.Node.t ->
+    t
+
+  val add_inference
+    :  global_resolution:Analysis.GlobalResolution.t ->
+    lookup:(Ast.Reference.t -> string option) ->
+    t ->
+    Analysis.Type.t * Inference.target ->
+    t
+
+  val error_to_inference
+    :  result:t ->
+    Analysis.AnalysisError.t ->
+    (Type.t * Inference.target) option
+
+  val add_missing_annotation_error
+    :  global_resolution:Analysis.GlobalResolution.t ->
+    lookup:(Ast.Reference.t -> string option) ->
+    t ->
+    Analysis.AnalysisError.t ->
+    t
+end
+
+module GlobalResult : sig
+  type t [@@deriving show, eq, to_yojson]
+
+  val inference_count : t -> int
+
+  val empty : t
+
+  val suppress_unhelpful_types : t -> t
+
+  val from_local_results : global_resolution:Analysis.GlobalResolution.t -> LocalResult.t list -> t
+end
