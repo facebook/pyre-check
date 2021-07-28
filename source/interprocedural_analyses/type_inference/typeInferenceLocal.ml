@@ -984,11 +984,32 @@ let skip_infer
 
 
 let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~define =
+  let error_to_inference ~result { AnalysisError.location; kind; _ } =
+    let open AnalysisError in
+    let abstract = LocalResult.abstract result in
+    match kind with
+    | MissingReturnAnnotation { annotation = Some type_; _ } when not abstract ->
+        Some (type_, Inference.Return)
+    | MissingParameterAnnotation { name; annotation = Some type_; _ } ->
+        Some (type_, Inference.Parameter { name })
+    | MissingAttributeAnnotation
+        { parent; missing_annotation = { name; annotation = Some type_; _ } } ->
+        Some (type_, Inference.Attribute { parent = type_to_reference parent; name; location })
+    | MissingGlobalAnnotation { name; annotation = Some type_; _ } ->
+        Some (type_, Inference.Global { name; location })
+    | _ -> None
+  in
+  let add_missing_annotation_error ~global_resolution ~lookup result error =
+    match error_to_inference ~result error with
+    | None -> result
+    | Some raw ->
+        raw |> Inference.create |> LocalResult.add_inference ~global_resolution ~lookup result
+  in
   let errors = legacy_infer_for_define ~configuration ~global_resolution ~source ~define in
   let lookup = TypeInferenceData.lookup ~configuration ~global_resolution in
   List.fold
     ~init:(LocalResult.from_signature ~global_resolution ~lookup ~qualifier define)
-    ~f:(LocalResult.add_missing_annotation_error ~global_resolution ~lookup)
+    ~f:(add_missing_annotation_error ~global_resolution ~lookup)
     errors
 
 
