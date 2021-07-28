@@ -11,6 +11,8 @@ val lookup
   Ast.Reference.t ->
   string option
 
+val type_to_reference : Type.t -> Ast.Reference.t
+
 module Inference : sig
   type target =
     | Global of {
@@ -38,6 +40,8 @@ module LocalResult : sig
 
   val define_name : t -> Ast.Reference.t
 
+  val abstract : t -> bool
+
   val from_signature
     :  global_resolution:Analysis.GlobalResolution.t ->
     lookup:(Ast.Reference.t -> string option) ->
@@ -50,18 +54,6 @@ module LocalResult : sig
     lookup:(Ast.Reference.t -> string option) ->
     t ->
     Inference.t ->
-    t
-
-  val error_to_inference
-    :  result:t ->
-    Analysis.AnalysisError.t ->
-    (Type.t * Inference.target) option
-
-  val add_missing_annotation_error
-    :  global_resolution:Analysis.GlobalResolution.t ->
-    lookup:(Ast.Reference.t -> string option) ->
-    t ->
-    Analysis.AnalysisError.t ->
     t
 end
 

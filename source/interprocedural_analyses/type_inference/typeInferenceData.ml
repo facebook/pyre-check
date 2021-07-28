@@ -384,6 +384,8 @@ module LocalResult = struct
 
   let define_name { define = { name; _ }; _ } = name
 
+  let abstract { abstract; _ } = abstract
+
   let from_signature
       ~global_resolution
       ~lookup
@@ -488,27 +490,6 @@ module LocalResult = struct
           { result with define = DefineAnnotation.add_inferred_parameter define name type_ }
     in
     inference |> Option.map ~f:add_inferred_type |> Option.value ~default:result
-
-
-  let error_to_inference ~result:{ abstract; _ } { AnalysisError.location; kind; _ } =
-    let open AnalysisError in
-    match kind with
-    | MissingReturnAnnotation { annotation = Some type_; _ } when not abstract ->
-        Some (type_, Inference.Return)
-    | MissingParameterAnnotation { name; annotation = Some type_; _ } ->
-        Some (type_, Inference.Parameter { name })
-    | MissingAttributeAnnotation
-        { parent; missing_annotation = { name; annotation = Some type_; _ } } ->
-        Some (type_, Inference.Attribute { parent = type_to_reference parent; name; location })
-    | MissingGlobalAnnotation { name; annotation = Some type_; _ } ->
-        Some (type_, Inference.Global { name; location })
-    | _ -> None
-
-
-  let add_missing_annotation_error ~global_resolution ~lookup result error =
-    error_to_inference ~result error
-    >>= Inference.create
-    |> add_inference ~global_resolution ~lookup result
 end
 
 module GlobalResult = struct
