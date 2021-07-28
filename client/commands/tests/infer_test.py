@@ -623,6 +623,39 @@ class InferTest(unittest.TestCase):
         configuration.get_existent_ignore_infer_paths = lambda: []
         return configuration
 
+    def make_command(
+        self,
+        configuration: MagicMock | None = None,
+        analysis_directory: AnalysisDirectory | None = None,
+        paths_to_modify: set[Path] | None = None,
+        print_only: bool = False,
+        read_stdin: bool = False,
+        interprocedural: bool = False,
+    ) -> Infer:
+        arguments = mock_arguments()
+        configuration = configuration or self.mock_configuration()
+        original_directory = configuration.project_root
+        configuration.get_typeshed.return_value = "stub"
+        analysis_directory = analysis_directory or AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
+        return Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            print_only=print_only,
+            in_place=False,
+            paths_to_modify=paths_to_modify or set(),
+            annotate_from_existing_stubs=False,
+            debug_infer=False,
+            read_stdin=read_stdin,
+            dequalify=False,
+            interprocedural=interprocedural,
+            annotate_attributes=False,
+            use_future_annotations=True,
+        )
+
     def test_check_working_directory(self) -> None:
         configuration = self.mock_configuration()
         self.assertRaises(
@@ -645,29 +678,7 @@ class InferTest(unittest.TestCase):
             path: Path,
             expected: bool,
         ) -> None:
-            arguments = mock_arguments()
-            configuration = self.mock_configuration()
-            original_directory = configuration.project_root
-            configuration.get_typeshed.return_value = "stub"
-            analysis_directory = AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            )
-            infer = Infer(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=analysis_directory,
-                print_only=True,
-                in_place=False,
-                paths_to_modify=paths_to_modify,
-                annotate_from_existing_stubs=False,
-                debug_infer=False,
-                read_stdin=False,
-                dequalify=False,
-                interprocedural=False,
-                annotate_attributes=False,
-                use_future_annotations=True,
-            )
+            infer = self.make_command(paths_to_modify=paths_to_modify)
             self.assertEqual(expected, infer._should_annotate_in_place(path))
 
         check_should_annotate_in_place(
@@ -713,30 +724,9 @@ class InferTest(unittest.TestCase):
         json_loads: MagicMock,
         find_global_and_local_root: MagicMock,
     ) -> None:
-        arguments = mock_arguments()
-        configuration = self.mock_configuration()
-        original_directory = configuration.project_root
-        configuration.get_typeshed.return_value = "stub"
-        analysis_directory = AnalysisDirectory(
-            configuration_module.SimpleSearchPathElement(".")
-        )
-
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=analysis_directory,
+            command = self.make_command(
                 print_only=True,
-                in_place=False,
-                paths_to_modify=set(),
-                annotate_from_existing_stubs=False,
-                debug_infer=False,
-                read_stdin=False,
-                dequalify=False,
-                interprocedural=False,
-                annotate_attributes=False,
-                use_future_annotations=True,
             )
             self.assertEqual(
                 command._flags(),
@@ -762,25 +752,20 @@ class InferTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=Infer.NAME)
 
+        configuration = self.mock_configuration()
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         configuration.get_existent_ignore_infer_paths = lambda: ["path1.py", "path2.py"]
         # pyre-ignore[8]
         analysis_directory.get_filter_roots = lambda: {"filter_root_1", "filter_root_2"}
+
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(
-                arguments,
-                original_directory,
+            command = self.make_command(
                 configuration=configuration,
                 analysis_directory=analysis_directory,
                 print_only=True,
-                in_place=False,
-                paths_to_modify=set(),
-                annotate_from_existing_stubs=False,
-                debug_infer=False,
-                read_stdin=False,
-                dequalify=False,
                 interprocedural=True,
-                annotate_attributes=False,
-                use_future_annotations=True,
             )
             self.assertEqual(
                 command._flags(),
@@ -812,21 +797,10 @@ class InferTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
             with patch.object(sys.stdin, "read", return_value=""):
-                command = Infer(
-                    arguments,
-                    original_directory,
+                command = self.make_command(
                     configuration=configuration,
                     analysis_directory=analysis_directory,
-                    print_only=True,
-                    in_place=False,
-                    paths_to_modify=set(),
-                    annotate_from_existing_stubs=False,
-                    debug_infer=False,
                     read_stdin=True,
-                    dequalify=False,
-                    interprocedural=False,
-                    annotate_attributes=False,
-                    use_future_annotations=True,
                 )
                 command.run()
                 call_client.assert_not_called()
