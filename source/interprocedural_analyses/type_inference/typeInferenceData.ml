@@ -135,8 +135,6 @@ module AnnotationsByName = struct
 
       let length = SerializableReference.Map.length
 
-      let find = SerializableReference.Map.find
-
       let data map = SerializableReference.Map.data map |> List.sort ~compare:Value.compare
 
       let show map =
@@ -380,6 +378,8 @@ module LocalResult = struct
     abstract: bool;
   }
   [@@deriving show, to_yojson]
+
+  let define_name { define = { name; _ }; _ } = name
 
   let from_signature
       ~global_resolution
