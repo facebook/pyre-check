@@ -377,14 +377,10 @@ module LocalResult = struct
     globals: GlobalAnnotation.ByName.t;
     attributes: AttributeAnnotation.ByName.t;
     define: DefineAnnotation.t;
-    (* Used to skip inferring abstract return types *)
-    abstract: bool;
   }
   [@@deriving show, to_yojson]
 
   let define_name { define = { name; _ }; _ } = name
-
-  let abstract { abstract; _ } = abstract
 
   let from_signature
       ~global_resolution
@@ -402,7 +398,7 @@ module LocalResult = struct
                 parent;
                 async;
                 _;
-              } as signature;
+              };
             _;
           };
         Node.location = define_location;
@@ -442,7 +438,6 @@ module LocalResult = struct
       globals = GlobalAnnotation.ByName.empty;
       attributes = AttributeAnnotation.ByName.empty;
       define;
-      abstract = Statement.Define.Signature.is_abstract_method signature;
     }
 
 
