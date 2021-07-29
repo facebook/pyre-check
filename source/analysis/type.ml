@@ -4675,6 +4675,10 @@ end = struct
 
 
       let rec local_replace replacement annotation =
+        let map_tuple ~f = function
+          | Tuple record -> f record
+          | other -> other
+        in
         let promote_to_tuple concatenation = Tuple (Concatenation concatenation) in
         let replace_unpackable = function
           | OrderedTypes.Concatenation.Broadcast
@@ -4725,12 +4729,8 @@ end = struct
             List.find_map ~f:extract_broadcast_error parameters
             |> fun result -> Option.first_some result default
         | Tuple (Concatenation { prefix; middle = unpackable; suffix }) ->
-            let handle_broadcasted ~f = function
-              | Tuple record -> f record
-              | other -> other
-            in
             replace_unpackable unpackable
-            >>| handle_broadcasted ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
+            >>| map_tuple ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
         | Callable callable ->
             let replace_variadic parameters_so_far parameters =
               let expanded_parameters =
@@ -4772,6 +4772,12 @@ end = struct
               | parameters -> parameters
             in
             Some (Callable (Callable.map_parameters callable ~f:map))
+        | TypeOperation (Compose (Concatenation { prefix; middle; suffix })) -> (
+            replace_unpackable middle
+            >>| map_tuple ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
+            >>= function
+            | Tuple results -> Some (TypeOperation (Compose results))
+            | _ -> None)
         | _ -> None
 
 
