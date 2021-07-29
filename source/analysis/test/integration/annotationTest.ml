@@ -3069,6 +3069,39 @@ let test_check_compose context =
       "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
        typing_extensions.Literal[30], Variable[T]]`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      Ts = TypeVarTuple("Ts")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[*Ts, In]) -> Tensor[*Ts, Out]: ...
+
+      x: Compose[
+        Compose[
+          Linear[L[10], L[20]],
+          Linear[L[20], L[30]]
+        ],
+        Compose[
+          Linear[L[30], L[40]],
+          Linear[L[40], L[50]]
+        ]
+      ]
+      input: Tensor[L[5], L[8], L[10]]
+      res = x(input)
+      reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[8], typing_extensions.Literal[50]]`.";
+    ];
   ()
 
 

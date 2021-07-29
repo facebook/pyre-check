@@ -510,6 +510,80 @@ let test_create _ =
   assert_create
     "pyre_extensions.Compose[typing.Tuple[bool, str], typing.Callable[[int], str]]"
     Type.Top;
+  assert_create
+    {|
+      pyre_extensions.Compose[
+        pyre_extensions.Compose[
+          pyre_extensions.Compose[
+            typing.Callable[[bool], bytes],
+            typing.Callable[[bytes], int]
+          ],
+          typing.Callable[[int], float]
+        ],
+        typing.Callable[[float], str]
+      ]
+    |}
+    (Type.TypeOperation
+       (Type.TypeOperation.Compose
+          (Concrete
+             [
+               Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [
+                        Type.Callable.Parameter.PositionalOnly
+                          { index = 0; annotation = Type.bool; default = false };
+                      ])
+                 ~annotation:Type.bytes
+                 ();
+               Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [
+                        Type.Callable.Parameter.PositionalOnly
+                          { index = 0; annotation = Type.bytes; default = false };
+                      ])
+                 ~annotation:Type.integer
+                 ();
+               Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [
+                        Type.Callable.Parameter.PositionalOnly
+                          { index = 0; annotation = Type.integer; default = false };
+                      ])
+                 ~annotation:Type.float
+                 ();
+               Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [
+                        Type.Callable.Parameter.PositionalOnly
+                          { index = 0; annotation = Type.float; default = false };
+                      ])
+                 ~annotation:Type.string
+                 ();
+             ])));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    {|
+      pyre_extensions.Compose[
+        pyre_extensions.Compose[
+          pyre_extensions.Compose[
+            pyre_extensions.Unpack[Ts],
+            typing.Callable[[bytes], int]
+          ],
+          pyre_extensions.Compose[
+            typing.Callable[[int], int],
+            ...
+          ]
+        ],
+        typing.Callable[[float], str]
+      ]
+    |}
+    Type.Top;
   ()
 
 

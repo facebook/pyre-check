@@ -3053,23 +3053,55 @@ module TypeOperation = struct
 
     type t = type_t Record.TypeOperation.Compose.t
 
+    let flatten_record input =
+      let record_to_list = function
+        | OrderedTypes.Concrete annotations -> annotations
+        | Concatenation { prefix; middle; suffix } ->
+            prefix
+            @ [TypeOperation (Compose (Concatenation { prefix = []; middle; suffix = [] }))]
+            @ suffix
+      in
+      let map_types_to_records = function
+        | TypeOperation (Compose record) -> record
+        | other -> Concrete [other]
+      in
+      record_to_list input |> List.map ~f:map_types_to_records
+
+
     let create record =
       let is_potentially_callable = function
         | Callable _
         | Parametric _
         | Variable _
         | Any
-        | Primitive _ ->
+        | Primitive _
+        | TypeOperation (Compose _) ->
             true
         | _ -> false
       in
-      match record with
-      | OrderedTypes.Concatenation { middle = Variadic _; _ } -> Some record
-      | Concatenation { middle = UnboundedElements element; _ } when is_potentially_callable element
-        ->
-          Some record
-      | Concrete annotations when List.for_all ~f:is_potentially_callable annotations -> Some record
-      | _ -> None
+      let list_to_record list =
+        let combine_records left right =
+          left >>= fun inner_left -> OrderedTypes.concatenate ~left:inner_left ~right
+        in
+        list |> List.fold ~init:(Some (OrderedTypes.Concrete [])) ~f:combine_records
+      in
+      let is_legal_record input =
+        match input with
+        | OrderedTypes.Concrete annotations when List.for_all ~f:is_potentially_callable annotations
+          ->
+            Some input
+        | Concatenation { prefix; middle = UnboundedElements element; suffix }
+          when is_potentially_callable element ->
+            Option.some_if (List.for_all ~f:is_potentially_callable (prefix @ suffix)) input
+        | Concatenation { prefix; middle = Variadic _; suffix } ->
+            Option.some_if (List.for_all ~f:is_potentially_callable (prefix @ suffix)) input
+        | _ -> None
+      in
+      record
+      |> flatten_record
+      |> list_to_record
+      >>= is_legal_record
+      >>| fun result -> TypeOperation (Compose result)
   end
 
   type t = type_t Record.TypeOperation.record
@@ -3630,9 +3662,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
   | Parametric { name = "pyre_extensions.Compose"; parameters } ->
       Option.value
         ~default:Top
-        (create_ordered_type_from_parameters parameters
-        >>= TypeOperation.Compose.create
-        >>| fun result -> TypeOperation (TypeOperation.Compose result))
+        (create_ordered_type_from_parameters parameters >>= TypeOperation.Compose.create)
   | Parametric { name; parameters } -> (
       match
         Identifier.Table.find parametric_substitution_map name, Parameter.all_singles parameters

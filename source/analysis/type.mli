@@ -628,7 +628,7 @@ module TypeOperation : sig
 
     type t = type_t Record.TypeOperation.Compose.t
 
-    val create : t -> t option
+    val create : t -> type_t option
   end
 
   type t = type_t Record.TypeOperation.record
