@@ -4671,6 +4671,8 @@ end = struct
               | _ -> []
             in
             List.concat_map (implementation :: overloads) ~f:extract
+        | TypeOperation (Compose (Concatenation { middle = unpackable; _ })) ->
+            collect_unpackable unpackable
         | _ -> []
 
 

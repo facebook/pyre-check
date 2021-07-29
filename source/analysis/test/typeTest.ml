@@ -3265,6 +3265,27 @@ let test_collect_all _ =
       ]
     |}
     [variadic2; variadic; variadic];
+
+  (* Compose. *)
+  assert_collected
+    {|
+      pyre_extensions.Compose[
+        pyre_extensions.Unpack[Ts],
+        typing.Callable[[int], int]
+      ]
+    |}
+    [variadic];
+  assert_collected
+    {|
+      pyre_extensions.Compose[
+        pyre_extensions.Compose[
+          typing.Callable[[int], int],
+          pyre_extensions.Unpack[Ts],
+        ],
+        typing.Callable[[int], int]
+      ]
+    |}
+    [variadic];
   ()
 
 
