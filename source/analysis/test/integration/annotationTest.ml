@@ -3295,6 +3295,56 @@ let test_check_compose context =
       "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
        typing_extensions.Literal[5], typing_extensions.Literal[60]]`.";
     ];
+  (* TODO (T96622059): Fix solving `Compose` or `Sequential` against `Callable` *)
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      T2 = TypeVar("T2")
+      DType = TypeVar("DType")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Sequential(Generic[*Ts]):
+        def __init__(self, *layers: *Ts) -> None: ...
+        __call__: Compose[*Ts] = ...
+
+      class Linear(Generic[In, Out]):
+        def __init__(self, x: In, y: Out) -> None: ...
+        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+
+      def foo(x: Callable[[T], T2]) -> Callable[[T], T2]: ...
+      x = Sequential(Linear(10, 20), Linear(20, 30))
+      y: Compose[Linear[L[10], L[20]], Linear[L[20], L[30]]]
+      result = foo(x)
+      result2 = foo(y)
+      reveal_type(result)
+      reveal_type(result2)
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` to \
+       have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
+      "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
+       inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
+       attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
+       Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Variable[T]], Variable[T2]]` \
+       for 1st positional only parameter to call `foo` but got `Sequential[Linear[int, int], \
+       Linear[int, int]]`.";
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Variable[T]], Variable[T2]]` \
+       for 1st positional only parameter to call `foo` but got \
+       `pyre_extensions.Compose[Linear[int, int], Linear[int, int]]`.";
+      "Revealed type [-1]: Revealed type for `result` is `typing.Callable[[typing.Any], \
+       typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `result2` is `typing.Callable[[typing.Any], \
+       typing.Any]`.";
+    ];
   ()
 
 
