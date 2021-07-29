@@ -639,6 +639,16 @@ module Record = struct
 
     let name { name; _ } = name
   end
+
+  module TypeOperation = struct
+    module Compose = struct
+      type 'annotation t = 'annotation OrderedTypes.record
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+
+    type 'annotation record = Compose of 'annotation Compose.t
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module rec Monomial : sig
@@ -1168,6 +1178,7 @@ module T = struct
     | RecursiveType of t Record.RecursiveType.record
     | Top
     | Tuple of t Record.OrderedTypes.record
+    | TypeOperation of t Record.TypeOperation.record
     | Union of t list
     | Variable of t Record.Variable.RecordUnary.record
     | IntExpression of t RecordIntExpression.t
@@ -1561,6 +1572,13 @@ let pp_typed_dictionary_field ~pp_type format { Record.TypedDictionary.name; ann
 
 
 let rec pp format annotation =
+  let pp_ordered_type ordered_type =
+    match ordered_type with
+    | Record.OrderedTypes.Concatenation
+        { middle = UnboundedElements annotation; prefix = []; suffix = [] } ->
+        Format.asprintf "%a, ..." pp annotation
+    | ordered_type -> Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
+  in
   match annotation with
   | Annotated annotation -> Format.fprintf format "typing.Annotated[%a]" pp annotation
   | Bottom -> Format.fprintf format "undefined"
@@ -1601,15 +1619,9 @@ let rec pp format annotation =
   | Primitive name -> Format.fprintf format "%a" String.pp name
   | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
   | Top -> Format.fprintf format "unknown"
-  | Tuple ordered_type ->
-      let parameters =
-        match ordered_type with
-        | Concatenation { middle = UnboundedElements annotation; prefix = []; suffix = [] } ->
-            Format.asprintf "%a, ..." pp annotation
-        | ordered_type ->
-            Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
-      in
-      Format.fprintf format "typing.Tuple[%s]" parameters
+  | Tuple ordered_type -> Format.fprintf format "typing.Tuple[%s]" (pp_ordered_type ordered_type)
+  | TypeOperation (Compose ordered_type) ->
+      Format.fprintf format "pyre_extensions.Compose[%s]" (pp_ordered_type ordered_type)
   | Union [NoneType; parameter]
   | Union [parameter; NoneType] ->
       Format.fprintf format "typing.Optional[%a]" pp parameter
@@ -1699,6 +1711,12 @@ and pp_concise format annotation =
       Format.fprintf
         format
         "Tuple[%a]"
+        (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
+        ordered_type
+  | TypeOperation (Compose ordered_type) ->
+      Format.fprintf
+        format
+        "Compose[%a]"
         (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
         ordered_type
   | Union [NoneType; parameter]
@@ -1933,6 +1951,14 @@ let rec expression annotation =
         parameter_variable_type_representation variable |> expression
   in
   let rec convert_annotation annotation =
+    let convert_ordered_type ordered_type =
+      match ordered_type with
+      | Record.OrderedTypes.Concatenation
+          { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
+          List.map ~f:expression [parameter; Primitive "..."]
+      | Concatenation concatenation -> concatenation_to_expressions concatenation
+      | Concrete parameters -> List.map ~f:expression parameters
+    in
     match annotation with
     | Annotated annotation -> get_item_call "typing.Annotated" [expression annotation]
     | Bottom -> create_name "$bottom"
@@ -2056,15 +2082,9 @@ let rec expression annotation =
     | Top -> create_name "$unknown"
     | Tuple (Concrete []) ->
         get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
-    | Tuple ordered_type ->
-        let parameters =
-          match ordered_type with
-          | Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
-              List.map ~f:expression [parameter; Primitive "..."]
-          | Concatenation concatenation -> concatenation_to_expressions concatenation
-          | Concrete parameters -> List.map ~f:expression parameters
-        in
-        get_item_call "typing.Tuple" parameters
+    | Tuple ordered_type -> get_item_call "typing.Tuple" (convert_ordered_type ordered_type)
+    | TypeOperation (Compose ordered_type) ->
+        get_item_call "pyre_extensions.Compose" (convert_ordered_type ordered_type)
     | Union [NoneType; parameter]
     | Union [parameter; NoneType] ->
         get_item_call "typing.Optional" [expression parameter]
@@ -2243,6 +2263,8 @@ module Transform = struct
         | RecursiveType { name; body } ->
             RecursiveType { name; body = visit_annotation ~state body }
         | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
+        | TypeOperation (Compose ordered_type) ->
+            TypeOperation (Compose (visit_ordered_types ordered_type))
         | Union annotations -> union (List.map annotations ~f:(visit_annotation ~state))
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
@@ -3710,6 +3732,7 @@ let elements annotation =
         | Parametric { name; _ } -> name :: sofar, recursive_type_names
         | Primitive annotation -> annotation :: sofar, recursive_type_names
         | Tuple _ -> "tuple" :: sofar, recursive_type_names
+        | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
         | Union _ -> "typing.Union" :: sofar, recursive_type_names
         | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
         | ParameterVariadicComponent _

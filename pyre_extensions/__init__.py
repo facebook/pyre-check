@@ -143,3 +143,10 @@ class Broadcast(Generic[_T1, _T2]):
 
 class BroadcastError(Generic[_T1, _T2]):
     pass
+
+
+_Rs = TypeVarTuple("_Rs")
+
+
+class Compose(Generic[_Rs]):
+    pass

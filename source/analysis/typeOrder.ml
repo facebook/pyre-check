@@ -392,6 +392,9 @@ module OrderImplementation = struct
                 else
                   union
             | None -> union)
+        | TypeOperation _, _
+        | _, TypeOperation _ ->
+            union
 
 
     and meet_callable_implementations
