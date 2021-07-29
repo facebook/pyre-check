@@ -1935,15 +1935,37 @@ let test_unpack_callable_and_self_argument context =
     in
     assert_unpack_type ~source given expected
   in
-  let signature_select ~arguments:_ ~callable:_ ~self_argument:_ =
+  let signature_select ?(pairs = []) ~arguments:_ ~callable ~self_argument:_ =
+    match pairs with
+    | [(Type.Any, right)] -> SignatureSelectionTypes.Found { selected_return_annotation = right }
+    | _ ->
+        List.find ~f:(fun (left, _) -> [%eq: Type.t] left (Type.Callable callable)) pairs
+        >>| (fun (_, right) -> SignatureSelectionTypes.Found { selected_return_annotation = right })
+        |> Option.value
+             ~default:
+               (SignatureSelectionTypes.NotFound
+                  { closest_return_annotation = Type.Bottom; reason = None })
+  in
+  let default_select ~arguments:_ ~callable:_ ~self_argument:_ =
     SignatureSelectionTypes.Found { selected_return_annotation = Type.integer }
   in
+
   assert_unpack
-    ~signature_select
+    ~signature_select:default_select
     "typing.Callable[[int], int]"
     (Some ("typing.Callable[[int], int]", None));
   assert_unpack_type
-    ~signature_select
+    ~signature_select:default_select
+    "typing.Any"
+    (Some
+       ( {
+           kind = Anonymous;
+           implementation = { annotation = Type.Any; parameters = Undefined };
+           overloads = [];
+         },
+         None ));
+  assert_unpack_type
+    ~signature_select:default_select
     "typing.Any"
     (Some
        ( {
@@ -1953,15 +1975,15 @@ let test_unpack_callable_and_self_argument context =
          },
          None ));
   assert_unpack
-    ~signature_select
+    ~signature_select:default_select
     "typing.Callable[[int], int]"
     (Some ("typing.Callable[[int], int]", None));
   assert_unpack
-    ~signature_select
+    ~signature_select:default_select
     "BoundMethod[typing.Callable[[int], bool], str]"
     (Some ("typing.Callable[[int], bool]", Some Type.string));
   assert_unpack
-    ~signature_select
+    ~signature_select:default_select
     ~source:
       {|
         from typing import Generic, TypeVar
@@ -1972,7 +1994,7 @@ let test_unpack_callable_and_self_argument context =
     "BoundMethod[test.Foo[str], int]"
     (Some ("typing.Callable[[Named(x, int)], str]", Some Type.integer));
   assert_unpack_type
-    ~signature_select
+    ~signature_select:default_select
     ~source:
       {|
         class Foo:
@@ -2004,7 +2026,7 @@ let test_unpack_callable_and_self_argument context =
          },
          Some (Type.Primitive "test.Foo") ));
   assert_unpack
-    ~signature_select
+    ~signature_select:default_select
     ~source:
       {|
         from typing import Callable
@@ -2016,7 +2038,7 @@ let test_unpack_callable_and_self_argument context =
     "BoundMethod[test.Foo, int]"
     (Some ("typing.Callable[[int], int]", Some Type.integer));
   assert_unpack
-    ~signature_select
+    ~signature_select:default_select
     ~source:
       {|
         from typing import Callable
@@ -2030,7 +2052,7 @@ let test_unpack_callable_and_self_argument context =
     "BoundMethod[test.Foo, int]"
     None;
   assert_unpack
-    ~signature_select
+    ~signature_select:default_select
     ~source:
       {|
         class Bar:
@@ -2040,20 +2062,50 @@ let test_unpack_callable_and_self_argument context =
       |}
     "BoundMethod[test.Foo, int]"
     None;
-  assert_unpack ~signature_select "typing.Tuple[int, str]" None;
   assert_unpack
-    ~signature_select
+    ~signature_select:default_select
     ~source:
       {|
         from typing import Callable
         from pyre_extensions import Compose
-        class Baz:
+        class Bar2:
           __call__: Compose[Callable[[int], int], Callable[[int], int]] = ...
-        class Bar:
+        class Baz2:
           __call__: Compose[Callable[[int], int], Callable[[int], int]] = ...
       |}
-    "pyre_extensions.Compose[test.Baz, test.Bar]"
+    "pyre_extensions.Compose[test.Bar2, test.Baz2]"
     (Some ("typing.Callable[[int], int]", None));
+  assert_unpack ~signature_select:default_select "typing.Tuple[int, str]" None;
+  assert_unpack
+    ~signature_select:
+      (signature_select
+         ~pairs:
+           [
+             ( Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [PositionalOnly { index = 0; annotation = Type.integer; default = false }])
+                 ~annotation:Type.float
+                 (),
+               Type.float );
+             ( Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [PositionalOnly { index = 0; annotation = Type.float; default = false }])
+                 ~annotation:Type.string
+                 (),
+               Type.string );
+           ])
+    {|
+      pyre_extensions.Compose[
+        pyre_extensions.Compose[
+          typing.Callable[[bool], int],
+          typing.Callable[[int], float]
+        ],
+        typing.Callable[[float], str]
+      ]
+    |}
+    (Some ("typing.Callable[[bool], str]", None));
   ()
 
 
