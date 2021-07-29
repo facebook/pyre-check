@@ -9,6 +9,12 @@ open Ast
 open Statement
 module Error = AnalysisError
 
+type callable_and_self_argument = {
+  callable: Type.Callable.t;
+  self_argument: Type.t option;
+}
+[@@deriving eq, show]
+
 module type Context = sig
   val qualifier : Reference.t
 
@@ -40,6 +46,11 @@ module type Signature = sig
 
   include Fixpoint.State with type t := t
 end
+
+val unpack_callable_and_self_argument
+  :  global_resolution:GlobalResolution.t ->
+  Type.t ->
+  callable_and_self_argument option
 
 module State (Context : Context) : Signature
 

@@ -20,10 +20,11 @@ type class_name_and_is_abstract_and_is_protocol = {
   is_protocol: bool;
 }
 
-type unpacked_callable_and_self_argument = {
+type callable_and_self_argument = {
   callable: Type.Callable.t;
   self_argument: Type.t option;
 }
+[@@deriving eq, show]
 
 module LocalErrorMap = struct
   type t = Error.t list Int.Table.t
@@ -206,6 +207,41 @@ let errors_from_not_found
           error_and_location_from_typed_dictionary_mismatch mismatch)
       |> List.map ~f:(fun (location, error) -> Some location, error)
   | UnexpectedKeyword name -> [None, Error.UnexpectedKeyword { callee; name }]
+
+
+let unpack_callable_and_self_argument ~global_resolution = function
+  | Type.Callable callable -> Some { callable; self_argument = None }
+  | Any ->
+      Some
+        {
+          callable =
+            {
+              kind = Anonymous;
+              implementation = { annotation = Type.Any; parameters = Undefined };
+              overloads = [];
+            };
+          self_argument = None;
+        }
+  | Parametric { name = "BoundMethod"; parameters = [Single callable; Single self_argument] } -> (
+      let self_argument = Some self_argument in
+      match callable with
+      | Callable callable -> Some { callable; self_argument }
+      | complex -> (
+          let get_call_attribute parent =
+            GlobalResolution.attribute_from_annotation global_resolution ~parent ~name:"__call__"
+            >>| Annotated.Attribute.annotation
+            >>| Annotation.annotation
+          in
+          (* We do two layers since almost all callable classes have a BoundMethod __call__ which we
+             need to unwrap. We can't go arbitrarily deep since it would be possible to loop, and
+             its not worth building in a new assumption system just for this. We can't use a
+             constraint/protocol solve if we want to extract overloads, leaving us with this *)
+          get_call_attribute complex
+          >>= get_call_attribute
+          >>= function
+          | Callable callable -> Some { callable; self_argument }
+          | _ -> None))
+  | _ -> None
 
 
 module State (Context : Context) = struct
@@ -1930,51 +1966,11 @@ module State (Context : Context) = struct
         List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
       in
       let arguments = List.rev reversed_arguments in
-      let unpack_callable_and_self_argument = function
-        | Type.Callable callable -> Some { callable; self_argument = None }
-        | Any ->
-            Some
-              {
-                callable =
-                  {
-                    kind = Anonymous;
-                    implementation = { annotation = Type.Any; parameters = Undefined };
-                    overloads = [];
-                  };
-                self_argument = None;
-              }
-        | Parametric { name = "BoundMethod"; parameters = [Single callable; Single self_argument] }
-          -> (
-            let self_argument = Some self_argument in
-            match callable with
-            | Callable callable -> Some { callable; self_argument }
-            | complex -> (
-                let get_call_attribute parent =
-                  GlobalResolution.attribute_from_annotation
-                    global_resolution
-                    ~parent
-                    ~name:"__call__"
-                  >>| Annotated.Attribute.annotation
-                  >>| Annotation.annotation
-                in
-                (* We do two layers since almost all callable classes have a BoundMethod __call__
-                   which we need to unwrap. We can't go arbitrarily deep since it would be possible
-                   to loop, and its not worth building in a new assumption system just for this. We
-                   can't use a constraint/protocol solve if we want to extract overloads, leaving us
-                   with this *)
-                get_call_attribute complex
-                >>= get_call_attribute
-                >>= function
-                | Callable callable -> Some { callable; self_argument }
-                | _ -> None))
-        | _ -> None
-      in
-
       let find_method ~parent ~name ~special_method =
         GlobalResolution.attribute_from_annotation global_resolution ~parent ~name ~special_method
         >>| Annotated.Attribute.annotation
         >>| Annotation.annotation
-        >>= unpack_callable_and_self_argument
+        >>= unpack_callable_and_self_argument ~global_resolution
       in
       (* When an operator does not exist on the left operand but its inverse exists on the right
          operand, the missing attribute error would not have been thrown for the original operator.
@@ -2011,7 +2007,7 @@ module State (Context : Context) = struct
       let signatures =
         let callables, arguments, was_operator_inverted =
           let callable resolved =
-            match unpack_callable_and_self_argument resolved with
+            match unpack_callable_and_self_argument ~global_resolution resolved with
             | Some unpacked -> Some unpacked
             | _ -> find_method ~parent:resolved ~name:"__call__" ~special_method:true
           in
