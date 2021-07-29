@@ -2115,6 +2115,27 @@ let test_mark_all_variables_as_bound _ =
   ()
 
 
+let test_mark_all_variables_as_free _ =
+  let variable =
+    Type.Variable (Type.Variable.Unary.create "T") |> Type.Variable.mark_all_variables_as_bound
+  in
+  assert_true (Type.Variable.all_variables_are_resolved variable);
+  let variable = Type.Variable.mark_all_variables_as_free variable in
+  assert_false (Type.Variable.all_variables_are_resolved variable);
+  let callable =
+    let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+    Type.Callable.create
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
+      ~annotation:Type.integer
+      ()
+    |> Type.Variable.mark_all_variables_as_bound
+  in
+  assert_true (Type.Variable.all_variables_are_resolved callable);
+  let callable = Type.Variable.mark_all_variables_as_free callable in
+  assert_false (Type.Variable.all_variables_are_resolved callable);
+  ()
+
+
 let test_namespace_all_free_variables _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let bound_variable =
@@ -4490,6 +4511,7 @@ let () =
          "namespace_insensitive_compare" >:: test_namespace_insensitive_compare;
          "namespace" >:: test_namespace;
          "mark_all_variables_as_bound" >:: test_mark_all_variables_as_bound;
+         "mark_all_variables_as_free" >:: test_mark_all_variables_as_free;
          "namespace_all_free_variables" >:: test_namespace_all_free_variables;
          "mark_all_free_variables_as_escaped" >:: test_mark_all_free_variables_as_escaped;
          "contains_escaped_free_variable" >:: test_contains_escaped_free_variable;

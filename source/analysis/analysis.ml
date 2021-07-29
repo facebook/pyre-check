@@ -46,6 +46,7 @@ module SignatureSelectionTypes = SignatureSelectionTypes
 module Type = Type
 module TypeCheck = TypeCheck
 module TypeEnvironment = TypeEnvironment
+module TypeOperation = TypeOperation
 module TypeOrder = TypeOrder
 module TypeConstraints = TypeConstraints
 module Inference = Inference
