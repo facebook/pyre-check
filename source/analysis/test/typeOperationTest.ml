@@ -46,7 +46,17 @@ let test_compose_list _ =
     in
     let actual = annotation_list >>= TypeOperation.Compose.compose_list ~signature_select in
     assert_equal
-      ~cmp:[%eq: callable_and_self_argument option]
+      ~cmp:
+        (Option.equal
+           (fun
+             { callable = left_callable; self_argument = left_self_argument }
+             { callable = right_callable; self_argument = right_self_argument }
+           ->
+             [%eq: Type.t option] left_self_argument right_self_argument
+             && Type.namespace_insensitive_compare
+                  (Type.Callable left_callable)
+                  (Type.Callable right_callable)
+                = 0))
       ~printer:[%show: callable_and_self_argument option]
       actual
       (expected

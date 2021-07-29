@@ -4153,6 +4153,8 @@ module Variable : sig
 
   val mark_all_variables_as_free : ?specific:t list -> type_t -> type_t
 
+  val mark_as_bound : t -> t
+
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 
   val all_free_variables : type_t -> t list
@@ -4966,6 +4968,14 @@ end = struct
     GlobalTransforms.Unary.mark_all_as_bound ?specific:specific_unaries annotation
     |> GlobalTransforms.ParameterVariadic.mark_all_as_bound ?specific:specific_parameters_variadics
     |> GlobalTransforms.TupleVariadic.mark_all_as_bound ?specific:specific_tuple_variadics
+
+
+  let mark_as_bound = function
+    | Unary variable -> Unary (GlobalTransforms.Unary.mark_as_bound variable)
+    | ParameterVariadic variable ->
+        ParameterVariadic (GlobalTransforms.ParameterVariadic.mark_as_bound variable)
+    | TupleVariadic variable ->
+        TupleVariadic (GlobalTransforms.TupleVariadic.mark_as_bound variable)
 
 
   let mark_all_variables_as_free ?specific annotation =

@@ -977,6 +977,8 @@ module Variable : sig
 
   val mark_all_variables_as_free : ?specific:t list -> type_t -> type_t
 
+  val mark_as_bound : t -> t
+
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 
   val all_free_variables : type_t -> t list

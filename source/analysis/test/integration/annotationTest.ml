@@ -3016,6 +3016,59 @@ let test_check_compose context =
       "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
        typing_extensions.Literal[30]]`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+      class Constant:
+        def __call__(self, input: Tensor[L[5], L[20]]) -> Tensor[L[5], L[30]]: ...
+
+      x: Tensor[L[5], L[10]]
+      layer: Compose[
+        Linear[L[10], L[20]],
+        Constant
+      ]
+      res = layer(x)
+    |}
+    ["Call error [29]: `pyre_extensions.Compose[Linear[int, int], Constant]` is not a function."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      R = TypeVar("R")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out, R]):
+        def __call__(self, input: Tensor[T, In, R]) -> Tensor[T, Out, R]: ...
+
+      def bar(z: T) -> None:
+        def foo(input: Tensor[L[5], L[10], T]) -> None:
+          x: Compose[Linear[L[10], L[20], T], Linear[L[20], L[30], T]]
+          res = x(input)
+          reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[30], Variable[T]]`.";
+    ];
   ()
 
 
