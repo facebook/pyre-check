@@ -844,6 +844,14 @@ let test_instantiate _ =
     ~expected:(Type.optional Type.integer)
 
 
+let make_callable_from_arguments annotations =
+  Type.Callable.Defined
+    (List.mapi
+       ~f:(fun index annotation ->
+         Type.Callable.RecordParameter.PositionalOnly { index; annotation; default = false })
+       annotations)
+
+
 let test_expression _ =
   let assert_expression annotation expression =
     assert_equal
@@ -1006,6 +1014,24 @@ let test_expression _ =
        ~annotation:Type.integer
        ())
     "typing.Callable.__getitem__(([Variable(int, pyre_extensions.Unpack[Ts], str)], int))";
+
+  (* Compose *)
+  let callable1 =
+    Type.Callable.create
+      ~parameters:(make_callable_from_arguments [Type.integer])
+      ~annotation:Type.string
+      ()
+  in
+  let callable2 =
+    Type.Callable.create
+      ~parameters:(make_callable_from_arguments [Type.string])
+      ~annotation:Type.bool
+      ()
+  in
+  assert_expression
+    (Type.TypeOperation (Compose (Type.OrderedTypes.Concrete [callable1; callable2])))
+    "pyre_extensions.Compose[(typing.Callable[([PositionalOnly(int)], str)], \
+     typing.Callable[([PositionalOnly(str)], bool)])]";
   ()
 
 
@@ -1818,6 +1844,26 @@ let test_visit _ =
   in
 
   assert_equal ~printer:string_of_int 3 end_state;
+
+  let callable1 =
+    Type.Callable.create
+      ~parameters:(make_callable_from_arguments [Type.integer])
+      ~annotation:Type.string
+      ()
+  in
+  let callable2 =
+    Type.Callable.create
+      ~parameters:(make_callable_from_arguments [Type.string])
+      ~annotation:Type.bool
+      ()
+  in
+  let end_state, _ =
+    CountTransform.visit
+      0
+      (TypeOperation (Compose (Type.OrderedTypes.Concrete [callable1; callable2])))
+  in
+  assert_equal ~printer:string_of_int 7 end_state;
+
   let module SubstitutionTransform = Type.Transform.Make (struct
     type state = int
 
@@ -4249,6 +4295,64 @@ let test_resolve_class _ =
   ()
 
 
+let test_show _ =
+  let assert_show given ~expected_full ~expected_concise =
+    assert_equal ~cmp:String.equal ~printer:Fn.id ([%show: Type.t] given) expected_full;
+    assert_equal ~cmp:String.equal ~printer:Fn.id (Type.show_concise given) expected_concise
+  in
+  let callable1 =
+    Type.Callable.create
+      ~parameters:(make_callable_from_arguments [Type.integer])
+      ~annotation:Type.string
+      ()
+  in
+  let callable2 =
+    Type.Callable.create
+      ~parameters:(make_callable_from_arguments [Type.string])
+      ~annotation:Type.bool
+      ()
+  in
+  let ts = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_show
+    (Type.TypeOperation (Compose (Type.OrderedTypes.Concrete [callable1; callable2])))
+    ~expected_full:
+      "pyre_extensions.Compose[typing.Callable[[int], str], typing.Callable[[str], bool]]"
+    ~expected_concise:"Compose[(int) -> str, (str) -> bool]";
+  assert_show
+    (Type.TypeOperation
+       (Compose
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create ~prefix:[callable1] ts))))
+    ~expected_full:"pyre_extensions.Compose[typing.Callable[[int], str], *Ts]"
+    ~expected_concise:"Compose[(int) -> str, *Ts]";
+  assert_show
+    (Type.TypeOperation
+       (Compose
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+                ~prefix:[callable1]
+                callable2))))
+    ~expected_full:
+      "pyre_extensions.Compose[typing.Callable[[int], str], *Tuple[typing.Callable[[str], bool], \
+       ...]]"
+    ~expected_concise:"Compose[(int) -> str, *Tuple[(str) -> bool, ...]]";
+  assert_show
+    (Type.TypeOperation
+       (Compose
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+                ~prefix:[]
+                ~suffix:[]
+                ~concrete:[callable1]
+                ~concatenation:(Type.OrderedTypes.Concatenation.create ~prefix:[callable2] ts)))))
+    ~expected_full:
+      "pyre_extensions.Compose[*Broadcast[typing.Tuple[typing.Callable[[int], str]], \
+       typing.Tuple[typing.Callable[[str], bool], *Ts]]]"
+    ~expected_concise:
+      "Compose[*Broadcast[typing.Tuple[(int) -> str], typing.Tuple[(str) -> bool, *Ts]]]";
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -4318,6 +4422,7 @@ let () =
          "multiply_polynomial" >:: test_multiply_polynomial;
          "divide_polynomial" >:: test_divide_polynomial;
          "resolve_class" >:: test_resolve_class;
+         "show" >:: test_show;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

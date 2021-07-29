@@ -243,6 +243,16 @@ module Record : sig
 
     val name : 'annotation record -> Identifier.t
   end
+
+  module TypeOperation : sig
+    module Compose : sig
+      type 'annotation t = 'annotation OrderedTypes.record
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+
+    type 'annotation record = Compose of 'annotation Compose.t
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module Monomial : sig
@@ -332,6 +342,7 @@ and t =
   | RecursiveType of t Record.RecursiveType.record
   | Top
   | Tuple of t Record.OrderedTypes.record
+  | TypeOperation of t Record.TypeOperation.record
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
   | IntExpression of t RecordIntExpression.t
