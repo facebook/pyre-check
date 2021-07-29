@@ -300,7 +300,9 @@ class ModuleAnnotations:
                     annotation=type_annotation(attribute["annotation"]),
                 )
                 for attribute in infer_output["attributes"]
-            ],
+            ]
+            if options.annotate_attributes
+            else [],
             functions=[
                 FunctionAnnotation(
                     name=cast(str, define["name"]),
@@ -374,11 +376,7 @@ class ModuleAnnotations:
         """
         classes = defaultdict(list)
         nested_class_count = 0
-        if self.options.annotate_attributes:
-            class_annotations = [*self.attributes, *self.methods]
-        else:
-            class_annotations = self.methods
-        for annotation in class_annotations:
+        for annotation in [*self.attributes, *self.methods]:
             parent = self._relativize(annotation.parent)
             if len(parent) == 1:
                 classes[parent[0]].append(annotation)

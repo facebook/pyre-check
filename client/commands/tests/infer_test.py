@@ -185,6 +185,52 @@ class AnnotateModuleInPlaceTest(unittest.TestCase):
         )
 
 
+class ModuleAnnotationsTest(unittest.TestCase):
+    def _create_ModuleAnnotations(
+        self, data: dict[str, object], annotate_attributes: bool
+    ) -> ModuleAnnotations:
+        return ModuleAnnotations.from_infer_output(
+            path=PATH,
+            infer_output=_raw_infer_output(data),
+            options=StubGenerationOptions(
+                annotate_attributes=annotate_attributes,
+                use_future_annotations=False,
+                dequalify=False,
+            ),
+        )
+
+    def test_ModuleAnnotations_is_empty(self) -> None:
+        empty_data = {}
+        data_with_attribute: dict[str, object] = {
+            "attributes": [
+                {
+                    "annotation": "int",
+                    "name": "attribute_name",
+                    "parent": "test.Test",
+                }
+            ],
+        }
+
+        self.assertTrue(
+            self._create_ModuleAnnotations(
+                data=empty_data,
+                annotate_attributes=True,
+            ).is_empty()
+        )
+        self.assertFalse(
+            self._create_ModuleAnnotations(
+                data=data_with_attribute,
+                annotate_attributes=True,
+            ).is_empty()
+        )
+        self.assertTrue(
+            self._create_ModuleAnnotations(
+                data=data_with_attribute,
+                annotate_attributes=False,
+            ).is_empty()
+        )
+
+
 class StubGenerationTest(unittest.TestCase):
     def _assert_stubs(
         self,
