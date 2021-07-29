@@ -3058,7 +3058,8 @@ module TypeOperation = struct
         | Callable _
         | Parametric _
         | Variable _
-        | Any ->
+        | Any
+        | Primitive _ ->
             true
         | _ -> false
       in
