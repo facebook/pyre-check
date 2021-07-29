@@ -3102,6 +3102,199 @@ let test_check_compose context =
       "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
        typing_extensions.Literal[8], typing_extensions.Literal[50]]`.";
     ];
+  (* This test should be rejected later once we have variadic bounds, since `bar` does not extend
+     `nn.Module`. *)
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      DType = TypeVar("DType")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      Rs = TypeVarTuple("Rs")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Sequential(Generic[*Ts]):
+        def __init__(self, *layers: *Ts) -> None: ...
+        __call__: Compose[*Ts] = ...
+
+      class Linear(Generic[In, Out]):
+        def __init__(self, x: In, y: Out) -> None: ...
+        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+
+      class Foo:
+        def __call__(self, x: Tensor[DType, *Ts, L[20]]) -> Tensor[DType, *Ts, L[30]]: ...
+
+      layer: Compose[Foo, Foo]
+      x = (1, "hi")
+      result = layer( *x)
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` to \
+       have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
+      "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
+       inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
+       attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
+       Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
+      "Call error [29]: `pyre_extensions.Compose[Foo, Foo]` is not a function.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, Unpack, TypeVarTuple
+      from typing import Generic, Callable, TypeVar, Tuple, overload, Union
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      DType = TypeVar("DType")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      Rs = TypeVarTuple("Rs")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Sequential(Generic[*Ts]):
+        def __init__(self, *layers: *Ts) -> None: ...
+        __call__: Compose[*Ts] = ...
+
+      class Linear(Generic[In, Out]):
+        def __init__(self, x: In, y: Out) -> None: ...
+        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+
+      def bar(x: Tensor[DType, *Rs, L[40]]) -> Tensor[DType, *Rs, L[50]]: ...
+
+      layer = Sequential(
+        Linear(10, 20),
+        Linear(20, 40),
+        bar
+      )
+      x: Tensor[int, L[5], L[10]]
+      result = layer(x)
+      reveal_type(result)
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` to \
+       have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
+      "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
+       inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
+       attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
+       Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
+      "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
+       typing_extensions.Literal[5], typing_extensions.Literal[50]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N")
+      M = TypeVar("M")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+
+      def foo(n: N, m: M) -> None:
+        x: Tensor[L[5], L[10]]
+        layer: Compose[
+          Linear[L[10], N],
+          Linear[N, M],
+          Linear[M, L[30]]
+        ]
+        res = layer(x)
+        reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[30]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+      class Constant:
+        def __call__(self, input: Tensor[L[5], L[20]]) -> Tensor[L[5], L[30]]: ...
+
+      x: Tensor[L[5], L[10]]
+      layer: Compose[
+        Linear[L[10], L[20]],
+        Constant
+      ]
+      res = layer(x)
+    |}
+    ["Call error [29]: `pyre_extensions.Compose[Linear[int, int], Constant]` is not a function."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      R = TypeVar("R")
+      DType = TypeVar("DType")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Sequential(Generic[*Ts]):
+        def __init__(self, *layers: *Ts) -> None: ...
+        __call__: Compose[*Ts] = ...
+
+      class Linear(Generic[In, Out]):
+        def __init__(self, x: In, y: Out) -> None: ...
+        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+
+      layer = Sequential(
+                Sequential(
+                  Sequential(
+                    Linear(10, 20),
+                    Linear(20, 30),
+                  ),
+                  Linear(30, 40),
+                ),
+                Sequential(
+                  Linear(40, 50),
+                  Linear(50, 60)
+                )
+              )
+      x: Tensor[int, L[5], L[10]]
+      result = layer(x)
+      reveal_type(result)
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` to \
+       have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
+      "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
+       inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
+       attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
+       Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
+      "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
+       typing_extensions.Literal[5], typing_extensions.Literal[60]]`.";
+    ];
   ()
 
 

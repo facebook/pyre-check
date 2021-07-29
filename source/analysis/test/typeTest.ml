@@ -2910,6 +2910,105 @@ let test_replace_all _ =
     "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[2], \
      typing_extensions.Literal[2]], typing.Tuple[typing_extensions.Literal[5]]]";
 
+  let parse_string string =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | "Ts2" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic2))
+      | _ -> None
+    in
+    Type.create ~aliases (parse_single_expression ~preprocess:true string)
+  in
+  let replace_with_concrete = function
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
+        Some
+          (Type.OrderedTypes.Concrete
+             [
+               parse_string "typing.Callable[[int], str]";
+               parse_string "typing.Callable[[str], bool]";
+             ])
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic2 ->
+        Some
+          (Type.OrderedTypes.Concrete
+             [
+               parse_string "typing.Callable[[float], bytes]";
+               parse_string "typing.Callable[[bytes], int]";
+             ])
+    | _ -> None
+  in
+  let replace_with_concatenation = function
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
+        Some
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+                (parse_string "typing.Callable[[int], int]")))
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic2 ->
+        Some (Type.OrderedTypes.Concatenation (Type.OrderedTypes.Concatenation.create variadic))
+    | _ -> None
+  in
+
+  (* Compose. *)
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      pyre_extensions.Compose[
+        typing.Callable[[float], int],
+        pyre_extensions.Unpack[Ts]
+      ]
+    |}
+    "pyre_extensions.Compose[typing.Callable[[float], int], typing.Callable[[int], str], \
+     typing.Callable[[str], bool]]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      pyre_extensions.Compose[
+        pyre_extensions.Compose[
+          pyre_extensions.Unpack[Ts],
+          typing.Callable[[bool], bool]
+        ],
+        typing.Callable[[bool], float],
+      ]
+    |}
+    {|
+      pyre_extensions.Compose[
+        typing.Callable[[int], str],
+        typing.Callable[[str], bool],
+        typing.Callable[[bool], bool],
+        typing.Callable[[bool], float]
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concatenation
+    {|
+      pyre_extensions.Compose[
+        typing.Callable[[int], int],
+        pyre_extensions.Unpack[Ts]
+      ]
+    |}
+    {|
+      pyre_extensions.Compose[
+        typing.Callable[[int], int],
+        pyre_extensions.Unpack[
+          typing.Tuple[
+            typing.Callable[[int], int],
+            ...
+          ]
+        ]
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concatenation
+    {|
+      pyre_extensions.Compose[
+        typing.Callable[[int], int],
+        pyre_extensions.Unpack[Ts2]
+      ]
+    |}
+    {|
+      pyre_extensions.Compose[
+        typing.Callable[[int], int],
+        pyre_extensions.Unpack[Ts]
+      ]
+    |};
   ()
 
 
