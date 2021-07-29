@@ -14,17 +14,17 @@ module StatementDefine = Define
 module ExpressionCall = Call
 module Error = AnalysisError
 
-type class_name_and_is_abstract_and_is_protocol = {
-  class_name: string;
-  is_abstract: bool;
-  is_protocol: bool;
-}
-
 type callable_and_self_argument = {
   callable: Type.Callable.t;
   self_argument: Type.t option;
 }
 [@@deriving eq, show]
+
+type class_name_and_is_abstract_and_is_protocol = {
+  class_name: string;
+  is_abstract: bool;
+  is_protocol: bool;
+}
 
 module LocalErrorMap = struct
   type t = Error.t list Int.Table.t

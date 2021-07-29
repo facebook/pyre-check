@@ -4020,6 +4020,8 @@ module Variable : sig
 
     val mark_as_escaped : t -> t
 
+    val mark_as_free : t -> t
+
     val namespace : t -> namespace:Namespace.t -> t
 
     val dequalify : t -> dequalify_map:Reference.t Reference.Map.t -> t
@@ -4148,6 +4150,8 @@ module Variable : sig
 
   val mark_all_variables_as_bound : ?specific:t list -> type_t -> type_t
 
+  val mark_all_variables_as_free : ?specific:t list -> type_t -> type_t
+
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 
   val all_free_variables : type_t -> t list
@@ -4228,6 +4232,8 @@ end = struct
 
     val mark_as_escaped : t -> t
 
+    val mark_as_free : t -> t
+
     val namespace : t -> namespace:Namespace.t -> t
 
     val dequalify : t -> dequalify_map:Reference.t Reference.Map.t -> t
@@ -4299,6 +4305,8 @@ end = struct
 
 
     let mark_as_escaped variable = { variable with state = Free { escaped = true } }
+
+    let mark_as_free variable = { variable with state = Free { escaped = false } }
 
     let rec local_collect = function
       | Variable variable -> [variable]
@@ -4401,6 +4409,8 @@ end = struct
 
 
       let mark_as_escaped variable = { variable with state = Free { escaped = true } }
+
+      let mark_as_free variable = { variable with state = Free { escaped = false } }
 
       let local_collect = function
         | Callable { implementation; overloads; _ } ->
@@ -4595,6 +4605,8 @@ end = struct
 
       let mark_as_escaped variable = { variable with state = Free { escaped = true } }
 
+      let mark_as_free variable = { variable with state = Free { escaped = false } }
+
       let rec local_collect annotation =
         let collect_unpackable = function
           | Record.OrderedTypes.Concatenation.Variadic variadic -> [variadic]
@@ -4786,10 +4798,10 @@ end = struct
 
 
       let mark_all_as_bound ?specific =
-        let in_list =
+        let in_list variable =
           match specific with
-          | Some variables -> List.mem variables ~equal:Variable.equal
-          | None -> fun _ -> true
+          | Some variables -> List.mem variables ~equal:Variable.equal variable
+          | None -> true
         in
         let mark_as_bound_if_in_list variable =
           if in_list variable then
@@ -4798,6 +4810,21 @@ end = struct
             variable
         in
         map mark_as_bound_if_in_list
+
+
+      let mark_all_as_free ?specific =
+        let in_list variable =
+          match specific with
+          | Some variables -> List.mem variables ~equal:Variable.equal variable
+          | None -> true
+        in
+        let mark_as_free_if_in_list variable =
+          if in_list variable then
+            Variable.mark_as_free variable
+          else
+            variable
+        in
+        map mark_as_free_if_in_list
 
 
       let namespace_all_free_variables annotation ~namespace =
@@ -4938,6 +4965,17 @@ end = struct
     GlobalTransforms.Unary.mark_all_as_bound ?specific:specific_unaries annotation
     |> GlobalTransforms.ParameterVariadic.mark_all_as_bound ?specific:specific_parameters_variadics
     |> GlobalTransforms.TupleVariadic.mark_all_as_bound ?specific:specific_tuple_variadics
+
+
+  let mark_all_variables_as_free ?specific annotation =
+    let specific_unaries, specific_parameters_variadics, specific_tuple_variadics =
+      match specific >>| partition with
+      | None -> None, None, None
+      | Some (unaries, parameters, tuples) -> Some unaries, Some parameters, Some tuples
+    in
+    GlobalTransforms.Unary.mark_all_as_free ?specific:specific_unaries annotation
+    |> GlobalTransforms.ParameterVariadic.mark_all_as_free ?specific:specific_parameters_variadics
+    |> GlobalTransforms.TupleVariadic.mark_all_as_free ?specific:specific_tuple_variadics
 
 
   let namespace_all_free_variables annotation ~namespace =

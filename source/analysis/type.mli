@@ -841,6 +841,8 @@ module Variable : sig
 
     val mark_as_escaped : t -> t
 
+    val mark_as_free : t -> t
+
     val namespace : t -> namespace:Namespace.t -> t
 
     val dequalify : t -> dequalify_map:Reference.t Reference.Map.t -> t
@@ -972,6 +974,8 @@ module Variable : sig
   val namespace : t -> namespace:Namespace.t -> t
 
   val mark_all_variables_as_bound : ?specific:t list -> type_t -> type_t
+
+  val mark_all_variables_as_free : ?specific:t list -> type_t -> type_t
 
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 
