@@ -3045,6 +3045,35 @@ module OrderedTypes = struct
         Tuple (Concatenation { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix })
 end
 
+module TypeOperation = struct
+  include Record.TypeOperation
+
+  module Compose = struct
+    include Record.TypeOperation.Compose
+
+    type t = type_t Record.TypeOperation.Compose.t
+
+    let create record =
+      let is_potentially_callable = function
+        | Callable _
+        | Parametric _
+        | Variable _
+        | Any ->
+            true
+        | _ -> false
+      in
+      match record with
+      | OrderedTypes.Concatenation { middle = Variadic _; _ } -> Some record
+      | Concatenation { middle = UnboundedElements element; _ } when is_potentially_callable element
+        ->
+          Some record
+      | Concrete annotations when List.for_all ~f:is_potentially_callable annotations -> Some record
+      | _ -> None
+  end
+
+  type t = type_t Record.TypeOperation.record
+end
+
 let parameters_from_unpacked_annotation annotation ~variable_aliases =
   let open Record.OrderedTypes.Concatenation in
   let unpacked_variadic_to_parameter = function
@@ -3153,7 +3182,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | _ -> PositionalOnly { index; annotation = Top; default = false })
     | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
   in
-
+  let create_ordered_type_from_parameters parameters =
+    match Parameter.all_singles parameters with
+    | Some [annotation; Primitive "..."] ->
+        Some (OrderedTypes.create_unbounded_concatenation annotation)
+    | Some singles -> Some (Concrete singles)
+    | None -> OrderedTypes.concatenation_from_parameters parameters
+  in
   let result =
     let create_logic = create_logic ~resolve_aliases ~variable_aliases in
     let rec is_typing_callable = function
@@ -3587,15 +3622,16 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | Some substitute -> substitute
       | None -> result)
   | Parametric { name = "typing.Tuple"; parameters }
-  | Parametric { name = "tuple"; parameters } -> (
-      match Parameter.all_singles parameters with
-      | Some [annotation; Primitive "..."] ->
-          Tuple (OrderedTypes.create_unbounded_concatenation annotation)
-      | Some singles -> Tuple (Concrete singles)
-      | None ->
-          OrderedTypes.concatenation_from_parameters parameters
-          >>| (fun concatenation -> Tuple concatenation)
-          |> Option.value ~default:Top)
+  | Parametric { name = "tuple"; parameters } ->
+      Option.value
+        ~default:Top
+        (create_ordered_type_from_parameters parameters >>| fun result -> Tuple result)
+  | Parametric { name = "pyre_extensions.Compose"; parameters } ->
+      Option.value
+        ~default:Top
+        (create_ordered_type_from_parameters parameters
+        >>= TypeOperation.Compose.create
+        >>| fun result -> TypeOperation (TypeOperation.Compose result))
   | Parametric { name; parameters } -> (
       match
         Identifier.Table.find parametric_substitution_map name, Parameter.all_singles parameters
