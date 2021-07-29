@@ -22,50 +22,60 @@ module TypeOperation = struct
        a function call, or else it won't work. *)
     (* We need to namespace the callable before we bind, or else we might have a collision with
        existing bound variables of the same name. *)
+    let apply_callable
+        ~signature_select
+        input_annotation
+        ~callable_and_self:{ callable; self_argument }
+      =
+      match
+        signature_select
+          ~arguments:
+            [
+              {
+                AttributeResolution.Argument.expression = None;
+                kind = Ast.Expression.Call.Argument.Positional;
+                resolved = input_annotation;
+              };
+            ]
+          ~callable
+          ~self_argument
+      with
+      | SignatureSelectionTypes.Found { selected_return_annotation } ->
+          Some selected_return_annotation
+      | _ -> None
+
+
     let compose
         ~signature_select
-        {
-          callable =
-            { Type.Callable.implementation = original_left_implementation; _ } as
-            original_left_callable;
-          self_argument = left_self_argument;
-        }
-        { callable = right_callable; self_argument = right_self_argument }
+        { callable = original_left_callable; self_argument = left_self_argument }
+        right_callable_and_self
       =
-      let select_and_unbind
-          { Type.Callable.implementation = { annotation = left_annotation; _ }; _ }
-        =
-        match
-          signature_select
-            ~arguments:
-              [
-                {
-                  AttributeResolution.Argument.expression = None;
-                  kind = Ast.Expression.Call.Argument.Positional;
-                  resolved = left_annotation;
-                };
-              ]
-            ~callable:right_callable
-            ~self_argument:right_self_argument
-        with
-        | SignatureSelectionTypes.Found { selected_return_annotation } ->
-            let new_annotation =
-              Type.Variable.mark_all_variables_as_free selected_return_annotation
-            in
-            Some
-              {
-                callable =
-                  {
-                    original_left_callable with
-                    implementation =
-                      { original_left_implementation with annotation = new_annotation };
-                  };
-                self_argument = left_self_argument;
-              }
-        | NotFound _ -> None
+      let replace_return_annotation new_annotation ~input =
+        {
+          input with
+          Type.Callable.implementation =
+            { input.Type.Callable.implementation with annotation = new_annotation };
+        }
       in
-      Type.Callable.map ~f:Type.Variable.mark_all_variables_as_bound original_left_callable
-      >>= select_and_unbind
+      let namespace = Type.Variable.Namespace.create_fresh () in
+      let compose left_callable_namespaced =
+        let left_free_variables =
+          Type.Variable.all_free_variables (Type.Callable left_callable_namespaced)
+        in
+        Type.Callable.map
+          ~f:(Type.Variable.mark_all_variables_as_bound ~specific:left_free_variables)
+          left_callable_namespaced
+        >>| (fun { Type.Callable.implementation = { annotation; _ }; _ } -> annotation)
+        >>= apply_callable ~signature_select ~callable_and_self:right_callable_and_self
+        >>| Type.Variable.mark_all_variables_as_free
+              ~specific:(List.map ~f:Type.Variable.mark_as_bound left_free_variables)
+        >>| replace_return_annotation ~input:left_callable_namespaced
+        >>| fun result -> { callable = result; self_argument = left_self_argument }
+      in
+      Type.Callable.map
+        ~f:(Type.Variable.namespace_all_free_variables ~namespace)
+        original_left_callable
+      >>= compose
 
 
     let compose_list ~signature_select = function
