@@ -1892,6 +1892,124 @@ let test_calls context =
     ]
 
 
+let test_unpack_callable_and_self_argument context =
+  let parse ~global_resolution annotation =
+    parse_single_expression ~preprocess:true annotation
+    |> GlobalResolution.parse_annotation global_resolution
+  in
+  let assert_unpack_type ?(source = "") given expected =
+    let global_resolution =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      in
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
+    let actual =
+      TypeCheck.unpack_callable_and_self_argument
+        ~global_resolution
+        (parse ~global_resolution given)
+    in
+    let expected =
+      expected >>| fun (callable, self_argument) -> { TypeCheck.callable; self_argument }
+    in
+    assert_equal
+      ~printer:[%show: TypeCheck.callable_and_self_argument option]
+      ~cmp:[%eq: TypeCheck.callable_and_self_argument option]
+      actual
+      expected
+  in
+  let assert_unpack ?(source = "") given expected =
+    let global_resolution =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      in
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
+    let expected =
+      expected
+      >>= fun (expected_string, self_argument) ->
+      match parse ~global_resolution expected_string with
+      | Callable callable -> Some (callable, self_argument)
+      | _ -> assert false
+    in
+    assert_unpack_type ~source given expected
+  in
+  assert_unpack "typing.Callable[[int], int]" (Some ("typing.Callable[[int], int]", None));
+  assert_unpack_type
+    "typing.Any"
+    (Some
+       ( {
+           kind = Anonymous;
+           implementation = { annotation = Type.Any; parameters = Undefined };
+           overloads = [];
+         },
+         None ));
+  assert_unpack
+    "BoundMethod[typing.Callable[[int], bool], str]"
+    (Some ("typing.Callable[[int], bool]", Some Type.string));
+  assert_unpack_type
+    ~source:
+      {|
+        from typing import Generic, TypeVar
+        T = TypeVar("T")
+        class Foo(Generic[T]):
+          def __call__(self, x: int) -> T: ...
+      |}
+    "BoundMethod[test.Foo[str], int]"
+    (Some
+       ( {
+           Type.Callable.kind = Type.Callable.Anonymous;
+           implementation =
+             {
+               annotation = Type.string;
+               parameters =
+                 Type.Callable.Defined
+                   [
+                     Type.Callable.RecordParameter.Named
+                       { name = "$parameter$x"; annotation = Type.integer; default = false };
+                   ];
+             };
+           overloads = [];
+         },
+         Some Type.integer ));
+  assert_unpack
+    ~source:
+      {|
+        from typing import Callable
+        class Bar:
+          __call__: Callable[[int], int] = ...
+        class Foo():
+          __call__ : Bar = ...
+      |}
+    "BoundMethod[test.Foo, int]"
+    (Some ("typing.Callable[[int], int]", Some Type.integer));
+  assert_unpack
+    ~source:
+      {|
+        from typing import Callable
+        class Baz:
+          __call__: Callable[[int], int] = ...
+        class Bar:
+          __call__: Baz = ...
+        class Foo():
+          __call__ : Bar = ...
+      |}
+    "BoundMethod[test.Foo, int]"
+    None;
+  assert_unpack
+    ~source:
+      {|
+        class Bar:
+          __call__: int
+        class Foo():
+          __call__ : Bar = ...
+      |}
+    "BoundMethod[test.Foo, int]"
+    None;
+  assert_unpack "typing.Tuple[int, str]" None;
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -1906,5 +2024,6 @@ let () =
          "object_callables" >:: test_object_callables;
          "callable_selection" >:: test_callable_selection;
          "calls" >:: test_calls;
+         "unpack_callable_and_self_argument" >:: test_unpack_callable_and_self_argument;
        ]
   |> Test.run
