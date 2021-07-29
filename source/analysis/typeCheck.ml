@@ -14,12 +14,6 @@ module StatementDefine = Define
 module ExpressionCall = Call
 module Error = AnalysisError
 
-type callable_and_self_argument = {
-  callable: Type.Callable.t;
-  self_argument: Type.t option;
-}
-[@@deriving eq, show]
-
 type class_name_and_is_abstract_and_is_protocol = {
   class_name: string;
   is_abstract: bool;
@@ -209,8 +203,21 @@ let errors_from_not_found
   | UnexpectedKeyword name -> [None, Error.UnexpectedKeyword { callee; name }]
 
 
-let unpack_callable_and_self_argument ~global_resolution = function
-  | Type.Callable callable -> Some { callable; self_argument = None }
+let rec unpack_callable_and_self_argument ~signature_select ~global_resolution input =
+  let get_call_attribute parent =
+    GlobalResolution.attribute_from_annotation global_resolution ~parent ~name:"__call__"
+    >>| Annotated.Attribute.annotation
+    >>| Annotation.annotation
+  in
+  match input with
+  | Type.Callable callable -> Some { TypeOperation.callable; self_argument = None }
+  | Type.TypeOperation (Compose (Concrete annotations)) ->
+      List.map annotations ~f:(fun input ->
+          get_call_attribute input
+          (* TODO (T96555096): Fix potential infinite loop *)
+          >>= unpack_callable_and_self_argument ~signature_select ~global_resolution)
+      |> Option.all
+      >>= TypeOperation.TypeOperation.Compose.compose_list ~signature_select
   | Any ->
       Some
         {
@@ -225,13 +232,8 @@ let unpack_callable_and_self_argument ~global_resolution = function
   | Parametric { name = "BoundMethod"; parameters = [Single callable; Single self_argument] } -> (
       let self_argument = Some self_argument in
       match callable with
-      | Callable callable -> Some { callable; self_argument }
+      | Callable callable -> Some { TypeOperation.callable; self_argument }
       | complex -> (
-          let get_call_attribute parent =
-            GlobalResolution.attribute_from_annotation global_resolution ~parent ~name:"__call__"
-            >>| Annotated.Attribute.annotation
-            >>| Annotation.annotation
-          in
           (* We do two layers since almost all callable classes have a BoundMethod __call__ which we
              need to unwrap. We can't go arbitrarily deep since it would be possible to loop, and
              its not worth building in a new assumption system just for this. We can't use a
@@ -239,7 +241,7 @@ let unpack_callable_and_self_argument ~global_resolution = function
           get_call_attribute complex
           >>= get_call_attribute
           >>= function
-          | Callable callable -> Some { callable; self_argument }
+          | Callable callable -> Some { TypeOperation.callable; self_argument }
           | _ -> None))
   | _ -> None
 
@@ -1966,11 +1968,19 @@ module State (Context : Context) = struct
         List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
       in
       let arguments = List.rev reversed_arguments in
+      let signature_select ~arguments ~callable ~self_argument =
+        GlobalResolution.signature_select
+          ~arguments
+          ~global_resolution
+          ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+          ~callable
+          ~self_argument
+      in
       let find_method ~parent ~name ~special_method =
         GlobalResolution.attribute_from_annotation global_resolution ~parent ~name ~special_method
         >>| Annotated.Attribute.annotation
         >>| Annotation.annotation
-        >>= unpack_callable_and_self_argument ~global_resolution
+        >>= unpack_callable_and_self_argument ~signature_select ~global_resolution
       in
       (* When an operator does not exist on the left operand but its inverse exists on the right
          operand, the missing attribute error would not have been thrown for the original operator.
@@ -2007,7 +2017,9 @@ module State (Context : Context) = struct
       let signatures =
         let callables, arguments, was_operator_inverted =
           let callable resolved =
-            match unpack_callable_and_self_argument ~global_resolution resolved with
+            match
+              unpack_callable_and_self_argument ~signature_select ~global_resolution resolved
+            with
             | Some unpacked -> Some unpacked
             | _ -> find_method ~parent:resolved ~name:"__call__" ~special_method:true
           in
@@ -2062,23 +2074,16 @@ module State (Context : Context) = struct
         Context.Builder.add_callee
           ~global_resolution
           ~target
-          ~callables:(callables >>| List.map ~f:(fun { callable; _ } -> callable))
+          ~callables:(callables >>| List.map ~f:(fun { TypeOperation.callable; _ } -> callable))
           ~arguments:original_arguments
           ~dynamic
           ~qualifier:Context.qualifier
           ~callee_type:(Callee.resolved callee)
           ~callee:(Callee.expression callee);
         let signature_with_unpacked_callable_and_self_argument
-            ({ callable; self_argument } as unpacked_callable_and_self_argument)
+            ({ TypeOperation.callable; self_argument } as unpacked_callable_and_self_argument)
           =
-          let signature =
-            GlobalResolution.signature_select
-              ~arguments
-              ~global_resolution
-              ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-              ~callable
-              ~self_argument
-          in
+          let signature = signature_select ~arguments ~callable ~self_argument in
           match signature, callable with
           | NotFound _, _ -> (
               match callee, callable, arguments with
@@ -2088,7 +2093,8 @@ module State (Context : Context) = struct
                 when not was_operator_inverted ->
                   inverse_operator (Reference.last name)
                   >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
-                  >>| (fun ({ callable; self_argument } as unpacked_callable_and_self_argument) ->
+                  >>| (fun ({ TypeOperation.callable; self_argument } as
+                           unpacked_callable_and_self_argument) ->
                         let arguments =
                           [
                             {
@@ -2162,7 +2168,9 @@ module State (Context : Context) = struct
               _ ) ->
             let errors =
               let error_kinds =
-                let { callable; self_argument } = unpacked_callable_and_self_argument in
+                let { TypeOperation.callable; self_argument } =
+                  unpacked_callable_and_self_argument
+                in
                 errors_from_not_found
                   ~reason
                   ~callable

@@ -2697,7 +2697,7 @@ let test_check_union_shorthand context =
   ()
 
 
-let test_check_broadcast_features context =
+let test_check_broadcast context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_default_type_errors {|
       from pyre_extensions import Broadcast
@@ -2829,6 +2829,196 @@ let test_check_broadcast_features context =
   ()
 
 
+let test_check_compose context =
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+
+      class Foo:
+        def __call__(self, x: str) -> bool: ...
+      class Bar:
+        def __call__(self, x: bool) -> int: ...
+
+      x: Compose[Foo, Bar]
+      res = x("hi")
+      reveal_type(res)
+    |}
+    ["Revealed type [-1]: Revealed type for `res` is `int`."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+
+      x: Tensor[L[5], L[10]]
+      layer: Compose[
+        Linear[L[10], L[20]],
+        Linear[L[20], L[30]]
+      ]
+      reveal_type(layer)
+      res = layer(x)
+      reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `layer` is \
+       `pyre_extensions.Compose[Linear[typing_extensions.Literal[10], \
+       typing_extensions.Literal[20]], Linear[typing_extensions.Literal[20], \
+       typing_extensions.Literal[30]]]`.";
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[30]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+      from typing import Generic, Callable, TypeVar, Tuple
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      R = TypeVar("R")
+
+      class Foo:
+        def __call__(self, x: Tuple[T, R]) -> T: ...
+      class Bar:
+        def __call__(self, x: R) -> R: ...
+
+      layer: Compose[
+        Foo,
+        Bar
+      ]
+      res = layer((True, 3))
+      reveal_type(res)
+    |}
+    ["Revealed type [-1]: Revealed type for `res` is `typing_extensions.Literal[True]`."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+      from typing import Tuple
+
+      x: Compose[Tuple[int, str]]
+    |}
+    [
+      "Invalid type [31]: Expression `pyre_extensions.Compose[typing.Tuple[(int, str)]]` is not a \
+       valid type.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N")
+      M = TypeVar("M")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+
+      def foo(n: N, m: M) -> None:
+        x: Tensor[L[5], L[10]]
+        layer: Compose[
+          Linear[L[10], N],
+          Linear[M, L[30]]
+        ]
+        reveal_type(layer)
+        res = layer(x)
+
+      input: Tensor[L[5], L[10]]
+      layer2: Compose[Linear[L[10], L[20]], Linear[L[21], L[30]]]
+      res = layer2(input)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `layer` is \
+       `pyre_extensions.Compose[Linear[typing_extensions.Literal[10], Variable[N]], \
+       Linear[Variable[M], typing_extensions.Literal[30]]]`.";
+      "Call error [29]: `pyre_extensions.Compose[Linear[int, Variable[N]], Linear[Variable[M], \
+       int]]` is not a function.";
+      "Call error [29]: `pyre_extensions.Compose[Linear[int, int], Linear[int, int]]` is not a \
+       function.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+      from typing import Generic, Callable, TypeVar, Tuple
+
+      class Foo:
+        def __call__(self, x: int, y: str) -> Tuple[int, str]: ...
+
+      layer: Compose[Foo, Foo]
+      x = (1, "hi")
+      result = layer( *x)
+    |}
+    ["Call error [29]: `pyre_extensions.Compose[Foo, Foo]` is not a function."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+      from typing import Generic, Callable, TypeVar, Tuple, overload, Union
+
+      class Foo:
+        @overload
+        def __call__(self, x: int) -> int: ...
+        @overload
+        def __call__(self, x: str) -> str: ...
+        def __call__(self, x: Union[int, str]) -> Union[int, str]: ...
+
+      layer: Compose[Foo, Foo]
+      result = layer(1)
+      reveal_type(result)
+    |}
+    [
+      "Call error [29]: `pyre_extensions.Compose[Foo, Foo]` is not a function.";
+      "Revealed type [-1]: Revealed type for `result` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N")
+      M = TypeVar("M")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+
+      def foo(n: N, m: M) -> None:
+        x: Tensor[L[5], L[10]]
+        layer: Compose[
+          Linear[L[10], N],
+          Linear[N, M],
+          Linear[M, L[30]]
+        ]
+        res = layer(x)
+        reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[30]]`.";
+    ];
+  ()
+
+
 let () =
   "annotation"
   >::: [
@@ -2855,6 +3045,7 @@ let () =
          "check_typevar_division_simplify" >:: test_check_typevar_division_simplify;
          "check_annotated" >:: test_check_annotated;
          "check_union_shorthand" >:: test_check_union_shorthand;
-         "check_broadcast_features" >:: test_check_broadcast_features;
+         "check_broadcast" >:: test_check_broadcast;
+         "check_compose" >:: test_check_compose;
        ]
   |> Test.run

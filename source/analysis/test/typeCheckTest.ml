@@ -1897,7 +1897,7 @@ let test_unpack_callable_and_self_argument context =
     parse_single_expression ~preprocess:true annotation
     |> GlobalResolution.parse_annotation global_resolution
   in
-  let assert_unpack_type ?(source = "") given expected =
+  let assert_unpack_type ?(source = "") ~signature_select given expected =
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
@@ -1906,15 +1906,16 @@ let test_unpack_callable_and_self_argument context =
     in
     let actual =
       TypeCheck.unpack_callable_and_self_argument
+        ~signature_select
         ~global_resolution
         (parse ~global_resolution given)
     in
     let expected =
-      expected >>| fun (callable, self_argument) -> { TypeCheck.callable; self_argument }
+      expected >>| fun (callable, self_argument) -> { TypeOperation.callable; self_argument }
     in
     assert_equal
-      ~printer:[%show: TypeCheck.callable_and_self_argument option]
-      ~cmp:[%eq: TypeCheck.callable_and_self_argument option]
+      ~printer:[%show: TypeOperation.callable_and_self_argument option]
+      ~cmp:[%eq: TypeOperation.callable_and_self_argument option]
       actual
       expected
   in
@@ -1934,8 +1935,15 @@ let test_unpack_callable_and_self_argument context =
     in
     assert_unpack_type ~source given expected
   in
-  assert_unpack "typing.Callable[[int], int]" (Some ("typing.Callable[[int], int]", None));
+  let signature_select ~arguments:_ ~callable:_ ~self_argument:_ =
+    SignatureSelectionTypes.Found { selected_return_annotation = Type.integer }
+  in
+  assert_unpack
+    ~signature_select
+    "typing.Callable[[int], int]"
+    (Some ("typing.Callable[[int], int]", None));
   assert_unpack_type
+    ~signature_select
     "typing.Any"
     (Some
        ( {
@@ -1945,9 +1953,15 @@ let test_unpack_callable_and_self_argument context =
          },
          None ));
   assert_unpack
+    ~signature_select
+    "typing.Callable[[int], int]"
+    (Some ("typing.Callable[[int], int]", None));
+  assert_unpack
+    ~signature_select
     "BoundMethod[typing.Callable[[int], bool], str]"
     (Some ("typing.Callable[[int], bool]", Some Type.string));
-  assert_unpack_type
+  assert_unpack
+    ~signature_select
     ~source:
       {|
         from typing import Generic, TypeVar
@@ -1956,23 +1970,41 @@ let test_unpack_callable_and_self_argument context =
           def __call__(self, x: int) -> T: ...
       |}
     "BoundMethod[test.Foo[str], int]"
+    (Some ("typing.Callable[[Named(x, int)], str]", Some Type.integer));
+  assert_unpack_type
+    ~signature_select
+    ~source:
+      {|
+        class Foo:
+          def __call__(self, x: bool) -> str: ...
+        class Bar:
+          def __call__(self, x: str) -> int: ...
+      |}
+    "pyre_extensions.Compose[test.Foo, test.Bar]"
     (Some
        ( {
-           Type.Callable.kind = Type.Callable.Anonymous;
+           Type.Callable.kind = Type.Callable.Named (Reference.create "test.Foo.__call__");
            implementation =
              {
-               annotation = Type.string;
                parameters =
                  Type.Callable.Defined
                    [
-                     Type.Callable.RecordParameter.Named
-                       { name = "$parameter$x"; annotation = Type.integer; default = false };
+                     Type.Callable.Parameter.Named
+                       {
+                         name = "$parameter$self";
+                         annotation = Type.Primitive "test.Foo";
+                         default = false;
+                       };
+                     Type.Callable.Parameter.Named
+                       { name = "$parameter$x"; annotation = Type.bool; default = false };
                    ];
+               annotation = Type.integer;
              };
            overloads = [];
          },
-         Some Type.integer ));
+         Some (Type.Primitive "test.Foo") ));
   assert_unpack
+    ~signature_select
     ~source:
       {|
         from typing import Callable
@@ -1984,6 +2016,7 @@ let test_unpack_callable_and_self_argument context =
     "BoundMethod[test.Foo, int]"
     (Some ("typing.Callable[[int], int]", Some Type.integer));
   assert_unpack
+    ~signature_select
     ~source:
       {|
         from typing import Callable
@@ -1997,6 +2030,7 @@ let test_unpack_callable_and_self_argument context =
     "BoundMethod[test.Foo, int]"
     None;
   assert_unpack
+    ~signature_select
     ~source:
       {|
         class Bar:
@@ -2006,7 +2040,20 @@ let test_unpack_callable_and_self_argument context =
       |}
     "BoundMethod[test.Foo, int]"
     None;
-  assert_unpack "typing.Tuple[int, str]" None;
+  assert_unpack ~signature_select "typing.Tuple[int, str]" None;
+  assert_unpack
+    ~signature_select
+    ~source:
+      {|
+        from typing import Callable
+        from pyre_extensions import Compose
+        class Baz:
+          __call__: Compose[Callable[[int], int], Callable[[int], int]] = ...
+        class Bar:
+          __call__: Compose[Callable[[int], int], Callable[[int], int]] = ...
+      |}
+    "pyre_extensions.Compose[test.Baz, test.Bar]"
+    (Some ("typing.Callable[[int], int]", None));
   ()
 
 

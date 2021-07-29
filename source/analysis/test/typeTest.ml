@@ -492,7 +492,7 @@ let test_create _ =
                  ~annotation:Type.bool
                  ();
              ])));
-  assert_create "pyre_extensions.Compose[int, ...]" Type.Top;
+  assert_create "pyre_extensions.Compose[typing.Tuple[bool, str], ...]" Type.Top;
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -507,7 +507,9 @@ let test_create _ =
       ]
     |}
     Type.Top;
-  assert_create "pyre_extensions.Compose[int, typing.Callable[[int], str]]" Type.Top;
+  assert_create
+    "pyre_extensions.Compose[typing.Tuple[bool, str], typing.Callable[[int], str]]"
+    Type.Top;
   ()
 
 
