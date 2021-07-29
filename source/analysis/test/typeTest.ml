@@ -16,6 +16,14 @@ let empty_head variable = { Type.Callable.head = []; variable }
 
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
+let make_callable_from_arguments annotations =
+  Type.Callable.Defined
+    (List.mapi
+       ~f:(fun index annotation ->
+         Type.Callable.RecordParameter.PositionalOnly { index; annotation; default = false })
+       annotations)
+
+
 let test_create _ =
   let assert_create ?(aliases = fun _ -> None) source annotation =
     assert_equal
@@ -403,6 +411,103 @@ let test_create _ =
          CallableParameters
            (Defined [PositionalOnly { index = 0; annotation = Type.bool; default = false }]);
        ]);
+
+  (* Compose. *)
+  let variable = Type.Variable.Unary.create "T" in
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_create
+    {|
+      pyre_extensions.Compose[
+        typing.Callable[[int], str],
+        typing.Callable[[str], bool],
+        typing.Callable[[bool], typing.Tuple[int, int]]
+      ]
+    |}
+    (Type.TypeOperation
+       (Compose
+          (Type.OrderedTypes.Concrete
+             [
+               Type.Callable.create
+                 ~parameters:(make_callable_from_arguments [Type.integer])
+                 ~annotation:Type.string
+                 ();
+               Type.Callable.create
+                 ~parameters:(make_callable_from_arguments [Type.string])
+                 ~annotation:Type.bool
+                 ();
+               Type.Callable.create
+                 ~parameters:(make_callable_from_arguments [Type.bool])
+                 ~annotation:(Type.tuple [Type.integer; Type.integer])
+                 ();
+             ])));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    {|
+      pyre_extensions.Compose[
+        int,
+        pyre_extensions.Unpack[Ts],
+        str
+      ]
+    |}
+    (Type.TypeOperation
+       (Type.TypeOperation.Compose
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create
+                ~prefix:[Type.integer]
+                ~suffix:[Type.string]
+                variadic))));
+  assert_create
+    "pyre_extensions.Compose[typing.Callable[[int], int], ...]"
+    (Type.TypeOperation
+       (Type.TypeOperation.Compose
+          (Type.OrderedTypes.Concatenation
+             (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+                (Type.Callable.create
+                   ~parameters:(make_callable_from_arguments [Type.integer])
+                   ~annotation:Type.integer
+                   ())))));
+  let aliases = function
+    | "T" -> Some (Type.Variable variable)
+    | _ -> None
+  in
+  let aliases = create_type_alias_table aliases in
+  assert_create
+    ~aliases
+    "pyre_extensions.Compose[T, Foo[int], typing.Callable[[str], bool]]"
+    (Type.TypeOperation
+       (Type.TypeOperation.Compose
+          (Concrete
+             [
+               Type.Variable variable;
+               Type.Parametric { name = "Foo"; parameters = [Type.Parameter.Single Type.integer] };
+               Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [
+                        Type.Callable.Parameter.PositionalOnly
+                          { index = 0; annotation = Type.string; default = false };
+                      ])
+                 ~annotation:Type.bool
+                 ();
+             ])));
+  assert_create "pyre_extensions.Compose[int, ...]" Type.Top;
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    {|
+      pyre_extensions.Compose[
+        pyre_extensions.Broadcast[
+          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[3]]
+        ],
+        typing.Callable[[int], int]
+      ]
+    |}
+    Type.Top;
+  assert_create "pyre_extensions.Compose[int, typing.Callable[[int], str]]" Type.Top;
   ()
 
 
@@ -842,14 +947,6 @@ let test_instantiate _ =
     [Type.variable "_T", Type.integer; Type.variable "_VT", Type.NoneType]
     ~generic:(Type.Union [Type.variable "_T"; Type.variable "_VT"])
     ~expected:(Type.optional Type.integer)
-
-
-let make_callable_from_arguments annotations =
-  Type.Callable.Defined
-    (List.mapi
-       ~f:(fun index annotation ->
-         Type.Callable.RecordParameter.PositionalOnly { index; annotation; default = false })
-       annotations)
 
 
 let test_expression _ =

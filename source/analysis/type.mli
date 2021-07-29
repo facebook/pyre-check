@@ -616,6 +616,24 @@ module RecursiveType : sig
   end
 end
 
+module TypeOperation : sig
+  include module type of struct
+    include Record.TypeOperation
+  end
+
+  module Compose : sig
+    include module type of struct
+      include Record.TypeOperation.Compose
+    end
+
+    type t = type_t Record.TypeOperation.Compose.t
+
+    val create : t -> t option
+  end
+
+  type t = type_t Record.TypeOperation.record
+end
+
 val contains_callable : t -> bool
 
 val is_any : t -> bool
