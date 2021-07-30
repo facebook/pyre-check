@@ -674,7 +674,6 @@ class InferTest(unittest.TestCase):
         configuration: MagicMock | None = None,
         analysis_directory: AnalysisDirectory | None = None,
         paths_to_modify: set[Path] | None = None,
-        print_only: bool = False,
         read_stdin: bool = False,
         interprocedural: bool = False,
     ) -> Infer:
@@ -690,7 +689,7 @@ class InferTest(unittest.TestCase):
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
-            print_only=print_only,
+            print_only=True,  # always use print_only to avoid file operations
             in_place=False,
             paths_to_modify=paths_to_modify or set(),
             annotate_from_existing_stubs=False,
@@ -771,9 +770,7 @@ class InferTest(unittest.TestCase):
         find_global_and_local_root: MagicMock,
     ) -> None:
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = self.make_command(
-                print_only=True,
-            )
+            command = self.make_command()
             self.assertEqual(
                 command._flags(),
                 [
@@ -810,7 +807,6 @@ class InferTest(unittest.TestCase):
             command = self.make_command(
                 configuration=configuration,
                 analysis_directory=analysis_directory,
-                print_only=True,
                 interprocedural=True,
             )
             self.assertEqual(
