@@ -1387,6 +1387,27 @@ def statistics(
 
 @pyre.command()
 @click.pass_context
+def coverage(
+    context: click.Context,
+) -> int:
+    """
+    Collect various syntactic metrics on type coverage.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    return run_pyre_command(
+        commands.Coverage(
+            command_argument,
+            original_directory=os.getcwd(),
+            configuration=configuration,
+        ),
+        configuration,
+        command_argument.noninteractive,
+    )
+
+
+@pyre.command()
+@click.pass_context
 def stop(context: click.Context) -> int:
     """
     Signals the Pyre server to stop.
