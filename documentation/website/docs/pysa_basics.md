@@ -427,3 +427,12 @@ As you can see from the above examples, unmodelled parameters and function bodie
 both be elided with `...`. Additionally, type annotations *must* be entirely
 omitted (not replaced with `...`), even when present on the declaration of the
 function. This is done to make parsing taint annotations unambiguous.
+
+<FbInternalOnly>
+
+## Next Steps
+
+Ready to start writing some models? Check out our docs on the
+[end-to-end process of shipping pysa models.](fb/pysa_shipping_rules_models_internal.md)
+
+</FbInternalOnly>
