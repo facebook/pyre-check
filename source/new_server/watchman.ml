@@ -302,6 +302,11 @@ module Subscriber = struct
                      going. *)
                   raise (SubscriptionError "Subscription is cancelled by watchman")
               | _ -> (
+                  let () =
+                    match Yojson.Safe.Util.member "warning" response with
+                    | `String message -> Log.warning "Received watchman warning: %s" message
+                    | _ -> ()
+                  in
                   match Yojson.Safe.Util.member "files" response with
                   | `Null ->
                       (* This could be a "state-enter"/"state-leave" message which can also be
