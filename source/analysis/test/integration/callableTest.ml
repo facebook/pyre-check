@@ -266,6 +266,44 @@ let test_bound_method context =
       "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to \
        anonymous call but got `int`.";
     ];
+  assert_type_errors
+    {|
+      from typing import *
+      def foo(x: int, y:str) -> None:
+        pass
+
+      def bar(b: bool, s: str) -> None:
+        # pyre-ignore[10]: ensure mismatch errors appear after undefined arguments
+        foo(unknown, b)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `foo` but got `unknown`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
+       `foo` but got `bool`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import *
+      from pyre_extensions import Unpack, TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]], z: Tuple[Unpack[Ts]]) -> None:
+        pass
+
+      def bar() -> None:
+        x = (1,2,3)
+        y = (4, 5)
+        z = ("hello")
+        foo(x, y, z)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
+       parameter to call `foo` but got `typing.Tuple[int, int]`.";
+      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 3rd positional only \
+       parameter to call `foo` but got `str`.";
+    ];
   ()
 
 
