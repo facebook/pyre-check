@@ -30,27 +30,27 @@ let variable_r, escaped_variable_r =
 
 
 let compare_sig_t left right =
-  let default = SignatureSelectionTypes.equal_sig_t left right in
+  let open SignatureSelectionTypes in
+  let default = equal_sig_t left right in
   match left, right with
-  | ( SignatureSelectionTypes.NotFound
-        { reason = Some left_reason; closest_return_annotation = left_closest },
-      SignatureSelectionTypes.NotFound
-        { reason = Some right_reason; closest_return_annotation = right_closest } )
+  | ( NotFound { reason = Some left_reason; closest_return_annotation = left_closest },
+      NotFound { reason = Some right_reason; closest_return_annotation = right_closest } )
     when Type.equal left_closest right_closest -> (
       let equal_invalid_argument left right =
-        Option.compare
-          Expression.location_insensitive_compare
-          left.SignatureSelectionTypes.expression
-          right.SignatureSelectionTypes.expression
-        = 0
+        Option.compare Expression.location_insensitive_compare left.expression right.expression = 0
         && Type.equal left.annotation right.annotation
       in
       match left_reason, right_reason with
       | InvalidKeywordArgument left, InvalidKeywordArgument right
       | InvalidVariableArgument left, InvalidVariableArgument right ->
           equal_invalid_argument left.value right.value
-      | Mismatch left, Mismatch right ->
-          SignatureSelectionTypes.equal_mismatch left.value right.value
+      | Mismatches left, Mismatches right ->
+          let equal_single_mismatch left right =
+            match left, right with
+            | Mismatch left, Mismatch right -> equal_mismatch left.value right.value
+            | _, _ -> equal_mismatch_reason left right
+          in
+          List.equal equal_single_mismatch left right
       | _ -> default)
   | _ -> default
 
@@ -244,14 +244,14 @@ let test_unresolved_select context =
           let reason =
             { actual; expected; name; position }
             |> Node.create_with_default_location
-            |> fun mismatch -> Some (Mismatch mismatch)
+            |> fun mismatch -> Some (Mismatches [Mismatch mismatch])
           in
           NotFound { closest_return_annotation; reason }
       | `NotFoundMismatchWithClosest (closest, actual, expected, name, position) ->
           let reason =
             { actual; expected; name; position }
             |> Node.create_with_default_location
-            |> fun mismatch -> Some (Mismatch mismatch)
+            |> fun mismatch -> Some (Mismatches [Mismatch mismatch])
           in
           NotFound { closest_return_annotation = parse_return closest; reason }
       | `NotFound (closest, reason) ->
@@ -517,14 +517,17 @@ let test_unresolved_select context =
          closest_return_annotation = escaped_variable_r;
          reason =
            Some
-             (Mismatch
-                (Node.create_with_default_location
-                   {
-                     SignatureSelectionTypes.actual = Type.literal_string "string";
-                     expected = variable_r;
-                     name = None;
-                     position = 1;
-                   }));
+             (Mismatches
+                [
+                  Mismatch
+                    (Node.create_with_default_location
+                       {
+                         SignatureSelectionTypes.actual = Type.literal_string "string";
+                         expected = variable_r;
+                         name = None;
+                         position = 1;
+                       });
+                ]);
        });
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "int");
 
@@ -547,14 +550,17 @@ let test_unresolved_select context =
          closest_return_annotation = escaped_variable_r;
          reason =
            Some
-             (Mismatch
-                (Node.create_with_default_location
-                   {
-                     SignatureSelectionTypes.actual = Type.list Type.string;
-                     expected = Type.list variable_r;
-                     name = None;
-                     position = 1;
-                   }));
+             (Mismatches
+                [
+                  Mismatch
+                    (Node.create_with_default_location
+                       {
+                         SignatureSelectionTypes.actual = Type.list Type.string;
+                         expected = Type.list variable_r;
+                         name = None;
+                         position = 1;
+                       });
+                ]);
        });
   assert_select_direct
     ~arguments:[]
@@ -833,12 +839,15 @@ let test_resolved_select context =
          closest_return_annotation = Type.integer;
          reason =
            Some
-             (Mismatch
-                {
-                  location = Location.any;
-                  value =
-                    { actual = Type.integer; expected = Type.string; name = None; position = 1 };
-                });
+             (Mismatches
+                [
+                  Mismatch
+                    {
+                      location = Location.any;
+                      value =
+                        { actual = Type.integer; expected = Type.string; name = None; position = 1 };
+                    };
+                ]);
        });
   assert_select
     ~arguments:[{ expression = None; kind = Positional; resolved = Type.literal_integer 1 }]

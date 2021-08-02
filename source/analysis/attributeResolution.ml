@@ -3199,8 +3199,11 @@ class base class_metadata_environment dependency =
               | [] -> Ok extracted
               | not_bounded_tuple :: _ ->
                   Error
-                    (MismatchWithTupleVariadicTypeVariable
-                       { variable = expected; mismatch = NotBoundedTuple not_bounded_tuple })
+                    (Mismatches
+                       [
+                         MismatchWithTupleVariadicTypeVariable
+                           { variable = expected; mismatch = NotBoundedTuple not_bounded_tuple };
+                       ])
             in
             let concatenate extracted =
               let concatenated =
@@ -3216,8 +3219,11 @@ class base class_metadata_environment dependency =
               | Some concatenated -> Ok concatenated
               | None ->
                   Error
-                    (MismatchWithTupleVariadicTypeVariable
-                       { variable = expected; mismatch = CannotConcatenate extracted })
+                    (Mismatches
+                       [
+                         MismatchWithTupleVariadicTypeVariable
+                           { variable = expected; mismatch = CannotConcatenate extracted };
+                       ])
             in
             let solve concatenated =
               let updated_constraints_set =
@@ -3231,8 +3237,11 @@ class base class_metadata_environment dependency =
                 Ok updated_constraints_set
               else
                 Error
-                  (MismatchWithTupleVariadicTypeVariable
-                     { variable = expected; mismatch = ConstraintFailure concatenated })
+                  (Mismatches
+                     [
+                       MismatchWithTupleVariadicTypeVariable
+                         { variable = expected; mismatch = ConstraintFailure concatenated };
+                     ])
             in
             let make_signature_match = function
               | Ok constraints_set -> { signature_match with constraints_set }
@@ -3287,7 +3296,7 @@ class base class_metadata_environment dependency =
                       position;
                     }
                     |> Node.create ~location
-                    |> fun mismatch -> Mismatch mismatch
+                    |> fun mismatch -> Mismatches [Mismatch mismatch]
                   in
                   { reasons with annotation = mismatch :: annotation }
                 in
@@ -3530,9 +3539,16 @@ class base class_metadata_environment dependency =
         let arity_rank = List.length arity in
         let positions, annotation_rank =
           let count_unique (positions, count) = function
-            | Mismatch { Node.value = { position; _ }; _ } when not (Set.mem positions position) ->
-                Set.add positions position, count + 1
-            | Mismatch _ -> positions, count
+            | Mismatches mismatches ->
+                let count_unique_mismatches (positions, count) mismatch =
+                  match mismatch with
+                  | Mismatch { Node.value = { position; _ }; _ }
+                    when not (Set.mem positions position) ->
+                      Set.add positions position, count + 1
+                  | Mismatch _ -> positions, count
+                  | _ -> positions, count + 1
+                in
+                List.fold ~init:(positions, count) mismatches ~f:count_unique_mismatches
             | _ -> positions, count + 1
           in
           List.fold ~init:(Int.Set.empty, 0) ~f:count_unique annotation
@@ -3593,14 +3609,22 @@ class base class_metadata_environment dependency =
                  expect them to fall out in this way (see Mapping.get) *)
               |> Type.Variable.collapse_all_escaped_variable_unions
           in
-          let rev_filter_out_self_argument_errors =
-            let is_not_self_argument = function
-              | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
+          let rev_filter_out_self_argument_errors reasons =
+            let filter_too_many_arguments = function
               (* These would come from methods lacking a self argument called on an instance *)
               | TooManyArguments { expected; _ } -> not (Int.equal expected (-1))
               | _ -> true
             in
-            List.rev_filter ~f:is_not_self_argument
+            let filter_mismatches reason =
+              match reason with
+              | Mismatches mismatches ->
+                  Mismatches
+                    (List.filter mismatches ~f:(function
+                        | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
+                        | _ -> true))
+              | _ -> reason
+            in
+            List.map (List.rev_filter ~f:filter_too_many_arguments reasons) ~f:filter_mismatches
           in
           match
             ( rev_filter_out_self_argument_errors arity,
@@ -3614,9 +3638,8 @@ class base class_metadata_environment dependency =
                 | CallingParameterVariadicTypeVariable -> 1
                 | InvalidKeywordArgument _ -> 0
                 | InvalidVariableArgument _ -> 0
-                | Mismatch { Node.value = { position; _ }; _ } -> 0 - position
+                | Mismatches _ -> -1
                 | MissingArgument _ -> 1
-                | MismatchWithTupleVariadicTypeVariable _ -> 1
                 | MutuallyRecursiveTypeVariables -> 1
                 | ProtocolInstantiation _ -> 1
                 | TooManyArguments _ -> 1
@@ -3627,7 +3650,15 @@ class base class_metadata_environment dependency =
                 if importance reason > importance best_reason then
                   reason
                 else
-                  best_reason
+                  (* Prioritize the mismatch error with the smallest position. Since mismatch errors
+                     are only emitted as single-element lists uptill this point, we only need to
+                     match that case. *)
+                  match best_reason, reason with
+                  | ( Mismatches [Mismatch { Node.value = { position; _ }; _ }],
+                      Mismatches [Mismatch { Node.value = { position = other_position; _ }; _ }] )
+                    ->
+                      if other_position < position then reason else best_reason
+                  | _, _ -> best_reason
               in
               let reason = Some (List.fold ~init:reason ~f:get_most_important reasons) in
               NotFound { closest_return_annotation = instantiated_return_annotation; reason }
