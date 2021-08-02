@@ -233,6 +233,15 @@ let test_subscription _ =
       update_response ["foo.py"];
       update_response ~clock:"fake:clock:1" ~is_fresh_instance:true ["bar.py"];
     ]
+  >>= fun () ->
+  (* Correctly identify cancellation response. *)
+  assert_updates
+    ~should_raise:true
+    ~expected:[]
+    [
+      initial_success_response;
+      Yojson.Safe.Util.combine (update_response ["foo.py"]) (`Assoc ["canceled", `Bool true]);
+    ]
   >>= fun () -> Lwt.return_unit
 
 
