@@ -33,6 +33,14 @@ type mismatch_with_tuple_variadic_type_variable =
   | ConstraintFailure of Type.OrderedTypes.t
 [@@deriving compare, eq, show, sexp, hash]
 
+type mismatch_reason =
+  | Mismatch of mismatch Node.t
+  | MismatchWithTupleVariadicTypeVariable of {
+      variable: Type.OrderedTypes.t;
+      mismatch: mismatch_with_tuple_variadic_type_variable;
+    }
+[@@deriving eq, show, sexp, compare]
+
 type reason =
   | AbstractClassInstantiation of {
       class_name: Reference.t;
@@ -41,11 +49,7 @@ type reason =
   | CallingParameterVariadicTypeVariable
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
-  | Mismatch of mismatch Node.t
-  | MismatchWithTupleVariadicTypeVariable of {
-      variable: Type.OrderedTypes.t;
-      mismatch: mismatch_with_tuple_variadic_type_variable;
-    }
+  | Mismatches of mismatch_reason list
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | ProtocolInstantiation of Reference.t

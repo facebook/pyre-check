@@ -107,90 +107,100 @@ let errors_from_not_found
       ]
   | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
       [Some location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })]
-  | Mismatch mismatch ->
-      let { SignatureSelectionTypes.actual; expected; name; position } = Node.value mismatch in
-      let mismatch, name, position, location =
-        ( Error.create_mismatch ~resolution:global_resolution ~actual ~expected ~covariant:true,
-          name,
-          position,
-          Node.location mismatch )
-      in
-      let kind =
-        let normal = Error.IncompatibleParameterType { name; position; callee; mismatch } in
-        let typed_dictionary_error
-            ~method_name
-            ~position
-            { Type.Record.TypedDictionary.fields; name = typed_dictionary_name }
-          =
-          if
-            Type.TypedDictionary.is_special_mismatch
-              ~class_name:typed_dictionary_name
-              ~method_name
-              ~position
-              ~total:(Type.TypedDictionary.are_fields_total fields)
-          then
-            match actual with
-            | Type.Literal (Type.String (Type.LiteralValue field_name)) ->
-                let required_field_exists =
-                  List.exists
-                    ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
-                      String.equal name field_name && required)
-                    fields
-                in
-                if required_field_exists then
-                  Error.TypedDictionaryInvalidOperation
-                    { typed_dictionary_name; field_name; method_name; mismatch }
-                else
-                  Error.TypedDictionaryKeyNotFound
-                    { typed_dictionary_name; missing_key = field_name }
-            | Type.Primitive "str" ->
-                Error.TypedDictionaryAccessWithNonLiteral
-                  (List.map fields ~f:(fun { name; _ } -> name))
-            | _ -> normal
-          else
-            match method_name, arguments with
-            | ( "__setitem__",
-                Some
-                  ({
-                     AttributeResolution.Argument.expression =
-                       Some { Node.value = String { value = field_name; _ }; _ };
-                     _;
-                   }
-                  :: _) ) ->
-                Error.TypedDictionaryInvalidOperation
-                  { typed_dictionary_name; field_name; method_name; mismatch }
-            | _ -> normal
-        in
-        match self_argument, callee >>| Reference.as_list with
-        | Some self_annotation, Some callee_reference_list
-          when is_operator (List.last_exn callee_reference_list) -> (
-            let is_uninverted = Option.equal Type.equal self_argument original_target in
-            let operator_symbol =
-              if is_uninverted then
-                List.last_exn callee_reference_list |> operator_name_to_symbol
-              else
-                List.last_exn callee_reference_list |> inverse_operator >>= operator_name_to_symbol
+  | Mismatches mismatches ->
+      let convert_to_error mismatch_reason =
+        match mismatch_reason with
+        | SignatureSelectionTypes.Mismatch mismatch ->
+            let { SignatureSelectionTypes.actual; expected; name; position } =
+              Node.value mismatch
             in
-            match operator_symbol, callee_expression >>| Node.value with
-            | Some operator_name, Some (Expression.Name (Attribute { special = true; _ })) ->
-                let left_operand, right_operand =
-                  if is_uninverted then
-                    self_annotation, actual
-                  else
-                    actual, self_annotation
-                in
-                Error.UnsupportedOperand (Binary { operator_name; left_operand; right_operand })
-            | _ -> normal)
-        | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
-            GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
-            >>| typed_dictionary_error ~method_name ~position
-            |> Option.value ~default:normal
-        | _ -> normal
+            let mismatch, name, position, location =
+              ( Error.create_mismatch ~resolution:global_resolution ~actual ~expected ~covariant:true,
+                name,
+                position,
+                Node.location mismatch )
+            in
+            let kind =
+              let normal = Error.IncompatibleParameterType { name; position; callee; mismatch } in
+              let typed_dictionary_error
+                  ~method_name
+                  ~position
+                  { Type.Record.TypedDictionary.fields; name = typed_dictionary_name }
+                =
+                if
+                  Type.TypedDictionary.is_special_mismatch
+                    ~class_name:typed_dictionary_name
+                    ~method_name
+                    ~position
+                    ~total:(Type.TypedDictionary.are_fields_total fields)
+                then
+                  match actual with
+                  | Type.Literal (Type.String (Type.LiteralValue field_name)) ->
+                      let required_field_exists =
+                        List.exists
+                          ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
+                            String.equal name field_name && required)
+                          fields
+                      in
+                      if required_field_exists then
+                        Error.TypedDictionaryInvalidOperation
+                          { typed_dictionary_name; field_name; method_name; mismatch }
+                      else
+                        Error.TypedDictionaryKeyNotFound
+                          { typed_dictionary_name; missing_key = field_name }
+                  | Type.Primitive "str" ->
+                      Error.TypedDictionaryAccessWithNonLiteral
+                        (List.map fields ~f:(fun { name; _ } -> name))
+                  | _ -> normal
+                else
+                  match method_name, arguments with
+                  | ( "__setitem__",
+                      Some
+                        ({
+                           AttributeResolution.Argument.expression =
+                             Some { Node.value = String { value = field_name; _ }; _ };
+                           _;
+                         }
+                        :: _) ) ->
+                      Error.TypedDictionaryInvalidOperation
+                        { typed_dictionary_name; field_name; method_name; mismatch }
+                  | _ -> normal
+              in
+              match self_argument, callee >>| Reference.as_list with
+              | Some self_annotation, Some callee_reference_list
+                when is_operator (List.last_exn callee_reference_list) -> (
+                  let is_uninverted = Option.equal Type.equal self_argument original_target in
+                  let operator_symbol =
+                    if is_uninverted then
+                      List.last_exn callee_reference_list |> operator_name_to_symbol
+                    else
+                      List.last_exn callee_reference_list
+                      |> inverse_operator
+                      >>= operator_name_to_symbol
+                  in
+                  match operator_symbol, callee_expression >>| Node.value with
+                  | Some operator_name, Some (Expression.Name (Attribute { special = true; _ })) ->
+                      let left_operand, right_operand =
+                        if is_uninverted then
+                          self_annotation, actual
+                        else
+                          actual, self_annotation
+                      in
+                      Error.UnsupportedOperand
+                        (Binary { operator_name; left_operand; right_operand })
+                  | _ -> normal)
+              | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
+                  GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
+                  >>| typed_dictionary_error ~method_name ~position
+                  |> Option.value ~default:normal
+              | _ -> normal
+            in
+            [Some location, kind]
+        | MismatchWithTupleVariadicTypeVariable { variable; mismatch } ->
+            [None, Error.InvalidArgument (TupleVariadicVariable { variable; mismatch })]
       in
-      [Some location, kind]
+      List.concat_map mismatches ~f:convert_to_error
   | MissingArgument parameter -> [None, Error.MissingArgument { callee; parameter }]
-  | MismatchWithTupleVariadicTypeVariable { variable; mismatch } ->
-      [None, Error.InvalidArgument (TupleVariadicVariable { variable; mismatch })]
   | MutuallyRecursiveTypeVariables -> [None, Error.MutuallyRecursiveTypeVariables callee]
   | ProtocolInstantiation class_name ->
       [None, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)]
