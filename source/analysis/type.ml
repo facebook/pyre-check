@@ -2567,6 +2567,21 @@ module Callable = struct
     }
 
 
+  let map_parameters_with_result ({ implementation; overloads; _ } as callable) ~f =
+    let for_implementation ({ parameters; _ } as implementation) =
+      Result.map
+        ~f:(fun new_parameters -> { implementation with parameters = new_parameters })
+        (f parameters)
+    in
+    let implementation_result = for_implementation implementation in
+    let overloads_results = overloads |> List.map ~f:for_implementation |> Result.all in
+    Result.combine
+      ~ok:(fun implementation overloads -> { callable with implementation; overloads })
+      ~err:(fun first _ -> first)
+      implementation_result
+      overloads_results
+
+
   let map_annotation ({ implementation; overloads; _ } as callable) ~f =
     let for_implementation ({ annotation; _ } as implementation) =
       { implementation with annotation = f annotation }
@@ -4733,13 +4748,12 @@ end = struct
         | Tuple (Concatenation { prefix; middle = unpackable; suffix }) ->
             replace_unpackable unpackable
             >>| map_tuple ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
-        | Callable callable ->
+        | Callable callable -> (
             let replace_variadic parameters_so_far parameters =
               let expanded_parameters =
                 match parameters with
                 | Callable.Parameter.Variable
-                    (Concatenation
-                      ({ prefix; middle = Variadic variadic; suffix } as concatenation)) ->
+                    (Concatenation ({ prefix; middle = unpackable; suffix } as concatenation)) ->
                     let encode_ordered_types_into_parameters = function
                       | OrderedTypes.Concrete concretes ->
                           let start_index = List.length parameters_so_far in
@@ -4760,20 +4774,41 @@ end = struct
                                  });
                           ]
                     in
-                    replacement variadic
-                    >>| encode_ordered_types_into_parameters
+                    let handle_potential_error = function
+                      | Parametric { name = "pyre_extensions.BroadcastError"; _ } as broadcast_error
+                        ->
+                          Error broadcast_error
+                      | Tuple record -> Ok (encode_ordered_types_into_parameters record)
+                      | other ->
+                          Ok
+                            [
+                              Callable.Parameter.PositionalOnly
+                                {
+                                  index = List.length parameters_so_far;
+                                  annotation = other;
+                                  default = false;
+                                };
+                            ]
+                    in
+                    replace_unpackable unpackable
+                    >>| handle_potential_error
                     |> Option.value
-                         ~default:[Callable.Parameter.Variable (Concatenation concatenation)]
-                | parameter -> [parameter]
+                         ~default:(Ok [Callable.Parameter.Variable (Concatenation concatenation)])
+                | parameter -> Ok [parameter]
               in
-              List.rev_append expanded_parameters parameters_so_far
+              expanded_parameters
+              |> Result.map ~f:(fun result -> List.rev_append result parameters_so_far)
             in
-            let map = function
+            let map_defined = function
               | Defined parameters ->
-                  Defined (List.fold parameters ~init:[] ~f:replace_variadic |> List.rev)
-              | parameters -> parameters
+                  Result.map
+                    ~f:(fun result -> Defined (List.rev result))
+                    (List.fold_result ~init:[] ~f:replace_variadic parameters)
+              | parameters -> Ok parameters
             in
-            Some (Callable (Callable.map_parameters callable ~f:map))
+            match Callable.map_parameters_with_result ~f:map_defined callable with
+            | Ok result_callable -> Some (Callable result_callable)
+            | Error broadcast_error -> Some broadcast_error)
         | TypeOperation (Compose (Concatenation { prefix; middle; suffix })) -> (
             replace_unpackable middle
             >>| map_tuple ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
