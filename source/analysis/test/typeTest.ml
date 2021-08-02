@@ -2910,6 +2910,141 @@ let test_replace_all _ =
     "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[2], \
      typing_extensions.Literal[2]], typing.Tuple[typing_extensions.Literal[5]]]";
 
+  (* Callable *)
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      typing.Callable[
+        [
+          pyre_extensions.Unpack[
+            pyre_extensions.Broadcast[
+              typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
+              typing.Tuple[pyre_extensions.Unpack[Ts]],
+            ]
+          ]
+        ],
+        int
+      ]
+    |}
+    {|
+      typing.Callable[
+        [typing_extensions.Literal[2], typing_extensions.Literal[5]],
+        int
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concatenation
+    {|
+      typing.Callable[
+        [
+          pyre_extensions.Unpack[
+            pyre_extensions.Broadcast[
+              typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
+              typing.Tuple[pyre_extensions.Unpack[Ts]],
+            ]
+          ]
+        ],
+        int
+      ]
+    |}
+    {|
+      typing.Callable[
+        [pyre_extensions.Unpack[typing.Tuple[int, ...]]],
+        int
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      typing.Callable[
+        [
+          pyre_extensions.Unpack[
+            pyre_extensions.Broadcast[
+              typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+              typing.Tuple[pyre_extensions.Unpack[Ts]],
+            ]
+          ]
+        ],
+        int
+      ]
+    |}
+    {|
+      pyre_extensions.BroadcastError[
+        typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+        typing.Tuple[typing_extensions.Literal[5]]
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      typing.Callable[
+        [
+          Named(
+            x,
+            pyre_extensions.Broadcast[
+              typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+              typing.Tuple[pyre_extensions.Unpack[Ts]],
+            ])
+        ],
+        int
+      ]
+    |}
+    {|
+      typing.Callable[
+        [Named(
+          x,
+          pyre_extensions.BroadcastError[
+            typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+            typing.Tuple[typing_extensions.Literal[5]]
+          ]
+        )],
+        int
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      typing.Callable[
+        [
+          pyre_extensions.Broadcast[
+            typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+            typing.Tuple[pyre_extensions.Unpack[Ts]],
+          ]
+        ],
+        int
+      ]
+    |}
+    {|
+      typing.Callable[
+        [pyre_extensions.BroadcastError[
+          typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+          typing.Tuple[typing_extensions.Literal[5]]
+        ]],
+        int
+      ]
+    |};
+  let replace_with_concrete = function
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
+        Some (Type.OrderedTypes.Concrete [Type.literal_integer 5; Type.string])
+    | _ -> None
+  in
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+      typing.Callable[
+        [
+          pyre_extensions.Unpack[
+            pyre_extensions.Broadcast[
+              typing.Tuple[int, ...],
+              typing.Tuple[pyre_extensions.Unpack[Ts]],
+            ]
+          ]
+        ],
+        int
+      ]
+    |}
+    "typing.Callable[[$bottom], int]";
+
   let parse_string string =
     let aliases ?replace_unbound_parameters_with_any:_ = function
       | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))

@@ -2826,6 +2826,44 @@ let test_check_broadcast context =
        together.";
       "Revealed type [-1]: Revealed type for `res` is `typing.Any`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast, Unpack, TypeVarTuple
+      from typing import Tuple, Generic, TypeVar, overload, Union, Any
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+      Rs = TypeVarTuple("Rs")
+
+      class Foo(Generic[T, *Ts]):
+        def bar(self: Foo[T, *Rs]) -> Foo[T, *Broadcast[Tuple[*Rs], Tuple[L[1], L[2]]], str]: ...
+
+        @overload
+        def foo(self, *other: *Broadcast[Tuple[L[3], T], Tuple[*Ts]]) -> None: ...
+        @overload
+        def foo(self, *other: *Broadcast[Tuple[L[2], T], Tuple[*Ts]]) -> None: ...
+        def foo(self, *other: Any) -> None:
+          return
+
+      x: Foo[int, L[3], L[2], L[1]]
+      reveal_type(x.bar())
+
+      y: Foo[L[3], L[3], L[3]]
+      reveal_type(y.foo)
+    |}
+    [
+      "Incompatible overload [43]: The implementation of `Foo.foo` does not accept all possible \
+       arguments of overload defined on line `14`.";
+      "Incompatible overload [43]: The implementation of `Foo.foo` does not accept all possible \
+       arguments of overload defined on line `16`.";
+      "Revealed type [-1]: Revealed type for `x.bar()` is `Foo[int, typing_extensions.Literal[3], \
+       typing_extensions.Literal[2], typing_extensions.Literal[2], str]`.";
+      "Revealed type [-1]: Revealed type for `y.foo` is \
+       `pyre_extensions.BroadcastError[Tuple[typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]], Tuple[typing_extensions.Literal[3], \
+       typing_extensions.Literal[3]]]`.";
+    ];
   ()
 
 
