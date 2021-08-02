@@ -67,6 +67,32 @@ class IsPreciseTensorDimensionTest(unittest.TestCase):
         self.assert_is_precise_dimension("pyre_extensions.IntExpression[3N1 + (N2//3)]")
         self.assert_is_precise_dimension("pyre_extensions.IntExpression[5 + N2]")
 
+        self.assert_is_precise_dimension(
+            "*Broadcast[ \
+                typing.Tuple[ \
+                    typing_extensions.Literal[2], \
+                    typing_extensions.Literal[1] \
+                ], \
+                typing.Tuple[ \
+                    typing_extensions.Literal[1], \
+                    typing_extensions.Literal[2] \
+                ] \
+            ]"
+        )
+
+        self.assert_is_precise_dimension(
+            "*Broadcast[ \
+                Tuple[*Ts], \
+                Broadcast[ \
+                    typing.Tuple[ \
+                        typing_extensions.Literal[1], \
+                        typing_extensions.Literal[2] \
+                    ], \
+                    Tuple[*Ts2] \
+                ] \
+            ]"
+        )
+
     def test_is_not_precise_dimension(self) -> None:
         self.assert_is_not_precise_dimension("Variable[N]")
 
@@ -76,6 +102,39 @@ class IsPreciseTensorDimensionTest(unittest.TestCase):
         self.assert_is_not_precise_dimension("*Tuple[Any]")
 
         self.assert_is_not_precise_dimension("int")
+
+        self.assert_is_not_precise_dimension(
+            "Broadcast[*name, Tuple[typing_extensions.Literal[1], \
+             typing_extensions.Literal[2]]]"
+        )
+
+        self.assert_is_not_precise_dimension(
+            "*Broadcast[ \
+                *name, \
+                Tuple[ \
+                    typing_extensions.Literal[1], \
+                    typing_extensions.Literal[2] \
+                ], \
+                *name2 \
+            ]"
+        )
+
+        self.assert_is_not_precise_dimension(
+            "*Broadcast[ \
+                Tuple[ \
+                    typing_extensions.Literal[1], \
+                    typing_extensions.Literal[2] \
+                ], \
+                typing_extensions.Literal[2] \
+            ]"
+        )
+
+        self.assert_is_not_precise_dimension(
+            "*Broadcast[ \
+                *name, \
+                Tuple[*Ts] \
+            ]"
+        )
 
 
 class IsTensorTest(unittest.TestCase):
@@ -162,6 +221,8 @@ class IsPreciseTensorTest(unittest.TestCase):
                     "*Ts",
                     "Variable[N3 (bound to int)]",
                     "Variable[N4 (bound to int)]",
+                    "*Tuple[*Broadcast[Tuple[typing_extensions.Literal[1], \
+                     typing_extensions.Literal[2]], Tuple[*Ts]]]",
                 ],
             )
         )
