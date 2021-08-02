@@ -375,6 +375,8 @@ let test_check_typed_dictionaries context =
     [
       "Incompatible parameter type [6]: Expected `str` for 1st parameter `name` "
       ^ "to call `__init__` but got `int`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd parameter `year` to call `__init__` "
+      ^ "but got `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -635,6 +637,8 @@ let test_check_typed_dictionaries context =
     [
       "Incompatible parameter type [6]: Expected `str` for 1st parameter `name` to call "
       ^ "`TypedDictionary.update` but got `int`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd parameter `year` to call "
+      ^ "`TypedDictionary.update` but got `str`.";
       "Unexpected keyword [28]: Unexpected keyword argument `yar` to call "
       ^ "`TypedDictionary.update`.";
     ];

@@ -3650,17 +3650,27 @@ class base class_metadata_environment dependency =
                 if importance reason > importance best_reason then
                   reason
                 else
-                  (* Prioritize the mismatch error with the smallest position. Since mismatch errors
-                     are only emitted as single-element lists uptill this point, we only need to
-                     match that case. *)
                   match best_reason, reason with
-                  | ( Mismatches [Mismatch { Node.value = { position; _ }; _ }],
-                      Mismatches [Mismatch { Node.value = { position = other_position; _ }; _ }] )
-                    ->
-                      if other_position < position then reason else best_reason
+                  | Mismatches mismatches, Mismatches other_mismatches ->
+                      Mismatches (List.append mismatches other_mismatches)
                   | _, _ -> best_reason
               in
-              let reason = Some (List.fold ~init:reason ~f:get_most_important reasons) in
+              let sort_mismatches reason =
+                match reason with
+                | Mismatches mismatches ->
+                    let compare_mismatches mismatch other_mismatch =
+                      match mismatch, other_mismatch with
+                      | ( Mismatch { Node.value = { position; _ }; _ },
+                          Mismatch { Node.value = { position = other_position; _ }; _ } ) ->
+                          position - other_position
+                      | _, _ -> 0
+                    in
+                    Mismatches (List.sort mismatches ~compare:compare_mismatches)
+                | _ -> reason
+              in
+              let reason =
+                Some (List.fold ~init:reason ~f:get_most_important reasons |> sort_mismatches)
+              in
               NotFound { closest_return_annotation = instantiated_return_annotation; reason }
         in
         let { implementation = { annotation = default_return_annotation; _ }; _ } = callable in
