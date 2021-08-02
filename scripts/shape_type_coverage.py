@@ -94,24 +94,19 @@ def _is_literal_integer(type_name: str) -> bool:
     )
 
 
-def _is_unpacked_precise_tuple(type_name: str) -> bool:
-    """A legal unpacked tuple will be a `Tuple` of precise dimensions, or
-    *name, where name is just a simple identifier.
-    There's not enough information here to tell whether what comes after
-    the * is _really_ a TypeVarTuple, but anything that's not should be
+def _is_precise_unpacked(type_name: str) -> bool:
+    """A precise unpacked type can be either an unpacked
+    simple identifier (presumably a TypeVarTuple), or an unpacked
+    single precise tuple.
+    There's not enough information here to tell whether the name
+     is _really_ a TypeVarTuple, but anything that's not should be
     a type error, and thus not given to us by Pyre."""
     if len(type_name) == 0 or type_name[0] != "*":
         return False
 
     parametric = _parametric_type(type_name[1:])
 
-    return parametric is None or (
-        parametric.name == "Tuple"
-        and all(
-            _is_precise_tensor_dimension(dimension)
-            for dimension in parametric.parameters
-        )
-    )
+    return parametric is None or _is_precise_tuple(type_name[1:])
 
 
 def _is_int_expression(type_name: str) -> bool:
@@ -124,11 +119,30 @@ def _is_int_expression(type_name: str) -> bool:
     )
 
 
+def _is_precise_tuple(type_name: str) -> bool:
+    """A legal precise tuple will be a `Tuple` of precise dimensions,
+    or a `Broadcast` of precise tuples."""
+    parametric = _parametric_type(type_name)
+
+    return parametric is not None and (
+        (parametric.name == "Tuple" or parametric.name == "typing.Tuple")
+        and all(
+            _is_precise_tensor_dimension(dimension)
+            for dimension in parametric.parameters
+        )
+        or (
+            parametric.name == "Broadcast"
+            and len(parametric.parameters) == 2
+            and all(_is_precise_tuple(parameter) for parameter in parametric.parameters)
+        )
+    )
+
+
 def _is_precise_tensor_dimension(dimension: str) -> bool:
     return (
         _is_literal_integer(dimension)
         or _is_int_variable(dimension)
-        or _is_unpacked_precise_tuple(dimension)
+        or _is_precise_unpacked(dimension)
         or _is_int_expression(dimension)
     )
 
