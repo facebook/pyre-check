@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 
 
 TEXT: str = "text"
@@ -93,6 +93,18 @@ class CheckArguments:
     output: str = TEXT
     sequential: bool = False
     show_error_traces: bool = False
+
+
+@dataclass(frozen=True)
+class InferArguments:
+    annotate_attributes: bool = False
+    annotate_from_existing_stubs: bool = False
+    debug_infer: bool = False
+    interprocedural: bool = False
+    no_future_annotations: bool = False
+    paths_to_modify: Optional[Set[Path]] = None
+    print_only: bool = False
+    read_stdin: bool = False
 
 
 @dataclass(frozen=True)
