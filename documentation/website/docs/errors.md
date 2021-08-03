@@ -1444,7 +1444,7 @@ class SomeDuck:
 ### 53: Missing Annotation For Captured Variables
 
 Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
-From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
+From a nested function's perspective, a variable defined in an nesting function behaves similarly to a global variable. As with global variables, an explicit annotation is required if strict mode is turned on:
 
 ```python
 def outer_function0() -> int:

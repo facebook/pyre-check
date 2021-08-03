@@ -560,7 +560,8 @@ class Infer(Reporting):
                 --in-place argument"
             )
         self._check_working_directory(
-            original_directory=original_directory, configuration=configuration
+            original_directory=original_directory,
+            configuration=configuration,
         )
         super(Infer, self).__init__(
             command_arguments,
@@ -587,7 +588,8 @@ class Infer(Reporting):
 
     @staticmethod
     def _check_working_directory(
-        original_directory: str, configuration: Configuration
+        original_directory: str,
+        configuration: Configuration,
     ) -> None:
         project_root = configuration.project_root
         local_root = configuration.local_root
