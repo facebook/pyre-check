@@ -858,25 +858,45 @@ def infer(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return run_pyre_command(
-        commands.Infer(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            paths_to_modify={Path(path) for path in paths_to_modify},
-            print_only=print_only,
-            in_place=in_place,
-            annotate_from_existing_stubs=annotate_from_existing_stubs,
-            debug_infer=debug_infer,
-            read_stdin=read_stdin,
-            annotate_attributes=annotate_attributes,
-            use_future_annotations=not no_future_annotations,
-            dequalify=dequalify,
-            interprocedural=interprocedural,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+
+    # TODO: Change the condition to `configuration.use_command_v2` once it is ready
+    if False:
+        modify_paths = (
+            None if not in_place else {Path(path) for path in paths_to_modify}
+        )
+        return v2.infer.run(
+            configuration,
+            command_arguments.InferArguments(
+                annotate_attributes=annotate_attributes,
+                annotate_from_existing_stubs=annotate_from_existing_stubs,
+                debug_infer=debug_infer,
+                interprocedural=interprocedural,
+                no_future_annotations=no_future_annotations,
+                paths_to_modify=modify_paths,
+                print_only=print_only,
+                read_stdin=read_stdin,
+            ),
+        )
+    else:
+        return run_pyre_command(
+            commands.Infer(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                paths_to_modify={Path(path) for path in paths_to_modify},
+                print_only=print_only,
+                in_place=in_place,
+                annotate_from_existing_stubs=annotate_from_existing_stubs,
+                debug_infer=debug_infer,
+                read_stdin=read_stdin,
+                annotate_attributes=annotate_attributes,
+                use_future_annotations=not no_future_annotations,
+                dequalify=dequalify,
+                interprocedural=interprocedural,
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
