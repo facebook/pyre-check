@@ -186,3 +186,24 @@ class StatisticsCollectorTest(unittest.TestCase):
                 "line_count": 10,
             },
         )
+        # Ensure globals with literal values are considered annotated.
+        self.assert_annotation_count_equal(
+            """
+            x: int = 1
+            y = 2
+            z = foo
+            """,
+            {
+                "return_count": 0,
+                "annotated_return_count": 0,
+                "globals_count": 3,
+                "annotated_globals_count": 2,
+                "parameter_count": 0,
+                "annotated_parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
+        )
