@@ -28,7 +28,6 @@ class CommandArguments:
     logging_sections: Optional[str] = None
     log_identifier: Optional[str] = None
     logger: Optional[str] = None
-    formatter: Optional[str] = None
     targets: List[str] = field(default_factory=list)
     use_buck_builder: Optional[bool] = None
     use_buck_source_database: Optional[bool] = None
