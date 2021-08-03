@@ -379,7 +379,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--log-identifier", type=str, default=None, hidden=True)
 @click.option("--dot-pyre-directory", type=str, hidden=True)
 @click.option("--logger", type=str, hidden=True)
-@click.option("--formatter", type=str, hidden=True)
 @click.option(
     "--target",
     type=str,
@@ -493,7 +492,6 @@ def pyre(
     log_identifier: str | None,
     dot_pyre_directory: str | None,
     logger: str | None,
-    formatter: str | None,
     target: Iterable[str],
     use_buck_builder: bool | None,
     buck_mode: str | None,
@@ -533,7 +531,6 @@ def pyre(
         logging_sections=logging_sections,
         log_identifier=log_identifier,
         logger=logger,
-        formatter=formatter,
         targets=list(target),
         use_buck_builder=use_buck_builder,
         use_buck_source_database=use_buck_source_database,

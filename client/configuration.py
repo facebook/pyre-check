@@ -390,7 +390,6 @@ class PartialConfiguration:
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
-    formatter: Optional[str] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -448,7 +447,6 @@ class PartialConfiguration:
             excludes=arguments.exclude,
             extensions=[],
             file_hash=None,
-            formatter=arguments.formatter,
             ignore_all_errors=[],
             ignore_infer=[],
             isolation_prefix=arguments.isolation_prefix,
@@ -627,7 +625,6 @@ class PartialConfiguration:
                     for json in ensure_list(configuration_json, "extensions")
                 ],
                 file_hash=file_hash,
-                formatter=ensure_option_type(configuration_json, "formatter", str),
                 ignore_all_errors=ensure_string_list(
                     configuration_json, "ignore_all_errors"
                 ),
@@ -700,9 +697,6 @@ class PartialConfiguration:
         buck_builder_binary = self.buck_builder_binary
         if buck_builder_binary is not None:
             buck_builder_binary = expand_relative_path(root, buck_builder_binary)
-        formatter = self.formatter
-        if formatter is not None:
-            formatter = expand_relative_path(root, formatter)
         logger = self.logger
         if logger is not None:
             logger = expand_relative_path(root, logger)
@@ -728,7 +722,6 @@ class PartialConfiguration:
             excludes=self.excludes,
             extensions=self.extensions,
             file_hash=self.file_hash,
-            formatter=formatter,
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
@@ -797,7 +790,6 @@ def merge_partial_configurations(
         excludes=prepend_base(base.excludes, override.excludes),
         extensions=prepend_base(base.extensions, override.extensions),
         file_hash=overwrite_base(base.file_hash, override.file_hash),
-        formatter=overwrite_base(base.formatter, override.formatter),
         ignore_all_errors=prepend_base(
             base.ignore_all_errors, override.ignore_all_errors
         ),
@@ -864,7 +856,6 @@ class Configuration:
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
-    formatter: Optional[str] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -914,7 +905,6 @@ class Configuration:
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             file_hash=partial_configuration.file_hash,
-            formatter=partial_configuration.formatter,
             ignore_all_errors=partial_configuration.ignore_all_errors,
             ignore_infer=partial_configuration.ignore_infer,
             isolation_prefix=partial_configuration.isolation_prefix,
@@ -965,7 +955,6 @@ class Configuration:
         binary = self.binary
         buck_builder_binary = self.buck_builder_binary
         buck_mode = self.buck_mode
-        formatter = self.formatter
         isolation_prefix = self.isolation_prefix
         logger = self.logger
         number_of_workers = self.number_of_workers
@@ -991,7 +980,6 @@ class Configuration:
             "do_not_ignore_all_errors_in": list(self.do_not_ignore_all_errors_in),
             "excludes": list(self.excludes),
             "extensions": list(self.extensions),
-            **({"formatter": formatter} if formatter is not None else {}),
             "ignore_all_errors": list(self.ignore_all_errors),
             "ignore_infer": list(self.ignore_infer),
             **(
@@ -1074,7 +1062,6 @@ class Configuration:
             excludes=self.excludes,
             extensions=self.extensions,
             file_hash=self.file_hash,
-            formatter=self.formatter,
             ignore_all_errors=self.ignore_all_errors,
             ignore_infer=self.ignore_infer,
             isolation_prefix=self.isolation_prefix,

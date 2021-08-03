@@ -719,7 +719,6 @@ class Infer(Reporting):
             module.write_stubs(type_directory=type_directory)
 
     def _annotate_in_place(self) -> None:
-        formatter = self._configuration.formatter
         type_directory = self._type_directory
         debug_infer = self._debug_infer
         number_workers = self._configuration.get_number_of_workers()
@@ -743,12 +742,6 @@ class Infer(Reporting):
             for _ in pool.imap_unordered(AnnotateModuleInPlace.run_task, tasks):
                 pass
 
-        if formatter:
-            subprocess.call(
-                formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-            self._suppress_errors()
-
     def _should_annotate_in_place(self, full_code_path: Path) -> bool:
         if self._paths_to_modify == set():
             return True
@@ -756,9 +749,3 @@ class Infer(Reporting):
             path in self._paths_to_modify
             for path in (full_code_path, *full_code_path.parents)
         )
-
-    def _suppress_errors(self) -> None:
-        result = self._call_client(command="check")
-        errors = self._get_errors(result)
-        error_json = json.dumps([error.to_json() for error in errors])
-        subprocess.run("pyre-upgrade fixme", input=error_json)
