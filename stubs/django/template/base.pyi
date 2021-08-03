@@ -1,2 +1,4 @@
+from typing import Union
+
 class Template:
-    pass
+  def __init__(self, source: Union[Template, str], **kwargs) -> None: ...
