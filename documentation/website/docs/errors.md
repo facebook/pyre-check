@@ -1411,7 +1411,7 @@ If you specify more than one local mode, Pyre will error and ask you to remove a
 
 Python [Protocols](https://www.python.org/dev/peps/pep-0544/) provide a way to statically check "duck typing", what many languages would refer to as `interfaces`.
 
-Because protocols specify only an interface, they should not include [private fields and methods](https://docs.python.org/3/tutorial/classes.html#private-variables), which may not be accessed outside of the class where they are defines. Pyre will complain about the following:
+Because protocols specify only an interface, they should not include [private fields and methods](https://docs.python.org/3/tutorial/classes.html#private-variables), which cannot not be accessed outside of the class where they are defined (including in subclasses). Pyre will complain about the following:
 ```python
 from typing import Protocol
 
@@ -1426,7 +1426,7 @@ class SomeDuck:
         return "quack"
 ```
 
-Usually if you are attempting to do this you have some reason not to make the protocol property public, but you can use a protected (single-leading-underscore) property instead:
+To signal a non-public part of an interface, use a protected field or method (single leading underscore), which is accessible by classes implementing the interface:
 ```python
 from typing import Protocol
 
