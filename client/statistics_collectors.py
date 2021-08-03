@@ -124,10 +124,19 @@ class AnnotationCountCollector(StatisticsCollector):
     def visit_Assign(self, node: cst.Assign) -> None:
         if self.in_function_definition():
             return
+        implicitly_annotated = False
+        if isinstance(node.value, cst.BaseNumber) or isinstance(
+            node.value, cst.BaseString
+        ):
+            implicitly_annotated = True
         if self.in_class_definition():
             self.attribute_count += 1
+            if implicitly_annotated:
+                self.annotated_attribute_count += 1
         else:
             self.globals_count += 1
+            if implicitly_annotated:
+                self.annotated_globals_count += 1
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
         if self.in_function_definition():
