@@ -10,7 +10,6 @@ import logging
 import multiprocessing
 import re
 import shutil
-import subprocess
 import sys
 from abc import ABC
 from collections import defaultdict
