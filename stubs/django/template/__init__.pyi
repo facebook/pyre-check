@@ -5,8 +5,11 @@
 
 from typing import Any, Mapping
 
+from .base import Template
+from .engine import Engine
+
 class TemplateSyntaxError(Exception):
     pass
 
 class Context:
-    def _init(self, dict: Mapping[str, Any]) -> None: ...
+    def __init__(self, dict_: Mapping[str, Any]) -> None: ...
