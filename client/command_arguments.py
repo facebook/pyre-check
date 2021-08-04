@@ -100,11 +100,16 @@ class InferArguments:
     annotate_attributes: bool = False
     annotate_from_existing_stubs: bool = False
     debug_infer: bool = False
+    enable_memory_profiling: bool = False
+    enable_profiling: bool = False
     interprocedural: bool = False
+    log_identifier: Optional[str] = None
+    logging_sections: Optional[str] = None
     no_future_annotations: bool = False
     paths_to_modify: Optional[Set[Path]] = None
     print_only: bool = False
     read_stdin: bool = False
+    sequential: bool = False
 
 
 @dataclass(frozen=True)
