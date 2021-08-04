@@ -144,14 +144,14 @@ def get_source_path(
             isolation_prefix=configuration.isolation_prefix,
         )
 
-    if source_directories is None and targets is not None:
+    if source_directories is not None and targets is not None:
         raise configuration_module.InvalidConfiguration(
-            "`source_directory` and `targets` are mutually exclusive"
+            "`source_directories` and `targets` are mutually exclusive"
         )
 
     raise configuration_module.InvalidConfiguration(
         "Cannot find any source files to analyze. "
-        + "Either `source_directory` or `targets` must be specified."
+        + "Either `source_directories` or `targets` must be specified."
     )
 
 
