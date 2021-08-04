@@ -32,7 +32,7 @@ Inductive unary_operator :=
 
 (** * Expressions
     More will be added later. See
-    https://github.com/facebook/pyre-check/blob/master/ast/expression.mli#L216
+    https://github.com/facebook/pyre-check/blob/main/ast/expression.mli#L216
 *)
 Inductive t: Set :=
   | BooleanOperator: forall (left: t) (op: boolean_operator) (right: t), t
@@ -84,7 +84,7 @@ Proof.
 induction l as [ | hd tl hi]; simpl in *; [ now idtac | ].
 now rewrite hi.
 Qed.
- 
+
 Coercion to_list: tlist >-> list.
 End ListHelpers.
 (* end hide *)
