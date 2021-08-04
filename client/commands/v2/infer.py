@@ -8,11 +8,13 @@ import dataclasses
 import enum
 import logging
 import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from ... import commands, command_arguments, configuration as configuration_module
-from . import remote_logging, backend_arguments
+from . import remote_logging, backend_arguments, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -220,6 +222,74 @@ def _check_working_directory(
     )
 
 
+def _run_infer_command_get_output(command: Sequence[str]) -> str:
+    with backend_arguments.backend_log_file(prefix="pyre_infer") as log_file:
+        with start.background_logging(Path(log_file.name)):
+            result = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=log_file.file,
+                universal_newlines=True,
+            )
+            return_code = result.returncode
+
+            # Interpretation of the return code needs to be kept in sync with
+            # `command/newInferCommand.ml`.
+            if return_code == 0:
+                return result.stdout
+            elif return_code == 1:
+                raise commands.ClientException(
+                    message="Pyre encountered an internal failure",
+                    exit_code=commands.ExitCode.FAILURE,
+                )
+            elif return_code == 2:
+                raise commands.ClientException(
+                    message="Pyre encountered a failure within buck.",
+                    exit_code=commands.ExitCode.BUCK_INTERNAL_ERROR,
+                )
+            elif return_code == 3:
+                raise commands.ClientException(
+                    message="Pyre encountered an error when building the buck targets.",
+                    exit_code=commands.ExitCode.BUCK_USER_ERROR,
+                )
+            else:
+                raise commands.ClientException(
+                    message=(
+                        "Infer command exited with unexpected return code: "
+                        f"{return_code}."
+                    ),
+                    exit_code=commands.ExitCode.FAILURE,
+                )
+
+
+def _get_infer_command_output(
+    configuration: configuration_module.Configuration,
+    infer_arguments: command_arguments.InferArguments,
+) -> str:
+    binary_location = configuration.get_binary_respecting_override()
+    if binary_location is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot locate a Pyre binary to run."
+        )
+
+    with create_infer_arguments_and_cleanup(
+        configuration, infer_arguments
+    ) as arguments:
+        with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
+            infer_command = [binary_location, "newinfer", str(argument_file_path)]
+            return _run_infer_command_get_output(command=infer_command)
+
+
+def _load_output(
+    configuration: configuration_module.Configuration,
+    infer_arguments: command_arguments.InferArguments,
+) -> str:
+    if infer_arguments.read_stdin:
+        return sys.stdin.read()
+    else:
+        return _get_infer_command_output(configuration, infer_arguments)
+
+
 def run_infer(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
@@ -231,7 +301,10 @@ def run_infer(
         global_root=Path(configuration.project_root),
         relative_local_root=configuration.relative_local_root,
     )
-    LOG.warning("Coming soon...")
+
+    raw_output = _load_output(configuration, infer_arguments)
+    LOG.warning(f"{raw_output}")
+    LOG.warning("WORK IN PROGRESS...")
     return commands.ExitCode.SUCCESS
 
 
@@ -242,6 +315,8 @@ def run(
 ) -> commands.ExitCode:
     try:
         return run_infer(configuration, infer_arguments)
+    except commands.ClientException:
+        raise
     except Exception as error:
         raise commands.ClientException(
             f"Exception occured during Pyre infer: {error}"
