@@ -204,3 +204,17 @@ def temporary_argument_file(arguments: SerializableArguments) -> Iterator[Path]:
     ) as argument_file:
         _write_argument_file(argument_file, arguments)
         yield Path(argument_file.name)
+
+
+@dataclasses.dataclass
+class LogFile:
+    name: str
+    file: IO[str]
+
+
+@contextlib.contextmanager
+def backend_log_file(prefix: str) -> Iterator[LogFile]:
+    with tempfile.NamedTemporaryFile(
+        mode="w", prefix=prefix, suffix=".log", delete=True
+    ) as argument_file:
+        yield LogFile(name=argument_file.name, file=argument_file.file)
