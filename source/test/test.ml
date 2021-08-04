@@ -942,6 +942,20 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       );
     ]
   in
+  let torch_stubs =
+    [
+      ( "torch/__init__.pyi",
+        {|
+          class Tensor: ...
+
+          def zeros( *args: object, **kwargs: object) -> Tensor: ...
+        |}
+      );
+      "torch/nn/__init__.pyi", {|
+          class Module: ...
+        |};
+    ]
+  in
   [
     ( "sys.py",
       {|
@@ -2600,6 +2614,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
   ]
   @ sqlalchemy_stubs
   @ sqlalchemy_1_4_stubs
+  @ torch_stubs
 
 
 let mock_signature =
