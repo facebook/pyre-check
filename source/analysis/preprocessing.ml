@@ -3924,6 +3924,7 @@ let preprocess_phase1 source =
   |> expand_named_tuples
   |> expand_new_types
   |> inline_six_metaclass
+  |> expand_pytorch_register_buffer
   |> populate_nesting_defines
   |> populate_captures
 
