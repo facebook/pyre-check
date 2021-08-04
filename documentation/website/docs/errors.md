@@ -1230,53 +1230,53 @@ def f(x: Union[int, float, str]) -> Union[int, float, str]:
 
 ### 45: Invalid Class Instantiation
 
-In typed Python, certain classes are intended to represent abstract interfaces. These classes are not meant to be instantiated directly at runtime, and therefore Pyre will error on any attempt to perform such instantiations.
-
-Currently, Pyre will recognize a given class `C` as an interface class, if one of the following statement about `C` is true:
+In typed Python, some classes that represent abstract interfaces may not be directly instantiated. Pyre considers a class `C` abstract, and will error on invalid instantiation if you try to construct an instance directly in either of the following cases:
 
 1. `C` contains one or more abstract methods that are left not overridden. Abstract methods are defined as methods that are decorated with [`@abc.abstractmethod`](https://docs.python.org/3/library/abc.html#abc.abstractmethod).
+
+  For example, here `Derived0` is abstract because it does not override `bar`, but `Derived1` may be instantiated:
+  ```python
+  import abc
+  from typing import Protocol
+
+  class Base(abc.ABC):
+      @abc.abstractmethod
+      def foo(self) -> None:
+          raise NotImplementedError
+      @abc.abstractmethod
+      def bar(self) -> str:
+          raise NotImplementedError
+
+  class Derived0(Base):
+      def foo(self) -> None:
+          print(self.bar())
+
+  class Derived1(Derived0):
+      def bar(self) -> str:
+          return "bar"
+
+  def test0() -> None:
+      base = Base()  # Error! Class `Base` contains 2 abstract methods and therefore cannot be instantiated.
+      derived0 = Derived0()  # Error! Class `Derived0` contains 1 abstract method `bar` and therefore cannot be instantiated.
+      derived1 = Derived1()  # OK
+  ```
+
 2. `C` directly inherits from [`typing.Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol).
 
-To fix the error, use interface classes as type annotations only and do not instantiate any object from them. If object creation is a must, you can define subclasses of those interface classes, provide concrete implementations for all abstract methods (for case 1) or required interfaces (for case 2), and instantiate those subclasses instead.
+  For example, here `MyProtocol` is abstract because it inherits directly from `typing.Protocol`, but `MyClass` (which implements the protocol interface) may be instantiated:
+  ```python
+  class MyProtocol(Protocol):
+      def baz(self, x: int) -> int:
+          ...
 
-```python
-import abc
-from typing import Protocol
+  class MyClass:
+      def baz(self, x: int) -> int:
+          return x
 
-class Base(abc.ABC):
-    @abc.abstractmethod
-    def foo(self) -> None:
-        raise NotImplementedError
-    @abc.abstractmethod
-    def bar(self) -> str:
-        raise NotImplementedError
-
-class Derived0(Base):
-    def foo(self) -> None:
-        print(self.bar())
-
-class Derived1(Derived0):
-    def bar(self) -> str:
-        return "bar"
-
-def test0() -> None:
-    base = Base()  # Error! Class `Base` contains 2 abstract methods and therefore cannot be instantiated.
-    derived0 = Derived0()  # Error! Class `Derived0` contains 1 abstract method `bar` and therefore cannot be instantiated.
-    derived1 = Derived1()  # OK
-
-
-class MyProtocol(Protocol):
-    def baz(self, x: int) -> int:
-        ...
-
-class MyClass:
-    def baz(self, x: int) -> int:
-        return x
-
-def test1() -> None:
-    object0 = MyProtocol()  # Error! Class `MyProtocol` cannot be instantiated.
-    object1 = MyClass()  # OK
-```
+  def test1() -> None:
+      object0 = MyProtocol()  # Error! Class `MyProtocol` cannot be instantiated.
+      object1 = MyClass()  # OK
+  ```
 
 ### 46: Invalid Type Variance
 
