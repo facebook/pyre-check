@@ -64,6 +64,8 @@ val expand_starred_type_variable_tuple : Source.t -> Source.t
 
 val expand_starred_variadic_in_annotation_expression : Expression.t -> Expression.t
 
+val expand_pytorch_register_buffer : Source.t -> Source.t
+
 (* List of function definitions in a source. include_toplevels copies all definitions into a
    toplevel definition. *)
 val defines
