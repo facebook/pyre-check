@@ -6,7 +6,7 @@ Require Pyre.Typ.
 (** * Statements
 
   More will be added later on. See
-  https://github.com/facebook/pyre-check/blob/master/ast/statement.mli#L331
+  https://github.com/facebook/pyre-check/blob/main/ast/statement.mli#L331
 *)
 Inductive t : Set :=
   | Assign: forall (target: Lvalue.t)
@@ -25,13 +25,13 @@ Inductive t : Set :=
   | Nonlocal: list string -> t
   | Pass: t
   | While: forall (test: Expression.t) (body orelse: t), t
-  | Seq : forall (st next : t), t 
+  | Seq : forall (st next : t), t
   | Return: forall (ret: Expression.t), t
 .
 
 Fixpoint to_seq (statements: list t) : t :=
-  match statements with 
-  | nil => Pass 
-  | hd :: nil => hd 
+  match statements with
+  | nil => Pass
+  | hd :: nil => hd
   | hd :: tl => Seq hd (to_seq tl)
   end.

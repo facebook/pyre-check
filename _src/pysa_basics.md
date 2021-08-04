@@ -66,7 +66,7 @@ file is a JSON document which stores definitions for *sources*, *sinks*, *featur
 and *rules* (discussed below). The `.pysa` files are model files (also discussed
 below) which annotate your code with the *sources*, *sinks*, and *features* defined in
 your `taint.config` file. Examples of these files can be found in the [Pyre
-repository](https://github.com/facebook/pyre-check/tree/master/stubs/taint).
+repository](https://github.com/facebook/pyre-check/tree/main/stubs/taint).
 
 These files live in the directory configured by `taint_models_path` in your
 `.pyre_configuration` file. Any `.pysa` file found in this folder will be parsed
