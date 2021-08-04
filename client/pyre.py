@@ -869,12 +869,17 @@ def infer(
             command_arguments.InferArguments(
                 annotate_attributes=annotate_attributes,
                 annotate_from_existing_stubs=annotate_from_existing_stubs,
+                enable_memory_profiling=command_argument.enable_memory_profiling,
+                enable_profiling=command_argument.enable_profiling,
                 debug_infer=debug_infer,
                 interprocedural=interprocedural,
+                log_identifier=command_argument.log_identifier,
+                logging_sections=command_argument.logging_sections,
                 no_future_annotations=no_future_annotations,
                 paths_to_modify=modify_paths,
                 print_only=print_only,
                 read_stdin=read_stdin,
+                sequential=command_argument.sequential,
             ),
         )
     else:

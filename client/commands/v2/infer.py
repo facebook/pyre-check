@@ -3,12 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import contextlib
 import dataclasses
 import enum
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from ... import commands, command_arguments, configuration as configuration_module
 from . import remote_logging, backend_arguments
@@ -105,6 +106,86 @@ class Arguments:
                 else {"memory_profiling_output": str(self.memory_profiling_output)}
             ),
         }
+
+
+def create_infer_arguments(
+    configuration: configuration_module.Configuration,
+    infer_arguments: command_arguments.InferArguments,
+) -> Arguments:
+    """
+    Translate client configurations to backend check configurations.
+
+    This API is not pure since it needs to access filesystem to filter out
+    nonexistent directories. It is idempotent though, since it does not alter
+    any filesystem state.
+    """
+    source_paths = backend_arguments.get_source_path_for_check(configuration)
+
+    infer_mode = (
+        InferMode.INTERPROCEDURAL
+        if infer_arguments.interprocedural
+        else InferMode.LOCAL
+    )
+
+    profiling_output = (
+        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        if infer_arguments.enable_profiling
+        else None
+    )
+    memory_profiling_output = (
+        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        if infer_arguments.enable_memory_profiling
+        else None
+    )
+
+    logger = configuration.logger
+    remote_logging = (
+        backend_arguments.RemoteLogging(
+            logger=logger, identifier=infer_arguments.log_identifier or ""
+        )
+        if logger is not None
+        else None
+    )
+
+    return Arguments(
+        log_path=configuration.log_directory,
+        global_root=configuration.project_root,
+        checked_directory_allowlist=list(
+            source_paths.get_checked_directory_allowlist()
+        ),
+        checked_directory_blocklist=(
+            configuration.get_existent_ignore_all_errors_paths()
+        ),
+        debug=infer_arguments.debug_infer,
+        excludes=configuration.excludes,
+        extensions=configuration.get_valid_extension_suffixes(),
+        ignore_infer=configuration.get_existent_ignore_infer_paths(),
+        infer_mode=infer_mode,
+        relative_local_root=configuration.relative_local_root,
+        memory_profiling_output=memory_profiling_output,
+        number_of_workers=configuration.get_number_of_workers(),
+        parallel=not infer_arguments.sequential,
+        profiling_output=profiling_output,
+        python_version=configuration.get_python_version(),
+        shared_memory=configuration.shared_memory,
+        remote_logging=remote_logging,
+        search_paths=configuration.expand_and_get_existent_search_paths(),
+        source_paths=source_paths,
+    )
+
+
+@contextlib.contextmanager
+def create_infer_arguments_and_cleanup(
+    configuration: configuration_module.Configuration,
+    infer_arguments: command_arguments.InferArguments,
+) -> Iterator[Arguments]:
+    arguments = create_infer_arguments(configuration, infer_arguments)
+    try:
+        yield arguments
+    finally:
+        # It is safe to clean up source paths after infer command since
+        # any created artifact directory won't be reused by other commands.
+        arguments.source_paths.cleanup()
 
 
 def _check_arguments(infer_arguments: command_arguments.InferArguments) -> None:
