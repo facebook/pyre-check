@@ -17,7 +17,7 @@ module type Transformer = sig
 
   val expression : t -> Expression.t -> Expression.t
 
-  val transform_children : t -> Statement.t -> bool
+  val transform_children : t -> Statement.t -> t * bool
 
   val statement : t -> Statement.t -> t * Statement.t list
 end
@@ -33,7 +33,7 @@ module Identity : sig
 
   val expression : 't -> Expression.t -> Expression.t
 
-  val transform_children : 't -> Statement.t -> bool
+  val transform_children : 't -> Statement.t -> 't * bool
 
   val statement : 't -> Statement.t -> 't * Statement.t list
 end = struct
@@ -41,7 +41,7 @@ end = struct
 
   let expression _ expression = expression
 
-  let transform_children _ _ = true
+  let transform_children state _ = state, true
 
   let statement state statement = state, [statement]
 end
@@ -359,8 +359,12 @@ module Make (Transformer : Transformer) = struct
         | Statement.YieldFrom expression -> Statement.YieldFrom (transform_expression expression)
       in
       let statement =
-        if Transformer.transform_children !state statement then
-          { statement with Node.value = transform_children (Node.value statement) }
+        let parent_state, should_transform_children =
+          Transformer.transform_children !state statement
+        in
+        if should_transform_children then (
+          state := parent_state;
+          { statement with Node.value = transform_children (Node.value statement) })
         else
           statement
       in
@@ -447,7 +451,7 @@ let transform_expressions ~transform statement =
 
     let expression _ { Node.value; location } = { Node.value = transform value; location }
 
-    let transform_children _ _ = true
+    let transform_children state _ = state, true
 
     let statement state statement = state, [statement]
   end)

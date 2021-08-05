@@ -12,7 +12,7 @@ module type Transformer = sig
 
   val expression : t -> Expression.t -> Expression.t
 
-  val transform_children : t -> Statement.t -> bool
+  val transform_children : t -> Statement.t -> t * bool
 
   val statement : t -> Statement.t -> t * Statement.t list
 end
@@ -28,7 +28,7 @@ module Identity : sig
 
   val expression : 't -> Expression.t -> Expression.t
 
-  val transform_children : 't -> Statement.t -> bool
+  val transform_children : 't -> Statement.t -> 't * bool
 
   val statement : 't -> Statement.t -> 't * Statement.t list
 end

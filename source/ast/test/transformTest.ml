@@ -39,7 +39,7 @@ end = struct
   include Transform.Identity
   include ModifyingTransformer
 
-  let transform_children _ _ = false
+  let transform_children state _ = state, false
 end
 
 module ModifyingTransform = Transform.Make (ModifyingTransformer)
@@ -168,7 +168,7 @@ end = struct
   include Transform.Identity
   include ExpandingTransformer
 
-  let transform_children _ _ = false
+  let transform_children state _ = state, false
 end
 
 module ExpandingTransform = Transform.Make (ExpandingTransformer)
@@ -276,7 +276,7 @@ let test_expansion_with_stop _ =
   end = struct
     include ExpandingTransformer
 
-    let transform_children _ _ = false
+    let transform_children state _ = state, false
   end
   in
   let module StoppingExpandingTransform = Transform.Make (StoppingExpandingTransformer) in
@@ -344,7 +344,7 @@ let test_double_count _ =
     include Transform.Identity
     include DoubleCounterTransformer
 
-    let transform_children _ _ = false
+    let transform_children state _ = state, false
   end
   in
   let module DoubleCounterTransform = Transform.Make (DoubleCounterTransformer) in
@@ -415,6 +415,75 @@ let test_double_count _ =
           7
     |}
     1
+
+
+let test_conditional_count _ =
+  let module NestedCounterTransformer : sig
+    type t = {
+      is_nested: bool;
+      statement_count: int;
+    }
+
+    include Transform.Transformer with type t := t
+  end = struct
+    type t = {
+      is_nested: bool;
+      statement_count: int;
+    }
+
+    let transform_expression_children _ _ = false
+
+    let transform_children ({ is_nested; _ } as state) statement =
+      match Node.value statement with
+      | Statement.Class _ -> { state with is_nested = true }, true
+      | _ -> state, is_nested
+
+
+    let expression _ expression = expression
+
+    let statement { statement_count; is_nested } statement =
+      let is_nested, statement_count =
+        (* Reset `is_nested` to false after leaving a Class *)
+        match Node.value statement with
+        | Statement.Class _ -> false, statement_count
+        | _ -> is_nested, if is_nested then statement_count + 1 else statement_count
+      in
+      { is_nested; statement_count }, [statement]
+  end
+  in
+  let module NestedCounterTransform = Transform.Make (NestedCounterTransformer) in
+  let assert_conditional_count source expected_statement_count =
+    let statement_count { NestedCounterTransformer.statement_count; _ } = statement_count in
+    let state, modified =
+      let { NestedCounterTransform.state; source } =
+        NestedCounterTransform.transform { statement_count = 0; is_nested = false } (parse source)
+      in
+      state, source
+    in
+    assert_source_equal (parse source) modified;
+    assert_equal expected_statement_count (statement_count state)
+  in
+  (* Test ability to count only statements nested in classes. *)
+  assert_conditional_count {|
+      1.0
+      2.0
+    |} 0;
+  assert_conditional_count {|
+      1.0
+      class Foo:
+        2.0
+    |} 1;
+  assert_conditional_count
+    {|
+      1.0
+      class Foo:
+        2.0
+        def method(self) -> None:
+          3.0
+      4.0
+    |}
+    3;
+  ()
 
 
 let test_statement_transformer _ =
@@ -581,6 +650,7 @@ let () =
          "expansion" >:: test_expansion;
          "expansion_with_stop" >:: test_expansion_with_stop;
          "statement_double_counter" >:: test_double_count;
+         "statement_conditional_counter" >:: test_conditional_count;
          "statement_transformer" >:: test_statement_transformer;
          "transform_expression" >:: test_transform_expression;
          "sanitize_statement" >:: test_sanitize_statement;

@@ -836,7 +836,7 @@ let inline_decorators ~decorator_bodies source =
 
     let transform_expression_children _ _ = true
 
-    let transform_children _ _ = true
+    let transform_children state _ = state, true
 
     let expression _ expression = expression
 
