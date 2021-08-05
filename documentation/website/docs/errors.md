@@ -1378,18 +1378,8 @@ def f(x: int) -> None:
 ```
 
 ### 49: Unsafe Cast
-Pyre supports `cast` to force the type checker to accept a given type for your expression, no matter what it would otherwise infer that type to be. This is a good escape hatch but can also hide type inconsistencies and introduce unsoundness. For example:
 
-```python
-from typing import cast
-
-def foo(x: int) -> str:
-    y = cast(str, x)
-    return y # No type error, even though this is unsound.
-```
-
-It is safe to broaden the inferred type of a variable. In other words, casting an expression to a more general type than the type checker thinks it has is sound. If you wish to broaden the inferred type without running the risk of introducing type inconsistencies, you can use `pyre_extensions.safe_cast`. This will warn if the type you are casting to is not greater than or equal to the inferred type of the expression.
-
+To allow "safe" casts that preserve type soundness, you can use `pyre_extensions.safe_cast`. This will verify that the type you are casting to is broader than the type of the expression. In cases where this is not the case, pyre will produce an Unsafe Cast error. For example:
 ```python
 from pyre_extensions import safe_cast
 
@@ -1399,6 +1389,14 @@ def foo(x: int) -> str:
     return z # Invalid return type error
 ```
 
+Some context on this: `pyre_extensions.safe_cast` is a type-safe alternative to `typing.cast`. The `typing.cast` function forces type checkers to accept a type for an expression that otherwise would not be valid, which is sometimes useful but also can hide clear type errors, for example:
+```python
+from typing import cast
+
+def foo(x: int) -> str:
+    y = cast(str, x)
+    return y # No type error, even though this is unsound.
+```
 
 ### 51: Unused Local Mode
 Pyre only supports two modes of type checking, [unsafe](gradual_typing.md#gradual-typing) and [strict](gradual_typing.md#strict-mode). By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration.md#configuration-files).
