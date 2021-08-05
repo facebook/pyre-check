@@ -9,3 +9,6 @@ def django.template.base.Template.__init__(self, source: TaintSink[ServerSideTem
 
 #mako
 def mako.template.Template.__init__(self, text: TaintSink[ServerSideTemplateInjection], **kwargs): ...
+
+#chameleon
+def chameleon.template.BaseTemplate.__init__(self, body: TaintSink[ServerSideTemplateInjection], **kwargs): ...
