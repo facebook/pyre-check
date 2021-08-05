@@ -12,3 +12,6 @@ def mako.template.Template.__init__(self, text: TaintSink[ServerSideTemplateInje
 
 #chameleon
 def chameleon.template.BaseTemplate.__init__(self, body: TaintSink[ServerSideTemplateInjection], **kwargs): ...
+
+#genshi
+def genshi.template.base.Template.__init__(self, source: TaintSink[ServerSideTemplateInjection]): ...
