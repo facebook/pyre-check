@@ -18,3 +18,6 @@ def genshi.template.base.Template.__init__(self, source: TaintSink[ServerSideTem
 
 #trender
 def trender.trender.TRender.__init__(self, content_or_file: TaintSink[ServerSideTemplateInjection]): ...
+
+#cheetah
+def Cheetah.Template.Template.__init__(self, source: TaintSink[ServerSideTemplateInjection]): ...
