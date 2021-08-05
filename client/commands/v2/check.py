@@ -9,9 +9,8 @@ import json
 import logging
 import os
 import subprocess
-import tempfile
 from pathlib import Path
-from typing import Sequence, Optional, Dict, Any, Iterator, IO, List
+from typing import Sequence, Optional, Dict, Any, Iterator, List
 
 from ... import (
     commands,
