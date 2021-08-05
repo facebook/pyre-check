@@ -1399,11 +1399,12 @@ def foo(x: int) -> str:
 ```
 
 ### 51: Unused Local Mode
-Pyre only supports two modes of type checking, [unsafe](gradual_typing.md#gradual-typing) and [strict](gradual_typing.md#strict-mode). By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration.md#configuration-files).
 
-You can also change the type checking mode of a single file by adding a local mode in the form of a `# pyre-strict` or `# pyre-unsafe` comment on its own line to the file header. This will ensure that file checks under the specified mode regardless of the default.
+This error will be thrown if you specify more than one local mode, by having multiple line comments of the form `# pyre-strict` or `# pyre-unsafe` in the header. Pyre will ask you to remove all but one local mode declaration if you have more than one because the mode needs to be unambiguous.
 
-If you specify more than one local mode, Pyre will error and ask you to remove all but one.
+Context: Pyre  supports two modes of type checking, [unsafe](gradual_typing.md#gradual-typing) and [strict](gradual_typing.md#strict-mode).
+- By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration.md#configuration-files).
+- In addition, you can set the type checking mode of a module to differ from the default for the project by adding a comment in the form `# pyre-strict` or `# pyre-unsafe` comment on its own line to the file header.
 
 ### 52: Private Protocol Property
 
