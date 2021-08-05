@@ -24,3 +24,6 @@ def Cheetah.Template.Template.__init__(self, source: TaintSink[ServerSideTemplat
 
 #airspeed
 def airspeed.Template.__init__(self, content: TaintSink[ServerSideTemplateInjection]): ...
+
+#chevron
+def chevron.renderer.render(template: TaintSink[ServerSideTemplateInjection]): ...
