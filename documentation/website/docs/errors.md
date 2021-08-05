@@ -1363,7 +1363,7 @@ class ChildB(Parent):
 
 ### 48: Invalid Exception
 
-In python, you can only raise objects that derive from `BaseException` (it's more common to subtype `Exception` or one of the standard library-defined errors like `ValueError`), attempting to raise another object such as a bare string will result in a `TypeError`. As a result, pyre will flag code like this:
+In python, you can only raise objects that derive from `BaseException` (it's more common to subtype `Exception` or one of the standard library-defined errors like `ValueError`). Attempting to raise another object such as a bare string will result in a `TypeError`. As a result, pyre will flag code like this:
 ```python
 def f(x: int) -> None:
     if x > 1:
