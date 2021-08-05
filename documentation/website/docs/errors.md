@@ -1070,29 +1070,29 @@ When defining a new class, Pyre will error if the base class given is not a vali
       ...
   ```
 
-Pyre does not support dynamic expressions as base classes, even if they may evaluate to a valid class at runtime. This is because the type checker relies on building up a valid class hierarchy before it can resolve types in the Python it is analyzing. On the other hand, type aliases are equivalent to types and are acceptable as base classes.
+  Pyre does not support dynamic expressions as base classes, even if they may evaluate to a valid class at runtime. This is because the type checker relies on building up a valid class hierarchy before it can resolve types in the Python it is analyzing. On the other hand, type aliases are equivalent to types and are acceptable as base classes.
 
 
 3. You are defining a typed dictionary that does not inherit from another typed dictionary.
 
-```python
-from typing import TypedDict
+  ```python
+  from typing import TypedDict
 
-class NonTypedDict:
-    ...
+  class NonTypedDict:
+      ...
 
-class Movie(TypedDict):
-    name: str
-    year: int
+  class Movie(TypedDict):
+      name: str
+      year: int
 
-class BookBasedMovie(Movie): # No error
-    based_on: str
+  class BookBasedMovie(Movie): # No error
+      based_on: str
 
-class BookBasedMovie(NonTypedDict): # Invalid inheritance error
-    based_on: str
-```
+  class BookBasedMovie(NonTypedDict): # Invalid inheritance error
+      based_on: str
+  ```
 
-If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
+  If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
 
 ### 40: Invalid Override
 Pyre will error when methods in a child class override those in a parent class inconsistently.
