@@ -1070,29 +1070,29 @@ When defining a new class, Pyre will error if the base class given is not a vali
       ...
   ```
 
-Pyre does not support dynamic expressions as base classes, even if they may evaluate to a valid class at runtime. This is because the type checker relies on building up a valid class hierarchy before it can resolve types in the Python it is analyzing. On the other hand, type aliases are equivalent to types and are acceptable as base classes.
+  Pyre does not support dynamic expressions as base classes, even if they may evaluate to a valid class at runtime. This is because the type checker relies on building up a valid class hierarchy before it can resolve types in the Python it is analyzing. On the other hand, type aliases are equivalent to types and are acceptable as base classes.
 
 
 3. You are defining a typed dictionary that does not inherit from another typed dictionary.
 
-```python
-from typing import TypedDict
+  ```python
+  from typing import TypedDict
 
-class NonTypedDict:
-    ...
+  class NonTypedDict:
+      ...
 
-class Movie(TypedDict):
-    name: str
-    year: int
+  class Movie(TypedDict):
+      name: str
+      year: int
 
-class BookBasedMovie(Movie): # No error
-    based_on: str
+  class BookBasedMovie(Movie): # No error
+      based_on: str
 
-class BookBasedMovie(NonTypedDict): # Invalid inheritance error
-    based_on: str
-```
+  class BookBasedMovie(NonTypedDict): # Invalid inheritance error
+      based_on: str
+  ```
 
-If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
+  If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
 
 ### 40: Invalid Override
 Pyre will error when methods in a child class override those in a parent class inconsistently.
@@ -1363,7 +1363,7 @@ class ChildB(Parent):
 
 ### 48: Invalid Exception
 
-In python, you can only raise objects that derive from `BaseException` (it's more common to subtype `Exception` or one of the standard library-defined errors like `ValueError`), attempting to raise another object such as a bare string will result in a `TypeError`. As a result, pyre will flag code like this:
+In python, you can only raise objects that derive from `BaseException` (it's more common to subtype `Exception` or one of the standard library-defined errors like `ValueError`). Attempting to raise another object such as a bare string will result in a `TypeError`. As a result, pyre will flag code like this:
 ```python
 def f(x: int) -> None:
     if x > 1:
@@ -1378,18 +1378,8 @@ def f(x: int) -> None:
 ```
 
 ### 49: Unsafe Cast
-Pyre supports `cast` to force the type checker to accept a given type for your expression, no matter what it would otherwise infer that type to be. This is a good escape hatch but can also hide type inconsistencies and introduce unsoundness. For example:
 
-```python
-from typing import cast
-
-def foo(x: int) -> str:
-    y = cast(str, x)
-    return y # No type error, even though this is unsound.
-```
-
-It is safe to broaden the inferred type of a variable. In other words, casting an expression to a more general type than the type checker thinks it has is sound. If you wish to broaden the inferred type without running the risk of introducing type inconsistencies, you can use `pyre_extensions.safe_cast`. This will warn if the type you are casting to is not greater than or equal to the inferred type of the expression.
-
+To allow "safe" casts that preserve type soundness, you can use `pyre_extensions.safe_cast`. This will verify that the type you are casting to is broader than the type of the expression. In cases where this is not the case, pyre will produce an Unsafe Cast error. For example:
 ```python
 from pyre_extensions import safe_cast
 
@@ -1399,13 +1389,22 @@ def foo(x: int) -> str:
     return z # Invalid return type error
 ```
 
+Some context on this: `pyre_extensions.safe_cast` is a type-safe alternative to `typing.cast`. The `typing.cast` function forces type checkers to accept a type for an expression that otherwise would not be valid, which is sometimes useful but also can hide clear type errors, for example:
+```python
+from typing import cast
+
+def foo(x: int) -> str:
+    y = cast(str, x)
+    return y # No type error, even though this is unsound.
+```
 
 ### 51: Unused Local Mode
-Pyre only supports two modes of type checking, [unsafe](gradual_typing.md#gradual-typing) and [strict](gradual_typing.md#strict-mode). By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration.md#configuration-files).
 
-You can also change the type checking mode of a single file by adding a local mode in the form of a `# pyre-strict` or `# pyre-unsafe` comment on its own line to the file header. This will ensure that file checks under the specified mode regardless of the default.
+This error will be thrown if you specify more than one local mode, by having multiple line comments of the form `# pyre-strict` or `# pyre-unsafe` in the header. Pyre will ask you to remove all but one local mode declaration if you have more than one because the mode needs to be unambiguous.
 
-If you specify more than one local mode, Pyre will error and ask you to remove all but one.
+Context: Pyre  supports two modes of type checking, [unsafe](gradual_typing.md#gradual-typing) and [strict](gradual_typing.md#strict-mode).
+- By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration.md#configuration-files).
+- In addition, you can set the type checking mode of a module to differ from the default for the project by adding a comment in the form `# pyre-strict` or `# pyre-unsafe` comment on its own line to the file header.
 
 ### 52: Private Protocol Property
 
