@@ -15,3 +15,6 @@ def chameleon.template.BaseTemplate.__init__(self, body: TaintSink[ServerSideTem
 
 #genshi
 def genshi.template.base.Template.__init__(self, source: TaintSink[ServerSideTemplateInjection]): ...
+
+#trender
+def trender.trender.TRender.__init__(self, content_or_file: TaintSink[ServerSideTemplateInjection]): ...
