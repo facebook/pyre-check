@@ -4127,19 +4127,19 @@ module State (Context : Context) = struct
                       | _ -> Type.Top, false
                     in
                     let is_undefined_attribute parent =
-                      (* TODO(T64156088): This ought to be done in a much more principled way, by
-                         running signature select against the particular type *)
-                      (* Check if __setattr__ method is defined to accept value of type `Any` *)
-                      let is_setattr_any_defined =
+                      (* TODO(T64156088): To catch errors against the implicit call to a custom
+                         definition of `__setattr__`, we should run signature select against the
+                         value type. *)
+                      let is_getattr_defined =
                         let attribute =
                           match Type.resolve_class parent with
                           | Some [{ instantiated; class_name; _ }] ->
                               GlobalResolution.attribute_from_class_name
                                 class_name
                                 ~accessed_through_class:false
-                                ~transitive:false
+                                ~transitive:true
                                 ~resolution:global_resolution
-                                ~name:"__setattr__"
+                                ~name:"__getattr__"
                                 ~instantiated
                           | _ -> None
                         in
@@ -4152,33 +4152,14 @@ module State (Context : Context) = struct
                                 {
                                   name = "BoundMethod";
                                   parameters =
-                                    [
-                                      Single
-                                        (Type.Callable
-                                          {
-                                            implementation =
-                                              {
-                                                parameters =
-                                                  Defined (_ :: _ :: value_parameter :: _);
-                                                _;
-                                              };
-                                            _;
-                                          });
-                                      _;
-                                    ];
+                                    [Single (Callable { implementation = { annotation; _ }; _ }); _];
                                 }
-                            | Type.Callable
-                                {
-                                  implementation =
-                                    { parameters = Defined (_ :: value_parameter :: _); _ };
-                                  _;
-                                } ->
-                                Type.Callable.Parameter.annotation value_parameter
-                                |> Option.value_map ~default:false ~f:Type.is_any
+                            | Type.Callable { implementation = { annotation; _ }; _ } ->
+                                Type.is_any annotation
                             | _ -> false)
                         | _ -> false
                       in
-                      not is_setattr_any_defined
+                      not is_getattr_defined
                     in
                     let is_global =
                       match name with
