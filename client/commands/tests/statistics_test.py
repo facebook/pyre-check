@@ -169,7 +169,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
             """,
             {
                 "annotated_return_count": 0,
-                "annotated_globals_count": 1,
+                "annotated_globals_count": 2,
                 "annotated_parameter_count": 0,
                 "return_count": 0,
                 "globals_count": 2,
