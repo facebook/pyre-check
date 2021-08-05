@@ -121,7 +121,7 @@ let transform_annotations ~transform_annotation_expression source =
 
     let transform_expression_children _ _ = true
 
-    let transform_children _ _ = true
+    let transform_children state _ = state, true
 
     let statement _ ({ Node.value; _ } as statement) =
       let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
@@ -3403,7 +3403,7 @@ let replace_union_shorthand source =
 
     let transform_expression_children _ _ = true
 
-    let transform_children _ _ = true
+    let transform_children state _ = state, true
 
     let transform_shorthand_union_expression =
       let rec transform_expression ({ Node.value; location } as expression) =
