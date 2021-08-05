@@ -21,3 +21,6 @@ def trender.trender.TRender.__init__(self, content_or_file: TaintSink[ServerSide
 
 #cheetah
 def Cheetah.Template.Template.__init__(self, source: TaintSink[ServerSideTemplateInjection]): ...
+
+#airspeed
+def airspeed.Template.__init__(self, content: TaintSink[ServerSideTemplateInjection]): ...
