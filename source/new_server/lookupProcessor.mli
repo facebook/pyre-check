@@ -13,7 +13,7 @@ type error_reason =
   | FileNotFound
 
 type types_by_path = {
-  path: PyrePath.t;
+  path: string;
   types_by_location: ((Location.t * Type.t) list, error_reason) Core.Result.t;
 }
 
@@ -25,5 +25,5 @@ val find_all_annotations_batch
   :  environment:TypeEnvironment.t ->
   build_system:BuildSystem.t ->
   configuration:Configuration.Analysis.t ->
-  paths:PyrePath.t list ->
+  string list ->
   types_by_path list

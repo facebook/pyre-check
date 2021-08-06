@@ -63,7 +63,7 @@ module Response = struct
     [@@deriving sexp, compare, to_yojson]
 
     type types_at_path = {
-      path: PyrePath.t;
+      path: string;
       types: type_at_location list;
     }
     [@@deriving sexp, compare, to_yojson]
@@ -512,10 +512,9 @@ let rec process_request ~environment ~build_system ~configuration request =
             | LookupProcessor.FileNotFound -> " (file not found)"
           in
           Format.asprintf
-            "%s%s`%a`%s"
+            "%s%s`%s`%s"
             sofar
             (if String.is_empty sofar then "" else ", ")
-            PyrePath.pp
             path
             (print_reason error_reason))
         errors
@@ -719,16 +718,8 @@ let rec process_request ~environment ~build_system ~configuration request =
         let annotation = Resolution.resolve_expression_to_type resolution expression in
         Single (Type annotation)
     | TypesInFiles paths ->
-        let paths =
-          let { Configuration.Analysis.local_root = root; _ } = configuration in
-          List.map ~f:(fun path -> Path.create_relative ~root ~relative:path) paths
-        in
         let annotations =
-          LookupProcessor.find_all_annotations_batch
-            ~environment
-            ~build_system
-            ~configuration
-            ~paths
+          LookupProcessor.find_all_annotations_batch ~environment ~build_system ~configuration paths
         in
         let create_result { LookupProcessor.path; types_by_location } =
           match types_by_location with
