@@ -897,6 +897,42 @@ let test_handle_query_basic context =
   Lwt.return_unit
 
 
+let test_handle_types_query_with_build_system context =
+  let custom_source_root =
+    bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+  in
+  let build_system_initializer =
+    let initialize () =
+      let lookup_artifact _ =
+        [Path.create_relative ~root:custom_source_root ~relative:"redirected.py"]
+      in
+      Lwt.return (BuildSystem.create_for_testing ~lookup_artifact ())
+    in
+    let load () = failwith "saved state loading is not supported" in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
+  in
+  let test_types_query client =
+    let open Lwt.Infix in
+    Client.send_request client (Request.Query "types('original.py')")
+    >>= fun actual_response ->
+    let expected_response =
+      Response.Query
+        Query.Response.(Single (Base.TypesByPath [{ Base.path = "original.py"; types = [] }]))
+      |> Response.to_yojson
+      |> Yojson.Safe.to_string
+    in
+    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
+    Lwt.return_unit
+  in
+  ScratchProject.setup
+    ~context
+    ~include_helper_builtins:false
+    ~build_system_initializer
+    ~custom_source_root
+    ["original.py", "x: int = 42"; "redirected.py", ""]
+  |> ScratchProject.test_server_with ~f:test_types_query
+
+
 let test_handle_query_pysa context =
   let queries_and_expected_responses =
     [
@@ -1272,6 +1308,8 @@ let () =
   >::: [
          "parse_query" >:: test_parse_query;
          "handle_query_basic" >:: OUnitLwt.lwt_wrapper test_handle_query_basic;
+         "handle_types_query_with_build_system"
+         >:: OUnitLwt.lwt_wrapper test_handle_types_query_with_build_system;
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
          "inline_decorators" >:: OUnitLwt.lwt_wrapper test_inline_decorators;
        ]

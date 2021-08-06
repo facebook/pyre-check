@@ -37,6 +37,7 @@ module ScratchProject : sig
     ?external_sources:(string * string) list ->
     ?include_typeshed_stubs:bool ->
     ?include_helper_builtins:bool ->
+    ?custom_source_root:Pyre.Path.t ->
     ?watchman:Watchman.Raw.t ->
     ?build_system_initializer:BuildSystem.Initializer.t ->
     (* A list of test sources specified in the form of (relative_path, content) *)
