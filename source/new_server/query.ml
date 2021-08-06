@@ -724,7 +724,11 @@ let rec process_request ~environment ~build_system ~configuration request =
           List.map ~f:(fun path -> Path.create_relative ~root ~relative:path) paths
         in
         let annotations =
-          LookupProcessor.find_all_annotations_batch ~environment ~configuration ~paths
+          LookupProcessor.find_all_annotations_batch
+            ~environment
+            ~build_system
+            ~configuration
+            ~paths
         in
         let create_result { LookupProcessor.path; types_by_location } =
           match types_by_location with
