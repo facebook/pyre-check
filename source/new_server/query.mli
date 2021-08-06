@@ -56,7 +56,7 @@ module Response : sig
     [@@deriving sexp, compare, to_yojson]
 
     type types_at_path = {
-      path: PyrePath.t;
+      path: string;
       types: type_at_location list;
     }
     [@@deriving sexp, compare, to_yojson]

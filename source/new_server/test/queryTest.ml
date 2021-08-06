@@ -374,12 +374,12 @@ let test_handle_query_basic context =
         a = 42
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -434,12 +434,12 @@ let test_handle_query_basic context =
         return x
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -492,12 +492,12 @@ let test_handle_query_basic context =
         y = 3
      |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    2, 0, 2, 1, Type.integer;
@@ -516,12 +516,12 @@ let test_handle_query_basic context =
          x = 1
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -554,12 +554,12 @@ let test_handle_query_basic context =
           y = 1
      |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -597,12 +597,12 @@ let test_handle_query_basic context =
             y = 2
       |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -636,12 +636,12 @@ let test_handle_query_basic context =
         y = 2
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    2, 5, 2, 11, Type.Any;
@@ -659,12 +659,12 @@ let test_handle_query_basic context =
         y = 1
    |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    2, 6, 2, 15, Type.bool;
@@ -685,12 +685,12 @@ let test_handle_query_basic context =
          return x
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -735,12 +735,12 @@ let test_handle_query_basic context =
         pass
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -780,12 +780,12 @@ let test_handle_query_basic context =
          x = 1
      |}
     ~query:"types('test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    {

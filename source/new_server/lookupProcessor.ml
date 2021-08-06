@@ -8,18 +8,19 @@
 open Core
 open Ast
 open Analysis
+module Path = PyrePath
 
 type error_reason =
   | StubShadowing
   | FileNotFound
 
 type types_by_path = {
-  path: PyrePath.t;
+  path: string;
   types_by_location: ((Location.t * Type.t) list, error_reason) Result.t;
 }
 
 type lookup = {
-  path: PyrePath.t;
+  path: string;
   lookup: (Lookup.t, error_reason) Result.t;
 }
 
@@ -32,8 +33,12 @@ let get_lookups ~configuration ~build_system:_ ~environment paths =
     { path; lookup = Result.Error error_reason }
   in
   let generate_lookup_for_path path =
+    let full_path =
+      let { Configuration.Analysis.local_root = root; _ } = configuration in
+      Path.create_relative ~root ~relative:path
+    in
     let module_tracker = TypeEnvironment.module_tracker environment in
-    match ModuleTracker.lookup_path ~configuration module_tracker path with
+    match ModuleTracker.lookup_path ~configuration module_tracker full_path with
     | ModuleTracker.PathLookup.Found source_path ->
         generate_lookup_for_existent_path (path, source_path)
     | ModuleTracker.PathLookup.ShadowedBy _ ->
@@ -43,7 +48,7 @@ let get_lookups ~configuration ~build_system:_ ~environment paths =
   List.map paths ~f:generate_lookup_for_path
 
 
-let find_all_annotations_batch ~environment ~build_system ~configuration ~paths =
+let find_all_annotations_batch ~environment ~build_system ~configuration paths =
   let get_annotations { path; lookup; _ } =
     {
       path;
