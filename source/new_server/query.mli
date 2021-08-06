@@ -135,6 +135,7 @@ val parse_request : string -> (Request.t, string) Core.Result.t
 (* TODO (T82533515): `environment` should really be typed as `TypeEnvironment.ReadOnly.t`. *)
 val process_request
   :  environment:Analysis.TypeEnvironment.t ->
+  build_system:BuildSystem.t ->
   configuration:Configuration.Analysis.t ->
   Request.t ->
   Response.t
@@ -143,6 +144,7 @@ val process_request
 (* TODO (T82533515): `environment` should really be typed as `TypeEnvironment.ReadOnly.t`. *)
 val parse_and_process_request
   :  environment:Analysis.TypeEnvironment.t ->
+  build_system:BuildSystem.t ->
   configuration:Configuration.Analysis.t ->
   string ->
   Response.t

@@ -441,7 +441,7 @@ module InlineDecorators = struct
           (Format.asprintf "Could not find function `%s`" (Reference.show function_reference))
 end
 
-let rec process_request ~environment ~configuration request =
+let rec process_request ~environment ~build_system ~configuration request =
   let process_request () =
     let module_tracker = TypeEnvironment.module_tracker environment in
     let read_only_environment = TypeEnvironment.read_only environment in
@@ -555,7 +555,8 @@ let rec process_request ~environment ~configuration request =
              ~default:
                (Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
-    | Batch requests -> Batch (List.map ~f:(process_request ~environment ~configuration) requests)
+    | Batch requests ->
+        Batch (List.map ~f:(process_request ~environment ~build_system ~configuration) requests)
     | Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
         Single
@@ -810,7 +811,7 @@ let rec process_request ~environment ~configuration request =
            (Hash_set.to_list trace |> String.concat ~sep:", "))
 
 
-let parse_and_process_request ~environment ~configuration request =
+let parse_and_process_request ~environment ~build_system ~configuration request =
   match parse_request request with
   | Result.Error reason -> Response.Error reason
-  | Result.Ok request -> process_request ~environment ~configuration request
+  | Result.Ok request -> process_request ~environment ~build_system ~configuration request
