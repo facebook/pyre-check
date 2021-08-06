@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from dataclasses import dataclass
 from typing import final
 
@@ -15,14 +15,14 @@ class DataClass:
 
 
 def bad_is_tainted():
-    context = DataClass(bad=__test_source(), benign=1)
-    __test_sink(context)
+    context = DataClass(bad=_test_source(), benign=1)
+    _test_sink(context)
     return context
 
 
 def benign_is_untainted():
-    context = DataClass(bad=__test_source(), benign=1)
-    __test_sink(context.benign)
+    context = DataClass(bad=_test_source(), benign=1)
+    _test_sink(context.benign)
     return context
 
 
@@ -32,11 +32,11 @@ class DataClassWIthInit:
 
     def __init__(self, bad: int) -> None:
         self.bad = bad
-        __test_sink(bad)
+        _test_sink(bad)
 
 
 def issue_in_dataclass_constructor() -> None:
-    DataClassWIthInit(bad=__test_source())
+    DataClassWIthInit(bad=_test_source())
 
 
 @dataclass
@@ -64,8 +64,8 @@ class DataClassWithSource:
 
 
 def test_dataclass_with_source(context: DataClassWithSource) -> None:
-    __test_sink(context.tainted)
-    __test_sink(context.not_tainted)
+    _test_sink(context.tainted)
+    _test_sink(context.not_tainted)
 
 
 @final
@@ -76,5 +76,5 @@ class DataClassWithOtherSource:
 
 
 def test_dataclass_with_other_source(context: DataClassWithOtherSource) -> None:
-    __test_sink(context.tainted)
-    __test_sink(context.not_tainted)
+    _test_sink(context.tainted)
+    _test_sink(context.not_tainted)

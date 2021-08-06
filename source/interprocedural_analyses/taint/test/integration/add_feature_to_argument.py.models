@@ -6,8 +6,8 @@
     "callable_line": 38,
     "code": 5002,
     "line": 41,
-    "start": 16,
-    "end": 20,
+    "start": 15,
+    "end": 19,
     "filename": "add_feature_to_argument.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "add_feature_to_argument.py",
               "line": 39,
               "start": 15,
-              "end": 30
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
@@ -38,10 +38,10 @@
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 41,
-              "start": 16,
-              "end": 20
+              "start": 15,
+              "end": 19
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -84,10 +84,10 @@
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 46,
-              "start": 16,
-              "end": 25
+              "start": 15,
+              "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -143,9 +143,9 @@
               "filename": "add_feature_to_argument.py",
               "line": 14,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_source" }
@@ -211,10 +211,10 @@
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 35,
-              "start": 16,
-              "end": 25
+              "start": 15,
+              "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -238,9 +238,9 @@
               "filename": "add_feature_to_argument.py",
               "line": 28,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via-value": "second" },
               { "always-via": "special_source" }

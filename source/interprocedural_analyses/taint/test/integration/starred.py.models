@@ -19,9 +19,9 @@
               "filename": "starred.py",
               "line": 15,
               "start": 21,
-              "end": 36
+              "end": 35
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "issue-broadening" },
               { "always-via": "broadening" },
@@ -45,7 +45,7 @@
               "port": "formal(json)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -71,10 +71,10 @@
             "root": {
               "filename": "starred.py",
               "line": 11,
-              "start": 16,
-              "end": 20
+              "start": 15,
+              "end": 19
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

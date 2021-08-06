@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Optional, TypeVar
 
 from pyre_extensions import classproperty
@@ -19,11 +19,11 @@ class Class:
         return self.tainted
 
     def uses_property(self):
-        self.tainted = __test_source()
+        self.tainted = _test_source()
         return self.my_property
 
     def uses_property_but_no_tito_taint(self):
-        self.untainted = __test_source()
+        self.untainted = _test_source()
         return self.my_property
 
     def uses_other(self, other: Optional[Class]):
@@ -35,21 +35,21 @@ class Class:
 
 class Derived(Class):
     def uses_property(self):
-        self.tainted = __test_source()
+        self.tainted = _test_source()
         return self.my_property
 
     def uses_property_but_no_tito_taint(self):
-        self.untainted = __test_source()
+        self.untainted = _test_source()
         return self.my_property
 
 
 class OtherDerived(Class):
     @property
     def my_property(self) -> str:
-        return __test_source()
+        return _test_source()
 
     def uses_property_but_no_tito_taint(self):
-        self.untainted = __test_source()
+        self.untainted = _test_source()
         return self.my_property
 
 
@@ -59,7 +59,7 @@ class TaintedGetterAndSetter:
     def my_property(self) -> str:
         # Ensure that setter taint doesn't pollute the getter, there shouldn't
         # be an issue here.
-        __test_sink(self)
+        _test_sink(self)
         return ""
 
     @my_property.setter
@@ -71,7 +71,7 @@ class TaintedGetterAndSetter:
 
     # TODO(T52657355): Handle the property write here.
     def writes_to_property(self):
-        self.my_property = __test_source()
+        self.my_property = _test_source()
 
 
 class DerivedTaintedSetter(TaintedGetterAndSetter):
@@ -81,7 +81,7 @@ class DerivedTaintedSetter(TaintedGetterAndSetter):
 
     @my_property.setter
     def my_property(self, value) -> None:
-        __test_sink(value)
+        _test_sink(value)
 
 
 class GrandDerived(DerivedTaintedSetter):
@@ -95,7 +95,7 @@ class GrandDerived(DerivedTaintedSetter):
 
 
 def sets_tainted_value(t: TaintedGetterAndSetter) -> None:
-    t.my_property = __test_source()
+    t.my_property = _test_source()
 
 
 class SetterMutatesValue:
@@ -114,10 +114,10 @@ class SetterMutatesValue:
 def setters_are_simulated() -> None:
     x = SetterMutatesValue()
     # Expect no issue
-    __test_sink(x.p)
-    x.p = __test_source()
+    _test_sink(x.p)
+    x.p = _test_source()
     # x.p should now have an issue
-    __test_sink(x.p)
+    _test_sink(x.p)
 
 
 class ClassProperty:
@@ -127,7 +127,7 @@ class ClassProperty:
 
 
 def test_issue_in_class_property():
-    __test_sink(ClassProperty.my_class_property)
+    _test_sink(ClassProperty.my_class_property)
 
 
 class Class2:
@@ -158,6 +158,6 @@ class PropertySetterInConstructor:
 
 
 def property_setter_in_constructor():
-    obj = PropertySetterInConstructor(__test_source())
-    __test_sink(obj.x)
-    __test_sink(obj.underlying)
+    obj = PropertySetterInConstructor(_test_source())
+    _test_sink(obj.x)
+    _test_sink(obj.underlying)

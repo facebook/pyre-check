@@ -4,13 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def test():
     # fmt: off
-    __test_sink([
+    _test_sink([
         "foo",
-        __test_source(),
+        _test_source(),
     ])
     # fmt: on

@@ -62,10 +62,10 @@
               "filename": "obscure_models.py",
               "line": 33,
               "start": 24,
-              "end": 39
+              "end": 38
             },
-            "tito": [ { "line": 33, "start": 24, "end": 39 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 33, "start": 24, "end": 38 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -102,10 +102,10 @@
               "filename": "obscure_models.py",
               "line": 57,
               "start": 45,
-              "end": 60
+              "end": 59
             },
-            "tito": [ { "line": 57, "start": 45, "end": 60 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 57, "start": 45, "end": 59 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -142,10 +142,10 @@
               "filename": "obscure_models.py",
               "line": 41,
               "start": 43,
-              "end": 58
+              "end": 57
             },
-            "tito": [ { "line": 41, "start": 43, "end": 58 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 41, "start": 43, "end": 57 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -182,10 +182,10 @@
               "filename": "obscure_models.py",
               "line": 53,
               "start": 51,
-              "end": 66
+              "end": 65
             },
-            "tito": [ { "line": 53, "start": 51, "end": 66 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 53, "start": 51, "end": 65 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -209,10 +209,10 @@
               "filename": "obscure_models.py",
               "line": 37,
               "start": 44,
-              "end": 59
+              "end": 58
             },
-            "tito": [ { "line": 37, "start": 44, "end": 59 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 37, "start": 44, "end": 58 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -249,7 +249,7 @@
               "filename": "obscure_models.py",
               "line": 45,
               "start": 11,
-              "end": 52
+              "end": 51
             },
             "leaves": [
               {
@@ -263,10 +263,10 @@
               "filename": "obscure_models.py",
               "line": 45,
               "start": 36,
-              "end": 51
+              "end": 50
             },
-            "tito": [ { "line": 45, "start": 36, "end": 51 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 45, "start": 36, "end": 50 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }

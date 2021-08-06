@@ -19,9 +19,9 @@
               "filename": "taint_in_taint_out.py",
               "line": 99,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -43,7 +43,7 @@
               "port": "formal(src)[add_tito]",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -66,8 +66,8 @@
     "callable_line": 177,
     "code": 5002,
     "line": 178,
-    "start": 16,
-    "end": 50,
+    "start": 15,
+    "end": 48,
     "filename": "taint_in_taint_out.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -78,11 +78,11 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 178,
-              "start": 34,
-              "end": 49
+              "start": 33,
+              "end": 47
             },
-            "tito": [ { "line": 178, "start": 34, "end": 49 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 178, "start": 33, "end": 47 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_rhs" },
@@ -98,10 +98,10 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 178,
-              "start": 16,
-              "end": 50
+              "start": 15,
+              "end": 48
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -122,8 +122,8 @@
     "callable_line": 223,
     "code": 5002,
     "line": 224,
-    "start": 16,
-    "end": 64,
+    "start": 15,
+    "end": 62,
     "filename": "taint_in_taint_out.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -134,11 +134,11 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 224,
-              "start": 48,
-              "end": 63
+              "start": 47,
+              "end": 61
             },
-            "tito": [ { "line": 224, "start": 48, "end": 63 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 224, "start": 47, "end": 61 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito-broadening" },
               { "always-via": "broadening" },
@@ -156,10 +156,10 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 224,
-              "start": 16,
-              "end": 64
+              "start": 15,
+              "end": 62
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -182,8 +182,8 @@
     "callable_line": 194,
     "code": 5002,
     "line": 196,
-    "start": 16,
-    "end": 24,
+    "start": 15,
+    "end": 23,
     "filename": "taint_in_taint_out.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -195,10 +195,10 @@
               "filename": "taint_in_taint_out.py",
               "line": 195,
               "start": 19,
-              "end": 34
+              "end": 33
             },
-            "tito": [ { "line": 195, "start": 19, "end": 34 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 195, "start": 19, "end": 33 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "arg" },
@@ -215,10 +215,10 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 196,
-              "start": 16,
-              "end": 24
+              "start": 15,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -240,8 +240,8 @@
     "callable_line": 203,
     "code": 5002,
     "line": 204,
-    "start": 16,
-    "end": 46,
+    "start": 15,
+    "end": 44,
     "filename": "taint_in_taint_out.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -252,11 +252,11 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 204,
-              "start": 30,
-              "end": 45
+              "start": 29,
+              "end": 43
             },
-            "tito": [ { "line": 204, "start": 30, "end": 45 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 204, "start": 29, "end": 43 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -271,10 +271,10 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 204,
-              "start": 16,
-              "end": 46
+              "start": 15,
+              "end": 44
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -949,7 +949,7 @@
               "port": "formal(x)[add_tito]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -1081,10 +1081,10 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 95,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -1236,10 +1236,10 @@
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
-              "end": 47
+              "end": 46
             },
-            "tito": [ { "line": 55, "start": 32, "end": 47 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" },

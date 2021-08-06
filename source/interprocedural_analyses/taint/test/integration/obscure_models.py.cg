@@ -1,9 +1,9 @@
 @generated
 Call dependencies
-obscure_models.test_obscure (fun) -> [__test_source (fun) obscure_models.C::obscure (method)]
-obscure_models.test_obscure_with_multiple_models (fun) -> [__test_source (fun) obscure_models.C::obscure_with_multiple_models (method)]
-obscure_models.test_obscure_with_skip_inlining (fun) -> [__test_source (fun) obscure_models.C::obscure_with_skip_inlining (method)]
-obscure_models.test_obscure_with_skip_obscure (fun) -> [__test_source (fun) obscure_models.C::obscure_with_skip_obscure (method)]
-obscure_models.test_obscure_with_skip_obscure_and_tito (fun) -> [__test_source (fun) obscure_models.C::obscure_with_skip_obscure_and_tito (method)]
-obscure_models.test_obscure_with_skip_overrides (fun) -> [__test_source (fun) obscure_models.C::obscure_with_skip_overrides (method)]
-obscure_models.test_obscure_with_source (fun) -> [__test_source (fun) obscure_models.C::obscure_with_source (method)]
+obscure_models.test_obscure (fun) -> [_test_source (fun) obscure_models.C::obscure (method)]
+obscure_models.test_obscure_with_multiple_models (fun) -> [_test_source (fun) obscure_models.C::obscure_with_multiple_models (method)]
+obscure_models.test_obscure_with_skip_inlining (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_inlining (method)]
+obscure_models.test_obscure_with_skip_obscure (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_obscure (method)]
+obscure_models.test_obscure_with_skip_obscure_and_tito (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_obscure_and_tito (method)]
+obscure_models.test_obscure_with_skip_overrides (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_overrides (method)]
+obscure_models.test_obscure_with_source (fun) -> [_test_source (fun) obscure_models.C::obscure_with_source (method)]

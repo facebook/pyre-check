@@ -5,7 +5,7 @@
 
 # flake8: noqa
 
-from builtins import __test_source
+from builtins import _test_source
 
 
 def propagate_sink(a):
@@ -13,6 +13,6 @@ def propagate_sink(a):
 
 
 def inline_issue():
-    a = __test_source()
+    a = _test_source()
     f"<{a}>"
     f"{a}"

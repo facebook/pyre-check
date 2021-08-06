@@ -45,12 +45,12 @@ let test_fixpoint context =
   assert_fixpoint
     ~context
     {|
-      from builtins import __test_source, __test_sink, __user_controlled
+      from builtins import _test_source, _test_sink, __user_controlled
       def bar():
-        return __test_source()
+        return _test_source()
 
       def qux(arg):
-        __test_sink(arg)
+        _test_sink(arg)
 
       def bad(arg):
         qux(arg)
@@ -101,14 +101,14 @@ let test_fixpoint context =
         x.receiver_sink(5)
 
       def list_sink(list):
-        __test_sink(list[1])
+        _test_sink(list[1])
 
       def list_match():
-        x = [5, __test_source()]
+        x = [5, _test_source()]
         list_sink(x)
 
       def no_list_match():
-        x = [__test_source(), 5]
+        x = [_test_source(), 5]
         list_sink(x)
 
       def getattr_obj_no_match():
@@ -125,11 +125,11 @@ let test_fixpoint context =
           return y
 
       def test_deep_tito_no_match():
-        obj = deep_tito(__user_controlled(), __test_source())
+        obj = deep_tito(__user_controlled(), _test_source())
         getattr('obj', obj.f.g)
 
       def test_deep_tito_match():
-        obj = deep_tito(__user_controlled(), __test_source())
+        obj = deep_tito(__user_controlled(), _test_source())
         getattr('obj', obj.g.f)
 
       class Class:
@@ -142,14 +142,14 @@ let test_fixpoint context =
       def property_into_sink(input):
         c: Class = ...
         c.tainted = input
-        __test_sink(c.property)
+        _test_sink(c.property)
 
       def uses_property(c: Class):
-        c.tainted = __test_source()
+        c.tainted = _test_source()
         return c.property
 
       def uses_property_but_no_taint(c: Class):
-        c.untainted = __test_source()
+        c.untainted = _test_source()
         return c.property
     |}
     ~expect:
@@ -287,9 +287,9 @@ let test_combined_analysis context =
       def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import __test_sink, __user_controlled
+      from builtins import _test_sink, __user_controlled
       def combined_model(x, y, z):
-        __test_sink(x)
+        _test_sink(x)
         return x or __user_controlled()
     |}
     ~expect:
@@ -320,9 +320,9 @@ let test_skipped_analysis context =
       def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import __test_sink, __user_controlled
+      from builtins import _test_sink, __user_controlled
       def skipped_model(x, y, z):
-        __test_sink(x)
+        _test_sink(x)
         return x or __user_controlled()
     |}
     ~expect:
@@ -350,10 +350,10 @@ let test_sanitized_analysis context =
       def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import __test_sink, __user_controlled
+      from builtins import _test_sink, __user_controlled
       def sanitized_model(x, y, z):
         eval(__user_controlled())
-        __test_sink(x)
+        _test_sink(x)
         return x or __user_controlled()
     |}
     ~expect:
@@ -435,7 +435,7 @@ let test_overrides context =
   assert_fixpoint
     ~context
     {|
-      from builtins import __test_source, __test_sink, __user_controlled
+      from builtins import _test_source, _test_sink, __user_controlled
       class Base:
         def split(self):
           pass
@@ -450,11 +450,11 @@ let test_overrides context =
         def split(self): ...
 
         def some_sink(self, arg):
-          __test_sink(arg)
+          _test_sink(arg)
 
       class D(C):
         def some_source(self):
-          return __test_source()
+          return _test_source()
 
         def some_sink(self, arg):
           eval(arg)

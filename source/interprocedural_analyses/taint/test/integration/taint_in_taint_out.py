@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Dict, List, Tuple
 
 
@@ -52,7 +52,7 @@ def product_data_wrapper(x):
 
 
 def tito():
-    return product_data_wrapper(__test_source())
+    return product_data_wrapper(_test_source())
 
 
 def via_getattr(x, y):
@@ -92,11 +92,11 @@ def adds_tito_with_indirect_sink(src: FieldIsTITO) -> None:
 
 
 def indirect_sink(x: FieldIsTITO) -> None:
-    __test_sink(x.add_tito)
+    _test_sink(x.add_tito)
 
 
 def issue_with_indirect_sink_tito():
-    x = __test_source()
+    x = _test_source()
     adds_tito_with_indirect_sink(x)
 
 
@@ -155,8 +155,8 @@ async def return_taint(tainted: str, b1: str, b2: str) -> Tuple[str, str, str]:
 
 
 async def test_tuple_tito_indices():
-    tainted, b1, b2 = await return_taint(__test_source(), "", "")
-    __test_sink(b2)
+    tainted, b1, b2 = await return_taint(_test_source(), "", "")
+    _test_sink(b2)
 
 
 def return_taint_in_list(tainted: str, a: str, b: str) -> List[str]:
@@ -175,7 +175,7 @@ def tito_with_feature(arg):
 
 
 def test_always_via_feature():
-    __test_sink(tito_with_feature(__test_source()))
+    _test_sink(tito_with_feature(_test_source()))
 
 
 # Test TITO through explicit super.
@@ -192,8 +192,8 @@ class GetUser(GetQuery):
 
 
 def test_explicit_call_to_superclass():
-    user = GetUser(__test_source())
-    __test_sink(user.arg)
+    user = GetUser(_test_source())
+    _test_sink(user.arg)
 
 
 def evaluate_lazy(payload: Dict[str, str]):
@@ -201,7 +201,7 @@ def evaluate_lazy(payload: Dict[str, str]):
 
 
 def test_simplified_evaluator():
-    __test_sink(evaluate_lazy(__test_source()))
+    _test_sink(evaluate_lazy(_test_source()))
 
 
 class ComplexEvaluator:
@@ -221,4 +221,4 @@ class ComplexEvaluator:
 
 
 def test_complex_evaluator(evaluator: ComplexEvaluator):
-    __test_sink(evaluator.evaluate_lazy_payload(__test_source()))
+    _test_sink(evaluator.evaluate_lazy_payload(_test_source()))
