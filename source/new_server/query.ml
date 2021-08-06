@@ -508,8 +508,8 @@ let rec process_request ~environment ~build_system ~configuration request =
         ~init:""
         ~f:(fun sofar (path, error_reason) ->
           let print_reason = function
-            | Server.LookupProcessor.StubShadowing -> " (file shadowed by .pyi stub file)"
-            | Server.LookupProcessor.FileNotFound -> " (file not found)"
+            | LookupProcessor.StubShadowing -> " (file shadowed by .pyi stub file)"
+            | LookupProcessor.FileNotFound -> " (file not found)"
           in
           Format.asprintf
             "%s%s`%a`%s"
@@ -724,9 +724,9 @@ let rec process_request ~environment ~build_system ~configuration request =
           List.map ~f:(fun path -> Path.create_relative ~root ~relative:path) paths
         in
         let annotations =
-          Server.LookupProcessor.find_all_annotations_batch ~environment ~configuration ~paths
+          LookupProcessor.find_all_annotations_batch ~environment ~configuration ~paths
         in
-        let create_result { Server.LookupProcessor.path; types_by_location } =
+        let create_result { LookupProcessor.path; types_by_location } =
           match types_by_location with
           | Result.Ok types ->
               Either.First { Base.path; types = List.map ~f:create_type_at_location types }
