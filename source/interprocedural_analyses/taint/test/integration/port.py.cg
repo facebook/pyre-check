@@ -1,14 +1,14 @@
 @generated
 Call dependencies
-port.Foo::some_source (method) -> [__test_source (fun)]
+port.Foo::some_source (method) -> [_test_source (fun)]
 port.match_flows (fun) -> [port.sink_field (fun) port.source_field (fun)]
 port.match_star_arg_directly (fun) -> [port.source_field (fun) port.star_arg_wrapper (fun)]
 port.match_star_arg_with_star (fun) -> [port.source_field (fun) port.star_arg_wrapper (fun)]
 port.match_star_star_arg_directly (fun) -> [port.source_field (fun) port.star_star_arg_wrapper (fun)]
 port.match_star_star_arg_with_star (fun) -> [port.source_field (fun) port.star_star_arg_wrapper (fun)]
-port.refer_to_method_as_field (fun) -> [__test_sink (fun) port.Foo::some_source (method)]
-port.sink_field (fun) -> [__test_sink (fun)]
-port.source_field (fun) -> [__test_source (fun)]
+port.refer_to_method_as_field (fun) -> [_test_sink (fun) port.Foo::some_source (method)]
+port.sink_field (fun) -> [_test_sink (fun)]
+port.source_field (fun) -> [_test_source (fun)]
 port.star_arg (fun) -> [port.sink_field (fun) tuple::__getitem__ (method)]
 port.star_arg_wrapper (fun) -> [port.star_arg (fun)]
 port.star_star_arg (fun) -> [dict::__getitem__ (method) port.sink_field (fun)]

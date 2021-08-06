@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_source
+from builtins import _test_source
 from typing import Any, Dict
 
 import django
@@ -18,17 +18,17 @@ def view_entry_index(request):
 
 
 def first_index():
-    x = __test_source()
+    x = _test_source()
     return x["access_token"]
 
 
 def first_index_numeric():
-    x = __test_source()
+    x = _test_source()
     return x[0]
 
 
 def first_index_unknown():
-    x = __test_source()
+    x = _test_source()
     unknown = "some text"
     return x[unknown]
 

@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -32,5 +32,5 @@ class C:
 
 
 def test():
-    obj = C.async_create(1, {__test_source(): __test_source()}, "")
-    __test_sink(obj.id)
+    obj = C.async_create(1, {_test_source(): _test_source()}, "")
+    _test_sink(obj.id)

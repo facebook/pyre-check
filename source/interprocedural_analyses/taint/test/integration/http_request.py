@@ -5,25 +5,25 @@
 
 # flake8: noqa
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 from django.http.request import HttpRequest
 
 
 def test_untainted_assign(request: HttpRequest):
     request.GET = {}
-    __test_sink(request.GET)
+    _test_sink(request.GET)
 
 
 def test_trace_has_no_tito(request: HttpRequest):
-    request.GET = __test_source()
-    __test_sink(request.GET)
+    request.GET = _test_source()
+    _test_sink(request.GET)
 
 
 def request_get_flows_to_sink(request: HttpRequest):
-    __test_sink(request.GET)
+    _test_sink(request.GET)
 
 
 def test_hop_is_cut_off(request: HttpRequest):
-    request.GET = __test_source()
+    request.GET = _test_source()
     request_get_flows_to_sink(request)

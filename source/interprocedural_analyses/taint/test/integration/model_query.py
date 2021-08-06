@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from functools import lru_cache
 
 
@@ -126,22 +126,22 @@ class AttributeTestClass8(AttributeTestClass7):
 
 def alarm_1(x: AttributeTestClass1):
     # should trigger SourceA -> Test
-    __test_sink(x.attribute)
+    _test_sink(x.attribute)
 
 
 def alarm_2(x: AttributeTestClass1):
     # should trigger SourceA -> Test
-    __test_sink(x.instance)
+    _test_sink(x.instance)
 
 
 def alarm_3(x: AttributeTestClass2):
     # should trigger SourceA -> test
-    __test_sink(x.attribute)
+    _test_sink(x.attribute)
 
 
 def alarm_4(x: AttributeTestClass2):
     # should trigger SourceA -> test
-    __test_sink(x.instance)
+    _test_sink(x.instance)
 
 
 def alarm_5(x: AttributeTestClass3, source):
@@ -151,7 +151,7 @@ def alarm_5(x: AttributeTestClass3, source):
 
 def alarm_6(x: AttributeTestClass3):
     # should trigger Test -> SinkA and Test -> SinkC
-    x.instance = __test_source()
+    x.instance = _test_source()
 
 
 def alarm_7(x: AttributeTestClass4):
@@ -161,37 +161,37 @@ def alarm_7(x: AttributeTestClass4):
 
 def alarm_8(x: AttributeTestClass4):
     # should trigger SourceC -> Test and SourceE -> Test
-    __test_sink(x.instance)
+    _test_sink(x.instance)
 
 
 def alarm_9(x: AttributeTestClass5):
     # should trigger SourceB -> Test
-    __test_sink(x.foo_attribute)
+    _test_sink(x.foo_attribute)
 
 
 def alarm_10(x: AttributeTestClass5):
     # should trigger SourceB -> Test
-    __test_sink(x.foo_instance)
+    _test_sink(x.foo_instance)
 
 
 def alarm_11(x: AttributeTestClass6):
     # should trigger SourceB -> Test
-    __test_sink(x.foo_attribute)
+    _test_sink(x.foo_attribute)
 
 
 def alarm_12(x: AttributeTestClass6):
     # should trigger SourceB -> Test
-    __test_sink(x.foo_instance)
+    _test_sink(x.foo_instance)
 
 
 def no_alarm_1(x: AttributeTestClass7):
-    __test_sink(x.nomatch_attribute1)
-    __test_sink(x.nomatch_instance1)
+    _test_sink(x.nomatch_attribute1)
+    _test_sink(x.nomatch_instance1)
 
 
 def no_alarm_2(x: AttributeTestClass8):
-    __test_sink(x.nomatch_instance2)
-    __test_sink(x.nomatch_instance2)
+    _test_sink(x.nomatch_instance2)
+    _test_sink(x.nomatch_instance2)
 
 
 def function_test1_alarm1():

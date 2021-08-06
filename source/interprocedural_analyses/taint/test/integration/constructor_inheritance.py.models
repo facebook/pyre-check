@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 21,
     "start": 29,
-    "end": 44,
+    "end": 43,
     "filename": "constructor_inheritance.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "constructor_inheritance.py",
               "line": 21,
               "start": 29,
-              "end": 44
+              "end": 43
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -35,7 +35,7 @@
                 "filename": "constructor_inheritance.py",
                 "line": 21,
                 "start": 29,
-                "end": 44
+                "end": 43
               },
               "resolves_to": [
                 "constructor_inheritance.MyBaseClass.__init__"
@@ -43,7 +43,7 @@
               "port": "formal(argument)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -70,7 +70,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -104,7 +104,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -135,10 +135,10 @@
             "root": {
               "filename": "constructor_inheritance.py",
               "line": 12,
-              "start": 20,
-              "end": 28
+              "start": 19,
+              "end": 27
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

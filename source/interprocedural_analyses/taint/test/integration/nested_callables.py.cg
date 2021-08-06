@@ -1,11 +1,11 @@
 @generated
 Call dependencies
-$local_nested_callables?foo$inner (fun) -> [__test_sink (fun) __test_source (fun)]
-$local_nested_callables?foo$inner_with_model (fun) -> [__test_source (fun)]
-$local_nested_callables?outer$inner (fun) -> [__test_sink (fun)]
+$local_nested_callables?foo$inner (fun) -> [_test_sink (fun) _test_source (fun)]
+$local_nested_callables?foo$inner_with_model (fun) -> [_test_source (fun)]
+$local_nested_callables?outer$inner (fun) -> [_test_sink (fun)]
 $local_nested_callables?outer_calling_other_function$inner_calling_other_function (fun) -> [nested_callables.some_sink (fun)]
-nested_callables.call_outer (fun) -> [__test_source (fun) nested_callables.outer (fun)]
+nested_callables.call_outer (fun) -> [_test_source (fun) nested_callables.outer (fun)]
 nested_callables.foo (fun) -> []
 nested_callables.outer (fun) -> [$local_nested_callables?outer$inner (fun)]
 nested_callables.outer_calling_other_function (fun) -> [$local_nested_callables?outer_calling_other_function$inner_calling_other_function (fun)]
-nested_callables.some_sink (fun) -> [__test_sink (fun)]
+nested_callables.some_sink (fun) -> [_test_sink (fun)]

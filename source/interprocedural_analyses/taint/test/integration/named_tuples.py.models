@@ -6,8 +6,8 @@
     "callable_line": 20,
     "code": 5002,
     "line": 22,
-    "start": 16,
-    "end": 21,
+    "start": 15,
+    "end": 20,
     "filename": "named_tuples.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -26,7 +26,7 @@
               "port": "result[bad]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "bad" },
@@ -43,10 +43,10 @@
             "root": {
               "filename": "named_tuples.py",
               "line": 22,
-              "start": 16,
-              "end": 21
+              "start": 15,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -68,8 +68,8 @@
     "callable_line": 55,
     "code": 5002,
     "line": 57,
-    "start": 16,
-    "end": 21,
+    "start": 15,
+    "end": 20,
     "filename": "named_tuples.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -88,7 +88,7 @@
               "port": "result[bad]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "bad" },
@@ -105,10 +105,10 @@
             "root": {
               "filename": "named_tuples.py",
               "line": 57,
-              "start": 16,
-              "end": 21
+              "start": 15,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -130,8 +130,8 @@
     "callable_line": 37,
     "code": 5002,
     "line": 39,
-    "start": 16,
-    "end": 21,
+    "start": 15,
+    "end": 20,
     "filename": "named_tuples.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -150,7 +150,7 @@
               "port": "result[bad]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "bad" },
@@ -167,10 +167,10 @@
             "root": {
               "filename": "named_tuples.py",
               "line": 39,
-              "start": 16,
-              "end": 21
+              "start": 15,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -506,10 +506,10 @@
               "filename": "named_tuples.py",
               "line": 52,
               "start": 35,
-              "end": 50
+              "end": 49
             },
-            "tito": [ { "line": 52, "start": 35, "end": 50 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 52, "start": 35, "end": 49 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -533,10 +533,10 @@
               "filename": "named_tuples.py",
               "line": 34,
               "start": 35,
-              "end": 50
+              "end": 49
             },
-            "tito": [ { "line": 34, "start": 35, "end": 50 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 34, "start": 35, "end": 49 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -560,10 +560,10 @@
               "filename": "named_tuples.py",
               "line": 17,
               "start": 28,
-              "end": 43
+              "end": 42
             },
-            "tito": [ { "line": 17, "start": 28, "end": 43 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 17, "start": 28, "end": 42 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }

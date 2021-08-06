@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 class UnknownSourceDef:
@@ -16,7 +16,7 @@ class UnknownSourceDef:
 def test_unknown_source_def(x: UnknownSourceDef) -> None:
     # TODO(T90322028): we don't find the flow here.
     y = x.unknown()
-    __test_sink(y)
+    _test_sink(y)
 
 
 class UnknownSourceAttribute:
@@ -28,7 +28,7 @@ class UnknownSourceAttribute:
 
 def test_unknown_source_attribute(x: UnknownSourceAttribute) -> None:
     y = x.unknown()
-    __test_sink(y)
+    _test_sink(y)
 
 
 class UnknownSinkDef:
@@ -40,7 +40,7 @@ class UnknownSinkDef:
 
 def test_unknown_sink_def(x: UnknownSinkDef) -> None:
     # TODO(T90322028): we don't find the flow here.
-    x.unknown(__test_source())
+    x.unknown(_test_source())
 
 
 class UnknownSinkAttribute:
@@ -52,4 +52,4 @@ class UnknownSinkAttribute:
 
 def test_unknown_sink_attribute(x: UnknownSinkAttribute) -> None:
     # TODO(T90322028): we don't find the flow here.
-    x.unknown(__test_source())
+    x.unknown(_test_source())

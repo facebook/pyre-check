@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Optional, TypeVar
 
 
@@ -24,7 +24,7 @@ class Builder:
         return self
 
     def async_save(self) -> None:
-        __test_sink(self._saved)
+        _test_sink(self._saved)
 
     def set_saved_through_typevar(self: T, saved: str) -> T:
         self._saved = saved
@@ -37,17 +37,17 @@ class Builder:
 
 def test_no_issue():
     builder = Builder()
-    builder.set_not_saved(__test_source()).set_saved("benign").async_save()
+    builder.set_not_saved(_test_source()).set_saved("benign").async_save()
 
 
 def test_issue():
     builder = Builder()
-    builder.set_not_saved("benign").set_saved(__test_source()).async_save()
+    builder.set_not_saved("benign").set_saved(_test_source()).async_save()
 
 
 def test_no_issue_with_type_var():
     builder = Builder()
-    builder.set_not_saved_through_typevar(__test_source()).set_saved_through_typevar(
+    builder.set_not_saved_through_typevar(_test_source()).set_saved_through_typevar(
         "benign"
     ).async_save()
 
@@ -55,7 +55,7 @@ def test_no_issue_with_type_var():
 def test_issue_with_type_var():
     builder = Builder()
     builder.set_not_saved_through_typevar("benign").set_saved_through_typevar(
-        __test_source()
+        _test_source()
     ).async_save()
 
 
@@ -65,7 +65,7 @@ class SubBuilder(Builder):
 
 def test_no_issue_with_sub_builder():
     builder = SubBuilder()
-    builder.set_not_saved_through_typevar(__test_source()).set_saved_through_typevar(
+    builder.set_not_saved_through_typevar(_test_source()).set_saved_through_typevar(
         "benign"
     ).async_save()
 
@@ -73,5 +73,5 @@ def test_no_issue_with_sub_builder():
 def test_issue_with_sub_builder():
     builder = SubBuilder()
     builder.set_not_saved_through_typevar("benign").set_saved_through_typevar(
-        __test_source()
+        _test_source()
     ).async_save()

@@ -99,7 +99,7 @@ let test_simple_source context =
     ~context
     {|
       def simple_source():
-        return __test_source()
+        return _test_source()
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.simple_source"];
   assert_taint
@@ -218,7 +218,7 @@ let test_local_copy context =
     ~context
     {|
       def copy_source():
-        var = __test_source()
+        var = _test_source()
         return var
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.copy_source"]
@@ -229,12 +229,12 @@ let test_access_paths context =
     ~context
     {|
       def access_downward_closed():
-        o = { 'a': __test_source() }
+        o = { 'a': _test_source() }
         x = o.a
         return x.g
 
       def access_non_taint():
-        o = { 'a': __test_source() }
+        o = { 'a': _test_source() }
         x = o.b
         return x.g
     |}
@@ -249,7 +249,7 @@ let test_access_paths context =
     ~context
     {|
       def access_through_expression():
-        return " ".join(__test_source())
+        return " ".join(_test_source())
     |}
     [
       outcome
@@ -265,7 +265,7 @@ let test_class_model context =
     {|
       class Foo:
         def bar():
-          return __test_source()
+          return _test_source()
     |}
     [outcome ~kind:`Method ~returns:[Sources.NamedSource "Test"] "qualifier.Foo.bar"];
   assert_taint
@@ -324,7 +324,7 @@ let test_apply_method_model_at_call_site context =
     {|
       class Foo:
         def qux():
-          return __test_source()
+          return _test_source()
 
       class Bar:
         def qux():
@@ -340,7 +340,7 @@ let test_apply_method_model_at_call_site context =
     {|
       class Foo:
         def qux():
-          return __test_source()
+          return _test_source()
 
       class Bar:
         def qux():
@@ -356,7 +356,7 @@ let test_apply_method_model_at_call_site context =
     {|
       class Foo:
         def qux():
-          return __test_source()
+          return _test_source()
 
       class Bar:
         def qux():
@@ -371,7 +371,7 @@ let test_apply_method_model_at_call_site context =
     {|
       class Foo:
         def qux():
-          return __test_source()
+          return _test_source()
 
       class Bar:
         def qux():
@@ -386,7 +386,7 @@ let test_apply_method_model_at_call_site context =
     {|
       class Foo:
         def qux():
-          return __test_source()
+          return _test_source()
 
       class Bar:
         def qux():
@@ -416,7 +416,7 @@ let test_apply_method_model_at_call_site context =
 
       class Baz:
         def qux():
-          return __test_source()
+          return _test_source()
 
       def taint_with_union_type(condition):
         if condition:
@@ -439,7 +439,7 @@ let test_apply_method_model_at_call_site context =
 
       class Direct:
         def source():
-          return __test_source()
+          return _test_source()
 
       def taint_indirect_concatenated_call(indirect: Indirect):
         direct = indirect.direct()
@@ -459,7 +459,7 @@ let test_apply_method_model_at_call_site context =
 
       class Direct:
         def source():
-          return __test_source()
+          return _test_source()
 
       def taint_indirect_concatenated_call(indirect: Indirect):
         return indirect.direct().source()
@@ -477,7 +477,7 @@ let test_taint_in_taint_out_application context =
     ~context
     {|
       def simple_source():
-        return __test_source()
+        return _test_source()
 
       def taint_with_tito():
         y = simple_source()
@@ -489,7 +489,7 @@ let test_taint_in_taint_out_application context =
     ~context
     {|
       def simple_source():
-        return __test_source()
+        return _test_source()
 
       def __no_tito(y):
         pass
@@ -508,30 +508,30 @@ let test_dictionary context =
     {|
       def dictionary_source():
         return {
-          "a": __test_source(),
+          "a": _test_source(),
         }
 
       def dictionary_same_index():
         dict = {
-          "a": __test_source(),
+          "a": _test_source(),
         }
         return dict["a"]
 
       def dictionary_different_index():
         dict = {
-          "a": __test_source(),
+          "a": _test_source(),
         }
         return dict["b"]
 
       def dictionary_unknown_read_index(index):
         dict = {
-          "a": __test_source(),
+          "a": _test_source(),
         }
         return dict[index]
 
       def dictionary_unknown_write_index(index):
         dict = {
-          index: __test_source(),
+          index: _test_source(),
         }
         return dict["a"]
     |}
@@ -556,7 +556,7 @@ let test_dictionary context =
     {|
       def dictionary_source():
         first = {
-          "a": __test_source(),
+          "a": _test_source(),
         }
         second = { **first }
         return second
@@ -567,7 +567,7 @@ let test_dictionary context =
     {|
       def dictionary_source():
         first = {
-          "a": __test_source(),
+          "a": _test_source(),
         }
         second = { **first }
         return second["a"]
@@ -580,7 +580,7 @@ let test_dictionary context =
     {|
       def dictionary_source():
         first = {
-          "a": __test_source(),
+          "a": _test_source(),
         }
         second = { **first }
         return second["b"]
@@ -592,7 +592,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_source():
-        d = { __test_source(): "a" }
+        d = { _test_source(): "a" }
         return d
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.dictionary_source"];
@@ -602,7 +602,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_source_keys_two():
-        d = { __test_source(): "a" }
+        d = { _test_source(): "a" }
         return d[0]
     |}
     [outcome ~kind:`Function ~returns:[] "qualifier.dictionary_source_keys_two"];
@@ -612,7 +612,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_source():
-        d = { 1: x for x in [__test_source()] }
+        d = { 1: x for x in [_test_source()] }
         return d
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.dictionary_source"];
@@ -620,7 +620,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_source():
-        d = { x: 1 for x in [__test_source()] }
+        d = { x: 1 for x in [_test_source()] }
         return d
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.dictionary_source"];
@@ -628,7 +628,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_source():
-        d = { x: 1 for x in [__test_source()] }
+        d = { x: 1 for x in [_test_source()] }
         return d[0]
     |}
     [outcome ~kind:`Function ~returns:[] "qualifier.dictionary_source"]
@@ -639,22 +639,22 @@ let test_comprehensions context =
     ~context
     {|
       def source_in_iterator():
-          return [ x for x in __test_source() ]
+          return [ x for x in _test_source() ]
 
       def source_in_expression(data):
-          return [ __test_source() for x in data ]
+          return [ _test_source() for x in data ]
 
       def source_in_set_iterator():
-          return { x for x in __test_source() }
+          return { x for x in _test_source() }
 
       def source_in_set_expression(data):
-          return { __test_source() for x in data }
+          return { _test_source() for x in data }
 
       def source_in_generator_iterator():
-          return (x for x in __test_source())
+          return (x for x in _test_source())
 
       def source_in_generator_expression(data):
-          return ( __test_source() for x in data )
+          return ( _test_source() for x in data )
     |}
     [
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.source_in_iterator";
@@ -683,31 +683,31 @@ let test_list context =
     ~context
     {|
       def source_in_list():
-          return [ 1, __test_source(), "foo" ]
+          return [ 1, _test_source(), "foo" ]
 
       def list_same_index():
-          list = [ 1, __test_source(), "foo" ]
+          list = [ 1, _test_source(), "foo" ]
           return list[1]
 
       def list_different_index():
-          list = [ 1, __test_source(), "foo" ]
+          list = [ 1, _test_source(), "foo" ]
           return list[2]
 
       def list_unknown_index(index):
-          list = [ 1, __test_source(), "foo" ]
+          list = [ 1, _test_source(), "foo" ]
           return list[index]
 
       def list_pattern_same_index():
-          [_, match, _] = [ 1, __test_source(), "foo" ]
+          [_, match, _] = [ 1, _test_source(), "foo" ]
           return match
 
       def list_pattern_different_index():
-          [_, _, no_match] = [ 1, __test_source(), "foo" ]
+          [_, _, no_match] = [ 1, _test_source(), "foo" ]
           return no_match
 
       def list_pattern_star_index():
           # False positive because we don't know size of RHS in general.
-          [*match, _, _] = [ 1, __test_source(), "foo" ]
+          [*match, _, _] = [ 1, _test_source(), "foo" ]
           return match
     |}
     [
@@ -732,31 +732,31 @@ let test_tuple context =
     ~context
     {|
       def source_in_tuple():
-          return ( 1, __test_source(), "foo" )
+          return ( 1, _test_source(), "foo" )
 
       def tuple_same_index():
-          tuple = ( 1, __test_source(), "foo" )
+          tuple = ( 1, _test_source(), "foo" )
           return tuple[1]
 
       def tuple_different_index():
-          tuple = ( 1, __test_source(), "foo" )
+          tuple = ( 1, _test_source(), "foo" )
           return tuple[2]
 
       def tuple_unknown_index(index):
-          tuple = ( 1, __test_source(), "foo" )
+          tuple = ( 1, _test_source(), "foo" )
           return tuple[index]
 
       def tuple_pattern_same_index():
-          (_, match, _) = ( 1, __test_source(), "foo" )
+          (_, match, _) = ( 1, _test_source(), "foo" )
           return match
 
       def tuple_pattern_different_index():
-          (_, _, no_match) = ( 1, __test_source(), "foo" )
+          (_, _, no_match) = ( 1, _test_source(), "foo" )
           return no_match
 
       def tuple_pattern_star_index():
           # False positive because we don't know size of RHS in general.
-          ( *match, _, _ ) = ( 1, __test_source(), "foo" )
+          ( *match, _, _ ) = ( 1, _test_source(), "foo" )
           return match
     |}
     [
@@ -782,11 +782,11 @@ let test_asyncio_gather context =
     {|
       import asyncio
       def benign_through_asyncio():
-        a, b = asyncio.gather(0, __test_source())
+        a, b = asyncio.gather(0, _test_source())
         return a
 
       def source_through_asyncio():
-        a, b = asyncio.gather(0, __test_source())
+        a, b = asyncio.gather(0, _test_source())
         return b
     |}
     [
@@ -802,11 +802,11 @@ let test_asyncio_gather context =
     {|
       import foo
       def benign_through_asyncio():
-        a, b = foo.asyncio.gather(0, __test_source())
+        a, b = foo.asyncio.gather(0, _test_source())
         return a
 
       def source_through_asyncio():
-        a, b = foo.asyncio.gather(0, __test_source())
+        a, b = foo.asyncio.gather(0, _test_source())
         return b
     |}
     [
@@ -823,7 +823,7 @@ let test_lambda context =
     ~context
     {|
       def source_in_lambda():
-          return lambda x : x + __test_source()
+          return lambda x : x + _test_source()
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.source_in_lambda"];
   assert_taint
@@ -833,7 +833,7 @@ let test_lambda context =
         if 1 > 2:
           f = None
         else:
-          f = lambda x: x + __test_source()
+          f = lambda x: x + _test_source()
         return f
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.optional_lambda"]
@@ -844,14 +844,14 @@ let test_set context =
     ~context
     {|
       def source_in_set():
-          return { 1, __test_source(), "foo" }
+          return { 1, _test_source(), "foo" }
 
       def set_index():
-          set = { 1, __test_source(), "foo" }
+          set = { 1, _test_source(), "foo" }
           return set[2]
 
       def set_unknown_index(index):
-          set = { 1, __test_source(), "foo" }
+          set = { 1, _test_source(), "foo" }
           return set[index]
     |}
     [
@@ -866,13 +866,13 @@ let test_starred context =
     ~context
     {|
       def source_in_starred():
-          list = [ 1, __test_source(), "foo" ]
+          list = [ 1, _test_source(), "foo" ]
           return __tito( *list )
 
       def source_in_starred_starred():
           dict = {
               "a": 1,
-              "b": __test_source(),
+              "b": _test_source(),
               "c": "foo",
           }
           return __tito( **dict )
@@ -897,7 +897,7 @@ let test_string context =
         return f"{1} {2}"
 
       def tainted_format_string() -> str:
-        input = __test_source()
+        input = _test_source()
         return f"{input}"
     |}
     [
@@ -915,16 +915,16 @@ let test_ternary context =
     ~context
     {|
       def source_in_then(cond):
-          return __test_source() if cond else None
+          return _test_source() if cond else None
 
       def source_in_else(cond):
-          return "foo" if cond else __test_source()
+          return "foo" if cond else _test_source()
 
       def source_in_both(cond, request: django.http.Request):
-        return __test_source() if cond else request.GET['field']
+        return _test_source() if cond else request.GET['field']
 
       def source_in_cond(cond):
-          return "foo" if __test_source() else "bar"
+          return "foo" if _test_source() else "bar"
 
     |}
     [
@@ -943,7 +943,7 @@ let test_unary context =
     ~context
     {|
       def source_in_unary():
-          return not __test_source()
+          return not _test_source()
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.source_in_unary"]
 
@@ -952,14 +952,14 @@ let test_parameter_default_values context =
   assert_taint
     ~context
     {|
-      def source_in_default(totally_innocent=__test_source()):
+      def source_in_default(totally_innocent=_test_source()):
         return totally_innocent
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.source_in_default"];
   assert_taint
     ~context
     {|
-      def source_in_default(tainted=__test_source(), benign):
+      def source_in_default(tainted=_test_source(), benign):
         return benign
     |}
     [outcome ~kind:`Function ~returns:[] "qualifier.source_in_default"]
@@ -970,7 +970,7 @@ let test_walrus context =
     ~context
     {|
       def source_in_walrus():
-          return (x := __test_source())
+          return (x := _test_source())
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.source_in_walrus"]
 
@@ -980,10 +980,10 @@ let test_yield context =
     ~context
     {|
       def source_in_yield():
-          yield __test_source()
+          yield _test_source()
 
       def source_in_yield_from():
-          yield from __test_source()
+          yield from _test_source()
     |}
     [
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.source_in_yield";
@@ -1002,12 +1002,12 @@ let test_construction context =
         def __init__(self, capture) -> None: ...
 
       def test_capture():
-        x = __test_source();
+        x = _test_source();
         d = Data(x, 5)
         return d
 
       def test_no_capture():
-        x = __test_source();
+        x = _test_source();
         d = Data(5, x)
         return d
     |}
@@ -1054,26 +1054,26 @@ let test_tito_side_effects context =
     {|
       def test_from_1_to_0():
         x = 0
-        models.change_arg0(x, __test_source())
+        models.change_arg0(x, _test_source())
         return x
 
       def test_from_0_to_1():
         y = 0
-        models.change_arg1(__test_source(), y)
+        models.change_arg1(_test_source(), y)
         return y
 
       def test_from_1_to_0_nested():
         x = {}
-        models.change_arg0(x.foo, __test_source())
+        models.change_arg0(x.foo, _test_source())
         return x.foo
 
       def test_from_1_to_0_nested_distinct():
         x = {}
-        models.change_arg0(x.foo, __test_source())
+        models.change_arg0(x.foo, _test_source())
         return x.bar
 
       def test_weak_assign():
-        x = __test_source()
+        x = _test_source()
         models.change_arg0(x, 'no taint')
         return x
 
@@ -1082,7 +1082,7 @@ let test_tito_side_effects context =
 
       def test_list_append():
         l = MyList()
-        l.append(__test_source())
+        l.append(_test_source())
         return l
     |}
     [

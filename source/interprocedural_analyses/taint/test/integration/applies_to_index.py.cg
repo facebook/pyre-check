@@ -1,10 +1,10 @@
 @generated
 Call dependencies
-applies_to_index.issue_only_with_a_key (fun) -> [__test_sink (fun) applies_to_index.only_applies_to_a_key (fun)]
-applies_to_index.issue_only_with_first (fun) -> [__test_sink (fun) applies_to_index.only_applies_to_first (fun)]
-applies_to_index.issue_only_with_nested_first (fun) -> [__test_sink (fun) applies_to_index.only_applies_to_nested (fun)]
-applies_to_index.issue_only_with_second (fun) -> [__test_sink (fun) applies_to_index.only_applies_to_second (fun)]
-applies_to_index.issue_with_member (fun) -> [__test_sink (fun) applies_to_index.only_applies_to_a_member (fun)]
+applies_to_index.issue_only_with_a_key (fun) -> [_test_sink (fun) applies_to_index.only_applies_to_a_key (fun)]
+applies_to_index.issue_only_with_first (fun) -> [_test_sink (fun) applies_to_index.only_applies_to_first (fun)]
+applies_to_index.issue_only_with_nested_first (fun) -> [_test_sink (fun) applies_to_index.only_applies_to_nested (fun)]
+applies_to_index.issue_only_with_second (fun) -> [_test_sink (fun) applies_to_index.only_applies_to_second (fun)]
+applies_to_index.issue_with_member (fun) -> [_test_sink (fun) applies_to_index.only_applies_to_a_member (fun)]
 applies_to_index.only_applies_to_a_key (fun) -> []
 applies_to_index.only_applies_to_first (fun) -> []
 applies_to_index.only_applies_to_nested (fun) -> []

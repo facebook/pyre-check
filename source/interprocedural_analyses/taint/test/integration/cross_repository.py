@@ -7,7 +7,7 @@
 
 
 def cross_repository_source(source_parameter):
-    __test_sink(source_parameter)
+    _test_sink(source_parameter)
 
 
 def returns_crtex_source():
@@ -16,7 +16,7 @@ def returns_crtex_source():
 
 def test():
     s = returns_crtex_source()
-    __test_sink(s)
+    _test_sink(s)
 
 
 def cross_repository_anchor_sink(sink_parameter):
@@ -24,5 +24,5 @@ def cross_repository_anchor_sink(sink_parameter):
 
 
 def test_cross_repository_anchor():
-    source = __test_source()
+    source = _test_source()
     cross_repository_anchor_sink(source)

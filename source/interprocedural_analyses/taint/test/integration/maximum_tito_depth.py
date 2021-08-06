@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def tito_zero(x):
@@ -65,12 +65,12 @@ def tito_four(x):
 
 
 def issue():
-    x = __test_source()
+    x = _test_source()
     y = tito_three(x)
-    __test_sink(y)
+    _test_sink(y)
 
 
 def non_issue():
-    x = __test_source()
+    x = _test_source()
     y = tito_four(x)
-    __test_sink(y)
+    _test_sink(y)

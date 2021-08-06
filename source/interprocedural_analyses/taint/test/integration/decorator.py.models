@@ -5,121 +5,9 @@
     "callable": "decorator.main",
     "callable_line": 202,
     "code": 5002,
-    "line": 224,
-    "start": 14,
-    "end": 29,
-    "filename": "decorator.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "decorator.py",
-              "line": 224,
-              "start": 14,
-              "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "decorator.py",
-                "line": 224,
-                "start": 14,
-                "end": 29
-              },
-              "resolves_to": [ "decorator.Foo.bar" ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator.main",
-    "callable_line": 202,
-    "code": 5002,
-    "line": 220,
-    "start": 29,
-    "end": 44,
-    "filename": "decorator.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "decorator.py",
-              "line": 220,
-              "start": 29,
-              "end": 44
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "decorator.py",
-                "line": 220,
-                "start": 29,
-                "end": 44
-              },
-              "resolves_to": [ "decorator.foo_with_helper_function" ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-type": "scalar" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator.main",
-    "callable_line": 202,
-    "code": 5002,
     "line": 212,
     "start": 39,
-    "end": 54,
+    "end": 53,
     "filename": "decorator.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -131,9 +19,9 @@
               "filename": "decorator.py",
               "line": 212,
               "start": 39,
-              "end": 54
+              "end": 53
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -147,13 +35,13 @@
                 "filename": "decorator.py",
                 "line": 212,
                 "start": 39,
-                "end": 54
+                "end": 53
               },
               "resolves_to": [ "decorator.foo_args_kwargs_with_sink" ],
               "port": "formal(y)",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -175,228 +63,8 @@
     "callable": "decorator.main",
     "callable_line": 202,
     "code": 5002,
-    "line": 204,
-    "start": 18,
-    "end": 33,
-    "filename": "decorator.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "decorator.py",
-              "line": 204,
-              "start": 18,
-              "end": 33
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "decorator.py",
-                "line": 204,
-                "start": 18,
-                "end": 33
-              },
-              "resolves_to": [ "decorator.foo_with_sink" ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-type": "scalar" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator.main",
-    "callable_line": 202,
-    "code": 5002,
-    "line": 216,
-    "start": 32,
-    "end": 47,
-    "filename": "decorator.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "decorator.py",
-              "line": 216,
-              "start": 32,
-              "end": 47
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "decorator.py",
-                "line": 216,
-                "start": 32,
-                "end": 47
-              },
-              "resolves_to": [ "decorator.foo_using_decorator_factory" ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator.main",
-    "callable_line": 202,
-    "code": 5002,
-    "line": 222,
-    "start": 14,
-    "end": 29,
-    "filename": "decorator.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "decorator.py",
-              "line": 222,
-              "start": 14,
-              "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "decorator.py",
-                "line": 222,
-                "start": 14,
-                "end": 29
-              },
-              "resolves_to": [ "decorator.Foo.foo" ],
-              "port": "formal(x)",
-              "length": 4
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator.main",
-    "callable_line": 202,
-    "code": 5002,
-    "line": 226,
-    "start": 39,
-    "end": 54,
-    "filename": "decorator.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "decorator.py",
-              "line": 226,
-              "start": 39,
-              "end": 54
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "decorator.py",
-                "line": 226,
-                "start": 39,
-                "end": 54
-              },
-              "resolves_to": [ "decorator.Foo.self_has_generic_type" ],
-              "port": "formal(x)",
-              "length": 6
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator.main",
-    "callable_line": 202,
-    "code": 5002,
-    "line": 218,
-    "start": 28,
+    "line": 220,
+    "start": 29,
     "end": 43,
     "filename": "decorator.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
@@ -407,11 +75,11 @@
           {
             "root": {
               "filename": "decorator.py",
-              "line": 218,
-              "start": 28,
+              "line": 220,
+              "start": 29,
               "end": 43
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -423,15 +91,15 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 218,
-                "start": 28,
+                "line": 220,
+                "start": 29,
                 "end": 43
               },
-              "resolves_to": [ "decorator.foo_log_first_parameter" ],
+              "resolves_to": [ "decorator.foo_with_helper_function" ],
               "port": "formal(x)",
-              "length": 2
+              "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -455,7 +123,7 @@
     "code": 5002,
     "line": 205,
     "start": 20,
-    "end": 35,
+    "end": 34,
     "filename": "decorator.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -467,9 +135,9 @@
               "filename": "decorator.py",
               "line": 205,
               "start": 20,
-              "end": 35
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -483,13 +151,13 @@
                 "filename": "decorator.py",
                 "line": 205,
                 "start": 20,
-                "end": 35
+                "end": 34
               },
               "resolves_to": [ "decorator.foo_async" ],
               "port": "formal(y)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -507,9 +175,9 @@
     "callable": "decorator.main",
     "callable_line": 202,
     "code": 5002,
-    "line": 207,
-    "start": 20,
-    "end": 35,
+    "line": 226,
+    "start": 39,
+    "end": 53,
     "filename": "decorator.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -519,11 +187,11 @@
           {
             "root": {
               "filename": "decorator.py",
-              "line": 207,
-              "start": 20,
-              "end": 35
+              "line": 226,
+              "start": 39,
+              "end": 53
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -535,15 +203,15 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 207,
-                "start": 20,
-                "end": 35
+                "line": 226,
+                "start": 39,
+                "end": 53
               },
-              "resolves_to": [ "decorator.foo_args_kwargs" ],
+              "resolves_to": [ "decorator.Foo.self_has_generic_type" ],
               "port": "formal(x)",
-              "length": 2
+              "length": 6
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -561,9 +229,9 @@
     "callable": "decorator.main",
     "callable_line": 202,
     "code": 5002,
-    "line": 203,
-    "start": 8,
-    "end": 23,
+    "line": 218,
+    "start": 28,
+    "end": 42,
     "filename": "decorator.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -573,11 +241,11 @@
           {
             "root": {
               "filename": "decorator.py",
-              "line": 203,
-              "start": 8,
-              "end": 23
+              "line": 218,
+              "start": 28,
+              "end": 42
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -589,15 +257,15 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 203,
-                "start": 8,
-                "end": 23
+                "line": 218,
+                "start": 28,
+                "end": 42
               },
-              "resolves_to": [ "decorator.foo" ],
+              "resolves_to": [ "decorator.foo_log_first_parameter" ],
               "port": "formal(x)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -619,9 +287,171 @@
     "callable": "decorator.main",
     "callable_line": 202,
     "code": 5002,
+    "line": 216,
+    "start": 32,
+    "end": 46,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 216,
+              "start": 32,
+              "end": 46
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 216,
+                "start": 32,
+                "end": 46
+              },
+              "resolves_to": [ "decorator.foo_using_decorator_factory" ],
+              "port": "formal(x)",
+              "length": 2
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
+    "line": 222,
+    "start": 14,
+    "end": 28,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 222,
+              "start": 14,
+              "end": 28
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 222,
+                "start": 14,
+                "end": 28
+              },
+              "resolves_to": [ "decorator.Foo.foo" ],
+              "port": "formal(x)",
+              "length": 4
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
+    "line": 207,
+    "start": 20,
+    "end": 34,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 207,
+              "start": 20,
+              "end": 34
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 207,
+                "start": 20,
+                "end": 34
+              },
+              "resolves_to": [ "decorator.foo_args_kwargs" ],
+              "port": "formal(x)",
+              "length": 2
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
     "line": 228,
     "start": 26,
-    "end": 41,
+    "end": 40,
     "filename": "decorator.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -633,9 +463,9 @@
               "filename": "decorator.py",
               "line": 228,
               "start": 26,
-              "end": 41
+              "end": 40
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -649,19 +479,189 @@
                 "filename": "decorator.py",
                 "line": 228,
                 "start": 26,
-                "end": 41
+                "end": 40
               },
               "resolves_to": [ "decorator.Foo.some_class_method" ],
               "port": "formal(x)",
               "length": 4
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
     ],
     "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
+    "line": 204,
+    "start": 18,
+    "end": 32,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 204,
+              "start": 18,
+              "end": 32
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 204,
+                "start": 18,
+                "end": 32
+              },
+              "resolves_to": [ "decorator.foo_with_sink" ],
+              "port": "formal(x)",
+              "length": 3
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-type": "scalar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
+    "line": 224,
+    "start": 14,
+    "end": 28,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 224,
+              "start": 14,
+              "end": 28
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 224,
+                "start": 14,
+                "end": 28
+              },
+              "resolves_to": [ "decorator.Foo.bar" ],
+              "port": "formal(x)",
+              "length": 3
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
+    "line": 203,
+    "start": 8,
+    "end": 22,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 203,
+              "start": 8,
+              "end": 22
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 203,
+                "start": 8,
+                "end": 22
+              },
+              "resolves_to": [ "decorator.foo" ],
+              "port": "formal(x)",
+              "length": 2
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -690,7 +690,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -712,7 +712,7 @@
               "port": "formal(self)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -741,7 +741,7 @@
               "port": "formal(x)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -772,7 +772,7 @@
               "port": "formal(x)",
               "length": 4
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -794,7 +794,7 @@
               "port": "formal(other)",
               "length": 4
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -825,7 +825,7 @@
               "port": "formal(x)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -846,10 +846,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 62,
-              "start": 20,
-              "end": 26
+              "start": 19,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -880,7 +880,7 @@
               "port": "formal(y)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -904,10 +904,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 135,
-              "start": 24,
-              "end": 39
+              "start": 23,
+              "end": 38
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -931,10 +931,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 117,
-              "start": 24,
-              "end": 28
+              "start": 23,
+              "end": 27
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -965,7 +965,7 @@
               "port": "formal(*rest0)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -987,7 +987,7 @@
               "port": "formal(*rest0)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1011,10 +1011,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 164,
-              "start": 20,
-              "end": 24
+              "start": 19,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1035,10 +1035,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 87,
-              "start": 20,
-              "end": 21
+              "start": 19,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1061,7 +1061,7 @@
                 "filename": "decorator.py",
                 "line": 95,
                 "start": 17,
-                "end": 36
+                "end": 35
               },
               "resolves_to": [
                 "decorator.foo_with_shady_decorators.__inlined_with_logging_sink"
@@ -1070,7 +1070,7 @@
               "length": 1
             },
             "tito": [ { "line": 95, "start": 17, "end": 18 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_lhs" },
@@ -1091,7 +1091,7 @@
     "code": 5002,
     "line": 95,
     "start": 17,
-    "end": 36,
+    "end": 35,
     "filename": "decorator.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -1103,10 +1103,10 @@
               "filename": "decorator.py",
               "line": 95,
               "start": 21,
-              "end": 36
+              "end": 35
             },
-            "tito": [ { "line": 95, "start": 21, "end": 36 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 95, "start": 21, "end": 35 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_rhs" },
@@ -1124,7 +1124,7 @@
                 "filename": "decorator.py",
                 "line": 95,
                 "start": 17,
-                "end": 36
+                "end": 35
               },
               "resolves_to": [
                 "decorator.foo_with_shady_decorators.__inlined_with_logging_sink"
@@ -1132,7 +1132,7 @@
               "port": "formal(y)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1168,7 +1168,7 @@
               "port": "formal(x)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1190,7 +1190,7 @@
               "port": "formal(self)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1210,10 +1210,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 62,
-              "start": 20,
-              "end": 26
+              "start": 19,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1225,10 +1225,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 62,
-              "start": 20,
-              "end": 26
+              "start": 19,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1258,7 +1258,7 @@
               "port": "formal(x)",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1286,7 +1286,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1316,7 +1316,7 @@
               "port": "formal(x)",
               "length": 5
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1338,7 +1338,7 @@
               "port": "formal(other)",
               "length": 5
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1366,7 +1366,7 @@
               "port": "formal(x)",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1386,7 +1386,7 @@
               "port": "formal(self)",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1406,10 +1406,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 180,
-              "start": 20,
-              "end": 21
+              "start": 19,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1439,7 +1439,7 @@
               "port": "formal(x)",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1467,7 +1467,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1512,7 +1512,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1535,10 +1535,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 19,
-              "start": 20,
-              "end": 21
+              "start": 19,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1571,7 +1571,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1601,7 +1601,7 @@
               "port": "formal(y)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1624,10 +1624,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 82,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1660,7 +1660,7 @@
               "port": "formal(y)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1680,10 +1680,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 50,
-              "start": 24,
-              "end": 25
+              "start": 23,
+              "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1713,7 +1713,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1746,7 +1746,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1776,7 +1776,7 @@
               "port": "formal(y)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1798,7 +1798,7 @@
               "port": "formal(x)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1831,7 +1831,7 @@
               "port": "formal(y)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_lhs" },
@@ -1865,7 +1865,7 @@
               "port": "formal(x)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1898,7 +1898,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1921,10 +1921,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 39,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1947,10 +1947,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 19,
-              "start": 20,
-              "end": 21
+              "start": 19,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -1973,10 +1973,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 62,
-              "start": 20,
-              "end": 26
+              "start": 19,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1996,10 +1996,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 50,
-              "start": 24,
-              "end": 25
+              "start": 23,
+              "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -2019,10 +2019,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 135,
-              "start": 24,
-              "end": 39
+              "start": 23,
+              "end": 38
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -2045,10 +2045,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 164,
-              "start": 20,
-              "end": 24
+              "start": 19,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -2078,7 +2078,7 @@
               "port": "formal(*rest0)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -2098,10 +2098,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 87,
-              "start": 20,
-              "end": 21
+              "start": 19,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -2121,10 +2121,10 @@
             "root": {
               "filename": "decorator.py",
               "line": 117,
-              "start": 24,
-              "end": 28
+              "start": 23,
+              "end": 27
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

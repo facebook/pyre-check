@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import enum
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def return_via_parameter_type(parameter):
@@ -36,7 +36,7 @@ def tito(parameter, other):
 
 
 def test_tito():
-    a = tito(__test_source(), [1, 2])
+    a = tito(_test_source(), [1, 2])
     return a
 
 

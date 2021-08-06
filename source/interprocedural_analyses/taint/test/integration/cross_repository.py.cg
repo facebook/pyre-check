@@ -1,7 +1,7 @@
 @generated
 Call dependencies
 cross_repository.cross_repository_anchor_sink (fun) -> []
-cross_repository.cross_repository_source (fun) -> [__test_sink (fun)]
+cross_repository.cross_repository_source (fun) -> [_test_sink (fun)]
 cross_repository.returns_crtex_source (fun) -> []
-cross_repository.test (fun) -> [__test_sink (fun) cross_repository.returns_crtex_source (fun)]
-cross_repository.test_cross_repository_anchor (fun) -> [__test_source (fun) cross_repository.cross_repository_anchor_sink (fun)]
+cross_repository.test (fun) -> [_test_sink (fun) cross_repository.returns_crtex_source (fun)]
+cross_repository.test_cross_repository_anchor (fun) -> [_test_source (fun) cross_repository.cross_repository_anchor_sink (fun)]

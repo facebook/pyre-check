@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 from django.http import HttpRequest, HttpResponse
 
@@ -30,10 +30,10 @@ def test(complicated_service: ComplicatedService):
         except:
             raise
 
-    __test_sink(result)
+    _test_sink(result)
 
 
 def test_none_clears_taint():
-    x = __test_source()
+    x = _test_source()
     x = None
-    __test_sink(x)
+    _test_sink(x)
