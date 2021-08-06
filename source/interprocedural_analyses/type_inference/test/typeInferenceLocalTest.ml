@@ -208,7 +208,8 @@ module Setup = struct
     let module_results =
       TypeInference.Local.infer_for_module ~configuration ~global_resolution ~source
     in
-    let is_target { LocalResult.define = { name; _ }; _ } =
+    let is_target local_result =
+      let name = LocalResult.define_name local_result in
       Reference.equal name (Reference.create target)
     in
     let first = function
@@ -605,6 +606,19 @@ let test_inferred_function_parameters context =
     |}
     ~target:"test.bar"
     ~expected:(single_parameter ~default:"None" "Optional[str]");
+  (* For given annotations, use expressions rather than types so that the qualifier will match the
+     code rather than the fully qualified type name. This is important for aliased imports *)
+  check_inference_results
+    {|
+      # This is an aliased import.
+      # The full qualifier is sqlalchemy.ext.declarative.api.DeclarativeMeta.
+      from sqlalchemy.ext.declarative import DeclarativeMeta
+
+      def foo(x: DeclarativeMeta) -> None:
+          return None
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter "sqlalchemy.ext.declarative.DeclarativeMeta");
   let no_inferences =
     {|
       [{ "name": "x", "annotation": null, "value": null, "index": 0 }]
@@ -690,6 +704,24 @@ let test_inferred_function_parameters context =
         [
           { "name": "a", "annotation": null, "value": null, "index": 0 },
           { "name": "x", "annotation": "int", "value": "15", "index": 1 }
+        ]
+     |};
+  check_inference_results
+    {|
+      from typing import Any, Dict, Optional, TypeVar
+
+      # copied from typeshed
+      _T = TypeVar("_T")
+      def deepcopy(x: _T, memo: Optional[Dict[int, Any]] = ..., _nil: Any = ...) -> _T: ...
+
+      def foo(x):
+          return deepcopy(x)
+    |}
+    ~target:"test.foo"
+    ~expected:
+      {|
+        [
+          { "name": "x", "annotation": null, "value": null, "index": 0 }
         ]
      |};
   ()

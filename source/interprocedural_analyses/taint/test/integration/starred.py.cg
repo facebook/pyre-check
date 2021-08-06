@@ -1,4 +1,4 @@
 @generated
 Call dependencies
-starred.sink (fun) -> [__test_sink (fun)]
-starred.test (fun) -> [__test_source (fun) starred.sink (fun)]
+starred.sink (fun) -> [_test_sink (fun)]
+starred.test (fun) -> [_test_source (fun) starred.sink (fun)]

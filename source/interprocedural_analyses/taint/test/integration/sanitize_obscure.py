@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import TypeVar
 
 
@@ -17,13 +17,13 @@ def sanitize_all(x: T) -> T:
 
 def test1(x):
     y = sanitize_all(x)
-    __test_sink(y)
+    _test_sink(y)
 
 
 def test2():
-    x = __test_source()
+    x = _test_source()
     y = sanitize_all(x)
-    __test_sink(y)
+    _test_sink(y)
 
 
 def sanitize_tito(x: T) -> T:
@@ -32,13 +32,13 @@ def sanitize_tito(x: T) -> T:
 
 def test3(x):
     y = sanitize_tito(x)
-    __test_sink(y)
+    _test_sink(y)
 
 
 def test4():
-    x = __test_source()
+    x = _test_source()
     y = sanitize_tito(x)
-    __test_sink(y)
+    _test_sink(y)
 
 
 def a_source():

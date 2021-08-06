@@ -163,7 +163,10 @@ async def try_initialize(
         )
 
         initialized_notification = await lsp.read_json_rpc(input_channel)
-        if initialized_notification.method != "initialized":
+        if initialized_notification.method == "shutdown":
+            await _wait_for_exit(input_channel, output_channel)
+            return InitializationExit()
+        elif initialized_notification.method != "initialized":
             actual_message = json.dumps(initialized_notification.json())
             raise lsp.ServerNotInitializedError(
                 "Failed to receive an `initialized` request from client. "
@@ -204,6 +207,27 @@ async def _read_lsp_request(
                 message=str(json_rpc_error),
             ),
         )
+
+
+async def _wait_for_exit(
+    input_channel: connection.TextReader, output_channel: connection.TextWriter
+) -> None:
+    """
+    Wait for an LSP "exit" request from the `input_channel`. This is mostly useful
+    when the LSP server has received a "shutdown" request, in which case the LSP
+    specification dictates that only "exit" can be sent from the client side.
+
+    If a non-exit LSP request is received, drop it and keep waiting on another
+    "exit" request.
+    """
+    while True:
+        async with _read_lsp_request(input_channel, output_channel) as request:
+            if request.method == "exit":
+                return
+            else:
+                raise json_rpc.InvalidRequestError(
+                    f"Only exit requests are accepted after shutdown. Got {request}."
+                )
 
 
 async def _publish_diagnostics(
@@ -266,16 +290,8 @@ class PyreServer:
         self.pyre_manager = pyre_manager
 
     async def wait_for_exit(self) -> int:
-        while True:
-            async with _read_lsp_request(
-                self.input_channel, self.output_channel
-            ) as request:
-                LOG.debug(f"Received post-shutdown request: {request}")
-
-                if request.method == "exit":
-                    return 0
-                else:
-                    raise json_rpc.InvalidRequestError("LSP server has been shut down")
+        await _wait_for_exit(self.input_channel, self.output_channel)
+        return 0
 
     async def _try_restart_pyre_server(self) -> None:
         if self.state.consecutive_start_failure < CONSECUTIVE_START_ATTEMPT_THRESHOLD:

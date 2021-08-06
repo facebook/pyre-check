@@ -35,14 +35,14 @@ val infer_for_define
   :  configuration:Configuration.Analysis.t ->
   global_resolution:Analysis.GlobalResolution.t ->
   source:Ast.Source.t ->
-  qualifier:TypeInferenceData.SerializableReference.t ->
+  qualifier:Ast.Reference.t ->
   define:Ast.Statement.Define.t Ast.Node.t ->
   TypeInferenceData.LocalResult.t
 
 val empty_infer_for_define
   :  configuration:Configuration.Analysis.t ->
   global_resolution:Analysis.GlobalResolution.t ->
-  qualifier:TypeInferenceData.SerializableReference.t ->
+  qualifier:Ast.Reference.t ->
   define:Ast.Statement.Define.t Ast.Node.t ->
   TypeInferenceData.LocalResult.t
 

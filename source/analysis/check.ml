@@ -23,7 +23,6 @@ let checks : (module Signature) String.Map.t =
   let checks : (string * (module Signature)) list =
     [
       "awaitable", (module AwaitableCheck);
-      "deobfuscation", (module DeobfuscationCheck);
       "immutable_collection", (module ImmutableCollectionCheck);
       "liveness", (module LivenessCheck);
       "uninitialized_local", (module UninitializedLocalCheck);

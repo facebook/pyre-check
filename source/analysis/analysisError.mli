@@ -409,7 +409,44 @@ and kind =
     }
 [@@deriving compare, eq, sexp, show, hash]
 
-include BaseError.Error with type kind := kind
+type t = {
+  location: Location.WithModule.t;
+  kind: kind;
+  signature: Statement.Define.Signature.t Node.t;
+}
+[@@deriving compare, eq, show, sexp, hash]
+
+module Instantiated : sig
+  type t [@@deriving sexp, compare, eq, show, hash, yojson { strict = false }]
+
+  val location : t -> Location.WithPath.t
+
+  val path : t -> string
+
+  val code : t -> int
+
+  val description : t -> string
+
+  val long_description : t -> string
+
+  val concise_description : t -> string
+end
+
+include Hashable with type t := t
+
+val create : location:Location.WithModule.t -> kind:kind -> define:Statement.Define.t Node.t -> t
+
+val path : t -> Reference.t
+
+val key : t -> Location.WithModule.t
+
+val code : t -> int
+
+val instantiate
+  :  show_error_traces:bool ->
+  lookup:(Reference.t -> string option) ->
+  t ->
+  Instantiated.t
 
 module Set : Set.S with type Elt.t = t
 

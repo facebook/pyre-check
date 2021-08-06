@@ -6,7 +6,7 @@
 # flake8: noqa
 
 
-from builtins import __test_source
+from builtins import _test_source
 
 
 def f():
@@ -46,5 +46,5 @@ def inferred_sink(x):
 
 
 def test_to_subkind_sink():
-    x = __test_source()
+    x = _test_source()
     inferred_sink(x)

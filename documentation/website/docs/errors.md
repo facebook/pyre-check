@@ -1014,38 +1014,38 @@ Pyre will error when a type annotation is applied to something that can't be ann
 
 1. A variable is re-annotated after first declaration or an explicity annotated function parameter is re-annotated within the function body. This is not allowed as re-annotating variables reduces readability and causes the annotation of a variable to depend on the position in control flow.
 
-```python
-def transformation(p: int) -> str:
-    return str(p + 1)
+  ```python
+  def transformation(p: int) -> str:
+      return str(p + 1)
 
-def foo(x: int) -> None:
-    y: int = x + 2
-    z = x + 3
+  def foo(x: int) -> None:
+      y: int = x + 2
+      z = x + 3
 
-    # Each of the following will produce an error
-    x: str = transformation(x)
-    y: str = transformation(y)
-    z: int = 4
-```
-An easy fix for the first two errors is to use a new variable rather than re-annotating the old variable so it can hold a new type. For the third error, `z` should have been annotated at first declaration.
+      # Each of the following will produce an error
+      x: str = transformation(x)
+      y: str = transformation(y)
+      z: int = 4
+  ```
+  An easy fix for the first two errors is to use a new variable rather than re-annotating the old variable so it can hold a new type. For the third error, `z` should have been annotated at first declaration.
 
 2. Trying to annotate non-self attributes, i.e annotating the attributes of a different class than the one whose scope you are in:
 
-```python
-class Foo:
-    attribute: int = 1
+  ```python
+  class Foo:
+      attribute: int = 1
 
-class Bar:
-    def __init__(self):
-        Foo.attribute: str = "hello"
+  class Bar:
+      def __init__(self):
+          Foo.attribute: str = "hello"
 
-def some_method() -> None:
-    Foo.attribute: int = 5
-```
+  def some_method() -> None:
+      Foo.attribute: int = 5
+  ```
 
-This is not allowed as Pyre needs to be able to statically determine the type of globally accessible values, including class attributes. Even if Pyre followed control flow across functions to determine class attribute annotations, such re-annotations imply very dynamic behavior that makes the code difficult to work with.
+  This is not allowed as Pyre needs to be able to statically determine the type of globally accessible values, including class attributes. Even if Pyre followed control flow across functions to determine class attribute annotations, such re-annotations imply very dynamic behavior that makes the code difficult to work with.
 
-The fix for this situation, similar to the case above, is to annotate the class attribute at its definition in the class that owns it and remove any annotations elsewhere. If this attribute is from a third party library, then you can add a [stub](errors.md#third-party-libraries) for the class and annotate the attribute there.
+  The fix for this situation, similar to the case above, is to annotate the class attribute at its definition in the class that owns it and remove any annotations elsewhere. If this attribute is from a third party library, then you can add a [stub](errors.md#third-party-libraries) for the class and annotate the attribute there.
 
 ### 39: Invalid Inheritance
 When defining a new class, Pyre will error if the base class given is not a valid parent class. This may be caused by various conditions:
@@ -1070,29 +1070,29 @@ When defining a new class, Pyre will error if the base class given is not a vali
       ...
   ```
 
-Pyre does not support dynamic expressions as base classes, even if they may evaluate to a valid class at runtime. This is because the type checker relies on building up a valid class hierarchy before it can resolve types in the Python it is analyzing. On the other hand, type aliases are equivalent to types and are acceptable as base classes.
+  Pyre does not support dynamic expressions as base classes, even if they may evaluate to a valid class at runtime. This is because the type checker relies on building up a valid class hierarchy before it can resolve types in the Python it is analyzing. On the other hand, type aliases are equivalent to types and are acceptable as base classes.
 
 
 3. You are defining a typed dictionary that does not inherit from another typed dictionary.
 
-```python
-from typing import TypedDict
+  ```python
+  from typing import TypedDict
 
-class NonTypedDict:
-    ...
+  class NonTypedDict:
+      ...
 
-class Movie(TypedDict):
-    name: str
-    year: int
+  class Movie(TypedDict):
+      name: str
+      year: int
 
-class BookBasedMovie(Movie): # No error
-    based_on: str
+  class BookBasedMovie(Movie): # No error
+      based_on: str
 
-class BookBasedMovie(NonTypedDict): # Invalid inheritance error
-    based_on: str
-```
+  class BookBasedMovie(NonTypedDict): # Invalid inheritance error
+      based_on: str
+  ```
 
-If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
+  If inheriting from another typed dictionary, fields need to have a consistent type between child and parent, in order for subclassing to be sound. Similarly, a required field in the child must also be required for the parent.
 
 ### 40: Invalid Override
 Pyre will error when methods in a child class override those in a parent class inconsistently.
@@ -1230,53 +1230,53 @@ def f(x: Union[int, float, str]) -> Union[int, float, str]:
 
 ### 45: Invalid Class Instantiation
 
-In typed Python, certain classes are intended to represent abstract interfaces. These classes are not meant to be instantiated directly at runtime, and therefore Pyre will error on any attempt to perform such instantiations.
-
-Currently, Pyre will recognize a given class `C` as an interface class, if one of the following statement about `C` is true:
+In typed Python, some classes that represent abstract interfaces may not be directly instantiated. Pyre considers a class `C` abstract, and will error on invalid instantiation if you try to construct an instance directly in either of the following cases:
 
 1. `C` contains one or more abstract methods that are left not overridden. Abstract methods are defined as methods that are decorated with [`@abc.abstractmethod`](https://docs.python.org/3/library/abc.html#abc.abstractmethod).
+
+  For example, here `Derived0` is abstract because it does not override `bar`, but `Derived1` may be instantiated:
+  ```python
+  import abc
+  from typing import Protocol
+
+  class Base(abc.ABC):
+      @abc.abstractmethod
+      def foo(self) -> None:
+          raise NotImplementedError
+      @abc.abstractmethod
+      def bar(self) -> str:
+          raise NotImplementedError
+
+  class Derived0(Base):
+      def foo(self) -> None:
+          print(self.bar())
+
+  class Derived1(Derived0):
+      def bar(self) -> str:
+          return "bar"
+
+  def test0() -> None:
+      base = Base()  # Error! Class `Base` contains 2 abstract methods and therefore cannot be instantiated.
+      derived0 = Derived0()  # Error! Class `Derived0` contains 1 abstract method `bar` and therefore cannot be instantiated.
+      derived1 = Derived1()  # OK
+  ```
+
 2. `C` directly inherits from [`typing.Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol).
 
-To fix the error, use interface classes as type annotations only and do not instantiate any object from them. If object creation is a must, you can define subclasses of those interface classes, provide concrete implementations for all abstract methods (for case 1) or required interfaces (for case 2), and instantiate those subclasses instead.
+  For example, here `MyProtocol` is abstract because it inherits directly from `typing.Protocol`, but `MyClass` (which implements the protocol interface) may be instantiated:
+  ```python
+  class MyProtocol(Protocol):
+      def baz(self, x: int) -> int:
+          ...
 
-```python
-import abc
-from typing import Protocol
+  class MyClass:
+      def baz(self, x: int) -> int:
+          return x
 
-class Base(abc.ABC):
-    @abc.abstractmethod
-    def foo(self) -> None:
-        raise NotImplementedError
-    @abc.abstractmethod
-    def bar(self) -> str:
-        raise NotImplementedError
-
-class Derived0(Base):
-    def foo(self) -> None:
-        print(self.bar())
-
-class Derived1(Derived0):
-    def bar(self) -> str:
-        return "bar"
-
-def test0() -> None:
-    base = Base()  # Error! Class `Base` contains 2 abstract methods and therefore cannot be instantiated.
-    derived0 = Derived0()  # Error! Class `Derived0` contains 1 abstract method `bar` and therefore cannot be instantiated.
-    derived1 = Derived1()  # OK
-
-
-class MyProtocol(Protocol):
-    def baz(self, x: int) -> int:
-        ...
-
-class MyClass:
-    def baz(self, x: int) -> int:
-        return x
-
-def test1() -> None:
-    object0 = MyProtocol()  # Error! Class `MyProtocol` cannot be instantiated.
-    object1 = MyClass()  # OK
-```
+  def test1() -> None:
+      object0 = MyProtocol()  # Error! Class `MyProtocol` cannot be instantiated.
+      object1 = MyClass()  # OK
+  ```
 
 ### 46: Invalid Type Variance
 
@@ -1363,7 +1363,7 @@ class ChildB(Parent):
 
 ### 48: Invalid Exception
 
-In python, you can only raise objects that derive from `BaseException` (it's more common to subtype `Exception` or one of the standard library-defined errors like `ValueError`), attempting to raise another object such as a bare string will result in a `TypeError`. As a result, pyre will flag code like this:
+In python, you can only raise objects that derive from `BaseException` (it's more common to subtype `Exception` or one of the standard library-defined errors like `ValueError`). Attempting to raise another object such as a bare string will result in a `TypeError`. As a result, pyre will flag code like this:
 ```python
 def f(x: int) -> None:
     if x > 1:
@@ -1378,18 +1378,8 @@ def f(x: int) -> None:
 ```
 
 ### 49: Unsafe Cast
-Pyre supports `cast` to force the type checker to accept a given type for your expression, no matter what it would otherwise infer that type to be. This is a good escape hatch but can also hide type inconsistencies and introduce unsoundness. For example:
 
-```python
-from typing import cast
-
-def foo(x: int) -> str:
-    y = cast(str, x)
-    return y # No type error, even though this is unsound.
-```
-
-It is safe to broaden the inferred type of a variable. In other words, casting an expression to a more general type than the type checker thinks it has is sound. If you wish to broaden the inferred type without running the risk of introducing type inconsistencies, you can use `pyre_extensions.safe_cast`. This will warn if the type you are casting to is not greater than or equal to the inferred type of the expression.
-
+To allow "safe" casts that preserve type soundness, you can use `pyre_extensions.safe_cast`. This will verify that the type you are casting to is broader than the type of the expression. In cases where this is not the case, pyre will produce an Unsafe Cast error. For example:
 ```python
 from pyre_extensions import safe_cast
 
@@ -1399,19 +1389,28 @@ def foo(x: int) -> str:
     return z # Invalid return type error
 ```
 
+Some context on this: `pyre_extensions.safe_cast` is a type-safe alternative to `typing.cast`. The `typing.cast` function forces type checkers to accept a type for an expression that otherwise would not be valid, which is sometimes useful but also can hide clear type errors, for example:
+```python
+from typing import cast
+
+def foo(x: int) -> str:
+    y = cast(str, x)
+    return y # No type error, even though this is unsound.
+```
 
 ### 51: Unused Local Mode
-Pyre only supports two modes of type checking, [unsafe](gradual_typing.md#gradual-typing) and [strict](gradual_typing.md#strict-mode). By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration.md#configuration-files).
 
-You can also change the type checking mode of a single file by adding a local mode in the form of a `# pyre-strict` or `# pyre-unsafe` comment on its own line to the file header. This will ensure that file checks under the specified mode regardless of the default.
+This error will be thrown if you specify more than one local mode, by having multiple line comments of the form `# pyre-strict` or `# pyre-unsafe` in the header. Pyre will ask you to remove all but one local mode declaration if you have more than one because the mode needs to be unambiguous.
 
-If you specify more than one local mode, Pyre will error and ask you to remove all but one.
+Context: Pyre  supports two modes of type checking, [unsafe](gradual_typing.md#gradual-typing) and [strict](gradual_typing.md#strict-mode).
+- By default, every file runs in unsafe mode, but you can change this default to strict in your [configuration file](configuration.md#configuration-files).
+- In addition, you can set the type checking mode of a module to differ from the default for the project by adding a comment in the form `# pyre-strict` or `# pyre-unsafe` comment on its own line to the file header.
 
 ### 52: Private Protocol Property
 
 Python [Protocols](https://www.python.org/dev/peps/pep-0544/) provide a way to statically check "duck typing", what many languages would refer to as `interfaces`.
 
-Because protocols specify only an interface, they should not include [private fields and methods](https://docs.python.org/3/tutorial/classes.html#private-variables), which may not be accessed outside of the class where they are defines. Pyre will complain about the following:
+Because protocols specify only an interface, they should not include [private fields and methods](https://docs.python.org/3/tutorial/classes.html#private-variables), which cannot not be accessed outside of the class where they are defined (including in subclasses). Pyre will complain about the following:
 ```python
 from typing import Protocol
 
@@ -1426,7 +1425,7 @@ class SomeDuck:
         return "quack"
 ```
 
-Usually if you are attempting to do this you have some reason not to make the protocol property public, but you can use a protected (single-leading-underscore) property instead:
+To signal a non-public part of an interface, use a protected field or method (single leading underscore), which is accessible by classes implementing the interface:
 ```python
 from typing import Protocol
 
@@ -1444,7 +1443,7 @@ class SomeDuck:
 ### 53: Missing Annotation For Captured Variables
 
 Pyre makes no attempt at trying to infer the types across function boundaries. The statement holds for nested functions as well.
-From a nested function's perspective, a variable defined in an nesting function behaves not too differently from a global variable. Therefore, Pyre treats such variables in the same way as it treats global variable: an explicit annotation is required if strict mode is turned on.
+From a nested function's perspective, a variable defined in an nesting function behaves similarly to a global variable. As with global variables, an explicit annotation is required if strict mode is turned on:
 
 ```python
 def outer_function0() -> int:

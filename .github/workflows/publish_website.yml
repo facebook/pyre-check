@@ -1,9 +1,9 @@
-name: publish website  
-          
+name: publish website
+
 on:
   push:
-    branches: [ master ]
-    
+    branches: [ main ]
+
   workflow_dispatch:
 
 jobs:

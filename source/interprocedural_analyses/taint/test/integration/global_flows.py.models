@@ -19,10 +19,10 @@
               "filename": "global_flows.py",
               "line": 65,
               "start": 13,
-              "end": 28
+              "end": 27
             },
-            "tito": [ { "line": 65, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 65, "start": 13, "end": 27 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -59,7 +59,7 @@
     "code": 5002,
     "line": 73,
     "start": 20,
-    "end": 35,
+    "end": 34,
     "filename": "global_flows.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -71,9 +71,9 @@
               "filename": "global_flows.py",
               "line": 73,
               "start": 20,
-              "end": 35
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -87,7 +87,7 @@
                 "filename": "global_flows.py",
                 "line": 73,
                 "start": 20,
-                "end": 35
+                "end": 34
               },
               "resolves_to": [ "global_flows.append_argument" ],
               "port": "formal(arg)",
@@ -125,10 +125,10 @@
               "filename": "global_flows.py",
               "line": 21,
               "start": 19,
-              "end": 34
+              "end": 33
             },
-            "tito": [ { "line": 21, "start": 19, "end": 34 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 21, "start": 19, "end": 33 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -164,8 +164,8 @@
     "callable_line": 28,
     "code": 5002,
     "line": 29,
-    "start": 33,
-    "end": 34,
+    "start": 32,
+    "end": 33,
     "filename": "global_flows.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -177,10 +177,10 @@
               "filename": "global_flows.py",
               "line": 29,
               "start": 16,
-              "end": 31
+              "end": 30
             },
-            "tito": [ { "line": 29, "start": 16, "end": 31 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 29, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -195,8 +195,8 @@
             "root": {
               "filename": "global_flows.py",
               "line": 29,
-              "start": 33,
-              "end": 34
+              "start": 32,
+              "end": 33
             },
             "leaves": [ { "kind": "Test", "name": "Obj{global_flows.x}" } ]
           }
@@ -217,7 +217,7 @@
     "code": 5002,
     "line": 41,
     "start": 29,
-    "end": 44,
+    "end": 43,
     "filename": "global_flows.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -229,9 +229,9 @@
               "filename": "global_flows.py",
               "line": 41,
               "start": 29,
-              "end": 44
+              "end": 43
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -245,7 +245,7 @@
                 "filename": "global_flows.py",
                 "line": 41,
                 "start": 29,
-                "end": 44
+                "end": 43
               },
               "resolves_to": [ "global_flows.indirectly_update_x_arg1" ],
               "port": "formal(arg)",
@@ -271,7 +271,7 @@
     "code": 5002,
     "line": 53,
     "start": 29,
-    "end": 44,
+    "end": 43,
     "filename": "global_flows.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -283,9 +283,9 @@
               "filename": "global_flows.py",
               "line": 53,
               "start": 29,
-              "end": 44
+              "end": 43
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -299,7 +299,7 @@
                 "filename": "global_flows.py",
                 "line": 53,
                 "start": 29,
-                "end": 44
+                "end": 43
               },
               "resolves_to": [ "global_flows.indirectly_update_x_arg2" ],
               "port": "formal(arg)",

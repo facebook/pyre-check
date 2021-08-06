@@ -5,7 +5,7 @@
 
 # flake8: noqa
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from functools import wraps
 from typing import Awaitable, Callable
 
@@ -13,10 +13,10 @@ from typing import Awaitable, Callable
 def with_logging(f: Callable[[int], None]) -> Callable[[int], None]:
     def some_helper(x: int) -> None:
         print(x)
-        __test_sink(x)
+        _test_sink(x)
 
     def inner(x: int) -> None:
-        __test_sink(x)
+        _test_sink(x)
         f(x)
         some_helper(x)
 
@@ -25,7 +25,7 @@ def with_logging(f: Callable[[int], None]) -> Callable[[int], None]:
 
 def with_logging2(f: Callable[[int], None]) -> Callable[[int], None]:
     def inner(x: int) -> None:
-        __test_sink(x)
+        _test_sink(x)
         f(x)
 
     return inner
@@ -33,7 +33,7 @@ def with_logging2(f: Callable[[int], None]) -> Callable[[int], None]:
 
 def skip_this_decorator(f: Callable[[int], None]) -> Callable[[int], None]:
     def inner(x: int) -> None:
-        __test_sink(x)
+        _test_sink(x)
         f(x)
 
     return inner
@@ -42,7 +42,7 @@ def skip_this_decorator(f: Callable[[int], None]) -> Callable[[int], None]:
 @with_logging
 @with_logging2
 def foo(x: int) -> None:
-    __test_sink(x)
+    _test_sink(x)
 
 
 @skip_this_decorator
@@ -59,7 +59,7 @@ def baz(x: int) -> None:
 def pass_local_variable_to_x(f: Callable) -> Callable:
     @wraps(f)
     def inner(request: str, *args, **kwargs) -> None:
-        __test_sink(request)
+        _test_sink(request)
         x = 42
         f(request, x, *args, **kwargs)
 
@@ -68,12 +68,12 @@ def pass_local_variable_to_x(f: Callable) -> Callable:
 
 @pass_local_variable_to_x
 def handle_request(request: str, x: int, y: int) -> None:
-    __test_sink(x)
+    _test_sink(x)
 
 
 class Foo:
     def return_source(self) -> int:
-        return __test_source()
+        return _test_source()
 
 
 def identity(f: Callable) -> Callable:
@@ -92,15 +92,15 @@ def return_foo() -> Foo:
 
 def call_return_foo() -> None:
     foo = return_foo()
-    __test_sink(foo.return_source())
+    _test_sink(foo.return_source())
 
 
 def main() -> None:
-    foo(__test_source())
-    bar(__test_source())
-    baz(__test_source())
+    foo(_test_source())
+    bar(_test_source())
+    baz(_test_source())
 
     # No issue because this `x` is not passed to `handle_request`.
-    handle_request("hello", __test_source(), 42)
-    handle_request(__test_source(), 42, 42)
+    handle_request("hello", _test_source(), 42)
+    handle_request(_test_source(), 42, 42)
     call_return_foo()

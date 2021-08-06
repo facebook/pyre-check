@@ -5,19 +5,19 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 class SkipMe:
     def taint_here(self, x):
-        __test_sink(x)
+        _test_sink(x)
 
     def tito_here(self, x):
         return x
 
 
 def no_issue_due_to_skip():
-    x = __test_source()
+    x = _test_source()
     skip = SkipMe()
     skip.taint_here(x)
-    __test_sink(skip.tito_here(x))
+    _test_sink(skip.tito_here(x))

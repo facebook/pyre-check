@@ -1464,6 +1464,8 @@ let test_callable_parameter_variadics context =
        `BoundMethod[typing.Callable[[Foo, Named(x, int), Named(y, str)], int], Foo]`.";
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to \
        anonymous call but got `str`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to \
+       anonymous call but got `int`.";
     ];
   (* PyTorch style delegation pattern *)
   assert_type_errors
@@ -1537,6 +1539,8 @@ let test_callable_parameter_variadics context =
       "Missing argument [20]: Call `H.f` expects argument in position 1.";
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `H.f` but got `str`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
+       `H.f` but got `int`.";
     ];
 
   assert_type_errors

@@ -243,6 +243,16 @@ module Record : sig
 
     val name : 'annotation record -> Identifier.t
   end
+
+  module TypeOperation : sig
+    module Compose : sig
+      type 'annotation t = 'annotation OrderedTypes.record
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+
+    type 'annotation record = Compose of 'annotation Compose.t
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module Monomial : sig
@@ -332,6 +342,7 @@ and t =
   | RecursiveType of t Record.RecursiveType.record
   | Top
   | Tuple of t Record.OrderedTypes.record
+  | TypeOperation of t Record.TypeOperation.record
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
   | IntExpression of t RecordIntExpression.t
@@ -543,6 +554,11 @@ module Callable : sig
 
   val map_parameters : t -> f:(parameters -> parameters) -> t
 
+  val map_parameters_with_result
+    :  t ->
+    f:(parameters -> (parameters, 'error) result) ->
+    (t, 'error) result
+
   val map_annotation : t -> f:(type_t -> type_t) -> t
 
   val with_return_annotation : t -> annotation:type_t -> t
@@ -603,6 +619,24 @@ module RecursiveType : sig
 
     val create_fresh_name : unit -> string
   end
+end
+
+module TypeOperation : sig
+  include module type of struct
+    include Record.TypeOperation
+  end
+
+  module Compose : sig
+    include module type of struct
+      include Record.TypeOperation.Compose
+    end
+
+    type t = type_t Record.TypeOperation.Compose.t
+
+    val create : t -> type_t option
+  end
+
+  type t = type_t Record.TypeOperation.record
 end
 
 val contains_callable : t -> bool
@@ -812,6 +846,8 @@ module Variable : sig
 
     val mark_as_escaped : t -> t
 
+    val mark_as_free : t -> t
+
     val namespace : t -> namespace:Namespace.t -> t
 
     val dequalify : t -> dequalify_map:Reference.t Reference.Map.t -> t
@@ -943,6 +979,10 @@ module Variable : sig
   val namespace : t -> namespace:Namespace.t -> t
 
   val mark_all_variables_as_bound : ?specific:t list -> type_t -> type_t
+
+  val mark_all_variables_as_free : ?specific:t list -> type_t -> type_t
+
+  val mark_as_bound : t -> t
 
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 

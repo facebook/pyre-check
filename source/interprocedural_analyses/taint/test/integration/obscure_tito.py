@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_source
+from builtins import _test_source
 
 
 class C:
@@ -24,13 +24,13 @@ class D(C):
 
 def test_obscure_tito():
     c = C()
-    c.update(__test_source())
+    c.update(_test_source())
     return c
 
 
 def test_obscure_return():
     c = C()
-    return c.update(__test_source())
+    return c.update(_test_source())
 
 
 def test_obscure_sink(parameter):

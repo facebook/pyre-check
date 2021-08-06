@@ -6,36 +6,98 @@
  *)
 
 open Core
+open Ast
 
 type kind = {
   code: int;
   name: string;
   messages: string list;
 }
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving sexp, compare]
 
-include Analysis.BaseError.Make (struct
-  type t = kind
+type t = {
+  location: Location.WithModule.t;
+  kind: kind;
+  define_name: Reference.t;
+}
+[@@deriving sexp, compare]
 
-  let compare = compare_kind
+let create ~location ~kind ~define =
+  let {
+    Node.value =
+      { Statement.Define.signature = { Statement.Define.Signature.name = define_name; _ }; _ };
+    _;
+  }
+    =
+    define
+  in
+  { location; kind; define_name = Node.value define_name }
 
-  let hash = hash_kind
 
-  let show = show_kind
+let code { kind = { code; _ }; _ } = code
 
-  let hash_fold_t = hash_fold_kind
+module Instantiated = struct
+  type t = {
+    line: int;
+    column: int;
+    stop_line: int;
+    stop_column: int;
+    path: string;
+    code: int;
+    name: string;
+    description: string;
+    define: string;
+  }
+  [@@deriving sexp, compare, yojson { strict = false }]
 
-  let sexp_of_t = sexp_of_kind
+  let location { line; column; stop_line; stop_column; path; _ } =
+    { Location.start = { line; column }; stop = { line = stop_line; column = stop_column } }
+    |> Location.with_path ~path
 
-  let t_of_sexp = kind_of_sexp
-
-  let pp = pp_kind
-
-  let equal = equal_kind
 
   let code { code; _ } = code
 
-  let name { name; _ } = name
+  let description { description; _ } = description
 
-  let messages ~concise:_ ~signature:_ _ { messages; _ } = messages
-end)
+  let create
+      ~location:
+        {
+          Location.WithPath.path;
+          start = { Location.line = start_line; column = start_column };
+          stop = { Location.line = stop_line; column = stop_column };
+        }
+      ~kind:{ code; name; messages }
+      ~define_name
+      ~show_error_traces
+      ()
+    =
+    let description ~show_error_traces =
+      Format.asprintf
+        "%s [%d]: %s"
+        name
+        code
+        (if show_error_traces then
+           String.concat ~sep:" " messages
+        else
+          List.nth_exn messages 0)
+    in
+    {
+      line = start_line;
+      column = start_column;
+      stop_line;
+      stop_column;
+      path;
+      code;
+      name;
+      description = description ~show_error_traces;
+      define = Reference.show_sanitized (Reference.delocalize define_name);
+    }
+end
+
+let instantiate ~show_error_traces ~lookup { location; kind; define_name } =
+  Instantiated.create
+    ~location:(Location.WithModule.instantiate ~lookup location)
+    ~kind
+    ~define_name
+    ~show_error_traces
+    ()

@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import dataclasses
 from collections import defaultdict
 from re import compile
 from typing import Any, Dict, List, Pattern, Sequence
@@ -104,7 +105,6 @@ class AnnotationCountCollector(StatisticsCollector):
         return_is_annotated = node.returns is not None
         if return_is_annotated:
             self.annotated_return_count += 1
-
         annotated_parameters = self._check_parameter_annotations(node.params.params)
 
         if return_is_annotated and (annotated_parameters == len(node.params.params)):
@@ -124,10 +124,25 @@ class AnnotationCountCollector(StatisticsCollector):
     def visit_Assign(self, node: cst.Assign) -> None:
         if self.in_function_definition():
             return
+        implicitly_annotated_literal = False
+        if isinstance(node.value, cst.BaseNumber) or isinstance(
+            node.value, cst.BaseString
+        ):
+            implicitly_annotated_literal = True
+        implicitly_annotated_value = False
+        if isinstance(node.value, cst.Name) or isinstance(node.value, cst.Call):
+            # An over-approximation of global values that do not need an explicit
+            # annotation. Erring on the side of reporting these as annotated to
+            # avoid showing false positives to users.
+            implicitly_annotated_value = True
         if self.in_class_definition():
             self.attribute_count += 1
+            if implicitly_annotated_literal or implicitly_annotated_value:
+                self.annotated_attribute_count += 1
         else:
             self.globals_count += 1
+            if implicitly_annotated_literal or implicitly_annotated_value:
+                self.annotated_globals_count += 1
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
         if self.in_function_definition():
@@ -270,6 +285,46 @@ class FunctionsCollector(cst.CSTVisitor):
                 Bodies of unannotated functions are not typechecked by Pyre.",
             )
             self.issues.append(issue)
+
+
+class CoverageCollector(cst.CSTVisitor):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+    path: str = ""
+
+    @dataclasses.dataclass(frozen=True)
+    class FunctionInfo:
+        name: cst.Name
+        code_range: CodeRange
+
+    def __init__(self) -> None:
+        self.covered_functions: List[CoverageCollector.FunctionInfo] = []
+        self.uncovered_functions: List[CoverageCollector.FunctionInfo] = []
+
+    def _code_ranges_to_lines(self, code_ranges: Sequence[CodeRange]) -> List[int]:
+        lines = set()
+        for code_range in code_ranges:
+            lines |= set(range(code_range.start.line, code_range.end.line + 1))
+        return list(lines)
+
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+        function_info = CoverageCollector.FunctionInfo(
+            name=node.name,
+            code_range=self.get_metadata(PositionProvider, node),
+        )
+        if node.returns is not None:
+            self.covered_functions.append(function_info)
+        else:
+            self.uncovered_functions.append(function_info)
+
+    @property
+    def covered_lines(self) -> List[int]:
+        covered_ranges = [info.code_range for info in self.covered_functions]
+        return self._code_ranges_to_lines(covered_ranges)
+
+    @property
+    def uncovered_lines(self) -> List[int]:
+        uncovered_ranges = [info.code_range for info in self.uncovered_functions]
+        return self._code_ranges_to_lines(uncovered_ranges)
 
 
 class StrictIssueCollector(StrictCountCollector):

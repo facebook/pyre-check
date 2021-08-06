@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Optional, Union, List
 
 
@@ -45,15 +45,15 @@ def test_getattr_forward(t: Token):
 
 
 def test_getattr_default(t: Token):
-    return getattr(t, "unrelated", __test_source())
+    return getattr(t, "unrelated", _test_source())
 
 
 def test_getattr_backwards(t):
-    __test_sink(getattr(t, "token", None))
+    _test_sink(getattr(t, "token", None))
 
 
 def test_getattr_backwards_default(t):
-    __test_sink(getattr(None, "", t.token))
+    _test_sink(getattr(None, "", t.token))
 
 
 class UseViaDict:
@@ -63,11 +63,11 @@ class UseViaDict:
 
 
 def test_attribute_via_dunder_dict():
-    obj = UseViaDict(a=__test_source(), b=None)
+    obj = UseViaDict(a=_test_source(), b=None)
     # First two should be flows, and the third shouldn't.
-    __test_sink(obj.__dict__)
-    __test_sink(obj.__dict__["a"])
-    __test_sink(obj.__dict__["b"])
+    _test_sink(obj.__dict__)
+    _test_sink(obj.__dict__["a"])
+    _test_sink(obj.__dict__["b"])
 
 
 class Untainted:
@@ -75,11 +75,11 @@ class Untainted:
 
 
 def test_attribute_union_source(t: Union[Token, Untainted]):
-    __test_sink(t.token)
+    _test_sink(t.token)
     if isinstance(t, Token):
-        __test_sink(t.token)
+        _test_sink(t.token)
     elif isinstance(t, Untainted):
-        __test_sink(t.token)
+        _test_sink(t.token)
 
 
 class Sink:
@@ -87,11 +87,11 @@ class Sink:
 
 
 def test_attribute_union_sink(t: Union[Sink, Untainted]):
-    t.token = __test_source()
+    t.token = _test_source()
     if isinstance(t, Sink):
-        t.token = __test_source()
+        t.token = _test_source()
     elif isinstance(t, Untainted):
-        t.token = __test_source()
+        t.token = _test_source()
 
 
 class C:
@@ -99,11 +99,11 @@ class C:
 
 
 def test_issue_with_text_key_of_dictionary(c: C):
-    __test_sink(c.dictionary["text"])
+    _test_sink(c.dictionary["text"])
 
 
 def test_no_issue_with_other_key_of_dictionary(c: C):
-    __test_sink(c.dictionary["other"])
+    _test_sink(c.dictionary["other"])
 
 
 class D:
@@ -111,4 +111,4 @@ class D:
 
 
 def test_issue_with_update_to_self_attribute(d: D):
-    d.buffer.append(__test_source())
+    d.buffer.append(_test_source())

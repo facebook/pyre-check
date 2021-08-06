@@ -17,5 +17,5 @@ type t =
       configuration: ServerConfiguration.t;
     }
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
-  | Query of Server.Query.Response.t
+  | Query of Query.Response.t
 [@@deriving sexp, compare, to_yojson]

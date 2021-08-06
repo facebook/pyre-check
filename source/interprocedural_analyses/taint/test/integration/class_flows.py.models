@@ -20,9 +20,9 @@
               "filename": "class_flows.py",
               "line": 46,
               "start": 42,
-              "end": 57
+              "end": 56
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -72,9 +72,9 @@
               "filename": "class_flows.py",
               "line": 53,
               "start": 47,
-              "end": 62
+              "end": 61
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -123,9 +123,9 @@
               "filename": "class_flows.py",
               "line": 57,
               "start": 32,
-              "end": 47
+              "end": 46
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -174,9 +174,9 @@
               "filename": "class_flows.py",
               "line": 22,
               "start": 26,
-              "end": 41
+              "end": 40
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -224,9 +224,9 @@
               "filename": "class_flows.py",
               "line": 34,
               "start": 26,
-              "end": 41
+              "end": 40
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -274,9 +274,9 @@
               "filename": "class_flows.py",
               "line": 42,
               "start": 43,
-              "end": 58
+              "end": 57
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -313,7 +313,7 @@
     "code": 5002,
     "line": 79,
     "start": 63,
-    "end": 78,
+    "end": 77,
     "filename": "class_flows.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -325,9 +325,9 @@
               "filename": "class_flows.py",
               "line": 79,
               "start": 63,
-              "end": 78
+              "end": 77
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -341,7 +341,7 @@
                 "filename": "class_flows.py",
                 "line": 79,
                 "start": 63,
-                "end": 78
+                "end": 77
               },
               "resolves_to": [
                 "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db"
@@ -349,7 +349,7 @@
               "port": "formal(locale)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -369,7 +369,7 @@
     "code": 5002,
     "line": 90,
     "start": 36,
-    "end": 51,
+    "end": 50,
     "filename": "class_flows.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -381,9 +381,9 @@
               "filename": "class_flows.py",
               "line": 90,
               "start": 36,
-              "end": 51
+              "end": 50
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -397,7 +397,7 @@
                 "filename": "class_flows.py",
                 "line": 90,
                 "start": 36,
-                "end": 51
+                "end": 50
               },
               "resolves_to": [
                 "class_flows.HasDecoratedClassmethod.to_sink"
@@ -405,7 +405,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -440,7 +440,7 @@
               "port": "formal(locale)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -484,10 +484,10 @@
             "root": {
               "filename": "class_flows.py",
               "line": 70,
-              "start": 20,
-              "end": 26
+              "start": 19,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -507,10 +507,10 @@
             "root": {
               "filename": "class_flows.py",
               "line": 86,
-              "start": 20,
-              "end": 21
+              "start": 19,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

@@ -267,10 +267,10 @@
               "filename": "model_simplification.py",
               "line": 79,
               "start": 21,
-              "end": 36
+              "end": 35
             },
-            "tito": [ { "line": 79, "start": 21, "end": 36 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 79, "start": 21, "end": 35 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }

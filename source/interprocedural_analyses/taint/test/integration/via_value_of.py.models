@@ -12,10 +12,10 @@
             "root": {
               "filename": "via_value_of.py",
               "line": 84,
-              "start": 16,
-              "end": 25
+              "start": 15,
+              "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -37,9 +37,9 @@
               "filename": "via_value_of.py",
               "line": 76,
               "start": 11,
-              "end": 26
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -168,7 +168,7 @@
               "port": "formal(parameter)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via-value": "attached to sink" },
               { "always-via": "special_sink" }
@@ -199,7 +199,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via-value": "attached to source" },
               { "always-via": "special_source" }
@@ -526,10 +526,10 @@
               "filename": "via_value_of.py",
               "line": 51,
               "start": 13,
-              "end": 28
+              "end": 27
             },
-            "tito": [ { "line": 51, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 51, "start": 13, "end": 27 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via-value": "second" },

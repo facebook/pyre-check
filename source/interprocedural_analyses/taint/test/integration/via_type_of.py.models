@@ -195,10 +195,10 @@
               "filename": "via_type_of.py",
               "line": 39,
               "start": 13,
-              "end": 28
+              "end": 27
             },
-            "tito": [ { "line": 39, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 39, "start": 13, "end": 27 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via-type": "typing.List[int]" },

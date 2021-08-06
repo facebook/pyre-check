@@ -534,6 +534,8 @@ let test_check_method_parameters context =
     [
       "Incompatible parameter type [6]: "
       ^ "Expected `str` for 1st positional only parameter to call `foo` but got `int`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call "
+      ^ "`foo` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -589,6 +591,8 @@ let test_check_method_parameters context =
     [
       "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter "
       ^ "to call `foo` but got `int`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
+       `foo` but got `int`.";
     ];
 
   (* Special Methods *)
@@ -869,7 +873,7 @@ let test_check_method_parameters context =
     {|
       xs = (1, 2, 3)
       def foo(x: int, y: int, z: str) -> None: ...
-      foo(*xs)
+      foo( *xs )
     |}
     [
       "4: Incompatible parameter type [6]: Expected `str` for 3rd positional only parameter to \

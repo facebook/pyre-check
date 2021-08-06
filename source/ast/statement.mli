@@ -71,10 +71,7 @@ module rec Assert : sig
   module Origin : sig
     type t =
       | Assertion
-      | If of {
-          statement: Statement.t;
-          true_branch: bool;
-        }
+      | If of { true_branch: bool }
       | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 

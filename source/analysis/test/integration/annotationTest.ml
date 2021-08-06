@@ -2697,7 +2697,7 @@ let test_check_union_shorthand context =
   ()
 
 
-let test_check_broadcast_features context =
+let test_check_broadcast context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_default_type_errors {|
       from pyre_extensions import Broadcast
@@ -2826,6 +2826,563 @@ let test_check_broadcast_features context =
        together.";
       "Revealed type [-1]: Revealed type for `res` is `typing.Any`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast, Unpack, TypeVarTuple
+      from typing import Tuple, Generic, TypeVar, overload, Union, Any
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+      Rs = TypeVarTuple("Rs")
+
+      class Foo(Generic[T, *Ts]):
+        def bar(self: Foo[T, *Rs]) -> Foo[T, *Broadcast[Tuple[*Rs], Tuple[L[1], L[2]]], str]: ...
+
+        @overload
+        def foo(self, *other: *Broadcast[Tuple[L[3], T], Tuple[*Ts]]) -> None: ...
+        @overload
+        def foo(self, *other: *Broadcast[Tuple[L[2], T], Tuple[*Ts]]) -> None: ...
+        def foo(self, *other: Any) -> None:
+          return
+
+      x: Foo[int, L[3], L[2], L[1]]
+      reveal_type(x.bar())
+
+      y: Foo[L[3], L[3], L[3]]
+      reveal_type(y.foo)
+    |}
+    [
+      "Incompatible overload [43]: The implementation of `Foo.foo` does not accept all possible \
+       arguments of overload defined on line `14`.";
+      "Incompatible overload [43]: The implementation of `Foo.foo` does not accept all possible \
+       arguments of overload defined on line `16`.";
+      "Revealed type [-1]: Revealed type for `x.bar()` is `Foo[int, typing_extensions.Literal[3], \
+       typing_extensions.Literal[2], typing_extensions.Literal[2], str]`.";
+      "Revealed type [-1]: Revealed type for `y.foo` is \
+       `pyre_extensions.BroadcastError[Tuple[typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]], Tuple[typing_extensions.Literal[3], \
+       typing_extensions.Literal[3]]]`.";
+    ];
+  ()
+
+
+let test_check_compose context =
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+
+      class Foo:
+        def __call__(self, x: str) -> bool: ...
+      class Bar:
+        def __call__(self, x: bool) -> int: ...
+
+      x: Compose[Foo, Bar]
+      res = x("hi")
+      reveal_type(res)
+    |}
+    ["Revealed type [-1]: Revealed type for `res` is `int`."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+
+      x: Tensor[L[5], L[10]]
+      layer: Compose[
+        Linear[L[10], L[20]],
+        Linear[L[20], L[30]]
+      ]
+      reveal_type(layer)
+      res = layer(x)
+      reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `layer` is \
+       `pyre_extensions.Compose[Linear[typing_extensions.Literal[10], \
+       typing_extensions.Literal[20]], Linear[typing_extensions.Literal[20], \
+       typing_extensions.Literal[30]]]`.";
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[30]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+      from typing import Generic, Callable, TypeVar, Tuple
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      R = TypeVar("R")
+
+      class Foo:
+        def __call__(self, x: Tuple[T, R]) -> T: ...
+      class Bar:
+        def __call__(self, x: R) -> R: ...
+
+      layer: Compose[
+        Foo,
+        Bar
+      ]
+      res = layer((True, 3))
+      reveal_type(res)
+    |}
+    ["Revealed type [-1]: Revealed type for `res` is `typing_extensions.Literal[True]`."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+      from typing import Tuple
+
+      x: Compose[Tuple[int, str]]
+    |}
+    [
+      "Invalid type [31]: Expression `pyre_extensions.Compose[typing.Tuple[(int, str)]]` is not a \
+       valid type.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N")
+      M = TypeVar("M")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+
+      def foo(n: N, m: M) -> None:
+        x: Tensor[L[5], L[10]]
+        layer: Compose[
+          Linear[L[10], N],
+          Linear[M, L[30]]
+        ]
+        reveal_type(layer)
+        res = layer(x)
+
+      input: Tensor[L[5], L[10]]
+      layer2: Compose[Linear[L[10], L[20]], Linear[L[21], L[30]]]
+      res = layer2(input)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `layer` is \
+       `pyre_extensions.Compose[Linear[typing_extensions.Literal[10], Variable[N]], \
+       Linear[Variable[M], typing_extensions.Literal[30]]]`.";
+      "Call error [29]: `pyre_extensions.Compose[Linear[int, Variable[N]], Linear[Variable[M], \
+       int]]` is not a function.";
+      "Call error [29]: `pyre_extensions.Compose[Linear[int, int], Linear[int, int]]` is not a \
+       function.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+      from typing import Generic, Callable, TypeVar, Tuple
+
+      class Foo:
+        def __call__(self, x: int, y: str) -> Tuple[int, str]: ...
+
+      layer: Compose[Foo, Foo]
+      x = (1, "hi")
+      result = layer( *x)
+    |}
+    ["Call error [29]: `pyre_extensions.Compose[Foo, Foo]` is not a function."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose
+      from typing import Generic, Callable, TypeVar, Tuple, overload, Union
+
+      class Foo:
+        @overload
+        def __call__(self, x: int) -> int: ...
+        @overload
+        def __call__(self, x: str) -> str: ...
+        def __call__(self, x: Union[int, str]) -> Union[int, str]: ...
+
+      layer: Compose[Foo, Foo]
+      result = layer(1)
+      reveal_type(result)
+    |}
+    [
+      "Call error [29]: `pyre_extensions.Compose[Foo, Foo]` is not a function.";
+      "Revealed type [-1]: Revealed type for `result` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N")
+      M = TypeVar("M")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+
+      def foo(n: N, m: M) -> None:
+        x: Tensor[L[5], L[10]]
+        layer: Compose[
+          Linear[L[10], N],
+          Linear[N, M],
+          Linear[M, L[30]]
+        ]
+        res = layer(x)
+        reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[30]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+      class Constant:
+        def __call__(self, input: Tensor[L[5], L[20]]) -> Tensor[L[5], L[30]]: ...
+
+      x: Tensor[L[5], L[10]]
+      layer: Compose[
+        Linear[L[10], L[20]],
+        Constant
+      ]
+      res = layer(x)
+    |}
+    ["Call error [29]: `pyre_extensions.Compose[Linear[int, int], Constant]` is not a function."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      R = TypeVar("R")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out, R]):
+        def __call__(self, input: Tensor[T, In, R]) -> Tensor[T, Out, R]: ...
+
+      def bar(z: T) -> None:
+        def foo(input: Tensor[L[5], L[10], T]) -> None:
+          x: Compose[Linear[L[10], L[20], T], Linear[L[20], L[30], T]]
+          res = x(input)
+          reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[30], Variable[T]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      Ts = TypeVarTuple("Ts")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[*Ts, In]) -> Tensor[*Ts, Out]: ...
+
+      x: Compose[
+        Compose[
+          Linear[L[10], L[20]],
+          Linear[L[20], L[30]]
+        ],
+        Compose[
+          Linear[L[30], L[40]],
+          Linear[L[40], L[50]]
+        ]
+      ]
+      input: Tensor[L[5], L[8], L[10]]
+      res = x(input)
+      reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[8], typing_extensions.Literal[50]]`.";
+    ];
+  (* This test should be rejected later once we have variadic bounds, since `bar` does not extend
+     `nn.Module`. *)
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      DType = TypeVar("DType")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      Rs = TypeVarTuple("Rs")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Sequential(Generic[*Ts]):
+        def __init__(self, *layers: *Ts) -> None: ...
+        __call__: Compose[*Ts] = ...
+
+      class Linear(Generic[In, Out]):
+        def __init__(self, x: In, y: Out) -> None: ...
+        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+
+      class Foo:
+        def __call__(self, x: Tensor[DType, *Ts, L[20]]) -> Tensor[DType, *Ts, L[30]]: ...
+
+      layer: Compose[Foo, Foo]
+      x = (1, "hi")
+      result = layer( *x)
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` to \
+       have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
+      "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
+       inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
+       attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
+       Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
+      "Call error [29]: `pyre_extensions.Compose[Foo, Foo]` is not a function.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, Unpack, TypeVarTuple
+      from typing import Generic, Callable, TypeVar, Tuple, overload, Union
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      DType = TypeVar("DType")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      Rs = TypeVarTuple("Rs")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Sequential(Generic[*Ts]):
+        def __init__(self, *layers: *Ts) -> None: ...
+        __call__: Compose[*Ts] = ...
+
+      class Linear(Generic[In, Out]):
+        def __init__(self, x: In, y: Out) -> None: ...
+        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+
+      def bar(x: Tensor[DType, *Rs, L[40]]) -> Tensor[DType, *Rs, L[50]]: ...
+
+      layer = Sequential(
+        Linear(10, 20),
+        Linear(20, 40),
+        bar
+      )
+      x: Tensor[int, L[5], L[10]]
+      result = layer(x)
+      reveal_type(result)
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` to \
+       have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
+      "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
+       inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
+       attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
+       Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
+      "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
+       typing_extensions.Literal[5], typing_extensions.Literal[50]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N")
+      M = TypeVar("M")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+
+      def foo(n: N, m: M) -> None:
+        x: Tensor[L[5], L[10]]
+        layer: Compose[
+          Linear[L[10], N],
+          Linear[N, M],
+          Linear[M, L[30]]
+        ]
+        res = layer(x)
+        reveal_type(res)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `res` is `Tensor[typing_extensions.Literal[5], \
+       typing_extensions.Literal[30]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Linear(Generic[In, Out]):
+        def __call__(self, input: Tensor[T, In]) -> Tensor[T, Out]: ...
+      class Constant:
+        def __call__(self, input: Tensor[L[5], L[20]]) -> Tensor[L[5], L[30]]: ...
+
+      x: Tensor[L[5], L[10]]
+      layer: Compose[
+        Linear[L[10], L[20]],
+        Constant
+      ]
+      res = layer(x)
+    |}
+    ["Call error [29]: `pyre_extensions.Compose[Linear[int, int], Constant]` is not a function."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      R = TypeVar("R")
+      DType = TypeVar("DType")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Sequential(Generic[*Ts]):
+        def __init__(self, *layers: *Ts) -> None: ...
+        __call__: Compose[*Ts] = ...
+
+      class Linear(Generic[In, Out]):
+        def __init__(self, x: In, y: Out) -> None: ...
+        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+
+      layer = Sequential(
+                Sequential(
+                  Sequential(
+                    Linear(10, 20),
+                    Linear(20, 30),
+                  ),
+                  Linear(30, 40),
+                ),
+                Sequential(
+                  Linear(40, 50),
+                  Linear(50, 60)
+                )
+              )
+      x: Tensor[int, L[5], L[10]]
+      result = layer(x)
+      reveal_type(result)
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` to \
+       have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
+      "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
+       inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
+       attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
+       Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
+      "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
+       typing_extensions.Literal[5], typing_extensions.Literal[60]]`.";
+    ];
+  (* TODO (T96622059): Fix solving `Compose` or `Sequential` against `Callable` *)
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Compose, TypeVarTuple, Unpack
+      from typing import Generic, Callable, TypeVar
+      from typing_extensions import Literal as L
+
+      T = TypeVar("T")
+      T2 = TypeVar("T2")
+      DType = TypeVar("DType")
+      In = TypeVar("In")
+      Out = TypeVar("Out")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[Unpack[Ts]]): ...
+
+      class Sequential(Generic[*Ts]):
+        def __init__(self, *layers: *Ts) -> None: ...
+        __call__: Compose[*Ts] = ...
+
+      class Linear(Generic[In, Out]):
+        def __init__(self, x: In, y: Out) -> None: ...
+        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+
+      def foo(x: Callable[[T], T2]) -> Callable[[T], T2]: ...
+      x = Sequential(Linear(10, 20), Linear(20, 30))
+      y: Compose[Linear[L[10], L[20]], Linear[L[20], L[30]]]
+      result = foo(x)
+      result2 = foo(y)
+      reveal_type(result)
+      reveal_type(result2)
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `__call__` is declared in class `Sequential` to \
+       have type `pyre_extensions.Compose[*test.Ts]` but is never initialized.";
+      "Inconsistent override [15]: `__call__` overrides attribute defined in `type` \
+       inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
+       attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
+       Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Variable[T]], Variable[T2]]` \
+       for 1st positional only parameter to call `foo` but got `Sequential[Linear[int, int], \
+       Linear[int, int]]`.";
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Variable[T]], Variable[T2]]` \
+       for 1st positional only parameter to call `foo` but got \
+       `pyre_extensions.Compose[Linear[int, int], Linear[int, int]]`.";
+      "Revealed type [-1]: Revealed type for `result` is `typing.Callable[[typing.Any], \
+       typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `result2` is `typing.Callable[[typing.Any], \
+       typing.Any]`.";
+    ];
   ()
 
 
@@ -2855,6 +3412,7 @@ let () =
          "check_typevar_division_simplify" >:: test_check_typevar_division_simplify;
          "check_annotated" >:: test_check_annotated;
          "check_union_shorthand" >:: test_check_union_shorthand;
-         "check_broadcast_features" >:: test_check_broadcast_features;
+         "check_broadcast" >:: test_check_broadcast;
+         "check_compose" >:: test_check_compose;
        ]
   |> Test.run

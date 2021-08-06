@@ -56,10 +56,10 @@
               "filename": "side_effects.py",
               "line": 17,
               "start": 16,
-              "end": 31
+              "end": 30
             },
-            "tito": [ { "line": 17, "start": 16, "end": 31 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 17, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -83,10 +83,10 @@
               "filename": "side_effects.py",
               "line": 11,
               "start": 19,
-              "end": 34
+              "end": 33
             },
-            "tito": [ { "line": 11, "start": 19, "end": 34 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 11, "start": 19, "end": 33 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -110,10 +110,10 @@
               "filename": "side_effects.py",
               "line": 23,
               "start": 23,
-              "end": 38
+              "end": 37
             },
-            "tito": [ { "line": 23, "start": 23, "end": 38 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 23, "start": 23, "end": 37 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "foo" },
@@ -139,10 +139,10 @@
               "filename": "side_effects.py",
               "line": 35,
               "start": 13,
-              "end": 28
+              "end": 27
             },
-            "tito": [ { "line": 35, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 35, "start": 13, "end": 27 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -165,11 +165,11 @@
             "root": {
               "filename": "side_effects.py",
               "line": 50,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
             "tito": [ { "line": 49, "start": 19, "end": 20 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_sink" }

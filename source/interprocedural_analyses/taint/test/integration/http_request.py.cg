@@ -1,6 +1,6 @@
 @generated
 Call dependencies
-http_request.request_get_flows_to_sink (fun) -> [__test_sink (fun)]
-http_request.test_hop_is_cut_off (fun) -> [__test_source (fun) http_request.request_get_flows_to_sink (fun)]
-http_request.test_trace_has_no_tito (fun) -> [__test_sink (fun) __test_source (fun)]
-http_request.test_untainted_assign (fun) -> [__test_sink (fun)]
+http_request.request_get_flows_to_sink (fun) -> [_test_sink (fun)]
+http_request.test_hop_is_cut_off (fun) -> [_test_source (fun) http_request.request_get_flows_to_sink (fun)]
+http_request.test_trace_has_no_tito (fun) -> [_test_sink (fun) _test_source (fun)]
+http_request.test_untainted_assign (fun) -> [_test_sink (fun)]

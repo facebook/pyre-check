@@ -41,6 +41,16 @@ module type Signature = sig
   include Fixpoint.State with type t := t
 end
 
+val unpack_callable_and_self_argument
+  :  signature_select:
+       (arguments:AttributeResolution.Argument.t list ->
+       callable:Type.Callable.t ->
+       self_argument:Type.t option ->
+       SignatureSelectionTypes.sig_t) ->
+  global_resolution:GlobalResolution.t ->
+  Type.t ->
+  TypeOperation.callable_and_self_argument option
+
 module State (Context : Context) : Signature
 
 module DummyContext : Context

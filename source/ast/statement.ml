@@ -122,10 +122,7 @@ module rec Assert : sig
   module Origin : sig
     type t =
       | Assertion
-      | If of {
-          statement: Statement.t;
-          true_branch: bool;
-        }
+      | If of { true_branch: bool }
       | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -144,20 +141,14 @@ end = struct
   module Origin = struct
     type t =
       | Assertion
-      | If of {
-          statement: Statement.t;
-          true_branch: bool;
-        }
+      | If of { true_branch: bool }
       | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right : int =
       match left, right with
       | Assertion, Assertion -> 0
-      | If left, If right -> (
-          match Statement.location_insensitive_compare left.statement right.statement with
-          | x when not (Int.equal x 0) -> x
-          | _ -> Bool.compare left.true_branch right.true_branch)
+      | If left, If right -> Bool.compare left.true_branch right.true_branch
       | While left, While right -> Bool.compare left.true_branch right.true_branch
       | Assertion, _ -> -1
       | If _, _ -> -1

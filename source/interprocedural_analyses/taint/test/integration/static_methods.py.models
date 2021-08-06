@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 20,
     "start": 9,
-    "end": 24,
+    "end": 23,
     "filename": "static_methods.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "static_methods.py",
               "line": 20,
               "start": 9,
-              "end": 24
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -35,13 +35,13 @@
                 "filename": "static_methods.py",
                 "line": 20,
                 "start": 9,
-                "end": 24
+                "end": 23
               },
               "resolves_to": [ "static_methods.test" ],
               "port": "formal(source)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -65,10 +65,10 @@
             "root": {
               "filename": "static_methods.py",
               "line": 12,
-              "start": 20,
-              "end": 24
+              "start": 19,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -96,7 +96,7 @@
               "port": "formal(oops)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

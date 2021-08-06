@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink
+from builtins import _test_sink
 
 
 def source():
@@ -20,9 +20,9 @@ def inferred_is_propagated():
 
 
 def inferred_sink(taint_left, taint_right, taint_without_feature, untainted):
-    __test_sink(taint_left)
-    __test_sink(taint_right)
-    __test_sink(taint_without_feature)
+    _test_sink(taint_left)
+    _test_sink(taint_right)
+    _test_sink(taint_without_feature)
 
 
 def sink_is_propagated(argument):
@@ -34,7 +34,7 @@ def taint_in_taint_out(arg):
 
 
 def tito_and_sink(arg):
-    __test_sink(arg)
+    _test_sink(arg)
     return arg
 
 
@@ -51,14 +51,14 @@ def no_tito(arg):
 
 
 def modeled_sink_with_optionals(a: int = 0, b: int = 1) -> None:
-    __test_sink(b)
+    _test_sink(b)
 
 
 class HasMethods:
     def method_with_optionals(self, a: int = 0, b: int = 1) -> None:
-        __test_sink(b)
+        _test_sink(b)
 
 
 def attach_to_returned_sink():
-    x = __test_source()
+    x = _test_source()
     return x

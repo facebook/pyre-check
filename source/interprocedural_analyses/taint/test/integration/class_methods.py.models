@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 16,
     "start": 13,
-    "end": 28,
+    "end": 27,
     "filename": "class_methods.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "class_methods.py",
               "line": 16,
               "start": 13,
-              "end": 28
+              "end": 27
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -35,13 +35,13 @@
                 "filename": "class_methods.py",
                 "line": 16,
                 "start": 13,
-                "end": 28
+                "end": 27
               },
               "resolves_to": [ "class_methods.Test.foo" ],
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -65,10 +65,10 @@
             "root": {
               "filename": "class_methods.py",
               "line": 12,
-              "start": 27,
-              "end": 28
+              "start": 26,
+              "end": 27
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

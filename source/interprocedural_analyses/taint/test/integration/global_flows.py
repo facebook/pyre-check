@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_source
+from builtins import _test_source
 
 
 def update_arg1(arg1, arg2):
@@ -18,7 +18,7 @@ x = 1
 
 
 def update_x_at_arg1():
-    update_arg1(x, __test_source())
+    update_arg1(x, _test_source())
 
 
 def unaffected_x_at_arg1():
@@ -26,7 +26,7 @@ def unaffected_x_at_arg1():
 
 
 def update_x_at_arg2():
-    update_arg2(__test_source(), x)
+    update_arg2(_test_source(), x)
 
 
 def unaffected_x_at_arg2():
@@ -38,7 +38,7 @@ def indirectly_update_x_arg1(arg):
 
 
 def x_tainted_indirectly_arg1():
-    indirectly_update_x_arg1(__test_source())
+    indirectly_update_x_arg1(_test_source())
 
 
 def x_not_tainted():
@@ -50,7 +50,7 @@ def indirectly_update_x_arg2(arg):
 
 
 def x_tainted_indirectly_arg2():
-    indirectly_update_x_arg2(__test_source())
+    indirectly_update_x_arg2(_test_source())
 
 
 class MyList:
@@ -62,7 +62,7 @@ l: MyList = ...
 
 
 def append_directly():
-    l.append(__test_source())
+    l.append(_test_source())
 
 
 def append_argument(arg):
@@ -70,4 +70,4 @@ def append_argument(arg):
 
 
 def append_indirectly():
-    append_argument(__test_source())
+    append_argument(_test_source())

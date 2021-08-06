@@ -6,8 +6,8 @@
     "callable_line": 17,
     "code": 5002,
     "line": 19,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "cross_repository.py",
     "message":
       "Data from [UserControlled] source(s) may reach [Test] sink(s)",
@@ -39,10 +39,10 @@
             "root": {
               "filename": "cross_repository.py",
               "line": 19,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -71,9 +71,9 @@
               "filename": "cross_repository.py",
               "line": 27,
               "start": 13,
-              "end": 28
+              "end": 27
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -154,10 +154,10 @@
             "root": {
               "filename": "cross_repository.py",
               "line": 10,
-              "start": 16,
-              "end": 32
+              "start": 15,
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -172,8 +172,8 @@
     "callable_line": 9,
     "code": 5002,
     "line": 10,
-    "start": 16,
-    "end": 32,
+    "start": 15,
+    "end": 31,
     "filename": "cross_repository.py",
     "message":
       "Data from [UserControlled] source(s) may reach [Test] sink(s)",
@@ -205,10 +205,10 @@
             "root": {
               "filename": "cross_repository.py",
               "line": 10,
-              "start": 16,
-              "end": 32
+              "start": 15,
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

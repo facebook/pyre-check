@@ -639,6 +639,16 @@ module Record = struct
 
     let name { name; _ } = name
   end
+
+  module TypeOperation = struct
+    module Compose = struct
+      type 'annotation t = 'annotation OrderedTypes.record
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+
+    type 'annotation record = Compose of 'annotation Compose.t
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module rec Monomial : sig
@@ -1168,6 +1178,7 @@ module T = struct
     | RecursiveType of t Record.RecursiveType.record
     | Top
     | Tuple of t Record.OrderedTypes.record
+    | TypeOperation of t Record.TypeOperation.record
     | Union of t list
     | Variable of t Record.Variable.RecordUnary.record
     | IntExpression of t RecordIntExpression.t
@@ -1561,6 +1572,13 @@ let pp_typed_dictionary_field ~pp_type format { Record.TypedDictionary.name; ann
 
 
 let rec pp format annotation =
+  let pp_ordered_type ordered_type =
+    match ordered_type with
+    | Record.OrderedTypes.Concatenation
+        { middle = UnboundedElements annotation; prefix = []; suffix = [] } ->
+        Format.asprintf "%a, ..." pp annotation
+    | ordered_type -> Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
+  in
   match annotation with
   | Annotated annotation -> Format.fprintf format "typing.Annotated[%a]" pp annotation
   | Bottom -> Format.fprintf format "undefined"
@@ -1601,15 +1619,9 @@ let rec pp format annotation =
   | Primitive name -> Format.fprintf format "%a" String.pp name
   | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
   | Top -> Format.fprintf format "unknown"
-  | Tuple ordered_type ->
-      let parameters =
-        match ordered_type with
-        | Concatenation { middle = UnboundedElements annotation; prefix = []; suffix = [] } ->
-            Format.asprintf "%a, ..." pp annotation
-        | ordered_type ->
-            Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
-      in
-      Format.fprintf format "typing.Tuple[%s]" parameters
+  | Tuple ordered_type -> Format.fprintf format "typing.Tuple[%s]" (pp_ordered_type ordered_type)
+  | TypeOperation (Compose ordered_type) ->
+      Format.fprintf format "pyre_extensions.Compose[%s]" (pp_ordered_type ordered_type)
   | Union [NoneType; parameter]
   | Union [parameter; NoneType] ->
       Format.fprintf format "typing.Optional[%a]" pp parameter
@@ -1699,6 +1711,12 @@ and pp_concise format annotation =
       Format.fprintf
         format
         "Tuple[%a]"
+        (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
+        ordered_type
+  | TypeOperation (Compose ordered_type) ->
+      Format.fprintf
+        format
+        "Compose[%a]"
         (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
         ordered_type
   | Union [NoneType; parameter]
@@ -1933,6 +1951,14 @@ let rec expression annotation =
         parameter_variable_type_representation variable |> expression
   in
   let rec convert_annotation annotation =
+    let convert_ordered_type ordered_type =
+      match ordered_type with
+      | Record.OrderedTypes.Concatenation
+          { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
+          List.map ~f:expression [parameter; Primitive "..."]
+      | Concatenation concatenation -> concatenation_to_expressions concatenation
+      | Concrete parameters -> List.map ~f:expression parameters
+    in
     match annotation with
     | Annotated annotation -> get_item_call "typing.Annotated" [expression annotation]
     | Bottom -> create_name "$bottom"
@@ -2056,15 +2082,9 @@ let rec expression annotation =
     | Top -> create_name "$unknown"
     | Tuple (Concrete []) ->
         get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
-    | Tuple ordered_type ->
-        let parameters =
-          match ordered_type with
-          | Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] } ->
-              List.map ~f:expression [parameter; Primitive "..."]
-          | Concatenation concatenation -> concatenation_to_expressions concatenation
-          | Concrete parameters -> List.map ~f:expression parameters
-        in
-        get_item_call "typing.Tuple" parameters
+    | Tuple ordered_type -> get_item_call "typing.Tuple" (convert_ordered_type ordered_type)
+    | TypeOperation (Compose ordered_type) ->
+        get_item_call "pyre_extensions.Compose" (convert_ordered_type ordered_type)
     | Union [NoneType; parameter]
     | Union [parameter; NoneType] ->
         get_item_call "typing.Optional" [expression parameter]
@@ -2243,6 +2263,8 @@ module Transform = struct
         | RecursiveType { name; body } ->
             RecursiveType { name; body = visit_annotation ~state body }
         | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
+        | TypeOperation (Compose ordered_type) ->
+            TypeOperation (Compose (visit_ordered_types ordered_type))
         | Union annotations -> union (List.map annotations ~f:(visit_annotation ~state))
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
@@ -2543,6 +2565,21 @@ module Callable = struct
       implementation = for_implementation implementation;
       overloads = List.map overloads ~f:for_implementation;
     }
+
+
+  let map_parameters_with_result ({ implementation; overloads; _ } as callable) ~f =
+    let for_implementation ({ parameters; _ } as implementation) =
+      Result.map
+        ~f:(fun new_parameters -> { implementation with parameters = new_parameters })
+        (f parameters)
+    in
+    let implementation_result = for_implementation implementation in
+    let overloads_results = overloads |> List.map ~f:for_implementation |> Result.all in
+    Result.combine
+      ~ok:(fun implementation overloads -> { callable with implementation; overloads })
+      ~err:(fun first _ -> first)
+      implementation_result
+      overloads_results
 
 
   let map_annotation ({ implementation; overloads; _ } as callable) ~f =
@@ -3023,6 +3060,68 @@ module OrderedTypes = struct
         Tuple (Concatenation { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix })
 end
 
+module TypeOperation = struct
+  include Record.TypeOperation
+
+  module Compose = struct
+    include Record.TypeOperation.Compose
+
+    type t = type_t Record.TypeOperation.Compose.t
+
+    let flatten_record input =
+      let record_to_list = function
+        | OrderedTypes.Concrete annotations -> annotations
+        | Concatenation { prefix; middle; suffix } ->
+            prefix
+            @ [TypeOperation (Compose (Concatenation { prefix = []; middle; suffix = [] }))]
+            @ suffix
+      in
+      let map_types_to_records = function
+        | TypeOperation (Compose record) -> record
+        | other -> Concrete [other]
+      in
+      record_to_list input |> List.map ~f:map_types_to_records
+
+
+    let create record =
+      let is_potentially_callable = function
+        | Callable _
+        | Parametric _
+        | Variable _
+        | Any
+        | Primitive _
+        | TypeOperation (Compose _) ->
+            true
+        | _ -> false
+      in
+      let list_to_record list =
+        let combine_records left right =
+          left >>= fun inner_left -> OrderedTypes.concatenate ~left:inner_left ~right
+        in
+        list |> List.fold ~init:(Some (OrderedTypes.Concrete [])) ~f:combine_records
+      in
+      let is_legal_record input =
+        match input with
+        | OrderedTypes.Concrete annotations when List.for_all ~f:is_potentially_callable annotations
+          ->
+            Some input
+        | Concatenation { prefix; middle = UnboundedElements element; suffix }
+          when is_potentially_callable element ->
+            Option.some_if (List.for_all ~f:is_potentially_callable (prefix @ suffix)) input
+        | Concatenation { prefix; middle = Variadic _; suffix } ->
+            Option.some_if (List.for_all ~f:is_potentially_callable (prefix @ suffix)) input
+        | _ -> None
+      in
+      record
+      |> flatten_record
+      |> list_to_record
+      >>= is_legal_record
+      >>| fun result -> TypeOperation (Compose result)
+  end
+
+  type t = type_t Record.TypeOperation.record
+end
+
 let parameters_from_unpacked_annotation annotation ~variable_aliases =
   let open Record.OrderedTypes.Concatenation in
   let unpacked_variadic_to_parameter = function
@@ -3131,7 +3230,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | _ -> PositionalOnly { index; annotation = Top; default = false })
     | _ -> PositionalOnly { index; annotation = create_logic parameter; default = false }
   in
-
+  let create_ordered_type_from_parameters parameters =
+    match Parameter.all_singles parameters with
+    | Some [annotation; Primitive "..."] ->
+        Some (OrderedTypes.create_unbounded_concatenation annotation)
+    | Some singles -> Some (Concrete singles)
+    | None -> OrderedTypes.concatenation_from_parameters parameters
+  in
   let result =
     let create_logic = create_logic ~resolve_aliases ~variable_aliases in
     let rec is_typing_callable = function
@@ -3565,15 +3670,14 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | Some substitute -> substitute
       | None -> result)
   | Parametric { name = "typing.Tuple"; parameters }
-  | Parametric { name = "tuple"; parameters } -> (
-      match Parameter.all_singles parameters with
-      | Some [annotation; Primitive "..."] ->
-          Tuple (OrderedTypes.create_unbounded_concatenation annotation)
-      | Some singles -> Tuple (Concrete singles)
-      | None ->
-          OrderedTypes.concatenation_from_parameters parameters
-          >>| (fun concatenation -> Tuple concatenation)
-          |> Option.value ~default:Top)
+  | Parametric { name = "tuple"; parameters } ->
+      Option.value
+        ~default:Top
+        (create_ordered_type_from_parameters parameters >>| fun result -> Tuple result)
+  | Parametric { name = "pyre_extensions.Compose"; parameters } ->
+      Option.value
+        ~default:Top
+        (create_ordered_type_from_parameters parameters >>= TypeOperation.Compose.create)
   | Parametric { name; parameters } -> (
       match
         Identifier.Table.find parametric_substitution_map name, Parameter.all_singles parameters
@@ -3710,6 +3814,7 @@ let elements annotation =
         | Parametric { name; _ } -> name :: sofar, recursive_type_names
         | Primitive annotation -> annotation :: sofar, recursive_type_names
         | Tuple _ -> "tuple" :: sofar, recursive_type_names
+        | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
         | Union _ -> "typing.Union" :: sofar, recursive_type_names
         | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
         | ParameterVariadicComponent _
@@ -3961,6 +4066,8 @@ module Variable : sig
 
     val mark_as_escaped : t -> t
 
+    val mark_as_free : t -> t
+
     val namespace : t -> namespace:Namespace.t -> t
 
     val dequalify : t -> dequalify_map:Reference.t Reference.Map.t -> t
@@ -4089,6 +4196,10 @@ module Variable : sig
 
   val mark_all_variables_as_bound : ?specific:t list -> type_t -> type_t
 
+  val mark_all_variables_as_free : ?specific:t list -> type_t -> type_t
+
+  val mark_as_bound : t -> t
+
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 
   val all_free_variables : type_t -> t list
@@ -4169,6 +4280,8 @@ end = struct
 
     val mark_as_escaped : t -> t
 
+    val mark_as_free : t -> t
+
     val namespace : t -> namespace:Namespace.t -> t
 
     val dequalify : t -> dequalify_map:Reference.t Reference.Map.t -> t
@@ -4240,6 +4353,8 @@ end = struct
 
 
     let mark_as_escaped variable = { variable with state = Free { escaped = true } }
+
+    let mark_as_free variable = { variable with state = Free { escaped = false } }
 
     let rec local_collect = function
       | Variable variable -> [variable]
@@ -4342,6 +4457,8 @@ end = struct
 
 
       let mark_as_escaped variable = { variable with state = Free { escaped = true } }
+
+      let mark_as_free variable = { variable with state = Free { escaped = false } }
 
       let local_collect = function
         | Callable { implementation; overloads; _ } ->
@@ -4536,6 +4653,8 @@ end = struct
 
       let mark_as_escaped variable = { variable with state = Free { escaped = true } }
 
+      let mark_as_free variable = { variable with state = Free { escaped = false } }
+
       let rec local_collect annotation =
         let collect_unpackable = function
           | Record.OrderedTypes.Concatenation.Variadic variadic -> [variadic]
@@ -4567,10 +4686,16 @@ end = struct
               | _ -> []
             in
             List.concat_map (implementation :: overloads) ~f:extract
+        | TypeOperation (Compose (Concatenation { middle = unpackable; _ })) ->
+            collect_unpackable unpackable
         | _ -> []
 
 
       let rec local_replace replacement annotation =
+        let map_tuple ~f = function
+          | Tuple record -> f record
+          | other -> other
+        in
         let promote_to_tuple concatenation = Tuple (Concatenation concatenation) in
         let replace_unpackable = function
           | OrderedTypes.Concatenation.Broadcast
@@ -4621,19 +4746,14 @@ end = struct
             List.find_map ~f:extract_broadcast_error parameters
             |> fun result -> Option.first_some result default
         | Tuple (Concatenation { prefix; middle = unpackable; suffix }) ->
-            let handle_broadcasted ~f = function
-              | Tuple record -> f record
-              | other -> other
-            in
             replace_unpackable unpackable
-            >>| handle_broadcasted ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
-        | Callable callable ->
+            >>| map_tuple ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
+        | Callable callable -> (
             let replace_variadic parameters_so_far parameters =
               let expanded_parameters =
                 match parameters with
                 | Callable.Parameter.Variable
-                    (Concatenation
-                      ({ prefix; middle = Variadic variadic; suffix } as concatenation)) ->
+                    (Concatenation ({ prefix; middle = unpackable; suffix } as concatenation)) ->
                     let encode_ordered_types_into_parameters = function
                       | OrderedTypes.Concrete concretes ->
                           let start_index = List.length parameters_so_far in
@@ -4654,20 +4774,47 @@ end = struct
                                  });
                           ]
                     in
-                    replacement variadic
-                    >>| encode_ordered_types_into_parameters
+                    let handle_potential_error = function
+                      | Parametric { name = "pyre_extensions.BroadcastError"; _ } as broadcast_error
+                        ->
+                          Error broadcast_error
+                      | Tuple record -> Ok (encode_ordered_types_into_parameters record)
+                      | other ->
+                          Ok
+                            [
+                              Callable.Parameter.PositionalOnly
+                                {
+                                  index = List.length parameters_so_far;
+                                  annotation = other;
+                                  default = false;
+                                };
+                            ]
+                    in
+                    replace_unpackable unpackable
+                    >>| handle_potential_error
                     |> Option.value
-                         ~default:[Callable.Parameter.Variable (Concatenation concatenation)]
-                | parameter -> [parameter]
+                         ~default:(Ok [Callable.Parameter.Variable (Concatenation concatenation)])
+                | parameter -> Ok [parameter]
               in
-              List.rev_append expanded_parameters parameters_so_far
+              expanded_parameters
+              |> Result.map ~f:(fun result -> List.rev_append result parameters_so_far)
             in
-            let map = function
+            let map_defined = function
               | Defined parameters ->
-                  Defined (List.fold parameters ~init:[] ~f:replace_variadic |> List.rev)
-              | parameters -> parameters
+                  Result.map
+                    ~f:(fun result -> Defined (List.rev result))
+                    (List.fold_result ~init:[] ~f:replace_variadic parameters)
+              | parameters -> Ok parameters
             in
-            Some (Callable (Callable.map_parameters callable ~f:map))
+            match Callable.map_parameters_with_result ~f:map_defined callable with
+            | Ok result_callable -> Some (Callable result_callable)
+            | Error broadcast_error -> Some broadcast_error)
+        | TypeOperation (Compose (Concatenation { prefix; middle; suffix })) -> (
+            replace_unpackable middle
+            >>| map_tuple ~f:(OrderedTypes.expand_in_concatenation ~prefix ~suffix)
+            >>= function
+            | Tuple results -> Some (TypeOperation (Compose results))
+            | _ -> None)
         | _ -> None
 
 
@@ -4727,10 +4874,10 @@ end = struct
 
 
       let mark_all_as_bound ?specific =
-        let in_list =
+        let in_list variable =
           match specific with
-          | Some variables -> List.mem variables ~equal:Variable.equal
-          | None -> fun _ -> true
+          | Some variables -> List.mem variables ~equal:Variable.equal variable
+          | None -> true
         in
         let mark_as_bound_if_in_list variable =
           if in_list variable then
@@ -4739,6 +4886,21 @@ end = struct
             variable
         in
         map mark_as_bound_if_in_list
+
+
+      let mark_all_as_free ?specific =
+        let in_list variable =
+          match specific with
+          | Some variables -> List.mem variables ~equal:Variable.equal variable
+          | None -> true
+        in
+        let mark_as_free_if_in_list variable =
+          if in_list variable then
+            Variable.mark_as_free variable
+          else
+            variable
+        in
+        map mark_as_free_if_in_list
 
 
       let namespace_all_free_variables annotation ~namespace =
@@ -4879,6 +5041,25 @@ end = struct
     GlobalTransforms.Unary.mark_all_as_bound ?specific:specific_unaries annotation
     |> GlobalTransforms.ParameterVariadic.mark_all_as_bound ?specific:specific_parameters_variadics
     |> GlobalTransforms.TupleVariadic.mark_all_as_bound ?specific:specific_tuple_variadics
+
+
+  let mark_as_bound = function
+    | Unary variable -> Unary (GlobalTransforms.Unary.mark_as_bound variable)
+    | ParameterVariadic variable ->
+        ParameterVariadic (GlobalTransforms.ParameterVariadic.mark_as_bound variable)
+    | TupleVariadic variable ->
+        TupleVariadic (GlobalTransforms.TupleVariadic.mark_as_bound variable)
+
+
+  let mark_all_variables_as_free ?specific annotation =
+    let specific_unaries, specific_parameters_variadics, specific_tuple_variadics =
+      match specific >>| partition with
+      | None -> None, None, None
+      | Some (unaries, parameters, tuples) -> Some unaries, Some parameters, Some tuples
+    in
+    GlobalTransforms.Unary.mark_all_as_free ?specific:specific_unaries annotation
+    |> GlobalTransforms.ParameterVariadic.mark_all_as_free ?specific:specific_parameters_variadics
+    |> GlobalTransforms.TupleVariadic.mark_all_as_free ?specific:specific_tuple_variadics
 
 
   let namespace_all_free_variables annotation ~namespace =

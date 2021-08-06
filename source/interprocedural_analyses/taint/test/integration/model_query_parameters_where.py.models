@@ -139,10 +139,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 15,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -160,8 +160,8 @@
     "callable_line": 14,
     "code": 1000,
     "line": 15,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -192,10 +192,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 15,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -243,10 +243,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 19,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -261,8 +261,8 @@
     "callable_line": 18,
     "code": 1000,
     "line": 19,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -292,10 +292,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 19,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -340,10 +340,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 23,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -358,8 +358,8 @@
     "callable_line": 22,
     "code": 1000,
     "line": 23,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -389,10 +389,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 23,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -437,10 +437,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 27,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -455,8 +455,8 @@
     "callable_line": 26,
     "code": 1000,
     "line": 27,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -486,10 +486,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 27,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -510,10 +510,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 31,
-              "start": 16,
-              "end": 21
+              "start": 15,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -533,10 +533,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 35,
-              "start": 16,
-              "end": 21
+              "start": 15,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -566,10 +566,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 47,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -584,8 +584,8 @@
     "callable_line": 46,
     "code": 1000,
     "line": 47,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -615,10 +615,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 47,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -649,10 +649,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 51,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -667,8 +667,8 @@
     "callable_line": 50,
     "code": 1000,
     "line": 51,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -698,10 +698,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 51,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -732,10 +732,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 39,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -768,10 +768,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 43,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -801,10 +801,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 55,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -819,8 +819,8 @@
     "callable_line": 54,
     "code": 1000,
     "line": 55,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -850,10 +850,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 55,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -880,10 +880,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 63,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -898,8 +898,8 @@
     "callable_line": 62,
     "code": 1000,
     "line": 63,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -929,10 +929,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 63,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -963,10 +963,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 59,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -992,10 +992,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 67,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1025,10 +1025,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 88,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1043,8 +1043,8 @@
     "callable_line": 87,
     "code": 1000,
     "line": 88,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -1074,10 +1074,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 88,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1108,10 +1108,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 96,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1126,8 +1126,8 @@
     "callable_line": 95,
     "code": 1000,
     "line": 96,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -1157,10 +1157,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 96,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1191,10 +1191,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 92,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1224,10 +1224,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 100,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1265,10 +1265,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 112,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1283,8 +1283,8 @@
     "callable_line": 111,
     "code": 1000,
     "line": 112,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -1314,10 +1314,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 112,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1356,10 +1356,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 116,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1374,8 +1374,8 @@
     "callable_line": 115,
     "code": 1000,
     "line": 116,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -1405,10 +1405,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 116,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1447,10 +1447,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 120,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1465,8 +1465,8 @@
     "callable_line": 119,
     "code": 1000,
     "line": 120,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -1496,10 +1496,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 120,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1538,10 +1538,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 124,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1556,8 +1556,8 @@
     "callable_line": 123,
     "code": 1000,
     "line": 124,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "model_query_parameters_where.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -1587,10 +1587,10 @@
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 124,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

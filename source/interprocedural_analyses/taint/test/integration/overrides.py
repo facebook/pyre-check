@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Type, overload
 
 
@@ -32,7 +32,7 @@ class A(Base):
         super(Base, self).__init__(arg)
 
     def methodA(self, arg):
-        __test_sink(arg)
+        _test_sink(arg)
 
 
 class B(Base):
@@ -42,11 +42,11 @@ class B(Base):
         super(Base, self).__init__(arg)
 
     def methodB(self):
-        return __test_source()
+        return _test_source()
 
     @classmethod
     def classMethod(cls, arg):
-        __test_sink(arg)
+        _test_sink(arg)
 
 
 class C(B):
@@ -68,10 +68,10 @@ class D(C):
         super(C, self).__init__(arg)
 
     def methodA(self, arg):
-        __test_sink(arg)
+        _test_sink(arg)
 
     def methodB(self):
-        return __test_source()
+        return _test_source()
 
 
 def testBase(o: Base, cls: Type[Base]):
@@ -155,7 +155,7 @@ def testMakeD():
 
 
 def constructorTest(cls: Type[D]) -> D:
-    return cls(__test_source())
+    return cls(_test_source())
 
 
 class OverloadedOverride(D):
@@ -178,4 +178,4 @@ class SkippedOverrides:
 
 class ExtendsSkipped(SkippedOverrides):
     def method(self, arg):
-        __test_sink(arg)
+        _test_sink(arg)

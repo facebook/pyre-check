@@ -6,7 +6,7 @@ sidebar_label: Running Pysa
 
 This page walks you through the basics of running Pysa. If you want exercises to
 walk you through using Pysa's more advanced features, check out [this
-tutorial](https://github.com/facebook/pyre-check/tree/master/documentation/pysa_tutorial).
+tutorial](https://github.com/facebook/pyre-check/tree/main/documentation/pysa_tutorial).
 
 ## Setup
 

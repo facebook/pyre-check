@@ -6,8 +6,8 @@
     "callable_line": 67,
     "code": 1000,
     "line": 70,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "maximum_tito_depth.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -19,10 +19,10 @@
               "filename": "maximum_tito_depth.py",
               "line": 68,
               "start": 8,
-              "end": 23
+              "end": 22
             },
             "tito": [ { "line": 69, "start": 19, "end": 20 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -37,10 +37,10 @@
             "root": {
               "filename": "maximum_tito_depth.py",
               "line": 70,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

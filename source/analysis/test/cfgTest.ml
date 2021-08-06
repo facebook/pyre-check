@@ -212,10 +212,7 @@ let test_if _ =
         7
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = true })
-               (+Expression.True);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = true }) (+Expression.True);
              !!"body";
            ])
         [5]
@@ -224,10 +221,7 @@ let test_if _ =
         8
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = false })
-               (+Expression.False);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = false }) (+Expression.False);
              !!"orelse";
            ])
         [5]
@@ -248,10 +242,7 @@ let test_if _ =
         7
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = true })
-               (+Expression.True);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = true }) (+Expression.True);
              !!"body";
            ])
         [5]
@@ -259,12 +250,7 @@ let test_if _ =
       node
         8
         (Node.Block
-           [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = false })
-               (+Expression.False);
-           ])
+           [Statement.assume ~origin:(Assert.Origin.If { true_branch = false }) (+Expression.False)])
         [5]
         [6];
     ];
@@ -285,10 +271,7 @@ let test_if _ =
         7
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = true })
-               (+Expression.True);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = true }) (+Expression.True);
              !!"first";
              !!"second";
            ])
@@ -298,10 +281,7 @@ let test_if _ =
         8
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = false })
-               (+Expression.False);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = false }) (+Expression.False);
              +Statement.Pass;
            ])
         [5]
@@ -325,10 +305,7 @@ let test_if _ =
         8
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = true })
-               (+Expression.True);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = true }) (+Expression.True);
              !!"first";
              !!"second";
            ])
@@ -338,10 +315,7 @@ let test_if _ =
         9
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = false })
-               (+Expression.False);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = false }) (+Expression.False);
              !!"orelse";
            ])
         [6]
@@ -749,10 +723,7 @@ let test_while _ =
         10
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = true })
-               (+Expression.True);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = true }) (+Expression.True);
              +Statement.Break;
            ])
         [8]
@@ -760,12 +731,7 @@ let test_while _ =
       node
         11
         (Node.Block
-           [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = false })
-               (+Expression.False);
-           ])
+           [Statement.assume ~origin:(Assert.Origin.If { true_branch = false }) (+Expression.False)])
         [8]
         [9];
       node 12 (Node.Block [!!"body"]) [9] [5];
@@ -813,10 +779,7 @@ let test_while _ =
         10
         (Node.Block
            [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = true })
-               (+Expression.True);
+             Statement.assume ~origin:(Assert.Origin.If { true_branch = true }) (+Expression.True);
              +Statement.Continue;
            ])
         [8]
@@ -824,12 +787,7 @@ let test_while _ =
       node
         11
         (Node.Block
-           [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = false })
-               (+Expression.False);
-           ])
+           [Statement.assume ~origin:(Assert.Origin.If { true_branch = false }) (+Expression.False)])
         [8]
         [9];
       node 12 (Node.Block [!!"body"]) [9] [5];

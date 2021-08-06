@@ -13,9 +13,9 @@
               "filename": "colliding_class_names.py",
               "line": 16,
               "start": 15,
-              "end": 30
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -36,9 +36,9 @@
               "filename": "colliding_class_names.py",
               "line": 11,
               "start": 15,
-              "end": 30
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]

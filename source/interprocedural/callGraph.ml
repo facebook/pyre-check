@@ -593,7 +593,8 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
   | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
       (* Resolve `base.attribute` by looking up the type of `base`. *)
       match resolve_ignoring_optional ~resolution base with
-      | Type.Primitive class_name -> (
+      | Type.Primitive class_name
+      | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] } -> (
           GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
           >>| Node.value
           >>| ClassSummary.attributes

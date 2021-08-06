@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 61,
     "start": 21,
-    "end": 36,
+    "end": 35,
     "filename": "constructors.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "constructors.py",
               "line": 61,
               "start": 21,
-              "end": 36
+              "end": 35
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -35,13 +35,13 @@
                 "filename": "constructors.py",
                 "line": 61,
                 "start": 21,
-                "end": 36
+                "end": 35
               },
               "resolves_to": [ "constructors.ChildWithNew.__new__" ],
               "port": "formal(input)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -60,8 +60,8 @@
     "callable_line": 43,
     "code": 5002,
     "line": 45,
-    "start": 16,
-    "end": 19,
+    "start": 15,
+    "end": 18,
     "filename": "constructors.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -80,7 +80,7 @@
               "port": "result[x]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "x" },
@@ -96,10 +96,10 @@
             "root": {
               "filename": "constructors.py",
               "line": 45,
-              "start": 16,
-              "end": 19
+              "start": 15,
+              "end": 18
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -128,7 +128,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           },
           {
@@ -143,7 +143,7 @@
               "port": "result[x]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -207,7 +207,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -247,7 +247,7 @@
               "port": "result[x]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -354,7 +354,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -388,7 +388,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           },
           {
@@ -403,7 +403,7 @@
               "port": "result[x]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -476,7 +476,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -509,9 +509,9 @@
               "filename": "constructors.py",
               "line": 78,
               "start": 17,
-              "end": 32
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -559,10 +559,10 @@
             "root": {
               "filename": "constructors.py",
               "line": 56,
-              "start": 20,
-              "end": 25
+              "start": 19,
+              "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -603,7 +603,7 @@
               "port": "result[x]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -780,9 +780,9 @@
               "filename": "constructors.py",
               "line": 39,
               "start": 17,
-              "end": 32
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]

@@ -1369,6 +1369,44 @@ let test_call_graph_of_define context =
                  targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
                }) );
       ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Callable, TypeVar
+      from pyre_extensions import ParameterSpecification
+
+      _T = TypeVar("_T")
+      _TParams = ParameterSpecification("_TParams")
+
+      class Timer:
+        def __call__(self, func: Callable[_TParams, _T]) -> Callable[_TParams, _T]:
+          return func
+
+      def timer(name: str) -> Timer:
+        return Timer()
+
+      class Foo:
+        @classmethod
+        @timer("bar")
+        def bar(cls, x: int) -> None:
+          pass
+
+        @classmethod
+        def caller(cls) -> None:
+          cls.bar(1)
+    |}
+    ~define_name:"test.Foo.caller"
+    ~expected:
+      [
+        ( "23:4-23:14",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = true;
+                 collapse_tito = true;
+                 targets = [`Method { Callable.class_name = "test.Foo"; method_name = "bar" }];
+               }) );
+      ];
   (* Decorators with type errors. *)
   assert_call_graph_of_define
     ~source:

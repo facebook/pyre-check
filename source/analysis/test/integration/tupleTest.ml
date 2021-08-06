@@ -499,6 +499,8 @@ let test_tuple_literal_access context =
     [
       "Incompatible parameter type [6]: Expected `bool` for 2nd positional only parameter to call \
        `func` but got `str`.";
+      "Incompatible parameter type [6]: Expected `str` for 3rd positional only parameter to call \
+       `func` but got `bool`.";
     ];
   assert_type_errors
     {|

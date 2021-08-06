@@ -43,9 +43,9 @@
               "filename": "select.py",
               "line": 21,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "access_token" },
@@ -70,9 +70,9 @@
               "filename": "select.py",
               "line": 26,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
@@ -97,9 +97,9 @@
               "filename": "select.py",
               "line": 31,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },

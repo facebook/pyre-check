@@ -50,7 +50,7 @@ module.exports = {
           // Where to point users when they click "Edit this page"
           editUrl: fbContent({
             internal: 'https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/',
-            external: 'https://github.com/facebook/pyre-check/tree/master/documentation/website'
+            external: 'https://github.com/facebook/pyre-check/tree/main/documentation/website'
           }),
         },
         theme: {

@@ -27,10 +27,10 @@ class AbstractEventProcessor(Generic[EPInputType, EPOutputType]):
 
 class ConcreteEventProcessor(AbstractEventProcessor[EPInputType, EPOutputType]):
     async def async_run(self) -> None:
-        __test_sink(self.benign)
+        _test_sink(self.benign)
 
     async def async_call_tainted(self) -> None:
-        __test_sink(self.tainted)
+        _test_sink(self.tainted)
 
 
 PIInputType = TypeVar("PIInputType")
@@ -53,6 +53,6 @@ def get_event_processors() -> List[ProcessorInfo[int, int]]:
 
 def async_execute_event_processor() -> None:
     for p_info in get_event_processors():
-        processor = p_info.processor_type(__test_source(), "benign")
+        processor = p_info.processor_type(_test_source(), "benign")
         await processor.async_run()
         await processor.async_call_tainted()
