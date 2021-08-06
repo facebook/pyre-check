@@ -171,10 +171,7 @@ let process_request
   | Request.Query query_text ->
       let response =
         Response.Query
-          (Server.Query.parse_and_process_request
-             ~environment:type_environment
-             ~configuration
-             query_text)
+          (Query.parse_and_process_request ~environment:type_environment ~configuration query_text)
       in
       Lwt.return (state, response)
   | Request.Stop -> Stop.log_and_stop_waiting_server ~reason:"explicit request" ~state ()
