@@ -60,7 +60,7 @@ let test_obscure context =
       def test_obscure.obscure(x): ...
     |}
     {|
-      from builtins import _test_source, _test_sink, __user_controlled
+      from builtins import _test_source, _test_sink, _user_controlled
 
       def obscure(x): ...
 
@@ -74,7 +74,7 @@ let test_obscure context =
         obscure(_test_source())
 
       def user_controlled():
-        return __user_controlled()
+        return _user_controlled()
 
       def indirect_issue():
         to_obscure_x(user_controlled(), 0)
@@ -134,7 +134,7 @@ let test_type context =
     ~missing_flows:TaintConfiguration.Type
     ~handle:"test_type.py"
     {|
-      from builtins import _test_source, _test_sink, __user_controlled
+      from builtins import _test_source, _test_sink, _user_controlled
 
       def to_unknown_callee_x(x, y, f):
         f(x)
@@ -146,7 +146,7 @@ let test_type context =
         f(_test_source())
 
       def user_controlled():
-        return __user_controlled()
+        return _user_controlled()
 
       def indirect_issue(f):
         to_unknown_callee_x(user_controlled(), 0, f)

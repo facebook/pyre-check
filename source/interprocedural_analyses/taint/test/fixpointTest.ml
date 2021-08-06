@@ -45,7 +45,7 @@ let test_fixpoint context =
   assert_fixpoint
     ~context
     {|
-      from builtins import _test_source, _test_sink, __user_controlled
+      from builtins import _test_source, _test_sink, _user_controlled
       def bar():
         return _test_source()
 
@@ -70,7 +70,7 @@ let test_fixpoint context =
         bad(x)
 
       def rce_problem():
-        x = __user_controlled()
+        x = _user_controlled()
         eval(x)
 
       class TestMethods:
@@ -112,11 +112,11 @@ let test_fixpoint context =
         list_sink(x)
 
       def getattr_obj_no_match():
-        obj = __user_controlled()
+        obj = _user_controlled()
         getattr(obj, 'foo')
 
       def getattr_field_match(some_obj):
-        field = __user_controlled()
+        field = _user_controlled()
         return getattr(some_obj, field)
 
       def deep_tito(tito, no_tito):
@@ -125,11 +125,11 @@ let test_fixpoint context =
           return y
 
       def test_deep_tito_no_match():
-        obj = deep_tito(__user_controlled(), _test_source())
+        obj = deep_tito(_user_controlled(), _test_source())
         getattr('obj', obj.f.g)
 
       def test_deep_tito_match():
-        obj = deep_tito(__user_controlled(), _test_source())
+        obj = deep_tito(_user_controlled(), _test_source())
         getattr('obj', obj.g.f)
 
       class Class:
@@ -287,10 +287,10 @@ let test_combined_analysis context =
       def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import _test_sink, __user_controlled
+      from builtins import _test_sink, _user_controlled
       def combined_model(x, y, z):
         _test_sink(x)
-        return x or __user_controlled()
+        return x or _user_controlled()
     |}
     ~expect:
       {
@@ -320,10 +320,10 @@ let test_skipped_analysis context =
       def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import _test_sink, __user_controlled
+      from builtins import _test_sink, _user_controlled
       def skipped_model(x, y, z):
         _test_sink(x)
-        return x or __user_controlled()
+        return x or _user_controlled()
     |}
     ~expect:
       {
@@ -350,11 +350,11 @@ let test_sanitized_analysis context =
       def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import _test_sink, __user_controlled
+      from builtins import _test_sink, _user_controlled
       def sanitized_model(x, y, z):
-        eval(__user_controlled())
+        eval(_user_controlled())
         _test_sink(x)
-        return x or __user_controlled()
+        return x or _user_controlled()
     |}
     ~expect:
       {
@@ -435,7 +435,7 @@ let test_overrides context =
   assert_fixpoint
     ~context
     {|
-      from builtins import _test_source, _test_sink, __user_controlled
+      from builtins import _test_source, _test_sink, _user_controlled
       class Base:
         def split(self):
           pass
@@ -461,7 +461,7 @@ let test_overrides context =
 
       class E(Base):
         def some_source(self):
-          return __user_controlled()
+          return _user_controlled()
 
       def test_obscure_override(b: Base):
         return b.split()

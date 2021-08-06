@@ -927,20 +927,20 @@ let test_starred context =
     ~context
     {|
       def sink_in_starred(arg):
-          __tito( *[ 1, _test_sink(arg), "foo" ] )
+          _tito( *[ 1, _test_sink(arg), "foo" ] )
 
       def sink_in_starred_starred(arg):
-          __tito( **{
+          _tito( **{
               "a": 1,
               "b": _test_sink(arg),
               "c": "foo",
           })
 
       def tito_in_starred(arg):
-          return __tito( *[ 1, arg, "foo" ] )
+          return _tito( *[ 1, arg, "foo" ] )
 
       def tito_in_starred_starred(arg):
-          return __tito( **{
+          return _tito( **{
               "a": 1,
               "b": arg,
               "c": "foo",
@@ -1431,7 +1431,7 @@ let test_assignment context =
     ~context
     {|
       def assigns_to_sink(assigned_to_sink):
-        taint.__global_sink = assigned_to_sink
+        taint._global_sink = assigned_to_sink
     |}
     [
       outcome

@@ -481,7 +481,7 @@ let test_taint_in_taint_out_application context =
 
       def taint_with_tito():
         y = simple_source()
-        x = __tito(y)
+        x = _tito(y)
         return x
     |}
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.simple_source"];
@@ -867,7 +867,7 @@ let test_starred context =
     {|
       def source_in_starred():
           list = [ 1, _test_source(), "foo" ]
-          return __tito( *list )
+          return _tito( *list )
 
       def source_in_starred_starred():
           dict = {
@@ -875,7 +875,7 @@ let test_starred context =
               "b": _test_source(),
               "c": "foo",
           }
-          return __tito( **dict )
+          return _tito( **dict )
     |}
     [
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.source_in_starred";

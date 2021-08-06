@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import _test_sink, _test_source, __tito
+from builtins import _test_sink, _test_source, _tito
 
 
 def source_distance_zero():
@@ -55,5 +55,5 @@ def issue_source_one_sink_two():
 
 
 def multi_sink(x):
-    y = __tito(x, x.foo)
+    y = _tito(x, x.foo)
     sink_distance_one(y)
