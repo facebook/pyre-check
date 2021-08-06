@@ -145,8 +145,14 @@ let process_incremental_update_request
 
 let process_request
     ~state:
-      ({ ServerState.socket_path; server_configuration; configuration; type_environment; _ } as
-      state)
+      ({
+         ServerState.socket_path;
+         server_configuration;
+         configuration;
+         type_environment;
+         build_system;
+         _;
+       } as state)
     request
   =
   match request with
@@ -171,7 +177,11 @@ let process_request
   | Request.Query query_text ->
       let response =
         Response.Query
-          (Query.parse_and_process_request ~environment:type_environment ~configuration query_text)
+          (Query.parse_and_process_request
+             ~build_system
+             ~environment:type_environment
+             ~configuration
+             query_text)
       in
       Lwt.return (state, response)
   | Request.Stop -> Stop.log_and_stop_waiting_server ~reason:"explicit request" ~state ()
