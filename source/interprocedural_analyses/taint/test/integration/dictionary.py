@@ -111,9 +111,7 @@ def forward_comprehension_key_sink(arg):
 
 
 def lists_of_dictionary_iteration_is_precise():
-    list_of_dicts = [
-        {"with_feature": __test_source(), "without_feature": 0} for x in []
-    ]
+    list_of_dicts = [{"with_feature": __test_source(), "without_feature": 0} for x in []]
     for dict in list_of_dicts:
         __test_sink(dict["with_feature"])
         __test_sink(dict["without_feature"])
