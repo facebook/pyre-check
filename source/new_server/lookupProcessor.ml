@@ -23,7 +23,7 @@ type lookup = {
   lookup: (Lookup.t, error_reason) Result.t;
 }
 
-let get_lookups ~configuration ~environment paths =
+let get_lookups ~configuration ~build_system:_ ~environment paths =
   let generate_lookup_for_existent_path (path, { SourcePath.qualifier; _ }) =
     let lookup = Lookup.create_of_module (TypeEnvironment.read_only environment) qualifier in
     { path; lookup = Result.Ok lookup }
@@ -43,7 +43,7 @@ let get_lookups ~configuration ~environment paths =
   List.map paths ~f:generate_lookup_for_path
 
 
-let find_all_annotations_batch ~environment ~configuration ~paths =
+let find_all_annotations_batch ~environment ~build_system ~configuration ~paths =
   let get_annotations { path; lookup; _ } =
     {
       path;
@@ -52,4 +52,4 @@ let find_all_annotations_batch ~environment ~configuration ~paths =
             Lookup.get_all_annotations lookup |> List.sort ~compare:[%compare: Location.t * Type.t]);
     }
   in
-  List.map ~f:get_annotations (get_lookups ~configuration ~environment paths)
+  List.map ~f:get_annotations (get_lookups ~configuration ~environment ~build_system paths)

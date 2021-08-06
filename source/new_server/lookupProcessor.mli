@@ -23,6 +23,7 @@ type types_by_path = {
 
 val find_all_annotations_batch
   :  environment:TypeEnvironment.t ->
+  build_system:BuildSystem.t ->
   configuration:Configuration.Analysis.t ->
   paths:PyrePath.t list ->
   types_by_path list
