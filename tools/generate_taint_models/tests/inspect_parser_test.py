@@ -5,6 +5,8 @@
 
 import unittest
 
+from testing.types import File
+
 from ..inspect_parser import extract_parameters, extract_qualified_name
 from ..parameter import Parameter
 
@@ -64,4 +66,10 @@ class InspectParserTest(unittest.TestCase):
         ] + expected_parameters
         self.assertEqual(
             extract_parameters(TestMethodClass.test_method), expected_parameters
+        )
+
+    def test_thrift_structs(self) -> None:
+        self.assertEqual(
+            extract_qualified_name(File.__hash__),
+            "testing.types.File.__hash__",
         )
