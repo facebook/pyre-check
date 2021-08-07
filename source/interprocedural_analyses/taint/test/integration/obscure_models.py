@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 class C:
@@ -30,28 +30,28 @@ class C:
 
 
 def test_obscure(c: C):
-    return c.obscure(0, __test_source())
+    return c.obscure(0, _test_source())
 
 
 def test_obscure_with_skip_overrides(c: C):
-    return c.obscure_with_skip_overrides(0, __test_source())
+    return c.obscure_with_skip_overrides(0, _test_source())
 
 
 def test_obscure_with_skip_inlining(c: C):
-    return c.obscure_with_skip_inlining(0, __test_source())
+    return c.obscure_with_skip_inlining(0, _test_source())
 
 
 def test_obscure_with_source(c: C):
-    return c.obscure_with_source(0, __test_source())
+    return c.obscure_with_source(0, _test_source())
 
 
 def test_obscure_with_skip_obscure(c: C):
-    return c.obscure_with_skip_obscure(0, __test_source())
+    return c.obscure_with_skip_obscure(0, _test_source())
 
 
 def test_obscure_with_skip_obscure_and_tito(c: C):
-    return c.obscure_with_skip_obscure_and_tito(0, __test_source())
+    return c.obscure_with_skip_obscure_and_tito(0, _test_source())
 
 
 def test_obscure_with_multiple_models(c: C):
-    return c.obscure_with_multiple_models(0, __test_source())
+    return c.obscure_with_multiple_models(0, _test_source())

@@ -1,4 +1,4 @@
 @generated
 Call dependencies
-recognized_callable_targets.callable_target (fun) -> [__test_sink (fun)]
-recognized_callable_targets.test_callable_target (fun) -> [__test_source (fun) recognized_callable_targets.callable_target (fun)]
+recognized_callable_targets.callable_target (fun) -> [_test_sink (fun)]
+recognized_callable_targets.test_callable_target (fun) -> [_test_source (fun) recognized_callable_targets.callable_target (fun)]

@@ -379,7 +379,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--log-identifier", type=str, default=None, hidden=True)
 @click.option("--dot-pyre-directory", type=str, hidden=True)
 @click.option("--logger", type=str, hidden=True)
-@click.option("--formatter", type=str, hidden=True)
 @click.option(
     "--target",
     type=str,
@@ -493,7 +492,6 @@ def pyre(
     log_identifier: str | None,
     dot_pyre_directory: str | None,
     logger: str | None,
-    formatter: str | None,
     target: Iterable[str],
     use_buck_builder: bool | None,
     buck_mode: str | None,
@@ -533,7 +531,6 @@ def pyre(
         logging_sections=logging_sections,
         log_identifier=log_identifier,
         logger=logger,
-        formatter=formatter,
         targets=list(target),
         use_buck_builder=use_buck_builder,
         use_buck_source_database=use_buck_source_database,
@@ -792,25 +789,13 @@ def incremental(
     help="Read input from stdin instead of running a full infer.",
 )
 @click.option(
-    "--dequalify",
+    "--annotate-attributes",
     is_flag=True,
     default=False,
     help=(
-        "Dequalify all annotations? This is a temporary flag, used to "
-        "force fully-qualified names (e.g. sqlalchemy.sql.schema.Column) "
-        "to be dqualified (e.g. Column). It is needed now because pyre "
-        "infer doesn't yet know how to handle imports and qualified names "
-        "in a principled way."
-    ),
-)
-@click.option(
-    "--interprocedural",
-    is_flag=True,
-    default=False,
-    help=(
-        "Use (experimental) interprocedural inference. "
-        "Not recommended except for pyre developers, this work "
-        "is incomplete."
+        "Allow infer to attempt to annotate class attributes? "
+        "The code-generation logic for this is incomplete, so the "
+        "default is False but you may manually enable it."
     ),
 )
 @click.option(
@@ -826,6 +811,28 @@ def incremental(
         "in python 3.10+. This flag disables inserting the import."
     ),
 )
+@click.option(
+    "--dequalify",
+    is_flag=True,
+    default=False,
+    help=(
+        "Dequalify all annotations? This is a temporary flag, used to "
+        "force fully-qualified names (e.g. sqlalchemy.sql.schema.Column) "
+        "to be dequalified (e.g. Column). It is needed now because pyre "
+        "infer doesn't yet know how to handle imports and qualified names "
+        "in a principled way."
+    ),
+)
+@click.option(
+    "--interprocedural",
+    is_flag=True,
+    default=False,
+    help=(
+        "Use (experimental) interprocedural inference. "
+        "Not recommended except for pyre developers, this work "
+        "is incomplete."
+    ),
+)
 @click.pass_context
 def infer(
     context: click.Context,
@@ -835,9 +842,10 @@ def infer(
     annotate_from_existing_stubs: bool,
     debug_infer: bool,
     read_stdin: bool,
+    annotate_attributes: bool,
+    no_future_annotations: bool,
     dequalify: bool,
     interprocedural: bool,
-    no_future_annotations: bool,
 ) -> int:
     """
     Run pyre infer.
@@ -850,24 +858,50 @@ def infer(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return run_pyre_command(
-        commands.Infer(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            print_only=print_only,
-            in_place=in_place,
-            paths_to_modify={Path(path) for path in paths_to_modify},
-            annotate_from_existing_stubs=annotate_from_existing_stubs,
-            debug_infer=debug_infer,
-            read_stdin=read_stdin,
-            dequalify=dequalify,
-            interprocedural=interprocedural,
-            use_future_annotations=not no_future_annotations,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+
+    # TODO: Change the condition to `configuration.use_command_v2` once it is ready
+    if False:
+        modify_paths = (
+            None if not in_place else {Path(path) for path in paths_to_modify}
+        )
+        return v2.infer.run(
+            configuration,
+            command_arguments.InferArguments(
+                annotate_attributes=annotate_attributes,
+                annotate_from_existing_stubs=annotate_from_existing_stubs,
+                enable_memory_profiling=command_argument.enable_memory_profiling,
+                enable_profiling=command_argument.enable_profiling,
+                debug_infer=debug_infer,
+                interprocedural=interprocedural,
+                log_identifier=command_argument.log_identifier,
+                logging_sections=command_argument.logging_sections,
+                no_future_annotations=no_future_annotations,
+                paths_to_modify=modify_paths,
+                print_only=print_only,
+                read_stdin=read_stdin,
+                sequential=command_argument.sequential,
+            ),
+        )
+    else:
+        return run_pyre_command(
+            commands.Infer(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                paths_to_modify={Path(path) for path in paths_to_modify},
+                print_only=print_only,
+                in_place=in_place,
+                annotate_from_existing_stubs=annotate_from_existing_stubs,
+                debug_infer=debug_infer,
+                read_stdin=read_stdin,
+                annotate_attributes=annotate_attributes,
+                use_future_annotations=not no_future_annotations,
+                dequalify=dequalify,
+                interprocedural=interprocedural,
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
@@ -1367,6 +1401,27 @@ def statistics(
             filter_paths=list(filter_paths),
             log_results=log_results,
             aggregate=print_aggregates,
+        ),
+        configuration,
+        command_argument.noninteractive,
+    )
+
+
+@pyre.command()
+@click.pass_context
+def coverage(
+    context: click.Context,
+) -> int:
+    """
+    Collect various syntactic metrics on type coverage.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    return run_pyre_command(
+        commands.Coverage(
+            command_argument,
+            original_directory=os.getcwd(),
+            configuration=configuration,
         ),
         configuration,
         command_argument.noninteractive,

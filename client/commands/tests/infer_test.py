@@ -23,6 +23,8 @@ from ...commands.infer import (
     ModuleAnnotations,
     RawInferOutput,
     RawInferOutputDict,
+    StubGenerationOptions,
+    TypeAnnotation,
 )
 from .command_test import (
     mock_arguments,
@@ -46,13 +48,12 @@ def _raw_infer_output(
 
 
 def _create_test_module_annotations(
-    data: dict[str, object] | None,
-    use_future_annotations: bool,
+    data: dict[str, object] | None, options: StubGenerationOptions
 ) -> ModuleAnnotations:
     all_module_annotations = _create_module_annotations(
         infer_output=_raw_infer_output(data=data),
         sanitize_path=lambda path: path,
-        use_future_annotations=use_future_annotations,
+        options=options,
     )
     if len(all_module_annotations) != 1:
         raise AssertionError("Expected exactly one module!")
@@ -127,6 +128,36 @@ class InferUtilsTestSuite(unittest.TestCase):
         )
 
 
+class TypeAnnotationTest(unittest.TestCase):
+
+    no_dequalify_options: StubGenerationOptions = StubGenerationOptions(
+        annotate_attributes=False,
+        use_future_annotations=True,
+        dequalify=False,
+    )
+    dequalify_options: StubGenerationOptions = StubGenerationOptions(
+        annotate_attributes=False,
+        use_future_annotations=True,
+        dequalify=True,
+    )
+
+    def test_raises_on_invalid_type(self) -> None:
+        self.assertRaises(
+            ValueError, TypeAnnotation.from_raw, 0, self.no_dequalify_options
+        )
+
+    def test_sanitized(self) -> None:
+        actual = TypeAnnotation.from_raw(
+            "foo.Foo[int]", options=self.no_dequalify_options
+        )
+        self.assertEqual(actual.sanitized(), "foo.Foo[int]")
+        self.assertEqual(actual.sanitized(prefix=": "), ": foo.Foo[int]")
+
+        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=self.dequalify_options)
+        self.assertEqual(actual.sanitized(), "Foo[int]")
+        self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
+
+
 class AnnotateModuleInPlaceTest(unittest.TestCase):
     def run_test_case(self, stub: str, code: str, expected: str) -> None:
         stub = textwrap.dedent(stub.strip())
@@ -154,18 +185,69 @@ class AnnotateModuleInPlaceTest(unittest.TestCase):
         )
 
 
+class ModuleAnnotationsTest(unittest.TestCase):
+    def _create_ModuleAnnotations(
+        self, data: dict[str, object], annotate_attributes: bool
+    ) -> ModuleAnnotations:
+        return ModuleAnnotations.from_infer_output(
+            path=PATH,
+            infer_output=_raw_infer_output(data),
+            options=StubGenerationOptions(
+                annotate_attributes=annotate_attributes,
+                use_future_annotations=False,
+                dequalify=False,
+            ),
+        )
+
+    def test_ModuleAnnotations_is_empty(self) -> None:
+        empty_data = {}
+        data_with_attribute: dict[str, object] = {
+            "attributes": [
+                {
+                    "annotation": "int",
+                    "name": "attribute_name",
+                    "parent": "test.Test",
+                }
+            ],
+        }
+
+        self.assertTrue(
+            self._create_ModuleAnnotations(
+                data=empty_data,
+                annotate_attributes=True,
+            ).is_empty()
+        )
+        self.assertFalse(
+            self._create_ModuleAnnotations(
+                data=data_with_attribute,
+                annotate_attributes=True,
+            ).is_empty()
+        )
+        self.assertTrue(
+            self._create_ModuleAnnotations(
+                data=data_with_attribute,
+                annotate_attributes=False,
+            ).is_empty()
+        )
+
+
 class StubGenerationTest(unittest.TestCase):
     def _assert_stubs(
         self,
         data: dict[str, object],
         expected: str,
+        annotate_attributes: bool = False,
         use_future_annotations: bool = False,
     ) -> None:
         module_annotations = _create_test_module_annotations(
             data=data,
-            use_future_annotations=use_future_annotations,
+            options=StubGenerationOptions(
+                annotate_attributes=annotate_attributes,
+                use_future_annotations=use_future_annotations,
+                dequalify=False,
+            ),
         )
-        actual = module_annotations.to_stubs(dequalify=False)
+        actual = module_annotations.to_stubs()
         _assert_stubs_equal(actual, expected)
 
     def test_stubs_defines(self) -> None:
@@ -447,7 +529,7 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
-    def test_stubs_attributes_and_globals(self) -> None:
+    def test_stubs_globals(self) -> None:
         self._assert_stubs(
             {
                 "globals": [{"annotation": "int", "name": "global", "parent": None}],
@@ -457,6 +539,23 @@ class StubGenerationTest(unittest.TestCase):
             """,
         )
 
+    def test_stubs_attributes(self) -> None:
+        self._assert_stubs(
+            {
+                "attributes": [
+                    {
+                        "annotation": "int",
+                        "name": "attribute_name",
+                        "parent": "test.test",
+                    }
+                ],
+            },
+            """\
+            class test:
+                attribute_name: int = ...
+            """,
+            annotate_attributes=True,
+        )
         self._assert_stubs(
             {
                 "attributes": [
@@ -468,9 +567,8 @@ class StubGenerationTest(unittest.TestCase):
                 ],
             },
             """\
-            class Test:
-                attribute_name: int = ...
             """,
+            annotate_attributes=False,
         )
 
     def test_stubs_no_typing_import(self) -> None:
@@ -560,7 +658,7 @@ class StubGenerationTest(unittest.TestCase):
         )
 
 
-class InferV2Test(unittest.TestCase):
+class InferTest(unittest.TestCase):
     @staticmethod
     def mock_configuration() -> MagicMock:
         configuration = mock_configuration()
@@ -570,6 +668,38 @@ class InferV2Test(unittest.TestCase):
         configuration.strict = False
         configuration.get_existent_ignore_infer_paths = lambda: []
         return configuration
+
+    def make_command(
+        self,
+        configuration: MagicMock | None = None,
+        analysis_directory: AnalysisDirectory | None = None,
+        paths_to_modify: set[Path] | None = None,
+        read_stdin: bool = False,
+        interprocedural: bool = False,
+    ) -> Infer:
+        arguments = mock_arguments()
+        configuration = configuration or self.mock_configuration()
+        original_directory = configuration.project_root
+        configuration.get_typeshed.return_value = "stub"
+        analysis_directory = analysis_directory or AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
+        return Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            print_only=True,  # always use print_only to avoid file operations
+            in_place=False,
+            paths_to_modify=paths_to_modify or set(),
+            annotate_from_existing_stubs=False,
+            debug_infer=False,
+            read_stdin=read_stdin,
+            dequalify=False,
+            interprocedural=interprocedural,
+            annotate_attributes=False,
+            use_future_annotations=True,
+        )
 
     def test_check_working_directory(self) -> None:
         configuration = self.mock_configuration()
@@ -593,28 +723,7 @@ class InferV2Test(unittest.TestCase):
             path: Path,
             expected: bool,
         ) -> None:
-            arguments = mock_arguments()
-            configuration = self.mock_configuration()
-            original_directory = configuration.project_root
-            configuration.get_typeshed.return_value = "stub"
-            analysis_directory = AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            )
-            infer = Infer(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=analysis_directory,
-                print_only=True,
-                in_place=False,
-                paths_to_modify=paths_to_modify,
-                annotate_from_existing_stubs=False,
-                debug_infer=False,
-                read_stdin=False,
-                dequalify=False,
-                interprocedural=False,
-                use_future_annotations=True,
-            )
+            infer = self.make_command(paths_to_modify=paths_to_modify)
             self.assertEqual(expected, infer._should_annotate_in_place(path))
 
         check_should_annotate_in_place(
@@ -660,30 +769,8 @@ class InferV2Test(unittest.TestCase):
         json_loads: MagicMock,
         find_global_and_local_root: MagicMock,
     ) -> None:
-        arguments = mock_arguments()
-        configuration = self.mock_configuration()
-        original_directory = configuration.project_root
-        configuration.get_typeshed.return_value = "stub"
-        analysis_directory = AnalysisDirectory(
-            configuration_module.SimpleSearchPathElement(".")
-        )
-
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=analysis_directory,
-                print_only=True,
-                in_place=False,
-                paths_to_modify=set(),
-                annotate_from_existing_stubs=False,
-                debug_infer=False,
-                read_stdin=False,
-                dequalify=False,
-                interprocedural=False,
-                use_future_annotations=True,
-            )
+            command = self.make_command()
             self.assertEqual(
                 command._flags(),
                 [
@@ -708,24 +795,19 @@ class InferV2Test(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=Infer.NAME)
 
+        configuration = self.mock_configuration()
+        analysis_directory = AnalysisDirectory(
+            configuration_module.SimpleSearchPathElement(".")
+        )
         configuration.get_existent_ignore_infer_paths = lambda: ["path1.py", "path2.py"]
         # pyre-ignore[8]
         analysis_directory.get_filter_roots = lambda: {"filter_root_1", "filter_root_2"}
+
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(
-                arguments,
-                original_directory,
+            command = self.make_command(
                 configuration=configuration,
                 analysis_directory=analysis_directory,
-                print_only=True,
-                in_place=False,
-                paths_to_modify=set(),
-                annotate_from_existing_stubs=False,
-                debug_infer=False,
-                read_stdin=False,
-                dequalify=False,
                 interprocedural=True,
-                use_future_annotations=True,
             )
             self.assertEqual(
                 command._flags(),
@@ -757,20 +839,10 @@ class InferV2Test(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
             with patch.object(sys.stdin, "read", return_value=""):
-                command = Infer(
-                    arguments,
-                    original_directory,
+                command = self.make_command(
                     configuration=configuration,
                     analysis_directory=analysis_directory,
-                    print_only=True,
-                    in_place=False,
-                    paths_to_modify=set(),
-                    annotate_from_existing_stubs=False,
-                    debug_infer=False,
                     read_stdin=True,
-                    dequalify=False,
-                    interprocedural=False,
-                    use_future_annotations=True,
                 )
                 command.run()
                 call_client.assert_not_called()

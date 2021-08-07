@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_source
+from builtins import _test_source
 from typing import Any, Dict, List, cast
 
 
@@ -76,4 +76,4 @@ def asdict_test(obj):
 
 
 def obscure_test(obj):
-    return type(obj)(__test_source())
+    return type(obj)(_test_source())

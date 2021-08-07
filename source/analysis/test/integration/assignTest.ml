@@ -309,7 +309,7 @@ let test_check_assign context =
        class A:
          pass
        class B:
-         def __getattr_(self, name: str) -> Any: ...
+         def __getattr__(self, name: str) -> Any: ...
        class C:
          def __setattr__(self, name: str, value: Any) -> None: ...
        class D(C):
@@ -322,6 +322,8 @@ let test_check_assign context =
        class G:
          # pyre-ignore: this isnt consistent with object.__setattr__
          __setattr__: BoundMethod[Callable[[E, str, int], None], E]
+       class H(C):
+          def __getattr__(self, name: str) -> Any: ...
 
        def derp(a: A, b: B, c: C, d: D, e: E, f: F, g: G) -> None:
          a.foo = 42
@@ -334,13 +336,56 @@ let test_check_assign context =
     |}
     [
       "Undefined attribute [16]: `A` has no attribute `foo`.";
-      "Undefined attribute [16]: `B` has no attribute `foo`.";
+      "Undefined attribute [16]: `C` has no attribute `foo`.";
       "Undefined attribute [16]: `D` has no attribute `foo`.";
-      (* TODO(T64156088): This should be accepted *)
       "Undefined attribute [16]: `E` has no attribute `foo`.";
-      (* TODO(T64156088): This should be accepted *)
+      "Undefined attribute [16]: `F` has no attribute `foo`.";
       "Undefined attribute [16]: `G` has no attribute `foo`.";
     ];
+  assert_default_type_errors
+    {|
+      from typing import Any
+      class Foo:
+          def __setattr__(self, name: str, value: Any) -> None: ...
+          def __getattr__(self, name: str) -> Any: ...
+      class Bar(Foo):
+          pass
+      class Baz(object):
+          pass
+      def test(foo: Foo, bar: Bar, baz: Baz) -> None:
+          foo.attr = 1
+          bar.attr = 1
+          baz.attr = 1
+    |}
+    ["Undefined attribute [16]: `Baz` has no attribute `attr`."];
+  assert_default_type_errors
+    {|
+      from typing import Any
+      class Foo:
+          def __getattr__(self, name: str) -> Any: ...
+      class Bar(Foo):
+          pass
+      class Baz(object):
+          def __getattr__(self, name: str) -> int: ...
+      def test(foo: Foo, bar: Bar, baz: Baz) -> None:
+          foo.attr = 1
+          bar.attr = 1
+          baz.attr = 1
+    |}
+    ["Undefined attribute [16]: `Baz` has no attribute `attr`."];
+  assert_default_type_errors
+    {|
+      from typing import Any
+      class Foo:
+          def __getattr__(self, x: Any) -> Any:
+              return x
+
+
+      def test(f: Foo) -> None:
+          access = f.some_attribute
+          f.another_attribute = 1
+    |}
+    [];
   assert_type_errors
     {|
     from typing import Union

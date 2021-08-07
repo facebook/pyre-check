@@ -79,6 +79,7 @@ module ScratchProject = struct
       ?(external_sources = [])
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
+      ?custom_source_root
       ?watchman
       ?build_system_initializer
       sources
@@ -90,7 +91,11 @@ module ScratchProject = struct
     in
     (* We assume that there's only one checked source directory that acts as the global root as
        well. *)
-    let source_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let source_root =
+      match custom_source_root with
+      | Some source_root -> source_root
+      | None -> bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     (* We assume that there's only one external source directory. *)
     let external_root =
       bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true

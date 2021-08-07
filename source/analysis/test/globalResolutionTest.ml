@@ -2502,7 +2502,7 @@ let test_define context =
   in
   let source =
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def simple_function(x: int) -> str:
@@ -2512,14 +2512,14 @@ let test_define context =
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
 
     def two_inner_functions(callable: Callable[[str], None]) -> Callable[[str], None]:
       def inner1(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
 
       def inner2(y: str) -> None:
         inner1(y)
@@ -2530,7 +2530,7 @@ let test_define context =
     def decorator_factory(x: int) -> Callable[[Callable[[str], None]], Callable[[str], None]]:
       def wrapper(f: Callable[[str], None]) -> Callable[[str], None]:
         def inner(y: str) -> None:
-          __test_sink(y)
+          _test_sink(y)
           f(y)
 
         return inner
@@ -2554,12 +2554,12 @@ let test_define context =
     ~source
     ~expected_define_source:
       {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -2569,12 +2569,12 @@ let test_define context =
     ~source
     ~expected_define_source:
       {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def two_inner_functions(callable: Callable[[str], None]) -> Callable[[str], None]:
       def inner1(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
 
       def inner2(y: str) -> None:
         inner1(y)
@@ -2587,13 +2587,13 @@ let test_define context =
     ~source
     ~expected_define_source:
       {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def decorator_factory(x: int) -> Callable[[Callable[[str], None]], Callable[[str], None]]:
       def wrapper(f: Callable[[str], None]) -> Callable[[str], None]:
         def inner(y: str) -> None:
-          __test_sink(y)
+          _test_sink(y)
           f(y)
 
         return inner

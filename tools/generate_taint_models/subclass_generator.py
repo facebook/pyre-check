@@ -6,7 +6,7 @@
 # pyre-strict
 
 import logging
-from typing import Dict, Iterable, List, Optional, Set
+from typing import TypeVar, Type, Dict, Iterable, List, Optional, Set
 
 from ...api import query
 from ...api.connection import PyreConnection
@@ -58,3 +58,16 @@ def get_all_subclass_defines_from_pyre(
         }
     else:
         return None
+
+
+T = TypeVar("T")
+
+
+def get_all_subclasses_from_environment(parent_class: Type[T]) -> Iterable[Type[T]]:
+    return set(parent_class.__subclasses__()).union(
+        [
+            grandchild
+            for child in parent_class.__subclasses__()
+            for grandchild in get_all_subclasses_from_environment(child)
+        ]
+    )

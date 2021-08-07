@@ -49,7 +49,6 @@ def mock_arguments(
         logging_sections=None,
         log_identifier=log_identifier,
         logger=None,
-        formatter=None,
         targets=targets or [],
         use_buck_builder=False,
         use_buck_source_database=False,

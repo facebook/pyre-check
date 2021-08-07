@@ -121,7 +121,7 @@ let transform_annotations ~transform_annotation_expression source =
 
     let transform_expression_children _ _ = true
 
-    let transform_children _ _ = true
+    let transform_children state _ = state, true
 
     let statement _ ({ Node.value; _ } as statement) =
       let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
@@ -3403,7 +3403,7 @@ let replace_union_shorthand source =
 
     let transform_expression_children _ _ = true
 
-    let transform_children _ _ = true
+    let transform_children state _ = state, true
 
     let transform_shorthand_union_expression =
       let rec transform_expression ({ Node.value; location } as expression) =
@@ -3832,6 +3832,74 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
   Transform.transform qualifier source |> Transform.source
 
 
+(* Pytorch uses `self.register_buffer("foo", tensor)` to implicitly create an attribute `foo`.
+
+   Preprocess this into `self.foo: Tensor = tensor` to add the attribute and avoid spurious "missing
+   attribute" errors. *)
+let expand_pytorch_register_buffer source =
+  let module TransformRegisterBuffer = Transform.MakeStatementTransformer (struct
+    type t = unit
+
+    let statement _ ({ Node.value; location = statement_location } as statement) =
+      match value with
+      | Statement.Expression
+          {
+            Node.value =
+              Expression.Call
+                {
+                  callee;
+                  arguments =
+                    {
+                      name = None;
+                      value = { Node.value = String { value = attribute_name; kind = String }; _ };
+                    }
+                    :: { value = initial_value; _ }
+                       :: ([] | [{ name = Some { Node.value = "$parameter$persistent"; _ }; _ }]);
+                };
+            location;
+          }
+        when sanitized callee |> name_is ~name:"self.register_buffer" ->
+          let annotation =
+            Reference.create "torch.Tensor"
+            |> from_reference ~location
+            |> Option.some_if (not (name_is ~name:"None" initial_value))
+          in
+          ( (),
+            [
+              Statement.Assign
+                {
+                  target =
+                    Format.asprintf "$parameter$self.%s" attribute_name
+                    |> Reference.create
+                    |> from_reference ~location;
+                  annotation;
+                  value = initial_value;
+                  parent = None;
+                }
+              |> Node.create ~location:statement_location;
+            ] )
+      | _ -> (), [statement]
+  end)
+  in
+  let module TransformConstructor = Transform.MakeStatementTransformer (struct
+    type t = unit
+
+    let statement _ statement =
+      match statement with
+      | { Node.value = Statement.Define define; _ } when Define.is_constructor define ->
+          let transform_constructor constructor =
+            Source.create [constructor]
+            |> TransformRegisterBuffer.transform ()
+            |> TransformRegisterBuffer.source
+            |> Source.statements
+          in
+          (), transform_constructor statement
+      | _ -> (), [statement]
+  end)
+  in
+  TransformConstructor.transform () source |> TransformConstructor.source
+
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports
@@ -3856,6 +3924,7 @@ let preprocess_phase1 source =
   |> expand_named_tuples
   |> expand_new_types
   |> inline_six_metaclass
+  |> expand_pytorch_register_buffer
   |> populate_nesting_defines
   |> populate_captures
 

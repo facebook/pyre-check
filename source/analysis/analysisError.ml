@@ -419,7 +419,7 @@ and kind =
     }
 [@@deriving compare, eq, sexp, show, hash]
 
-let code = function
+let code_of_kind = function
   | RevealedType _ -> -1
   | UnusedIgnore _ -> 0
   | Top -> 1
@@ -490,7 +490,7 @@ let code = function
   | BroadcastError _ -> 2001
 
 
-let name = function
+let name_of_kind = function
   | AnalysisFailure _ -> "Analysis failure"
   | BroadcastError _ -> "Broadcast error"
   | DuplicateTypeVariables _ -> "Duplicate type variables"
@@ -2310,15 +2310,117 @@ let rec messages ~concise ~signature location kind =
       ]
 
 
-include BaseError.Make (struct
-  type t = kind [@@deriving hash, compare, show, sexp, equal]
+module T = struct
+  type t = {
+    location: Location.WithModule.t;
+    kind: kind;
+    signature: Define.Signature.t Node.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
 
-  let code = code
+include T
+include Hashable.Make (T)
 
-  let name = name
+let create ~location ~kind ~define =
+  let { Node.value = { Define.signature; _ }; location = define_location } = define in
+  { location; kind; signature = { Node.value = signature; location = define_location } }
 
-  let messages = messages
-end)
+
+let path { location = { Location.WithModule.path; _ }; _ } = path
+
+let key { location = { Location.WithModule.start = { Location.line; _ }; path; _ }; _ } =
+  let start = { Location.line; column = -1 } in
+  { Location.WithModule.start; stop = start; path }
+
+
+let code { kind; _ } = code_of_kind kind
+
+let _ = show (* shadowed below *)
+
+let show error = Format.asprintf "%a" pp error
+
+module Instantiated = struct
+  type t = {
+    line: int;
+    column: int;
+    stop_line: int;
+    stop_column: int;
+    path: string;
+    code: int;
+    name: string;
+    description: string;
+    long_description: string;
+    concise_description: string;
+    define: string;
+  }
+  [@@deriving sexp, compare, show, hash, yojson { strict = false }]
+
+  let equal = [%compare.equal: t]
+
+  let location { line; column; stop_line; stop_column; path; _ } =
+    { Location.start = { line; column }; stop = { line = stop_line; column = stop_column } }
+    |> Location.with_path ~path
+
+
+  let path { path; _ } = path
+
+  let code { code; _ } = code
+
+  let description { description; _ } = description
+
+  let long_description { long_description; _ } = long_description
+
+  let concise_description { concise_description; _ } = concise_description
+
+  let create
+      ~location:
+        ({
+           Location.WithPath.path;
+           start = { Location.line = start_line; column = start_column };
+           stop = { Location.line = stop_line; column = stop_column };
+         } as location)
+      ~kind
+      ~signature:({ Node.value = signature; _ } as signature_node)
+      ~show_error_traces
+      ()
+    =
+    let kind_name = name_of_kind kind in
+    let kind_code = code_of_kind kind in
+    let description ~concise ~separator ~show_error_traces =
+      let messages = messages ~concise ~signature:signature_node location kind in
+      Format.asprintf
+        "%s [%d]: %s"
+        kind_name
+        kind_code
+        (if show_error_traces then
+           String.concat ~sep:separator messages
+        else
+          List.nth_exn messages 0)
+    in
+    {
+      line = start_line;
+      column = start_column;
+      stop_line;
+      stop_column;
+      path;
+      code = kind_code;
+      name = kind_name;
+      description = description ~show_error_traces ~concise:false ~separator:" ";
+      long_description = description ~show_error_traces:true ~concise:false ~separator:"\n";
+      concise_description = description ~show_error_traces ~concise:true ~separator:"\n";
+      define = Reference.show_sanitized (Reference.delocalize (Node.value signature.name));
+    }
+end
+
+let instantiate ~show_error_traces ~lookup { location; kind; signature } =
+  Instantiated.create
+    ~location:(Location.WithModule.instantiate ~lookup location)
+    ~kind
+    ~signature
+    ~show_error_traces
+    ()
+
 
 module IntSet = Set.Make (struct
   type t = Int.t [@@deriving compare, sexp]

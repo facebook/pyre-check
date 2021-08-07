@@ -7,7 +7,7 @@
     "code": 1004,
     "line": 360,
     "start": 30,
-    "end": 45,
+    "end": 44,
     "filename": "sanitize.py",
     "message": "test to sink B",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "sanitize.py",
               "line": 360,
               "start": 30,
-              "end": 45
+              "end": 44
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -35,7 +35,7 @@
                 "filename": "sanitize.py",
                 "line": 360,
                 "start": 30,
-                "end": 45
+                "end": 44
               },
               "resolves_to": [ "sanitize.sanitize_a_sink_attribute" ],
               "port": "formal(c)[attribute]",
@@ -57,7 +57,7 @@
     "code": 1004,
     "line": 378,
     "start": 29,
-    "end": 44,
+    "end": 43,
     "filename": "sanitize.py",
     "message": "test to sink B",
     "traces": [
@@ -69,9 +69,9 @@
               "filename": "sanitize.py",
               "line": 378,
               "start": 29,
-              "end": 44
+              "end": 43
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -85,7 +85,7 @@
                 "filename": "sanitize.py",
                 "line": 378,
                 "start": 29,
-                "end": 44
+                "end": 43
               },
               "resolves_to": [ "sanitize.sanitize_a_sink_instance" ],
               "port": "formal(c)[instance]",
@@ -106,8 +106,8 @@
     "callable_line": 223,
     "code": 1002,
     "line": 229,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "sanitize.py",
     "message": "source B to test",
     "traces": [
@@ -138,10 +138,10 @@
             "root": {
               "filename": "sanitize.py",
               "line": 229,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -162,8 +162,8 @@
     "callable_line": 261,
     "code": 1002,
     "line": 267,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "sanitize.py",
     "message": "source B to test",
     "traces": [
@@ -194,10 +194,10 @@
             "root": {
               "filename": "sanitize.py",
               "line": 267,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -218,8 +218,8 @@
     "callable_line": 241,
     "code": 1005,
     "line": 247,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "sanitize.py",
     "message": "test to test",
     "traces": [
@@ -230,8 +230,8 @@
             "root": {
               "filename": "sanitize.py",
               "line": 247,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -249,10 +249,10 @@
             "root": {
               "filename": "sanitize.py",
               "line": 247,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -268,8 +268,8 @@
     "callable_line": 279,
     "code": 1005,
     "line": 285,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "sanitize.py",
     "message": "test to test",
     "traces": [
@@ -280,8 +280,8 @@
             "root": {
               "filename": "sanitize.py",
               "line": 285,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -299,10 +299,10 @@
             "root": {
               "filename": "sanitize.py",
               "line": 285,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -331,9 +331,9 @@
               "filename": "sanitize.py",
               "line": 374,
               "start": 18,
-              "end": 33
+              "end": 32
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -381,9 +381,9 @@
               "filename": "sanitize.py",
               "line": 392,
               "start": 17,
-              "end": 32
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -419,7 +419,7 @@
     "code": 1003,
     "line": 364,
     "start": 30,
-    "end": 45,
+    "end": 44,
     "filename": "sanitize.py",
     "message": "test to sink A",
     "traces": [
@@ -431,9 +431,9 @@
               "filename": "sanitize.py",
               "line": 364,
               "start": 30,
-              "end": 45
+              "end": 44
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -447,7 +447,7 @@
                 "filename": "sanitize.py",
                 "line": 364,
                 "start": 30,
-                "end": 45
+                "end": 44
               },
               "resolves_to": [ "sanitize.sanitize_b_sink_attribute" ],
               "port": "formal(c)[attribute]",
@@ -469,7 +469,7 @@
     "code": 1003,
     "line": 382,
     "start": 29,
-    "end": 44,
+    "end": 43,
     "filename": "sanitize.py",
     "message": "test to sink A",
     "traces": [
@@ -481,9 +481,9 @@
               "filename": "sanitize.py",
               "line": 382,
               "start": 29,
-              "end": 44
+              "end": 43
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -497,7 +497,7 @@
                 "filename": "sanitize.py",
                 "line": 382,
                 "start": 29,
-                "end": 44
+                "end": 43
               },
               "resolves_to": [ "sanitize.sanitize_b_sink_instance" ],
               "port": "formal(c)[instance]",
@@ -518,8 +518,8 @@
     "callable_line": 232,
     "code": 1001,
     "line": 238,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "sanitize.py",
     "message": "source A to test",
     "traces": [
@@ -550,10 +550,10 @@
             "root": {
               "filename": "sanitize.py",
               "line": 238,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -574,8 +574,8 @@
     "callable_line": 270,
     "code": 1001,
     "line": 276,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "sanitize.py",
     "message": "source A to test",
     "traces": [
@@ -606,10 +606,10 @@
             "root": {
               "filename": "sanitize.py",
               "line": 276,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1761,10 +1761,10 @@
             "root": {
               "filename": "sanitize.py",
               "line": 107,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1862,10 +1862,10 @@
             "root": {
               "filename": "sanitize.py",
               "line": 117,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

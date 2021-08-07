@@ -2,9 +2,9 @@ name: pysa
 
 on:
   push:
-    branches: [ test-2, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
   workflow_dispatch:
 

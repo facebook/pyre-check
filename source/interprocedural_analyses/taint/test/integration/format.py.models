@@ -11,10 +11,10 @@
             "root": {
               "filename": "format.py",
               "line": 19,
-              "start": 16,
-              "end": 24
+              "start": 15,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "special_sink" },
               { "always-via": "format-string" }
@@ -38,9 +38,9 @@
               "filename": "format.py",
               "line": 10,
               "start": 12,
-              "end": 27
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "format-string" }

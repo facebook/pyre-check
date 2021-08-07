@@ -12,9 +12,9 @@
               "filename": "first_field.py",
               "line": 12,
               "start": 14,
-              "end": 29
+              "end": 28
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "a" },
@@ -25,10 +25,10 @@
             "root": {
               "filename": "first_field.py",
               "line": 12,
-              "start": 36,
-              "end": 51
+              "start": 35,
+              "end": 49
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "b" },
@@ -47,8 +47,8 @@
     "callable_line": 11,
     "code": 5002,
     "line": 17,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "first_field.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -60,9 +60,9 @@
               "filename": "first_field.py",
               "line": 12,
               "start": 14,
-              "end": 29
+              "end": 28
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "a" },
@@ -73,10 +73,10 @@
             "root": {
               "filename": "first_field.py",
               "line": 12,
-              "start": 36,
-              "end": 51
+              "start": 35,
+              "end": 49
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "b" },
@@ -92,10 +92,10 @@
             "root": {
               "filename": "first_field.py",
               "line": 17,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

@@ -9,15 +9,10 @@ import logging
 from importlib import import_module
 from typing import Callable, Iterable, List, Optional, Type, TypeVar
 
+from .subclass_generator import get_all_subclasses_from_environment as all_subclasses
 
 LOG: logging.Logger = logging.getLogger(__name__)
 T = TypeVar("T")
-
-
-def all_subclasses(parent_class: Type[T]) -> Iterable[Type[T]]:
-    return set(parent_class.__subclasses__()).union(
-        [s for c in parent_class.__subclasses__() for s in all_subclasses(c)]
-    )
 
 
 def gather_all_constructors_in_hierarchy(

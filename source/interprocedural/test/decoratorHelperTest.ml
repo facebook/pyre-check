@@ -105,13 +105,13 @@ let test_inline_decorators context =
   in
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -121,13 +121,13 @@ let test_inline_decorators context =
       print(z)
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -137,7 +137,7 @@ let test_inline_decorators context =
         print(z)
 
       def __inlined_with_logging(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         __original_function(y)
 
       return __inlined_with_logging(y)
@@ -145,7 +145,7 @@ let test_inline_decorators context =
   (* Leave decorators as such if none can be inlined. *)
   assert_inlined
     {|
-    from builtins import __test_sink, __test_source
+    from builtins import _test_sink, _test_source
     from typing import Callable
 
     def fails_to_apply(f):
@@ -162,7 +162,7 @@ let test_inline_decorators context =
         print(z)
   |}
     {|
-    from builtins import __test_sink, __test_source
+    from builtins import _test_sink, _test_source
     from typing import Callable
 
     def fails_to_apply(f):
@@ -180,7 +180,7 @@ let test_inline_decorators context =
   |};
   assert_inlined
     {|
-    from builtins import __test_sink, __test_source
+    from builtins import _test_sink, _test_source
     from typing import Callable
 
     class Foo:
@@ -199,7 +199,7 @@ let test_inline_decorators context =
         self._some_property = value
   |}
     {|
-    from builtins import __test_sink, __test_source
+    from builtins import _test_sink, _test_source
     from typing import Callable
 
     class Foo:
@@ -221,12 +221,12 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         f( **kwargs)
         f( *args)
         f(1, 2)
@@ -239,12 +239,12 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         f( **kwargs)
         f( *args)
         f(1, 2)
@@ -259,12 +259,12 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def no_calls_to_original_function(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
 
       return inner
 
@@ -274,12 +274,12 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def no_calls_to_original_function(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
 
       return inner
 
@@ -289,19 +289,19 @@ let test_inline_decorators context =
         print(x)
 
       def __inlined_no_calls_to_original_function( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
 
       return __inlined_no_calls_to_original_function( *args, **kwargs)
   |};
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         result = callable(y)
         return result
 
@@ -314,13 +314,13 @@ let test_inline_decorators context =
       return result
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         result = callable(y)
         return result
 
@@ -333,7 +333,7 @@ let test_inline_decorators context =
         return result
 
       def __inlined_with_logging(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         result = __original_function(y)
         return result
 
@@ -391,12 +391,12 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner(y: str) -> int:
-        __test_sink(y)
+        _test_sink(y)
         f(y)
 
       return inner
@@ -407,12 +407,12 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner(y: str) -> int:
-        __test_sink(y)
+        _test_sink(y)
         f(y)
 
       return inner
@@ -423,7 +423,7 @@ let test_inline_decorators context =
         print(x)
 
       def __inlined_with_logging(y: str) -> int:
-        __test_sink(y)
+        _test_sink(y)
         __original_function(y)
 
       return __inlined_with_logging(y)
@@ -431,13 +431,13 @@ let test_inline_decorators context =
   (* Wrapper function with default values for parameters. *)
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str, z: int = 4) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y + z)
 
       return inner
@@ -447,13 +447,13 @@ let test_inline_decorators context =
       print(z)
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str, z: int = 4) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y + z)
 
       return inner
@@ -463,7 +463,7 @@ let test_inline_decorators context =
         print(z)
 
       def __inlined_with_logging(y: str, z: int = 4) -> None:
-        __test_sink(y)
+        _test_sink(y)
         __original_function(y + z)
 
       return __inlined_with_logging(y, z)
@@ -472,12 +472,12 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         f( *args, **kwargs)
 
       return inner
@@ -488,12 +488,12 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         f( *args, **kwargs)
 
       return inner
@@ -506,7 +506,7 @@ let test_inline_decorators context =
       def __inlined_with_logging(x: str) -> None:
         __args = (x,)
         __kwargs = {"x": x}
-        __test_sink(__args)
+        _test_sink(__args)
         __original_function(x)
 
       return __inlined_with_logging(x)
@@ -516,7 +516,7 @@ let test_inline_decorators context =
     {|
     from typing import Callable
     from pyre_extensions import ParameterSpecification
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     P = ParameterSpecification("P")
 
@@ -534,7 +534,7 @@ let test_inline_decorators context =
     {|
     from typing import Callable
     from pyre_extensions import ParameterSpecification
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     P = ParameterSpecification("P")
 
@@ -560,7 +560,7 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def change_return_type(f: Callable) -> Callable:
 
@@ -576,7 +576,7 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def change_return_type(f: Callable) -> Callable:
 
@@ -602,13 +602,13 @@ let test_inline_decorators context =
   (* Multiple decorators. *)
   assert_inlined
     {|
-    from builtins import __test_sink, __test_source
+    from builtins import _test_sink, _test_source
     from typing import Callable
 
     def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -616,7 +616,7 @@ let test_inline_decorators context =
     def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        callable(y + __test_source())
+        callable(y + _test_source())
 
       return inner
 
@@ -626,13 +626,13 @@ let test_inline_decorators context =
       print(z)
   |}
     {|
-    from builtins import __test_sink, __test_source
+    from builtins import _test_sink, _test_source
     from typing import Callable
 
     def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -640,7 +640,7 @@ let test_inline_decorators context =
     def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        callable(y + __test_source())
+        callable(y + _test_source())
 
       return inner
 
@@ -650,24 +650,24 @@ let test_inline_decorators context =
         print(z)
 
       def __inlined_with_logging_sink(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         __original_function(y)
 
       def __inlined_with_logging_source(y: str) -> None:
-        __inlined_with_logging_sink(y + __test_source())
+        __inlined_with_logging_sink(y + _test_source())
 
       return __inlined_with_logging_source(y)
   |};
   (* Multiple decorators where one decorator fails to apply. *)
   assert_inlined
     {|
-    from builtins import __test_sink, __test_source
+    from builtins import _test_sink, _test_source
     from typing import Callable
 
     def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -675,7 +675,7 @@ let test_inline_decorators context =
     def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        callable(y + __test_source())
+        callable(y + _test_source())
 
       return inner
 
@@ -691,13 +691,13 @@ let test_inline_decorators context =
       print(z)
   |}
     {|
-    from builtins import __test_sink, __test_source
+    from builtins import _test_sink, _test_source
     from typing import Callable
 
     def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -705,7 +705,7 @@ let test_inline_decorators context =
     def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        callable(y + __test_source())
+        callable(y + _test_source())
 
       return inner
 
@@ -718,11 +718,11 @@ let test_inline_decorators context =
         print(z)
 
       def __inlined_with_logging_sink(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         __original_function(y)
 
       def __inlined_with_logging_source(y: str) -> None:
-        __inlined_with_logging_sink(y + __test_source())
+        __inlined_with_logging_sink(y + _test_source())
 
       return __inlined_with_logging_source(y)
   |};
@@ -730,7 +730,7 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
 
@@ -738,7 +738,7 @@ let test_inline_decorators context =
 
         def inner( *args: object, **kwargs: object) -> None:
           print(logger_name)
-          __test_sink(args)
+          _test_sink(args)
           f( *args, **kwargs)
 
         return inner
@@ -751,7 +751,7 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
 
@@ -759,7 +759,7 @@ let test_inline_decorators context =
 
         def inner( *args: object, **kwargs: object) -> None:
           print(logger_name)
-          __test_sink(args)
+          _test_sink(args)
           f( *args, **kwargs)
 
         return inner
@@ -775,7 +775,7 @@ let test_inline_decorators context =
         __kwargs = {"x": x}
 
         print($parameter$logger_name)
-        __test_sink(__args)
+        _test_sink(__args)
         __original_function(x)
 
       return __inlined_with_named_logger(x)
@@ -783,13 +783,13 @@ let test_inline_decorators context =
   (* Decorator that uses helper functions. *)
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         before(y)
         callable(y)
         after(y)
@@ -812,13 +812,13 @@ let test_inline_decorators context =
       print(z)
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         before(y)
         callable(y)
         after(y)
@@ -853,7 +853,7 @@ let test_inline_decorators context =
           message = "after"
           my_print(message, y)
 
-        __test_sink(y)
+        _test_sink(y)
         before(y)
         __original_function(y)
         after(y)
@@ -863,14 +863,14 @@ let test_inline_decorators context =
   (* Decorator factory with helper functions. *)
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
       def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
         def inner(y: str) -> None:
-          __test_sink(y)
+          _test_sink(y)
           before(y)
           callable(y)
           after(y)
@@ -896,14 +896,14 @@ let test_inline_decorators context =
       print(z)
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
       def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
         def inner(y: str) -> None:
-          __test_sink(y)
+          _test_sink(y)
           before(y)
           callable(y)
           after(y)
@@ -942,7 +942,7 @@ let test_inline_decorators context =
           __original_function(y)
           my_print(message, y)
 
-        __test_sink(y)
+        _test_sink(y)
         before(y)
         __original_function(y)
         after(y)
@@ -955,7 +955,7 @@ let test_inline_decorators context =
     from pyre_extensions import ParameterSpecification
     from pyre_extensions.type_variable_operators import Concatenate
 
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     P = ParameterSpecification("P")
 
@@ -977,7 +977,7 @@ let test_inline_decorators context =
     from pyre_extensions import ParameterSpecification
     from pyre_extensions.type_variable_operators import Concatenate
 
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     P = ParameterSpecification("P")
 
@@ -1008,13 +1008,13 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable, TypeVar
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     T = TypeVar("T", bound="Foo")
 
     def with_logging(f: Callable) -> Callable:
       def helper(args) -> None:
-        __test_sink(args)
+        _test_sink(args)
 
       def inner( *args, **kwargs) -> None:
         helper(args)
@@ -1043,13 +1043,13 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable, TypeVar
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     T = TypeVar("T", bound="Foo")
 
     def with_logging(f: Callable) -> Callable:
       def helper(args) -> None:
-        __test_sink(args)
+        _test_sink(args)
 
       def inner( *args, **kwargs) -> None:
         helper(args)
@@ -1070,7 +1070,7 @@ let test_inline_decorators context =
         def __inlined_with_logging(self: Foo, x: str) -> None:
 
           def helper(args) -> None:
-            __test_sink(args)
+            _test_sink(args)
 
           __args = (self, x)
           __kwargs = {"self": self, "x": x}
@@ -1086,7 +1086,7 @@ let test_inline_decorators context =
         def __inlined_with_logging(self: Base, x: str) -> None:
 
           def helper(args) -> None:
-            __test_sink(args)
+            _test_sink(args)
 
           __args = (self, x)
           __kwargs = {"self": self, "x": x}
@@ -1103,7 +1103,7 @@ let test_inline_decorators context =
         def __inlined_with_logging(self: T, other: T, x: str) -> None:
 
           def helper(args) -> None:
-            __test_sink(args)
+            _test_sink(args)
 
           __args = (self, other, x)
           __kwargs = {"self": self, "other": other, "x": x}
@@ -1116,12 +1116,12 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         f( *args, **kwargs)
 
       return inner
@@ -1146,12 +1146,12 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         f( *args, **kwargs)
 
       return inner
@@ -1177,7 +1177,7 @@ let test_inline_decorators context =
         def __inlined_with_logging(cls: typing.Type[Foo], x: int) -> None:
           __args = (cls, x)
           __kwargs = {"cls": cls, "x": x}
-          __test_sink(__args)
+          _test_sink(__args)
           __original_function(cls, x)
 
         return __inlined_with_logging(cls, x)
@@ -1187,12 +1187,12 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         f( *args, **kwargs)
 
       return inner
@@ -1208,12 +1208,12 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner( *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         f( *args, **kwargs)
 
       return inner
@@ -1230,7 +1230,7 @@ let test_inline_decorators context =
         def __inlined_with_logging(x: int) -> None:
           __args = (x,)
           __kwargs = {"x": x}
-          __test_sink(__args)
+          _test_sink(__args)
           __original_function(x)
 
         return __inlined_with_logging(x)
@@ -1238,13 +1238,13 @@ let test_inline_decorators context =
   (* Same decorator applied multiple times. *)
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -1262,13 +1262,13 @@ let test_inline_decorators context =
       print(z)
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
 
     def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
 
       def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
       return inner
@@ -1285,14 +1285,14 @@ let test_inline_decorators context =
         print(z)
 
       def __inlined_with_logging(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         __original_function(y)
 
       def __inlined_identity(y: str) -> None:
         __inlined_with_logging(y)
 
       def __inlined_with_logging2(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         __inlined_identity(y)
 
       return __inlined_with_logging2(y)
@@ -1306,14 +1306,14 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
     from functools import wraps
 
     def with_logging(f: Callable) -> Callable:
 
       @wraps(f)
       def inner(request: str, *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         x = 42
         f(request, x, *args, **kwargs)
 
@@ -1325,14 +1325,14 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
     from functools import wraps
 
     def with_logging(f: Callable) -> Callable:
 
       @wraps(f)
       def inner(request: str, *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         x = 42
         f(request, x, *args, **kwargs)
 
@@ -1346,7 +1346,7 @@ let test_inline_decorators context =
       def __inlined_with_logging(request: str, x: int, y: int) -> None:
         __args = (y, )
         __kwargs = {"y": y}
-        __test_sink(__args)
+        _test_sink(__args)
 
         # Need to explicitly qualify this local variable because `x` is also a parameter.
         $local_test?foo?__inlined_with_logging$x = 42
@@ -1359,12 +1359,12 @@ let test_inline_decorators context =
   assert_inlined
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner(request: str, *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         x = 42
         f(request, x, *args, **kwargs)
 
@@ -1376,12 +1376,12 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
-    from builtins import __test_sink
+    from builtins import _test_sink
 
     def with_logging(f: Callable) -> Callable:
 
       def inner(request: str, *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         x = 42
         f(request, x, *args, **kwargs)
 
@@ -1393,7 +1393,7 @@ let test_inline_decorators context =
         print(x)
 
       def __inlined_with_logging(request: str, *args, **kwargs) -> None:
-        __test_sink(args)
+        _test_sink(args)
         x = 42
         __original_function(request, x, *args, **kwargs)
 
@@ -1402,7 +1402,7 @@ let test_inline_decorators context =
   (* Preserve the return type if the decorator uses @wraps. *)
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Any, Callable
     from functools import wraps
 
@@ -1418,7 +1418,7 @@ let test_inline_decorators context =
       return x
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Any, Callable
     from functools import wraps
 
@@ -1442,7 +1442,7 @@ let test_inline_decorators context =
   |};
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Any, Callable
     from functools import wraps
 
@@ -1459,7 +1459,7 @@ let test_inline_decorators context =
       return z
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Any, Callable
     from functools import wraps
 
@@ -1531,7 +1531,7 @@ let test_inline_decorators context =
   (* Don't preserve the return type if the decorator doesn't use @wraps. *)
   assert_inlined
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Any, Callable
 
     def decorator_not_using_wraps(func: Callable) -> Any:
@@ -1546,7 +1546,7 @@ let test_inline_decorators context =
       return x
   |}
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Any, Callable
 
     def decorator_not_using_wraps(func: Callable) -> Any:
@@ -1611,7 +1611,7 @@ let test_decorator_location context =
                 print(y)
 
               def inner(y: str) -> None:
-                __test_sink(y)
+                _test_sink(y)
                 callable(y)
                 helper(y)
 
@@ -1637,7 +1637,7 @@ let test_decorator_location context =
   assert_inlined
     ~additional_sources
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
     from logging_decorator import with_logging, fails_to_apply
     from some_module.identity_decorator import identity
@@ -1687,7 +1687,7 @@ let test_decorator_location context =
         !&"test.same_decorator_twice", None;
       ]
     {|
-    from builtins import __test_sink
+    from builtins import _test_sink
     from typing import Callable
     from logging_decorator import with_logging, fails_to_apply
     from some_module.identity_decorator import identity
@@ -1707,7 +1707,7 @@ let test_decorator_location context =
         def helper(y: str) -> None:
           print(y)
 
-        __test_sink(y)
+        _test_sink(y)
         __original_function(y)
         helper(y)
 
@@ -1726,7 +1726,7 @@ let test_decorator_location context =
         def helper(y: str) -> None:
           print(y)
 
-        __test_sink(y)
+        _test_sink(y)
         __inlined_identity(y)
         helper(y)
 

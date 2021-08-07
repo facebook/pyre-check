@@ -151,22 +151,30 @@ def split_imports(types_list: list[str]) -> set[str]:
 
 
 @dataclass(frozen=True)
+class StubGenerationOptions:
+    annotate_attributes: bool
+    use_future_annotations: bool
+    dequalify: bool
+
+
+@dataclass(frozen=True)
 class TypeAnnotation:
     annotation: str | None
+    dequalify: bool
 
     @staticmethod
-    def from_raw(annotation: object) -> TypeAnnotation:
+    def from_raw(annotation: object, options: StubGenerationOptions) -> TypeAnnotation:
         if annotation is None or isinstance(annotation, str):
-            return TypeAnnotation(annotation=annotation)
+            return TypeAnnotation(annotation=annotation, dequalify=options.dequalify)
         else:
             raise ValueError("Expected str | None for annotation")
 
-    def sanitized(self, dequalify: bool, prefix: str = "") -> str:
+    def sanitized(self, prefix: str = "") -> str:
         if self.annotation is None:
             return ""
         else:
             return prefix + sanitize_annotation(
-                self.annotation, dequalify_all=dequalify
+                self.annotation, dequalify_all=self.dequalify
             )
 
     def split(self) -> list[str]:
@@ -187,10 +195,10 @@ class Parameter:
     annotation: TypeAnnotation
     value: str | None
 
-    def to_stub(self, dequalify: bool) -> str:
+    def to_stub(self) -> str:
         delimiter = "=" if self.annotation.missing else " = "
         value = f"{delimiter}{self.value}" if self.value else ""
-        return f"{self.name}{self.annotation.sanitized(dequalify, prefix=': ')}{value}"
+        return f"{self.name}{self.annotation.sanitized(prefix=': ')}{value}"
 
 
 @dataclass(frozen=True)
@@ -201,14 +209,12 @@ class FunctionAnnotation:
     decorators: Sequence[str]
     is_async: bool
 
-    def to_stub(self, dequalify: bool) -> str:
+    def to_stub(self) -> str:
         name = _sanitize_name(self.name)
         decorators = "".join(f"@{decorator}\n" for decorator in self.decorators)
         async_ = "async " if self.is_async else ""
-        parameters = ", ".join(
-            parameter.to_stub(dequalify) for parameter in self.parameters
-        )
-        return_ = self.return_annotation.sanitized(dequalify, prefix=" -> ")
+        parameters = ", ".join(parameter.to_stub() for parameter in self.parameters)
+        return_ = self.return_annotation.sanitized(prefix=" -> ")
         return f"{decorators}{async_}def {name}({parameters}){return_}: ..."
 
     def typing_imports(self) -> set[str]:
@@ -238,9 +244,9 @@ class FieldAnnotation(ABC):
         if self.annotation.missing:
             raise RuntimeError(f"Illegal missing FieldAnnotation for {self.name}")
 
-    def to_stub(self, dequalify: bool) -> str:
+    def to_stub(self) -> str:
         name = _sanitize_name(self.name)
-        return f"{name}: {self.annotation.sanitized(dequalify)} = ..."
+        return f"{name}: {self.annotation.sanitized()} = ..."
 
     def typing_imports(self) -> set[str]:
         return split_imports(self.annotation.split())
@@ -263,20 +269,26 @@ class ModuleAnnotations:
     attributes: list[AttributeAnnotation]
     functions: list[FunctionAnnotation]
     methods: list[MethodAnnotation]
-    use_future_annotations: bool
+    options: StubGenerationOptions
 
     @staticmethod
     def from_infer_output(
         path: str,
         infer_output: RawInferOutput,
-        use_future_annotations: bool,
+        options: StubGenerationOptions,
     ) -> ModuleAnnotations:
+        def type_annotation(annotation: object) -> TypeAnnotation:
+            return TypeAnnotation.from_raw(
+                annotation,
+                options=options,
+            )
+
         return ModuleAnnotations(
             path=path,
             globals_=[
                 GlobalAnnotation(
                     name=cast(str, global_["name"]),
-                    annotation=TypeAnnotation.from_raw(global_["annotation"]),
+                    annotation=type_annotation(global_["annotation"]),
                 )
                 for global_ in infer_output["globals"]
             ],
@@ -284,18 +296,20 @@ class ModuleAnnotations:
                 AttributeAnnotation(
                     parent=cast(str, attribute["parent"]),
                     name=cast(str, attribute["name"]),
-                    annotation=TypeAnnotation.from_raw(attribute["annotation"]),
+                    annotation=type_annotation(attribute["annotation"]),
                 )
                 for attribute in infer_output["attributes"]
-            ],
+            ]
+            if options.annotate_attributes
+            else [],
             functions=[
                 FunctionAnnotation(
                     name=cast(str, define["name"]),
-                    return_annotation=TypeAnnotation.from_raw(define.get("return")),
+                    return_annotation=type_annotation(define.get("return")),
                     parameters=[
                         Parameter(
                             name=cast(str, parameter["name"]),
-                            annotation=TypeAnnotation.from_raw(parameter["annotation"]),
+                            annotation=type_annotation(parameter["annotation"]),
                             value=cast(Optional[str], parameter.get("value")),
                         )
                         # pyre-ignore [16]
@@ -311,11 +325,11 @@ class ModuleAnnotations:
                 MethodAnnotation(
                     parent=cast(str, define["parent"]),
                     name=cast(str, define["name"]),
-                    return_annotation=TypeAnnotation.from_raw(define.get("return")),
+                    return_annotation=type_annotation(define.get("return")),
                     parameters=[
                         Parameter(
                             name=cast(str, parameter["name"]),
-                            annotation=TypeAnnotation.from_raw(parameter["annotation"]),
+                            annotation=type_annotation(parameter["annotation"]),
                             value=cast(Optional[str], parameter.get("value")),
                         )
                         for parameter in define["parameters"]
@@ -326,7 +340,7 @@ class ModuleAnnotations:
                 for define in infer_output["defines"]
                 if define.get("parent") is not None
             ],
-            use_future_annotations=use_future_annotations,
+            options=options,
         )
 
     def is_empty(self) -> bool:
@@ -361,10 +375,10 @@ class ModuleAnnotations:
         """
         classes = defaultdict(list)
         nested_class_count = 0
-        for attribute in [*self.attributes, *self.methods]:
-            parent = self._relativize(attribute.parent)
+        for annotation in [*self.attributes, *self.methods]:
+            parent = self._relativize(annotation.parent)
             if len(parent) == 1:
-                classes[parent[0]].append(attribute)
+                classes[parent[0]].append(annotation)
             else:
                 nested_class_count += 1
         if nested_class_count > 0:
@@ -379,7 +393,7 @@ class ModuleAnnotations:
     def _header_imports(self) -> List[str]:
         return (
             ["from __future__ import annotations"]
-            if self.use_future_annotations
+            if self.options.use_future_annotations
             else []
         )
 
@@ -417,40 +431,39 @@ class ModuleAnnotations:
         self,
         classname: str,
         annotations: Sequence[AttributeAnnotation | MethodAnnotation],
-        dequalify: bool,
     ) -> str:
         body = "\n".join(
-            self._indent(annotation.to_stub(dequalify)) for annotation in annotations
+            self._indent(annotation.to_stub()) for annotation in annotations
         )
         return f"class {classname}:\n{body}\n"
 
-    def to_stubs(self, dequalify: bool) -> str:
+    def to_stubs(self) -> str:
         """
         Output annotation information as a stub file.
         """
         return "\n".join(
             [
                 self._imports(),
-                *(global_.to_stub(dequalify) for global_ in self.globals_),
-                *(function.to_stub(dequalify) for function in self.functions),
+                *(global_.to_stub() for global_ in self.globals_),
+                *(function.to_stub() for function in self.functions),
                 *(
-                    self._class_stub(classname, annotations, dequalify)
+                    self._class_stub(classname, annotations)
                     for classname, annotations in self.classes.items()
                 ),
                 "",
             ]
         )
 
-    def write_stubs(self, type_directory: Path, dequalify: bool) -> None:
+    def write_stubs(self, type_directory: Path) -> None:
         path = self.stubs_path(type_directory)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(self.to_stubs(dequalify))
+        path.write_text(self.to_stubs())
 
 
 def _create_module_annotations(
     infer_output: RawInferOutput,
     sanitize_path: Callable[[str], str | None],
-    use_future_annotations: bool,
+    options: StubGenerationOptions,
 ) -> Sequence[ModuleAnnotations]:
     infer_output_by_path = RawInferOutput.split_by_path(
         infer_output=infer_output,
@@ -464,7 +477,7 @@ def _create_module_annotations(
         ModuleAnnotations.from_infer_output(
             path=path,
             infer_output=infer_output_for_path,
-            use_future_annotations=use_future_annotations,
+            options=options,
         )
         for path, infer_output_for_path in infer_output_sanitized.items()
     ]
@@ -530,15 +543,16 @@ class Infer(Reporting):
         *,
         configuration: Configuration,
         analysis_directory: AnalysisDirectory | None = None,
+        paths_to_modify: set[Path],
         print_only: bool,
         in_place: bool,
-        paths_to_modify: set[Path],
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
         read_stdin: bool,
+        annotate_attributes: bool,
+        use_future_annotations: bool,
         dequalify: bool,
         interprocedural: bool,
-        use_future_annotations: bool,
     ) -> None:
         if annotate_from_existing_stubs and not in_place:
             raise ValueError(
@@ -546,7 +560,8 @@ class Infer(Reporting):
                 --in-place argument"
             )
         self._check_working_directory(
-            original_directory=original_directory, configuration=configuration
+            original_directory=original_directory,
+            configuration=configuration,
         )
         super(Infer, self).__init__(
             command_arguments,
@@ -554,15 +569,18 @@ class Infer(Reporting):
             configuration=configuration,
             analysis_directory=analysis_directory,
         )
+        self._paths_to_modify = paths_to_modify
         self._print_only = print_only
         self._in_place = in_place
-        self._paths_to_modify = paths_to_modify
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
         self._read_stdin = read_stdin
-        self._dequalify = dequalify
+        self._stub_generation_options = StubGenerationOptions(
+            annotate_attributes=annotate_attributes,
+            use_future_annotations=use_future_annotations,
+            dequalify=dequalify,
+        )
         self._interprocedural = interprocedural
-        self._use_future_annotations = use_future_annotations
         self._type_directory: Path = (
             Path(self._configuration.log_directory) / "types"
         ).absolute()
@@ -570,7 +588,8 @@ class Infer(Reporting):
 
     @staticmethod
     def _check_working_directory(
-        original_directory: str, configuration: Configuration
+        original_directory: str,
+        configuration: Configuration,
     ) -> None:
         project_root = configuration.project_root
         local_root = configuration.local_root
@@ -633,7 +652,7 @@ class Infer(Reporting):
         module_annotations = _create_module_annotations(
             infer_output=infer_output,
             sanitize_path=self.project_relative_path,
-            use_future_annotations=self._use_future_annotations,
+            options=self._stub_generation_options,
         )
         if self._print_only:
             return self._print_inferences(
@@ -683,8 +702,7 @@ class Infer(Reporting):
             log.SUCCESS,
             "Generated stubs:\n\n"
             + "\n\n".join(
-                f"*{module.path}*\n{module.to_stubs(self._dequalify)}"
-                for module in module_annotations
+                f"*{module.path}*\n{module.to_stubs()}" for module in module_annotations
             ),
         )
         return
@@ -698,10 +716,9 @@ class Infer(Reporting):
 
         LOG.log(log.SUCCESS, f"Outputting inferred stubs to {type_directory}")
         for module in module_annotations:
-            module.write_stubs(type_directory=type_directory, dequalify=self._dequalify)
+            module.write_stubs(type_directory=type_directory)
 
     def _annotate_in_place(self) -> None:
-        formatter = self._configuration.formatter
         type_directory = self._type_directory
         debug_infer = self._debug_infer
         number_workers = self._configuration.get_number_of_workers()
@@ -725,12 +742,6 @@ class Infer(Reporting):
             for _ in pool.imap_unordered(AnnotateModuleInPlace.run_task, tasks):
                 pass
 
-        if formatter:
-            subprocess.call(
-                formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-            self._suppress_errors()
-
     def _should_annotate_in_place(self, full_code_path: Path) -> bool:
         if self._paths_to_modify == set():
             return True
@@ -738,9 +749,3 @@ class Infer(Reporting):
             path in self._paths_to_modify
             for path in (full_code_path, *full_code_path.parents)
         )
-
-    def _suppress_errors(self) -> None:
-        result = self._call_client(command="check")
-        errors = self._get_errors(result)
-        error_json = json.dumps([error.to_json() for error in errors])
-        subprocess.run("pyre-upgrade fixme", input=error_json)

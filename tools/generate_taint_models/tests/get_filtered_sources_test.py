@@ -161,6 +161,7 @@ class GetFilteredSourcesTest(unittest.TestCase):
                     # pyre-ignore: Incompatible parameter type [6]
                     function_definition,
                     "TaintSource[UserControlled]",
+                    # pyre-fixme[6]: Expected `Optional[tools.pyre.tools.generate_tai...
                     "TaintSource[UserControlled]",
                     "TaintSource[UserControlled]",
                 )

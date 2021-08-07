@@ -120,7 +120,7 @@ let filter_errors
     let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
     List.filter ~f:keep_error errors
   in
-  List.map errors_by_define ~f:(fun errors -> filter errors)
+  List.map errors_by_define ~f:(fun errors -> filter errors |> List.sort ~compare:Error.compare)
   |> List.concat_map ~f:(Error.join_at_define ~resolution:global_resolution)
   |> Error.join_at_source ~resolution:global_resolution
 

@@ -66,7 +66,7 @@ file is a JSON document which stores definitions for *sources*, *sinks*, *featur
 and *rules* (discussed below). The `.pysa` files are model files (also discussed
 below) which annotate your code with the *sources*, *sinks*, and *features* defined in
 your `taint.config` file. Examples of these files can be found in the [Pyre
-repository](https://github.com/facebook/pyre-check/tree/master/stubs/taint).
+repository](https://github.com/facebook/pyre-check/tree/main/stubs/taint).
 
 These files live in the directory configured by `taint_models_path` in your
 `.pyre_configuration` file. Any `.pysa` file found in this folder will be parsed
@@ -427,3 +427,12 @@ As you can see from the above examples, unmodelled parameters and function bodie
 both be elided with `...`. Additionally, type annotations *must* be entirely
 omitted (not replaced with `...`), even when present on the declaration of the
 function. This is done to make parsing taint annotations unambiguous.
+
+<FbInternalOnly>
+
+## Next Steps
+
+Ready to start writing some models? Check out our docs on the
+[end-to-end process of shipping pysa models.](fb/pysa_shipping_rules_models_internal.md)
+
+</FbInternalOnly>

@@ -11,10 +11,10 @@
             "root": {
               "filename": "breadcrumbs.py",
               "line": 30,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -39,9 +39,9 @@
               "filename": "breadcrumbs.py",
               "line": 18,
               "start": 11,
-              "end": 26
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -65,10 +65,10 @@
             "root": {
               "filename": "breadcrumbs.py",
               "line": 26,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -92,9 +92,9 @@
               "filename": "breadcrumbs.py",
               "line": 14,
               "start": 11,
-              "end": 26
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_source" }
@@ -117,10 +117,10 @@
             "root": {
               "filename": "breadcrumbs.py",
               "line": 22,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -144,9 +144,9 @@
               "filename": "breadcrumbs.py",
               "line": 10,
               "start": 11,
-              "end": 26
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_source" }

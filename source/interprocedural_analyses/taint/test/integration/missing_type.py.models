@@ -61,10 +61,10 @@
             "root": {
               "filename": "missing_type.py",
               "line": 31,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "special_sink" },
               { "always-via": "obscure" }
@@ -82,8 +82,8 @@
     "callable_line": 29,
     "code": 5002,
     "line": 31,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "missing_type.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -115,10 +115,10 @@
             "root": {
               "filename": "missing_type.py",
               "line": 31,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -142,10 +142,10 @@
             "root": {
               "filename": "missing_type.py",
               "line": 19,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "special_sink" },
               { "always-via": "obscure" }

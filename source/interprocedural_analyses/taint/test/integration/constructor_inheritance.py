@@ -4,12 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 # Integration test illustrating flows through an inherited constructor
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 class MyBaseClass:
     def __init__(self, argument: str) -> None:
-        __test_sink(argument)
+        _test_sink(argument)
 
 
 class MyDerivedClass(MyBaseClass):
@@ -18,4 +18,4 @@ class MyDerivedClass(MyBaseClass):
 
 def test() -> None:
     # This flow should be detected:
-    derived = MyDerivedClass(__test_source())
+    derived = MyDerivedClass(_test_source())

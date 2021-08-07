@@ -5660,6 +5660,105 @@ let test_expand_import_python_calls _ =
   ()
 
 
+let test_expand_pytorch_register_buffer _ =
+  let assert_expand ?(handle = "test.py") source expected =
+    let expected = parse ~handle expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source |> Preprocessing.qualify |> Preprocessing.expand_pytorch_register_buffer
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_expand
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Foo(nn.Module):
+        def __init__(self) -> None:
+          super(Foo, self).__init__()
+          self.register_buffer("foo", torch.zeros(10, 20))
+          self.register_buffer("foo_persistent", torch.zeros(10, 20), persistent=False)
+          self.register_buffer("bar", None)
+
+          self.register_buffer(not_a_literal(), torch.zeros(10, 20))
+
+        def some_method() -> None:
+          self.register_buffer("foobar", torch.zeros(30, 40))
+    |}
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Foo(nn.Module):
+        def __init__(self) -> None:
+          super(Foo, self).__init__()
+          self.foo: torch.Tensor = torch.zeros(10, 20)
+          self.foo_persistent: torch.Tensor = torch.zeros(10, 20)
+          self.bar = None
+
+          self.register_buffer(not_a_literal(), torch.zeros(10, 20))
+
+        def some_method() -> None:
+          self.register_buffer("foobar", torch.zeros(30, 40))
+    |};
+  (* TODO(T80453653): We shouldn't preprocess in non-Module constructors. *)
+  assert_expand
+    {|
+      import torch
+      import torch.nn as nn
+
+      class NotAModule:
+        def __init__(self) -> None:
+          super(NotAModule, self).__init__()
+          self.register_buffer("foo", torch.zeros(10, 20))
+    |}
+    {|
+      import torch
+      import torch.nn as nn
+
+      class NotAModule:
+        def __init__(self) -> None:
+          super(NotAModule, self).__init__()
+          self.foo: torch.Tensor = torch.zeros(10, 20)
+    |};
+  assert_expand
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Outer:
+        class Foo(nn.Module):
+          def __init__(self) -> None:
+            super(Foo, self).__init__()
+            self.register_buffer("foo", torch.zeros(10, 20))
+            self.register_buffer("foo_persistent", torch.zeros(10, 20), persistent=False)
+            self.register_buffer("bar", None)
+
+            self.register_buffer(not_a_literal(), torch.zeros(10, 20))
+
+          def some_method() -> None:
+            self.register_buffer("foobar", torch.zeros(30, 40))
+    |}
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Outer:
+        class Foo(nn.Module):
+          def __init__(self) -> None:
+            super(Foo, self).__init__()
+            self.foo: torch.Tensor = torch.zeros(10, 20)
+            self.foo_persistent: torch.Tensor = torch.zeros(10, 20)
+            self.bar = None
+
+            self.register_buffer(not_a_literal(), torch.zeros(10, 20))
+
+          def some_method() -> None:
+            self.register_buffer("foobar", torch.zeros(30, 40))
+    |};
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -5687,5 +5786,6 @@ let () =
          "six_metaclass_decorator" >:: test_six_metaclass_decorator;
          "expand_starred_type_variable_tuples" >:: test_expand_starred_type_variable_tuples;
          "expand_import_python_calls" >:: test_expand_import_python_calls;
+         "expand_pytorch_register_buffer" >:: test_expand_pytorch_register_buffer;
        ]
   |> Test.run

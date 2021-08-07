@@ -6,8 +6,8 @@
     "callable_line": 93,
     "code": 5002,
     "line": 95,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "features.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -26,7 +26,7 @@
               "port": "result[0]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -42,10 +42,10 @@
             "root": {
               "filename": "features.py",
               "line": 95,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -66,8 +66,8 @@
     "callable_line": 77,
     "code": 5002,
     "line": 79,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "features.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -86,7 +86,7 @@
               "port": "result[0]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -102,10 +102,10 @@
             "root": {
               "filename": "features.py",
               "line": 79,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -126,8 +126,8 @@
     "callable_line": 57,
     "code": 5002,
     "line": 60,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "features.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -139,10 +139,10 @@
               "filename": "features.py",
               "line": 58,
               "start": 8,
-              "end": 23
+              "end": 22
             },
             "tito": [ { "line": 59, "start": 13, "end": 14 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -159,10 +159,10 @@
             "root": {
               "filename": "features.py",
               "line": 60,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -184,8 +184,8 @@
     "callable_line": 67,
     "code": 5002,
     "line": 70,
-    "start": 16,
-    "end": 31,
+    "start": 15,
+    "end": 30,
     "filename": "features.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -205,7 +205,7 @@
               "length": 1
             },
             "tito": [ { "line": 69, "start": 22, "end": 23 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -222,10 +222,10 @@
             "root": {
               "filename": "features.py",
               "line": 70,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -246,9 +246,9 @@
     "callable": "features.issue_via_in",
     "callable_line": 102,
     "code": 5002,
-    "line": 104,
-    "start": 16,
-    "end": 24,
+    "line": 105,
+    "start": 15,
+    "end": 23,
     "filename": "features.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -260,9 +260,9 @@
               "filename": "features.py",
               "line": 103,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -277,11 +277,11 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 104,
-              "start": 16,
-              "end": 24
+              "line": 105,
+              "start": 15,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -301,9 +301,9 @@
     "callable": "features.issue_via_in",
     "callable_line": 102,
     "code": 5002,
-    "line": 105,
-    "start": 16,
-    "end": 24,
+    "line": 104,
+    "start": 15,
+    "end": 23,
     "filename": "features.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -315,9 +315,9 @@
               "filename": "features.py",
               "line": 103,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -332,11 +332,11 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 105,
-              "start": 16,
-              "end": 24
+              "line": 104,
+              "start": 15,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -363,9 +363,9 @@
               "filename": "features.py",
               "line": 90,
               "start": 11,
-              "end": 26
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -381,10 +381,10 @@
             "root": {
               "filename": "features.py",
               "line": 90,
-              "start": 28,
-              "end": 43
+              "start": 27,
+              "end": 41
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -490,9 +490,9 @@
               "filename": "features.py",
               "line": 74,
               "start": 11,
-              "end": 26
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -508,10 +508,10 @@
             "root": {
               "filename": "features.py",
               "line": 74,
-              "start": 28,
-              "end": 43
+              "start": 27,
+              "end": 41
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-type": "bool" },
@@ -536,9 +536,9 @@
               "filename": "features.py",
               "line": 64,
               "start": 11,
-              "end": 26
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]

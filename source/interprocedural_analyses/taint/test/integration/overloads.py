@@ -23,4 +23,4 @@ def f(x: Union[int, str]) -> None:
 
 
 def call_me(x):
-    __test_sink(x)
+    _test_sink(x)

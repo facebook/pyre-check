@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 100,
     "start": 10,
-    "end": 25,
+    "end": 24,
     "filename": "model_query_transitive_extends.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "model_query_transitive_extends.py",
               "line": 100,
               "start": 10,
-              "end": 25
+              "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -34,7 +34,7 @@
               "filename": "model_query_transitive_extends.py",
               "line": 100,
               "start": 10,
-              "end": 25
+              "end": 24
             },
             "leaves": [
               {
@@ -334,10 +334,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 116,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -357,10 +357,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 120,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -380,10 +380,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 68,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -398,8 +398,8 @@
     "callable_line": 67,
     "code": 5002,
     "line": 68,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "model_query_transitive_extends.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -410,8 +410,8 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 68,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -435,10 +435,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 68,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -459,10 +459,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 72,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -477,8 +477,8 @@
     "callable_line": 71,
     "code": 5002,
     "line": 72,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query_transitive_extends.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -489,8 +489,8 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 72,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -514,10 +514,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 72,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -538,10 +538,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 76,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -556,8 +556,8 @@
     "callable_line": 75,
     "code": 5002,
     "line": 76,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "model_query_transitive_extends.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -568,8 +568,8 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 76,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -598,10 +598,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 76,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -622,10 +622,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 80,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -640,8 +640,8 @@
     "callable_line": 79,
     "code": 5002,
     "line": 80,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query_transitive_extends.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -652,8 +652,8 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 80,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -682,10 +682,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 80,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -706,10 +706,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 84,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -724,8 +724,8 @@
     "callable_line": 83,
     "code": 5002,
     "line": 84,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "model_query_transitive_extends.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -736,8 +736,8 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 84,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -756,10 +756,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 84,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -780,10 +780,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 88,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -798,8 +798,8 @@
     "callable_line": 87,
     "code": 5002,
     "line": 88,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query_transitive_extends.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -810,8 +810,8 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 88,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -830,10 +830,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 88,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -854,10 +854,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 92,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -877,10 +877,10 @@
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 96,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

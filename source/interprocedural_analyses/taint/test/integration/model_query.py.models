@@ -19,9 +19,9 @@
               "filename": "model_query.py",
               "line": 154,
               "start": 17,
-              "end": 32
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -69,9 +69,9 @@
               "filename": "model_query.py",
               "line": 154,
               "start": 17,
-              "end": 32
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -717,10 +717,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 129,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -735,8 +735,8 @@
     "callable_line": 127,
     "code": 1001,
     "line": 129,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "model_query.py",
     "message": "[SourceA] to [Test]",
     "traces": [
@@ -747,8 +747,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 129,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -766,10 +766,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 129,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -790,10 +790,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 174,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -808,8 +808,8 @@
     "callable_line": 172,
     "code": 1002,
     "line": 174,
-    "start": 16,
-    "end": 30,
+    "start": 15,
+    "end": 29,
     "filename": "model_query.py",
     "message": "[SourceB] to [Test]",
     "traces": [
@@ -820,8 +820,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 174,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
             "leaves": [
               {
@@ -839,10 +839,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 174,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -863,10 +863,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 179,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -881,8 +881,8 @@
     "callable_line": 177,
     "code": 1002,
     "line": 179,
-    "start": 16,
-    "end": 31,
+    "start": 15,
+    "end": 30,
     "filename": "model_query.py",
     "message": "[SourceB] to [Test]",
     "traces": [
@@ -893,8 +893,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 179,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
             "leaves": [
               {
@@ -912,10 +912,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 179,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -936,10 +936,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 184,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -954,8 +954,8 @@
     "callable_line": 182,
     "code": 1002,
     "line": 184,
-    "start": 16,
-    "end": 30,
+    "start": 15,
+    "end": 29,
     "filename": "model_query.py",
     "message": "[SourceB] to [Test]",
     "traces": [
@@ -966,8 +966,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 184,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
             "leaves": [
               {
@@ -985,10 +985,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 184,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1009,10 +1009,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 134,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1027,8 +1027,8 @@
     "callable_line": 132,
     "code": 1001,
     "line": 134,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query.py",
     "message": "[SourceA] to [Test]",
     "traces": [
@@ -1039,8 +1039,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 134,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -1058,10 +1058,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 134,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1082,10 +1082,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 139,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1100,8 +1100,8 @@
     "callable_line": 137,
     "code": 1001,
     "line": 139,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "model_query.py",
     "message": "[SourceA] to [Test]",
     "traces": [
@@ -1112,8 +1112,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 139,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -1131,10 +1131,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 139,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1155,10 +1155,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 144,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1173,8 +1173,8 @@
     "callable_line": 142,
     "code": 1001,
     "line": 144,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query.py",
     "message": "[SourceA] to [Test]",
     "traces": [
@@ -1185,8 +1185,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 144,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -1204,10 +1204,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 144,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1529,10 +1529,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1547,8 +1547,8 @@
     "callable_line": 162,
     "code": 1003,
     "line": 164,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query.py",
     "message": "[SourceC] to [Test]",
     "traces": [
@@ -1559,8 +1559,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -1578,10 +1578,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1597,8 +1597,8 @@
     "callable_line": 162,
     "code": 1005,
     "line": 164,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query.py",
     "message": "[SourceE] to [Test]",
     "traces": [
@@ -1609,8 +1609,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -1628,10 +1628,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1652,10 +1652,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 169,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1670,8 +1670,8 @@
     "callable_line": 167,
     "code": 1002,
     "line": 169,
-    "start": 16,
-    "end": 31,
+    "start": 15,
+    "end": 30,
     "filename": "model_query.py",
     "message": "[SourceB] to [Test]",
     "traces": [
@@ -1682,8 +1682,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 169,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
             "leaves": [
               {
@@ -1701,10 +1701,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 169,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1785,10 +1785,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 188,
-              "start": 16,
-              "end": 36
+              "start": 15,
+              "end": 35
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1800,10 +1800,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 189,
-              "start": 16,
-              "end": 35
+              "start": 15,
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1823,20 +1823,20 @@
             "root": {
               "filename": "model_query.py",
               "line": 193,
-              "start": 16,
-              "end": 35
+              "start": 15,
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           },
           {
             "root": {
               "filename": "model_query.py",
               "line": 194,
-              "start": 16,
-              "end": 35
+              "start": 15,
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

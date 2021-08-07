@@ -68,10 +68,10 @@
               "filename": "obscure_tito.py",
               "line": 33,
               "start": 20,
-              "end": 35
+              "end": 34
             },
-            "tito": [ { "line": 33, "start": 20, "end": 35 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 33, "start": 20, "end": 34 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -122,10 +122,10 @@
               "filename": "obscure_tito.py",
               "line": 27,
               "start": 13,
-              "end": 28
+              "end": 27
             },
-            "tito": [ { "line": 27, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 27, "start": 13, "end": 27 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }

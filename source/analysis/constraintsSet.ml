@@ -751,6 +751,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.Literal _ -> impossible
     | Type.Literal _, _ ->
         solve_less_or_equal order ~constraints ~left:(Type.weaken_literals left) ~right
+    | Type.TypeOperation _, _
+    | _, Type.TypeOperation _ ->
+        impossible
 
 
   and solve_ordered_types_less_or_equal order ~left ~right ~constraints =

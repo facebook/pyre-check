@@ -4,13 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def sink(json):
-    __test_sink(json)
+    _test_sink(json)
 
 
 def test():
-    query = {"json": __test_source()}
+    query = {"json": _test_source()}
     sink(query)

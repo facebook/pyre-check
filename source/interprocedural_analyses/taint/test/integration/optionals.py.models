@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 24,
     "start": 32,
-    "end": 47,
+    "end": 46,
     "filename": "optionals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "optionals.py",
               "line": 24,
               "start": 32,
-              "end": 47
+              "end": 46
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -35,13 +35,13 @@
                 "filename": "optionals.py",
                 "line": 24,
                 "start": 32,
-                "end": 47
+                "end": 46
               },
               "resolves_to": [ "optionals.Client.offer" ],
               "port": "formal(message)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -65,10 +65,10 @@
             "root": {
               "filename": "optionals.py",
               "line": 12,
-              "start": 20,
-              "end": 27
+              "start": 19,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

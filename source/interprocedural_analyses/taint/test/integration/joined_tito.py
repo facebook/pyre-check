@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 class Wrapper:
@@ -20,6 +20,6 @@ class C:
 
 
 def y_is_benign():
-    wrapper = Wrapper(a=__test_source(), b=0)
+    wrapper = Wrapper(a=_test_source(), b=0)
     c = C(wrapper)
-    __test_sink(c.y)
+    _test_sink(c.y)

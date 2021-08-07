@@ -9,7 +9,7 @@ posible.
 
 Aceptamos activamente sus solicitudes de extracción.
 
-1. Fork el repositorio y crear su rama de `master`.
+1. Fork el repositorio y crear su rama de `main`.
 2. Si ha agregado un código que debe probarse, agregue pruebas.
 3. Si ha cambiado las APIs, actualice la documentación.
 4. Asegúrese de que el conjunto de pruebas pase (consulte [la siguiente sección](#ejecución-de-pruebas)).
