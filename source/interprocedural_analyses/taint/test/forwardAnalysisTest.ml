@@ -43,23 +43,23 @@ let assert_taint ?models ~context source expect =
             ~source:model_source
             ~configuration:TaintConfiguration.default
             ~functions:None
-            ~stubs:(Callable.HashSet.create ())
-            Callable.Map.empty
+            ~stubs:(Target.HashSet.create ())
+            Target.Map.empty
         in
         assert_bool "Error while parsing models." (List.is_empty errors);
-        Callable.Map.map models ~f:(Interprocedural.AnalysisResult.make_model Taint.Result.kind)
-        |> Interprocedural.FixpointAnalysis.record_initial_models ~functions:[] ~stubs:[])
+        Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
+        |> FixpointAnalysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
   let defines = source |> Preprocessing.defines |> List.rev in
   let () =
-    List.map ~f:Callable.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
+    List.map ~f:Target.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
   in
   let analyze_and_store_in_order define =
-    let call_target = Callable.create define in
-    let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
+    let call_target = Target.create define in
+    let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let environment = TypeEnvironment.read_only environment in
     let call_graph_of_define =
-      Interprocedural.CallGraph.call_graph_of_define ~environment ~define:(Ast.Node.value define)
+      CallGraph.call_graph_of_define ~environment ~define:(Ast.Node.value define)
     in
     let forward, _errors, _ =
       ForwardAnalysis.run

@@ -177,7 +177,7 @@ module T = struct
   end
 
   type parse_result = {
-    models: TaintResult.call_model Interprocedural.Callable.Map.t;
+    models: TaintResult.call_model Interprocedural.Target.Map.t;
     queries: ModelQuery.rule list;
     skip_overrides: Reference.Set.t;
     errors: ModelVerificationError.t list;
@@ -1772,7 +1772,7 @@ let parse_return_taint
 type parsed_signature = {
   signature: Define.Signature.t;
   location: Location.t;
-  call_target: Callable.real_target;
+  call_target: Target.real_target;
 }
 
 type parsed_attribute = {
@@ -1781,7 +1781,7 @@ type parsed_attribute = {
   sink_annotation: Expression.t option;
   decorators: Decorator.t list;
   location: Location.t;
-  call_target: Callable.object_target;
+  call_target: Target.object_target;
 }
 
 type parsed_statement =
@@ -2042,9 +2042,9 @@ let parse_statement ~resolution ~path ~configuration statement =
       let call_target =
         match class_candidate with
         | Some _ when Define.Signature.is_property_setter signature ->
-            Callable.create_property_setter name
-        | Some _ -> Callable.create_method name
-        | None -> Callable.create_function name
+            Target.create_property_setter name
+        | Some _ -> Target.create_method name
+        | None -> Target.create_function name
       in
       Ok [ParsedSignature { signature; location; call_target }]
   | {
@@ -2152,7 +2152,7 @@ let parse_statement ~resolution ~path ~configuration statement =
                                decorators;
                              };
                            location;
-                           call_target = Callable.create_method name;
+                           call_target = Target.create_method name;
                          }
                      in
                      let sources =
@@ -2231,7 +2231,7 @@ let parse_statement ~resolution ~path ~configuration statement =
                 sink_annotation = None;
                 decorators = [decorator];
                 location;
-                call_target = Callable.create_object name;
+                call_target = Target.create_object name;
               };
           ]
       else if Expression.show annotation |> String.is_substring ~substring:"TaintSource[" then
@@ -2245,7 +2245,7 @@ let parse_statement ~resolution ~path ~configuration statement =
                 sink_annotation = None;
                 decorators = [];
                 location;
-                call_target = Callable.create_object name;
+                call_target = Target.create_object name;
               };
           ]
       else if
@@ -2262,7 +2262,7 @@ let parse_statement ~resolution ~path ~configuration statement =
                 sink_annotation = Some annotation;
                 decorators = [];
                 location;
-                call_target = Callable.create_object name;
+                call_target = Target.create_object name;
               };
           ]
       else
@@ -2353,7 +2353,7 @@ let create_model_from_signature
   =
   let open Core.Result in
   let open ModelVerifier in
-  let call_target = (call_target :> Callable.t) in
+  let call_target = (call_target :> Target.t) in
   (* Strip off the decorators only used for taint annotations. *)
   let top_level_decorators, define =
     let is_taint_decorator decorator =
@@ -2540,7 +2540,7 @@ let create_model_from_attribute
     { name; source_annotation; sink_annotation; decorators; location; call_target }
   =
   let open Core.Result in
-  let call_target = (call_target :> Callable.t) in
+  let call_target = (call_target :> Target.t) in
   ModelVerifier.verify_global ~path ~location ~resolution ~name
   >>= fun () ->
   source_annotation
@@ -2633,7 +2633,7 @@ let create ~resolution ~path ~configuration ~rule_filter ~functions ~stubs sourc
           ~configuration
           ~sources_to_keep
           ~sinks_to_keep
-          ~is_obscure:(is_obscure (call_target :> Callable.t))
+          ~is_obscure:(is_obscure (call_target :> Target.t))
           parsed_signature
     | ParsedAttribute parsed_attribute ->
         create_model_from_attribute
@@ -2667,8 +2667,8 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration ~functions ~stub
   {
     models =
       List.map new_models ~f:(fun (model, _) -> model.call_target, model.model)
-      |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
-      |> Callable.Map.merge models ~f:(fun ~key:_ -> function
+      |> Target.Map.of_alist_reduce ~f:(join ~iteration:0)
+      |> Target.Map.merge models ~f:(fun ~key:_ -> function
            | `Both (a, b) -> Some (join ~iteration:0 a b)
            | `Left model
            | `Right model ->
@@ -2696,13 +2696,11 @@ let create_callable_model_from_annotations
   let open Core.Result in
   let open ModelVerifier in
   let global_resolution = Resolution.global_resolution resolution in
-  match
-    Interprocedural.Callable.get_module_and_definition ~resolution:global_resolution callable
-  with
+  match Interprocedural.Target.get_module_and_definition ~resolution:global_resolution callable with
   | None ->
       Error
         (invalid_model_query_error
-           (Format.sprintf "No callable corresponding to `%s` found." (Callable.show callable)))
+           (Format.sprintf "No callable corresponding to `%s` found." (Target.show callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       resolve_global_callable
         ~path:None

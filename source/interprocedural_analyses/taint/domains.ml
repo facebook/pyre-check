@@ -63,7 +63,7 @@ module TraceInfo = struct
         port: AccessPath.Root.t;
         path: Abstract.TreeDomain.Label.path;
         location: Location.WithModule.t;
-        callees: Interprocedural.Callable.t list;
+        callees: Interprocedural.Target.t list;
       }
   [@@deriving compare]
 
@@ -77,7 +77,7 @@ module TraceInfo = struct
           "CallSite(callees=[%s], location=%a, port=%s)"
           (String.concat
              ~sep:", "
-             (List.map ~f:Interprocedural.Callable.external_target_name callees))
+             (List.map ~f:Interprocedural.Target.external_target_name callees))
           Location.WithModule.pp
           location
           port
@@ -92,7 +92,7 @@ module TraceInfo = struct
       (fun
         (_ : AccessPath.Root.t)
         (_ : Abstract.TreeDomain.Label.path)
-        (_ : Interprocedural.Callable.non_override_target)
+        (_ : Interprocedural.Target.non_override_target)
       -> true)
 
 
@@ -104,7 +104,7 @@ module TraceInfo = struct
           Interprocedural.DependencyGraph.expand_callees callees
           |> List.filter ~f:(!has_significant_summary port path)
         in
-        CallSite { location; callees = (callees :> Interprocedural.Callable.t list); port; path }
+        CallSite { location; callees = (callees :> Interprocedural.Target.t list); port; path }
     | _ -> trace
 
 
@@ -118,7 +118,7 @@ module TraceInfo = struct
         let callee_json =
           callees
           |> List.map ~f:(fun callable ->
-                 `String (Interprocedural.Callable.external_target_name callable))
+                 `String (Interprocedural.Target.external_target_name callable))
         in
         let location_json = location_with_module_to_json ~filename_lookup location in
         let port_json = AccessPath.create port path |> AccessPath.to_json in
@@ -152,7 +152,7 @@ module TraceInfo = struct
           } ) ->
         AccessPath.Root.equal port_left port_right
         && Location.WithModule.compare location_left location_right = 0
-        && [%compare.equal: Interprocedural.Callable.t list] callees_left callees_right
+        && [%compare.equal: Interprocedural.Target.t list] callees_left callees_right
         && Abstract.TreeDomain.Label.compare_path path_right path_left = 0
     | _ -> [%compare.equal: t] left right
 
@@ -298,7 +298,7 @@ module type TAINT_DOMAIN = sig
   (* Add trace info at call-site *)
   val apply_call
     :  Location.WithModule.t ->
-    callees:Interprocedural.Callable.t list ->
+    callees:Interprocedural.Target.t list ->
     port:AccessPath.Root.t ->
     path:Abstract.TreeDomain.Label.path ->
     element:t ->
@@ -526,8 +526,7 @@ end = struct
             else
               let open Features in
               let make_leaf_name callee =
-                LeafName.
-                  { leaf = Interprocedural.Callable.external_target_name callee; port = None }
+                LeafName.{ leaf = Interprocedural.Target.external_target_name callee; port = None }
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
           in

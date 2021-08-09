@@ -10,14 +10,14 @@ module Json = Yojson.Safe
 
 val externalize
   :  filename_lookup:(Ast.Reference.t -> string option) ->
-  Interprocedural.Callable.t ->
+  Target.t ->
   TaintResult.result option ->
   TaintResult.call_model ->
   Yojson.Safe.json list
 
 val fetch_and_externalize
   :  filename_lookup:(Ast.Reference.t -> string option) ->
-  Interprocedural.Callable.t ->
+  Target.t ->
   Yojson.Safe.json list
 
 val report
@@ -25,7 +25,7 @@ val report
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:'e ->
   filename_lookup:(Ast.Reference.t -> string option) ->
-  callables:Callable.Set.t ->
+  callables:Target.Set.t ->
   skipped_overrides:Ast.Reference.t list ->
   fixpoint_timer:Timer.t ->
   fixpoint_iterations:int option ->

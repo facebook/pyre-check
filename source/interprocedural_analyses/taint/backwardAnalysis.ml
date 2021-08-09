@@ -439,8 +439,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let state = apply_call_targets state init_targets in
       match new_targets with
       | [] -> state
-      | [`Method { Interprocedural.Callable.class_name = "object"; method_name = "__new__" }] ->
-          state
+      | [`Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" }] -> state
       | targets -> apply_call_targets state targets
 
 

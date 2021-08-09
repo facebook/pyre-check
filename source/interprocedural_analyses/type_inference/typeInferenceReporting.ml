@@ -49,7 +49,7 @@ let report
   =
   let result =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-    let callables = Callable.Set.elements callables in
+    let callables = Target.Set.elements callables in
     make_global_result ~global_resolution ~callables
   in
   log_performance

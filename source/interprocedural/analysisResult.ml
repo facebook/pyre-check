@@ -74,7 +74,7 @@ type 'part pkg =
 
 module InitializedModels = struct
   type 'call_model initialize_result = {
-    initial_models: 'call_model Callable.Map.t;
+    initial_models: 'call_model Target.Map.t;
     skip_overrides: Ast.Reference.Set.t;
   }
 
@@ -85,7 +85,7 @@ module InitializedModels = struct
 
   let empty =
     create (fun ~updated_environment:_ ->
-        { initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty })
+        { initial_models = Target.Map.empty; skip_overrides = Ast.Reference.Set.empty })
 
 
   let get_models f = f ~updated_environment:None
@@ -102,7 +102,7 @@ module type ANALYZER = sig
 
   val analyze
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    callable:Callable.real_target ->
+    callable:Target.real_target ->
     qualifier:Reference.t ->
     define:Define.t Node.t ->
     existing:call_model option ->
@@ -118,8 +118,8 @@ module type ANALYZER = sig
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    functions:Callable.t list ->
-    stubs:Callable.t list ->
+    functions:Target.t list ->
+    stubs:Target.t list ->
     call_model InitializedModels.t
 
   val report
@@ -127,7 +127,7 @@ module type ANALYZER = sig
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     filename_lookup:(Ast.Reference.t -> string option) ->
-    callables:Callable.Set.t ->
+    callables:Target.Set.t ->
     skipped_overrides:Ast.Reference.t list ->
     fixpoint_timer:Timer.t ->
     fixpoint_iterations:int option ->

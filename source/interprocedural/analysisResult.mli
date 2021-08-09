@@ -85,7 +85,7 @@ module InitializedModels : sig
   type 'call_model t
 
   type 'call_model initialize_result = {
-    initial_models: 'call_model Callable.Map.t;
+    initial_models: 'call_model Target.Map.t;
     skip_overrides: Ast.Reference.Set.t;
   }
 
@@ -114,7 +114,7 @@ module type ANALYZER = sig
 
   val analyze
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    callable:Callable.real_target ->
+    callable:Target.real_target ->
     qualifier:Reference.t ->
     define:Statement.Define.t Node.t ->
     existing:call_model option ->
@@ -130,8 +130,8 @@ module type ANALYZER = sig
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    functions:Callable.t list ->
-    stubs:Callable.t list ->
+    functions:Target.t list ->
+    stubs:Target.t list ->
     call_model InitializedModels.t
 
   val report
@@ -139,7 +139,7 @@ module type ANALYZER = sig
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     filename_lookup:(Ast.Reference.t -> string option) ->
-    callables:Callable.Set.t ->
+    callables:Target.Set.t ->
     skipped_overrides:Ast.Reference.t list ->
     fixpoint_timer:Timer.t ->
     fixpoint_iterations:int option ->

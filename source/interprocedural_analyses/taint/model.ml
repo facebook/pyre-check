@@ -17,7 +17,7 @@ open TaintResult
 exception InvalidModel of string
 
 type t = {
-  call_target: Callable.t;
+  call_target: Target.t;
   model: TaintResult.call_model;
 }
 [@@deriving show]
@@ -33,16 +33,16 @@ let remove_sinks model =
 
 
 let add_obscure_sink ~resolution ~call_target model =
-  match Callable.get_real_target call_target with
+  match Target.get_real_target call_target with
   | None -> model
   | Some real_target -> (
       match
-        Callable.get_module_and_definition
+        Target.get_module_and_definition
           ~resolution:(Resolution.global_resolution resolution)
           real_target
       with
       | None ->
-          let () = Log.warning "Found no definition for %s" (Callable.show call_target) in
+          let () = Log.warning "Found no definition for %s" (Target.show call_target) in
           model
       | Some (_, { value = { signature = { parameters; _ }; _ }; _ }) ->
           let open Domains in
@@ -65,7 +65,7 @@ let unknown_callee ~location ~call =
     | Expression.Call { callee; _ } -> callee
     | _ -> Node.create ~location:(Location.strip_module location) call
   in
-  Interprocedural.Callable.create_function
+  Interprocedural.Target.create_function
     (Reference.create
        (Format.asprintf "%a:%a" Location.WithModule.pp location Expression.pp callee))
 
@@ -113,7 +113,7 @@ let register_unknown_callee_model callable =
 
 
 let get_callsite_model ~resolution ~call_target ~arguments =
-  let call_target = (call_target :> Callable.t) in
+  let call_target = (call_target :> Target.t) in
   match Interprocedural.FixpointState.get_model call_target with
   | None -> { call_target; model = TaintResult.obscure_model }
   | Some model ->
@@ -246,7 +246,7 @@ let get_global_targets ~resolution ~expression =
 
 let get_global_models ~resolution ~expression =
   let fetch_model target =
-    let call_target = Callable.create_object target in
+    let call_target = Target.create_object target in
     get_callsite_model ~resolution ~call_target ~arguments:[]
   in
   get_global_targets ~resolution ~expression |> List.map ~f:fetch_model
@@ -449,7 +449,7 @@ let infer_class_models ~environment =
   let inferred_models class_name =
     GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
     >>= compute_models class_name
-    >>| fun model -> `Method { Callable.class_name; method_name = "__init__" }, model
+    >>| fun model -> `Method { Target.class_name; method_name = "__init__" }, model
   in
   let all_classes =
     TypeEnvironment.ReadOnly.global_resolution environment
@@ -458,7 +458,7 @@ let infer_class_models ~environment =
   in
   let models =
     List.filter_map all_classes ~f:inferred_models
-    |> Callable.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)
+    |> Target.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)
   in
   Statistics.performance
     ~name:"Computed inferred models"

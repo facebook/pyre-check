@@ -1477,7 +1477,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
           |> ForwardState.Tree.apply_call
                location
-               ~callees:[Interprocedural.Callable.create FunctionContext.definition]
+               ~callees:[Interprocedural.Target.create FunctionContext.definition]
                ~port:parameter_root
         in
         let default_value_taint, state =

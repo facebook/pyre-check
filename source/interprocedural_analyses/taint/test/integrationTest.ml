@@ -111,7 +111,7 @@ let test_integration path context =
       ~environment
       ~analysis:TaintAnalysis.abstract_kind
       ~dependencies
-      ~filtered_callables:Callable.Set.empty
+      ~filtered_callables:Target.Set.empty
       ~all_callables:callables_to_analyze
       FixpointState.Epoch.initial
     |> ignore;
@@ -131,8 +131,8 @@ let test_integration path context =
     let divergent_files = [create_call_graph_files callgraph; create_overrides_files overrides] in
     ( divergent_files,
       List.rev_append initial_models_callables callables_to_analyze
-      |> Callable.Set.of_list
-      |> Callable.Set.elements
+      |> Target.Set.of_list
+      |> Target.Set.elements
       |> List.map ~f:serialized_model
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:"" )

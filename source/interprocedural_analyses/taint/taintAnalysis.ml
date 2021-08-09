@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module Callable = Interprocedural.Callable
 open Core
 open Pyre
 open Taint
+module Target = Interprocedural.Target
 
 (* Registers the Taint analysis with the interprocedural analysis framework. *)
 include Taint.Result.Register (struct
@@ -78,8 +78,8 @@ include Taint.Result.Register (struct
         let callables =
           Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:functions
           |> List.filter_map ~f:(function
-                 | `Function _ as callable -> Some (callable :> Callable.real_target)
-                 | `Method _ as callable -> Some (callable :> Callable.real_target)
+                 | `Function _ as callable -> Some (callable :> Target.real_target)
+                 | `Method _ as callable -> Some (callable :> Target.real_target)
                  | _ -> None)
         in
         TaintModelQuery.ModelQuery.apply_all_rules
@@ -93,20 +93,20 @@ include Taint.Result.Register (struct
           ~environment
           ~models
       in
-      let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
+      let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
       let add_obscure_sinks models =
         let add_obscure_sink models callable =
           let model =
-            Callable.Map.find models callable
+            Target.Map.find models callable
             |> Option.value ~default:Taint.Result.empty_model
             |> Model.add_obscure_sink ~resolution ~call_target:callable
             |> Model.remove_obscureness
           in
-          Callable.Map.set models ~key:callable ~data:model
+          Target.Map.set models ~key:callable ~data:model
         in
         stubs
         |> Hash_set.filter ~f:(fun callable ->
-               Callable.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
+               Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
         |> Hash_set.fold ~f:add_obscure_sink ~init:models
       in
       let find_missing_flows =
@@ -183,7 +183,7 @@ include Taint.Result.Register (struct
               Some model
           | `Both (left, right) -> Some (Result.join ~iteration:0 left right)
         in
-        ( Callable.Map.merge models_left models_right ~f:merge_models,
+        ( Target.Map.merge models_left models_right ~f:merge_models,
           List.rev_append errors_left errors_right,
           Set.union skip_overrides_left skip_overrides_right,
           List.rev_append queries_left queries_right )
@@ -262,7 +262,7 @@ include Taint.Result.Register (struct
 
 
   let initialize_models ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
-    let stubs = Callable.HashSet.of_list stubs in
+    let stubs = Target.HashSet.of_list stubs in
 
     Log.info "Parsing taint models...";
     let timer = Timer.start () in
@@ -271,7 +271,7 @@ include Taint.Result.Register (struct
         ~scheduler
         ~static_analysis_configuration
         ~environment
-        ~functions:(Some (Callable.HashSet.of_list functions))
+        ~functions:(Some (Target.HashSet.of_list functions))
         ~stubs
     in
     Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
@@ -395,7 +395,7 @@ include Taint.Result.Register (struct
     in
     match existing with
     | Some ({ modes; _ } as model) when ModeSet.contains Mode.SkipAnalysis modes ->
-        let () = Log.info "Skipping taint analysis of %a" Callable.pretty_print callable in
+        let () = Log.info "Skipping taint analysis of %a" Target.pretty_print callable in
         [], model
     | Some ({ sanitize; modes; _ } as model) ->
         analyze ~callable ~environment ~qualifier ~define ~sanitize ~modes model

@@ -149,7 +149,7 @@ module T : sig
   end
 
   type parse_result = {
-    models: TaintResult.call_model Interprocedural.Callable.Map.t;
+    models: TaintResult.call_model Interprocedural.Target.Map.t;
     queries: ModelQuery.rule list;
     skip_overrides: Ast.Reference.Set.t;
     errors: ModelVerificationError.t list;
@@ -162,9 +162,9 @@ val parse
   ?rule_filter:int list ->
   source:string ->
   configuration:TaintConfiguration.t ->
-  functions:Interprocedural.Callable.HashSet.t option ->
-  stubs:Interprocedural.Callable.HashSet.t ->
-  TaintResult.call_model Interprocedural.Callable.Map.t ->
+  functions:Interprocedural.Target.HashSet.t option ->
+  stubs:Interprocedural.Target.HashSet.t ->
+  TaintResult.call_model Interprocedural.Target.Map.t ->
   T.parse_result
 
 val verify_model_syntax : path:Path.t -> source:string -> unit
@@ -176,7 +176,7 @@ val compute_sources_and_sinks_to_keep
 
 val create_callable_model_from_annotations
   :  resolution:Analysis.Resolution.t ->
-  callable:Interprocedural.Callable.real_target ->
+  callable:Interprocedural.Target.real_target ->
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   is_obscure:bool ->

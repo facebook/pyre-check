@@ -27,11 +27,11 @@ let assert_taint ~context source expected =
   in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let () =
-    List.map ~f:Callable.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
+    List.map ~f:Target.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
   in
   let analyze_and_store_in_order define =
-    let call_target = Callable.create define in
-    let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
+    let call_target = Target.create define in
+    let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
       Interprocedural.CallGraph.call_graph_of_define
         ~environment:(TypeEnvironment.read_only environment)

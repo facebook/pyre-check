@@ -29,8 +29,8 @@ let test_callables context =
     |> fst
     |> List.map ~f:(fun { Service.StaticAnalysis.callable; _ } -> callable)
     |> assert_equal
-         ~printer:(List.to_string ~f:Interprocedural.Callable.show_real_target)
-         ~cmp:(List.equal Interprocedural.Callable.equal_real_target)
+         ~printer:(List.to_string ~f:Interprocedural.Target.show_real_target)
+         ~cmp:(List.equal Interprocedural.Target.equal_real_target)
          expected
   in
   assert_callables
@@ -42,8 +42,8 @@ let test_callables context =
     ~expected:
       [
         `Function "test.$toplevel";
-        `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "$class_toplevel" };
-        `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" };
+        `Method { Interprocedural.Target.class_name = "test.C"; method_name = "$class_toplevel" };
+        `Method { Interprocedural.Target.class_name = "test.C"; method_name = "foo" };
       ];
   assert_callables
     ~additional_sources:["placeholder.py", "# pyre-placeholder-stub"]
@@ -56,8 +56,8 @@ let test_callables context =
     ~expected:
       [
         `Function "test.$toplevel";
-        `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "$class_toplevel" };
-        `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" };
+        `Method { Interprocedural.Target.class_name = "test.C"; method_name = "$class_toplevel" };
+        `Method { Interprocedural.Target.class_name = "test.C"; method_name = "foo" };
       ];
   assert_callables
     {|
@@ -90,8 +90,7 @@ let test_callables context =
         def foo() -> int:
           ...
     |}
-    ~expected:
-      [`Method { Interprocedural.Callable.class_name = "test.Toplevel"; method_name = "foo" }]
+    ~expected:[`Method { Interprocedural.Target.class_name = "test.Toplevel"; method_name = "foo" }]
 
 
 let () = "staticAnalysis" >::: ["callables" >:: test_callables] |> Test.run

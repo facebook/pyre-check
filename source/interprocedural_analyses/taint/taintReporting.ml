@@ -109,7 +109,7 @@ let save_results_to_directory
     in
     Json.to_outbuf out_buffer header_with_version;
     Bi_outbuf.add_string out_buffer "\n";
-    Callable.Set.iter (emit_externalization ~filename_lookup array_emitter) callables;
+    Target.Set.iter (emit_externalization ~filename_lookup array_emitter) callables;
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel
   in
@@ -171,7 +171,7 @@ let report
     ~fixpoint_timer
     ~fixpoint_iterations
   =
-  let errors = extract_errors scheduler (Callable.Set.elements callables) in
+  let errors = extract_errors scheduler (Target.Set.elements callables) in
   (* Log and record stats *)
   Log.info "Found %d issues" (List.length errors);
   (match fixpoint_iterations with

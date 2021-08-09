@@ -98,12 +98,12 @@ module AnalysisA = ResultA.Register (struct
       `Assoc
         [
           "analysis", `String ResultA.name;
-          "callable", `String (Callable.show callable);
+          "callable", `String (Target.show callable);
           "model", model;
           "result", result;
         ]
     in
-    callables |> Callable.Set.elements |> List.map ~f:get_model
+    callables |> Target.Set.elements |> List.map ~f:get_model
 end)
 
 let analysis = AnalysisA.abstract_kind
@@ -119,7 +119,7 @@ let assert_report ~expected report =
 
 
 let test_unknown_function_analysis context =
-  let callable_of_string name = name |> Reference.create |> Callable.create_function in
+  let callable_of_string name = name |> Reference.create |> Target.create_function in
   let targets = List.map ["fun_a"; "fun_b"] ~f:callable_of_string in
   let scratch_project = setup_scratch_project ~context () in
   let environment =
@@ -130,8 +130,7 @@ let test_unknown_function_analysis context =
   (* Make sure obscure models are correctly handled *)
   let check_obscure_model target =
     match FixpointState.get_model target with
-    | None ->
-        Format.sprintf "no model stored for target %s" (Callable.show target) |> assert_failure
+    | None -> Format.sprintf "no model stored for target %s" (Target.show target) |> assert_failure
     | Some models ->
         assert_equal (AnalysisResult.get_model ResultA.kind models) (Some ResultA.obscure_model)
   in
@@ -145,7 +144,7 @@ let test_unknown_function_analysis context =
       ~environment
       ~analysis
       ~filename_lookup:(fun _ -> None)
-      ~callables:(targets |> Callable.Set.of_list)
+      ~callables:(targets |> Target.Set.of_list)
       ~skipped_overrides:[]
       ~fixpoint_timer:(Timer.start ())
       ~fixpoint_iterations:None
@@ -162,9 +161,9 @@ let test_unknown_function_analysis context =
 let check_meta_data ~step ~is_partial target =
   match FixpointState.get_meta_data target with
   | None ->
-      Format.sprintf "no meta data stored for target %s" (Callable.show target) |> assert_failure
+      Format.sprintf "no meta data stored for target %s" (Target.show target) |> assert_failure
   | Some { is_partial = stored_is_partial; step = stored_step } ->
-      let target_name = Callable.show target in
+      let target_name = Target.show target in
       assert_equal
         is_partial
         stored_is_partial
@@ -179,7 +178,7 @@ let check_meta_data ~step ~is_partial target =
 
 let test_meta_data context =
   let targets =
-    List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"] |> List.map ~f:Callable.create_function
+    List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"] |> List.map ~f:Target.create_function
   in
   let step1 = FixpointState.{ epoch = 1; iteration = 0 } in
   let environment =

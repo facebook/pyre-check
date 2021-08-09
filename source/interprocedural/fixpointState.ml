@@ -32,7 +32,7 @@ type t = {
 
 module SharedModels =
   SharedMemory.WithCache.Make
-    (Callable.Key)
+    (Target.Key)
     (struct
       type t = AnalysisResult.model_t
 
@@ -45,7 +45,7 @@ module SharedModels =
 
 module SharedResults =
   SharedMemory.WithCache.Make
-    (Callable.Key)
+    (Target.Key)
     (struct
       type t = AnalysisResult.result_t
 
@@ -64,7 +64,7 @@ type meta_data = {
 (* Caches the fixpoint state (is_partial) of a call model. *)
 module SharedFixpoint =
   SharedMemory.WithCache.Make
-    (Callable.Key)
+    (Target.Key)
     (struct
       type t = meta_data
 
@@ -79,29 +79,29 @@ module KeySet = SharedModels.KeySet
 module KeyMap = SharedModels.KeyMap
 
 let get_new_model callable =
-  let callable = (callable :> Callable.t) in
+  let callable = (callable :> Target.t) in
   SharedModels.get callable
 
 
 let get_old_model callable =
-  let callable = (callable :> Callable.t) in
+  let callable = (callable :> Target.t) in
   SharedModels.get_old callable
 
 
 let get_model callable =
-  let callable = (callable :> Callable.t) in
+  let callable = (callable :> Target.t) in
   match get_new_model callable with
   | Some _ as model -> model
   | None -> get_old_model callable
 
 
 let get_result callable =
-  let callable = (callable :> Callable.t) in
+  let callable = (callable :> Target.t) in
   SharedResults.get callable |> Option.value ~default:AnalysisResult.empty_result
 
 
 let get_is_partial callable =
-  let callable = (callable :> Callable.t) in
+  let callable = (callable :> Target.t) in
   match SharedFixpoint.get callable with
   | Some { is_partial; _ } -> is_partial
   | None -> (
@@ -111,14 +111,14 @@ let get_is_partial callable =
 
 
 let get_meta_data callable =
-  let callable = (callable :> Callable.t) in
+  let callable = (callable :> Target.t) in
   match SharedFixpoint.get callable with
   | Some _ as meta_data -> meta_data
   | None -> SharedFixpoint.get_old callable
 
 
 let has_model callable =
-  let key = (callable :> Callable.t) in
+  let key = (callable :> Target.t) in
   SharedModels.mem key
 
 
@@ -127,20 +127,20 @@ let meta_data_to_string { is_partial; step = { epoch; iteration } } =
 
 
 let add step callable state =
-  let callable = (callable :> Callable.t) in
+  let callable = (callable :> Target.t) in
   (* Separate diagnostics from state to speed up lookups, and cache fixpoint state separately. *)
   let () = SharedModels.add callable state.model in
   (* Skip result writing unless necessary (e.g. overrides don't have results) *)
   let () =
     match callable with
-    | #Callable.target_with_result -> SharedResults.add callable state.result
+    | #Target.target_with_result -> SharedResults.add callable state.result
     | _ -> ()
   in
   SharedFixpoint.add callable { is_partial = state.is_partial; step }
 
 
 let add_predefined epoch callable model =
-  let callable = (callable :> Callable.t) in
+  let callable = (callable :> Target.t) in
   let () = SharedModels.add callable model in
   let step = { epoch; iteration = 0 } in
   SharedFixpoint.add callable { is_partial = false; step }

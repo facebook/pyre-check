@@ -38,13 +38,11 @@ let analysis = TypeInference.Analysis.abstract_kind
 
 let fixpoint_result ~context ~sources ~callable_names ~transform_configuration =
   let callables =
-    let callable_of_string name : Callable.t =
-      name |> Reference.create |> Callable.create_function
-    in
+    let callable_of_string name : Target.t = name |> Reference.create |> Target.create_function in
     callable_names |> List.map ~f:callable_of_string
   in
   let scratch_project = ScratchProject.setup ~context sources in
-  let filtered_callables = Callable.Set.of_list callables in
+  let filtered_callables = Target.Set.of_list callables in
   let environment =
     setup_environment scratch_project |> TypeEnvironment.create |> TypeEnvironment.read_only
   in
@@ -53,7 +51,7 @@ let fixpoint_result ~context ~sources ~callable_names ~transform_configuration =
     static_analysis_configuration ~transform_configuration scratch_project
   in
   FixpointAnalysis.initialize_configuration ~static_analysis_configuration analysis;
-  FixpointAnalysis.record_initial_models ~functions:callables ~stubs:[] Callable.Map.empty;
+  FixpointAnalysis.record_initial_models ~functions:callables ~stubs:[] Target.Map.empty;
   let fixpoint_iterations =
     let iteration_limit = 1 in
     Some

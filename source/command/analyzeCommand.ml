@@ -167,8 +167,8 @@ let run_analysis
               ~environment:(Analysis.TypeEnvironment.read_only environment)
               ~functions:
                 (List.map callables_with_dependency_information ~f:fst
-                  :> Interprocedural.Callable.t list)
-              ~stubs:(stubs :> Interprocedural.Callable.t list)
+                  :> Interprocedural.Target.t list)
+              ~stubs:(stubs :> Interprocedural.Target.t list)
           in
 
           let environment, initial_callables =

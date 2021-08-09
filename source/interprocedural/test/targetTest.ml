@@ -19,7 +19,7 @@ let test_get_module_and_definition context =
       |> Analysis.Resolution.global_resolution
     in
     let actual =
-      Interprocedural.Callable.get_module_and_definition ~resolution target
+      Interprocedural.Target.get_module_and_definition ~resolution target
       >>| fun (qualifier, { Node.value = { Statement.Define.body; _ }; _ }) -> qualifier, body
     in
     let equal (first_qualifier, first_body) (second_qualifier, second_body) =
@@ -47,7 +47,7 @@ let test_get_module_and_definition context =
       def foo(self, value: int) -> None:
         self._foo = value
   |}
-    ~target:(`Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo$setter" })
+    ~target:(`Method { Interprocedural.Target.class_name = "test.C"; method_name = "foo$setter" })
     ~expected:
       (Some
          ( Reference.create "test",
@@ -70,9 +70,9 @@ let test_resolve_method context =
       |> Test.ScratchProject.build_global_resolution
     in
     assert_equal
-      ~printer:(show_optional Interprocedural.Callable.show_method_target)
+      ~printer:(show_optional Interprocedural.Target.show_method_target)
       expected
-      (Interprocedural.Callable.resolve_method ~resolution ~class_type ~method_name)
+      (Interprocedural.Target.resolve_method ~resolution ~class_type ~method_name)
   in
   assert_get_resolve_method
     ~source:

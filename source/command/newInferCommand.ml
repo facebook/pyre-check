@@ -293,7 +293,7 @@ let run_infer_interprocedural ~configuration ~build_system () =
             ~environment
             ~qualifiers
             ~initial_callables
-            ~initial_models:Interprocedural.Callable.Map.empty
+            ~initial_models:Interprocedural.Target.Map.empty
             ~skip_overrides:Ast.Reference.Set.empty
             ()));
   Lwt.return ExitStatus.Ok

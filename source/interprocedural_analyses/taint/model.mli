@@ -11,7 +11,7 @@ open Analysis
 open Interprocedural
 
 type t = {
-  call_target: Callable.t;
+  call_target: Target.t;
   model: TaintResult.call_model;
 }
 [@@deriving show]
@@ -20,7 +20,7 @@ exception InvalidModel of string
 
 val get_callsite_model
   :  resolution:Resolution.t ->
-  call_target:[< Callable.t ] ->
+  call_target:[< Target.t ] ->
   arguments:Expression.Call.Argument.t list ->
   t
 
@@ -50,7 +50,7 @@ val get_model_sources : paths:Path.t list -> (Path.t * string) list
 
 val infer_class_models
   :  environment:TypeEnvironment.ReadOnly.t ->
-  TaintResult.call_model Callable.Map.t
+  TaintResult.call_model Target.Map.t
 
 val is_obscure : TaintResult.call_model -> bool
 
@@ -60,13 +60,13 @@ val remove_sinks : TaintResult.call_model -> TaintResult.call_model
 
 val add_obscure_sink
   :  resolution:Resolution.t ->
-  call_target:[< Callable.t ] ->
+  call_target:[< Target.t ] ->
   TaintResult.call_model ->
   TaintResult.call_model
 
 (* Create a symbolic callable representing an unknown callee at a call site. *)
-val unknown_callee : location:Location.WithModule.t -> call:Expression.expression -> Callable.t
+val unknown_callee : location:Location.WithModule.t -> call:Expression.expression -> Target.t
 
 (* Register a model with sinks on all parameters for a symbolic callable that
  * represents an unknown callee, in order to find missing flows. *)
-val register_unknown_callee_model : [< Callable.t ] -> unit
+val register_unknown_callee_model : [< Target.t ] -> unit

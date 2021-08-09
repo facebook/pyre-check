@@ -17,32 +17,32 @@ val initialize_models
   scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  functions:Callable.t list ->
-  stubs:Callable.t list ->
+  functions:Target.t list ->
+  stubs:Target.t list ->
   AnalysisResult.model_t AnalysisResult.InitializedModels.t
 
 val record_initial_models
-  :  functions:Callable.t list ->
-  stubs:Callable.t list ->
-  AnalysisResult.model_t Callable.Map.t ->
+  :  functions:Target.t list ->
+  stubs:Target.t list ->
+  AnalysisResult.model_t Target.Map.t ->
   unit
 
 type expensive_callable = {
   time_to_analyze_in_ms: int;
-  callable: Callable.t;
+  callable: Target.t;
 }
 
 type result = {
   callables_processed: int;
   expensive_callables: expensive_callable list;
-  callables_to_dump: Callable.Set.t;
+  callables_to_dump: Target.Set.t;
 }
 
 val one_analysis_pass
   :  analysis:Kind.abstract ->
   step:FixpointState.step ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  callables:Callable.t list ->
+  callables:Target.t list ->
   result
 
 (* Returns number of iterations. *)
@@ -51,8 +51,8 @@ val compute_fixpoint
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   analysis:Kind.abstract ->
   dependencies:DependencyGraph.t ->
-  filtered_callables:Callable.Set.t ->
-  all_callables:Callable.t list ->
+  filtered_callables:Target.Set.t ->
+  all_callables:Target.t list ->
   FixpointState.Epoch.t ->
   int
 
@@ -64,7 +64,7 @@ val report_results
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   analysis:Kind.abstract ->
-  callables:Callable.Set.t ->
+  callables:Target.Set.t ->
   skipped_overrides:Ast.Reference.t list ->
   fixpoint_timer:Timer.t ->
   fixpoint_iterations:int option ->

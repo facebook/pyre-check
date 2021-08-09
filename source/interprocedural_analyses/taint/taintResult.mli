@@ -103,10 +103,10 @@ include
 
 val model_to_json
   :  filename_lookup:(Ast.Reference.t -> string option) ->
-  Interprocedural.Callable.t ->
+  Interprocedural.Target.t ->
   call_model ->
   Yojson.Safe.t
 
 val decorators_to_skip
-  :  Interprocedural.AnalysisResult.model_t Interprocedural.Callable.Map.t ->
+  :  Interprocedural.AnalysisResult.model_t Interprocedural.Target.Map.t ->
   Ast.Reference.Set.t

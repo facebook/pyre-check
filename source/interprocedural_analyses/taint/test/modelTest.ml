@@ -10,7 +10,7 @@ open Core
 open OUnit2
 open Test
 open TestHelper
-module Callable = Interprocedural.Callable
+module Target = Interprocedural.Target
 open Taint
 open Model.ModelQuery
 
@@ -76,8 +76,8 @@ let set_up_environment ?source ?rules ~context ~model_source () =
       ~source
       ~configuration
       ~functions:None
-      ~stubs:(Callable.HashSet.create ())
-      Callable.Map.empty
+      ~stubs:(Target.HashSet.create ())
+      Target.Map.empty
   in
   assert_bool
     (Format.sprintf
@@ -103,8 +103,8 @@ let assert_model ?source ?rules ?expected_skipped_overrides ~context ~model_sour
     | None -> ()
   end;
   let get_model callable =
-    let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
-    Callable.Map.find models callable |> Option.value_exn ?here:None ?error:None ~message, false
+    let message = Format.asprintf "Model %a missing" Interprocedural.Target.pp callable in
+    Target.Map.find models callable |> Option.value_exn ?here:None ?error:None ~message, false
     (* obscure *)
   in
   List.iter ~f:(check_expectation ~environment ~get_model) expect
@@ -1202,8 +1202,8 @@ let test_invalid_models context =
         ?path
         ~source:(Test.trim_extra_indentation model_source)
         ~functions:None
-        ~stubs:(Callable.HashSet.create ())
-        Callable.Map.empty
+        ~stubs:(Target.HashSet.create ())
+        Target.Map.empty
       |> fun { Taint.Model.errors; _ } ->
       List.hd errors
       >>| Taint.Model.display_verification_error

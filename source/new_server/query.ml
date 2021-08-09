@@ -765,8 +765,8 @@ let rec process_request ~environment ~build_system ~configuration request =
                 ~source
                 ~configuration
                 ~functions:None
-                ~stubs:(Interprocedural.Callable.HashSet.create ())
-                Interprocedural.Callable.Map.empty
+                ~stubs:(Interprocedural.Target.HashSet.create ())
+                Interprocedural.Target.Map.empty
               |> fun { Taint.Model.errors; _ } -> errors
             in
             List.concat_map sources ~f:model_errors

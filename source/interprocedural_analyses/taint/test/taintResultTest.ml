@@ -26,10 +26,10 @@ let test_decorators_to_skip _ =
     ~cmp:Ast.Reference.Set.equal
     (Ast.Reference.Set.of_list [!&"foo.skipped"])
     (Taint.Result.decorators_to_skip
-       (Callable.Map.of_alist_exn
+       (Target.Map.of_alist_exn
           [
-            Callable.create_function !&"foo.not_skipped", normal_model;
-            Callable.create_function !&"foo.skipped", skipped_decorator_model;
+            Target.create_function !&"foo.not_skipped", normal_model;
+            Target.create_function !&"foo.skipped", skipped_decorator_model;
           ]));
   ()
 

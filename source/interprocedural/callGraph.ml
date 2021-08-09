@@ -15,14 +15,14 @@ open Pyre
 type regular_targets = {
   implicit_self: bool;
   collapse_tito: bool;
-  targets: Callable.t list;
+  targets: Target.t list;
 }
 [@@deriving eq, show { with_path = false }]
 
 type raw_callees =
   | ConstructorTargets of {
-      new_targets: Callable.t list;
-      init_targets: Callable.t list;
+      new_targets: Target.t list;
+      init_targets: Target.t list;
     }
   | RegularTargets of regular_targets
   | HigherOrderTargets of {
@@ -218,9 +218,9 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
   let get_class_type = GlobalResolution.parse_reference global_resolution in
   let get_actual_target method_name =
     if DependencyGraphSharedMemory.overrides_exist method_name then
-      Callable.create_override method_name
+      Target.create_override method_name
     else
-      Callable.create_method method_name
+      Target.create_method method_name
   in
   let receiver_type = receiver_type |> strip_meta |> strip_optional |> Type.weaken_literals in
   let declaring_type = Reference.prefix implementation_target in
@@ -231,7 +231,7 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
   then (* case a *)
     [get_actual_target implementation_target]
   else
-    let target_callable = Callable.create_method implementation_target in
+    let target_callable = Target.create_method implementation_target in
     match DependencyGraphSharedMemory.get_overriding_types ~member:implementation_target with
     | None ->
         (* case b *)
@@ -304,15 +304,15 @@ let rec resolve_callees_from_type
       | Some receiver_type ->
           let targets =
             match callee_kind with
-            | Method { is_direct_call = true } -> [Callable.create_method name]
+            | Method { is_direct_call = true } -> [Target.create_method name]
             | _ -> compute_indirect_targets ~resolution ~receiver_type name
           in
           Some (RegularTargets { implicit_self = true; targets; collapse_tito })
       | None ->
           let target =
             match callee_kind with
-            | Method _ -> Callable.create_method name
-            | _ -> Callable.create_function name
+            | Method _ -> Target.create_method name
+            | _ -> Target.create_function name
           in
           Some (RegularTargets { implicit_self = false; targets = [target]; collapse_tito }))
   | Type.Callable { kind = Anonymous; _ } -> None
@@ -355,7 +355,7 @@ let rec resolve_callees_from_type
                  targets =
                    [
                      `Method
-                       { Callable.class_name = primitive_callable_name; method_name = "__call__" };
+                       { Target.class_name = primitive_callable_name; method_name = "__call__" };
                    ];
                  collapse_tito;
                })
@@ -585,7 +585,7 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
                 (RegularTargets
                    {
                      implicit_self = not static;
-                     targets = [`Method { Callable.class_name; method_name = attribute }];
+                     targets = [`Method { Target.class_name; method_name = attribute }];
                      collapse_tito;
                    })
           | _ -> None)
@@ -606,7 +606,7 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
                 (RegularTargets
                    {
                      implicit_self = true;
-                     targets = [`Method { Callable.class_name; method_name = attribute }];
+                     targets = [`Method { Target.class_name; method_name = attribute }];
                      collapse_tito;
                    })
           | _ -> None)
@@ -669,7 +669,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
         let targets =
           let receiver_type = resolve_ignoring_optional ~resolution base in
           if Type.is_meta receiver_type then
-            [Callable.create_method (Reference.create ~prefix:parent attribute)]
+            [Target.create_method (Reference.create ~prefix:parent attribute)]
           else
             let callee = Reference.create ~prefix:parent attribute in
             compute_indirect_targets ~resolution ~receiver_type callee
@@ -677,10 +677,10 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
         if setter then
           let to_setter target =
             match target with
-            | `OverrideTarget { Callable.class_name; method_name } ->
-                `OverrideTarget { Callable.class_name; method_name = method_name ^ "$setter" }
-            | `Method { Callable.class_name; method_name } ->
-                `Method { Callable.class_name; method_name = method_name ^ "$setter" }
+            | `OverrideTarget { Target.class_name; method_name } ->
+                `OverrideTarget { Target.class_name; method_name = method_name ^ "$setter" }
+            | `Method { Target.class_name; method_name } ->
+                `Method { Target.class_name; method_name = method_name ^ "$setter" }
             | _ -> target
           in
           List.map targets ~f:to_setter
@@ -864,7 +864,7 @@ let call_graph_of_define
               value))
   in
   let deduplicate callees =
-    let deduplicate_targets targets = List.dedup_and_sort ~compare:Callable.compare targets in
+    let deduplicate_targets targets = List.dedup_and_sort ~compare:Target.compare targets in
     let deduplicate_regular_targets { targets; implicit_self; collapse_tito } =
       { targets = deduplicate_targets targets; implicit_self; collapse_tito }
     in
@@ -896,7 +896,7 @@ let call_graph_of_define
 module SharedMemory = struct
   include
     Memory.WithCache.Make
-      (Callable.RealKey)
+      (Target.RealKey)
       (struct
         type t = callees Location.Map.Tree.t
 
@@ -930,7 +930,7 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
         let call_graph_of_define =
           if use_shared_memory then
             SharedMemory.get_or_compute
-              ~callable:(Callable.create define)
+              ~callable:(Target.create define)
               ~environment
               ~define:(Node.value define)
           else
@@ -955,9 +955,8 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
         in
         Location.Map.data call_graph_of_define
         |> List.concat_map ~f:callees
-        |> List.dedup_and_sort ~compare:Callable.compare
-        |> fun callees ->
-        Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees
+        |> List.dedup_and_sort ~compare:Target.compare
+        |> fun callees -> Target.RealMap.set dependencies ~key:(Target.create define) ~data:callees
   in
   Preprocessing.defines ~include_nested:true source
-  |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
+  |> List.fold ~init:Target.RealMap.empty ~f:fold_defines

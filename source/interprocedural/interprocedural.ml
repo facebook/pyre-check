@@ -7,7 +7,7 @@
 
 module AnalysisKind = AnalysisKind
 module FixpointAnalysis = FixpointAnalysis
-module Callable = Callable
+module Target = Target
 module CallGraph = CallGraph
 module CallResolution = CallResolution
 module DecoratorHelper = DecoratorHelper

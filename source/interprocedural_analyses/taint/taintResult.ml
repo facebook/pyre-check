@@ -407,7 +407,7 @@ module ResultArgument = struct
       callable
       { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
     =
-    let callable_name = Interprocedural.Callable.external_target_name callable in
+    let callable_name = Interprocedural.Target.external_target_name callable in
     let model_json = ["callable", `String callable_name] in
     let model_json =
       if not (ForwardState.is_empty source_taint) then
