@@ -211,6 +211,154 @@ class RawInferOutputParsingError(Exception):
     pass
 
 
+@dataclasses.dataclass(frozen=True)
+class StubGenerationOptions:
+    annotate_attributes: bool
+    use_future_annotations: bool
+    dequalify: bool
+
+
+@dataclasses.dataclass(frozen=True)
+class TypeAnnotation:
+    annotation: Optional[str]
+    dequalify: bool
+
+    @staticmethod
+    def from_raw(
+        annotation: Optional[str], options: StubGenerationOptions
+    ) -> "TypeAnnotation":
+        return TypeAnnotation(annotation=annotation, dequalify=options.dequalify)
+
+    @property
+    def missing(self) -> bool:
+        return self.annotation is None
+
+
+@dataclasses.dataclass(frozen=True)
+class Parameter:
+    name: str
+    annotation: TypeAnnotation
+    value: Optional[str]
+
+
+@dataclasses.dataclass(frozen=True)
+class FunctionAnnotation:
+    name: str
+    return_annotation: TypeAnnotation
+    parameters: Sequence[Parameter]
+    decorators: Sequence[str]
+    is_async: bool
+
+
+@dataclasses.dataclass(frozen=True)
+class MethodAnnotation(FunctionAnnotation):
+    parent: str
+
+
+@dataclasses.dataclass(frozen=True)
+class FieldAnnotation:
+    name: str
+    annotation: TypeAnnotation
+
+
+@dataclasses.dataclass(frozen=True)
+class GlobalAnnotation(FieldAnnotation):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class AttributeAnnotation(FieldAnnotation):
+    parent: str
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleAnnotations:
+    path: str
+    options: StubGenerationOptions
+    globals_: List[GlobalAnnotation] = dataclasses.field(default_factory=list)
+    attributes: List[AttributeAnnotation] = dataclasses.field(default_factory=list)
+    functions: List[FunctionAnnotation] = dataclasses.field(default_factory=list)
+    methods: List[MethodAnnotation] = dataclasses.field(default_factory=list)
+
+    @staticmethod
+    def from_infer_output(
+        path: str,
+        infer_output: RawInferOutput,
+        options: StubGenerationOptions,
+    ) -> "ModuleAnnotations":
+        def type_annotation(annotation: Optional[str]) -> TypeAnnotation:
+            return TypeAnnotation.from_raw(
+                annotation,
+                options=options,
+            )
+
+        return ModuleAnnotations(
+            path=path,
+            globals_=[
+                GlobalAnnotation(
+                    name=global_.name, annotation=type_annotation(global_.annotation)
+                )
+                for global_ in infer_output.global_annotations
+            ],
+            attributes=[
+                AttributeAnnotation(
+                    parent=attribute.parent,
+                    name=attribute.name,
+                    annotation=type_annotation(attribute.annotation),
+                )
+                for attribute in infer_output.attribute_annotations
+            ]
+            if options.annotate_attributes
+            else [],
+            functions=[
+                FunctionAnnotation(
+                    name=define.name,
+                    return_annotation=type_annotation(define.return_),
+                    parameters=[
+                        Parameter(
+                            name=parameter.name,
+                            annotation=type_annotation(parameter.annotation),
+                            value=parameter.value,
+                        )
+                        for parameter in define.parameters
+                    ],
+                    decorators=define.decorators,
+                    is_async=define.is_async,
+                )
+                for define in infer_output.define_annotations
+                if define.parent is None
+            ],
+            methods=[
+                MethodAnnotation(
+                    parent=define.parent,
+                    name=define.name,
+                    return_annotation=type_annotation(define.return_),
+                    parameters=[
+                        Parameter(
+                            name=parameter.name,
+                            annotation=type_annotation(parameter.annotation),
+                            value=parameter.value,
+                        )
+                        for parameter in define.parameters
+                    ],
+                    decorators=define.decorators,
+                    is_async=define.is_async,
+                )
+                for define in infer_output.define_annotations
+                if define.parent is not None
+            ],
+            options=options,
+        )
+
+    def is_empty(self) -> bool:
+        return (
+            len(self.globals_)
+            + len(self.attributes)
+            + len(self.functions)
+            + len(self.methods)
+        ) == 0
+
+
 def create_infer_arguments(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,

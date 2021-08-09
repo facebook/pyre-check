@@ -24,6 +24,13 @@ from ..infer import (
     RawDefineAnnotation,
     RawInferOutput,
     RawInferOutputParsingError,
+    StubGenerationOptions,
+    TypeAnnotation,
+    FunctionAnnotation,
+    MethodAnnotation,
+    GlobalAnnotation,
+    AttributeAnnotation,
+    ModuleAnnotations,
 )
 
 
@@ -330,5 +337,165 @@ class InferTest(testslide.TestCase):
                         is_async=True,
                     )
                 ]
+            ),
+        )
+
+
+class ModuleAnnotationTest(testslide.TestCase):
+    def test_module_annotations_from_infer_output(self) -> None:
+        def assert_result(
+            path: str,
+            infer_output: RawInferOutput,
+            options: StubGenerationOptions,
+            expected: ModuleAnnotations,
+        ) -> None:
+            self.assertEqual(
+                ModuleAnnotations.from_infer_output(path, infer_output, options),
+                expected,
+            )
+
+        default_path = "test.py"
+        default_options = StubGenerationOptions(
+            annotate_attributes=False, use_future_annotations=False, dequalify=False
+        )
+
+        assert_result(
+            path=default_path,
+            infer_output=RawInferOutput(),
+            options=default_options,
+            expected=ModuleAnnotations(path=default_path, options=default_options),
+        )
+
+        assert_result(
+            path=default_path,
+            infer_output=RawInferOutput(
+                define_annotations=[
+                    RawDefineAnnotation(
+                        name="test.Foo.foo",
+                        parent="test.Foo",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=1
+                        ),
+                        return_="int",
+                        decorators=["derp"],
+                        is_async=True,
+                    ),
+                    RawDefineAnnotation(
+                        name="test.bar",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=2
+                        ),
+                    ),
+                ],
+            ),
+            options=default_options,
+            expected=ModuleAnnotations(
+                path=default_path,
+                options=default_options,
+                functions=[
+                    FunctionAnnotation(
+                        name="test.bar",
+                        return_annotation=TypeAnnotation.from_raw(
+                            None, options=default_options
+                        ),
+                        parameters=[],
+                        decorators=[],
+                        is_async=False,
+                    )
+                ],
+                methods=[
+                    MethodAnnotation(
+                        parent="test.Foo",
+                        name="test.Foo.foo",
+                        return_annotation=TypeAnnotation.from_raw(
+                            "int", options=default_options
+                        ),
+                        parameters=[],
+                        decorators=["derp"],
+                        is_async=True,
+                    )
+                ],
+            ),
+        )
+
+        assert_result(
+            path=default_path,
+            infer_output=RawInferOutput(
+                global_annotations=[
+                    RawGlobalAnnotation(
+                        name="x",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=3
+                        ),
+                        annotation="int",
+                    )
+                ],
+            ),
+            options=default_options,
+            expected=ModuleAnnotations(
+                path=default_path,
+                options=default_options,
+                globals_=[
+                    GlobalAnnotation(
+                        name="x",
+                        annotation=TypeAnnotation.from_raw(
+                            "int", options=default_options
+                        ),
+                    )
+                ],
+            ),
+        )
+
+        assert_result(
+            path=default_path,
+            infer_output=RawInferOutput(
+                attribute_annotations=[
+                    RawAttributeAnnotation(
+                        parent="Foo",
+                        name="x",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=3
+                        ),
+                        annotation="int",
+                    )
+                ],
+            ),
+            options=default_options,
+            expected=ModuleAnnotations(
+                path=default_path,
+                options=default_options,
+            ),
+        )
+
+        annotate_attribute_options = StubGenerationOptions(
+            annotate_attributes=True, use_future_annotations=False, dequalify=False
+        )
+        assert_result(
+            path=default_path,
+            infer_output=RawInferOutput(
+                attribute_annotations=[
+                    RawAttributeAnnotation(
+                        parent="Foo",
+                        name="x",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=3
+                        ),
+                        annotation="int",
+                    )
+                ],
+            ),
+            options=annotate_attribute_options,
+            expected=ModuleAnnotations(
+                path=default_path,
+                options=annotate_attribute_options,
+                attributes=[
+                    AttributeAnnotation(
+                        parent="Foo",
+                        name="x",
+                        annotation=TypeAnnotation.from_raw(
+                            "int", options=annotate_attribute_options
+                        ),
+                    )
+                ],
             ),
         )
