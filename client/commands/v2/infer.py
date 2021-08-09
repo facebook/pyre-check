@@ -13,6 +13,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence
 
+import dataclasses_json
+
 from ... import commands, command_arguments, configuration as configuration_module
 from . import remote_logging, backend_arguments, start
 
@@ -108,6 +110,105 @@ class Arguments:
                 else {"memory_profiling_output": str(self.memory_profiling_output)}
             ),
         }
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class RawAnnotationLocation:
+    qualifier: str
+    path: str
+    line: int
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class RawGlobalAnnotation:
+    name: str
+    location: RawAnnotationLocation
+    annotation: str
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class RawAttributeAnnotation:
+    parent: str
+    name: str
+    location: RawAnnotationLocation
+    annotation: str
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class RawParameter:
+    name: str
+    index: int
+    annotation: Optional[str] = None
+    value: Optional[str] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class RawDefineAnnotation:
+    name: str
+    location: RawAnnotationLocation
+    parent: Optional[str] = None
+    return_: Optional[str] = dataclasses.field(
+        metadata=dataclasses_json.config(field_name="return"), default=None
+    )
+    parameters: List[RawParameter] = dataclasses.field(default_factory=list)
+    decorators: List[str] = dataclasses.field(default_factory=list)
+    is_async: bool = dataclasses.field(
+        metadata=dataclasses_json.config(field_name="async"), default=False
+    )
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class RawInferOutput:
+    global_annotations: List[RawGlobalAnnotation] = dataclasses.field(
+        metadata=dataclasses_json.config(field_name="globals"), default_factory=list
+    )
+    attribute_annotations: List[RawAttributeAnnotation] = dataclasses.field(
+        metadata=dataclasses_json.config(field_name="attributes"), default_factory=list
+    )
+    define_annotations: List[RawDefineAnnotation] = dataclasses.field(
+        metadata=dataclasses_json.config(field_name="defines"), default_factory=list
+    )
+
+    @staticmethod
+    def create(input: str) -> "RawInferOutput":
+        try:
+            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+            return RawInferOutput.schema().loads(input)
+        except (
+            TypeError,
+            KeyError,
+            ValueError,
+            dataclasses_json.mm.ValidationError,
+        ) as error:
+            raise RawInferOutputParsingError(str(error)) from error
+
+
+class RawInferOutputParsingError(Exception):
+    pass
 
 
 def create_infer_arguments(

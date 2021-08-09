@@ -3,16 +3,28 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
 import tempfile
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Dict
 
 import testslide
 
 from .... import configuration, command_arguments
 from ....tests import setup
 from .. import backend_arguments
-from ..infer import Arguments, InferMode, create_infer_arguments
+from ..infer import (
+    Arguments,
+    InferMode,
+    create_infer_arguments,
+    RawAnnotationLocation,
+    RawGlobalAnnotation,
+    RawAttributeAnnotation,
+    RawParameter,
+    RawDefineAnnotation,
+    RawInferOutput,
+    RawInferOutputParsingError,
+)
 
 
 class ArgumentTest(testslide.TestCase):
@@ -184,3 +196,139 @@ class InferTest(testslide.TestCase):
                     ),
                 ),
             )
+
+    def test_parse_raw_infer_output(self) -> None:
+        def assert_parsed(input: Dict[str, object], expected: RawInferOutput) -> None:
+            self.assertEqual(RawInferOutput.create(json.dumps(input)), expected)
+
+        def assert_not_parsed(input: str) -> None:
+            with self.assertRaises(RawInferOutputParsingError):
+                RawInferOutput.create(input)
+
+        assert_not_parsed("")
+        assert_not_parsed("[]")
+        assert_not_parsed("42")
+        assert_not_parsed('"abc"')
+
+        assert_parsed({}, RawInferOutput())
+        assert_parsed({"irrelevant": 42}, RawInferOutput())
+        assert_parsed(
+            {
+                "globals": [
+                    {
+                        "name": "x",
+                        "location": {"qualifier": "test", "path": "test.py", "line": 4},
+                        "annotation": "int",
+                    }
+                ]
+            },
+            RawInferOutput(
+                global_annotations=[
+                    RawGlobalAnnotation(
+                        name="x",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=4
+                        ),
+                        annotation="int",
+                    )
+                ]
+            ),
+        )
+        assert_parsed(
+            {
+                "attributes": [
+                    {
+                        "parent": "Foo",
+                        "name": "x",
+                        "location": {"qualifier": "test", "path": "test.py", "line": 3},
+                        "annotation": "int",
+                    }
+                ]
+            },
+            RawInferOutput(
+                attribute_annotations=[
+                    RawAttributeAnnotation(
+                        parent="Foo",
+                        name="x",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=3
+                        ),
+                        annotation="int",
+                    )
+                ]
+            ),
+        )
+        assert_parsed(
+            {
+                "defines": [
+                    {
+                        "name": "test.foo",
+                        "parent": None,
+                        "return": None,
+                        "parameters": [],
+                        "decorators": [],
+                        "location": {"qualifier": "test", "path": "test.py", "line": 1},
+                        "async": False,
+                    }
+                ]
+            },
+            RawInferOutput(
+                define_annotations=[
+                    RawDefineAnnotation(
+                        name="test.foo",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=1
+                        ),
+                        is_async=False,
+                    )
+                ]
+            ),
+        )
+        assert_parsed(
+            {
+                "defines": [
+                    {
+                        "name": "test.Foo.foo",
+                        "parent": "test.Foo",
+                        "return": "int",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            },
+                            {
+                                "name": "x",
+                                "annotation": "int",
+                                "value": "42",
+                                "index": 1,
+                            },
+                        ],
+                        "decorators": ["derp"],
+                        "location": {"qualifier": "test", "path": "test.py", "line": 1},
+                        "async": True,
+                    }
+                ]
+            },
+            RawInferOutput(
+                define_annotations=[
+                    RawDefineAnnotation(
+                        name="test.Foo.foo",
+                        parent="test.Foo",
+                        location=RawAnnotationLocation(
+                            qualifier="test", path="test.py", line=1
+                        ),
+                        return_="int",
+                        parameters=[
+                            RawParameter(name="self", index=0),
+                            RawParameter(
+                                name="x", index=1, annotation="int", value="42"
+                            ),
+                        ],
+                        decorators=["derp"],
+                        is_async=True,
+                    )
+                ]
+            ),
+        )
