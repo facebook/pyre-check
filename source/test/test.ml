@@ -245,12 +245,7 @@ let assert_source_equal ?(location_insensitive = false) left right =
   let right = { right with Source.metadata } in
   let cmp =
     if location_insensitive then
-      fun left right ->
-    Source.equal { left with statements = [] } { right with statements = [] }
-    && List.equal
-         (fun left right -> Statement.location_insensitive_compare left right = 0)
-         left.statements
-         right.statements
+      fun left right -> Source.location_insensitive_compare left right = 0
     else
       Source.equal
   in
