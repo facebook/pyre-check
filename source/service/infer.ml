@@ -10,10 +10,7 @@ open Analysis
 open Pyre
 
 type environment_data = {
-  module_tracker: ModuleTracker.t;
-  ast_environment: AstEnvironment.t;
   global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
-  global_resolution: GlobalResolution.t;
   qualifiers: Ast.Reference.t list;
 }
 
@@ -61,13 +58,13 @@ let build_environment_data
     in
     global_environment, qualifiers
   in
-  let global_resolution = GlobalResolution.create global_environment in
-  { module_tracker; ast_environment; global_environment; global_resolution; qualifiers }
+  { global_environment; qualifiers }
 
 
-let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
+let run_infer ~configuration ~scheduler { global_environment; qualifiers } =
   Log.info "Running inference...";
   let timer = Timer.start () in
+  let global_resolution = GlobalResolution.create global_environment in
   let ast_environment = GlobalResolution.ast_environment global_resolution in
   let map _ qualifiers =
     let analyze_qualifier qualifier =
@@ -90,10 +87,4 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
       ()
   in
   Statistics.performance ~name:"inference" ~phase_name:"Type inference" ~timer ();
-  results
-
-
-let infer ~configuration ~scheduler () =
-  let { global_resolution; qualifiers; _ } = build_environment_data ~configuration ~scheduler () in
-  run_infer ~scheduler ~configuration ~global_resolution qualifiers
-  |> TypeInference.Data.GlobalResult.from_local_results ~global_resolution
+  TypeInference.Data.GlobalResult.from_local_results ~global_resolution results

@@ -5,8 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val infer
+type environment_data = {
+  global_environment: Analysis.AnnotatedGlobalEnvironment.ReadOnly.t;
+  qualifiers: Ast.Reference.t list;
+}
+
+val build_environment_data
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
   unit ->
+  environment_data
+
+val run_infer
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  environment_data ->
   TypeInference.Data.GlobalResult.t
