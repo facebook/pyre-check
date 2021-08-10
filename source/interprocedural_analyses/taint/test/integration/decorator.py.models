@@ -671,7 +671,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.Foo.bar.__inlined_with_logging_args_kwargs_no_sink2",
+      "decorator.Foo.bar._inlined_with_logging_args_kwargs_no_sink2",
     "sinks": [
       {
         "port": "formal(x)",
@@ -685,7 +685,7 @@
                 "end": 9
               },
               "resolves_to": [
-                "decorator.Foo.bar.__inlined_with_logging_args_kwargs"
+                "decorator.Foo.bar._inlined_with_logging_args_kwargs"
               ],
               "port": "formal(x)",
               "length": 1
@@ -707,7 +707,7 @@
                 "end": 9
               },
               "resolves_to": [
-                "decorator.Foo.bar.__inlined_with_logging_args_kwargs"
+                "decorator.Foo.bar._inlined_with_logging_args_kwargs"
               ],
               "port": "formal(self)",
               "length": 1
@@ -724,36 +724,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.Foo.foo.__inlined_with_logging_args_kwargs_no_sink",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "call": {
-              "position": {
-                "filename": "decorator.py",
-                "line": 75,
-                "start": 8,
-                "end": 9
-              },
-              "resolves_to": [ "decorator.Foo.foo.__original_function" ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "decorator.Foo.self_has_generic_type.__inlined_with_logging_args_kwargs_no_sink",
+      "decorator.Foo.self_has_generic_type._inlined_with_logging_args_kwargs_no_sink",
     "sinks": [
       {
         "port": "formal(x)",
@@ -767,7 +738,7 @@
                 "end": 9
               },
               "resolves_to": [
-                "decorator.Foo.self_has_generic_type.__original_function"
+                "decorator.Foo.self_has_generic_type._original_function"
               ],
               "port": "formal(x)",
               "length": 4
@@ -789,7 +760,7 @@
                 "end": 9
               },
               "resolves_to": [
-                "decorator.Foo.self_has_generic_type.__original_function"
+                "decorator.Foo.self_has_generic_type._original_function"
               ],
               "port": "formal(other)",
               "length": 4
@@ -806,7 +777,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.Foo.some_class_method.__inlined_with_logging_args_kwargs_no_sink",
+      "decorator.Foo.some_class_method._inlined_with_logging_args_kwargs_no_sink",
     "sinks": [
       {
         "port": "formal(x)",
@@ -820,7 +791,7 @@
                 "end": 9
               },
               "resolves_to": [
-                "decorator.Foo.some_class_method.__original_function"
+                "decorator.Foo.some_class_method._original_function"
               ],
               "port": "formal(x)",
               "length": 2
@@ -837,31 +808,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.foo_args_kwargs.__inlined_with_logging_args_kwargs",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "root": {
-              "filename": "decorator.py",
-              "line": 62,
-              "start": 19,
-              "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "decorator.foo_args_kwargs_with_sink.__inlined_with_logging_args_kwargs_no_sink",
+      "decorator.foo_args_kwargs_with_sink._inlined_with_logging_args_kwargs_no_sink",
     "sinks": [
       {
         "port": "formal(y)",
@@ -875,7 +822,7 @@
                 "end": 9
               },
               "resolves_to": [
-                "decorator.foo_args_kwargs_with_sink.__original_function"
+                "decorator.foo_args_kwargs_with_sink._original_function"
               ],
               "port": "formal(y)",
               "length": 1
@@ -895,7 +842,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.foo_log_first_parameter.__inlined_with_logging_first_parameter",
+      "decorator.foo_log_first_parameter._inlined_with_logging_first_parameter",
     "sinks": [
       {
         "port": "formal(x)",
@@ -922,7 +869,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.foo_using_decorator_factory.__inlined_with_named_logger",
+      "decorator.foo_using_decorator_factory._inlined_with_named_logger",
     "sinks": [
       {
         "port": "formal(x)",
@@ -946,7 +893,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.foo_with_helper_function.__inlined_with_logging_helper_functions",
+      "decorator.foo_with_helper_function._inlined_with_logging_helper_functions",
     "sinks": [
       {
         "port": "formal(y)",
@@ -960,7 +907,7 @@
                 "end": 23
               },
               "resolves_to": [
-                "decorator.foo_with_helper_function.__inlined_with_logging_helper_functions.after"
+                "decorator.foo_with_helper_function._inlined_with_logging_helper_functions.after"
               ],
               "port": "formal(*rest0)",
               "length": 1
@@ -982,7 +929,7 @@
                 "end": 23
               },
               "resolves_to": [
-                "decorator.foo_with_helper_function.__inlined_with_logging_helper_functions.after"
+                "decorator.foo_with_helper_function._inlined_with_logging_helper_functions.after"
               ],
               "port": "formal(*rest0)",
               "length": 1
@@ -1002,7 +949,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.foo_with_helper_function.__inlined_with_logging_helper_functions.after",
+      "decorator.foo_with_helper_function._inlined_with_logging_helper_functions.after",
     "sinks": [
       {
         "port": "formal(*rest0)",
@@ -1026,7 +973,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.foo_with_shady_decorators.__inlined_with_logging_sink",
+      "decorator.foo_with_shady_decorators._inlined_with_logging_sink",
     "sinks": [
       {
         "port": "formal(y)",
@@ -1050,7 +997,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator.foo_with_shady_decorators.__inlined_with_logging_source",
+      "decorator.foo_with_shady_decorators._inlined_with_logging_source",
     "sinks": [
       {
         "port": "formal(y)",
@@ -1064,7 +1011,7 @@
                 "end": 35
               },
               "resolves_to": [
-                "decorator.foo_with_shady_decorators.__inlined_with_logging_sink"
+                "decorator.foo_with_shady_decorators._inlined_with_logging_sink"
               ],
               "port": "formal(y)",
               "length": 1
@@ -1086,7 +1033,7 @@
   "kind": "issue",
   "data": {
     "callable":
-      "decorator.foo_with_shady_decorators.__inlined_with_logging_source",
+      "decorator.foo_with_shady_decorators._inlined_with_logging_source",
     "callable_line": 109,
     "code": 5002,
     "line": 95,
@@ -1127,7 +1074,7 @@
                 "end": 35
               },
               "resolves_to": [
-                "decorator.foo_with_shady_decorators.__inlined_with_logging_sink"
+                "decorator.foo_with_shady_decorators._inlined_with_logging_sink"
               ],
               "port": "formal(y)",
               "length": 1
@@ -1163,7 +1110,7 @@
                 "end": 37
               },
               "resolves_to": [
-                "decorator.Foo.bar.__inlined_with_logging_args_kwargs_no_sink2"
+                "decorator.Foo.bar._inlined_with_logging_args_kwargs_no_sink2"
               ],
               "port": "formal(x)",
               "length": 2
@@ -1185,7 +1132,7 @@
                 "end": 37
               },
               "resolves_to": [
-                "decorator.Foo.bar.__inlined_with_logging_args_kwargs_no_sink2"
+                "decorator.Foo.bar._inlined_with_logging_args_kwargs_no_sink2"
               ],
               "port": "formal(self)",
               "length": 2
@@ -1201,7 +1148,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.Foo.bar.__inlined_with_logging_args_kwargs",
+    "callable": "decorator.Foo.bar._inlined_with_logging_args_kwargs",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1253,7 +1200,7 @@
                 "end": 37
               },
               "resolves_to": [
-                "decorator.Foo.foo.__inlined_with_logging_args_kwargs_no_sink"
+                "decorator.Foo.foo._inlined_with_logging_args_kwargs_no_sink"
               ],
               "port": "formal(x)",
               "length": 3
@@ -1269,7 +1216,35 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.Foo.foo.__original_function",
+    "callable": "decorator.Foo.foo._inlined_with_logging_args_kwargs_no_sink",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 75,
+                "start": 8,
+                "end": 9
+              },
+              "resolves_to": [ "decorator.Foo.foo._original_function" ],
+              "port": "formal(x)",
+              "length": 2
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.Foo.foo._original_function",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1311,7 +1286,7 @@
                 "end": 37
               },
               "resolves_to": [
-                "decorator.Foo.self_has_generic_type.__inlined_with_logging_args_kwargs_no_sink"
+                "decorator.Foo.self_has_generic_type._inlined_with_logging_args_kwargs_no_sink"
               ],
               "port": "formal(x)",
               "length": 5
@@ -1333,7 +1308,7 @@
                 "end": 37
               },
               "resolves_to": [
-                "decorator.Foo.self_has_generic_type.__inlined_with_logging_args_kwargs_no_sink"
+                "decorator.Foo.self_has_generic_type._inlined_with_logging_args_kwargs_no_sink"
               ],
               "port": "formal(other)",
               "length": 5
@@ -1349,7 +1324,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.Foo.self_has_generic_type.__original_function",
+    "callable": "decorator.Foo.self_has_generic_type._original_function",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1434,7 +1409,7 @@
                 "end": 37
               },
               "resolves_to": [
-                "decorator.Foo.some_class_method.__inlined_with_logging_args_kwargs_no_sink"
+                "decorator.Foo.some_class_method._inlined_with_logging_args_kwargs_no_sink"
               ],
               "port": "formal(x)",
               "length": 3
@@ -1450,7 +1425,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.Foo.some_class_method.__original_function",
+    "callable": "decorator.Foo.some_class_method._original_function",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1508,7 +1483,7 @@
                 "start": 1,
                 "end": 13
               },
-              "resolves_to": [ "decorator.foo.__inlined_with_logging" ],
+              "resolves_to": [ "decorator.foo._inlined_with_logging" ],
               "port": "formal(x)",
               "length": 1
             },
@@ -1526,7 +1501,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.foo.__inlined_with_logging",
+    "callable": "decorator.foo._inlined_with_logging",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1566,10 +1541,33 @@
                 "end": 25
               },
               "resolves_to": [
-                "decorator.foo_args_kwargs.__inlined_with_logging_args_kwargs"
+                "decorator.foo_args_kwargs._inlined_with_logging_args_kwargs"
               ],
               "port": "formal(x)",
               "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.foo_args_kwargs._inlined_with_logging_args_kwargs",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "decorator.py",
+              "line": 62,
+              "start": 19,
+              "end": 25
             },
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
@@ -1596,7 +1594,7 @@
                 "end": 33
               },
               "resolves_to": [
-                "decorator.foo_args_kwargs_with_sink.__inlined_with_logging_args_kwargs_no_sink"
+                "decorator.foo_args_kwargs_with_sink._inlined_with_logging_args_kwargs_no_sink"
               ],
               "port": "formal(y)",
               "length": 2
@@ -1615,7 +1613,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.foo_args_kwargs_with_sink.__original_function",
+    "callable": "decorator.foo_args_kwargs_with_sink._original_function",
     "sinks": [
       {
         "port": "formal(y)",
@@ -1655,7 +1653,7 @@
                 "end": 19
               },
               "resolves_to": [
-                "decorator.foo_async.__inlined_with_logging_async"
+                "decorator.foo_async._inlined_with_logging_async"
               ],
               "port": "formal(y)",
               "length": 1
@@ -1671,7 +1669,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.foo_async.__inlined_with_logging_async",
+    "callable": "decorator.foo_async._inlined_with_logging_async",
     "sinks": [
       {
         "port": "formal(y)",
@@ -1708,7 +1706,7 @@
                 "end": 29
               },
               "resolves_to": [
-                "decorator.foo_log_first_parameter.__inlined_with_logging_first_parameter"
+                "decorator.foo_log_first_parameter._inlined_with_logging_first_parameter"
               ],
               "port": "formal(x)",
               "length": 1
@@ -1741,7 +1739,7 @@
                 "end": 18
               },
               "resolves_to": [
-                "decorator.foo_using_decorator_factory.__inlined_with_named_logger"
+                "decorator.foo_using_decorator_factory._inlined_with_named_logger"
               ],
               "port": "formal(x)",
               "length": 1
@@ -1771,7 +1769,7 @@
                 "end": 30
               },
               "resolves_to": [
-                "decorator.foo_with_helper_function.__inlined_with_logging_helper_functions"
+                "decorator.foo_with_helper_function._inlined_with_logging_helper_functions"
               ],
               "port": "formal(y)",
               "length": 2
@@ -1793,7 +1791,7 @@
                 "end": 30
               },
               "resolves_to": [
-                "decorator.foo_with_helper_function.__inlined_with_logging_helper_functions"
+                "decorator.foo_with_helper_function._inlined_with_logging_helper_functions"
               ],
               "port": "formal(x)",
               "length": 2
@@ -1826,7 +1824,7 @@
                 "end": 20
               },
               "resolves_to": [
-                "decorator.foo_with_shady_decorators.__inlined_with_logging_source"
+                "decorator.foo_with_shady_decorators._inlined_with_logging_source"
               ],
               "port": "formal(y)",
               "length": 2
@@ -1860,7 +1858,7 @@
                 "end": 21
               },
               "resolves_to": [
-                "decorator.foo_with_sink.__inlined_with_logging_no_sink"
+                "decorator.foo_with_sink._inlined_with_logging_no_sink"
               ],
               "port": "formal(x)",
               "length": 2
@@ -1879,7 +1877,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.foo_with_sink.__inlined_with_logging_no_sink",
+    "callable": "decorator.foo_with_sink._inlined_with_logging_no_sink",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1892,9 +1890,7 @@
                 "start": 10,
                 "end": 11
               },
-              "resolves_to": [
-                "decorator.foo_with_sink.__original_function"
-              ],
+              "resolves_to": [ "decorator.foo_with_sink._original_function" ],
               "port": "formal(x)",
               "length": 1
             },
@@ -1912,7 +1908,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.foo_with_sink.__original_function",
+    "callable": "decorator.foo_with_sink._original_function",
     "sinks": [
       {
         "port": "formal(x)",

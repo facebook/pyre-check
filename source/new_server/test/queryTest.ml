@@ -1186,24 +1186,24 @@ let test_inline_decorators context =
       {
       "response": {
         "definition": "def test.foo(a: int) -> int:
-        def __original_function(a: int) -> int:
+        def _original_function(a: int) -> int:
           return a|}
         ^ "\n        "
         ^ {|
-        def __inlined_identity(a: int) -> int:
-          __args = (a)
-          __kwargs = { \"a\":a }
-          return __original_function(a)|}
+        def _inlined_identity(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          return _original_function(a)|}
         ^ "\n        "
         ^ {|
-        def __inlined_with_logging(a: int) -> int:
-          __args = (a)
-          __kwargs = { \"a\":a }
-          print(__args, __kwargs)
-          return __inlined_identity(a)|}
+        def _inlined_with_logging(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          print(_args, _kwargs)
+          return _inlined_identity(a)|}
         ^ "\n        "
         ^ {|
-        return __inlined_with_logging(a)
+        return _inlined_with_logging(a)
       "
       }
       }
@@ -1231,18 +1231,18 @@ let test_inline_decorators context =
       {
         "response": {
           "definition": "def test.foo(a: int) -> int:
-        def __original_function(a: int) -> int:
+        def _original_function(a: int) -> int:
           return a|}
         ^ "\n        "
         ^ {|
-        def __inlined_with_logging(a: int) -> int:
-          __args = (a)
-          __kwargs = { \"a\":a }
-          print(__args, __kwargs)
-          return __original_function(a)|}
+        def _inlined_with_logging(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          print(_args, _kwargs)
+          return _original_function(a)|}
         ^ "\n        "
         ^ {|
-        return __inlined_with_logging(a)
+        return _inlined_with_logging(a)
       "
         }
       }

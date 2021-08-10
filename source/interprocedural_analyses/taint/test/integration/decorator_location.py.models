@@ -231,7 +231,7 @@
   "kind": "model",
   "data": {
     "callable":
-      "decorator_location.handle_request.__inlined_pass_local_variable_to_x",
+      "decorator_location.handle_request._inlined_pass_local_variable_to_x",
     "sinks": [
       {
         "port": "formal(request)",
@@ -294,7 +294,7 @@
                 "end": 14
               },
               "resolves_to": [
-                "decorator_location.baz.__inlined_with_logging2"
+                "decorator_location.baz._inlined_with_logging2"
               ],
               "port": "formal(x)",
               "length": 1
@@ -313,7 +313,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.baz.__inlined_with_logging2",
+    "callable": "decorator_location.baz._inlined_with_logging2",
     "sinks": [
       {
         "port": "formal(x)",
@@ -353,7 +353,7 @@
                 "end": 13
               },
               "resolves_to": [
-                "decorator_location.foo.__inlined_with_logging"
+                "decorator_location.foo._inlined_with_logging"
               ],
               "port": "formal(x)",
               "length": 1
@@ -372,7 +372,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.foo.__inlined_with_logging",
+    "callable": "decorator_location.foo._inlined_with_logging",
     "sinks": [
       {
         "port": "formal(x)",
@@ -399,7 +399,7 @@
                 "end": 11
               },
               "resolves_to": [
-                "decorator_location.foo.__inlined_with_logging2"
+                "decorator_location.foo._inlined_with_logging2"
               ],
               "port": "formal(x)",
               "length": 1
@@ -419,7 +419,7 @@
                 "end": 21
               },
               "resolves_to": [
-                "decorator_location.foo.__inlined_with_logging.some_helper"
+                "decorator_location.foo._inlined_with_logging.some_helper"
               ],
               "port": "formal(x)",
               "length": 1
@@ -438,7 +438,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.foo.__inlined_with_logging.some_helper",
+    "callable": "decorator_location.foo._inlined_with_logging.some_helper",
     "sinks": [
       {
         "port": "formal(x)",
@@ -464,7 +464,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.foo.__inlined_with_logging2",
+    "callable": "decorator_location.foo._inlined_with_logging2",
     "sinks": [
       {
         "port": "formal(x)",
@@ -490,7 +490,7 @@
                 "start": 10,
                 "end": 11
               },
-              "resolves_to": [ "decorator_location.foo.__original_function" ],
+              "resolves_to": [ "decorator_location.foo._original_function" ],
               "port": "formal(x)",
               "length": 1
             },
@@ -508,7 +508,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.foo.__original_function",
+    "callable": "decorator_location.foo._original_function",
     "sinks": [
       {
         "port": "formal(x)",
@@ -548,7 +548,7 @@
                 "end": 25
               },
               "resolves_to": [
-                "decorator_location.handle_request.__inlined_pass_local_variable_to_x"
+                "decorator_location.handle_request._inlined_pass_local_variable_to_x"
               ],
               "port": "formal(request)",
               "length": 1
@@ -564,7 +564,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.handle_request.__original_function",
+    "callable": "decorator_location.handle_request._original_function",
     "sinks": [
       {
         "port": "formal(x)",

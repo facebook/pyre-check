@@ -12,18 +12,18 @@ open Pyre
 open Statement
 open Expression
 
-let inlined_original_function_name = "__original_function"
+let inlined_original_function_name = "_original_function"
 
 let make_wrapper_function_name decorator_reference =
   Reference.delocalize decorator_reference
   |> Reference.last
-  |> Format.asprintf "__inlined_%s"
+  |> Format.asprintf "_inlined_%s"
   |> Reference.create
 
 
-let args_local_variable_name = "__args"
+let args_local_variable_name = "_args"
 
-let kwargs_local_variable_name = "__kwargs"
+let kwargs_local_variable_name = "_kwargs"
 
 type decorator_reference_and_module = {
   decorator: Reference.t;
@@ -526,7 +526,7 @@ let call_function_with_precise_parameters
    -> None`. Pass precise arguments to any calls to `callee_name`.
 
    In order to support uses of `args` and `kwargs` within `wrapper_define`, we create synthetic
-   local variables `__args` and `__kwargs` that contain all the arguments. *)
+   local variables `_args` and `_kwargs` that contain all the arguments. *)
 let replace_signature_if_always_passing_on_arguments
     ~callee_name
     ~new_signature:({ Define.Signature.parameters = new_parameters; _ } as new_signature)
@@ -543,7 +543,7 @@ let replace_signature_if_always_passing_on_arguments
       let prefix_parameters = List.rev remaining_parameters in
       let callee_prefix_parameters = List.take new_parameters (List.length prefix_parameters) in
 
-      (* We have to rename `args` and `kwargs` to `__args` and `__kwargs` before transforming calls
+      (* We have to rename `args` and `kwargs` to `_args` and `_kwargs` before transforming calls
          to `callee`. We also have to rename any prefix parameters.
 
          Otherwise, if we rename them after replacing calls to `callee`, we might inadvertently
