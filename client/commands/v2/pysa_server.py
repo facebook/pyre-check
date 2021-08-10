@@ -11,13 +11,12 @@ version of persistent.py.
 
 import asyncio
 import logging
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 from typing import List, Sequence, Dict
 
 from ....api import query, connection as api_connection
 from ....api.connection import PyreQueryError
-
 from ... import (
     json_rpc,
     command_arguments,
