@@ -61,7 +61,7 @@ let build_environment_data
   { global_environment; qualifiers }
 
 
-let run_infer ~configuration ~scheduler { global_environment; qualifiers } =
+let run_infer ~configuration ~scheduler ~filename_lookup { global_environment; qualifiers } =
   Log.info "Running inference...";
   let timer = Timer.start () in
   let global_resolution = GlobalResolution.create global_environment in
@@ -69,7 +69,11 @@ let run_infer ~configuration ~scheduler { global_environment; qualifiers } =
   let map _ qualifiers =
     let analyze_qualifier qualifier =
       let analyze_source source =
-        TypeInference.Local.infer_for_module ~configuration ~global_resolution ~source
+        TypeInference.Local.infer_for_module
+          ~configuration
+          ~global_resolution
+          ~filename_lookup
+          ~source
       in
       AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier >>| analyze_source
     in

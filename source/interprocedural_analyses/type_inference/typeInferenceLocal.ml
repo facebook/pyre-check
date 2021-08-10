@@ -972,7 +972,7 @@ let legacy_infer_for_define
         []
 
 
-let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~define =
+let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filename_lookup ~define =
   let abstract =
     let { Node.value = { Define.signature; _ }; _ } = define in
     Define.Signature.is_abstract_method signature
@@ -1000,25 +1000,25 @@ let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~defin
         raw |> Inference.create |> LocalResult.add_inference ~global_resolution ~lookup result
   in
   let errors = legacy_infer_for_define ~configuration ~global_resolution ~source ~define in
-  let lookup = TypeInferenceData.lookup ~configuration ~global_resolution in
   List.fold
-    ~init:(LocalResult.from_signature ~global_resolution ~lookup ~qualifier define)
-    ~f:(add_missing_annotation_error ~global_resolution ~lookup)
+    ~init:(LocalResult.from_signature ~global_resolution ~lookup:filename_lookup ~qualifier define)
+    ~f:(add_missing_annotation_error ~global_resolution ~lookup:filename_lookup)
     errors
 
 
-let empty_infer_for_define ~configuration ~global_resolution ~qualifier ~define =
-  let lookup = TypeInferenceData.lookup ~configuration ~global_resolution in
+let empty_infer_for_define ~global_resolution ~qualifier ~define =
+  let lookup _ = None in
   TypeInferenceData.LocalResult.from_signature ~global_resolution ~lookup ~qualifier define
 
 
 let infer_for_module
     ~configuration
     ~global_resolution
+    ~filename_lookup
     ~source:({ Ast.Source.source_path = { qualifier; _ } as source_path; _ } as source)
   =
   Log.debug "Running infer for %s..." source_path.relative;
   let check define =
-    infer_for_define ~configuration ~global_resolution ~source ~qualifier ~define
+    infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filename_lookup ~define
   in
   source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check

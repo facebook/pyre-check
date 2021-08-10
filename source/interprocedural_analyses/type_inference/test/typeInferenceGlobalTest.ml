@@ -127,37 +127,11 @@ let serialization_test context =
     ~expected:
       {|
         {
-          "globals": [
-            {
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 4 },
-              "annotation": "int"
-            }
-          ],
-          "attributes": [
-            {
-              "parent": "C",
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 7 },
-              "annotation": "int"
-            }
-          ],
-          "defines": [
-            {
-              "name": "test.needs_return",
-              "parent": null,
-              "return": "int",
-              "parameters": [
-                { "name": "y", "annotation": "int", "value": null, "index": 0 },
-                { "name": "x", "annotation": "int", "value": null, "index": 1 }
-              ],
-              "decorators": [ "functools.lru_cache(4)" ],
-              "location": { "qualifier": "test", "path": "test.py", "line": 13 },
-              "async": false
-            }
-          ]
+          "globals": [],
+          "attributes": [],
+          "defines": []
         }
-    |}
+      |}
     ()
 
 
@@ -281,14 +255,7 @@ let attribute_widen_test context =
       {|
         {
           "globals": [],
-          "attributes": [
-            {
-              "parent": "Foo",
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 3 },
-              "annotation": "typing.Optional[int]"
-            }
-          ],
+          "attributes": [],
           "defines": []
         }
       |}

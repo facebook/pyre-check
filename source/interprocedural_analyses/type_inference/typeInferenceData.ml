@@ -16,12 +16,6 @@ let type_to_reference type_ = type_ |> type_to_string |> Reference.create
 
 let expression_to_json expression = `String (expression |> Expression.sanitized |> Expression.show)
 
-let lookup ~configuration ~global_resolution reference =
-  GlobalResolution.ast_environment global_resolution
-  |> fun ast_environment ->
-  AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment reference
-
-
 module SerializableReference = struct
   type t = Reference.t [@@deriving compare, eq, sexp, hash, show]
 

@@ -5,12 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val lookup
-  :  configuration:Configuration.Analysis.t ->
-  global_resolution:Analysis.GlobalResolution.t ->
-  Ast.Reference.t ->
-  string option
-
 val type_to_reference : Type.t -> Ast.Reference.t
 
 module Inference : sig

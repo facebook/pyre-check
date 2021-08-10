@@ -230,10 +230,19 @@ let run_infer_local
     (fun () ->
       let result =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-            let environment_data =
+            let ({ Service.Infer.global_environment; _ } as environment_data) =
               Service.Infer.build_environment_data ~configuration ~scheduler ()
             in
-            Infer.run_infer ~configuration ~scheduler environment_data)
+            let filename_lookup qualifier =
+              let ast_environment =
+                Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
+              in
+              Analysis.AstEnvironment.ReadOnly.get_real_path_relative
+                ~configuration
+                ast_environment
+                qualifier
+            in
+            Infer.run_infer ~configuration ~scheduler ~filename_lookup environment_data)
       in
       if debug then
         Memory.report_statistics ();

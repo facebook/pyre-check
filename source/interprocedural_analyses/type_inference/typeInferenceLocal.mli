@@ -34,12 +34,12 @@ val infer_for_define
   global_resolution:Analysis.GlobalResolution.t ->
   source:Ast.Source.t ->
   qualifier:Ast.Reference.t ->
+  filename_lookup:(Ast.Reference.t -> string option) ->
   define:Ast.Statement.Define.t Ast.Node.t ->
   TypeInferenceData.LocalResult.t
 
 val empty_infer_for_define
-  :  configuration:Configuration.Analysis.t ->
-  global_resolution:Analysis.GlobalResolution.t ->
+  :  global_resolution:Analysis.GlobalResolution.t ->
   qualifier:Ast.Reference.t ->
   define:Ast.Statement.Define.t Ast.Node.t ->
   TypeInferenceData.LocalResult.t
@@ -47,5 +47,6 @@ val empty_infer_for_define
 val infer_for_module
   :  configuration:Configuration.Analysis.t ->
   global_resolution:Analysis.GlobalResolution.t ->
+  filename_lookup:(Ast.Reference.t -> string option) ->
   source:Ast.Source.t ->
   TypeInferenceData.LocalResult.t list

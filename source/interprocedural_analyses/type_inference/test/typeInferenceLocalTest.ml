@@ -200,13 +200,17 @@ module Setup = struct
   let run_inference ~context ~target code =
     let environment, configuration = set_up_project ~context code in
     let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
+    let ast_environment = GlobalResolution.ast_environment global_resolution in
     let source =
-      let ast_environment = GlobalResolution.ast_environment global_resolution in
       AstEnvironment.ReadOnly.get_processed_source ast_environment (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
     let module_results =
-      TypeInference.Local.infer_for_module ~configuration ~global_resolution ~source
+      TypeInference.Local.infer_for_module
+        ~configuration
+        ~global_resolution
+        ~filename_lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
+        ~source
     in
     let is_target local_result =
       let name = LocalResult.define_name local_result in
