@@ -13,9 +13,9 @@ import testslide
 from .. import (
     command_arguments,
     configuration,
-    pyre,
     recently_used_configurations,
 )
+from ...client import pyre
 from .setup import (
     ensure_directories_exists,
     switch_working_directory,

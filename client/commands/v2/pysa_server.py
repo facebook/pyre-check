@@ -15,6 +15,9 @@ from pathlib import Path
 from collections import defaultdict
 from typing import List, Sequence, Dict
 
+from ....api import query, connection as api_connection
+from ....api.connection import PyreQueryError
+
 from ... import (
     json_rpc,
     command_arguments,
@@ -36,8 +39,6 @@ from .persistent import (
     InitializationSuccess,
     InitializationFailure,
 )
-from ....api import query, connection as api_connection
-from ....api.connection import PyreQueryError
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
