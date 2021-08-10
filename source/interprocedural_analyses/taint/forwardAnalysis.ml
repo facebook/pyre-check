@@ -644,16 +644,25 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
          *   $result = fn
          * hof(q, fn, x, y)
          *)
-        let lambda_index, { Call.Argument.value = lambda_callee; name = lambda_name } =
+        let ( lambda_index,
+              {
+                Call.Argument.value = { location = lambda_location; _ } as lambda_callee;
+                name = lambda_name;
+              } )
+          =
           lambda_argument
         in
         let location = lambda_callee.Node.location in
-        let result = Node.create ~location (Expression.Name (Name.Identifier "$result")) in
+        let result =
+          Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$result"))
+        in
 
         (* Simulate if branch. *)
         let if_branch_state =
           (* Simulate `$all = {q, x, y}`. *)
-          let all_argument = Node.create ~location (Expression.Name (Name.Identifier "$all")) in
+          let all_argument =
+            Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$all"))
+          in
           let state =
             let all_assignee =
               Node.create

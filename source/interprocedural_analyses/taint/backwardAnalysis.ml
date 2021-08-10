@@ -590,7 +590,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ~higher_order_function
           ~callable_argument
         =
-        let lambda_index, { Call.Argument.value = lambda_callee; name = lambda_name } =
+        let ( lambda_index,
+              {
+                Call.Argument.value = { location = lambda_location; _ } as lambda_callee;
+                name = lambda_name;
+              } )
+          =
           lambda_argument
         in
         (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
@@ -609,7 +614,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ( lambda_index,
               {
                 Call.Argument.value =
-                  Node.create_with_default_location (Expression.Name (Name.Identifier result));
+                  Node.create ~location:lambda_location (Expression.Name (Name.Identifier result));
                 name = lambda_name;
               } )
           in
@@ -643,7 +648,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         (* Simulate if branch. *)
         let if_branch_state =
           (* Simulate $result = fn( all, all). *)
-          let all_argument = Node.create ~location (Expression.Name (Name.Identifier "$all")) in
+          let all_argument =
+            Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$all"))
+          in
           let arguments_with_all_value =
             List.map non_lambda_arguments ~f:snd
             |> List.map ~f:(fun argument -> { argument with Call.Argument.value = all_argument })

@@ -78,3 +78,12 @@ def callable_class():
     c = Callable(_test_source())
     # Even if c is a callable, we should still propagate the taint on it.
     _test_sink(c)
+
+
+def sink_args(*args):
+    for arg in args:
+        _test_sink(arg)
+
+
+def test_location(x: int, y: Callable, z: int):
+    sink_args(x, y, z)
