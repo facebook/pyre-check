@@ -13,6 +13,7 @@ from . import initialize  # noqa F401
 from . import kill  # noqa F401
 from . import persistent  # noqa F401
 from . import profile  # noqa F401
+from . import pysa_server  # noqa F401
 from . import query  # noqa F401
 from . import rage  # noqa F401
 from . import restart  # noqa F401
@@ -21,4 +22,3 @@ from . import start  # noqa F401
 from . import statistics  # noqa F401
 from . import stop  # noqa F401
 from . import validate_models  # noqa F401
-from ....client.commands.v2 import pysa_server  # noqa F401
