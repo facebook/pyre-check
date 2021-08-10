@@ -277,7 +277,6 @@ module Analysis = struct
     include_hints: bool;
     perform_autocompletion: bool;
     features: Features.t;
-    ignore_infer: Path.t list;
     log_directory: Path.t;
     python_major_version: int;
     python_minor_version: int;
@@ -313,7 +312,6 @@ module Analysis = struct
       ?(include_hints = false)
       ?(perform_autocompletion = false)
       ?(features = Features.default)
-      ?(ignore_infer = [])
       ?log_directory
       ?(python_major_version = default_python_major_version)
       ?(python_minor_version = default_python_minor_version)
@@ -353,7 +351,6 @@ module Analysis = struct
       include_hints;
       perform_autocompletion;
       features;
-      ignore_infer;
       log_directory =
         (match log_directory with
         | Some directory -> Path.create_absolute directory

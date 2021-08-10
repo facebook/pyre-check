@@ -21,7 +21,6 @@ module InferConfiguration : sig
     excludes: string list;
     checked_directory_allowlist: PyrePath.t list;
     checked_directory_blocklist: PyrePath.t list;
-    ignore_infer: PyrePath.t list;
     extensions: Configuration.Extension.t list;
     log_path: PyrePath.t;
     global_root: PyrePath.t;

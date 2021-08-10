@@ -37,7 +37,6 @@ let test_json_parsing context =
         "excludes": ["/excludes"],
         "checked_directory_allowlist": ["/allows"],
         "checked_directory_blocklist": ["/blocks"],
-        "ignore_infer": ["/ignored"],
         "extensions": [".typsy"],
         "infer_mode": ["Local"],
         "debug": true,
@@ -68,7 +67,6 @@ let test_json_parsing context =
         excludes = ["/excludes"];
         checked_directory_allowlist = [Path.create_absolute "/allows"];
         checked_directory_blocklist = [Path.create_absolute "/blocks"];
-        ignore_infer = [Path.create_absolute "/ignored"];
         extensions = [Configuration.Extension.create_extension ".typsy"];
         log_path = Path.create_absolute "/log";
         global_root = Path.create_absolute "/project";

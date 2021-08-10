@@ -17,7 +17,7 @@ let argument_to_paths argument =
 
 
 let run_infer_interprocedural
-    ignore_infer
+    _ignore_infer
     _verbose
     expected_version
     sections
@@ -59,7 +59,6 @@ let run_infer_interprocedural
       ~project_root
       ();
     Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
-    let ignore_infer = argument_to_paths ignore_infer in
     let filter_directories = argument_to_paths filter_directories in
     let ignore_all_errors = argument_to_paths ignore_all_errors in
     let configuration =
@@ -77,7 +76,6 @@ let run_infer_interprocedural
         ~excludes
         ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
         ?log_directory
-        ?ignore_infer
         ?python_major_version
         ?python_minor_version
         ?python_micro_version
@@ -160,7 +158,7 @@ let run_infer_interprocedural
 
 
 let run_infer_local
-    ignore_infer
+    _ignore_infer
     _verbose
     expected_version
     sections
@@ -202,7 +200,6 @@ let run_infer_local
       ~project_root
       ();
     Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
-    let ignore_infer = argument_to_paths ignore_infer in
     let filter_directories = argument_to_paths filter_directories in
     let ignore_all_errors = argument_to_paths ignore_all_errors in
     let configuration =
@@ -220,7 +217,6 @@ let run_infer_local
         ~excludes
         ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
         ?log_directory
-        ?ignore_infer
         ?python_major_version
         ?python_minor_version
         ?python_micro_version

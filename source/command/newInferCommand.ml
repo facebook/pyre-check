@@ -38,7 +38,6 @@ module InferConfiguration = struct
     excludes: string list;
     checked_directory_allowlist: Path.t list;
     checked_directory_blocklist: Path.t list;
-    ignore_infer: Path.t list;
     extensions: Configuration.Extension.t list;
     (* Auxiliary paths *)
     log_path: Path.t;
@@ -85,7 +84,6 @@ module InferConfiguration = struct
       let checked_directory_blocklist =
         json |> path_list_member "checked_directory_blocklist" ~default:[]
       in
-      let ignore_infer = json |> path_list_member "ignore_infer" ~default:[] in
       let extensions =
         json
         |> string_list_member "extensions" ~default:[]
@@ -131,7 +129,6 @@ module InferConfiguration = struct
           excludes;
           checked_directory_allowlist;
           checked_directory_blocklist;
-          ignore_infer;
           extensions;
           log_path;
           global_root;
@@ -160,7 +157,6 @@ module InferConfiguration = struct
         excludes;
         checked_directory_allowlist;
         checked_directory_blocklist;
-        ignore_infer;
         extensions;
         log_path;
         global_root;
@@ -183,7 +179,6 @@ module InferConfiguration = struct
       | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
     in
     Configuration.Analysis.create
-      ~ignore_infer
       ~parallel
       ~analyze_external_sources:false
       ~filter_directories:checked_directory_allowlist

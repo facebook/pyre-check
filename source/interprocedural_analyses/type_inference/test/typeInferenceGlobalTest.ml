@@ -295,50 +295,6 @@ let attribute_widen_test context =
     ()
 
 
-let ignore_infer_test context =
-  let assert_fixpoint_result =
-    assert_fixpoint_result
-      ~context
-      ~sources:["test.py", {|
-          x = 1 + 1
-          |}]
-      ~callable_names:["test.$toplevel"]
-  in
-  assert_fixpoint_result
-    ~expected:
-      {|
-        {
-          "globals": [
-            {
-              "name": "x",
-              "location": { "qualifier": "test", "path": "test.py", "line": 2 },
-              "annotation": "int"
-            }
-          ],
-          "attributes": [],
-          "defines": []
-        }
-      |}
-    ();
-  assert_fixpoint_result
-    ~transform_configuration:(fun configuration ->
-      {
-        configuration with
-        Configuration.Analysis.ignore_infer =
-          [PyrePath.create_relative ~root:configuration.local_root ~relative:"test.py"];
-      })
-    ~expected:
-      {|
-        {
-          "globals": [],
-          "attributes": [],
-          "defines": []
-        }
-      |}
-    ();
-  ()
-
-
 let () =
   "typeInferenceAnalysisTest"
   >::: [
@@ -346,6 +302,5 @@ let () =
          "duplicates" >:: duplicate_define_test;
          "suppress" >:: suppress_test;
          "attribute_widen" >:: attribute_widen_test;
-         "ignore_infer" >:: ignore_infer_test;
        ]
   |> Test.run

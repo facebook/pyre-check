@@ -972,17 +972,6 @@ let legacy_infer_for_define
         []
 
 
-let skip_infer
-    ~configuration:({ Configuration.Analysis.ignore_infer; _ } as configuration)
-    source_path
-  =
-  try
-    let path = Ast.SourcePath.full_path ~configuration source_path in
-    source_path.is_stub or List.exists ignore_infer ~f:(Path.equal path)
-  with
-  | Unix.Unix_error (Unix.ENOENT, _, _) -> true
-
-
 let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~define =
   let abstract =
     let { Node.value = { Define.signature; _ }; _ } = define in
@@ -1028,11 +1017,8 @@ let infer_for_module
     ~global_resolution
     ~source:({ Ast.Source.source_path = { qualifier; _ } as source_path; _ } as source)
   =
-  if skip_infer ~configuration source_path then
-    []
-  else (
-    Log.debug "Running infer for %s..." source_path.relative;
-    let check define =
-      infer_for_define ~configuration ~global_resolution ~source ~qualifier ~define
-    in
-    source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check)
+  Log.debug "Running infer for %s..." source_path.relative;
+  let check define =
+    infer_for_define ~configuration ~global_resolution ~source ~qualifier ~define
+  in
+  source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check

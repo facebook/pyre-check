@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
 open Analysis
 open Interprocedural
 
@@ -33,8 +32,7 @@ module Analyzer = struct
     let maybe_source = AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier in
     let result =
       match maybe_source with
-      | Some ({ Ast.Source.source_path; _ } as source)
-        when not (TypeInferenceLocal.skip_infer ~configuration source_path) ->
+      | Some source ->
           TypeInferenceLocal.infer_for_define
             ~configuration
             ~global_resolution

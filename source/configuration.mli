@@ -118,7 +118,6 @@ module Analysis : sig
     include_hints: bool;
     perform_autocompletion: bool;
     features: Features.t;
-    ignore_infer: Path.t list;
     log_directory: Path.t;
     python_major_version: int;
     python_minor_version: int;
@@ -149,7 +148,6 @@ module Analysis : sig
     ?include_hints:bool ->
     ?perform_autocompletion:bool ->
     ?features:Features.t ->
-    ?ignore_infer:Path.t list ->
     ?log_directory:string ->
     ?python_major_version:int ->
     ?python_minor_version:int ->

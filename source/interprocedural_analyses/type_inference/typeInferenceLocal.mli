@@ -29,8 +29,6 @@ end
 
 module State (Context : Context) : Signature
 
-val skip_infer : configuration:Configuration.Analysis.t -> Ast.SourcePath.t -> bool
-
 val infer_for_define
   :  configuration:Configuration.Analysis.t ->
   global_resolution:Analysis.GlobalResolution.t ->
