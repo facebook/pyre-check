@@ -872,6 +872,7 @@ def infer(
                 enable_memory_profiling=command_argument.enable_memory_profiling,
                 enable_profiling=command_argument.enable_profiling,
                 debug_infer=debug_infer,
+                dequalify=dequalify,
                 interprocedural=interprocedural,
                 log_identifier=command_argument.log_identifier,
                 logging_sections=command_argument.logging_sections,

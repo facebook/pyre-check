@@ -18,7 +18,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, TypeVar, 
 import dataclasses_json
 import libcst
 
-from ... import commands, command_arguments, configuration as configuration_module
+from ... import commands, command_arguments, configuration as configuration_module, log
 from . import remote_logging, backend_arguments, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -835,6 +835,21 @@ def create_module_annotations(
     ]
 
 
+def _print_inferences(
+    infer_output: RawInferOutput, module_annotations: Sequence[ModuleAnnotations]
+) -> None:
+    LOG.log(log.SUCCESS, "Raw Infer Outputs:")
+    # pyre-ignore[16]: Pyre does not understand `dataclasses_json`
+    LOG.log(log.SUCCESS, json.dumps(infer_output.to_dict(), indent=2))
+    LOG.log(log.SUCCESS, "Generated Stubs:")
+    LOG.log(
+        log.SUCCESS,
+        "\n\n".join(
+            f"*{module.path}*\n{module.to_stubs()}" for module in module_annotations
+        ),
+    )
+
+
 def run_infer(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
@@ -847,9 +862,22 @@ def run_infer(
         relative_local_root=configuration.relative_local_root,
     )
 
-    raw_output = _load_output(configuration, infer_arguments)
-    LOG.warning(f"{raw_output}")
-    LOG.warning("WORK IN PROGRESS...")
+    infer_output = RawInferOutput.create_from_json(
+        json.loads(_load_output(configuration, infer_arguments))[0]
+    )
+    module_annotations = create_module_annotations(
+        infer_output=infer_output,
+        base_path=working_directory,
+        options=StubGenerationOptions(
+            annotate_attributes=infer_arguments.annotate_attributes,
+            use_future_annotations=not infer_arguments.no_future_annotations,
+            dequalify=infer_arguments.dequalify,
+        ),
+    )
+    if infer_arguments.print_only:
+        _print_inferences(infer_output, module_annotations)
+    else:
+        LOG.warning("WORK IN PROGRESS...")
     return commands.ExitCode.SUCCESS
 
 
