@@ -8,12 +8,14 @@ import dataclasses
 import enum
 import logging
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Sequence, TypeVar
+from typing import Any, Dict, Iterator, List, Optional, Sequence, TypeVar, Union
 
 import dataclasses_json
+import libcst
 
 from ... import commands, command_arguments, configuration as configuration_module
 from . import remote_logging, backend_arguments, start
@@ -239,6 +241,81 @@ class RawInferOutputParsingError(Exception):
     pass
 
 
+def _sanitize_name(name: str) -> str:
+    """The last part of the access path is the function/attribute name"""
+    return name.split(".")[-1]
+
+
+class PathLikeAnnotationFixer(libcst.CSTTransformer):
+    def leave_Subscript(
+        self,
+        original_node: libcst.Subscript,
+        updated_node: Union[libcst.Subscript, libcst.SimpleString],
+    ) -> Union[libcst.Subscript, libcst.SimpleString]:
+        if libcst.matchers.matches(
+            original_node.value, libcst.matchers.Name("PathLike")
+        ):
+            name_node = libcst.Attribute(
+                value=libcst.Name(
+                    value="os",
+                    lpar=[],
+                    rpar=[],
+                ),
+                attr=libcst.Name(value="PathLike"),
+            )
+            node_as_string = libcst.parse_module("").code_for_node(
+                updated_node.with_changes(value=name_node)
+            )
+            updated_node = libcst.SimpleString(f"'{node_as_string}'")
+        return updated_node
+
+
+def sanitize_annotation(
+    annotation: str,
+    dequalify_all: bool = False,
+    dequalify_typing: bool = True,
+) -> str:
+    """
+    Transform raw annotations in an attempt to reduce incorrectly-imported
+    annotations in generated code.
+
+    TODO(T93381000): Handle qualification in a principled way and remove
+    this: all of these transforms are attempts to hack simple fixes to the
+    problem of us not actually understanding qualified types and existing
+    imports.
+
+    (1) If `dequalify_typing` is set, then remove all uses of `typing.`, for
+    example `typing.Optional[int]` becomes `Optional[int]`. We do this because
+    we automatically add a `from typing import ...` if necessary.
+
+    (2) If `dequalify_all` is set, then remove all qualifiers from any
+    top-level type (by top-level I mean outside the outermost brackets). For
+    example, convert `sqlalchemy.sql.schema.Column[typing.Optional[int]]`
+    into `Column[typing.Optional[int]]`.
+
+    (3) Fix PathLike annotations: convert all bare `PathLike` uses to
+    `'os.PathLike'`; the ocaml side of pyre currently spits out an unqualified
+    type here which is incorrect, and quoting makes the use of os safer
+    given that we don't handle imports correctly yet.
+    """
+    if dequalify_all:
+        match = re.fullmatch(r"([^.]*?\.)*?([^.]+)(\[.*\])", annotation)
+        if match is not None:
+            annotation = f"{match.group(2)}{match.group(3)}"
+
+    if dequalify_typing:
+        annotation = annotation.replace("typing.", "")
+
+    if annotation.find("PathLike") >= 0:
+        try:
+            tree = libcst.parse_module(annotation)
+            annotation = tree.visit(PathLikeAnnotationFixer()).code
+        except libcst._exceptions.ParserSyntaxError:
+            pass
+
+    return annotation
+
+
 @dataclasses.dataclass(frozen=True)
 class StubGenerationOptions:
     annotate_attributes: bool
@@ -256,6 +333,21 @@ class TypeAnnotation:
         annotation: Optional[str], options: StubGenerationOptions
     ) -> "TypeAnnotation":
         return TypeAnnotation(annotation=annotation, dequalify=options.dequalify)
+
+    def sanitized(self, prefix: str = "") -> str:
+        if self.annotation is None:
+            return ""
+        else:
+            return prefix + sanitize_annotation(
+                self.annotation, dequalify_all=self.dequalify
+            )
+
+    def split(self) -> List[str]:
+        """Split an annotation into its tokens"""
+        if self.annotation is None or self.annotation == "":
+            return []
+        else:
+            return re.split("[^\\w.]+", self.annotation)
 
     @property
     def missing(self) -> bool:

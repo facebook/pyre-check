@@ -6,6 +6,7 @@
 import dataclasses
 import json
 import tempfile
+import textwrap
 from pathlib import Path
 from typing import Iterable, Tuple, Dict, List
 
@@ -19,6 +20,7 @@ from ..infer import (
     InferMode,
     create_infer_arguments,
     create_module_annotations,
+    sanitize_annotation,
     RawAnnotationLocation,
     RawGlobalAnnotation,
     RawAttributeAnnotation,
@@ -689,3 +691,91 @@ class ModuleAnnotationTest(testslide.TestCase):
                 )
             ],
         )
+
+
+def _assert_stubs_equal(actual: str, expected: str) -> None:
+    actual = actual.strip()
+    expected = textwrap.dedent(expected.rstrip())
+    if actual != expected:
+        print(f"---\nactual\n---\n{actual}")
+        print(f"---\nexpected\n---\n{expected}")
+        raise AssertionError("Stubs not as expected, see stdout")
+
+
+class InferUtilsTestSuite(testslide.TestCase):
+    def test_sanitize_annotation__dequalify_typing(self) -> None:
+        self.assertEqual(sanitize_annotation("typing.List"), "List")
+        self.assertEqual(
+            sanitize_annotation("typing.Union[typing.List[int]]"),
+            "Union[List[int]]",
+        )
+        self.assertEqual(
+            sanitize_annotation("typing.List", dequalify_typing=False), "typing.List"
+        )
+        self.assertEqual(
+            sanitize_annotation(
+                "typing.Union[typing.List[int]]", dequalify_typing=False
+            ),
+            "typing.Union[typing.List[int]]",
+        )
+
+    def test_sanitize_annotation__dequalify_all(self) -> None:
+        self.assertEqual(sanitize_annotation("int", dequalify_all=True), "int")
+        self.assertEqual(
+            sanitize_annotation("sql.Column[int]", dequalify_all=True), "Column[int]"
+        )
+        self.assertEqual(
+            sanitize_annotation(
+                "sqlalchemy.sql.schema.Column[int]", dequalify_all=True
+            ),
+            "Column[int]",
+        )
+        self.assertEqual(
+            sanitize_annotation(
+                "sqlalchemy.sql.schema.Column[Optional[int]]", dequalify_all=True
+            ),
+            "Column[Optional[int]]",
+        )
+
+    def test_sanitize_annotation__fix_PathLike(self) -> None:
+        self.assertEqual(
+            sanitize_annotation("PathLike[str]"),
+            "'os.PathLike[str]'",
+        )
+        self.assertEqual(
+            sanitize_annotation("os.PathLike[str]"),
+            "os.PathLike[str]",
+        )
+        self.assertEqual(
+            sanitize_annotation("Union[PathLike[bytes], PathLike[str], str]"),
+            "Union['os.PathLike[bytes]', 'os.PathLike[str]', str]",
+        )
+        # The libcst code throws an exception on this annotation because it is
+        # invalid; this unit test verifies that we try/catch as expected rather than
+        # crashing infer.
+        self.assertEqual(
+            sanitize_annotation("PathLike[Variable[AnyStr <: [str, bytes]]]"),
+            "PathLike[Variable[AnyStr <: [str, bytes]]]",
+        )
+
+
+class TypeAnnotationTest(testslide.TestCase):
+    def test_sanitized(self) -> None:
+        no_dequalify_options: StubGenerationOptions = StubGenerationOptions(
+            annotate_attributes=False,
+            use_future_annotations=True,
+            dequalify=False,
+        )
+        dequalify_options: StubGenerationOptions = StubGenerationOptions(
+            annotate_attributes=False,
+            use_future_annotations=True,
+            dequalify=True,
+        )
+
+        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=no_dequalify_options)
+        self.assertEqual(actual.sanitized(), "foo.Foo[int]")
+        self.assertEqual(actual.sanitized(prefix=": "), ": foo.Foo[int]")
+
+        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=dequalify_options)
+        self.assertEqual(actual.sanitized(), "Foo[int]")
+        self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
