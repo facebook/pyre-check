@@ -3217,7 +3217,7 @@ module State (Context : Context) = struct
               match
                 GlobalResolution.attribute_from_class_name
                   class_name
-                  ~transitive:(not (is_private_attribute attribute))
+                  ~transitive:true
                   ~accessed_through_class
                   ~special_method:special
                   ~resolution:global_resolution
@@ -5828,8 +5828,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             ~include_generated_attributes:true
             ~resolution:global_resolution
             (Reference.show (ClassSummary.name definition))
-          >>| List.filter ~f:(fun attribute ->
-                  is_private_attribute (AnnotatedAttribute.name attribute))
+          >>| List.filter ~f:(fun attribute -> AnnotatedAttribute.is_private attribute)
           >>| List.map ~f:(fun attribute ->
                   Error.create
                     ~location:(Location.with_module ~qualifier:Context.qualifier location)
@@ -6133,8 +6132,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         | _ -> true
                       in
                       if
-                        Ast.Expression.is_private_attribute
-                          (Annotated.Attribute.name overridden_attribute)
+                        Annotated.Attribute.is_private overridden_attribute
                         || (GlobalResolution.less_or_equal
                               global_resolution
                               ~left:actual

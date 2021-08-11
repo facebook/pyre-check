@@ -1405,11 +1405,6 @@ let get_item_call base arguments ~location =
     }
 
 
-let is_private_attribute attribute_name =
-  let private_name_regex = Str.regexp "^_[^_].*__.+$" in
-  Str.string_match private_name_regex attribute_name 0
-
-
 let is_dunder_attribute attribute_name =
   String.is_prefix ~prefix:"__" attribute_name && String.is_suffix ~suffix:"__" attribute_name
 

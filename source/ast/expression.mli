@@ -347,8 +347,6 @@ val arguments_location : Call.t -> Location.t
 
 val get_item_call : string -> expression Node.t list -> location:Location.t -> expression
 
-val is_private_attribute : string -> bool
-
 val is_dunder_attribute : string -> bool
 
 val pp_expression_list : Format.formatter -> t list -> unit

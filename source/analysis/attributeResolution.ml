@@ -1077,7 +1077,7 @@ class base class_metadata_environment dependency =
       let unannotated_attributes
           ~include_generated_attributes
           ~in_test
-          { Node.value = class_summary; _ }
+          ({ Node.value = class_summary; _ } as parent)
         =
         let attributes =
           ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
@@ -1111,7 +1111,7 @@ class base class_metadata_environment dependency =
         let name_annotation_pairs =
           let name_annotation_pair attribute =
             let name = AnnotatedAttribute.name attribute in
-            if Expression.is_dunder_attribute name || Expression.is_private_attribute name then
+            if Expression.is_dunder_attribute name || AnnotatedAttribute.is_private attribute then
               None
             else
               let annotation =
