@@ -692,6 +692,19 @@ class ModuleAnnotationTest(testslide.TestCase):
             ],
         )
 
+    def test_module_annotation_stubs_path(self) -> None:
+        self.assertEqual(
+            ModuleAnnotations(
+                path="derp.py",
+                options=StubGenerationOptions(
+                    annotate_attributes=False,
+                    use_future_annotations=False,
+                    dequalify=False,
+                ),
+            ).stubs_path(Path("/root")),
+            Path("/root/derp.pyi"),
+        )
+
 
 def _assert_stubs_equal(actual: str, expected: str) -> None:
     actual = actual.strip()

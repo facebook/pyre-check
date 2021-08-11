@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -629,6 +630,14 @@ class ModuleAnnotations:
             ]
         )
 
+    def stubs_path(self, directory: Path) -> Path:
+        return (directory / self.path).with_suffix(".pyi")
+
+    def write_stubs(self, type_directory: Path) -> None:
+        path = self.stubs_path(type_directory)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(self.to_stubs())
+
 
 def create_infer_arguments(
     configuration: configuration_module.Configuration,
@@ -850,6 +859,23 @@ def _print_inferences(
     )
 
 
+def _get_type_directory(log_directory: Path) -> Path:
+    return log_directory / "types"
+
+
+def _write_stubs(
+    type_directory: Path, module_annotations: Sequence[ModuleAnnotations]
+) -> None:
+    if type_directory.exists():
+        LOG.log(log.SUCCESS, f"Deleting {type_directory}")
+        shutil.rmtree(type_directory)
+    type_directory.mkdir(parents=True, exist_ok=True)
+
+    LOG.log(log.SUCCESS, f"Outputting inferred stubs to {type_directory}...")
+    for module in module_annotations:
+        module.write_stubs(type_directory=type_directory)
+
+
 def run_infer(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
@@ -877,6 +903,9 @@ def run_infer(
     if infer_arguments.print_only:
         _print_inferences(infer_output, module_annotations)
     else:
+        _write_stubs(
+            _get_type_directory(Path(configuration.log_directory)), module_annotations
+        )
         LOG.warning("WORK IN PROGRESS...")
     return commands.ExitCode.SUCCESS
 
