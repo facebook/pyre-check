@@ -3386,6 +3386,131 @@ let test_check_compose context =
   ()
 
 
+let test_check_subtract context =
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_default_type_errors
+    {|
+      from typing_extensions import Literal
+      from pyre_extensions import Subtract
+      x : Subtract[Literal[2],Literal[1]]
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Subtract
+
+      N = TypeVar("N", bound=int)
+      def f1(a : N) -> Subtract[N,Literal[3]]: ...
+      def f2(a : N) -> Subtract[Literal[3],N]: ...
+      reveal_type(f1(2))
+      reveal_type(f2(2))
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.f1(2)` is `typing_extensions.Literal[-1]`.";
+      "Revealed type [-1]: Revealed type for `test.f2(2)` is `typing_extensions.Literal[1]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Subtract
+
+      N = TypeVar("N", bound=int)
+      A = TypeVar("A")
+      def f(a : A) -> Subtract[A,Literal[3]]: ...
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & Multiply & \
+       Divide only accept type variables with a bound that's a subtype of int.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Subtract
+
+      N = TypeVar("N", bound=int)
+      def f(n : N) -> Subtract[N,Literal["foo"]]: ...
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter `typing_extensions.Literal['foo']` violates \
+       constraints on `Variable[pyre_extensions._B (bound to int)]` in generic type `Subtract`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Any
+      from pyre_extensions import Subtract
+      from typing_extensions import Literal
+
+      a : Subtract[Literal[3],int]
+      b : Subtract[Literal[4],Any]
+      c : Subtract[int,Any]
+
+      reveal_type(a)
+      reveal_type(b)
+      reveal_type(c)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `int`.";
+      "Revealed type [-1]: Revealed type for `b` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `c` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Any, TypeVar, Generic
+      from pyre_extensions import Subtract
+      from typing_extensions import Literal
+
+      A = TypeVar("A", bound=int)
+      B = TypeVar("B", bound=int)
+
+      class Vec(Generic[A]): ...
+
+      def subtract(a : Vec[A], b : Vec[B]) -> Vec[Subtract[A,B]]: ...
+
+      a : Vec[Literal[5]]
+      b : Vec[int]
+      c : Vec[Any]
+      c1 = subtract(a,b)
+      c2 = subtract(a,c)
+      c3 = subtract(b,c)
+
+      reveal_type(c1)
+      reveal_type(c2)
+      reveal_type(c3)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `c1` is `Vec[int]`.";
+      "Revealed type [-1]: Revealed type for `c2` is `Vec[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `c3` is `Vec[typing.Any]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Divide, Add, Multiply, Subtract
+
+      A = TypeVar("A",bound=int)
+      # A/2 + A(2-A)/4
+      def f(a : A) -> Add[Divide[A,Literal[2]],Divide[Multiply[A,Subtract[Literal[2], A]],Literal[4]]]: ...
+
+      def foo() -> None:
+        x = f(3)
+        reveal_type(x)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[0]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(a, Variable[A \
+       (bound to int)])], pyre_extensions.IntExpression[((-2A + A^2)//-4) + (A//2)]]`.";
+    ];
+  ()
+
+
 let () =
   "annotation"
   >::: [
@@ -3414,5 +3539,6 @@ let () =
          "check_union_shorthand" >:: test_check_union_shorthand;
          "check_broadcast" >:: test_check_broadcast;
          "check_compose" >:: test_check_compose;
+         "check_subtract" >:: test_check_subtract;
        ]
   |> Test.run

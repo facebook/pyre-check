@@ -113,6 +113,10 @@ class Multiply(Generic[_A, _B], int):
     pass
 
 
+class Subtract(Generic[_A, _B], int):
+    pass
+
+
 class Divide(Generic[_A, _B], int):
     pass
 

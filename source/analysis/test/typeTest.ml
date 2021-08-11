@@ -584,6 +584,45 @@ let test_create _ =
       ]
     |}
     Type.Top;
+  (* Subtract. *)
+  assert_create
+    {|
+      pyre_extensions.Subtract[
+        typing_extensions.Literal[3],
+        typing_extensions.Literal[2]
+      ]
+    |}
+    (Type.literal_integer 1);
+  let variable =
+    Type.Variable.Unary.create ~constraints:(Type.Record.Variable.Bound (Type.Primitive "int")) "N"
+  in
+  assert_create
+    ~aliases:(function
+      | "N" -> Some (TypeAlias (Type.Variable variable))
+      | _ -> None)
+    {|
+      pyre_extensions.Subtract[
+        N,
+        typing_extensions.Literal[1]
+      ]
+    |}
+    (Type.IntExpression.create
+       (Type.Polynomial.subtract
+          ~compare_t:Type.compare
+          (Type.Polynomial.create_from_variable variable)
+          (Type.Polynomial.create_from_int 1)));
+  assert_create
+    {|
+      pyre_extensions.Subtract[
+        typing_extensions.Literal[3],
+        str
+      ]
+    |}
+    (Type.Parametric
+       {
+         name = "pyre_extensions.Subtract";
+         parameters = [Single (Type.literal_integer 3); Single Type.string];
+       });
   ()
 
 

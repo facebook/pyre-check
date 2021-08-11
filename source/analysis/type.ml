@@ -3426,6 +3426,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               match operation with
               | `Add -> Polynomial.add, false
               | `Multiply -> Polynomial.multiply, false
+              | `Subtract -> Polynomial.subtract, false
               | `Divide -> Polynomial.divide, true
             in
             List.fold
@@ -3548,6 +3549,26 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         }
       when name_is ~name:"pyre_extensions.Multiply.__getitem__" callee ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Multiply in
+        (match created_type with
+        | Top -> create_parametric ~base ~argument
+        | _ -> created_type)
+        |> resolve_aliases
+    | Call
+        {
+          callee =
+            { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
+            callee;
+          arguments =
+            [
+              {
+                Call.Argument.name = None;
+                value = { Node.value = Expression.Tuple arguments; _ } as argument;
+                _;
+              };
+            ];
+        }
+      when name_is ~name:"pyre_extensions.Subtract.__getitem__" callee ->
+        let created_type = create_int_expression_from_arguments arguments ~operation:`Subtract in
         (match created_type with
         | Top -> create_parametric ~base ~argument
         | _ -> created_type)
