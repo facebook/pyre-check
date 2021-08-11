@@ -1255,8 +1255,9 @@ let rec messages ~concise ~signature location kind =
       [
         Format.asprintf
           "Type parameter `%a` violates constraints on \
-           `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & \
-           Multiply & Divide only accept type variables with a bound that's a subtype of int."
+           `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Subtract`/`pyre_extensions.Divide`. \
+           Add & Multiply & Subtract & Divide only accept type variables with a bound that's a \
+           subtype of int."
           pp_type
           actual;
       ]

@@ -1853,14 +1853,17 @@ let test_check_typevar_arithmetic context =
     |}
     [
       "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
-       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & Multiply & \
-       Divide only accept type variables with a bound that's a subtype of int.";
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Subtract`/`pyre_extensions.Divide`. \
+       Add & Multiply & Subtract & Divide only accept type variables with a bound that's a subtype \
+       of int.";
       "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
-       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & Multiply & \
-       Divide only accept type variables with a bound that's a subtype of int.";
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Subtract`/`pyre_extensions.Divide`. \
+       Add & Multiply & Subtract & Divide only accept type variables with a bound that's a subtype \
+       of int.";
       "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
-       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & Multiply & \
-       Divide only accept type variables with a bound that's a subtype of int.";
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Subtract`/`pyre_extensions.Divide`. \
+       Add & Multiply & Subtract & Divide only accept type variables with a bound that's a subtype \
+       of int.";
     ];
   assert_type_errors
     {|
@@ -3424,8 +3427,9 @@ let test_check_subtract context =
     |}
     [
       "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
-       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Divide`. Add & Multiply & \
-       Divide only accept type variables with a bound that's a subtype of int.";
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`/`pyre_extensions.Subtract`/`pyre_extensions.Divide`. \
+       Add & Multiply & Subtract & Divide only accept type variables with a bound that's a subtype \
+       of int.";
     ];
   assert_default_type_errors
     {|
