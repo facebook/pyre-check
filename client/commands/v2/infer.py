@@ -8,6 +8,7 @@ import dataclasses
 import enum
 import json
 import logging
+import multiprocessing
 import os
 import re
 import shutil
@@ -18,6 +19,8 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, TypeVar, 
 
 import dataclasses_json
 import libcst
+from libcst.codemod import CodemodContext
+from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
 
 from ... import commands, command_arguments, configuration as configuration_module, log
 from . import remote_logging, backend_arguments, start
@@ -639,6 +642,56 @@ class ModuleAnnotations:
         path.write_text(self.to_stubs())
 
 
+@dataclasses.dataclass
+class AnnotateModuleInPlace:
+    full_stub_path: str
+    full_code_path: str
+    debug_infer: bool
+
+    @staticmethod
+    def _annotated_code(stub: str, code: str) -> str:
+        """
+        Merge inferred annotations from stubs with source code to get
+        annotated code.
+        """
+        context = CodemodContext()
+        ApplyTypeAnnotationsVisitor.store_stub_in_context(
+            context, libcst.parse_module(stub)
+        )
+        modified_tree = ApplyTypeAnnotationsVisitor(context).transform_module(
+            libcst.parse_module(code)
+        )
+        return modified_tree.code
+
+    @staticmethod
+    def annotate_code(stub_path: str, code_path: str, debug_infer: bool) -> None:
+        "Merge a stub file of inferred annotations with a code file inplace."
+        try:
+            with open(stub_path) as stub_file, open(code_path) as code_file:
+                stub = stub_file.read()
+                code = code_file.read()
+                annotated_code = AnnotateModuleInPlace._annotated_code(stub, code)
+            with open(code_path, "w") as code_file:
+                code_file.write(annotated_code)
+            LOG.info(f"Annotated {code_path}")
+        except Exception as error:
+            LOG.warning(f"Failed to annotate {code_path}")
+            if debug_infer:
+                LOG.warning(f"\tError: {error}")
+
+    def run(self) -> None:
+        return self.annotate_code(
+            stub_path=self.full_stub_path,
+            code_path=self.full_code_path,
+            debug_infer=self.debug_infer,
+        )
+
+    @staticmethod
+    def run_task(task: "AnnotateModuleInPlace") -> None:
+        "Wrap `run` in a static method to use with multiprocessing"
+        return task.run()
+
+
 def create_infer_arguments(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
@@ -717,17 +770,6 @@ def create_infer_arguments_and_cleanup(
         # It is safe to clean up source paths after infer command since
         # any created artifact directory won't be reused by other commands.
         arguments.source_paths.cleanup()
-
-
-def _check_arguments(infer_arguments: command_arguments.InferArguments) -> None:
-    if (
-        infer_arguments.annotate_from_existing_stubs
-        and infer_arguments.paths_to_modify is None
-    ):
-        raise ValueError(
-            "`--annotate-from-existing-stubs` cannot be used without the"
-            " `--in-place` flag"
-        )
 
 
 def _check_working_directory(
@@ -876,37 +918,93 @@ def _write_stubs(
         module.write_stubs(type_directory=type_directory)
 
 
+def should_annotate_in_place(path: Path, paths_to_modify: Set[Path]) -> bool:
+    return (
+        True
+        if len(paths_to_modify) == 0
+        else any(path in paths_to_modify for path in (path, *path.parents))
+    )
+
+
+def _annotate_in_place(
+    working_directory: Path,
+    type_directory: Path,
+    paths_to_modify: Set[Path],
+    debug_infer: bool,
+    number_of_workers: int,
+) -> None:
+    tasks: List[AnnotateModuleInPlace] = []
+    for full_stub_path in type_directory.rglob("*.pyi"):
+        stub_path = full_stub_path.relative_to(type_directory)
+        code_path = stub_path.with_suffix(".py")
+        full_code_path = working_directory / code_path
+
+        if should_annotate_in_place(code_path, paths_to_modify):
+            tasks.append(
+                AnnotateModuleInPlace(
+                    full_stub_path=str(full_stub_path),
+                    full_code_path=str(full_code_path),
+                    debug_infer=debug_infer,
+                )
+            )
+
+    with multiprocessing.Pool(number_of_workers) as pool:
+        for _ in pool.imap_unordered(AnnotateModuleInPlace.run_task, tasks):
+            pass
+
+
 def run_infer(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
 ) -> commands.ExitCode:
     working_directory = Path.cwd()
-    _check_arguments(infer_arguments)
     _check_working_directory(
         working_directory=working_directory,
         global_root=Path(configuration.project_root),
         relative_local_root=configuration.relative_local_root,
     )
 
-    infer_output = RawInferOutput.create_from_json(
-        json.loads(_load_output(configuration, infer_arguments))[0]
-    )
-    module_annotations = create_module_annotations(
-        infer_output=infer_output,
-        base_path=working_directory,
-        options=StubGenerationOptions(
-            annotate_attributes=infer_arguments.annotate_attributes,
-            use_future_annotations=not infer_arguments.no_future_annotations,
-            dequalify=infer_arguments.dequalify,
-        ),
-    )
-    if infer_arguments.print_only:
-        _print_inferences(infer_output, module_annotations)
-    else:
-        _write_stubs(
-            _get_type_directory(Path(configuration.log_directory)), module_annotations
+    type_directory = _get_type_directory(Path(configuration.log_directory))
+    paths_to_modify = infer_arguments.paths_to_modify
+
+    if infer_arguments.annotate_from_existing_stubs:
+        if paths_to_modify is None:
+            raise ValueError(
+                "`--annotate-from-existing-stubs` cannot be used without the"
+                " `--in-place` flag"
+            )
+        _annotate_in_place(
+            working_directory=working_directory,
+            type_directory=type_directory,
+            paths_to_modify=paths_to_modify,
+            debug_infer=infer_arguments.debug_infer,
+            number_of_workers=configuration.get_number_of_workers(),
         )
-        LOG.warning("WORK IN PROGRESS...")
+    else:
+        infer_output = RawInferOutput.create_from_json(
+            json.loads(_load_output(configuration, infer_arguments))[0]
+        )
+        module_annotations = create_module_annotations(
+            infer_output=infer_output,
+            base_path=working_directory,
+            options=StubGenerationOptions(
+                annotate_attributes=infer_arguments.annotate_attributes,
+                use_future_annotations=not infer_arguments.no_future_annotations,
+                dequalify=infer_arguments.dequalify,
+            ),
+        )
+        if infer_arguments.print_only:
+            _print_inferences(infer_output, module_annotations)
+        else:
+            _write_stubs(type_directory, module_annotations)
+            if paths_to_modify is not None:
+                _annotate_in_place(
+                    working_directory=working_directory,
+                    type_directory=type_directory,
+                    paths_to_modify=paths_to_modify,
+                    debug_infer=infer_arguments.debug_infer,
+                    number_of_workers=configuration.get_number_of_workers(),
+                )
     return commands.ExitCode.SUCCESS
 
 

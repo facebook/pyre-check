@@ -8,7 +8,7 @@ import json
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Any, Iterable, Tuple, Dict, List
+from typing import Any, Iterable, Tuple, Dict, List, Set
 
 import testslide
 
@@ -21,6 +21,7 @@ from ..infer import (
     create_infer_arguments,
     create_module_annotations,
     sanitize_annotation,
+    should_annotate_in_place,
     RawAnnotationLocation,
     RawGlobalAnnotation,
     RawAttributeAnnotation,
@@ -418,6 +419,40 @@ class InferTest(testslide.TestCase):
                 "bar.py": {"attributes": [bar_attribute0]},
                 "baz.py": {"defines": [baz_define0]},
             },
+        )
+
+    def test_should_annotate_in_place(self) -> None:
+        def assert_should_annotate_in_place(
+            path: Path,
+            paths_to_modify: Set[Path],
+            expected: bool,
+        ) -> None:
+            self.assertEqual(should_annotate_in_place(path, paths_to_modify), expected)
+
+        assert_should_annotate_in_place(
+            paths_to_modify=set(),
+            path=Path("any/path/will/do"),
+            expected=True,
+        )
+        assert_should_annotate_in_place(
+            paths_to_modify={Path("some/directory")},
+            path=Path("some/directory/inner/file.py"),
+            expected=True,
+        )
+        assert_should_annotate_in_place(
+            paths_to_modify={Path("some/directory")},
+            path=Path("other/directory/inner/file.py"),
+            expected=False,
+        )
+        assert_should_annotate_in_place(
+            paths_to_modify={Path("some/file.py")},
+            path=Path("some/file.py"),
+            expected=True,
+        )
+        assert_should_annotate_in_place(
+            paths_to_modify={Path("some/file.py")},
+            path=Path("some/other_file.py"),
+            expected=False,
         )
 
 
