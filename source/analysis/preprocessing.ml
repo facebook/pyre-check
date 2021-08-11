@@ -3576,6 +3576,126 @@ let replace_union_shorthand source =
   Transform.transform () source |> Transform.source
 
 
+let mangle_private_attributes source =
+  let module Transform = Transform.Make (struct
+    type t = Identifier.t list
+
+    let mangle_identifier class_name identifier = "_" ^ class_name ^ identifier
+
+    let mangle_reference class_name reference =
+      let mangled_identifier =
+        mangle_identifier class_name (Reference.last reference) |> Reference.create
+      in
+      match Reference.prefix reference with
+      | Some prefix -> Reference.combine prefix mangled_identifier
+      | None -> mangled_identifier
+
+
+    let should_mangle identifier =
+      (* Ensure there are at least two leading underscores and at most one trailing underscore. *)
+      let identifier = Identifier.sanitized identifier in
+      let thrift_typing_import_special_case =
+        (* TODO(T97954725): Remove special casing *)
+        String.equal identifier "__T"
+      in
+      String.is_prefix ~prefix:"__" identifier
+      && (not (String.is_suffix ~suffix:"__" identifier))
+      && not thrift_typing_import_special_case
+
+
+    let transform_expression_children _ _ = true
+
+    let transform_children state statement =
+      match state, Node.value statement with
+      | _, Statement.Class { name; _ } ->
+          let mangling_prefix =
+            Node.value name
+            |> Reference.last
+            |> String.lstrip ~drop:(fun character -> Char.equal character '_')
+          in
+          mangling_prefix :: state, true
+      | _, _ -> state, true
+
+
+    let statement state ({ Node.value; _ } as statement) =
+      let state =
+        (* Ensure identifiers following class body are not mangled. *)
+        match state, value with
+        | _ :: tail, Statement.Class _ -> tail
+        | _, _ -> state
+      in
+      let statement =
+        let mangle_parent_name parent =
+          (* Update if the parent of this statement is a class that itself is private and will be
+             mangled. *)
+          match state with
+          | _ :: parent_prefix :: _ when should_mangle (Reference.last parent) ->
+              mangle_reference parent_prefix parent
+          | _ -> parent
+        in
+        match state, value with
+        | _, Statement.Assign ({ parent; _ } as assign) ->
+            {
+              statement with
+              Node.value = Statement.Assign { assign with parent = parent >>| mangle_parent_name };
+            }
+        | ( class_name :: _,
+            Statement.Class ({ name = { Node.value = name; _ } as name_node; _ } as class_value) )
+          when should_mangle (Reference.last name) ->
+            {
+              statement with
+              value =
+                Statement.Class
+                  {
+                    class_value with
+                    name = { name_node with value = mangle_reference class_name name };
+                  };
+            }
+        | ( class_name :: _,
+            Statement.Define
+              ({
+                 Define.signature =
+                   { Define.Signature.name = { Node.value = name; _ } as name_node; parent; _ } as
+                   signature;
+                 _;
+               } as define) )
+          when should_mangle (Reference.last name) ->
+            {
+              statement with
+              value =
+                Statement.Define
+                  {
+                    define with
+                    signature =
+                      {
+                        signature with
+                        name = { name_node with value = mangle_reference class_name name };
+                        parent = parent >>| mangle_parent_name;
+                      };
+                  };
+            }
+        | _ -> statement
+      in
+      state, [statement]
+
+
+    let expression state ({ Node.value; _ } as expression) =
+      let open Expression in
+      let transformed_expression =
+        match state, value with
+        | class_name :: _, Name (Name.Identifier identifier) when should_mangle identifier ->
+            Name (Name.Identifier (mangle_identifier class_name identifier))
+        | class_name :: _, Name (Name.Attribute ({ attribute; _ } as name))
+          when should_mangle attribute ->
+            Name (Name.Attribute { name with attribute = mangle_identifier class_name attribute })
+        | _ -> value
+      in
+      { expression with Node.value = transformed_expression }
+  end)
+  in
+  Transform.transform [] source |> Transform.source
+
+
 let inline_six_metaclass ({ Source.statements; _ } as source) =
   let inline_six_metaclass ({ Node.location; value } as statement) =
     let expanded_declaration =
@@ -3914,6 +4034,7 @@ let preprocess_phase1 source =
   source
   |> populate_unbound_names
   |> replace_union_shorthand
+  |> mangle_private_attributes
   |> expand_starred_type_variable_tuple
   |> qualify
   |> replace_lazy_import

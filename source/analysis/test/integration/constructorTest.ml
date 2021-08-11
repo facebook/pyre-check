@@ -940,7 +940,8 @@ let test_infer_constructor_attributes context =
       "Revealed type [-1]: Revealed type for `a.y` is `int`.";
       "Revealed type [-1]: Revealed type for `a.x` is `int`.";
       "Revealed type [-1]: Revealed type for `a._x` is `int`.";
-      "Revealed type [-1]: Revealed type for `a.__x` is `int`.";
+      (* Private attribute throws undefined attribute error. *)
+      "Revealed type [-1]: Revealed type for `a.__x` is `unknown`.";
     ]
 
 

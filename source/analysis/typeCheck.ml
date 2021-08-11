@@ -3290,7 +3290,7 @@ module State (Context : Context) = struct
                 }
             | Some (_ :: _ as attribute_info) ->
                 let name = attribute in
-                let class_datas, attributes, undefined_targets = List.unzip3 attribute_info in
+                let class_datas, attributes, _ = List.unzip3 attribute_info in
                 let head_annotation, tail_annotations =
                   let annotations = attributes |> List.map ~f:Annotated.Attribute.annotation in
                   List.hd_exn annotations, List.tl_exn annotations
@@ -3310,7 +3310,17 @@ module State (Context : Context) = struct
                     ~name
                 end;
                 let errors =
-                  match List.find undefined_targets ~f:Option.is_some |> Option.join with
+                  let attribute_name, target =
+                    match
+                      List.find attribute_info ~f:(fun (_, _, undefined_target) ->
+                          Option.is_some undefined_target)
+                    with
+                    | Some (_, attribute, Some target) ->
+                        AnnotatedAttribute.public_name attribute, Some target
+                    | Some (_, attribute, _) -> AnnotatedAttribute.public_name attribute, None
+                    | _ -> name, None
+                  in
+                  match target with
                   | Some target ->
                       if Option.is_some (inverse_operator name) then
                         (* Defer any missing attribute error until the inverse operator has been
@@ -3323,7 +3333,7 @@ module State (Context : Context) = struct
                           ~kind:
                             (Error.UndefinedAttribute
                                {
-                                 attribute = name;
+                                 attribute = attribute_name;
                                  origin =
                                    Error.Class
                                      {
@@ -3359,7 +3369,7 @@ module State (Context : Context) = struct
                           ~kind:
                             (Error.UndefinedAttribute
                                {
-                                 attribute = name;
+                                 attribute = attribute_name;
                                  origin =
                                    Error.Class
                                      {
@@ -4302,7 +4312,7 @@ module State (Context : Context) = struct
                           in
                           let check_undefined_attribute_target errors =
                             match resolved_base, attribute with
-                            | `Attribute (_, parent), Some (attribute, name)
+                            | `Attribute (_, parent), Some (attribute, _)
                               when not (Annotated.Attribute.defined attribute) ->
                                 let is_meta_typed_dictionary =
                                   Type.is_meta parent
@@ -4333,7 +4343,7 @@ module State (Context : Context) = struct
                                     ~kind:
                                       (Error.UndefinedAttribute
                                          {
-                                           attribute = name;
+                                           attribute = AnnotatedAttribute.public_name attribute;
                                            origin =
                                              Error.Class { class_type = parent; parent_source_path };
                                          })
@@ -5856,15 +5866,15 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             ~include_generated_attributes:true
             ~resolution:global_resolution
             (Reference.show (ClassSummary.name definition))
-          >>| List.map ~f:AnnotatedAttribute.name
-          >>| List.filter ~f:is_private_attribute
-          >>| List.map ~f:(fun name ->
+          >>| List.filter ~f:(fun attribute ->
+                  is_private_attribute (AnnotatedAttribute.name attribute))
+          >>| List.map ~f:(fun attribute ->
                   Error.create
                     ~location:(Location.with_module ~qualifier:Context.qualifier location)
                     ~kind:
                       (Error.PrivateProtocolProperty
                          {
-                           name;
+                           name = AnnotatedAttribute.public_name attribute;
                            parent = Type.Primitive (ClassSummary.name definition |> Reference.show);
                          })
                     ~define:Context.define)

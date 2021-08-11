@@ -1072,8 +1072,8 @@ class base class_metadata_environment dependency =
         ~include_generated_attributes
         ~in_test
         ~accessed_via_metaclass
-        ({ Node.value = { ClassSummary.name; _ }; _ } as parent) =
-      let class_name = Reference.show name in
+        ({ Node.value = { ClassSummary.name = parent_name; _ }; _ } as parent) =
+      let class_name = Reference.show parent_name in
       let unannotated_attributes
           ~include_generated_attributes
           ~in_test
@@ -1105,7 +1105,7 @@ class base class_metadata_environment dependency =
           ClassMetadataEnvironment.ReadOnly.successors
             class_metadata_environment
             ?dependency
-            (Reference.show name)
+            class_name
           |> List.filter_map ~f:class_definition
         in
         let name_annotation_pairs =
@@ -1148,7 +1148,7 @@ class base class_metadata_environment dependency =
         in
         let constructor =
           {
-            Type.Callable.kind = Named (Reference.create ~prefix:name "__init__");
+            Type.Callable.kind = Named (Reference.create ~prefix:parent_name "__init__");
             implementation = { annotation = Type.none; parameters };
             overloads = [];
           }

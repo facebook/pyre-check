@@ -5418,6 +5418,111 @@ let test_union_shorthand _ =
   ()
 
 
+let test_mangle_private_attributes _ =
+  let assert_replace ?(handle = "test.py") source expected =
+    let expected = parse ~handle ~coerce_special_methods:true expected in
+    let actual = parse ~handle source |> Preprocessing.mangle_private_attributes in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_replace
+    {|
+      class Foo:
+        non_private = 1
+        __private = 1
+    |}
+    {|
+      class Foo:
+        non_private = 1
+        _Foo__private = 1
+    |};
+  assert_replace
+    {|
+      class Foo:
+        def _non_private(self) -> None: pass
+        def __private(self) -> None: pass
+        @staticmethod
+        def __private_static(self) -> None: pass
+
+        def __init__(self) -> None:
+          x = __private_name  # arbitrary reference
+          y = self.__private()
+
+      class Bar(Foo):
+        def __init__(self) -> None:
+          x = self.__private()
+    |}
+    {|
+      class Foo:
+        def _non_private(self) -> None: pass
+        def _Foo__private(self) -> None: pass
+        @staticmethod
+        def _Foo__private_static(self) -> None: pass
+
+        def __init__(self) -> None:
+          x = _Foo__private_name  # arbitrary reference
+          y = self._Foo__private()
+
+      class Bar(Foo):
+        def __init__(self) -> None:
+          x = self._Bar__private()
+    |};
+  assert_replace
+    {|
+      class A:
+        class B:
+          def __foo(self):
+            self.__bar
+        __private = 1
+    |}
+    {|
+      class A:
+        class B:
+          def _B__foo(self):
+            self._B__bar
+        _A__private = 1
+    |};
+  assert_replace
+    {|
+      class __A:
+        __private = 1
+      class _B:
+        __private = 1
+    |}
+    {|
+      class __A:
+        _A__private = 1
+      class _B:
+        _B__private = 1
+    |};
+  assert_replace
+    {|
+      class A:
+        class __B:
+          def __foo(self):
+            return
+    |}
+    {|
+      class A:
+        class _A__B:
+          def _B__foo(self):
+            return
+    |};
+  assert_replace
+    {|
+      def foo():
+        class C:
+          def __bar(self):
+            pass
+    |}
+    {|
+      def foo():
+        class C:
+          def _C__bar(self):
+            pass
+    |};
+  ()
+
+
 let test_six_metaclass_decorator _ =
   let assert_replace ?(handle = "test.py") source expected =
     let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
@@ -5783,6 +5888,7 @@ let () =
          "captures" >:: test_populate_captures;
          "unbound_names" >:: test_populate_unbound_names;
          "union_shorthand" >:: test_union_shorthand;
+         "mangle_private_attributes" >:: test_mangle_private_attributes;
          "six_metaclass_decorator" >:: test_six_metaclass_decorator;
          "expand_starred_type_variable_tuples" >:: test_expand_starred_type_variable_tuples;
          "expand_import_python_calls" >:: test_expand_import_python_calls;

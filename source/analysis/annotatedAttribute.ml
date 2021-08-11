@@ -176,6 +176,15 @@ let name { name; _ } = name
 
 let parent { parent; _ } = parent
 
+let parent_name { parent; _ } =
+  let type_name = Type.primitive_name (Type.Primitive parent) in
+  Option.value_exn type_name
+
+
+let parent_prefix attribute =
+  parent_name attribute |> Reference.create |> Reference.last |> fun name -> "_" ^ name
+
+
 let initialized { initialized; _ } = initialized
 
 let defined { defined; _ } = defined
@@ -199,6 +208,19 @@ let visibility { visibility; _ } = visibility
 let undecorated_signature { undecorated_signature; _ } = undecorated_signature
 
 let problem { problem; _ } = problem
+
+let is_private ({ name; _ } as attribute) =
+  let parent_prefix = parent_prefix attribute in
+  String.is_prefix ~prefix:(parent_prefix ^ "__") name
+
+
+let public_name ({ name; _ } as attribute) =
+  let parent_prefix = parent_prefix attribute in
+  if is_private attribute then
+    String.drop_prefix name (String.length parent_prefix)
+  else
+    name
+
 
 let is_final { visibility; _ } =
   match visibility with

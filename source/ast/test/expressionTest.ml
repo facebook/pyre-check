@@ -528,10 +528,14 @@ let test_name_equals _ =
 let test_is_private_attribute _ =
   let assert_is_private_attribute attribute = assert_true (is_private_attribute attribute) in
   let assert_is_not_private_attribute attribute = assert_false (is_private_attribute attribute) in
-  assert_is_private_attribute "__foo_";
-  assert_is_private_attribute "__foo";
-  assert_is_private_attribute "__foo_bar_baz";
-  assert_is_private_attribute "__foo_bar_baz_";
+  assert_is_private_attribute "_Class__foo_";
+  assert_is_private_attribute "_Class__foo";
+  assert_is_private_attribute "_Class__foo_bar_baz";
+  assert_is_private_attribute "_Class__foo_bar_baz_";
+  assert_is_not_private_attribute "__foo";
+  assert_is_not_private_attribute "__foo_bar";
+  assert_is_not_private_attribute "_Class_foo";
+  assert_is_not_private_attribute "__Class__foo";
   assert_is_not_private_attribute "_foo_";
   assert_is_not_private_attribute "__foo__"
 

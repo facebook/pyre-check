@@ -590,7 +590,7 @@ module ClassAttributes = struct
     | _ -> right
 
 
-  let create ({ Class.name = { Node.value = name; _ }; body; _ } as definition) =
+  let create ({ Class.name = { Node.value = parent_name; _ }; body; _ } as definition) =
     let explicitly_assigned_attributes =
       let assigned_attributes map { Node.location; value } =
         let open Expression in
@@ -603,7 +603,7 @@ module ClassAttributes = struct
               _;
             } ->
             let add_attribute map ({ Node.location; _ } as target) value =
-              Attribute.name ~parent:name target
+              Attribute.name ~parent:parent_name target
               |> function
               | Some name ->
                   let attribute =
@@ -623,7 +623,7 @@ module ClassAttributes = struct
               map
         | Assign { Assign.target = { Node.value = Tuple targets; _ }; value; _ } ->
             let add_attribute index map ({ Node.location; _ } as target) =
-              Attribute.name ~parent:name target
+              Attribute.name ~parent:parent_name target
               |> function
               | Some name ->
                   let value =
@@ -668,7 +668,7 @@ module ClassAttributes = struct
             in
             List.foldi ~init:map ~f:add_attribute targets
         | Assign { Assign.target; annotation; value; _ } -> (
-            Attribute.name ~parent:name target
+            Attribute.name ~parent:parent_name target
             |> function
             | Some name ->
                 let frozen = Class.is_frozen definition in
@@ -803,7 +803,7 @@ module ClassAttributes = struct
           | Statement.Define
               ({ Define.signature = { name = { Node.value = target; _ }; _ } as signature; _ } as
               define) ->
-              Attribute.name (Expression.from_reference ~location target) ~parent:name
+              Attribute.name (Expression.from_reference ~location target) ~parent:parent_name
               >>| (fun name ->
                     let attribute =
                       match Identifier.SerializableMap.find_opt name map with

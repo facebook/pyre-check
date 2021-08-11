@@ -1315,19 +1315,6 @@ let test_check_behavioral_subtyping context =
        `float`.";
     ];
 
-  (* Dunder methods must end with dunder. *)
-  assert_type_errors
-    {|
-      class Foo():
-        def __f(self, a: float) -> None: ...
-      class Bar(Foo):
-        def __f(self, a: int) -> None: pass
-    |}
-    [
-      "Inconsistent override [14]: `test.Bar.__f` overrides method defined in `Foo` inconsistently. "
-      ^ "Parameter of type `int` is not a supertype of the overridden parameter `float`.";
-    ];
-
   (* Weakening of object precondition is not possible. *)
   assert_type_errors
     {|
@@ -2616,11 +2603,13 @@ let test_check_private_member_access context =
       class Child(Base):
         def __init__(self) -> None:
           self.y = 1
-      def foo(x: typing.Union[Base, Child]) -> bool:
-        return x.__private
+      def foo(union: typing.Union[Base, Child], child: Child, base: Base) -> None:
+        x = union.__private
+        y = base.__private
+        z = child.__private
     |}
     [
-      "Incompatible return type [7]: Expected `bool` but got `unknown`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`.";
       "Undefined attribute [16]: `Child` has no attribute `__private`.";
     ];
   assert_type_errors
@@ -2632,7 +2621,10 @@ let test_check_private_member_access context =
       def foo(x: Base) -> bool:
         return x.__private
     |}
-    ["Undefined attribute [16]: `Base` has no attribute `__private`."];
+    [
+      "Incompatible return type [7]: Expected `bool` but got `unknown`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -2645,7 +2637,10 @@ let test_check_private_member_access context =
       def foo() -> bool:
         return [Base(), Child()][1].__private
     |}
-    ["Undefined attribute [16]: `Base` has no attribute `__private`."];
+    [
+      "Incompatible return type [7]: Expected `bool` but got `unknown`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -2657,12 +2652,11 @@ let test_check_private_member_access context =
       class Child(Base):
         def public_method(self) -> None:
           self.__private_method()
-      def foo() -> bool:
+      def foo() -> None:
         return [Base(), Child()][1].__private_method()
     |}
     [
       "Undefined attribute [16]: `Child` has no attribute `__private_method`.";
-      "Incompatible return type [7]: Expected `bool` but got `None`.";
       "Undefined attribute [16]: `Base` has no attribute `__private_method`.";
     ];
   assert_type_errors
@@ -2685,6 +2679,7 @@ let test_check_private_member_access context =
     [
       "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
       "Undefined attribute [16]: `GenericChild` has no attribute `__private`.";
+      "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
       "Undefined attribute [16]: `GenericBase` has no attribute `__private`.";
     ];
   assert_type_errors
@@ -2738,12 +2733,13 @@ let test_check_private_member_access context =
 
     |}
     [
-      "Undefined attribute [16]: `typing.Type` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `ExampleClass` has no attribute `_Child__private_static_method`.";
       "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
       "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
       "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
       "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `typing.Type` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `ExampleClass` has no attribute \
+       `_NonChild__private_static_method`.";
     ];
   ()
 
