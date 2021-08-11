@@ -210,11 +210,11 @@ class InferTest(testslide.TestCase):
 
     def test_parse_raw_infer_output(self) -> None:
         def assert_parsed(input: Dict[str, object], expected: RawInferOutput) -> None:
-            self.assertEqual(RawInferOutput.create(json.dumps(input)), expected)
+            self.assertEqual(RawInferOutput.create_from_json(input), expected)
 
         def assert_not_parsed(input: str) -> None:
             with self.assertRaises(RawInferOutputParsingError):
-                RawInferOutput.create(input)
+                RawInferOutput.create_from_string(input)
 
         assert_not_parsed("")
         assert_not_parsed("[]")
@@ -345,10 +345,10 @@ class InferTest(testslide.TestCase):
         )
 
     def test_raw_infer_output_split(self) -> None:
-        def assert_split(given: Dict[str, object], expected: Dict[str, object]) -> None:
-            input_infer_output = RawInferOutput.create(json.dumps(given))
+        def assert_split(given: Dict[str, object], expected: Dict[str, Any]) -> None:
+            input_infer_output = RawInferOutput.create_from_json(given)
             expected_infer_output = {
-                path: RawInferOutput.create(json.dumps(output))
+                path: RawInferOutput.create_from_json(output)
                 for (path, output) in expected.items()
             }
             self.assertDictEqual(
@@ -790,23 +790,21 @@ class StubGenerationTest(testslide.TestCase):
         use_future_annotations: bool = False,
     ) -> None:
         test_path = "/root/test.py"
-        infer_output = RawInferOutput.create(
-            json.dumps(
-                {
-                    category: [
-                        {
-                            "location": {
-                                "path": test_path,
-                                "qualifier": "test",
-                                "line": 1,
-                            },
-                            **value,
-                        }
-                        for value in values
-                    ]
-                    for category, values in data.items()
-                }
-            )
+        infer_output = RawInferOutput.create_from_json(
+            {
+                category: [
+                    {
+                        "location": {
+                            "path": test_path,
+                            "qualifier": "test",
+                            "line": 1,
+                        },
+                        **value,
+                    }
+                    for value in values
+                ]
+                for category, values in data.items()
+            }
         )
         module_annotations = create_module_annotations(
             infer_output=infer_output,

@@ -6,6 +6,7 @@
 import contextlib
 import dataclasses
 import enum
+import json
 import logging
 import os
 import re
@@ -199,7 +200,7 @@ class RawInferOutput:
     )
 
     @staticmethod
-    def create(input: str) -> "RawInferOutput":
+    def create_from_string(input: str) -> "RawInferOutput":
         try:
             # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
             return RawInferOutput.schema().loads(input)
@@ -210,6 +211,10 @@ class RawInferOutput:
             dataclasses_json.mm.ValidationError,
         ) as error:
             raise RawInferOutputParsingError(str(error)) from error
+
+    @staticmethod
+    def create_from_json(input: Dict[str, object]) -> "RawInferOutput":
+        return RawInferOutput.create_from_string(json.dumps(input))
 
     def split_by_path(self) -> "Dict[str, RawInferOutput]":
         def create_index(
