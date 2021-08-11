@@ -10,10 +10,10 @@ from pathlib import Path
 
 import testslide
 
-from ...client import pyre
 from .. import (
     command_arguments,
     configuration,
+    pyre,
     recently_used_configurations,
 )
 from .setup import (
