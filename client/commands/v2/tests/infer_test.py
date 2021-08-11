@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import dataclasses
-import json
 import tempfile
 import textwrap
 from pathlib import Path
