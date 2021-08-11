@@ -218,7 +218,7 @@ end = struct
       formatter
       "%s"
       (match operator with
-      | Equals -> "="
+      | Equals -> "=="
       | GreaterThan -> ">"
       | GreaterThanOrEquals -> ">="
       | In -> "in"
