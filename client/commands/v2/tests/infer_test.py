@@ -340,6 +340,82 @@ class InferTest(testslide.TestCase):
             ),
         )
 
+    def test_raw_infer_output_split(self) -> None:
+        def assert_split(given: Dict[str, object], expected: Dict[str, object]) -> None:
+            input_infer_output = RawInferOutput.create(json.dumps(given))
+            expected_infer_output = {
+                path: RawInferOutput.create(json.dumps(output))
+                for (path, output) in expected.items()
+            }
+            self.assertDictEqual(
+                input_infer_output.split_by_path(), expected_infer_output
+            )
+
+        foo_global0 = {
+            "name": "x",
+            "location": {"qualifier": "foo", "path": "foo.py", "line": 1},
+            "annotation": "int",
+        }
+        foo_global1 = {
+            "name": "y",
+            "location": {"qualifier": "foo", "path": "foo.py", "line": 2},
+            "annotation": "int",
+        }
+        bar_global0 = {
+            "name": "z",
+            "location": {"qualifier": "bar", "path": "bar.py", "line": 1},
+            "annotation": "str",
+        }
+        bar_attribute0 = {
+            "parent": "bar.Foo",
+            "name": "a",
+            "location": {"qualifier": "bar", "path": "bar.py", "line": 2},
+            "annotation": "str",
+        }
+        baz_define0 = {
+            "name": "baz.derp",
+            "parent": None,
+            "return": None,
+            "parameters": [],
+            "decorators": [],
+            "location": {"qualifier": "baz", "path": "baz.py", "line": 1},
+            "async": False,
+        }
+
+        assert_split({}, expected={})
+        assert_split({"globals": [foo_global0]}, {"foo.py": {"globals": [foo_global0]}})
+        assert_split(
+            {
+                "globals": [
+                    foo_global0,
+                    bar_global0,
+                    foo_global1,
+                ]
+            },
+            {
+                "foo.py": {"globals": [foo_global0, foo_global1]},
+                "bar.py": {"globals": [bar_global0]},
+            },
+        )
+        assert_split(
+            {
+                "globals": [
+                    foo_global0,
+                ],
+                "attributes": [bar_attribute0],
+                "defines": [baz_define0],
+            },
+            {
+                "foo.py": {
+                    "globals": [
+                        foo_global0,
+                    ]
+                },
+                "bar.py": {"attributes": [bar_attribute0]},
+                "baz.py": {"defines": [baz_define0]},
+            },
+        )
+
 
 class ModuleAnnotationTest(testslide.TestCase):
     def test_module_annotations_from_infer_output(self) -> None:

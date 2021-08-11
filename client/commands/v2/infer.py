@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence, TypeVar
 
 import dataclasses_json
 
@@ -123,14 +123,18 @@ class RawAnnotationLocation:
     line: int
 
 
+@dataclasses.dataclass(frozen=True)
+class RawAnnotation:
+    name: str
+    location: RawAnnotationLocation
+
+
 @dataclasses_json.dataclass_json(
     letter_case=dataclasses_json.LetterCase.CAMEL,
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
-class RawGlobalAnnotation:
-    name: str
-    location: RawAnnotationLocation
+class RawGlobalAnnotation(RawAnnotation):
     annotation: str
 
 
@@ -139,10 +143,8 @@ class RawGlobalAnnotation:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
-class RawAttributeAnnotation:
+class RawAttributeAnnotation(RawAnnotation):
     parent: str
-    name: str
-    location: RawAnnotationLocation
     annotation: str
 
 
@@ -163,9 +165,7 @@ class RawParameter:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
-class RawDefineAnnotation:
-    name: str
-    location: RawAnnotationLocation
+class RawDefineAnnotation(RawAnnotation):
     parent: Optional[str] = None
     return_: Optional[str] = dataclasses.field(
         metadata=dataclasses_json.config(field_name="return"), default=None
@@ -175,6 +175,9 @@ class RawDefineAnnotation:
     is_async: bool = dataclasses.field(
         metadata=dataclasses_json.config(field_name="async"), default=False
     )
+
+
+TAnnotation = TypeVar("TAnnotation", bound=RawAnnotation)
 
 
 @dataclasses_json.dataclass_json(
@@ -205,6 +208,31 @@ class RawInferOutput:
             dataclasses_json.mm.ValidationError,
         ) as error:
             raise RawInferOutputParsingError(str(error)) from error
+
+    def split_by_path(self) -> "Dict[str, RawInferOutput]":
+        def create_index(
+            annotations: Sequence[TAnnotation],
+        ) -> Dict[str, List[TAnnotation]]:
+            result: Dict[str, List[TAnnotation]] = {}
+            for annotation in annotations:
+                key = annotation.location.path
+                result.setdefault(key, []).append(annotation)
+            return result
+
+        global_annotation_index = create_index(self.global_annotations)
+        attribute_annotation_index = create_index(self.attribute_annotations)
+        define_annotation_index = create_index(self.define_annotations)
+
+        return {
+            path: RawInferOutput(
+                global_annotations=global_annotation_index.get(path, []),
+                attribute_annotations=attribute_annotation_index.get(path, []),
+                define_annotations=define_annotation_index.get(path, []),
+            )
+            for path in global_annotation_index.keys()
+            | attribute_annotation_index.keys()
+            | define_annotation_index.keys()
+        }
 
 
 class RawInferOutputParsingError(Exception):
