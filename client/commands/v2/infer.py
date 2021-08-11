@@ -567,6 +567,31 @@ def _load_output(
         return _get_infer_command_output(configuration, infer_arguments)
 
 
+def _relativize_path(path: str, against: Path) -> Optional[str]:
+    given_path = Path(path)
+    return (
+        None
+        if against not in given_path.parents
+        else str(given_path.relative_to(against))
+    )
+
+
+def create_module_annotations(
+    infer_output: RawInferOutput, base_path: Path, options: StubGenerationOptions
+) -> List[ModuleAnnotations]:
+    infer_output_relativized: Dict[Optional[str], RawInferOutput] = {
+        _relativize_path(path, against=base_path): data
+        for path, data in infer_output.split_by_path().items()
+    }
+    return [
+        ModuleAnnotations.from_infer_output(
+            path=path, infer_output=infer_output_for_path, options=options
+        )
+        for path, infer_output_for_path in infer_output_relativized.items()
+        if path is not None
+    ]
+
+
 def run_infer(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,

@@ -3,10 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import dataclasses
 import json
 import tempfile
 from pathlib import Path
-from typing import Iterable, Tuple, Dict
+from typing import Iterable, Tuple, Dict, List
 
 import testslide
 
@@ -17,6 +18,7 @@ from ..infer import (
     Arguments,
     InferMode,
     create_infer_arguments,
+    create_module_annotations,
     RawAnnotationLocation,
     RawGlobalAnnotation,
     RawAttributeAnnotation,
@@ -417,6 +419,12 @@ class InferTest(testslide.TestCase):
         )
 
 
+@dataclasses.dataclass(frozen=True)
+class ExpectedModuleAnnotationItem:
+    path: str
+    infer_output: RawInferOutput
+
+
 class ModuleAnnotationTest(testslide.TestCase):
     def test_module_annotations_from_infer_output(self) -> None:
         def assert_result(
@@ -574,4 +582,110 @@ class ModuleAnnotationTest(testslide.TestCase):
                     )
                 ],
             ),
+        )
+
+    def test_create_module_annotations(self) -> None:
+        def assert_created(
+            infer_output: RawInferOutput,
+            base_path: Path,
+            expected: List[ExpectedModuleAnnotationItem],
+        ) -> None:
+            default_options = StubGenerationOptions(
+                annotate_attributes=False, use_future_annotations=False, dequalify=False
+            )
+            self.assertCountEqual(
+                create_module_annotations(infer_output, base_path, default_options),
+                [
+                    ModuleAnnotations.from_infer_output(
+                        path=item.path,
+                        infer_output=item.infer_output,
+                        options=default_options,
+                    )
+                    for item in expected
+                ],
+            )
+
+        foo_global0 = RawGlobalAnnotation(
+            name="x",
+            location=RawAnnotationLocation(
+                qualifier="foo", path="/root/p0/foo.py", line=1
+            ),
+            annotation="int",
+        )
+        foo_global1 = RawGlobalAnnotation(
+            name="y",
+            location=RawAnnotationLocation(
+                qualifier="foo", path="/root/p0/foo.py", line=2
+            ),
+            annotation="str",
+        )
+        bar_global0 = RawGlobalAnnotation(
+            name="x",
+            location=RawAnnotationLocation(
+                qualifier="bar", path="/root/p1/bar.py", line=1
+            ),
+            annotation="int",
+        )
+        bar_attribute0 = RawAttributeAnnotation(
+            parent="bar.Foo",
+            name="a",
+            location=RawAnnotationLocation(
+                qualifier="bar", path="/root/p1/bar.py", line=2
+            ),
+            annotation="bool",
+        )
+
+        # Empty case
+        assert_created(
+            infer_output=RawInferOutput(), base_path=Path("irrelevant"), expected=[]
+        )
+
+        # Test proper splits by paths
+        assert_created(
+            infer_output=RawInferOutput(
+                global_annotations=[
+                    foo_global0,
+                    bar_global0,
+                    foo_global1,
+                ],
+                attribute_annotations=[
+                    bar_attribute0,
+                ],
+            ),
+            base_path=Path("/root"),
+            expected=[
+                ExpectedModuleAnnotationItem(
+                    path="p0/foo.py",
+                    infer_output=RawInferOutput(
+                        global_annotations=[foo_global0, foo_global1],
+                    ),
+                ),
+                ExpectedModuleAnnotationItem(
+                    path="p1/bar.py",
+                    infer_output=RawInferOutput(
+                        global_annotations=[bar_global0],
+                        attribute_annotations=[bar_attribute0],
+                    ),
+                ),
+            ],
+        )
+
+        # Test relativization & path filtering
+        assert_created(
+            infer_output=RawInferOutput(
+                global_annotations=[
+                    foo_global0,
+                    bar_global0,
+                    foo_global1,
+                ],
+            ),
+            base_path=Path("/root/p1"),
+            expected=[
+                ExpectedModuleAnnotationItem(
+                    path="bar.py",
+                    infer_output=RawInferOutput(
+                        global_annotations=[bar_global0],
+                    ),
+                )
+            ],
         )
