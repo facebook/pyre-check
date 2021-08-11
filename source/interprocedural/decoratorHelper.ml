@@ -543,8 +543,8 @@ let replace_signature_if_always_passing_on_arguments
       let prefix_parameters = List.rev remaining_parameters in
       let callee_prefix_parameters = List.take new_parameters (List.length prefix_parameters) in
 
-      (* We have to rename `args` and `kwargs` to `_args` and `_kwargs` before transforming calls
-         to `callee`. We also have to rename any prefix parameters.
+      (* We have to rename `args` and `kwargs` to `_args` and `_kwargs` before transforming calls to
+         `callee`. We also have to rename any prefix parameters.
 
          Otherwise, if we rename them after replacing calls to `callee`, we might inadvertently
          rename any `args` or `kwargs` present in `callee`'s parameters. *)
