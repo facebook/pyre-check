@@ -3341,45 +3341,7 @@ module State (Context : Context) = struct
                                        parent_source_path = source_path_of_parent_module target;
                                      };
                                })
-                  | _ ->
-                      let is_accessed_in_base_class =
-                        let enclosing_class_reference =
-                          let open Annotated in
-                          Define.parent_definition
-                            ~resolution:(Resolution.global_resolution resolution)
-                            (Define.create Context.define)
-                          >>| Node.value
-                          >>| ClassSummary.name
-                        in
-                        let base_class =
-                          if Type.is_meta resolved_base then
-                            Type.class_name (Type.single_parameter resolved_base)
-                          else
-                            Type.class_name resolved_base
-                        in
-                        Option.value_map
-                          ~default:false
-                          ~f:(Reference.equal_sanitized base_class)
-                          enclosing_class_reference
-                      in
-                      if is_private_attribute attribute && not is_accessed_in_base_class then
-                        emit_error
-                          ~errors
-                          ~location
-                          ~kind:
-                            (Error.UndefinedAttribute
-                               {
-                                 attribute = attribute_name;
-                                 origin =
-                                   Error.Class
-                                     {
-                                       class_type = resolved_base;
-                                       parent_source_path =
-                                         source_path_of_parent_module resolved_base;
-                                     };
-                               })
-                      else
-                        errors
+                  | _ -> errors
                 in
                 let resolved_annotation =
                   let apply_local_override global_annotation =
