@@ -204,6 +204,8 @@ let pp format { statements; _ } =
   List.iter statements ~f:print_statement
 
 
+let pp_all format source = Sexp.pp_hum format (sexp_of_t source)
+
 let location_insensitive_compare left right =
   match Metadata.compare left.metadata right.metadata with
   | x when x <> 0 -> x

@@ -65,6 +65,8 @@ val create
   Statement.t list ->
   t
 
+val pp_all : Format.formatter -> t -> unit
+
 val location_insensitive_compare : t -> t -> int
 
 val mode : configuration:Configuration.Analysis.t -> local_mode:local_mode Node.t option -> mode

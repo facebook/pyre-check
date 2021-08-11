@@ -249,10 +249,16 @@ let assert_source_equal ?(location_insensitive = false) left right =
     else
       Source.equal
   in
+  let print_difference format (left, right) =
+    if Source.equal { left with Source.statements = [] } { right with Source.statements = [] } then
+      diff ~print:Source.pp format (left, right)
+    else
+      diff ~print:Source.pp_all format (left, right)
+  in
   assert_equal
     ~cmp
     ~printer:(fun source -> Format.asprintf "%a" Source.pp source)
-    ~pp_diff:(diff ~print:Source.pp)
+    ~pp_diff:print_difference
     left
     right
 
