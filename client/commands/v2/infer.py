@@ -12,7 +12,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Sequence, TypeVar, Union
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, TypeVar, Union
 
 import dataclasses_json
 import libcst
@@ -316,6 +316,16 @@ def sanitize_annotation(
     return annotation
 
 
+def split_imports(types_list: List[str]) -> Set[str]:
+    typing_imports = set()
+    for full_type in types_list:
+        if full_type:
+            split_type = re.findall(r"[\w]+", full_type)
+            if len(split_type) > 1 and split_type[0] == "typing":
+                typing_imports.add(split_type[1])
+    return typing_imports
+
+
 @dataclasses.dataclass(frozen=True)
 class StubGenerationOptions:
     annotate_attributes: bool
@@ -360,6 +370,11 @@ class Parameter:
     annotation: TypeAnnotation
     value: Optional[str]
 
+    def to_stub(self) -> str:
+        delimiter = "=" if self.annotation.missing else " = "
+        value = f"{delimiter}{self.value}" if self.value else ""
+        return f"{self.name}{self.annotation.sanitized(prefix=': ')}{value}"
+
 
 @dataclasses.dataclass(frozen=True)
 class FunctionAnnotation:
@@ -368,6 +383,26 @@ class FunctionAnnotation:
     parameters: Sequence[Parameter]
     decorators: Sequence[str]
     is_async: bool
+
+    def to_stub(self) -> str:
+        name = _sanitize_name(self.name)
+        decorators = "".join(f"@{decorator}\n" for decorator in self.decorators)
+        async_ = "async " if self.is_async else ""
+        parameters = ", ".join(parameter.to_stub() for parameter in self.parameters)
+        return_ = self.return_annotation.sanitized(prefix=" -> ")
+        return f"{decorators}{async_}def {name}({parameters}){return_}: ..."
+
+    def typing_imports(self) -> Set[str]:
+        return split_imports(
+            self.return_annotation.split()
+            + [
+                split
+                for splits in (
+                    parameter.annotation.split() for parameter in self.parameters
+                )
+                for split in splits
+            ]
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -379,6 +414,17 @@ class MethodAnnotation(FunctionAnnotation):
 class FieldAnnotation:
     name: str
     annotation: TypeAnnotation
+
+    def __post_init__(self) -> None:
+        if self.annotation.missing:
+            raise RuntimeError(f"Illegal missing FieldAnnotation for {self.name}")
+
+    def to_stub(self) -> str:
+        name = _sanitize_name(self.name)
+        return f"{name}: {self.annotation.sanitized()} = ..."
+
+    def typing_imports(self) -> Set[str]:
+        return split_imports(self.annotation.split())
 
 
 @dataclasses.dataclass(frozen=True)
@@ -477,6 +523,106 @@ class ModuleAnnotations:
             + len(self.functions)
             + len(self.methods)
         ) == 0
+
+    @staticmethod
+    def _indent(stub: str) -> str:
+        return "    " + stub.replace("\n", "\n    ")
+
+    def _relativize(self, parent: str) -> Sequence[str]:
+        path = (
+            str(self.path).split(".", 1)[0].replace("/", ".").replace(".__init__", "")
+        )
+        return parent.replace(path, "", 1).strip(".").split(".")
+
+    @property
+    def classes(self) -> Dict[str, List[Union[AttributeAnnotation, MethodAnnotation]]]:
+        """
+        Find all classes with attributes or methods to annotate.
+
+        Anything in nested classes is currently ignored, e.g.:
+        ```
+        class X:
+            class Y:
+                [ALL OF THIS IS IGNORED]
+        ```
+        """
+        classes: Dict[str, List[Union[AttributeAnnotation, MethodAnnotation]]] = {}
+        nested_class_count = 0
+        for annotation in [*self.attributes, *self.methods]:
+            parent = self._relativize(annotation.parent)
+            if len(parent) == 1:
+                classes.setdefault(parent[0], []).append(annotation)
+            else:
+                nested_class_count += 1
+        if nested_class_count > 0:
+            LOG.warning(
+                f"In file {self.path}, ignored {nested_class_count} nested classes"
+            )
+        return classes
+
+    def _header_imports(self) -> List[str]:
+        return (
+            ["from __future__ import annotations"]
+            if self.options.use_future_annotations
+            else []
+        )
+
+    def _typing_imports(self) -> List[str]:
+        from_typing = sorted(
+            {
+                typing_import
+                for by_category in [
+                    (global_.typing_imports() for global_ in self.globals_),
+                    (function.typing_imports() for function in self.functions),
+                    (
+                        attribute.typing_imports()
+                        for class_attributes in self.classes.values()
+                        for attribute in class_attributes
+                    ),
+                ]
+                for by_annotation in by_category
+                for typing_import in by_annotation
+            }
+        )
+        return (
+            []
+            if from_typing == []
+            else [f"from typing import {', '.join(from_typing)}"]
+        )
+
+    def _imports(self) -> str:
+        import_statements = self._header_imports() + self._typing_imports()
+        imports_str = (
+            "" if import_statements == [] else "\n".join(import_statements) + "\n"
+        )
+        return imports_str
+
+    def _class_stub(
+        self,
+        classname: str,
+        annotations: Sequence[Union[AttributeAnnotation, MethodAnnotation]],
+    ) -> str:
+        body = "\n".join(
+            self._indent(annotation.to_stub()) for annotation in annotations
+        )
+        return f"class {classname}:\n{body}\n"
+
+    def to_stubs(self) -> str:
+        """
+        Output annotation information as a stub file.
+        """
+        return "\n".join(
+            [
+                self._imports(),
+                *(global_.to_stub() for global_ in self.globals_),
+                *(function.to_stub() for function in self.functions),
+                *(
+                    self._class_stub(classname, annotations)
+                    for classname, annotations in self.classes.items()
+                ),
+                "",
+            ]
+        )
 
 
 def create_infer_arguments(

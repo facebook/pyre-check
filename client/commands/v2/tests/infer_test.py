@@ -8,7 +8,7 @@ import json
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Iterable, Tuple, Dict, List
+from typing import Any, Iterable, Tuple, Dict, List
 
 import testslide
 
@@ -779,3 +779,516 @@ class TypeAnnotationTest(testslide.TestCase):
         actual = TypeAnnotation.from_raw("foo.Foo[int]", options=dequalify_options)
         self.assertEqual(actual.sanitized(), "Foo[int]")
         self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
+
+
+class StubGenerationTest(testslide.TestCase):
+    def _assert_stubs(
+        self,
+        data: Dict[str, Any],
+        expected: str,
+        annotate_attributes: bool = False,
+        use_future_annotations: bool = False,
+    ) -> None:
+        test_path = "/root/test.py"
+        infer_output = RawInferOutput.create(
+            json.dumps(
+                {
+                    category: [
+                        {
+                            "location": {
+                                "path": test_path,
+                                "qualifier": "test",
+                                "line": 1,
+                            },
+                            **value,
+                        }
+                        for value in values
+                    ]
+                    for category, values in data.items()
+                }
+            )
+        )
+        module_annotations = create_module_annotations(
+            infer_output=infer_output,
+            base_path=Path("/root"),
+            options=StubGenerationOptions(
+                annotate_attributes=annotate_attributes,
+                use_future_annotations=use_future_annotations,
+                dequalify=False,
+            ),
+        )
+        if len(module_annotations) != 1:
+            raise AssertionError("Expected exactly one module!")
+        module_annotation = module_annotations[0]
+        actual = module_annotation.to_stubs()
+        _assert_stubs_equal(actual, expected)
+
+    def test_stubs_defines(self) -> None:
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "int",
+                        "name": "test.Test.ret_int",
+                        "parent": "test.Test",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": ["classmethod"],
+                        "async": False,
+                    }
+                ]
+            },
+            """\
+            class Test:
+                @classmethod
+                def ret_int(self) -> int: ...
+            """,
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "int",
+                        "name": "test.returns_int",
+                        "parent": None,
+                        "parameters": [],
+                        "decorators": ["staticmethod"],
+                        "async": True,
+                    }
+                ]
+            },
+            """\
+            @staticmethod
+            async def returns_int() -> int: ...
+            """,
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "int",
+                        "name": "test.with_params",
+                        "parent": None,
+                        "parameters": [
+                            {"name": "y", "annotation": None, "value": "7", "index": 0},
+                            {
+                                "name": "x",
+                                "annotation": "int",
+                                "value": "5",
+                                "index": 1,
+                            },
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "def with_params(y=7, x: int = 5) -> int: ...",
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "str",
+                        "name": "test.returns_string",
+                        "parent": None,
+                        "parameters": [],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "def returns_string() -> str: ...",
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "bool",
+                        "name": "test.returns_bool",
+                        "parent": None,
+                        "parameters": [],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "def returns_bool() -> bool: ...",
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "float",
+                        "name": "test.returns_float",
+                        "parent": None,
+                        "parameters": [],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "def returns_float() -> float: ...",
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "name": "test.missing_param_test",
+                        "parent": None,
+                        "parameters": [
+                            {"name": "x", "annotation": "int", "value": "5", "index": 0}
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "def missing_param_test(x: int = 5): ...",
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "float",
+                        "name": "test.some_fun.another_fun",
+                        "parent": None,
+                        "parameters": [],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "def another_fun() -> float: ...",
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "int",
+                        "name": "ret_int",
+                        "parent": "test.Test.Test2",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": ["classmethod"],
+                        "async": False,
+                    }
+                ]
+            },
+            "",
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "typing.Union[int, str]",
+                        "name": "ret_union",
+                        "parent": "test.Test.Test2",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": ["classmethod"],
+                        "async": False,
+                    }
+                ]
+            },
+            "",
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "typing.Union[int, str]",
+                        "name": "ret_union",
+                        "parent": "test.Test.Test2",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": ["classmethod"],
+                        "async": False,
+                    },
+                    {
+                        "return": "typing.Dict[int, str]",
+                        "name": "ret_dict",
+                        "parent": "test.Test",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    },
+                ],
+            },
+            """\
+            from typing import Dict
+
+            class Test:
+                def ret_dict(self) -> Dict[int, str]: ...
+            """,
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "typing.Union[typing.Dict[str, int], str]",
+                        "name": "b",
+                        "parent": "test.Test",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    },
+                    {
+                        "return": "typing.Union[typing.Dict[str, int], str]",
+                        "name": "a",
+                        "parent": "test.Test",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    },
+                ],
+            },
+            """\
+            from typing import Dict, Union
+
+            class Test:
+                def b(self) -> Union[Dict[str, int], str]: ...
+                def a(self) -> Union[Dict[str, int], str]: ...
+            """,
+        )
+
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "typing.Union[typing.Dict[str, int], str]",
+                        "name": "f",
+                        "parent": "test.TestA",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    },
+                    {
+                        "return": "typing.Union[typing.Dict[str, int], str]",
+                        "name": "f",
+                        "parent": "test.TestB",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    },
+                ],
+            },
+            """\
+            from typing import Dict, Union
+
+            class TestA:
+                def f(self) -> Union[Dict[str, int], str]: ...
+
+            class TestB:
+                def f(self) -> Union[Dict[str, int], str]: ...
+            """,
+        )
+
+    def test_stubs_globals(self) -> None:
+        self._assert_stubs(
+            {
+                "globals": [{"annotation": "int", "name": "global", "parent": None}],
+            },
+            """\
+            global: int = ...
+            """,
+        )
+
+    def test_stubs_attributes(self) -> None:
+        self._assert_stubs(
+            {
+                "attributes": [
+                    {
+                        "annotation": "int",
+                        "name": "attribute_name",
+                        "parent": "test.test",
+                    }
+                ],
+            },
+            """\
+            class test:
+                attribute_name: int = ...
+            """,
+            annotate_attributes=True,
+        )
+        self._assert_stubs(
+            {
+                "attributes": [
+                    {
+                        "annotation": "int",
+                        "name": "attribute_name",
+                        "parent": "test.Test",
+                    }
+                ],
+            },
+            """\
+            """,
+            annotate_attributes=False,
+        )
+
+    def test_stubs_no_typing_import(self) -> None:
+        """
+        Make sure we don't spuriously import from typing
+
+        NOTE: This logic is almost certainly incomplete - if another function
+        in the same module used typing.Union, we would produce incorrect stubs.
+
+        We should determine whether it is truly necessary to import from typing,
+        because doing it correctly in edge cases is nontrivial.
+        """
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "Union[int, str]",
+                        "name": "test.with_params",
+                        "parent": None,
+                        "parameters": [
+                            {"name": "y", "annotation": None, "value": "7", "index": 0},
+                            {
+                                "name": "x",
+                                "annotation": "typing.List[int]",
+                                "value": "[5]",
+                                "index": 1,
+                            },
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            """\
+            from typing import List
+
+            def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...
+            """,
+        )
+
+    def test_stubs_use_future_annotations(self) -> None:
+        """
+        Test
+        """
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "Test",
+                        "name": "test.Test.f",
+                        "parent": "test.Test",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            },
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ],
+            },
+            """\
+            from __future__ import annotations
+
+            class Test:
+                def f(self) -> Test: ...
+            """,
+            use_future_annotations=True,
+        )
+
+    def test_stubs_with_pathlike(self) -> None:
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "Union[PathLike[bytes],"
+                        + " PathLike[str], bytes, str]",
+                        "name": "test.bar",
+                        "parent": None,
+                        "parameters": [
+                            {
+                                "name": "x",
+                                "annotation": "int",
+                                "value": None,
+                                "index": 0,
+                            }
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            "def bar(x: int) -> Union['os.PathLike[bytes]',"
+            + " 'os.PathLike[str]', bytes, str]: ...",
+        )
