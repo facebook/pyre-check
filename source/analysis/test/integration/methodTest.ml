@@ -2596,6 +2596,60 @@ let test_check_private_member_access context =
   assert_type_errors
     ~context
     {|
+      class Base:
+        def __private_method(self) -> None:
+          return
+
+      class Child(Base):
+        def test(self) -> None:
+          self.__private_method
+    |}
+    ["Undefined attribute [16]: `Child` has no attribute `__private_method`."];
+  assert_type_errors
+    ~context
+    {|
+      class Foo:
+          __private = 1
+
+      def test(foo: Foo) -> None:
+          access = foo.__private
+          foo.__private = 1
+    |}
+    ["Undefined attribute [16]: `Foo` has no attribute `__private`."];
+  assert_type_errors
+    ~context
+    {|
+      import typing
+      T = typing.TypeVar("T", bound="Base")
+
+      class Base:
+        def __init__(self: T) -> None:
+          self.__private = 1
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+    from typing import *
+
+    T = TypeVar("T", bound="Foo")
+
+    class Foo:
+        def test(self: T) -> T:
+            self.derp
+            self.__herp
+            return self
+
+        def __herp(self, value: bool) -> None:
+            return
+
+        def derp(self, value: bool) -> None:
+            return
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
       import typing
       class Base:
         def __init__(self) -> None:
