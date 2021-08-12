@@ -652,9 +652,16 @@ module Record = struct
 end
 
 module rec Monomial : sig
+  module Operation : sig
+    type 'a t =
+      | Product of 'a Record.OrderedTypes.Concatenation.record_unpackable
+      | Divide of 'a Polynomial.t * 'a Polynomial.t
+    [@@deriving compare, sexp, hash]
+  end
+
   type 'a variable =
     | Variable of 'a Record.Variable.RecordUnary.record
-    | Divide of 'a Polynomial.t * 'a Polynomial.t
+    | Operation of 'a Operation.t
   [@@deriving compare, eq, sexp, show, hash]
 
   type 'a variable_degree = {
@@ -677,6 +684,7 @@ module rec Monomial : sig
 
   val show_normal
     :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
+    show_type:(Format.formatter -> 'a -> unit) ->
     'a t ->
     string
 
@@ -688,9 +696,16 @@ module rec Monomial : sig
 
   val create_from_list : compare_t:('a -> 'a -> int) -> int * ('a variable * int) list -> 'a t
 end = struct
+  module Operation = struct
+    type 'a t =
+      | Product of 'a Record.OrderedTypes.Concatenation.record_unpackable
+      | Divide of 'a Polynomial.t * 'a Polynomial.t
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
   type 'a variable =
     | Variable of 'a Record.Variable.RecordUnary.record
-    | Divide of 'a Polynomial.t * 'a Polynomial.t
+    | Operation of 'a Operation.t
   [@@deriving compare, eq, sexp, show, hash]
 
   type 'a variable_degree = {
@@ -752,20 +767,25 @@ end = struct
     { constant_factor; variables } |> normalize ~compare_t
 
 
-  let show_normal ~show_variable { constant_factor; variables } =
+  let show_normal ~show_variable ~show_type { constant_factor; variables } =
     let string_of_variable ~variable ~degree =
       let name =
         match variable with
         | Variable variable -> show_variable variable
-        | Divide (dividend, quotient) ->
+        | Operation (Divide (dividend, quotient)) ->
             let show_polynomial polynomial =
-              let polynomial_string = Polynomial.show_normal polynomial ~show_variable in
+              let polynomial_string = Polynomial.show_normal polynomial ~show_variable ~show_type in
               if List.length polynomial > 1 then
                 "(" ^ polynomial_string ^ ")"
               else
                 polynomial_string
             in
             "(" ^ show_polynomial dividend ^ "//" ^ show_polynomial quotient ^ ")"
+        | Operation (Product unpackable) ->
+            Format.asprintf
+              "Product[%a]"
+              (Record.OrderedTypes.Concatenation.pp_unpackable ~pp_type:show_type)
+              unpackable
       in
 
       name ^ if degree > 1 then "^" ^ string_of_int degree else ""
@@ -834,6 +854,7 @@ and Polynomial : sig
 
   val show_normal
     :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
+    show_type:(Format.formatter -> 'a -> unit) ->
     'a t ->
     string
 
@@ -867,11 +888,14 @@ and Polynomial : sig
 end = struct
   type 'a t = 'a Monomial.t list [@@deriving compare, eq, sexp, hash, show]
 
-  let rec show_normal ~show_variable polynomial =
+  let rec show_normal ~show_variable ~show_type polynomial =
     match polynomial with
     | [] -> "0"
-    | [x] -> Monomial.show_normal ~show_variable x
-    | x :: xs -> Monomial.show_normal ~show_variable x ^ " + " ^ show_normal ~show_variable xs
+    | [x] -> Monomial.show_normal ~show_variable ~show_type x
+    | x :: xs ->
+        Monomial.show_normal ~show_variable ~show_type x
+        ^ " + "
+        ^ show_normal ~show_variable ~show_type xs
 
 
   let fold1 l ~f =
@@ -1091,7 +1115,7 @@ end = struct
         [
           {
             Monomial.constant_factor = 1;
-            variables = [{ variable = Monomial.Divide (left, right); degree = 1 }];
+            variables = [{ variable = Monomial.Operation (Divide (left, right)); degree = 1 }];
           };
         ]
 end
@@ -1316,7 +1340,7 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
     match monomial_variable with
     | Monomial.Variable variable ->
         replace_variable variable >>| fun result -> monomial_variable, result
-    | Monomial.Divide (dividend, quotient) ->
+    | Monomial.Operation (Divide (dividend, quotient)) ->
         let replace_polynomial polynomial =
           match replace_recursive (IntExpression.create polynomial) with
           | Some replaced -> replaced
@@ -1330,6 +1354,7 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
             ~operation:(fun x _ -> x)
         in
         Some (monomial_variable, replaced_division)
+    | Monomial.Operation (Product _) -> None
   in
   let replacements = collect polynomial |> List.filter_map ~f:replacement_pair in
   if List.length replacements = 0 then
@@ -1637,7 +1662,7 @@ let rec pp format annotation =
       Format.fprintf
         format
         "pyre_extensions.IntExpression[%s]"
-        (Polynomial.show_normal polynomial ~show_variable:polynomial_show_variable)
+        (Polynomial.show_normal polynomial ~show_variable:polynomial_show_variable ~show_type:pp)
 
 
 and show annotation = Format.asprintf "%a" pp annotation
@@ -1730,7 +1755,10 @@ and pp_concise format annotation =
       Format.fprintf
         format
         "pyre_extensions.IntExpression[%s]"
-        (Polynomial.show_normal polynomial ~show_variable:polynomial_show_variable)
+        (Polynomial.show_normal
+           polynomial
+           ~show_variable:polynomial_show_variable
+           ~show_type:pp_concise)
 
 
 and show_concise annotation = Format.asprintf "%a" pp_concise annotation
@@ -2124,7 +2152,7 @@ let rec expression annotation =
                 let variable =
                   match variable with
                   | Monomial.Variable variable -> convert_annotation (Variable variable)
-                  | Monomial.Divide (dividend, quotient) ->
+                  | Monomial.Operation (Divide (dividend, quotient)) ->
                       convert_annotation
                         (Parametric
                            {
@@ -2135,6 +2163,15 @@ let rec expression annotation =
                                  Single (IntExpression.create quotient);
                                ];
                            })
+                  | Monomial.Operation (Product unpackable) ->
+                      get_item_call
+                        "pyre_extensions.Product"
+                        [
+                          Record.OrderedTypes.Concatenation.unpackable_to_expression
+                            ~expression
+                            ~location
+                            unpackable;
+                        ]
                 in
                 if degree = 1 then
                   variable
@@ -4384,9 +4421,11 @@ end = struct
               List.concat_map variables ~f:(fun { variable; _ } ->
                   match variable with
                   | Variable x -> [x]
-                  | Divide (dividend, quotient) ->
+                  | Operation (Divide (dividend, quotient)) ->
                       local_collect (IntExpression.create dividend)
-                      @ local_collect (IntExpression.create quotient)))
+                      @ local_collect (IntExpression.create quotient)
+                  | Operation (Product _) -> []
+                  (* TODO(T97728895): Implement collection for Product. *)))
           |> List.dedup_and_sort ~compare
       | _ -> []
 

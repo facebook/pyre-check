@@ -4371,7 +4371,7 @@ let test_is_unit_test _ =
 
 
 let polynomial_show_normal =
-  Type.Polynomial.show_normal ~show_variable:Type.polynomial_show_variable
+  Type.Polynomial.show_normal ~show_variable:Type.polynomial_show_variable ~show_type:Type.pp
 
 
 let polynomial_add = Type.Polynomial.add ~compare_t:Type.compare

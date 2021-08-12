@@ -270,6 +270,7 @@ module Polynomial : sig
 
   val show_normal
     :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
+    show_type:(Format.formatter -> 'a -> unit) ->
     'a t ->
     string
 
