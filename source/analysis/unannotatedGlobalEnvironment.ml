@@ -578,7 +578,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     in
     {
       Class.name = Node.create_with_default_location (Reference.create name);
-      bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
+      base_arguments = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
       body;
       decorators = [];
       top_level_unbound_names = [];
@@ -802,7 +802,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
           let value =
             Type.expression (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
           in
-          { definition with Class.bases = [{ name = None; value }] }
+          { definition with Class.base_arguments = [{ name = None; value }] }
       | _ -> definition
     in
     WriteOnly.set_class_definition

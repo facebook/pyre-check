@@ -5584,7 +5584,7 @@ module State (Context : Context) = struct
         ( Some resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
-    | Class { Class.bases; _ } when not (List.is_empty bases) ->
+    | Class { Class.base_arguments; _ } when not (List.is_empty base_arguments) ->
         (* Check that variance isn't widened on inheritence *)
         let check_base errors { Call.Argument.value = base; _ } =
           let check_pair errors extended actual =
@@ -5646,7 +5646,7 @@ module State (Context : Context) = struct
               |> Option.value ~default:errors
           | _ -> errors
         in
-        Some resolution, List.fold bases ~f:check_base ~init:[]
+        Some resolution, List.fold base_arguments ~f:check_base ~init:[]
     | Class _ ->
         (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
         Some resolution, []

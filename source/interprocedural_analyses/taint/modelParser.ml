@@ -2057,7 +2057,7 @@ let parse_statement ~resolution ~path ~configuration statement =
      Class
        {
          Class.name = { Node.value = name; _ };
-         bases;
+         base_arguments;
          body = [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }];
          _;
        };
@@ -2070,7 +2070,7 @@ let parse_statement ~resolution ~path ~configuration statement =
           else
             None
         in
-        List.filter_map bases ~f:class_sink_base
+        List.filter_map base_arguments ~f:class_sink_base
       in
       let source_annotations, extra_decorators =
         let decorator_with_name name =
@@ -2090,7 +2090,7 @@ let parse_statement ~resolution ~path ~configuration statement =
           else
             None
         in
-        List.filter_map bases ~f:class_source_base
+        List.filter_map base_arguments ~f:class_source_base
         |> List.fold ~init:([], []) ~f:(fun (source_annotations, decorators) -> function
              | Either.First source_annotation -> source_annotation :: source_annotations, decorators
              | Either.Second decorator -> source_annotations, decorator :: decorators)

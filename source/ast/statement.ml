@@ -175,7 +175,7 @@ end
 and Class : sig
   type t = {
     name: Reference.t Node.t;
-    bases: Expression.Call.Argument.t list;
+    base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -204,7 +204,7 @@ and Class : sig
 end = struct
   type t = {
     name: Reference.t Node.t;
-    bases: Expression.Call.Argument.t list;
+    base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -218,7 +218,10 @@ end = struct
     | x when not (Int.equal x 0) -> x
     | _ -> (
         match
-          List.compare Expression.Call.Argument.location_insensitive_compare left.bases right.bases
+          List.compare
+            Expression.Call.Argument.location_insensitive_compare
+            left.base_arguments
+            right.base_arguments
         with
         | x when not (Int.equal x 0) -> x
         | _ -> (
@@ -291,16 +294,16 @@ end = struct
     List.exists decorators ~f:is_frozen_dataclass
 
 
-  let base_classes { bases; _ } =
+  let base_classes { base_arguments; _ } =
     List.fold
       ~init:[]
       ~f:(fun base_classes { Expression.Call.Argument.name; value } ->
         if Option.is_some name then base_classes else value :: base_classes)
-      bases
+      base_arguments
     |> List.rev
 
 
-  let metaclass { bases; _ } =
+  let metaclass { base_arguments; _ } =
     List.find
       ~f:(fun { Expression.Call.Argument.name; _ } ->
         match name with
@@ -308,11 +311,11 @@ end = struct
           when String.equal base_argument_name "metaclass" ->
             true
         | _ -> false)
-      bases
+      base_arguments
     >>| fun { Expression.Call.Argument.value; _ } -> value
 
 
-  let init_subclass_arguments { bases; _ } =
+  let init_subclass_arguments { base_arguments; _ } =
     List.filter
       ~f:(fun { Expression.Call.Argument.name; _ } ->
         match name with
@@ -321,7 +324,7 @@ end = struct
             false
         | Some _ -> true
         | None -> false)
-      bases
+      base_arguments
 end
 
 and Define : sig
@@ -1432,7 +1435,7 @@ module PrettyPrinter = struct
       value
 
 
-  and pp_class formatter { Class.name; bases; body; decorators; _ } =
+  and pp_class formatter { Class.name; base_arguments; body; decorators; _ } =
     Format.fprintf
       formatter
       "%a@[<v 2>class %a(%a):@;@[<v>%a@]@;@]"
@@ -1441,7 +1444,7 @@ module PrettyPrinter = struct
       Reference.pp
       (Node.value name)
       Expression.pp_expression_argument_list
-      bases
+      base_arguments
       pp_statement_list
       body
 

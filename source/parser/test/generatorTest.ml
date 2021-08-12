@@ -3455,7 +3455,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Pass];
            decorators = [decorator "bar"];
            top_level_unbound_names = [];
@@ -3467,7 +3467,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Pass];
            decorators = [];
            top_level_unbound_names = [];
@@ -3479,7 +3479,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Define
@@ -3510,7 +3510,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Define
@@ -3560,7 +3560,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo.bar";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Pass];
            decorators = [];
            top_level_unbound_names = [];
@@ -3572,7 +3572,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases =
+           base_arguments =
              [
                { Call.Argument.name = None; value = +Expression.Integer 1 };
                { Call.Argument.name = None; value = +Expression.Integer 2 };
@@ -3588,7 +3588,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases =
+           base_arguments =
              [
                { Call.Argument.name = None; value = +Expression.Integer 1 };
                { Call.Argument.name = None; value = +Expression.Starred (Starred.Twice !"kwargs") };
@@ -3604,7 +3604,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Assign
@@ -3625,7 +3625,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Assign
@@ -3646,7 +3646,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Assign
@@ -3667,7 +3667,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [{ Call.Argument.name = None; value = !"superfoo" }];
+           base_arguments = [{ Call.Argument.name = None; value = !"superfoo" }];
            body =
              [
                +Statement.Define
@@ -3698,7 +3698,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Define
@@ -3749,7 +3749,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.If
@@ -4900,7 +4900,7 @@ let test_stubs _ =
       +Statement.Class
          {
            Class.name = + !&"A";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Assign
@@ -5012,7 +5012,7 @@ let test_stubs _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];
@@ -5024,7 +5024,7 @@ let test_stubs _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];
@@ -5036,7 +5036,7 @@ let test_stubs _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];

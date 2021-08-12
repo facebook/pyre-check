@@ -684,7 +684,7 @@ compound_statement:
         Node.location;
         value = Class {
           Class.name = { Node.location = name_location; value = name };
-          bases = List.map ~f:convert_argument bases;
+          base_arguments = List.map ~f:convert_argument bases;
           body;
           decorators = [];
           top_level_unbound_names = [];

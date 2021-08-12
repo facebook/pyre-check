@@ -142,9 +142,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Assert { Assert.test; message; _ } ->
           visit_expression test;
           Option.iter ~f:visit_expression message
-      | Class { Class.name; bases; body; decorators; _ } ->
+      | Class { Class.name; base_arguments; body; decorators; _ } ->
           visit_node ~state ~visitor (Reference name);
-          List.iter bases ~f:(visit_argument ~visit_expression);
+          List.iter base_arguments ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.map decorators ~f:Decorator.to_expression |> List.iter ~f:visit_expression
       | Define { Define.signature; captures; body; unbound_names = _ } ->

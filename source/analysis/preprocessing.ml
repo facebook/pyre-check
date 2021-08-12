@@ -149,12 +149,12 @@ let transform_annotations ~transform_annotation_expression source =
         in
         { define with signature }
       in
-      let transform_class ~class_statement:({ Class.bases; _ } as class_statement) =
+      let transform_class ~class_statement:({ Class.base_arguments; _ } as class_statement) =
         let transform_base ({ Call.Argument.value; _ } as base) =
           let value = transform_annotation_expression value in
           { base with value }
         in
-        { class_statement with bases = List.map bases ~f:transform_base }
+        { class_statement with base_arguments = List.map base_arguments ~f:transform_base }
       in
       let statement =
         let value =
@@ -704,7 +704,7 @@ let qualify
         original_scope_with_alias, { define with signature; body }
       in
       let qualify_class
-          ({ Class.name = { Node.value = name; location }; bases; body; decorators; _ } as
+          ({ Class.name = { Node.value = name; location }; base_arguments; body; decorators; _ } as
           definition)
         =
         let scope = { scope with is_top_level = false } in
@@ -781,7 +781,7 @@ let qualify
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
           Class.name = { Node.location; value = qualify_if_needed ~qualifier:scope.qualifier name };
-          bases = List.map bases ~f:qualify_base;
+          base_arguments = List.map base_arguments ~f:qualify_base;
           body;
           decorators;
         }
@@ -2098,7 +2098,7 @@ let expand_typed_dictionary_declarations
               (Statement.Class
                  {
                    name = Node.create ~location class_reference;
-                   bases =
+                   base_arguments =
                      ([
                         {
                           Call.Argument.name = None;
@@ -2189,7 +2189,7 @@ let expand_typed_dictionary_declarations
       | Class
           {
             name = { Node.value = class_name; _ };
-            bases =
+            base_arguments =
               {
                 Call.Argument.name = None;
                 value =
@@ -2243,7 +2243,7 @@ let expand_typed_dictionary_declarations
             class_declaration
           in
           declaration (Reference.show class_name) |> Option.value ~default:value
-      | Class ({ bases; _ } as class_definition) ->
+      | Class ({ base_arguments; _ } as class_definition) ->
           let replace_totality base =
             match extract_totality_from_base base with
             | Some true -> None
@@ -2257,7 +2257,11 @@ let expand_typed_dictionary_declarations
                   }
             | None -> Some base
           in
-          Class { class_definition with bases = List.filter_map bases ~f:replace_totality }
+          Class
+            {
+              class_definition with
+              base_arguments = List.filter_map base_arguments ~f:replace_totality;
+            }
       | _ -> value
     in
     { statement with Node.value = expanded_declaration }
@@ -2533,13 +2537,13 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               Statement.Class
                 {
                   Class.name = Node.create ~location:target_location name;
-                  bases = [tuple_base ~location];
+                  base_arguments = [tuple_base ~location];
                   body = constructors @ attributes;
                   decorators = [];
                   top_level_unbound_names = [];
                 }
           | _ -> value)
-      | Class ({ Class.name = { Node.value = name; _ }; bases; body; _ } as original) ->
+      | Class ({ Class.name = { Node.value = name; _ }; base_arguments; body; _ } as original) ->
           let is_named_tuple_primitive = function
             | {
                 Call.Argument.value =
@@ -2559,7 +2563,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 true
             | _ -> false
           in
-          if List.exists ~f:is_named_tuple_primitive bases then
+          if List.exists ~f:is_named_tuple_primitive base_arguments then
             let extract_assign = function
               | {
                   Node.value =
@@ -2617,12 +2621,12 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               | None -> base :: bases, attributes_sofar
             in
             let reversed_bases, attributes =
-              List.fold bases ~init:([], []) ~f:extract_named_tuples
+              List.fold base_arguments ~init:([], []) ~f:extract_named_tuples
             in
             Class
               {
                 original with
-                Class.bases = List.rev reversed_bases;
+                Class.base_arguments = List.rev reversed_bases;
                 body = attributes @ List.map ~f:expand_named_tuples body;
               }
       | Define ({ Define.body; _ } as define) ->
@@ -2708,7 +2712,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
           Statement.Class
             {
               Class.name = Node.create ~location:name_location name;
-              bases = [base_argument];
+              base_arguments = [base_argument];
               body = [constructor];
               decorators = [];
               top_level_unbound_names = [];
@@ -2739,7 +2743,7 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
         Statement.Class
           {
             name = Node.create ~location class_name_reference;
-            bases = [metaclass];
+            base_arguments = [metaclass];
             decorators = [];
             body = [Node.create ~location Statement.Pass];
             top_level_unbound_names = [];
@@ -2947,9 +2951,9 @@ module AccessCollector = struct
     | Assert { Assert.test; message; _ } ->
         let collected = from_expression collected test in
         Option.value_map message ~f:(from_expression collected) ~default:collected
-    | Class { Class.bases; decorators; _ } ->
+    | Class { Class.base_arguments; decorators; _ } ->
         let collected =
-          List.fold bases ~init:collected ~f:(fun sofar { Call.Argument.value; _ } ->
+          List.fold base_arguments ~init:collected ~f:(fun sofar { Call.Argument.value; _ } ->
               from_expression sofar value)
         in
         List.map decorators ~f:Decorator.to_expression
@@ -3699,7 +3703,9 @@ let mangle_private_attributes source =
 let inline_six_metaclass ({ Source.statements; _ } as source) =
   let inline_six_metaclass ({ Node.location; value } as statement) =
     let expanded_declaration =
-      let transform_class ~class_statement:({ Class.bases; decorators; _ } as class_statement) =
+      let transform_class
+          ~class_statement:({ Class.base_arguments; decorators; _ } as class_statement)
+        =
         let is_six_add_metaclass_decorator { Decorator.name; _ } =
           Identifier.equal (Node.value name |> Reference.show) "six.add_metaclass"
         in
@@ -3726,7 +3732,11 @@ let inline_six_metaclass ({ Source.statements; _ } as source) =
                 value = name_expression;
               }
             in
-            { class_statement with bases = bases @ [metaclass]; decorators = rest }
+            {
+              class_statement with
+              base_arguments = base_arguments @ [metaclass];
+              decorators = rest;
+            }
         | _ -> class_statement
       in
       match value with

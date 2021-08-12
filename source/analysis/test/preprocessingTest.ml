@@ -2848,7 +2848,13 @@ let test_defines _ =
   let define_bar = create_define "bar" in
   let body = [+Statement.Define define_foo; +Statement.Define define_bar] in
   let parent =
-    { Class.name = + !&"Foo"; bases = []; body; decorators = []; top_level_unbound_names = [] }
+    {
+      Class.name = + !&"Foo";
+      base_arguments = [];
+      body;
+      decorators = [];
+      top_level_unbound_names = [];
+    }
   in
   assert_defines
     [+Statement.Class parent]
@@ -2870,7 +2876,7 @@ let test_classes _ =
   let class_define =
     {
       Class.name = + !&"foo";
-      bases = [];
+      base_arguments = [];
       body =
         [
           +Statement.Define
@@ -2899,7 +2905,7 @@ let test_classes _ =
   let inner =
     {
       Class.name = + !&"bar";
-      bases = [];
+      base_arguments = [];
       body = [+Statement.Pass];
       decorators = [];
       top_level_unbound_names = [];
@@ -2908,7 +2914,7 @@ let test_classes _ =
   let class_define =
     {
       Class.name = + !&"foo";
-      bases = [];
+      base_arguments = [];
       body = [+Statement.Class inner];
       decorators = [];
       top_level_unbound_names = [];
@@ -4054,7 +4060,7 @@ let test_populate_nesting_define _ =
       +Statement.Class
          {
            Class.name = + !&"C";
-           bases = [];
+           base_arguments = [];
            decorators = [];
            body =
              [
@@ -4127,7 +4133,7 @@ let test_populate_nesting_define _ =
                +Statement.Class
                   {
                     Class.name = + !&"C";
-                    bases = [];
+                    base_arguments = [];
                     decorators = [];
                     body =
                       [

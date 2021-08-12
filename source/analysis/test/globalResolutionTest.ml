@@ -458,11 +458,11 @@ let test_constructors context =
 
 
 let test_is_protocol _ =
-  let assert_is_protocol bases expected =
-    let is_protocol bases =
+  let assert_is_protocol base_arguments expected =
+    let is_protocol base_arguments =
       {
         StatementClass.name = + !&"Derp";
-        bases;
+        base_arguments;
         body = [];
         decorators = [];
         top_level_unbound_names = [];
@@ -470,7 +470,7 @@ let test_is_protocol _ =
       |> ClassSummary.create ~qualifier:Reference.empty
       |> ClassSummary.is_protocol
     in
-    assert_equal expected (is_protocol bases)
+    assert_equal expected (is_protocol base_arguments)
   in
   let parse = parse_single_expression in
   assert_is_protocol [] false;

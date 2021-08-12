@@ -240,11 +240,12 @@ module Make (Transformer : Transformer) = struct
                 origin;
               }
         | Break -> value
-        | Class { Class.name; bases; body; decorators; top_level_unbound_names } ->
+        | Class { Class.name; base_arguments; body; decorators; top_level_unbound_names } ->
             Class
               {
                 Class.name;
-                bases = transform_list bases ~f:(transform_argument ~transform_expression);
+                base_arguments =
+                  transform_list base_arguments ~f:(transform_argument ~transform_expression);
                 body = transform_list body ~f:transform_statement |> List.concat;
                 decorators = transform_list decorators ~f:transform_decorator;
                 top_level_unbound_names;

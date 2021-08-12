@@ -91,7 +91,7 @@ end
 and Class : sig
   type t = {
     name: Reference.t Node.t;
-    bases: Expression.Call.Argument.t list;
+    base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
