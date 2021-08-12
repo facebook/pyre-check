@@ -17,7 +17,7 @@ from libcst.metadata import MetadataWrapper
 from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..statistics_collectors import CoverageCollector
+from ..coverage_collector import CoverageCollector
 from .command import Command
 
 LOG: logging.Logger = logging.getLogger(__name__)
