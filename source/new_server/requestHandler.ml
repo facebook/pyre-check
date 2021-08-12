@@ -38,10 +38,6 @@ let instantiate_errors ~build_system ~configuration ~ast_environment errors =
   List.map errors ~f:(instantiate_error ~build_system ~configuration ~ast_environment)
 
 
-let find_critical_file ~server_configuration:{ ServerConfiguration.critical_files; _ } paths =
-  CriticalFile.find critical_files ~within:paths
-
-
 let process_display_type_error_request
     ~state:{ ServerState.configuration; type_environment; error_table; build_system; _ }
     paths
@@ -84,7 +80,7 @@ let process_display_type_error_request
 let process_incremental_update_request
     ~state:
       ({
-         ServerState.server_configuration;
+         ServerState.critical_files;
          configuration;
          type_environment;
          error_table;
@@ -96,13 +92,13 @@ let process_incremental_update_request
   =
   let open Lwt.Infix in
   let paths = List.map paths ~f:Path.create_absolute in
-  match find_critical_file ~server_configuration paths with
+  match CriticalFile.find critical_files ~within:paths with
   | Some path ->
       Format.asprintf
         "Pyre needs to restart as it is notified on potential changes in `%a`"
         Path.pp
         path
-      |> StartupNotification.produce_for_configuration ~server_configuration;
+      |> StartupNotification.produce ~log_path:configuration.log_directory;
       Stop.log_and_stop_waiting_server ~reason:"critical file update" ~state ()
   | None -> (
       BuildSystem.update build_system paths
@@ -144,15 +140,7 @@ let process_incremental_update_request
 
 
 let process_request
-    ~state:
-      ({
-         ServerState.socket_path;
-         server_configuration;
-         configuration;
-         type_environment;
-         build_system;
-         _;
-       } as state)
+    ~state:({ ServerState.socket_path; configuration; type_environment; build_system; _ } as state)
     request
   =
   match request with
@@ -163,7 +151,6 @@ let process_request
             version = Version.version ();
             pid = Unix.getpid () |> Pid.to_int;
             socket = Pyre.Path.absolute socket_path;
-            configuration = server_configuration;
           }
       in
       Lwt.return (state, response)

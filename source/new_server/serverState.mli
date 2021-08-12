@@ -24,8 +24,8 @@ end
 type t = private {
   start_time: Timer.t;
   socket_path: Path.t;
-  server_configuration: ServerConfiguration.t;
   configuration: Configuration.Analysis.t;
+  critical_files: CriticalFile.t list;
   build_system: BuildSystem.t;
   type_environment: Analysis.TypeEnvironment.t;
   error_table: Analysis.AnalysisError.t list Ast.Reference.Table.t;
@@ -37,7 +37,8 @@ val create
   ?error_table:Analysis.AnalysisError.t list Ast.Reference.Table.t ->
   ?subscriptions:Subscriptions.t ->
   socket_path:Path.t ->
-  server_configuration:ServerConfiguration.t ->
+  configuration:Configuration.Analysis.t ->
+  critical_files:CriticalFile.t list ->
   build_system:BuildSystem.t ->
   type_environment:Analysis.TypeEnvironment.t ->
   unit ->

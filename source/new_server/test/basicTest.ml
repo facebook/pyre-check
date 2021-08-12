@@ -15,9 +15,8 @@ module Path = Pyre.Path
 let test_basic client =
   let test_path, test2_path =
     Client.current_server_state client
-    |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
-    ( Path.create_relative ~root:global_root ~relative:"test.py",
-      Path.create_relative ~root:global_root ~relative:"test2.py" )
+    |> fun { ServerState.configuration = { Configuration.Analysis.project_root = root; _ }; _ } ->
+    Path.create_relative ~root ~relative:"test.py", Path.create_relative ~root ~relative:"test2.py"
   in
   (* Test if the `GetInfo` request works properly. *)
   let request = Request.GetInfo in
@@ -173,8 +172,8 @@ let test_watchman_integration ~watchman_mailbox client =
   (* Test if we can get the initial type errors. *)
   let global_root =
     Client.current_server_state client
-    |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
-    global_root
+    |> fun { ServerState.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
+    project_root
   in
   let test_path = Path.create_relative ~root:global_root ~relative:"test.py" in
   let initial_error =
@@ -330,13 +329,13 @@ let test_subscription_responses client =
   let {
     ServerState.subscriptions;
     socket_path;
-    server_configuration = { ServerConfiguration.global_root; _ };
+    configuration = { Configuration.Analysis.project_root; _ };
     _;
   }
     =
     Client.current_server_state client
   in
-  let test_path = Path.create_relative ~root:global_root ~relative:"test.py" in
+  let test_path = Path.create_relative ~root:project_root ~relative:"test.py" in
   let error =
     Analysis.AnalysisError.Instantiated.of_yojson
       (`Assoc

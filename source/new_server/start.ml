@@ -97,9 +97,9 @@ let handle_request ~state request =
   let on_uncaught_server_exception exn =
     Log.info "Uncaught server exception: %s" (Exn.to_string exn);
     let () =
-      let { ServerState.server_configuration; _ } = state in
-      StartupNotification.produce_for_configuration
-        ~server_configuration
+      let { ServerState.configuration; _ } = state in
+      StartupNotification.produce
+        ~log_path:configuration.log_directory
         "Restarting Pyre server due to unexpected crash"
     in
     let origin =
@@ -230,7 +230,8 @@ let initialize_server_state
     in
     ServerState.create
       ~socket_path:(socket_path_of log_path)
-      ~server_configuration
+      ~critical_files
+      ~configuration
       ~build_system
       ~type_environment:environment
       ~error_table
@@ -411,7 +412,8 @@ let initialize_server_state
                   let error_table = Server.SavedState.ServerErrors.load () in
                   ServerState.create
                     ~socket_path:(socket_path_of log_path)
-                    ~server_configuration
+                    ~critical_files
+                    ~configuration
                     ~build_system
                     ~type_environment
                     ~error_table

@@ -96,8 +96,8 @@ let test_type_errors context =
     let open Lwt.Infix in
     let global_root =
       Client.current_server_state client
-      |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
-      global_root
+      |> fun { ServerState.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
+      project_root
     in
     test_source_path := Path.create_relative ~root:global_root ~relative:"test.py";
     let expected_error =
@@ -183,8 +183,8 @@ let test_update context =
     let open Lwt.Infix in
     let root =
       Client.current_server_state client
-      |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
-      global_root
+      |> fun { ServerState.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
+      project_root
     in
     test_artifact_path := Path.create_relative ~root ~relative:"test.py";
 

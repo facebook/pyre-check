@@ -27,8 +27,8 @@ end
 type t = {
   start_time: Timer.t;
   socket_path: Path.t;
-  server_configuration: ServerConfiguration.t;
   configuration: Configuration.Analysis.t;
+  critical_files: CriticalFile.t list;
   build_system: BuildSystem.t;
   type_environment: TypeEnvironment.t;
   error_table: AnalysisError.t list Reference.Table.t;
@@ -40,7 +40,8 @@ let create
     ?error_table
     ?subscriptions
     ~socket_path
-    ~server_configuration
+    ~configuration
+    ~critical_files
     ~build_system
     ~type_environment
     ()
@@ -48,8 +49,8 @@ let create
   {
     start_time = Option.value start_time ~default:(Timer.start ());
     socket_path;
-    server_configuration;
-    configuration = ServerConfiguration.analysis_configuration_of server_configuration;
+    critical_files;
+    configuration;
     build_system;
     type_environment;
     error_table = Option.value error_table ~default:(Reference.Table.create ());

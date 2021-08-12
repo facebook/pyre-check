@@ -14,7 +14,6 @@ type t =
       version: string;
       pid: int;
       socket: string;
-      configuration: ServerConfiguration.t;
     }
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Query of Query.Response.t
