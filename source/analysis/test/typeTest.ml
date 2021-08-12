@@ -4557,6 +4557,70 @@ let test_collect_all _ =
       ]
     |}
     [variadic];
+
+  (* Product. *)
+  let variable = Type.Variable.Unary.create "T" in
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.collect_all
+       (Type.IntExpression.create
+          (Type.Polynomial.create_from_monomial_variables_list
+             ~compare_t:Type.compare
+             [
+               ( 1,
+                 [
+                   ( Type.Monomial.create_product
+                       (Type.OrderedTypes.Concatenation.create_unbounded_unpackable
+                          (Type.Variable variable)),
+                     1 );
+                 ] );
+             ])))
+    [variable];
+  assert_collected
+    {|
+      pyre_extensions.Product[
+        pyre_extensions.Unpack[Ts],
+        typing_extensions.Literal[2]
+      ]
+    |}
+    [variadic];
+  assert_collected
+    {|
+      pyre_extensions.Product[
+        typing_extensions.Literal[2],
+        typing_extensions.Literal[3]
+      ]
+    |}
+    [];
+  assert_collected
+    {|
+      pyre_extensions.Product[
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[Ts],
+          typing_extensions.Literal[2]
+        ],
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[Ts],
+          typing_extensions.Literal[3]
+        ]
+      ]
+    |}
+    [variadic];
+  assert_collected
+    {|
+      pyre_extensions.Product[
+        pyre_extensions.Divide[
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts],
+            typing_extensions.Literal[2]
+          ],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2],
+            typing_extensions.Literal[3]
+          ]
+        ]
+      ]
+    |}
+    [variadic2; variadic];
   ()
 
 

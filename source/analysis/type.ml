@@ -1266,6 +1266,12 @@ module IntExpression : sig
          (type_t Record.OrderedTypes.Concatenation.record_unpackable -> type_t option) ->
     type_t Polynomial.t ->
     type_t
+
+  val collect
+    :  collect_from_variable:(type_t Monomial.variable -> 'a list) ->
+    compare:('a -> 'a -> int) ->
+    type_t Polynomial.t ->
+    'a list
 end = struct
   let create polynomial =
     match RecordIntExpression.normalize_variant ~compare_t:[%compare: type_t] polynomial with
@@ -1433,6 +1439,12 @@ end = struct
           create [{ Monomial.constant_factor = 1; variables = [{ Monomial.variable; degree = 1 }] }]
     in
     polynomial_replace_monomial_variable ~replace:replace_monomial_variable polynomial
+
+
+  let collect ~collect_from_variable ~compare polynomial =
+    List.concat_map polynomial ~f:(fun { Monomial.variables; _ } ->
+        List.concat_map variables ~f:(fun { variable; _ } -> collect_from_variable variable))
+    |> List.dedup_and_sort ~compare
 end
 
 let _ = show (* shadowed below *)
@@ -4579,16 +4591,14 @@ end = struct
     let rec local_collect = function
       | Variable variable -> [variable]
       | IntExpression (Data polynomial) ->
-          List.concat_map polynomial ~f:(fun { variables; _ } ->
-              List.concat_map variables ~f:(fun { variable; _ } ->
-                  match variable with
-                  | Variable x -> [x]
-                  | Operation (Divide (dividend, quotient)) ->
-                      local_collect (IntExpression.create dividend)
-                      @ local_collect (IntExpression.create quotient)
-                  | Operation (Product _) -> []
-                  (* TODO(T97728895): Implement collection for Product. *)))
-          |> List.dedup_and_sort ~compare
+          let collect_from_variable = function
+            | Monomial.Variable x -> [x]
+            | Operation (Divide (dividend, quotient)) ->
+                local_collect (IntExpression.create dividend)
+                @ local_collect (IntExpression.create quotient)
+            | Operation (Product _) -> []
+          in
+          IntExpression.collect ~collect_from_variable ~compare polynomial
       | _ -> []
 
 
@@ -4912,6 +4922,15 @@ end = struct
             List.concat_map (implementation :: overloads) ~f:extract
         | TypeOperation (Compose (Concatenation { middle = unpackable; _ })) ->
             collect_unpackable unpackable
+        | IntExpression (Data polynomial) ->
+            let collect_from_variable = function
+              | Monomial.Variable _ -> []
+              | Operation (Divide (dividend, quotient)) ->
+                  local_collect (IntExpression.create dividend)
+                  @ local_collect (IntExpression.create quotient)
+              | Operation (Product unpackable) -> collect_unpackable unpackable
+            in
+            IntExpression.collect ~collect_from_variable ~compare polynomial
         | _ -> []
 
 
