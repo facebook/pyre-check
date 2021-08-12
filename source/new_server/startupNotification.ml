@@ -14,10 +14,6 @@ let produce ~log_path content =
   File.create ~content path |> File.write
 
 
-let produce_for_configuration ~server_configuration:{ ServerConfiguration.log_path; _ } content =
-  produce ~log_path content
-
-
 let consume ~log_path () =
   let path = Path.create_relative ~root:log_path ~relative:file_name in
   match File.create path |> File.content with

@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Newserver
+open Commands.NewServer
 
 let test_json_parsing context =
   let assert_parsed ~expected json_string =
