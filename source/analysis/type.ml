@@ -1260,6 +1260,12 @@ module IntExpression : sig
          type_t Record.OrderedTypes.Concatenation.record_unpackable) ->
     type_t Polynomial.t ->
     type_t Polynomial.t
+
+  val replace_variadic
+    :  replace_unpackable:
+         (type_t Record.OrderedTypes.Concatenation.record_unpackable -> type_t option) ->
+    type_t Polynomial.t ->
+    type_t
 end = struct
   let create polynomial =
     match RecordIntExpression.normalize_variant ~compare_t:[%compare: type_t] polynomial with
@@ -1298,6 +1304,8 @@ end = struct
       | Any, _
       | _, Any ->
           Any
+      | Parametric { name = "pyre_extensions.BroadcastError"; _ }, _ -> left
+      | _, Parametric { name = "pyre_extensions.BroadcastError"; _ } -> right
       | Primitive "int", _
       | _, Primitive "int" ->
           Primitive "int"
@@ -1376,6 +1384,55 @@ end = struct
       }
     in
     List.map ~f:visit_monomial polynomial
+
+
+  let polynomial_replace_monomial_variable ~replace polynomial =
+    let exponent ~degree input =
+      List.init degree ~f:(Fn.const input)
+      |> List.fold
+           ~init:(Literal (Integer 1))
+           ~f:(apply_over_types ~operation:(Polynomial.multiply ~compare_t:compare_type_t))
+    in
+    let replace_variable_with_power ~degree variable = replace variable |> exponent ~degree in
+    let replace_monomial { Monomial.constant_factor; variables } =
+      List.map
+        ~f:(fun { Monomial.variable; degree } -> replace_variable_with_power ~degree variable)
+        variables
+      |> List.fold
+           ~init:(Literal (Integer constant_factor))
+           ~f:(apply_over_types ~operation:(Polynomial.multiply ~compare_t:compare_type_t))
+    in
+    List.map ~f:replace_monomial polynomial
+    |> List.fold
+         ~init:(Literal (Integer 0))
+         ~f:(apply_over_types ~operation:(Polynomial.add ~compare_t:compare_type_t))
+
+
+  let rec replace_variadic ~replace_unpackable polynomial =
+    let replace_monomial_variable variable =
+      match variable with
+      | Monomial.Operation (Product unpackable) ->
+          let expand_unpackable = function
+            | Parametric { name = "pyre_extensions.BroadcastError"; _ } as broadcast_error ->
+                broadcast_error |> Option.some
+            | Tuple record -> record |> create_product_from_ordered_type
+            | other -> type_to_int_expression other
+          in
+          replace_unpackable unpackable
+          |> Option.value ~default:(create (Polynomial.create_from_operation (Product unpackable)))
+          |> expand_unpackable
+          |> Option.value ~default:Bottom
+          (* TODO (T98054916): Add a `ProductError` error. *)
+      | Operation (Divide (left_polynomial, right_polynomial)) ->
+          apply_over_types
+            ~operation:(Polynomial.divide ~compare_t:compare_type_t)
+            ~divide:true
+            (replace_variadic ~replace_unpackable left_polynomial)
+            (replace_variadic ~replace_unpackable right_polynomial)
+      | _ ->
+          create [{ Monomial.constant_factor = 1; variables = [{ Monomial.variable; degree = 1 }] }]
+    in
+    polynomial_replace_monomial_variable ~replace:replace_monomial_variable polynomial
 end
 
 let _ = show (* shadowed below *)
@@ -3397,7 +3454,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         >>| IntExpression.create_int_expression_from_types ~operation
         |> Option.value ~default:Top
   in
-
   let result =
     let create_logic = create_logic ~resolve_aliases ~variable_aliases in
     let rec is_typing_callable = function
@@ -4983,6 +5039,8 @@ end = struct
             >>= function
             | Tuple results -> Some (TypeOperation (Compose results))
             | _ -> None)
+        | IntExpression (Data polynomial) ->
+            IntExpression.replace_variadic ~replace_unpackable polynomial |> Option.some
         | _ -> None
 
 

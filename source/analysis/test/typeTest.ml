@@ -1002,7 +1002,7 @@ let test_create_type_operator _ =
                   1 );
               ] );
           ]));
-assert_create
+  assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | other -> aliases other)
@@ -3146,6 +3146,7 @@ let test_replace_all _ =
        (variable_list_to_type [1, [x, 1]; 1, [y, 1]]))
     (variable_list_to_type [1, [x, 1; y, 1]; 1, [x, 2; y, 1]]);
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  (* Product, unary *)
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all
        (fun _ -> Some (Type.literal_integer 7))
@@ -3418,8 +3419,6 @@ let test_replace_all _ =
          CallableParameters
            (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
        ]);
-
-  (* Variadic tuples. *)
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
   let assert_replaced ~replace annotation expected =
@@ -3434,6 +3433,7 @@ let test_replace_all _ =
          (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
       (Type.create ~aliases (parse_single_expression ~preprocess:true expected))
   in
+  (* Variadic tuples. *)
   let replace_with_concrete given =
     Option.some_if
       (Type.Variable.Variadic.Tuple.equal given variadic)
@@ -3930,6 +3930,356 @@ let test_replace_all _ =
         pyre_extensions.Unpack[Ts]
       ]
     |};
+  ()
+
+
+let test_product_replace_variadic _ =
+  let assert_equal actual expected =
+    assert_equal ~cmp:Type.equal ~printer:Type.show expected actual
+  in
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
+  let variable = Type.Variable.Unary.create "N" in
+  let aliases ?replace_unbound_parameters_with_any:_ = function
+    | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+    | "Ts2" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic2))
+    | "N" -> Some (TypeAlias (Type.Variable variable))
+    | _ -> None
+  in
+  let assert_replaced_type ~replace annotation expected =
+    assert_equal
+      (Type.Variable.GlobalTransforms.TupleVariadic.replace_all
+         replace
+         (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
+      expected
+  in
+  let assert_replaced ~replace annotation expected =
+    assert_replaced_type
+      ~replace
+      annotation
+      (Type.create ~aliases (parse_single_expression ~preprocess:true expected))
+  in
+  let replace_with_concrete given =
+    Option.some_if
+      (Type.Variable.Variadic.Tuple.equal given variadic)
+      (Type.OrderedTypes.Concrete [Type.literal_integer 2; Type.literal_integer 3])
+  in
+  let replace_with_concatenation given =
+    Option.some_if
+      (Type.Variable.Variadic.Tuple.equal given variadic)
+      (Type.OrderedTypes.Concatenation
+         (Type.OrderedTypes.Concatenation.create
+            ~prefix:[Type.literal_integer 2]
+            ~suffix:[]
+            variadic2))
+  in
+  assert_replaced
+    ~replace:replace_with_concrete
+    "pyre_extensions.Product[pyre_extensions.Unpack[Ts]]"
+    "typing_extensions.Literal[6]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+        pyre_extensions.Product[
+          typing_extensions.Literal[2],
+          pyre_extensions.Unpack[Ts],
+          typing_extensions.Literal[4]
+        ]
+      |}
+    "typing_extensions.Literal[48]";
+  assert_replaced
+    ~replace:replace_with_concatenation
+    {|
+        pyre_extensions.Product[
+          typing_extensions.Literal[2],
+          pyre_extensions.Unpack[Ts],
+          typing_extensions.Literal[4]
+        ]
+      |}
+    {|
+      pyre_extensions.Product[
+        typing_extensions.Literal[16],
+        pyre_extensions.Unpack[Ts2]
+      ]
+    |};
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[Ts],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts],
+            typing_extensions.Literal[1]
+          ]
+        ]
+      |}
+    "typing_extensions.Literal[36]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[
+            pyre_extensions.Broadcast[
+              typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
+              typing.Tuple[pyre_extensions.Unpack[Ts]]
+            ]
+          ]
+        ]
+      |}
+    "typing_extensions.Literal[6]";
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[
+            typing.Tuple[
+              pyre_extensions.Product[
+                pyre_extensions.Unpack[
+                  pyre_extensions.Broadcast[
+                    typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
+                    typing.Tuple[pyre_extensions.Unpack[Ts]]
+                  ]
+                ]
+              ],
+              ...
+            ]
+          ]
+        ]
+      |}
+    "int";
+  let replace_with_ones given =
+    Option.some_if
+      (Type.Variable.Variadic.Tuple.equal given variadic)
+      (Type.OrderedTypes.Concrete [Type.literal_integer 1; Type.literal_integer 1])
+  in
+  assert_replaced
+    ~replace:replace_with_ones
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[
+            typing.Tuple[
+              pyre_extensions.Product[
+                pyre_extensions.Unpack[
+                  pyre_extensions.Broadcast[
+                    typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[1]],
+                    typing.Tuple[pyre_extensions.Unpack[Ts]]
+                  ]
+                ]
+              ],
+              ...
+            ]
+          ]
+        ]
+      |}
+    "int";
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[
+            pyre_extensions.Broadcast[
+              typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+              typing.Tuple[pyre_extensions.Unpack[Ts]]
+            ]
+          ]
+        ]
+      |}
+    "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[2], \
+     typing_extensions.Literal[2]], typing.Tuple[typing_extensions.Literal[2], \
+     typing_extensions.Literal[3]]]";
+  assert_replaced
+    ~replace:replace_with_concatenation
+    {|
+      pyre_extensions.Product[
+        pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[
+            typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+            typing.Tuple[pyre_extensions.Unpack[Ts]]
+          ]
+        ]
+      ]
+    |}
+    {|
+      pyre_extensions.Product[
+        pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[
+            typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+            typing.Tuple[
+              typing_extensions.Literal[2], pyre_extensions.Unpack[Ts2]
+            ]
+          ]
+        ]
+      ]
+    |};
+  let replace_with_bad given =
+    Option.some_if
+      (Type.Variable.Variadic.Tuple.equal given variadic)
+      (Type.OrderedTypes.Concrete [Type.literal_integer 2; Type.string])
+  in
+  assert_replaced
+    ~replace:replace_with_bad
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[Ts]
+        ]
+      |}
+    "$bottom";
+  assert_replaced_type
+    ~replace:replace_with_concrete
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[Ts2],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2]
+          ],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts]
+          ]
+        ]
+      |}
+    (Type.IntExpression.create
+       (Type.Polynomial.create_from_monomial_variables_list
+          ~compare_t:Type.compare
+          [
+            ( 6,
+              [
+                ( Type.Monomial.create_product
+                    (Type.OrderedTypes.Concatenation.create_unpackable variadic2),
+                  2 );
+              ] );
+          ]));
+  let replace_with_both = function
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
+        Some (Type.OrderedTypes.Concrete [Type.literal_integer 1; Type.literal_integer 4])
+    | variable when Type.Variable.Variadic.Tuple.equal variable variadic2 ->
+        Some (Type.OrderedTypes.Concrete [Type.literal_integer 5; Type.literal_integer 2])
+    | _ -> None
+  in
+  assert_replaced_type
+    ~replace:replace_with_both
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[Ts2],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2]
+          ],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts]
+          ]
+        ]
+    |}
+    (Type.literal_integer 400);
+  assert_replaced_type
+    ~replace:replace_with_both
+    {|
+        pyre_extensions.Add[
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2],
+            pyre_extensions.Product[
+              pyre_extensions.Unpack[Ts2]
+            ],
+          ],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2],
+            pyre_extensions.Product[
+              pyre_extensions.Unpack[Ts2]
+            ],
+          ]
+        ]
+    |}
+    (Type.literal_integer 200);
+  assert_replaced_type
+    ~replace:replace_with_both
+    {|
+        pyre_extensions.Add[
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2],
+            pyre_extensions.Product[
+              pyre_extensions.Unpack[Ts2]
+            ],
+          ],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2],
+            pyre_extensions.Product[
+              pyre_extensions.Unpack[Ts2]
+            ],
+          ]
+        ]
+    |}
+    (Type.literal_integer 200);
+  assert_replaced_type
+    ~replace:replace_with_both
+    {|
+        pyre_extensions.Product[
+          N,
+          pyre_extensions.Unpack[Ts2],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2]
+          ]
+        ]
+    |}
+    (Type.IntExpression.create
+       (Type.Polynomial.create_from_monomial_variables_list
+          ~compare_t:Type.compare
+          [100, [Type.Monomial.create_variable variable, 1]]));
+  assert_replaced
+    ~replace:replace_with_concrete
+    {|
+        pyre_extensions.Product[
+          pyre_extensions.Unpack[
+            pyre_extensions.Broadcast[
+              typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
+              typing.Tuple[pyre_extensions.Unpack[Ts]]
+            ]
+          ]
+        ]
+      |}
+    "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[2], \
+     typing_extensions.Literal[2]], typing.Tuple[typing_extensions.Literal[2], \
+     typing_extensions.Literal[3]]]";
+  assert_replaced
+    ~replace:replace_with_both
+    {|
+        pyre_extensions.Divide[
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[
+              pyre_extensions.Broadcast[
+                typing.Tuple[typing_extensions.Literal[3], typing_extensions.Literal[4]],
+                typing.Tuple[pyre_extensions.Unpack[Ts]]
+              ]
+            ]
+          ],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2]
+          ]
+        ]
+      |}
+    "typing_extensions.Literal[1]";
+  assert_replaced
+    ~replace:replace_with_both
+    (* Prod[Prod[*BC[Tuple[2, 4], Tuple[*Ts]]] // 4, 8] // Prod[*Ts2]) *)
+    {|
+        pyre_extensions.Divide[
+          pyre_extensions.Product[
+            pyre_extensions.Divide[
+              pyre_extensions.Product[
+                pyre_extensions.Unpack[
+                  pyre_extensions.Broadcast[
+                    typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[4]],
+                    typing.Tuple[pyre_extensions.Unpack[Ts]]
+                  ]
+                ]
+              ],
+              typing_extensions.Literal[4]
+            ],
+            typing_extensions.Literal[8]
+          ],
+          pyre_extensions.Product[
+            pyre_extensions.Unpack[Ts2]
+          ]
+        ]
+      |}
+    "typing_extensions.Literal[1]";
   ()
 
 
@@ -5637,6 +5987,7 @@ let () =
          >:: test_convert_all_escaped_free_variables_to_anys;
          "int_expression_create" >:: test_int_expression_create;
          "replace_all" >:: test_replace_all;
+         "product_replace_variadic" >:: test_product_replace_variadic;
          "less_or_equal_polynomial" >:: test_less_or_equal;
          "collect_all" >:: test_collect_all;
          "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;

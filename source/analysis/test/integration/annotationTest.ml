@@ -3560,6 +3560,58 @@ let test_check_product context =
       "Incompatible parameter type [6]: Expected `Variable[N (bound to int)]` for 1st positional \
        only parameter to call `cube` but got `str`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Product, Unpack, TypeVarTuple
+      from typing_extensions import Literal as L
+      from typing import Tuple, TypeVar, Generic
+
+      DType = TypeVar("DType")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[DType, *Ts]): ...
+      def flatten(input: Tensor[DType, *Ts]) -> Tensor[DType, Product[*Ts]]: ...
+
+      x: Tensor[int, L[2], L[3], L[4]]
+      result = flatten(x)
+      reveal_type(result)
+
+      y: Tensor[int, str, L[2], L[3]]
+      result2 = flatten(y)
+      reveal_type(result2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
+       typing_extensions.Literal[24]]`.";
+      "Revealed type [-1]: Revealed type for `result2` is `Tensor[int, undefined]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Product, Broadcast, Unpack, TypeVarTuple
+      from typing_extensions import Literal as L
+      from typing import Tuple, TypeVar, Generic
+
+      DType = TypeVar("DType")
+      Ts = TypeVarTuple("Ts")
+
+      class Tensor(Generic[DType, *Ts]): ...
+      def foo(input: Tensor[DType, *Ts]) -> Tensor[DType, Product[*Broadcast[Tuple[*Ts], Tuple[L[2], L[1]]]]]: ...
+
+      x: Tensor[int, L[2], L[3]]
+      result = foo(x)
+      reveal_type(result)
+
+      y: Tensor[int, str, L[3], L[3]]
+      result2 = foo(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
+       typing_extensions.Literal[6]]`.";
+      "Broadcast error [2001]: Broadcast error at expression `test.foo(y)`; types \
+       `Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]]` and `Tuple[str, \
+       typing_extensions.Literal[3], typing_extensions.Literal[3]]` cannot be broadcasted \
+       together.";
+    ];
   ()
 
 
