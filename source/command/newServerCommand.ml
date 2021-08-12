@@ -43,8 +43,15 @@ let run_server configuration_file =
       |> Option.iter ~f:(fun message -> Log.warning "%s" message);
 
       let exit_status =
+        let start_options = Newserver.ServerConfiguration.start_options_of server_configuration in
+        let configuration =
+          Newserver.ServerConfiguration.analysis_configuration_of server_configuration
+        in
         Lwt_main.run
-          (Newserver.Start.start_server_and_wait ~event_channel:Lwt_io.stdout server_configuration)
+          (Newserver.Start.start_server_and_wait
+             ~event_channel:Lwt_io.stdout
+             ~configuration
+             start_options)
       in
       exit (Newserver.Start.ExitStatus.exit_code exit_status)
 

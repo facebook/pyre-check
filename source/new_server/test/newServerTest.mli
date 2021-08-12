@@ -30,7 +30,9 @@ end
 module ScratchProject : sig
   type t
 
-  val server_configuration_of : t -> ServerConfiguration.t
+  val configuration_of : t -> Configuration.Analysis.t
+
+  val start_options_of : t -> StartOptions.t
 
   val setup
     :  context:OUnit2.test_ctxt ->

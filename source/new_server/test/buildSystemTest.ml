@@ -49,13 +49,17 @@ let test_cleanup context =
     BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let open Lwt.Infix in
-  let server_configuration =
-    ScratchProject.setup ~context ~include_typeshed_stubs:false ~include_helper_builtins:false []
-    |> ScratchProject.server_configuration_of
+  let configuration, start_options =
+    let project =
+      ScratchProject.setup ~context ~include_typeshed_stubs:false ~include_helper_builtins:false []
+    in
+    ScratchProject.configuration_of project, ScratchProject.start_options_of project
   in
+
   Caml.Filename.set_temp_dir_name "/tmp";
   Start.start_server
-    server_configuration
+    start_options
+    ~configuration
     ~build_system_initializer
     ~on_exception:(fun exn -> raise exn)
     ~on_started:(fun _ ->

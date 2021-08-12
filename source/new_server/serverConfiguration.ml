@@ -249,6 +249,10 @@ let to_yojson
   `Assoc result
 
 
+let start_options_of { source_paths; watchman_root; critical_files; saved_state_action; _ } =
+  { StartOptions.source_paths; watchman_root; critical_files; saved_state_action }
+
+
 let analysis_configuration_of
     {
       source_paths;

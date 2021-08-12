@@ -47,5 +47,7 @@ val of_yojson : Yojson.Safe.t -> (t, string) Result.t
 
 val to_yojson : t -> Yojson.Safe.t
 
+val start_options_of : t -> StartOptions.t
+
 (* NOTE: This is neither a stateless nor an exception-free operation. *)
 val analysis_configuration_of : t -> Configuration.Analysis.t
