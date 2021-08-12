@@ -917,7 +917,7 @@ def init(context: click.Context, local: bool) -> int:
     """
     Create a pyre configuration file at the current directory.
     """
-    return commands.Initialize().run().exit_code()
+    return v2.initialize.run()
 
 
 @pyre.command()

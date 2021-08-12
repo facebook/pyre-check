@@ -19,7 +19,6 @@ from .coverage import Coverage
 from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
 from .infer import Infer as Infer
-from .initialize import Initialize as Initialize
 from .kill import Kill as Kill
 from .persistent import Persistent as Persistent
 from .profile import Profile as Profile
@@ -40,7 +39,6 @@ COMMANDS: List[Type[CommandParser]] = [
     Deobfuscate,
     Incremental,
     Infer,
-    Initialize,
     Kill,
     Persistent,
     Profile,
