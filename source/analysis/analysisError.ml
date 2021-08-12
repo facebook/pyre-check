@@ -2112,6 +2112,16 @@ let rec messages ~concise ~signature location kind =
         "Check if along control flows the variable is defined.";
       ]
   | UndefinedAttribute { attribute; origin } -> (
+      let private_attribute_warning () =
+        if String.is_prefix ~prefix:"__" attribute && not (String.is_suffix ~suffix:"__" attribute)
+        then
+          Format.asprintf
+            " `%s` looks like a private attribute, which is not accessible from outside its parent \
+             class."
+            attribute
+        else
+          ""
+      in
       let target =
         match origin with
         | Class
@@ -2151,12 +2161,13 @@ let rec messages ~concise ~signature location kind =
           let stub_trace =
             Format.asprintf
               "`%a` is defined in a stub file at `%s`. Ensure attribute `%a` is defined in the \
-               stub file."
+               stub file.%s"
               pp_type
               class_type
               relative
               pp_identifier
               attribute
+              (private_attribute_warning ())
           in
           [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute; stub_trace]
       | Module (ExplicitModule { SourcePath.relative; is_stub = true; _ }) ->
@@ -2169,7 +2180,15 @@ let rec messages ~concise ~signature location kind =
               attribute
           in
           [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute; stub_trace]
-      | _ -> [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute])
+      | _ ->
+          [
+            Format.asprintf
+              "%s has no attribute `%a`.%s"
+              target
+              pp_identifier
+              attribute
+              (private_attribute_warning ());
+          ])
   | UndefinedImport (UndefinedModule reference) when concise ->
       [Format.asprintf "Could not find module `%a`." Reference.pp_sanitized reference]
   | UndefinedImport (UndefinedName { from; name }) when concise ->

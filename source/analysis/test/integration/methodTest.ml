@@ -2591,7 +2591,8 @@ let test_check_private_member_access context =
     |}
     [
       "Incompatible return type [7]: Expected `bool` but got `unknown`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2604,7 +2605,10 @@ let test_check_private_member_access context =
         def test(self) -> None:
           self.__private_method
     |}
-    ["Undefined attribute [16]: `Child` has no attribute `__private_method`."];
+    [
+      "Undefined attribute [16]: `Child` has no attribute `__private_method`. `__private_method` \
+       looks like a private attribute, which is not accessible from outside its parent class.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -2615,7 +2619,10 @@ let test_check_private_member_access context =
           access = foo.__private
           foo.__private = 1
     |}
-    ["Undefined attribute [16]: `Foo` has no attribute `__private`."];
+    [
+      "Undefined attribute [16]: `Foo` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -2663,8 +2670,10 @@ let test_check_private_member_access context =
         z = child.__private
     |}
     [
-      "Undefined attribute [16]: `Base` has no attribute `__private`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
+      "Undefined attribute [16]: `Child` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2677,7 +2686,8 @@ let test_check_private_member_access context =
     |}
     [
       "Incompatible return type [7]: Expected `bool` but got `unknown`.";
-      "Undefined attribute [16]: `Base` has no attribute `__private`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2693,7 +2703,8 @@ let test_check_private_member_access context =
     |}
     [
       "Incompatible return type [7]: Expected `bool` but got `unknown`.";
-      "Undefined attribute [16]: `Base` has no attribute `__private`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2710,8 +2721,10 @@ let test_check_private_member_access context =
         return [Base(), Child()][1].__private_method()
     |}
     [
-      "Undefined attribute [16]: `Child` has no attribute `__private_method`.";
-      "Undefined attribute [16]: `Base` has no attribute `__private_method`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_method`. `__private_method` \
+       looks like a private attribute, which is not accessible from outside its parent class.";
+      "Undefined attribute [16]: `Base` has no attribute `__private_method`. `__private_method` \
+       looks like a private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2732,9 +2745,11 @@ let test_check_private_member_access context =
     |}
     [
       "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
-      "Undefined attribute [16]: `GenericChild` has no attribute `__private`.";
+      "Undefined attribute [16]: `GenericChild` has no attribute `__private`. `__private` looks \
+       like a private attribute, which is not accessible from outside its parent class.";
       "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
-      "Undefined attribute [16]: `GenericBase` has no attribute `__private`.";
+      "Undefined attribute [16]: `GenericBase` has no attribute `__private`. `__private` looks \
+       like a private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2788,10 +2803,18 @@ let test_check_private_member_access context =
     |}
     [
       "Undefined attribute [16]: `ExampleClass` has no attribute `_Child__private_static_method`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`. \
+       `__private_static_method` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`. \
+       `__private_static_method` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`. \
+       `__private_static_method` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`. \
+       `__private_static_method` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
       "Undefined attribute [16]: `ExampleClass` has no attribute \
        `_NonChild__private_static_method`.";
     ];
