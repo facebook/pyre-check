@@ -150,8 +150,13 @@ let transform_annotations ~transform_annotation_expression source =
         { define with signature }
       in
       let transform_class ~class_statement:({ Class.base_arguments; _ } as class_statement) =
-        let transform_base ({ Call.Argument.value; _ } as base) =
-          let value = transform_annotation_expression value in
+        let transform_base ({ Call.Argument.value; name } as base) =
+          let should_transform =
+            match name with
+            | Some { Node.value = name; _ } -> String.equal name "metaclass"
+            | None -> true
+          in
+          let value = if should_transform then transform_annotation_expression value else value in
           { base with value }
         in
         { class_statement with base_arguments = List.map base_arguments ~f:transform_base }

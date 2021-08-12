@@ -3583,6 +3583,24 @@ let test_class _ =
          };
     ];
   assert_parsed_equal
+    "class foo(init_subclass_arg=\"literal_string\"):\n\t1"
+    [
+      +Statement.Class
+         {
+           Class.name = + !&"foo";
+           base_arguments =
+             [
+               {
+                 Call.Argument.name = Some ~+"init_subclass_arg";
+                 value = +Expression.String (StringLiteral.create "literal_string");
+               };
+             ];
+           body = [+Statement.Expression (+Expression.Integer 1)];
+           decorators = [];
+           top_level_unbound_names = [];
+         };
+    ];
+  assert_parsed_equal
     "class foo(1, **kwargs):\n\t1"
     [
       +Statement.Class

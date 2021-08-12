@@ -209,6 +209,38 @@ let test_expand_string_annotations _ =
     {|
       valid_string_literal: typing.Annotated[int, test.Foo("hello")]
     |};
+
+  (* Ensure init subclass arguments are not counted as annotations to be expanded *)
+  assert_expand
+    {|
+      class Foo("BaseClass"):
+        pass
+
+      class Bar(metaclass="BaseClass"):
+        pass
+
+      class Baz(init_subclass_arg="BaseClass"):
+        pass
+    |}
+    {|
+      class Foo(BaseClass):
+        pass
+
+      class Bar(metaclass=BaseClass):
+        pass
+
+      class Baz(init_subclass_arg="BaseClass"):
+        pass
+    |};
+  assert_expand
+    {|
+      class Foo("BaseClass", BaseClass2, metaclass="BaseClass3", arbitrary="BaseClass4"):
+        pass
+    |}
+    {|
+      class Foo(BaseClass, BaseClass2, metaclass=BaseClass3, arbitrary="BaseClass4"):
+        pass
+    |};
   ()
 
 
