@@ -2489,6 +2489,100 @@ let test_visit _ =
   in
   assert_equal ~printer:string_of_int 7 end_state;
 
+  let end_state, _ =
+    CountTransform.visit
+      0
+      (Type.IntExpression.create
+         (Type.Polynomial.create_from_monomial_variables_list
+            ~compare_t:Type.compare
+            [
+              ( 1,
+                [
+                  ( Type.Monomial.create_product
+                      (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.integer),
+                    1 );
+                ] );
+            ]))
+  in
+  assert_equal ~printer:string_of_int 2 end_state;
+
+  let variable = Type.Variable.Unary.create "T" in
+  let end_state, _ =
+    CountTransform.visit
+      0
+      (Type.IntExpression.create
+         (Type.Polynomial.create_from_monomial_variables_list
+            ~compare_t:Type.compare
+            [1, [Type.Monomial.create_variable variable, 1]]))
+  in
+  assert_equal ~printer:string_of_int 1 end_state;
+
+  let variable = Type.Variable.Unary.create "T" in
+  let end_state, _ =
+    CountTransform.visit
+      0
+      (Type.IntExpression.create
+         (Type.Polynomial.divide
+            ~compare_t:Type.compare
+            (Type.Polynomial.create_from_monomial_variables_list
+               ~compare_t:Type.compare
+               [
+                 ( 1,
+                   [
+                     ( Type.Monomial.create_product
+                         (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.integer),
+                       1 );
+                   ] );
+               ])
+            (Type.Polynomial.create_from_monomial_variables_list
+               ~compare_t:Type.compare
+               [1, [Type.Monomial.create_variable variable, 1]])))
+  in
+  assert_equal ~printer:string_of_int 2 end_state;
+
+  let end_state, _ =
+    CountTransform.visit
+      0
+      (Type.IntExpression.create
+         (Type.Polynomial.create_from_monomial_variables_list
+            ~compare_t:Type.compare
+            [
+              ( 1,
+                [
+                  ( Type.Monomial.create_product
+                      (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.integer),
+                    1 );
+                ] );
+              ( 1,
+                [
+                  ( Type.Monomial.create_product
+                      (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.integer),
+                    1 );
+                ] );
+            ]))
+  in
+  assert_equal ~printer:string_of_int 3 end_state;
+
+  let end_state, _ =
+    CountTransform.visit
+      0
+      (Type.IntExpression.create
+         (Type.Polynomial.create_from_monomial_variables_list
+            ~compare_t:Type.compare
+            [
+              ( 1,
+                [
+                  ( Type.Monomial.create_product
+                      (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.integer),
+                    1 );
+                  ( Type.Monomial.create_product
+                      (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.string),
+                    1 );
+                ] );
+            ]))
+  in
+  assert_equal ~printer:string_of_int 3 end_state;
+
   let module SubstitutionTransform = Type.Transform.Make (struct
     type state = int
 
@@ -3051,6 +3145,246 @@ let test_replace_all _ =
        (fun _ -> Some (variable_list_to_type [1, [x, 1; y, 1]]))
        (variable_list_to_type [1, [x, 1]; 1, [y, 1]]))
     (variable_list_to_type [1, [x, 1; y, 1]; 1, [x, 2; y, 1]]);
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.literal_integer 7))
+       (Type.IntExpression.create
+          (Type.Polynomial.create_from_monomial_variables_list
+             ~compare_t:Type.compare
+             [
+               ( 1,
+                 [
+                   ( Type.Monomial.create_product
+                       (Type.OrderedTypes.Concatenation
+                        .create_unpackable_from_concrete_against_concatenation
+                          ~concrete:[Type.literal_integer 2; Type.Variable x]
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)),
+                     1 );
+                 ] );
+             ])))
+    (Type.IntExpression.create
+       (Type.Polynomial.create_from_monomial_variables_list
+          ~compare_t:Type.compare
+          [
+            ( 1,
+              [
+                ( Type.Monomial.create_product
+                    (Type.OrderedTypes.Concatenation
+                     .create_unpackable_from_concrete_against_concatenation
+                       ~concrete:[Type.literal_integer 2; Type.literal_integer 7]
+                       ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)),
+                  1 );
+              ] );
+          ]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.literal_integer 7))
+       (Type.IntExpression.create
+          (Type.Polynomial.create_from_monomial_variables_list
+             ~compare_t:Type.compare
+             [
+               ( 1,
+                 [
+                   ( Type.Monomial.create_product
+                       (Type.OrderedTypes.Concatenation
+                        .create_unpackable_from_concatenation_against_concatenation
+                          ~compare_t:Type.compare
+                          (Type.OrderedTypes.Concatenation
+                           .create_from_concrete_against_concatenation
+                             ~prefix:[]
+                             ~suffix:[]
+                             ~concrete:[Type.literal_integer 2; Type.Variable y]
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                          (Type.OrderedTypes.Concatenation
+                           .create_from_concrete_against_concatenation
+                             ~prefix:[]
+                             ~suffix:[]
+                             ~concrete:[Type.literal_integer 2; Type.Variable x]
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                     1 );
+                 ] );
+             ])))
+    (Type.IntExpression.create
+       (Type.Polynomial.create_from_monomial_variables_list
+          ~compare_t:Type.compare
+          [
+            ( 1,
+              [
+                ( Type.Monomial.create_product
+                    (Type.OrderedTypes.Concatenation
+                     .create_unpackable_from_concatenation_against_concatenation
+                       ~compare_t:Type.compare
+                       (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+                          ~prefix:[]
+                          ~suffix:[]
+                          ~concrete:[Type.literal_integer 2; Type.literal_integer 7]
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                       (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+                          ~prefix:[]
+                          ~suffix:[]
+                          ~concrete:[Type.literal_integer 2; Type.literal_integer 7]
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                  1 );
+              ] );
+          ]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (function
+         | variable when [%equal: Type.Variable.Unary.t] variable x -> Some (Type.literal_integer 1)
+         | _ -> Some (Type.literal_integer 2))
+       (Type.IntExpression.create
+          (Type.Polynomial.create_from_monomial_variables_list
+             ~compare_t:Type.compare
+             [
+               ( 1,
+                 [
+                   ( Type.Monomial.create_product
+                       (Type.OrderedTypes.Concatenation
+                        .create_unpackable_from_concatenation_against_concatenation
+                          ~compare_t:Type.compare
+                          (Type.OrderedTypes.Concatenation
+                           .create_from_concrete_against_concatenation
+                             ~prefix:[Type.Variable x]
+                             ~suffix:[Type.Variable y]
+                             ~concrete:[Type.literal_integer 2; Type.Variable y]
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                          (Type.OrderedTypes.Concatenation
+                           .create_from_concrete_against_concatenation
+                             ~prefix:[Type.Variable y]
+                             ~suffix:[Type.Variable x]
+                             ~concrete:[Type.literal_integer 2; Type.Variable x]
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                     1 );
+                 ] );
+             ])))
+    (Type.IntExpression.create
+       (Type.Polynomial.create_from_monomial_variables_list
+          ~compare_t:Type.compare
+          [
+            ( 1,
+              [
+                ( Type.Monomial.create_product
+                    (Type.OrderedTypes.Concatenation
+                     .create_unpackable_from_concatenation_against_concatenation
+                       ~compare_t:Type.compare
+                       (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+                          ~prefix:[Type.literal_integer 1]
+                          ~suffix:[Type.literal_integer 2]
+                          ~concrete:[Type.literal_integer 2; Type.literal_integer 2]
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                       (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+                          ~prefix:[Type.literal_integer 2]
+                          ~suffix:[Type.literal_integer 1]
+                          ~concrete:[Type.literal_integer 2; Type.literal_integer 1]
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                  1 );
+              ] );
+          ]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (fun _ -> Some (Type.literal_integer 7))
+       (Type.IntExpression.create
+          (Type.Polynomial.create_from_monomial_variables_list
+             ~compare_t:Type.compare
+             [
+               ( 1,
+                 [
+                   ( Type.Monomial.create_product
+                       (Type.OrderedTypes.Concatenation.create_unbounded_unpackable
+                          (Type.tuple [Type.Variable x; Type.Variable y; Type.literal_integer 2])),
+                     1 );
+                 ] );
+             ])))
+    (Type.IntExpression.create
+       (Type.Polynomial.create_from_monomial_variables_list
+          ~compare_t:Type.compare
+          [
+            ( 1,
+              [
+                ( Type.Monomial.create_product
+                    (Type.OrderedTypes.Concatenation.create_unbounded_unpackable
+                       (Type.tuple
+                          [Type.literal_integer 7; Type.literal_integer 7; Type.literal_integer 2])),
+                  1 );
+              ] );
+          ]));
+  assert_equal
+    (Type.Variable.GlobalTransforms.Unary.replace_all
+       (function
+         | variable when [%equal: Type.Variable.Unary.t] variable x -> Some (Type.literal_integer 1)
+         | _ -> Some (Type.literal_integer 2))
+       (divide_to_type
+          (Type.Polynomial.create_from_monomial_variables_list
+             ~compare_t:Type.compare
+             [
+               ( 1,
+                 [
+                   ( Type.Monomial.create_product
+                       (Type.OrderedTypes.Concatenation
+                        .create_unpackable_from_concatenation_against_concatenation
+                          ~compare_t:Type.compare
+                          (Type.OrderedTypes.Concatenation
+                           .create_from_concrete_against_concatenation
+                             ~prefix:[Type.Variable x]
+                             ~suffix:[Type.Variable y]
+                             ~concrete:[Type.literal_integer 2; Type.Variable y]
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                          (Type.OrderedTypes.Concatenation
+                           .create_from_concrete_against_concatenation
+                             ~prefix:[Type.Variable y]
+                             ~suffix:[Type.Variable x]
+                             ~concrete:[Type.literal_integer 2; Type.Variable x]
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                     1 );
+                 ] );
+             ])
+          (Type.Polynomial.create_from_monomial_variables_list
+             ~compare_t:Type.compare
+             [
+               ( 1,
+                 [
+                   ( Type.Monomial.create_product
+                       (Type.OrderedTypes.Concatenation.create_unbounded_unpackable
+                          (Type.tuple [Type.Variable x; Type.Variable y; Type.literal_integer 2])),
+                     1 );
+                 ] );
+             ])))
+    (divide_to_type
+       (Type.Polynomial.create_from_monomial_variables_list
+          ~compare_t:Type.compare
+          [
+            ( 1,
+              [
+                ( Type.Monomial.create_product
+                    (Type.OrderedTypes.Concatenation
+                     .create_unpackable_from_concatenation_against_concatenation
+                       ~compare_t:Type.compare
+                       (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+                          ~prefix:[Type.literal_integer 1]
+                          ~suffix:[Type.literal_integer 2]
+                          ~concrete:[Type.literal_integer 2; Type.literal_integer 2]
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                       (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
+                          ~prefix:[Type.literal_integer 2]
+                          ~suffix:[Type.literal_integer 1]
+                          ~concrete:[Type.literal_integer 2; Type.literal_integer 1]
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                  1 );
+              ] );
+          ])
+       (Type.Polynomial.create_from_monomial_variables_list
+          ~compare_t:Type.compare
+          [
+            ( 1,
+              [
+                ( Type.Monomial.create_product
+                    (Type.OrderedTypes.Concatenation.create_unbounded_unpackable
+                       (Type.tuple
+                          [Type.literal_integer 1; Type.literal_integer 2; Type.literal_integer 2])),
+                  1 );
+              ] );
+          ]));
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create

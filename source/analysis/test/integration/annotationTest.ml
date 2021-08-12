@@ -3541,6 +3541,25 @@ let test_check_product context =
        ...)]]]` is not a valid type.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Product, Unpack, Broadcast, TypeVarTuple
+      from typing_extensions import Literal as L
+      from typing import Tuple, TypeVar
+
+      N = TypeVar("N", bound=int)
+      Ts = TypeVarTuple("Ts")
+      def cube(x: N) -> Product[N, N, N]: ...
+
+      result = cube(3)
+      reveal_type(result)
+      result2 = cube("hi")
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `result` is `typing_extensions.Literal[27]`.";
+      "Incompatible parameter type [6]: Expected `Variable[N (bound to int)]` for 1st positional \
+       only parameter to call `cube` but got `str`.";
+    ];
   ()
 
 

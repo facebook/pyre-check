@@ -1253,6 +1253,13 @@ module IntExpression : sig
     type_t
 
   val create_product_from_ordered_type : type_t Record.OrderedTypes.record -> type_t option
+
+  val visit
+    :  visit_unpackable:
+         (type_t Record.OrderedTypes.Concatenation.record_unpackable ->
+         type_t Record.OrderedTypes.Concatenation.record_unpackable) ->
+    type_t Polynomial.t ->
+    type_t Polynomial.t
 end = struct
   let create polynomial =
     match RecordIntExpression.normalize_variant ~compare_t:[%compare: type_t] polynomial with
@@ -1347,6 +1354,28 @@ end = struct
         |> List.map ~f:type_to_int_expression
         |> Option.all
         >>| multiply_multiplicands
+
+
+  let rec visit ~visit_unpackable polynomial =
+    let visit_variable = function
+      | Monomial.Operation (Divide (left_polynomial, right_polynomial)) ->
+          Monomial.Operation
+            (Divide
+               (visit ~visit_unpackable left_polynomial, visit ~visit_unpackable right_polynomial))
+      | Operation (Product unpackable) -> Operation (Product (visit_unpackable unpackable))
+      | other -> other
+    in
+    let visit_monomial { Monomial.constant_factor; variables } =
+      {
+        Monomial.constant_factor;
+        variables =
+          List.map
+            ~f:(fun { Monomial.variable; degree } ->
+              { Monomial.variable = visit_variable variable; degree })
+            variables;
+      }
+    in
+    List.map ~f:visit_monomial polynomial
 end
 
 let _ = show (* shadowed below *)
@@ -2299,17 +2328,16 @@ module Transform = struct
       let visit_children annotation =
         let visit_all = List.map ~f:(visit_annotation ~state) in
         let rec visit_concatenation { Record.OrderedTypes.Concatenation.prefix; middle; suffix } =
-          let middle =
-            match middle with
-            | Variadic _ -> middle
-            | UnboundedElements annotation -> UnboundedElements (visit_annotation annotation ~state)
-            | Broadcast broadcast -> Broadcast (visit_broadcast broadcast)
-          in
           {
             Record.OrderedTypes.Concatenation.prefix = visit_all prefix;
-            middle;
+            middle = visit_unpackable middle;
             suffix = visit_all suffix;
           }
+        and visit_unpackable middle =
+          match middle with
+          | Variadic _ -> middle
+          | UnboundedElements annotation -> UnboundedElements (visit_annotation annotation ~state)
+          | Broadcast broadcast -> Broadcast (visit_broadcast broadcast)
         and visit_ordered_types ordered_types =
           match ordered_types with
           | Record.OrderedTypes.Concrete concretes ->
@@ -2401,12 +2429,13 @@ module Transform = struct
                    enumeration_member with
                    enumeration_type = visit_annotation ~state enumeration_type;
                  })
+        | IntExpression (Data polynomial) ->
+            IntExpression.create (IntExpression.visit ~visit_unpackable polynomial)
         | ParameterVariadicComponent _
         | Literal _
         | Bottom
         | Top
         | Any
-        | IntExpression _
         | Primitive _ ->
             annotation
       in
