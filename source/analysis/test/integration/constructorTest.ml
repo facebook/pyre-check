@@ -984,8 +984,7 @@ let test_init_subclass context =
       class Quest(QuestBase, swallow="african"):
           pass
     |}
-    (* TODO(T74895281): Should type check cleanly. *)
-    ["Undefined attribute [16]: `object` has no attribute `__init_subclass__`."];
+    [];
   ()
 
 

@@ -1265,12 +1265,14 @@ let test_typed_dictionary_attributes context =
            "x", "foo.Foo";
            "__class__", "object";
            "__delattr__", "object";
+           "__dir__", "object";
            "__doc__", "object";
            "__eq__", "object";
            "__format__", "object";
            "__getattribute__", "object";
            "__hash__", "object";
            "__init__", "object";
+           "__init_subclass__", "object";
            "__module__", "object";
            "__ne__", "object";
            "__new__", "object";
@@ -1304,11 +1306,13 @@ let test_typed_dictionary_attributes context =
            "values", "typing.Mapping";
            "__class__", "object";
            "__delattr__", "object";
+           "__dir__", "object";
            "__doc__", "object";
            "__eq__", "object";
            "__format__", "object";
            "__getattribute__", "object";
            "__hash__", "object";
+           "__init_subclass__", "object";
            "__module__", "object";
            "__ne__", "object";
            "__new__", "object";

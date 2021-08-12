@@ -652,6 +652,7 @@ end = struct
       else
         String.equal name "__init__"
         || String.equal name "__new__"
+        || String.equal name "__init_subclass__"
         || (in_test && is_test_setup signature)
 
 

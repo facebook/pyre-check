@@ -2338,8 +2338,8 @@ let test_check_static context =
     {|
       import typing
       class Foo:
-        def __init_subclass__(cls) -> typing.Type[Foo]:
-          return cls
+        def __init_subclass__(cls) -> None:
+          return
         def __new__(cls) -> typing.Type[Foo]:
           return cls
         def __class_getitem__(cls, key: int) -> typing.Type[Foo]:

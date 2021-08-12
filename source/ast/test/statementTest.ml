@@ -151,6 +151,7 @@ let test_is_constructor _ =
     assert_equal expected (Define.is_constructor ~in_test define)
   in
   assert_is_constructor ~name:"Foo.__init__" ~parent:(Some "Foo") true;
+  assert_is_constructor ~name:"Foo.__init_subclass__" ~parent:(Some "Foo") true;
   assert_is_constructor ~in_test:true ~name:"Foo.setUp" ~parent:(Some "Foo") true;
   assert_is_constructor ~in_test:true ~name:"Foo.async_setUp" ~parent:(Some "Foo") true;
   assert_is_constructor ~in_test:true ~name:"Foo.asyncSetUp" ~parent:(Some "Foo") true;
