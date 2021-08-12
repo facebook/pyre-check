@@ -7,6 +7,7 @@ from . import backend_arguments  # noqa F401
 from . import check  # noqa F401
 from . import incremental  # noqa F401
 from . import infer  # noqa F401
+from . import initialize  # noqa F401
 from . import kill  # noqa F401
 from . import persistent  # noqa F401
 from . import profile  # noqa F401
