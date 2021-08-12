@@ -5584,9 +5584,10 @@ module State (Context : Context) = struct
         ( Some resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
-    | Class { Class.base_arguments; _ } when not (List.is_empty base_arguments) ->
-        (* Check that variance isn't widened on inheritence *)
-        let check_base errors { Call.Argument.value = base; _ } =
+    | Class class_statement ->
+        (* Check that variance isn't widened on inheritence. Don't check for other errors. Nested
+           classes and functions are analyzed separately. *)
+        let check_base errors base =
           let check_pair errors extended actual =
             match extended, actual with
             | ( Type.Variable { Type.Record.Variable.RecordUnary.variance = left; _ },
@@ -5646,10 +5647,7 @@ module State (Context : Context) = struct
               |> Option.value ~default:errors
           | _ -> errors
         in
-        Some resolution, List.fold base_arguments ~f:check_base ~init:[]
-    | Class _ ->
-        (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
-        Some resolution, []
+        Some resolution, List.fold (Class.base_classes class_statement) ~f:check_base ~init:[]
     | For _
     | If _
     | Try _

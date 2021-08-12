@@ -971,6 +971,24 @@ let test_newtype context =
   ()
 
 
+let test_init_subclass context =
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str) -> None:
+            cls.swallow = swallow
+            super().__init_subclass__()
+
+      class Quest(QuestBase, swallow="african"):
+          pass
+    |}
+    (* TODO(T74895281): Should type check cleanly. *)
+    ["Undefined attribute [16]: `object` has no attribute `__init_subclass__`."];
+  ()
+
+
 let test_dictionary_constructor context =
   assert_type_errors
     ~context
@@ -1099,6 +1117,7 @@ let () =
          "check_constructors" >:: test_check_constructors;
          "check_infer_constructor_attributes" >:: test_infer_constructor_attributes;
          "newtype" >:: test_newtype;
+         "init_subclass" >:: test_init_subclass;
          "check_dictionary_constructor" >:: test_dictionary_constructor;
          "register_buffer_attribute" >:: test_register_buffer_attribute;
        ]
