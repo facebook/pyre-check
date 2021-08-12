@@ -426,17 +426,14 @@ let initialize_server_state
   let open Lwt.Infix in
   let get_initial_state ~build_system_initializer () =
     match saved_state_action with
-    | Some
-        (ServerConfiguration.SavedStateAction.LoadFromFile
-          { shared_memory_path; changed_files_path }) ->
+    | Some (SavedStateAction.LoadFromFile { shared_memory_path; changed_files_path }) ->
         with_performance_logging
           ~normals:["initialization method", "saved state"]
           ~name:"initialization"
           (fun _ ->
             fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
             >>= load_from_saved_state ~build_system_initializer)
-    | Some (ServerConfiguration.SavedStateAction.LoadFromProject { project_name; project_metadata })
-      ->
+    | Some (SavedStateAction.LoadFromProject { project_name; project_metadata }) ->
         let normals =
           let normals =
             ["initialization method", "saved state"; "saved_state_project", project_name]
@@ -458,7 +455,7 @@ let initialize_server_state
       { ServerState.configuration; type_environment; error_table; build_system; _ }
     =
     match saved_state_action with
-    | Some (ServerConfiguration.SavedStateAction.SaveToFile { shared_memory_path }) ->
+    | Some (SavedStateAction.SaveToFile { shared_memory_path }) ->
         Memory.SharedMemory.collect `aggressive;
         Analysis.TypeEnvironment.module_tracker type_environment
         |> Analysis.ModuleTracker.SharedMemory.store;

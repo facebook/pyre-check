@@ -8,20 +8,6 @@
 open Core
 open Pyre
 
-module SavedStateAction : sig
-  type t =
-    | LoadFromFile of {
-        shared_memory_path: Path.t;
-        changed_files_path: Path.t option;
-      }
-    | LoadFromProject of {
-        project_name: string;
-        project_metadata: string option;
-      }
-    | SaveToFile of { shared_memory_path: Path.t }
-  [@@deriving sexp, compare, hash, yojson]
-end
-
 type t = {
   (* Source file discovery *)
   source_paths: Configuration.SourcePaths.t;
