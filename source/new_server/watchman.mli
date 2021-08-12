@@ -70,7 +70,7 @@ module Filter : sig
   [@@deriving sexp, compare, hash]
 
   val from_server_configurations
-    :  critical_files:ServerConfiguration.CriticalFile.t list ->
+    :  critical_files:CriticalFile.t list ->
     extensions:Configuration.Extension.t list ->
     source_paths:Configuration.SourcePaths.t ->
     unit ->

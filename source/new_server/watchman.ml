@@ -156,7 +156,6 @@ module Filter = struct
   [@@deriving sexp, compare, hash]
 
   let from_server_configurations ~critical_files ~extensions ~source_paths () =
-    let open ServerConfiguration in
     let base_name_of = function
       | CriticalFile.BaseName name -> Some name
       | CriticalFile.FullPath path -> Some (Path.last path)

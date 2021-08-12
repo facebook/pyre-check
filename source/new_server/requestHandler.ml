@@ -39,7 +39,7 @@ let instantiate_errors ~build_system ~configuration ~ast_environment errors =
 
 
 let find_critical_file ~server_configuration:{ ServerConfiguration.critical_files; _ } paths =
-  ServerConfiguration.CriticalFile.find critical_files ~within:paths
+  CriticalFile.find critical_files ~within:paths
 
 
 let process_display_type_error_request

@@ -8,20 +8,6 @@
 open Core
 open Pyre
 
-module CriticalFile : sig
-  type t =
-    | BaseName of string
-    | Extension of string
-    | FullPath of Path.t
-  [@@deriving sexp, compare, hash, yojson]
-
-  val matches : path:Path.t -> t -> bool
-
-  val matches_any : path:Path.t -> t list -> bool
-
-  val find : within:Path.t list -> t list -> Path.t option
-end
-
 module SavedStateAction : sig
   type t =
     | LoadFromFile of {

@@ -14,7 +14,7 @@ module Path = Pyre.Path
 let test_query context =
   let watchman_root = Path.create_absolute "/fake/root" in
   let target = Path.create_absolute "/fake/target" in
-  let critical_files = [ServerConfiguration.CriticalFile.BaseName ".pyre_configuration"] in
+  let critical_files = [CriticalFile.BaseName ".pyre_configuration"] in
   let watchman_filter =
     { Watchman.Filter.base_names = [".pyre_configuration"]; suffixes = [".py"] }
   in

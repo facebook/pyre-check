@@ -286,7 +286,6 @@ let test_filter_creation context =
     assert_equal ~ctxt:context ~cmp ~printer (sorted expected_suffixes) (sorted actual_suffixes)
   in
 
-  let open ServerConfiguration in
   let open Configuration in
   let open Watchman.Filter in
   assert_filter
