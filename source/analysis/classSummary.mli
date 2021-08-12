@@ -100,10 +100,17 @@ module ClassAttributes : sig
   end
 end
 
+type bases = {
+  base_classes: Expression.t list;
+  metaclass: Expression.t option;
+  init_subclass_arguments: Expression.Call.Argument.t list;
+}
+[@@deriving compare, eq, sexp, show, hash, to_yojson]
+
 type t = {
   name: Reference.t;
   qualifier: Reference.t;
-  bases: Expression.Call.Argument.t list;
+  bases: bases;
   decorators: Decorator.t list;
   class_attributes: ClassAttributes.t;
 }
@@ -123,7 +130,9 @@ val fields_tuple_value : t -> string list option
 
 val name : t -> Reference.t
 
-val bases : t -> Expression.Call.Argument.t list
+val bases : t -> bases
+
+val base_classes : t -> Expression.t list
 
 val constructor_attributes : t -> Attribute.t Identifier.SerializableMap.t
 

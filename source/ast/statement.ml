@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Pyre
 
 module Assign = struct
   type t = {
@@ -193,6 +194,12 @@ and Class : sig
 
   val is_frozen : t -> bool
 
+  val base_classes : t -> Expression.t list
+
+  val metaclass : t -> Expression.t option
+
+  val init_subclass_arguments : t -> Expression.Call.Argument.t list
+
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end = struct
   type t = {
@@ -282,6 +289,39 @@ end = struct
       | _ -> false
     in
     List.exists decorators ~f:is_frozen_dataclass
+
+
+  let base_classes { bases; _ } =
+    List.fold
+      ~init:[]
+      ~f:(fun base_classes { Expression.Call.Argument.name; value } ->
+        if Option.is_some name then base_classes else value :: base_classes)
+      bases
+    |> List.rev
+
+
+  let metaclass { bases; _ } =
+    List.find
+      ~f:(fun { Expression.Call.Argument.name; _ } ->
+        match name with
+        | Some { Node.value = base_argument_name; _ }
+          when String.equal base_argument_name "metaclass" ->
+            true
+        | _ -> false)
+      bases
+    >>| fun { Expression.Call.Argument.value; _ } -> value
+
+
+  let init_subclass_arguments { bases; _ } =
+    List.filter
+      ~f:(fun { Expression.Call.Argument.name; _ } ->
+        match name with
+        | Some { Node.value = base_argument_name; _ }
+          when String.equal base_argument_name "metaclass" ->
+            false
+        | Some _ -> true
+        | None -> false)
+      bases
 end
 
 and Define : sig

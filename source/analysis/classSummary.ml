@@ -1029,10 +1029,17 @@ module ClassAttributes = struct
 end
 
 module ClassSummary = struct
+  type bases = {
+    base_classes: Expression.t list;
+    metaclass: Expression.t option;
+    init_subclass_arguments: Expression.Call.Argument.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
   type t = {
     name: Reference.t;
     qualifier: Reference.t;
-    bases: Expression.Call.Argument.t list;
+    bases: bases;
     decorators: Decorator.t list;
     class_attributes: ClassAttributes.t;
   }
@@ -1040,9 +1047,15 @@ module ClassSummary = struct
 
   let create
       ~qualifier
-      ({ Ast.Statement.Class.name = { Node.value = name; _ }; bases; decorators; _ } as
-      class_definition)
+      ({ Ast.Statement.Class.name = { Node.value = name; _ }; decorators; _ } as class_definition)
     =
+    let bases =
+      {
+        base_classes = Ast.Statement.Class.base_classes class_definition;
+        metaclass = Ast.Statement.Class.metaclass class_definition;
+        init_subclass_arguments = Ast.Statement.Class.init_subclass_arguments class_definition;
+      }
+    in
     {
       name;
       qualifier;
@@ -1052,47 +1065,45 @@ module ClassSummary = struct
     }
 
 
-  let is_protocol { bases; _ } =
-    let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
+  let is_protocol { bases = { base_classes; _ }; _ } =
+    let is_protocol { Node.value; _ } =
       let open Expression in
-      match name, value with
-      | ( None,
-          Expression.Call
-            {
-              callee =
-                {
-                  Node.value =
-                    Name
-                      (Attribute
-                        {
-                          base =
-                            {
-                              Node.value =
-                                Name
-                                  (Attribute
-                                    {
-                                      base = { Node.value = Name (Identifier typing); _ };
-                                      attribute = "Protocol";
-                                      _;
-                                    });
-                              _;
-                            };
-                          attribute = "__getitem__";
-                          _;
-                        });
-                  _;
-                };
-              _;
-            } )
-      | ( None,
-          Name
-            (Attribute
-              { base = { Node.value = Name (Identifier typing); _ }; attribute = "Protocol"; _ }) )
+      match value with
+      | Expression.Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name
+                    (Attribute
+                      {
+                        base =
+                          {
+                            Node.value =
+                              Name
+                                (Attribute
+                                  {
+                                    base = { Node.value = Name (Identifier typing); _ };
+                                    attribute = "Protocol";
+                                    _;
+                                  });
+                            _;
+                          };
+                        attribute = "__getitem__";
+                        _;
+                      });
+                _;
+              };
+            _;
+          }
+      | Name
+          (Attribute
+            { base = { Node.value = Name (Identifier typing); _ }; attribute = "Protocol"; _ })
         when String.equal typing "typing" || String.equal typing "typing_extensions" ->
           true
       | _ -> false
     in
-    List.exists ~f:is_protocol bases
+    List.exists ~f:is_protocol base_classes
 
 
   let has_decorator { decorators; _ } decorator =
@@ -1104,25 +1115,29 @@ module ClassSummary = struct
     has_decorator definition "typing.final" || has_decorator definition "typing_extensions.final"
 
 
-  let is_abstract { bases; _ } =
-    let abstract_metaclass { Expression.Call.Argument.value; _ } =
-      let open Expression in
+  let is_abstract { bases = { base_classes; metaclass; _ }; _ } =
+    let open Expression in
+    let is_abstract_base_class { Node.value; _ } =
       match value with
-      | {
-       Node.value =
-         Expression.Name
-           (Attribute
-             {
-               base = { Node.value = Name (Identifier "abc"); _ };
-               attribute = "ABCMeta" | "ABC";
-               _;
-             });
-       _;
-      } ->
+      | Expression.Name
+          (Attribute { base = { Node.value = Name (Identifier "abc"); _ }; attribute = "ABC"; _ })
+        ->
           true
       | _ -> false
     in
-    List.exists bases ~f:abstract_metaclass
+    let is_abstract_metaclass = function
+      | Some
+          {
+            Node.value =
+              Expression.Name
+                (Attribute
+                  { base = { Node.value = Name (Identifier "abc"); _ }; attribute = "ABCMeta"; _ });
+            _;
+          } ->
+          true
+      | _ -> false
+    in
+    List.exists base_classes ~f:is_abstract_base_class || is_abstract_metaclass metaclass
 
 
   let fields_tuple_value { class_attributes; _ } =
@@ -1157,6 +1172,8 @@ module ClassSummary = struct
   let name { name; _ } = name
 
   let bases { bases; _ } = bases
+
+  let base_classes { bases = { base_classes; _ }; _ } = base_classes
 
   let constructor_attributes { class_attributes = { ClassAttributes.constructor_attributes; _ }; _ }
     =

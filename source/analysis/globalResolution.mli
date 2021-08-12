@@ -96,7 +96,7 @@ val aliases
   Type.Primitive.t ->
   Type.alias option
 
-val base_is_from_placeholder_stub : t -> Expression.Call.Argument.t -> bool
+val base_is_from_placeholder_stub : t -> Expression.t -> bool
 
 val module_exists : t -> Reference.t -> bool
 

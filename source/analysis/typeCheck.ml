@@ -11,7 +11,6 @@ open Ast
 open Expression
 open Statement
 module StatementDefine = Define
-module ExpressionCall = Call
 module Error = AnalysisError
 
 type class_name_and_is_abstract_and_is_protocol = {
@@ -1334,8 +1333,8 @@ module State (Context : Context) = struct
       in
       if Define.is_class_toplevel define then
         let open Annotated in
-        let check_base old_errors ({ ExpressionCall.Argument.value; _ } as base) =
-          let annotation_errors, parsed = parse_and_check_annotation ~resolution value in
+        let check_base old_errors base =
+          let annotation_errors, parsed = parse_and_check_annotation ~resolution base in
           let errors = List.append annotation_errors old_errors in
           match parsed with
           | Type.Parametric { name = "type"; parameters = [Single Type.Any] } ->
@@ -1353,7 +1352,7 @@ module State (Context : Context) = struct
               then
                 emit_error
                   ~errors
-                  ~location:(Node.location value)
+                  ~location:(Node.location base)
                   ~kind:
                     (InvalidInheritance
                        (UninheritableType
@@ -1368,7 +1367,7 @@ module State (Context : Context) = struct
           | annotation ->
               emit_error
                 ~errors
-                ~location:(Node.location value)
+                ~location:(Node.location base)
                 ~kind:
                   (InvalidInheritance
                      (UninheritableType { annotation; is_parent_class_typed_dictionary = false }))
@@ -1378,7 +1377,7 @@ module State (Context : Context) = struct
           |> Define.create
           |> Define.parent_definition ~resolution:global_resolution
           >>| Node.value
-          >>| ClassSummary.bases
+          >>| ClassSummary.base_classes
           |> Option.value ~default:[]
         in
         let errors = List.fold ~init:errors ~f:check_base bases in
@@ -5994,21 +5993,21 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     if Define.is_class_toplevel define then
       let check_bases errors =
         let open Annotated in
-        let is_final errors { ExpressionCall.Argument.name; value } =
+        let is_final errors expression_value =
           let add_error { ClassMetadataEnvironment.is_final; _ } =
             if is_final then
               let error =
                 Error.create
                   ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                  ~kind:(Error.InvalidInheritance (ClassName (Expression.show value)))
+                  ~kind:(Error.InvalidInheritance (ClassName (Expression.show expression_value)))
                   ~define:Context.define
               in
               error :: errors
             else
               errors
           in
-          match name, value with
-          | None, { Node.value = Name name; _ } when is_simple_name name ->
+          match expression_value with
+          | { Node.value = Name name; _ } when is_simple_name name ->
               let reference = name_to_reference_exn name in
               GlobalResolution.class_metadata
                 global_resolution
@@ -6019,7 +6018,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         in
         Define.parent_definition ~resolution:global_resolution (Define.create define_node)
         >>| Node.value
-        >>| ClassSummary.bases
+        >>| ClassSummary.base_classes
         >>| List.fold ~init:errors ~f:is_final
         |> Option.value ~default:errors
       in

@@ -110,6 +110,12 @@ and Class : sig
 
   val is_frozen : t -> bool
 
+  val base_classes : t -> Expression.t list
+
+  val metaclass : t -> Expression.t option
+
+  val init_subclass_arguments : t -> Expression.Call.Argument.t list
+
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 

@@ -1259,13 +1259,13 @@ class base class_metadata_environment dependency =
         in
         let get_field_attributes
             ~include_generated_attributes
-            { Node.value = { bases; _ } as class_summary; _ }
+            { Node.value = { bases = { ClassSummary.base_classes; _ }; _ } as class_summary; _ }
           =
           let required =
             not
-              (List.exists bases ~f:(fun { value; _ } ->
+              (List.exists base_classes ~f:(fun base_expression ->
                    String.equal
-                     (Expression.show value)
+                     (Expression.show base_expression)
                      (Type.TypedDictionary.class_name ~total:false)))
           in
           ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
@@ -2295,28 +2295,20 @@ class base class_metadata_environment dependency =
       (* See
          https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
          for why we need to consider all metaclasses. *)
-      let rec handle ({ Node.value = { ClassSummary.bases; _ }; _ } as original) =
+      let rec handle
+          ({ Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ } as
+          original)
+        =
         let open Expression in
         let parse_annotation = self#parse_annotation ~assumptions ?validation:None in
         let metaclass_candidates =
-          let explicit_metaclass =
-            let find_explicit_metaclass = function
-              | { Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
-                  Some (parse_annotation value)
-              | _ -> None
-            in
-            List.find_map ~f:find_explicit_metaclass bases
-          in
+          let explicit_metaclass = metaclass >>| parse_annotation in
           let metaclass_of_bases =
             let explicit_bases =
-              let base_to_class { Call.Argument.value; _ } =
-                delocalize value |> parse_annotation |> Type.split |> fst
+              let base_to_class base_expression =
+                delocalize base_expression |> parse_annotation |> Type.split |> fst
               in
-              List.filter
-                ~f:(function
-                  | { Call.Argument.name = None; _ } -> true
-                  | _ -> false)
-                bases
+              base_classes
               |> List.map ~f:base_to_class
               |> List.filter_map ~f:(class_definition class_metadata_environment ~dependency)
               |> List.filter ~f:(fun base_class ->
