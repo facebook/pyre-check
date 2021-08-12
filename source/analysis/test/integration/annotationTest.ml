@@ -3515,6 +3515,35 @@ let test_check_subtract context =
   ()
 
 
+let test_check_product context =
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Product
+      from typing_extensions import Literal as L
+
+      x: Product[L[1], L[2], L[3]]
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[6]`."];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Product, Unpack
+      from typing_extensions import Literal as L
+      from typing import Tuple
+
+      x: Product[*Tuple[Tuple[L[2]], ...]]
+      reveal_type(x)
+    |}
+    [
+      "Invalid type [31]: Expression \
+       `pyre_extensions.Product[pyre_extensions.Unpack[typing.Tuple[(typing.Tuple[typing_extensions.Literal[2]], \
+       ...)]]]` is not a valid type.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+    ];
+  ()
+
+
 let () =
   "annotation"
   >::: [
@@ -3544,5 +3573,6 @@ let () =
          "check_broadcast" >:: test_check_broadcast;
          "check_compose" >:: test_check_compose;
          "check_subtract" >:: test_check_subtract;
+         "check_product" >:: test_check_product;
        ]
   |> Test.run

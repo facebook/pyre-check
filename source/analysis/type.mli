@@ -256,11 +256,17 @@ module Record : sig
 end
 
 module Monomial : sig
+  module Operation : sig
+    type 'a t
+  end
+
   type 'a variable [@@deriving compare, eq, sexp, show, hash]
 
   type 'a t [@@deriving eq, sexp, compare, hash, show]
 
   val create_variable : 'a Record.Variable.RecordUnary.record -> 'a variable
+
+  val create_product : 'a Record.OrderedTypes.Concatenation.record_unpackable -> 'a variable
 end
 
 module Polynomial : sig
@@ -278,9 +284,16 @@ module Polynomial : sig
 
   val create_from_int : int -> 'a t
 
+  val create_from_operation : 'a Monomial.Operation.t -> 'a t
+
   val create_from_variables_list
     :  compare_t:('a -> 'a -> int) ->
     (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
+    'a t
+
+  val create_from_monomial_variables_list
+    :  compare_t:('a -> 'a -> int) ->
+    (int * ('a Monomial.variable * int) list) list ->
     'a t
 
   val add : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t

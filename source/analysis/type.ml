@@ -654,6 +654,9 @@ end
 module rec Monomial : sig
   module Operation : sig
     type 'a t =
+      (* A `Product` is an unpackable because it needs to contain the information of an unpacked
+         tuple. We don't need the prefix and suffix of a `Concatenation.t`, because those are just
+         absorbed into the entire product. *)
       | Product of 'a Record.OrderedTypes.Concatenation.record_unpackable
       | Divide of 'a Polynomial.t * 'a Polynomial.t
     [@@deriving compare, sexp, hash]
@@ -677,6 +680,8 @@ module rec Monomial : sig
   [@@deriving eq, sexp, compare, hash, show]
 
   val create_variable : 'a Record.Variable.RecordUnary.record -> 'a variable
+
+  val create_product : 'a Record.OrderedTypes.Concatenation.record_unpackable -> 'a variable
 
   val equal_variable_id : compare_t:('a -> 'a -> int) -> 'a variable -> 'a variable -> bool
 
@@ -721,6 +726,8 @@ end = struct
   [@@deriving eq, sexp, compare, hash, show]
 
   let create_variable variable = Variable variable
+
+  let create_product unpackable = Monomial.Operation (Product unpackable)
 
   let equal_variable_id ~compare_t left right =
     let compare = compare_variable compare_t in
@@ -864,11 +871,18 @@ and Polynomial : sig
 
   val create_from_int : int -> 'a t
 
+  val create_from_operation : 'a Monomial.Operation.t -> 'a t
+
   val normalize : compare_t:('a -> 'a -> int) -> 'a t -> 'a t
 
   val create_from_variables_list
     :  compare_t:('a -> 'a -> int) ->
     (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
+    'a t
+
+  val create_from_monomial_variables_list
+    :  compare_t:('a -> 'a -> int) ->
+    (int * ('a Monomial.variable * int) list) list ->
     'a t
 
   val add : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
@@ -908,6 +922,10 @@ end = struct
     if value = 0 then [] else [{ Monomial.constant_factor = value; variables = [] }]
 
 
+  let create_from_operation operation =
+    [{ Monomial.constant_factor = 1; variables = [{ variable = Operation operation; degree = 1 }] }]
+
+
   let create_from_variable variable =
     [{ Monomial.constant_factor = 1; variables = [{ variable = Variable variable; degree = 1 }] }]
 
@@ -936,6 +954,10 @@ end = struct
     List.map list ~f:as_variable
     |> List.map ~f:(Monomial.create_from_list ~compare_t)
     |> normalize ~compare_t
+
+
+  let create_from_monomial_variables_list ~compare_t list =
+    list |> List.map ~f:(Monomial.create_from_list ~compare_t) |> normalize ~compare_t
 
 
   let merge ~compare_t left_polynomial right_polynomial ~operation =
@@ -1215,12 +1237,116 @@ type type_t = t [@@deriving compare, eq, sexp, show, hash]
 
 module IntExpression : sig
   val create : type_t Polynomial.t -> type_t
+
+  val type_to_int_expression : type_t -> type_t option
+
+  val apply_over_types
+    :  operation:(type_t Polynomial.t -> type_t Polynomial.t -> type_t Polynomial.t) ->
+    ?divide:bool ->
+    type_t ->
+    type_t ->
+    type_t
+
+  val create_int_expression_from_types
+    :  operation:[< `Add | `Subtract | `Multiply | `Divide ] ->
+    type_t list ->
+    type_t
+
+  val create_product_from_ordered_type : type_t Record.OrderedTypes.record -> type_t option
 end = struct
   let create polynomial =
     match RecordIntExpression.normalize_variant ~compare_t:[%compare: type_t] polynomial with
     | RecordIntExpression.Constant n -> Literal (Integer n)
     | RecordIntExpression.Variable variable_name -> Variable variable_name
     | RecordIntExpression.Polynomial polynomial -> IntExpression polynomial
+
+
+  let type_to_int_expression = function
+    | Literal (Integer literal) -> Some (create (Polynomial.create_from_int literal))
+    | Variable variable -> Some (create (Polynomial.create_from_variable variable))
+    | IntExpression (Data polynomial) -> Some (create polynomial)
+    | Primitive "int" -> Some (Primitive "int")
+    | Any -> Some Any
+    | _ -> None
+
+
+  let apply_over_types ~operation ?(divide = false) left right =
+    let checked_division left right =
+      if List.length right = 0 then
+        Bottom
+      else
+        create (Polynomial.divide left right ~compare_t:T.compare)
+    in
+    let type_to_polynomial = function
+      | Literal (Integer n) -> Some (Polynomial.create_from_int n)
+      | Variable variable_name -> Some (Polynomial.create_from_variable variable_name)
+      | IntExpression (Data polynomial) -> Some polynomial
+      | _ -> None
+    in
+    let non_int_expression_result left right =
+      match left, right with
+      | Bottom, _
+      | _, Bottom ->
+          Bottom
+      | Any, _
+      | _, Any ->
+          Any
+      | Primitive "int", _
+      | _, Primitive "int" ->
+          Primitive "int"
+      | _ -> Bottom
+    in
+    match type_to_polynomial left, type_to_polynomial right with
+    | Some left_polynomial, Some right_polynomial ->
+        if divide then
+          checked_division left_polynomial right_polynomial
+        else
+          create (operation left_polynomial right_polynomial)
+    | _ -> non_int_expression_result left right
+
+
+  let create_int_expression_from_types ~operation = function
+    | [] -> create (Polynomial.create_from_int 1)
+    | hd :: tl ->
+        let operation, divide =
+          match operation with
+          | `Add -> Polynomial.add, false
+          | `Multiply -> Polynomial.multiply, false
+          | `Subtract -> Polynomial.subtract, false
+          | `Divide -> Polynomial.divide, true
+        in
+        List.fold
+          tl
+          ~init:hd
+          ~f:(apply_over_types ~operation:(operation ~compare_t:T.compare) ~divide)
+
+
+  let create_product_from_ordered_type = function
+    | Record.OrderedTypes.Concrete annotations ->
+        List.map ~f:type_to_int_expression annotations
+        |> Option.all
+        >>| create_int_expression_from_types ~operation:`Multiply
+    | Concatenation { prefix; middle; suffix } ->
+        let multiply_multiplicands multiplicands =
+          match middle with
+          | UnboundedElements (Literal (Integer 0)) -> create (Polynomial.create_from_int 0)
+          | UnboundedElements (Literal (Integer 1)) ->
+              create_int_expression_from_types ~operation:`Multiply multiplicands
+          | UnboundedElements (Literal (Integer _))
+          | UnboundedElements (IntExpression _)
+          | UnboundedElements (Primitive "int") ->
+              Primitive "int"
+          | UnboundedElements _ -> Top
+          | _ ->
+              create_int_expression_from_types
+                ~operation:`Multiply
+                (create (Polynomial.create_from_operation (Monomial.Operation.Product middle))
+                 :: multiplicands)
+        in
+        prefix @ suffix
+        |> List.map ~f:type_to_int_expression
+        |> Option.all
+        >>| multiply_multiplicands
 end
 
 let _ = show (* shadowed below *)
@@ -1286,50 +1412,6 @@ let solve_less_or_equal_polynomial ~left ~right ~solve ~impossible =
   | _ -> impossible
 
 
-let type_to_int_expression = function
-  | Literal (Integer literal) -> Some (IntExpression.create (Polynomial.create_from_int literal))
-  | Variable variable -> Some (IntExpression.create (Polynomial.create_from_variable variable))
-  | IntExpression (Data polynomial) -> Some (IntExpression.create polynomial)
-  | Primitive "int" -> Some (Primitive "int")
-  | Any -> Some Any
-  | _ -> None
-
-
-let apply_over_types ~operation ?(divide = false) left right =
-  let checked_division left right =
-    if List.length right = 0 then
-      Bottom
-    else
-      IntExpression.create (Polynomial.divide left right ~compare_t:T.compare)
-  in
-  let type_to_polynomial = function
-    | Literal (Integer n) -> Some (Polynomial.create_from_int n)
-    | Variable variable_name -> Some (Polynomial.create_from_variable variable_name)
-    | IntExpression (Data polynomial) -> Some polynomial
-    | _ -> None
-  in
-  let non_int_expression_result left right =
-    match left, right with
-    | Bottom, _
-    | _, Bottom ->
-        Bottom
-    | Any, _
-    | _, Any ->
-        Any
-    | Primitive "int", _
-    | _, Primitive "int" ->
-        Primitive "int"
-    | _ -> Bottom
-  in
-  match type_to_polynomial left, type_to_polynomial right with
-  | Some left_polynomial, Some right_polynomial ->
-      if divide then
-        checked_division left_polynomial right_polynomial
-      else
-        IntExpression.create (operation left_polynomial right_polynomial)
-  | _ -> non_int_expression_result left right
-
-
 let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
   let collect polynomial =
     List.concat_map polynomial ~f:(fun { Monomial.variables; _ } ->
@@ -1347,7 +1429,7 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
           | None -> IntExpression.create polynomial
         in
         let replaced_division =
-          apply_over_types
+          IntExpression.apply_over_types
             (replace_polynomial dividend)
             (replace_polynomial quotient)
             ~divide:true
@@ -1361,7 +1443,7 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
     None
   else
     let merge_replace left (variable, right) =
-      apply_over_types left right ~operation:(fun left right ->
+      IntExpression.apply_over_types left right ~operation:(fun left right ->
           Polynomial.replace left ~by:right ~variable ~compare_t:T.compare)
     in
     let replaced_expression =
@@ -3274,6 +3356,19 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
     | Some singles -> Some (Concrete singles)
     | None -> OrderedTypes.concatenation_from_parameters parameters
   in
+  let create_int_expression_from_arguments arguments ~operation =
+    match arguments with
+    | []
+    | [_] ->
+        Top
+    | _ ->
+        List.map arguments ~f:(create_logic ~resolve_aliases ~variable_aliases)
+        |> List.map ~f:IntExpression.type_to_int_expression
+        |> Option.all
+        >>| IntExpression.create_int_expression_from_types ~operation
+        |> Option.value ~default:Top
+  in
+
   let result =
     let create_logic = create_logic ~resolve_aliases ~variable_aliases in
     let rec is_typing_callable = function
@@ -3448,28 +3543,6 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       | Primitive name, _ -> parametric name
       | _, Name _ -> parametric (Expression.show base)
       | _ -> Top
-    in
-    let create_int_expression_from_arguments arguments ~operation =
-      let arguments = List.map arguments ~f:create_logic |> List.map ~f:type_to_int_expression in
-      if List.exists arguments ~f:Option.is_none then
-        Top
-      else
-        match List.filter_map arguments ~f:Fn.id with
-        | []
-        | [_] ->
-            Top
-        | hd :: tl ->
-            let operation, divide =
-              match operation with
-              | `Add -> Polynomial.add, false
-              | `Multiply -> Polynomial.multiply, false
-              | `Subtract -> Polynomial.subtract, false
-              | `Divide -> Polynomial.divide, true
-            in
-            List.fold
-              tl
-              ~init:hd
-              ~f:(apply_over_types ~operation:(operation ~compare_t:T.compare) ~divide)
     in
     match expression with
     | Call
@@ -3736,6 +3809,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       Option.value
         ~default:Top
         (create_ordered_type_from_parameters parameters >>= TypeOperation.Compose.create)
+  | Parametric { name = "pyre_extensions.Product"; parameters } ->
+      create_ordered_type_from_parameters parameters
+      >>= IntExpression.create_product_from_ordered_type
+      |> Option.value ~default:Top
   | Parametric { name; parameters } -> (
       match
         Identifier.Table.find parametric_substitution_map name, Parameter.all_singles parameters
@@ -4436,7 +4513,9 @@ end = struct
           let replace_variable variable =
             match replacement variable with
             | Some replaced_variable ->
-                Some (type_to_int_expression replaced_variable |> Option.value ~default:Bottom)
+                Some
+                  (IntExpression.type_to_int_expression replaced_variable
+                  |> Option.value ~default:Bottom)
             | _ -> None
           in
           local_replace_polynomial
