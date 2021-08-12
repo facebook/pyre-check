@@ -6,14 +6,14 @@
    pyrelib.test pyrelib.ast pyrelib.analysis))
 
 (tests
- (names newCheckTest newInferTest newServerTest)
- (modules newCheckTest newInferTest newServerTest)
+ (names baseConfigurationTest newCheckTest newInferTest newServerTest)
+ (modules baseConfigurationTest newCheckTest newInferTest newServerTest)
  (preprocess
   (pps ppx_compare ppx_sexp_conv))
  (libraries oUnit pyrelib.test pyrelib.commands))
 
 (tests
  (names languageServerTest persistentClientTest serverProtocolTest serverTest)
- (modules :standard \ commandTest newCheckTest newInferTest newServerTest)
+ (modules :standard \ commandTest baseConfigurationTest newCheckTest newInferTest newServerTest)
  (libraries oUnit pyrelib.test pyrelib.commandTest pyrelib.commands
    pyrelib.languageServer pyrelib.network pyrelib.server pyrelib.ast))

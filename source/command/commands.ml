@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module BaseConfiguration = NewCommandStartup.BaseConfiguration
 module Analyze = AnalyzeCommand
 module Check = CheckCommand
 module Infer = InferCommand

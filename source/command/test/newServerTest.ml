@@ -8,316 +8,94 @@
 open Core
 open OUnit2
 open Commands.NewServer
+module Path = PyrePath
 
 let test_json_parsing context =
-  let assert_parsed ~expected json_string =
-    let json = Yojson.Safe.from_string json_string in
+  let assert_parsed ~expected json =
     match ServerConfiguration.of_yojson json with
     | Result.Error message ->
         let message = Format.sprintf "Unexpected JSON parsing failure: %s" message in
         assert_failure message
     | Result.Ok actual ->
-        let actual_json = ServerConfiguration.to_yojson actual in
-        List.iter expected ~f:(fun (key, value) ->
-            assert_equal
-              ~ctxt:context
-              ~cmp:Yojson.Safe.equal
-              ~printer:Yojson.Safe.pretty_to_string
-              value
-              (Yojson.Safe.Util.member key actual_json))
-  in
-  let assert_not_parsed json_string =
-    let json = Yojson.Safe.from_string json_string in
-    match ServerConfiguration.of_yojson json with
-    | Result.Ok _ -> assert_failure "Unexpected JSON parsing success"
-    | Result.Error _ -> ()
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: ServerConfiguration.t]
+          ~printer:(fun result -> Sexp.to_string ([%sexp_of: ServerConfiguration.t] result))
+          expected
+          actual
   in
 
-  (* Empty. *)
-  assert_not_parsed "[]";
-  assert_not_parsed "{}";
-
-  (* Mandatory fields must exist with the right type. *)
-  assert_not_parsed {| { "foo": 42 } |};
-  assert_not_parsed {| { "log_path": "/foo/bar" } |};
-  assert_not_parsed {| { "source_path": ["/foo/bar"] } |};
-  assert_not_parsed {| { "source_paths": {} } |};
-  assert_not_parsed {| { "source_paths": { "kind": 42 } } |};
-  assert_not_parsed {| { "global_root": "/foo/bar" } |};
-  assert_not_parsed {| { "log_path": 42, "source_path": ["/foo/bar"], "global_root": "/foo/bar" } |};
-  assert_not_parsed
-    {| { "log_path": "/foo/bar", "source_path": "/foo/bar", "global_root": "/foo/bar" } |};
-  assert_not_parsed {| { "log_path": "/foo/bar", "source_path": ["/foo/bar"], "global_root": [] } |};
-
-  let mandatory_fileds =
-    {|
-    "log_path": "/log",
-    "source_paths": ["/source"],
-    "global_root": "/project"
-  |}
+  let dummy_server_configuration =
+    {
+      ServerConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
+      strict = false;
+      show_error_traces = false;
+      additional_logging_sections = [];
+      watchman_root = None;
+      critical_files = [];
+      taint_model_paths = [];
+      store_type_check_resolution = false;
+      saved_state_action = None;
+    }
   in
 
-  (* Default values *)
   assert_parsed
-    (Format.sprintf "{%s}" mandatory_fileds)
+    (`Assoc (("strict", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_server_configuration with strict = true };
+  assert_parsed
+    (`Assoc (("show_error_traces", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_server_configuration with show_error_traces = true };
+  assert_parsed
+    (`Assoc
+      (("additional_logging_sections", `List [`String "foo"; `String "bar"])
+       :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_server_configuration with additional_logging_sections = ["foo"; "bar"] };
+  assert_parsed
+    (`Assoc (("watchman_root", `String "/project") :: BaseConfigurationTest.dummy_base_json))
     ~expected:
-      [
-        "log_path", `String "/log";
-        "source_paths", `Assoc ["kind", `String "simple"; "paths", `List [`String "/source"]];
-        "global_root", `String "/project";
-        "excludes", `List [];
-        "checked_directory_allowlist", `List [];
-        "checked_directory_blocklist", `List [];
-        "extensions", `List [];
-        "debug", `Bool false;
-        "strict", `Bool false;
-        "show_error_traces", `Bool false;
-        "store_type_check_resolution", `Bool false;
-        "critical_files", `List [];
-        "parallel", `Bool false;
-        "number_of_workers", `Int 1;
-      ];
-
-  (* Individual values *)
+      { dummy_server_configuration with watchman_root = Some (Path.create_absolute "/project") };
   assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "excludes": ["/excludes"],
-            "checked_directory_allowlist": ["/allows"],
-            "checked_directory_blocklist": ["/blocks"],
-            "extensions": [".typsy"],
-            "taint_model_paths": ["/taint/model"]
-          }
-       |}
-       mandatory_fileds)
+    (`Assoc
+      (( "critical_files",
+         `List
+           [
+             `Assoc ["base_name", `String "foo.py"];
+             `Assoc ["extension", `String "derp"];
+             `Assoc ["full_path", `String "/home/bar.txt"];
+           ] )
+       :: BaseConfigurationTest.dummy_base_json))
     ~expected:
-      [
-        "excludes", `List [`String "/excludes"];
-        "checked_directory_allowlist", `List [`String "/allows"];
-        "checked_directory_blocklist", `List [`String "/blocks"];
-        ( "extensions",
-          `List
-            [`Assoc ["suffix", `String ".typsy"; "include_suffix_in_module_qualifier", `Bool false]]
-        );
-        "taint_model_paths", `List [`String "/taint/model"];
-      ];
+      {
+        dummy_server_configuration with
+        critical_files =
+          [
+            Newserver.CriticalFile.BaseName "foo.py";
+            Newserver.CriticalFile.Extension "derp";
+            Newserver.CriticalFile.FullPath (Path.create_absolute "/home/bar.txt");
+          ];
+      };
   assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "debug": true,
-            "strict": true,
-            "python_version": {
-              "major": 3,
-              "minor": 7,
-              "micro": 4
-            },
-            "show_error_traces": true,
-            "store_type_check_resolution": true,
-            "critical_files": [
-              { "base_name": "foo.py" },
-              { "extension": "derp" },
-              { "full_path": "/home/bar.txt" }
-            ]
-          }
-       |}
-       mandatory_fileds)
+    (`Assoc
+      (("taint_model_paths", `List [`String "/taint/model"])
+       :: BaseConfigurationTest.dummy_base_json))
     ~expected:
-      [
-        "debug", `Bool true;
-        "strict", `Bool true;
-        "python_version", `Assoc ["major", `Int 3; "minor", `Int 7; "micro", `Int 4];
-        "show_error_traces", `Bool true;
-        "store_type_check_resolution", `Bool true;
-        ( "critical_files",
-          `List
-            [
-              `Assoc ["base_name", `String "foo.py"];
-              `Assoc ["extension", `String "derp"];
-              `Assoc ["full_path", `String "/home/bar.txt"];
-            ] );
-      ];
+      { dummy_server_configuration with taint_model_paths = [Path.create_absolute "/taint/model"] };
   assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "parallel": true,
-            "number_of_workers": 20
-          }
-       |}
-       mandatory_fileds)
-    ~expected:["parallel", `Bool true; "number_of_workers", `Int 20];
+    (`Assoc (("store_type_check_resolution", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_server_configuration with store_type_check_resolution = true };
   assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "local_root": "/project/local",
-            "watchman_root": "/project"
-          }
-       |}
-       mandatory_fileds)
-    ~expected:["local_root", `String "/project/local"; "watchman_root", `String "/project"];
-  assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "additional_logging_sections": ["foo", "bar"],
-            "profiling_output": "/output0",
-            "memory_profiling_output": "/output1"
-          }
-       |}
-       mandatory_fileds)
+    (`Assoc
+      (( "saved_state_action",
+         `List [`String "load_from_project"; `Assoc ["project_name", `String "project"]] )
+       :: BaseConfigurationTest.dummy_base_json))
     ~expected:
-      [
-        "additional_logging_sections", `List [`String "foo"; `String "bar"];
-        "profiling_output", `String "/output0";
-        "memory_profiling_output", `String "/output1";
-      ];
-  assert_not_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "additional_logging_sections": "derp"
-          }
-       |}
-       mandatory_fileds);
-  assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "remote_logging": { "logger": "/bin/logger", "identifier": "foo" }
-          }
-       |}
-       mandatory_fileds)
-    ~expected:
-      ["remote_logging", `Assoc ["logger", `String "/bin/logger"; "identifier", `String "foo"]];
-  assert_not_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "remote_logging": "derp"
-          }
-       |}
-       mandatory_fileds);
-  assert_not_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "saved_state_action": "derp"
-          }
-       |}
-       mandatory_fileds);
-  assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "saved_state_action": [
-              "load_from_project",
-              {
-                "project_name": "project"
-              }
-            ]
-          }
-       |}
-       mandatory_fileds)
-    ~expected:
-      [
-        ( "saved_state_action",
-          `List [`String "load_from_project"; `Assoc ["project_name", `String "project"]] );
-      ];
-
-  (* Specify source paths with `simple` *)
-  let mandatory_fileds = {|
-    "log_path": "/log",
-    "global_root": "/project"
-  |} in
-  assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "source_paths": {
-              "kind": "simple",
-              "paths": ["/source/path0", "/source/path1"]
-            }
-          }
-       |}
-       mandatory_fileds)
-    ~expected:
-      [
-        ( "source_paths",
-          `Assoc
-            [
-              "kind", `String "simple";
-              "paths", `List [`String "/source/path0"; `String "/source/path1"];
-            ] );
-      ];
-
-  (* Specify source paths with `buck` *)
-  assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "source_paths": {
-              "kind": "buck",
-              "source_root": "/buck/root",
-              "artifact_root": "/build/root"
-            }
-          }
-       |}
-       mandatory_fileds)
-    ~expected:
-      [
-        ( "source_paths",
-          `Assoc
-            [
-              "kind", `String "buck";
-              "targets", `List [];
-              "source_root", `String "/buck/root";
-              "artifact_root", `String "/build/root";
-            ] );
-      ];
-  assert_parsed
-    (Format.sprintf
-       {|
-          {
-            %s,
-            "source_paths": {
-              "kind": "buck",
-              "targets": ["//my:target"],
-              "mode": "@mode/opt",
-              "isolation_prefix": "prefix",
-              "source_root": "/buck/root",
-              "artifact_root": "/build/root"
-            }
-          }
-       |}
-       mandatory_fileds)
-    ~expected:
-      [
-        ( "source_paths",
-          `Assoc
-            [
-              "kind", `String "buck";
-              "targets", `List [`String "//my:target"];
-              "mode", `String "@mode/opt";
-              "isolation_prefix", `String "prefix";
-              "source_root", `String "/buck/root";
-              "artifact_root", `String "/build/root";
-            ] );
-      ];
+      {
+        dummy_server_configuration with
+        saved_state_action =
+          Some
+            (Newserver.SavedStateAction.LoadFromProject
+               { project_name = "project"; project_metadata = None });
+      };
   ()
 
 
