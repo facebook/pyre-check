@@ -96,6 +96,8 @@ def _collect_coverage(modules: Mapping[str, cst.Module]) -> List[FileCoverage]:
 
 
 class Coverage(Command):
+    """Collect per-line type coverage."""
+
     NAME = "coverage"
 
     def __init__(
