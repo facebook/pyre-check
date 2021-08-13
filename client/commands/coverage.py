@@ -7,6 +7,7 @@
 import dataclasses
 import json
 import logging
+import os
 from pathlib import Path
 from typing import List, Mapping, Optional, Set
 
@@ -117,8 +118,9 @@ class Coverage(Command):
         modules = {}
         for path in _parse_paths(paths):
             module = parse_path_to_module(path)
+            relative_path = os.path.relpath(path, self._configuration.project_root)
             if module is not None:
-                modules[path] = module
+                modules[relative_path] = module
         coverage = _collect_coverage(modules)
         print(json.dumps(list(map(dataclasses.asdict, coverage))))
 
