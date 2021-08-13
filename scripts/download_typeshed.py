@@ -12,7 +12,8 @@ import pathlib
 import shutil
 import urllib.request
 import zipfile
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -36,6 +37,12 @@ class Statistics:
     stdlib: FileCount
     third_party: FileCount
     third_party_package_count: int
+
+
+@dataclasses.dataclass(frozen=True)
+class TypeshedPatchingResult:
+    entries: List[FileEntry]
+    failed: List[Tuple[FileEntry, Path]]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -158,7 +165,7 @@ def log_trim_statistics(statistics: Statistics) -> None:
     )
 
 
-def write_output(trim_result: TypeshedTrimmingResult, output: str) -> None:
+def write_output(trim_result: TypeshedPatchingResult, output: str) -> None:
     with zipfile.ZipFile(output, mode="w") as output_file:
         for entry in trim_result.entries:
             data = entry.data
@@ -167,6 +174,37 @@ def write_output(trim_result: TypeshedTrimmingResult, output: str) -> None:
             else:
                 # Zipfile uses trailing `/` to determine if the file is a directory.
                 output_file.writestr(f"{entry.path}/", bytes())
+
+
+def _find_entry(typeshed_path: Path, entries: List[FileEntry]) -> Optional[FileEntry]:
+    """Finds a particular entry in typeshed, given its path relative to
+    `typeshed-master`, possibly while having a different suffix."""
+    for entry in entries:
+        if (
+            entry.path == f"typeshed-master/{typeshed_path.with_suffix('.pyi')}"
+            and entry.data is not None
+        ):
+            return entry
+    return None
+
+
+def _apply_patches(
+    patches_path: Path, trimmed_typeshed: TypeshedTrimmingResult
+) -> TypeshedPatchingResult:
+    failed_patches = []
+    for typeshed_path in [
+        path.relative_to(patches_path) for path in patches_path.glob("**/*.patch")
+    ]:
+        entry = _find_entry(typeshed_path, trimmed_typeshed.entries)
+
+        if entry is None:
+            continue
+
+        # Applying the patch file to the entry will happen here
+    return TypeshedPatchingResult(
+        trimmed_typeshed.entries,
+        failed_patches,
+    )
 
 
 def main() -> None:
@@ -189,17 +227,26 @@ def main() -> None:
         type=str,
         help="Where to store the downloaded typeshed zip file.",
     )
+    parser.add_argument(
+        "-p",
+        "--patch-directory",
+        required=True,
+        type=str,
+        help="Where the .patch files for amending typeshed are located.",
+    )
     arguments = parser.parse_args()
     logging.basicConfig(
         format="[%(asctime)s][%(levelname)s]: %(message)s", level=logging.INFO
     )
 
+    path = Path(arguments.patch_directory)
     url = get_typeshed_url(arguments.url)
     downloaded = download_typeshed(url)
     LOG.info(f"{downloaded.getbuffer().nbytes} bytes downloaded from {url}")
     trimmed_typeshed = trim_typeshed(downloaded)
     log_trim_statistics(trimmed_typeshed.statistics)
-    write_output(trimmed_typeshed, arguments.output)
+    patched_typeshed = _apply_patches(path, trimmed_typeshed)
+    write_output(patched_typeshed, arguments.output)
     LOG.info(f"Zip file written to {arguments.output}")
 
 
