@@ -445,7 +445,9 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--changed-files-path", type=str, hidden=True)
 @click.option("--saved-state-project", type=str, hidden=True)
 @click.option("--features", type=str, hidden=True)
-@click.option("--use-command-v2", is_flag=True, default=None, hidden=True)
+@click.option(
+    "--use-command-v2/--no-use-command-v2", is_flag=True, default=None, hidden=True
+)
 @click.option("--isolation-prefix", type=str, hidden=True)
 @click.option(
     "--python-version",
