@@ -176,7 +176,7 @@ val compute_sources_and_sinks_to_keep
 
 val create_callable_model_from_annotations
   :  resolution:Analysis.Resolution.t ->
-  callable:Interprocedural.Target.real_target ->
+  callable:Interprocedural.Target.callable_t ->
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   is_obscure:bool ->

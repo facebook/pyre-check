@@ -598,7 +598,7 @@ let test_prune_callables _ =
       List.map callgraph ~f:(fun (key, values) ->
           ( Target.create_method (Reference.create key),
             List.map values ~f:(fun value -> (create (Reference.create value) :> Target.t)) ))
-      |> Target.RealMap.of_alist_exn
+      |> Target.CallableMap.of_alist_exn
     in
     let overrides =
       List.map overrides ~f:(fun (key, values) ->

@@ -523,8 +523,8 @@ let initialize
             ~models
             ~callables:
               (List.filter_map (List.rev_append stubs callables) ~f:(function
-                  | `Function _ as callable -> Some (callable :> Target.real_target)
-                  | `Method _ as callable -> Some (callable :> Target.real_target)
+                  | `Function _ as callable -> Some (callable :> Target.callable_t)
+                  | `Method _ as callable -> Some (callable :> Target.callable_t)
                   | _ -> None))
             ~stubs:(Target.HashSet.of_list stubs)
             ~environment

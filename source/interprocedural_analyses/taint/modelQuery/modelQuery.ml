@@ -591,8 +591,8 @@ let apply_all_rules
     in
     let callables =
       List.filter_map callables ~f:(function
-          | `Function _ as callable -> Some (callable :> Target.real_target)
-          | `Method _ as callable -> Some (callable :> Target.real_target)
+          | `Function _ as callable -> Some (callable :> Target.callable_t)
+          | `Method _ as callable -> Some (callable :> Target.callable_t)
           | _ -> None)
     in
     let callable_models =

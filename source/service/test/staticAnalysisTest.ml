@@ -29,8 +29,8 @@ let test_callables context =
     |> fst
     |> List.map ~f:(fun { Service.StaticAnalysis.callable; _ } -> callable)
     |> assert_equal
-         ~printer:(List.to_string ~f:Interprocedural.Target.show_real_target)
-         ~cmp:(List.equal Interprocedural.Target.equal_real_target)
+         ~printer:(List.to_string ~f:Interprocedural.Target.show_callable_t)
+         ~cmp:(List.equal Interprocedural.Target.equal_callable_t)
          expected
   in
   assert_callables

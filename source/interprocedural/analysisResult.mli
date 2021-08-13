@@ -114,7 +114,7 @@ module type ANALYZER = sig
 
   val analyze
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    callable:Target.real_target ->
+    callable:Target.callable_t ->
     qualifier:Reference.t ->
     define:Statement.Define.t Node.t ->
     existing:call_model option ->

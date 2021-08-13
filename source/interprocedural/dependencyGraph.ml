@@ -13,13 +13,13 @@ open Analysis
 
 type t = Target.t list Target.Map.t
 
-type callgraph = Target.t list Target.RealMap.t
+type callgraph = Target.t list Target.CallableMap.t
 
 module CallGraphSharedMemory = Memory.Serializer (struct
-  type t = Target.t list Target.RealMap.Tree.t
+  type t = Target.t list Target.CallableMap.Tree.t
 
   module Serialized = struct
-    type t = Target.t list Target.RealMap.Tree.t
+    type t = Target.t list Target.CallableMap.Tree.t
 
     let prefix = Prefix.make ()
 
@@ -55,7 +55,7 @@ end)
 
 let empty = Target.Map.empty
 
-let empty_callgraph = Target.RealMap.empty
+let empty_callgraph = Target.CallableMap.empty
 
 let empty_overrides = Reference.Map.empty
 
@@ -173,7 +173,7 @@ let from_callgraph callgraph =
     let key = (key :> Target.t) in
     Target.Map.set result ~key ~data
   in
-  Target.RealMap.fold callgraph ~f:add ~init:Target.Map.empty
+  Target.CallableMap.fold callgraph ~f:add ~init:Target.Map.empty
 
 
 let union left right =
@@ -279,8 +279,8 @@ let create_overrides ~environment ~source =
 
 let expand_callees callees =
   let rec expand_and_gather expanded = function
-    | (#Target.real_target | #Target.object_target) as real -> real :: expanded
-    | #Target.override_target as override ->
+    | (#Target.callable_t | #Target.object_t) as real -> real :: expanded
+    | #Target.override_t as override ->
         let make_override at_type = Target.create_derived_override override ~at_type in
         let overrides =
           let member = Target.get_override_reference override in

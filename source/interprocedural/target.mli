@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* A generalization of what can be a call target during the analysis. - RealTarget refers to an
-   actual definition. - OverrideTarget is a set of target represented by an override tree. *)
+(* A generalization of what can be a call target during the analysis. `callable_t` refers to an
+   actual definition. `override_t` is a set of target represented by an override tree. `object_t`
+   represents some non-callable object through which taint might flow. *)
 
 open Ast
 open Statement
@@ -17,31 +18,31 @@ type method_name = {
 }
 [@@deriving show, sexp, compare, hash, eq]
 
-type function_target = [ `Function of string ] [@@deriving show, sexp, compare, hash, eq]
+type function_t = [ `Function of string ] [@@deriving show, sexp, compare, hash, eq]
 
-type method_target = [ `Method of method_name ] [@@deriving show, sexp, compare, hash, eq]
+type method_t = [ `Method of method_name ] [@@deriving show, sexp, compare, hash, eq]
 
-type real_target =
-  [ function_target
-  | method_target
+type callable_t =
+  [ function_t
+  | method_t
   ]
 [@@deriving show, sexp, compare, hash, eq]
 
-type override_target = [ `OverrideTarget of method_name ] [@@deriving show, sexp, compare, hash, eq]
+type override_t = [ `OverrideTarget of method_name ] [@@deriving show, sexp, compare, hash, eq]
 
 (* Technically not a callable, but we store models of some fields/globals, E.g. os.environ, or
    HttpRequest.GET *)
-type object_target = [ `Object of string ] [@@deriving show, sexp, compare, hash, eq]
+type object_t = [ `Object of string ] [@@deriving show, sexp, compare, hash, eq]
 
-type non_override_target =
-  [ real_target
-  | object_target
+type non_override_t =
+  [ callable_t
+  | object_t
   ]
 [@@deriving show, sexp, compare, hash, eq]
 
 type t =
-  [ non_override_target
-  | override_target
+  [ non_override_t
+  | override_t
   ]
 [@@deriving sexp, compare, hash, eq]
 
@@ -57,33 +58,33 @@ val class_name : [< t ] -> string option
 
 val compare : ([< t ] as 'a) -> 'a -> int
 
-type target_with_result = real_target
+type t_with_result = callable_t
 
-val create_function : Reference.t -> [> function_target ]
+val create_function : Reference.t -> [> function_t ]
 
-val create_method : Reference.t -> [> method_target ]
+val create_method : Reference.t -> [> method_t ]
 
-val create_property_setter : Reference.t -> [> method_target ]
+val create_property_setter : Reference.t -> [> method_t ]
 
-val create_override : Reference.t -> [> override_target ]
+val create_override : Reference.t -> [> override_t ]
 
-val create_property_setter_override : Reference.t -> [> override_target ]
+val create_property_setter_override : Reference.t -> [> override_t ]
 
-val create_object : Reference.t -> [> object_target ]
+val create_object : Reference.t -> [> object_t ]
 
-val create : Define.t Node.t -> [> real_target ]
+val create : Define.t Node.t -> [> callable_t ]
 
-val create_derived_override : override_target -> at_type:Reference.t -> [> override_target ]
+val create_derived_override : override_t -> at_type:Reference.t -> [> override_t ]
 
-val get_method_reference : method_target -> Reference.t
+val get_method_reference : method_t -> Reference.t
 
-val get_override_reference : override_target -> Reference.t
+val get_override_reference : override_t -> Reference.t
 
-val get_corresponding_method : override_target -> [> method_target ]
+val get_corresponding_method : override_t -> [> method_t ]
 
-val get_corresponding_override : method_target -> [> override_target ]
+val get_corresponding_override : method_t -> [> override_t ]
 
-val get_real_target : [< t ] -> [> real_target ] option
+val get_callable_t : [< t ] -> [> callable_t ] option
 
 (* function or method name, no class or anything else *)
 val get_short_name : [< t ] -> string
@@ -101,7 +102,7 @@ module Key : sig
 end
 
 module OverrideKey : sig
-  type t = override_target
+  type t = override_t
 
   val to_string : t -> string
 
@@ -112,8 +113,8 @@ module OverrideKey : sig
   val from_string : string -> out
 end
 
-module RealKey : sig
-  type t = real_target
+module CallableKey : sig
+  type t = callable_t
 
   val to_string : t -> string
 
@@ -128,23 +129,23 @@ module Set : Caml.Set.S with type elt = t
 
 val get_module_and_definition
   :  resolution:Analysis.GlobalResolution.t ->
-  [< real_target ] ->
+  [< callable_t ] ->
   (Reference.t * Define.t Node.t) option
 
 val resolve_method
   :  resolution:Analysis.GlobalResolution.t ->
   class_type:Type.t ->
   method_name:string ->
-  [> method_target ] option
+  [> method_t ] option
 
 module Map : Core.Map.S with type Key.t = t
 
 module Hashable : Core.Hashable.S with type t := t
 
-module RealMap : Core.Map.S with type Key.t = real_target
+module CallableMap : Core.Map.S with type Key.t = callable_t
 
-module RealSet : Caml.Set.S with type elt = real_target
+module CallableSet : Caml.Set.S with type elt = callable_t
 
-module OverrideSet : Caml.Set.S with type elt = override_target
+module OverrideSet : Caml.Set.S with type elt = override_t
 
 module HashSet : Core.Hash_set.S with type elt := t

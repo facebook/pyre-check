@@ -1772,7 +1772,7 @@ let parse_return_taint
 type parsed_signature = {
   signature: Define.Signature.t;
   location: Location.t;
-  call_target: Target.real_target;
+  call_target: Target.callable_t;
 }
 
 type parsed_attribute = {
@@ -1781,7 +1781,7 @@ type parsed_attribute = {
   sink_annotation: Expression.t option;
   decorators: Decorator.t list;
   location: Location.t;
-  call_target: Target.object_target;
+  call_target: Target.object_t;
 }
 
 type parsed_statement =

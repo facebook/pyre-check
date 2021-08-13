@@ -48,17 +48,17 @@ val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> T
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 
 module SharedMemory : sig
-  val add : callable:Target.real_target -> callees:callees Location.Map.t -> unit
+  val add : callable:Target.callable_t -> callees:callees Location.Map.t -> unit
 
   (* Attempts to read the call graph for the given callable from shared memory. If it doesn't exist,
      computes the call graph and writes to shard memory. *)
   val get_or_compute
-    :  callable:Target.real_target ->
+    :  callable:Target.callable_t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     define:Ast.Statement.Define.t ->
     callees Ast.Location.Map.t
 
-  val remove : Target.real_target list -> unit
+  val remove : Target.callable_t list -> unit
 end
 
 val create_callgraph

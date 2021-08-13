@@ -896,7 +896,7 @@ let call_graph_of_define
 module SharedMemory = struct
   include
     Memory.WithCache.Make
-      (Target.RealKey)
+      (Target.CallableKey)
       (struct
         type t = callees Location.Map.Tree.t
 
@@ -956,7 +956,8 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
         Location.Map.data call_graph_of_define
         |> List.concat_map ~f:callees
         |> List.dedup_and_sort ~compare:Target.compare
-        |> fun callees -> Target.RealMap.set dependencies ~key:(Target.create define) ~data:callees
+        |> fun callees ->
+        Target.CallableMap.set dependencies ~key:(Target.create define) ~data:callees
   in
   Preprocessing.defines ~include_nested:true source
-  |> List.fold ~init:Target.RealMap.empty ~f:fold_defines
+  |> List.fold ~init:Target.CallableMap.empty ~f:fold_defines

@@ -10,12 +10,12 @@ open Analysis
 
 type t = Target.t list Target.Map.t
 
-type callgraph = Target.t list Target.RealMap.t
+type callgraph = Target.t list Target.CallableMap.t
 
 module CallGraphSharedMemory : sig
-  val store : Target.t list Target.RealMap.Tree.t -> unit
+  val store : Target.t list Target.CallableMap.Tree.t -> unit
 
-  val load : unit -> Target.t list Target.RealMap.Tree.t
+  val load : unit -> Target.t list Target.CallableMap.Tree.t
 end
 
 (* Maps method names to closest sub-types that override them next *)
@@ -53,7 +53,7 @@ val create_overrides : environment:TypeEnvironment.ReadOnly.t -> source:Source.t
 
 val union : t -> t -> t
 
-val expand_callees : Target.t list -> Target.non_override_target list
+val expand_callees : Target.t list -> Target.non_override_t list
 
 type prune_result = {
   dependencies: t;

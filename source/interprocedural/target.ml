@@ -17,31 +17,31 @@ type method_name = {
 }
 [@@deriving show, sexp, compare, hash, eq]
 
-type function_target = [ `Function of string ] [@@deriving show, sexp, compare, hash, eq]
+type function_t = [ `Function of string ] [@@deriving show, sexp, compare, hash, eq]
 
-type method_target = [ `Method of method_name ] [@@deriving show, sexp, compare, hash, eq]
+type method_t = [ `Method of method_name ] [@@deriving show, sexp, compare, hash, eq]
 
-type real_target =
-  [ function_target
-  | method_target
+type callable_t =
+  [ function_t
+  | method_t
   ]
 [@@deriving show, sexp, compare, hash, eq]
 
-type override_target = [ `OverrideTarget of method_name ] [@@deriving show, sexp, compare, hash, eq]
+type override_t = [ `OverrideTarget of method_name ] [@@deriving show, sexp, compare, hash, eq]
 
 (* Technically not a callable, but we store models of some fields/globals, E.g. os.environ, or
    HttpRequest.GET *)
-type object_target = [ `Object of string ] [@@deriving show, sexp, compare, hash, eq]
+type object_t = [ `Object of string ] [@@deriving show, sexp, compare, hash, eq]
 
-type non_override_target =
-  [ real_target
-  | object_target
+type non_override_t =
+  [ callable_t
+  | object_t
   ]
 [@@deriving show, sexp, compare, hash, eq]
 
 type t =
-  [ non_override_target
-  | override_target
+  [ non_override_t
+  | override_t
   ]
 [@@deriving show, sexp, hash, eq]
 
@@ -78,7 +78,7 @@ let pretty_print formatter callable =
   | `Object name -> String.pp formatter (Format.sprintf "Object{%s}" name)
 
 
-type target_with_result = real_target
+type t_with_result = callable_t
 
 let create_function reference = `Function (Reference.show reference)
 
@@ -139,12 +139,12 @@ module Key = struct
   let from_string = ident
 end
 
-module RealKey = struct
-  type t = real_target [@@deriving sexp, hash]
+module CallableKey = struct
+  type t = callable_t [@@deriving sexp, hash]
 
-  let to_string = show_real_target
+  let to_string = show_callable_t
 
-  let compare = compare_real_target
+  let compare = compare_callable_t
 
   type out = string
 
@@ -152,11 +152,11 @@ module RealKey = struct
 end
 
 module OverrideKey = struct
-  type t = override_target [@@deriving sexp, hash]
+  type t = override_t [@@deriving sexp, hash]
 
-  let to_string = show_override_target
+  let to_string = show_override_t
 
-  let compare = compare_override_target
+  let compare = compare_override_t
 
   type out = string
 
@@ -164,7 +164,7 @@ module OverrideKey = struct
 end
 
 module Set = Caml.Set.Make (Key)
-module RealSet = Caml.Set.Make (RealKey)
+module CallableSet = Caml.Set.Make (CallableKey)
 module OverrideSet = Caml.Set.Make (OverrideKey)
 module HashSet = Hash_set.Make (Key)
 
@@ -242,7 +242,7 @@ let get_corresponding_override = function
   | `Method method_name -> `OverrideTarget method_name
 
 
-let get_real_target = function
+let get_callable_t = function
   | `Function name -> Some (`Function name)
   | `Method method_name -> Some (`Method method_name)
   | `OverrideTarget method_name -> Some (`Method method_name)
@@ -287,6 +287,6 @@ let compare target1 target2 =
   compare target1 target2
 
 
-module RealMap = Map.Make (RealKey)
+module CallableMap = Map.Make (CallableKey)
 module Map = Map.Make (Key)
 module Hashable = Hashable.Make (Key)

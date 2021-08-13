@@ -92,7 +92,7 @@ module TraceInfo = struct
       (fun
         (_ : AccessPath.Root.t)
         (_ : Abstract.TreeDomain.Label.path)
-        (_ : Interprocedural.Target.non_override_target)
+        (_ : Interprocedural.Target.non_override_t)
       -> true)
 
 

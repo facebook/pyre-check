@@ -291,7 +291,7 @@ let analyze_define
     qualifier
     ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
   =
-  let () = Log.log ~section:`Interprocedural "Analyzing %a" Target.pp_real_target callable in
+  let () = Log.log ~section:`Interprocedural "Analyzing %a" Target.pp_callable_t callable in
   let old_model =
     match FixpointState.get_old_model callable with
     | Some model ->
@@ -299,7 +299,7 @@ let analyze_define
           Log.log
             ~section:`Interprocedural
             "Analyzing %a, with initial model %a"
-            Target.pp_real_target
+            Target.pp_callable_t
             callable
             AnalysisResult.pp_model_t
             model
@@ -412,7 +412,7 @@ let analyze_callable analysis step callable environment =
     | _ -> ()
   in
   match callable with
-  | #Target.real_target as callable -> (
+  | #Target.callable_t as callable -> (
       match Target.get_module_and_definition callable ~resolution with
       | None ->
           let () = Log.error "Found no definition for %s" (Target.show callable) in
@@ -437,8 +437,8 @@ let analyze_callable analysis step callable environment =
           if Define.dump value then
             callables_to_dump := Target.Set.add callable !callables_to_dump;
           analyze_define step analysis callable environment qualifier define)
-  | #Target.override_target as callable -> analyze_overrides step callable
-  | #Target.object_target as path ->
+  | #Target.override_t as callable -> analyze_overrides step callable
+  | #Target.object_t as path ->
       Format.asprintf "Found object %a in fixpoint analysis" Target.pp path |> failwith
 
 
@@ -671,7 +671,7 @@ let compute_fixpoint
       let resolution = Analysis.Resolution.global_resolution resolution in
       let { Define.signature = { name; _ }; _ } =
         match callable with
-        | #Target.real_target as callable ->
+        | #Target.callable_t as callable ->
             Target.get_module_and_definition callable ~resolution
             >>| (fun (_, { Node.value; _ }) -> value)
             |> fun value -> Option.value_exn value

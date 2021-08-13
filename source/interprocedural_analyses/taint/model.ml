@@ -33,7 +33,7 @@ let remove_sinks model =
 
 
 let add_obscure_sink ~resolution ~call_target model =
-  match Target.get_real_target call_target with
+  match Target.get_callable_t call_target with
   | None -> model
   | Some real_target -> (
       match

@@ -70,7 +70,7 @@ let test_resolve_method context =
       |> Test.ScratchProject.build_global_resolution
     in
     assert_equal
-      ~printer:(show_optional Interprocedural.Target.show_method_target)
+      ~printer:(show_optional Interprocedural.Target.show_method_t)
       expected
       (Interprocedural.Target.resolve_method ~resolution ~class_type ~method_name)
   in

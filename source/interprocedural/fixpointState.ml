@@ -133,7 +133,7 @@ let add step callable state =
   (* Skip result writing unless necessary (e.g. overrides don't have results) *)
   let () =
     match callable with
-    | #Target.target_with_result -> SharedResults.add callable state.result
+    | #Target.t_with_result -> SharedResults.add callable state.result
     | _ -> ()
   in
   SharedFixpoint.add callable { is_partial = state.is_partial; step }

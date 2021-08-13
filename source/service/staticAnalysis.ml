@@ -17,11 +17,11 @@ module DependencyGraph = Interprocedural.DependencyGraph
 module DependencyGraphSharedMemory = Interprocedural.DependencyGraphSharedMemory
 
 (* The boolean indicated whether the callable is internal or not. *)
-type callable_with_dependency_information = Target.real_target * bool
+type callable_with_dependency_information = Target.callable_t * bool
 
 type initial_callables = {
   callables_with_dependency_information: callable_with_dependency_information list;
-  stubs: Target.real_target list;
+  stubs: Target.callable_t list;
   filtered_callables: Target.Set.t;
 }
 
@@ -265,7 +265,7 @@ end = struct
     let path = get_callgraph_save_path ~configuration in
     try
       let sexp = Sexplib.Sexp.load_sexp (Path.absolute path) in
-      let callgraph = Target.RealMap.t_of_sexp (Core.List.t_of_sexp Target.t_of_sexp) sexp in
+      let callgraph = Target.CallableMap.t_of_sexp (Core.List.t_of_sexp Target.t_of_sexp) sexp in
       Log.info "Loaded call graph from cache.";
       Some callgraph
     with
@@ -278,7 +278,7 @@ end = struct
   let save_call_graph ~configuration ~callgraph =
     let path = get_callgraph_save_path ~configuration in
     try
-      let data = Target.RealMap.sexp_of_t (Core.List.sexp_of_t Target.sexp_of_t) callgraph in
+      let data = Target.CallableMap.sexp_of_t (Core.List.sexp_of_t Target.sexp_of_t) callgraph in
       ensure_save_directory_exists ~configuration;
       Sexplib.Sexp.save (Path.absolute path) data;
       Log.info "Saved call graph to cache file: %s" (Path.absolute path)
@@ -335,7 +335,7 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
 
 
 type found_callable = {
-  callable: Target.real_target;
+  callable: Target.callable_t;
   define: Define.t Node.t;
   is_internal: bool;
 }
@@ -569,9 +569,9 @@ let build_call_graph
         Scheduler.map_reduce
           scheduler
           ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-          ~initial:Target.RealMap.empty
+          ~initial:Target.CallableMap.empty
           ~map:(fun _ qualifiers ->
-            List.fold qualifiers ~init:Target.RealMap.empty ~f:build_call_graph)
+            List.fold qualifiers ~init:Target.CallableMap.empty ~f:build_call_graph)
           ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
           ~inputs:qualifiers
           ()

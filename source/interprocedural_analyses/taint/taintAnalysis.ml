@@ -78,8 +78,8 @@ include Taint.Result.Register (struct
         let callables =
           Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:functions
           |> List.filter_map ~f:(function
-                 | `Function _ as callable -> Some (callable :> Target.real_target)
-                 | `Method _ as callable -> Some (callable :> Target.real_target)
+                 | `Function _ as callable -> Some (callable :> Target.callable_t)
+                 | `Method _ as callable -> Some (callable :> Target.callable_t)
                  | _ -> None)
         in
         TaintModelQuery.ModelQuery.apply_all_rules
