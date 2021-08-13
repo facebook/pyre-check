@@ -10,6 +10,8 @@ import json
 import logging
 import pathlib
 import shutil
+import subprocess
+import tempfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -27,6 +29,12 @@ class FileEntry:
 
 
 @dataclasses.dataclass(frozen=True)
+class PatchResult:
+    entry: FileEntry
+    failed: bool
+
+
+@dataclasses.dataclass(frozen=True)
 class FileCount:
     kept: int
     dropped: int
@@ -41,8 +49,7 @@ class Statistics:
 
 @dataclasses.dataclass(frozen=True)
 class TypeshedPatchingResult:
-    entries: List[FileEntry]
-    failed: List[Tuple[FileEntry, Path]]
+    results: List[PatchResult]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -167,13 +174,15 @@ def log_trim_statistics(statistics: Statistics) -> None:
 
 def write_output(trim_result: TypeshedPatchingResult, output: str) -> None:
     with zipfile.ZipFile(output, mode="w") as output_file:
-        for entry in trim_result.entries:
-            data = entry.data
+        for patch_result in trim_result.results:
+            data = patch_result.entry.data
             if data is not None:
-                output_file.writestr(entry.path, data)
+                output_file.writestr(patch_result.entry.path, data)
             else:
                 # Zipfile uses trailing `/` to determine if the file is a directory.
-                output_file.writestr(f"{entry.path}/", bytes())
+                output_file.writestr(f"{patch_result.entry.path}/", bytes())
+                if patch_result.failed:
+                    LOG.warning(f"Failed to apply patch to {patch_result.entry.path}!")
 
 
 def _find_entry(typeshed_path: Path, entries: List[FileEntry]) -> Optional[FileEntry]:
@@ -188,23 +197,48 @@ def _find_entry(typeshed_path: Path, entries: List[FileEntry]) -> Optional[FileE
     return None
 
 
+def _patch_entry(
+    entry: FileEntry, temporary_path: Path, patch_path: Path
+) -> PatchResult:
+    if entry.data is None or not patch_path.is_file():
+        return PatchResult(entry, False)
+
+    new_filepath = temporary_path / "tempfile"
+    new_filepath.write_bytes(entry.data)
+
+    result = subprocess.run(["patch", "-R", "-u", new_filepath, "-i", patch_path])
+    if result.returncode != 0:
+        return PatchResult(entry, True)
+
+    new_data = new_filepath.read_bytes()
+
+    new_filepath.unlink()
+
+    return PatchResult(FileEntry(entry.path, new_data), False)
+
+
+def _entry_path_to_patch_path(input: str) -> Path:
+    """Removes the first component of the path, and changes the suffix to `.patch`."""
+    parts = Path(input).with_suffix(".patch").parts
+    return Path("/".join(parts[1:]))
+
+
 def _apply_patches(
     patches_path: Path, trimmed_typeshed: TypeshedTrimmingResult
 ) -> TypeshedPatchingResult:
-    failed_patches = []
-    for typeshed_path in [
-        path.relative_to(patches_path) for path in patches_path.glob("**/*.patch")
-    ]:
-        entry = _find_entry(typeshed_path, trimmed_typeshed.entries)
+    with tempfile.TemporaryDirectory() as temporary_root:
+        temporary_root_path = Path(temporary_root)
 
-        if entry is None:
-            continue
-
-        # Applying the patch file to the entry will happen here
-    return TypeshedPatchingResult(
-        trimmed_typeshed.entries,
-        failed_patches,
-    )
+        return TypeshedPatchingResult(
+            [
+                _patch_entry(
+                    entry,
+                    temporary_root_path,
+                    patches_path / _entry_path_to_patch_path(entry.path),
+                )
+                for entry in trimmed_typeshed.entries
+            ]
+        )
 
 
 def main() -> None:
