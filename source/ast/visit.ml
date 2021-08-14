@@ -503,3 +503,17 @@ let rec collect_non_generic_type_names { Node.value; _ } =
       List.concat_map ~f:collect_non_generic_type_names elements
   | Name name -> name_to_reference name >>| Reference.show |> Option.to_list
   | _ -> []
+
+
+let collect_format_strings_with_ignores ~ignore_line_map source =
+  let module CollectIgnoredFormatStrings = ExpressionCollector (struct
+    type t = Expression.t * Ignore.t list
+
+    let predicate = function
+      | { Node.value = Expression.String { kind = Mixed _ | Format _; _ }; location } as expression
+        ->
+          Map.find ignore_line_map (Location.line location) >>| fun ignores -> expression, ignores
+      | _ -> None
+  end)
+  in
+  CollectIgnoredFormatStrings.collect source

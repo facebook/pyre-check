@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
 open Expression
 
 type node =
@@ -116,3 +117,8 @@ val collect_calls_and_names : Statement.t -> Expression.t list
 val collect_base_identifiers : Statement.t -> Identifier.t Node.t list
 
 val collect_non_generic_type_names : Expression.t -> Identifier.t list
+
+val collect_format_strings_with_ignores
+  :  ignore_line_map:Ignore.t list Int.Map.t ->
+  Source.t ->
+  (Expression.t * Ignore.t list) list
