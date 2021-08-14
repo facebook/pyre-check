@@ -22,6 +22,7 @@ from ..errors import (
     _get_unused_ignore_codes,
     _line_ranges_spanned_by_format_strings,
     _remove_unused_ignores,
+    _relocate_errors,
     _suppress_errors,
 )
 
@@ -861,4 +862,61 @@ class ErrorsTest(unittest.TestCase):
         self.assertEqual(
             _map_line_to_start_of_range([(3, 5), (4, 6)]),
             {3: 3, 4: 3, 5: 3, 6: 4},
+        )
+
+    def test_relocate_errors(self) -> None:
+        errors = {
+            1: [
+                {"code": "1", "description": "description"},
+                {"code": "2", "description": "description"},
+            ],
+            2: [
+                {"code": "3", "description": "description"},
+                {"code": "4", "description": "description"},
+            ],
+            3: [
+                {"code": "5", "description": "description"},
+                {"code": "6", "description": "description"},
+            ],
+        }
+        self.assertEqual(
+            _relocate_errors(
+                errors,
+                {},
+            ),
+            errors,
+        )
+        self.assertEqual(
+            _relocate_errors(
+                errors,
+                {2: 1, 3: 1},
+            ),
+            {
+                1: [
+                    {"code": "1", "description": "description"},
+                    {"code": "2", "description": "description"},
+                    {"code": "3", "description": "description"},
+                    {"code": "4", "description": "description"},
+                    {"code": "5", "description": "description"},
+                    {"code": "6", "description": "description"},
+                ],
+            },
+        )
+        self.assertEqual(
+            _relocate_errors(
+                errors,
+                {1: 1, 2: 2, 3: 2},
+            ),
+            {
+                1: [
+                    {"code": "1", "description": "description"},
+                    {"code": "2", "description": "description"},
+                ],
+                2: [
+                    {"code": "3", "description": "description"},
+                    {"code": "4", "description": "description"},
+                    {"code": "5", "description": "description"},
+                    {"code": "6", "description": "description"},
+                ],
+            },
         )

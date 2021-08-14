@@ -25,6 +25,7 @@ MAX_LINES_PER_FIXME: int = 4
 PyreError = Dict[str, Any]
 PathsToErrors = Dict[Path, List[PyreError]]
 LineRange = Tuple[int, int]
+LineToErrors = Dict[int, List[Dict[str, str]]]
 
 
 class LineBreakTransformer(libcst.CSTTransformer):
@@ -485,9 +486,28 @@ def _lines_after_suppressing_errors(
     return new_lines
 
 
+def _relocate_errors(
+    errors: LineToErrors, target_line_map: Dict[int, int]
+) -> LineToErrors:
+    relocated = defaultdict(list)
+    for line, errors in errors.items():
+        target_line = target_line_map.get(line)
+        if target_line is None:
+            target_line = line
+        else:
+            LOG.info(
+                f"Relocating the following fixmes from line {line}"
+                f" to line {target_line} because line {line} is within"
+                f" a multi-line format string:\n{errors}"
+            )
+
+        relocated[target_line].extend(errors)
+    return relocated
+
+
 def _suppress_errors(
     input: str,
-    errors: Dict[int, List[Dict[str, str]]],
+    errors: LineToErrors,
     custom_comment: Optional[str] = None,
     max_line_length: Optional[int] = None,
     truncate: bool = False,
