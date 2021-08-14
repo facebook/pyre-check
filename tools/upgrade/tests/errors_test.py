@@ -8,7 +8,7 @@
 import json
 import textwrap
 import unittest
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from unittest.mock import call, patch
 
 from .. import UserError, errors
@@ -19,6 +19,7 @@ from ..errors import (
     SkippingGeneratedFileException,
     SkippingUnparseableFileException,
     _get_unused_ignore_codes,
+    _line_ranges_spanned_by_format_strings,
     _remove_unused_ignores,
     _suppress_errors,
 )
@@ -803,4 +804,45 @@ class ErrorsTest(unittest.TestCase):
             def foo() -> None: pass
             """,
             max_line_length=25,
+        )
+
+    def assertLinesSpanned(
+        self, source: str, expected_lines: List[Tuple[int, int]]
+    ) -> None:
+        self.assertEqual(
+            list(
+                _line_ranges_spanned_by_format_strings(textwrap.dedent(source)).values()
+            ),
+            expected_lines,
+        )
+
+    def test_lines_spanned_by_format_strings(self) -> None:
+        self.assertLinesSpanned(
+            """
+            def foo() -> None:
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                bar
+                \"\"\"
+
+                f\"\"\"
+                bar
+                \"\"\"
+            """,
+            [(3, 7), (9, 11)],
+        )
+        self.assertLinesSpanned(
+            """
+            def foo() -> None:
+                f"{1 + "hello"}"
+            """,
+            [(3, 3)],
+        )
+        # Skip checking of format strings in case libcst barfs on the parsing.
+        self.assertLinesSpanned(
+            """
+            def cannot_parse()
+            """,
+            [],
         )

@@ -10,7 +10,7 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import libcst
 import libcst.matchers as libcst_matchers
@@ -24,6 +24,7 @@ MAX_LINES_PER_FIXME: int = 4
 
 PyreError = Dict[str, Any]
 PathsToErrors = Dict[Path, List[PyreError]]
+LineRange = Tuple[int, int]
 
 
 class LineBreakTransformer(libcst.CSTTransformer):
@@ -371,6 +372,37 @@ def _remove_unused_ignores(line: str, errors: List[Dict[str, str]]) -> str:
             ignore_codes_string,
             ", ".join([str(code) for code in remaining_ignore_codes]),
         )
+
+
+def _line_ranges_spanned_by_format_strings(
+    source: str,
+) -> Dict[libcst.CSTNode, LineRange]:
+    def _code_range_to_line_range(
+        code_range: libcst._position.CodeRange,
+    ) -> LineRange:
+        return code_range.start.line, code_range.end.line
+
+    try:
+        wrapper = libcst.metadata.MetadataWrapper(libcst.parse_module(source))
+    except libcst._exceptions.ParserSyntaxError as exception:
+        # NOTE: This should not happen. If a file is unparseable for libcst, it
+        # would probably have been unparseable for Pyre as well. In that case,
+        # we would not have raised a 404 parse error and not reached here in the
+        # first place. Still, catch the exception and just skip the special
+        # handling of format strings.
+        LOG.warning(
+            "Not moving out fixmes from f-strings because"
+            f" libcst failed to parse the file: {exception}"
+        )
+        return {}
+
+    position_map = wrapper.resolve(libcst.metadata.PositionProvider)
+    return {
+        format_string: _code_range_to_line_range(position_map[format_string])
+        for format_string in libcst_matchers.findall(
+            wrapper.module, libcst_matchers.FormattedString()
+        )
+    }
 
 
 def _suppress_errors(
