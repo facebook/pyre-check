@@ -505,6 +505,29 @@ def _relocate_errors(
     return relocated
 
 
+def _relocate_errors_inside_format_strings(
+    errors: LineToErrors, source: str
+) -> LineToErrors:
+    def _expression_to_string(expression: libcst.BaseExpression) -> str:
+        return libcst.Module(
+            [libcst.SimpleStatementLine([libcst.Expr(expression)])]
+        ).code.strip()
+
+    format_string_line_ranges = _line_ranges_spanned_by_format_strings(source)
+    if len(format_string_line_ranges) == 0:
+        return errors
+
+    log_lines = ["Lines spanned by format strings:"]
+    for format_string, line_range in format_string_line_ranges.items():
+        # pyre-fixme[6]: Expected BaseExpression but got CSTNode.
+        log_lines.append(f"{_expression_to_string(format_string)}: {line_range}")
+    LOG.debug("\n".join(log_lines))
+
+    return _relocate_errors(
+        errors, _map_line_to_start_of_range(list(format_string_line_ranges.values()))
+    )
+
+
 def _suppress_errors(
     input: str,
     errors: LineToErrors,
@@ -523,6 +546,8 @@ def _suppress_errors(
         error["code"] == "404" for error_list in errors.values() for error in error_list
     ):
         raise SkippingUnparseableFileException()
+
+    errors = _relocate_errors_inside_format_strings(errors, input)
 
     new_lines = _lines_after_suppressing_errors(
         lines, errors, custom_comment, max_line_length, truncate

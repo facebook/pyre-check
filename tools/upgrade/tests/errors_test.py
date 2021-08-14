@@ -306,12 +306,12 @@ class ErrorsTest(unittest.TestCase):
 
         # Skip generated files.
         with self.assertRaises(SkippingGeneratedFileException):
-            _suppress_errors("@" "generated", {})
+            _suppress_errors("# @" "generated", {})
 
         # Do not check for generated files with --unsafe.
         try:
             _suppress_errors(
-                "@" "generated",
+                "# @" "generated",
                 {},
                 custom_comment=None,
                 max_line_length=None,
@@ -806,6 +806,82 @@ class ErrorsTest(unittest.TestCase):
             def foo() -> None: pass
             """,
             max_line_length=25,
+        )
+
+    def test_suppress_errors__format_string(self) -> None:
+        self.assertSuppressErrors(
+            {
+                4: [
+                    {
+                        "code": "42",
+                        "description": "Some error",
+                    }
+                ],
+                5: [
+                    {
+                        "code": "42",
+                        "description": "Some error",
+                    },
+                    {
+                        "code": "43",
+                        "description": "Some error",
+                    },
+                ],
+            },
+            """
+            def foo() -> None:
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                {"world" + int("a")}
+                bar
+                \"\"\"
+            """,
+            """
+            def foo() -> None:
+                # FIXME[42]: Some error
+                # FIXME[43]: Some error
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                {"world" + int("a")}
+                bar
+                \"\"\"
+            """,
+        )
+        self.assertSuppressErrors(
+            {
+                4: [
+                    {
+                        "code": "42",
+                        "description": "Some error 1",
+                    },
+                    {
+                        "code": "42",
+                        "description": "Some error 2",
+                    },
+                ],
+            },
+            """
+            def foo() -> None:
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                {"world" + int("a")}
+                bar
+                \"\"\"
+            """,
+            """
+            def foo() -> None:
+                # FIXME[42]: Some error 1
+                # FIXME[42]: Some error 2
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                {"world" + int("a")}
+                bar
+                \"\"\"
+            """,
         )
 
     def assertLinesSpanned(
