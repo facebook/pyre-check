@@ -238,7 +238,7 @@ let test_collect_format_strings_with_ignores _ =
         baz
         """
     |}
-    [[6, PyreFixme, [58; 42]; 6, PyreIgnore, [7]]];
+    [[6, PyreIgnore, [7]; 6, PyreFixme, [58; 42]]];
   assert_format_strings_with_ignores
     {|
       def foo() -> None:

@@ -60,7 +60,9 @@ val ignored_lines_including_format_strings
   Ignore.t list
 
 val create_from_source_path
-  :  metadata:Metadata.t ->
+  :  ?collect_format_strings_with_ignores:
+       (ignore_line_map:Ignore.t list Int.Map.t -> t -> (Expression.t * Ignore.t list) list) ->
+  metadata:Metadata.t ->
   source_path:SourcePath.t ->
   Statement.t list ->
   t

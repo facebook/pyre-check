@@ -268,8 +268,17 @@ let ignored_lines_including_format_strings
   |> List.concat_map ~f:(List.dedup_and_sort ~compare:Ignore.compare)
 
 
-let create_from_source_path ~metadata ~source_path statements =
-  { metadata; source_path; top_level_unbound_names = []; statements }
+let create_from_source_path ?collect_format_strings_with_ignores ~metadata ~source_path statements =
+  let source = { metadata; source_path; top_level_unbound_names = []; statements } in
+  {
+    source with
+    metadata =
+      {
+        metadata with
+        ignore_lines =
+          ignored_lines_including_format_strings ?collect_format_strings_with_ignores source;
+      };
+  }
 
 
 let create
