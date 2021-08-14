@@ -12,6 +12,15 @@ open Statement
 open Ignore
 open Test
 
+let create_ignore ignored_line codes kind start_line start_column end_line end_column =
+  let location =
+    let start = { Location.line = start_line; column = start_column } in
+    let stop = { Location.line = end_line; column = end_column } in
+    { Location.start; stop }
+  in
+  create ~ignored_line ~codes ~kind ~location
+
+
 let test_parse _ =
   let qualifier = !&"test" in
   let assert_mode line expected_mode =
@@ -71,14 +80,6 @@ let test_parse _ =
       ~printer:(fun ignores -> List.to_string ~f:show ignores)
       expected_ignore_lines
       (List.rev ignore_lines)
-  in
-  let create_ignore ignored_line codes kind start_line start_column end_line end_column =
-    let location =
-      let start = { Location.line = start_line; column = start_column } in
-      let stop = { Location.line = end_line; column = end_column } in
-      { Location.start; stop }
-    in
-    create ~ignored_line ~codes ~kind ~location
   in
   assert_ignore
     ["def foo() -> int: return 1.0  # pyre-ignore"]
@@ -248,8 +249,67 @@ let test_expand_relative_import _ =
   assert_export ~relative:"module/__init__.py" ~from:"." ~expected:"module"
 
 
+let test_ignored_lines _ =
+  let assert_ignores source expected =
+    assert_equal
+      ~cmp:[%equal: Ignore.t list]
+      ~printer:[%show: Ignore.t list]
+      expected
+      (Source.ignored_lines_including_format_strings
+         ~collect_format_strings_with_ignores:Visit.collect_format_strings_with_ignores
+         (parse source))
+  in
+  assert_ignores {|
+      def foo() -> None:
+        pass
+    |} [];
+  assert_ignores
+    {|
+      def foo() -> None:
+        # pyre-fixme[58, 42]
+        # Some comment.
+        f"""
+        {1 + "hello"}
+        """
+
+        # pyre-fixme[9]
+        x: str = 1
+    |}
+    [
+      create_ignore 5 [58; 42] PyreFixme 3 2 3 18;
+      create_ignore 6 [58; 42] PyreFixme 3 2 3 18;
+      create_ignore 7 [58; 42] PyreFixme 3 2 3 18;
+      create_ignore 10 [9] PyreFixme 9 2 9 17;
+    ];
+  assert_ignores
+    {|
+      def foo() -> None:
+        # pyre-fixme[7]
+        # Some comment.
+        f"""
+        foo
+        bar
+        {1 + "hello"}
+        baz
+        """
+    |}
+    [
+      create_ignore 5 [7] PyreFixme 3 2 3 18;
+      create_ignore 6 [7] PyreFixme 3 2 3 18;
+      create_ignore 7 [7] PyreFixme 3 2 3 18;
+      create_ignore 8 [7] PyreFixme 3 2 3 18;
+      create_ignore 9 [7] PyreFixme 3 2 3 18;
+      create_ignore 10 [7] PyreFixme 3 2 3 18;
+    ];
+  ()
+
+
 let () =
   "metadata" >::: ["parse" >:: test_parse; "mode" >:: test_mode] |> Test.run;
   "source"
-  >::: ["qualifier" >:: test_qualifier; "expand_relative_import" >:: test_expand_relative_import]
+  >::: [
+         "qualifier" >:: test_qualifier;
+         "expand_relative_import" >:: test_expand_relative_import;
+         "ignored_lines" >:: test_ignored_lines;
+       ]
   |> Test.run

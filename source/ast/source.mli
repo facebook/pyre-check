@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
+
 type mode =
   | Debug
   | Strict
@@ -50,6 +52,12 @@ type t = {
   statements: Statement.t list;
 }
 [@@deriving compare, eq, hash, show, sexp]
+
+val ignored_lines_including_format_strings
+  :  ?collect_format_strings_with_ignores:
+       (ignore_line_map:Ignore.t list Int.Map.t -> t -> (Expression.t * Ignore.t list) list) ->
+  t ->
+  Ignore.t list
 
 val create_from_source_path
   :  metadata:Metadata.t ->

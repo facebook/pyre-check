@@ -238,6 +238,36 @@ let mode ~configuration ~local_mode : mode =
   | None, _ -> Unsafe
 
 
+(* An f-string may span multiple lines. Synthesize ignores for each of the lines using the ignores
+   from the first line. *)
+let synthesize_ignores_for_format_string
+    ( { Node.location = { start = { line = start_line; _ }; stop = { line = stop_line; _ } }; _ },
+      first_line_ignores )
+  =
+  let copy_ignores_from_first_line line =
+    line, List.map first_line_ignores ~f:(fun ignore -> { ignore with Ignore.ignored_line = line })
+  in
+  List.range start_line (stop_line + 1) |> List.map ~f:copy_ignores_from_first_line
+
+
+let noop_collect_format_strings ~ignore_line_map:_ _ = []
+
+let ignored_lines_including_format_strings
+    ?(collect_format_strings_with_ignores = noop_collect_format_strings)
+    ({ metadata = { Metadata.ignore_lines; _ }; _ } as source)
+  =
+  let ignore_line_map =
+    List.map ignore_lines ~f:(fun ({ Ignore.ignored_line; _ } as ignore) -> ignored_line, ignore)
+    |> Int.Map.of_alist_multi
+  in
+  collect_format_strings_with_ignores ~ignore_line_map source
+  |> List.concat_map ~f:synthesize_ignores_for_format_string
+  |> Int.Map.of_alist_reduce ~f:List.append
+  |> Map.merge_skewed ~combine:(fun ~key:_ -> List.append) ignore_line_map
+  |> Int.Map.data
+  |> List.concat_map ~f:(List.dedup_and_sort ~compare:Ignore.compare)
+
+
 let create_from_source_path ~metadata ~source_path statements =
   { metadata; source_path; top_level_unbound_names = []; statements }
 
