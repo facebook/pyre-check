@@ -405,26 +405,13 @@ def _line_ranges_spanned_by_format_strings(
     }
 
 
-def _suppress_errors(
-    input: str,
+def _lines_after_suppressing_errors(
+    lines: List[str],
     errors: Dict[int, List[Dict[str, str]]],
-    custom_comment: Optional[str] = None,
-    max_line_length: Optional[int] = None,
-    truncate: bool = False,
-    unsafe: bool = False,
-) -> str:
-    if not unsafe and "@" "generated" in input:
-        raise SkippingGeneratedFileException()
-
-    lines: List[str] = input.split("\n")
-
-    # Do not suppress parse errors.
-    if any(
-        error["code"] == "404" for error_list in errors.values() for error in error_list
-    ):
-        raise SkippingUnparseableFileException()
-
-    # Replace lines in file.
+    custom_comment: Optional[str],
+    max_line_length: Optional[int],
+    truncate: bool,
+) -> List[str]:
     new_lines = []
     removing_pyre_comments = False
     line_break_block_errors: List[List[str]] = []
@@ -486,6 +473,33 @@ def _suppress_errors(
             )
             new_lines.extend(comments)
         new_lines.append(line)
+
+    return new_lines
+
+
+def _suppress_errors(
+    input: str,
+    errors: Dict[int, List[Dict[str, str]]],
+    custom_comment: Optional[str] = None,
+    max_line_length: Optional[int] = None,
+    truncate: bool = False,
+    unsafe: bool = False,
+) -> str:
+    if not unsafe and "@" "generated" in input:
+        raise SkippingGeneratedFileException()
+
+    lines: List[str] = input.split("\n")
+
+    # Do not suppress parse errors.
+    if any(
+        error["code"] == "404" for error_list in errors.values() for error in error_list
+    ):
+        raise SkippingUnparseableFileException()
+
+    new_lines = _lines_after_suppressing_errors(
+        lines, errors, custom_comment, max_line_length, truncate
+    )
+
     output = "\n".join(new_lines)
     if not unsafe:
         ast.check_stable(input, output)
