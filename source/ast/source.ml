@@ -250,7 +250,7 @@ let create
     statements
   =
   let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority in
-  { metadata; source_path; top_level_unbound_names = []; statements }
+  create_from_source_path ~metadata ~source_path statements
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
