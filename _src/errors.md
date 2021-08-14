@@ -1806,6 +1806,22 @@ def foo() -> int:
 
 Pyre also supports `# type: ignore` comments for backwards-compatibility with *mypy*.
 
+### Suppressing Errors within Format Strings
+
+If you want to suppress an error within an f-string, you can add a fixme comment on the line before the string. This will suppress all errors within the f-string matching that fixme:
+
+```python
+def print_profile(name: str, age: Optional[int]) -> None:
+    # pyre-fixme[58]: `-` is not supported for operand types `Optional[int]` and `int`.
+    s = f"""
+    Your personal details!!
+
+    Name: {name}
+    Age: {age - 3}
+    """
+    print(s)
+```
+
 ### Suppressing All Errors
 You can use the [Pyre upgrade tool](gradual_typing.md#upgrade) to add inline error suppressions for all errors in your project.
 
