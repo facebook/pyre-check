@@ -405,6 +405,14 @@ def _line_ranges_spanned_by_format_strings(
     }
 
 
+def _map_line_to_start_of_range(line_ranges: List[LineRange]) -> Dict[int, int]:
+    target_line_map = {}
+    for start, end in reversed(line_ranges):
+        for line in range(start, end + 1):
+            target_line_map[line] = start
+    return target_line_map
+
+
 def _lines_after_suppressing_errors(
     lines: List[str],
     errors: Dict[int, List[Dict[str, str]]],

@@ -18,6 +18,7 @@ from ..errors import (
     PartialErrorSuppression,
     SkippingGeneratedFileException,
     SkippingUnparseableFileException,
+    _map_line_to_start_of_range,
     _get_unused_ignore_codes,
     _line_ranges_spanned_by_format_strings,
     _remove_unused_ignores,
@@ -845,4 +846,19 @@ class ErrorsTest(unittest.TestCase):
             def cannot_parse()
             """,
             [],
+        )
+
+    def test_map_line_to_start_of_range(self) -> None:
+        self.assertEqual(
+            _map_line_to_start_of_range([(3, 3), (3, 5), (9, 13)]),
+            {3: 3, 4: 3, 5: 3, 9: 9, 10: 9, 11: 9, 12: 9, 13: 9},
+        )
+        self.assertEqual(
+            _map_line_to_start_of_range([]),
+            {},
+        )
+        # Intervals shouldn't overlap, but if they do, we will prefer the earlier one.
+        self.assertEqual(
+            _map_line_to_start_of_range([(3, 5), (4, 6)]),
+            {3: 3, 4: 3, 5: 3, 6: 4},
         )
