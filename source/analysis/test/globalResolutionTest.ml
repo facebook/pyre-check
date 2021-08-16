@@ -2303,29 +2303,118 @@ let test_metaclasses context =
 
 
 let test_overrides context =
+  let create_simple_callable_attribute ?(initialized = Attribute.OnClass) ~signature ~parent name =
+    let annotation = Type.Callable signature in
+    Annotated.Attribute.create
+      ~abstract:false
+      ~annotation
+      ~original_annotation:annotation
+      ~uninstantiated_annotation:(Some annotation)
+      ~async_property:false
+      ~class_variable:false
+      ~defined:true
+      ~initialized
+      ~name
+      ~parent
+      ~visibility:ReadWrite
+      ~property:false
+      ~undecorated_signature:(Some signature)
+      ~problem:None
+  in
+  let create_callable ~name ~parameters ~annotation ~overloads =
+    {
+      Type.Callable.kind = Named (Reference.create name);
+      implementation = { parameters = Defined parameters; annotation };
+      overloads;
+    }
+  in
   let resolution =
     ScratchProject.setup
       ~context
       [
         ( "test.py",
           {|
-      class Foo:
-        def foo(): pass
-      class Bar(Foo):
-        pass
-      class Baz(Bar):
-        def foo(): pass
-        def baz(): pass
-    |}
+            class Foo:
+              def foo() -> int: pass
+            class Bar(Foo):
+              pass
+            class Baz(Bar):
+              def foo() -> int: pass
+              def baz() -> int: pass
+          |}
+        );
+        ( "overloads.py",
+          {|
+            from typing import Union
+            class Foo:
+              @overload
+              def foo() -> int: pass
+              @overload
+              def foo() -> str: pass
+              def foo() -> Union[int, str]: pass
+            class Bar(Foo):
+              def foo() -> int: pass
+          |}
         );
       ]
     |> ScratchProject.build_global_resolution
   in
-  assert_is_none (GlobalResolution.overrides "test.Baz" ~resolution ~name:"baz");
-  let overrides = GlobalResolution.overrides "test.Baz" ~resolution ~name:"foo" in
-  assert_is_some overrides;
-  assert_equal ~cmp:String.equal (Attribute.name (Option.value_exn overrides)) "foo";
-  assert_equal (Option.value_exn overrides |> Attribute.parent) "test.Foo"
+  let assert_overrides ~class_name ~method_name ~expected_override =
+    let overrides = GlobalResolution.overrides ~resolution ~name:method_name class_name in
+    let print_attribute attribute =
+      Annotated.Attribute.sexp_of_instantiated attribute |> Sexp.to_string_hum
+    in
+    match expected_override with
+    | Some expected ->
+        let actual = Option.value_exn overrides in
+        assert_equal
+          ~cmp:Attribute.equal_instantiated
+          ~printer:print_attribute
+          ~pp_diff:
+            (diff ~print:(fun format attribute ->
+                 Format.fprintf format "%s" ([%show: Attribute.instantiated] attribute)))
+          actual
+          expected
+    | None -> assert_is_none overrides
+  in
+  assert_overrides ~class_name:"test.Baz" ~method_name:"baz" ~expected_override:None;
+  assert_overrides
+    ~class_name:"test.Baz"
+    ~method_name:"foo"
+    ~expected_override:
+      (create_simple_callable_attribute
+         ~initialized:OnClass
+         ~signature:
+           (create_callable
+              ~name:"test.Foo.foo"
+              ~parameters:[]
+              ~annotation:Type.integer
+              ~overloads:[])
+         ~parent:"test.Foo"
+         "foo"
+      |> Option.some);
+
+  (* Test overloads. *)
+  assert_overrides
+    ~class_name:"overloads.Bar"
+    ~method_name:"foo"
+    ~expected_override:
+      (create_simple_callable_attribute
+         ~initialized:OnClass
+         ~signature:
+           (create_callable
+              ~name:"overloads.Foo.foo"
+              ~parameters:[]
+              ~annotation:(Type.union [Type.integer; Type.string])
+              ~overloads:
+                [
+                  { parameters = Defined []; annotation = Type.integer };
+                  { parameters = Defined []; annotation = Type.string };
+                ])
+         ~parent:"overloads.Foo"
+         "foo"
+      |> Option.some);
+  ()
 
 
 let test_extract_type_parameter context =
