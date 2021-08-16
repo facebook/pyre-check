@@ -1066,6 +1066,36 @@ let test_init_subclass context =
           pass
     |}
     ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `swallow`."];
+  assert_type_errors
+    ~context
+    {|
+      from typing import Any
+      class QuestBase:
+        def __init_subclass__(cls, **kwargs: Any) -> None:
+            pass
+
+      class Quest(QuestBase):
+        pass
+
+      class Quest2(QuestBase, arbitrary="string"):
+        pass
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      from typing import Any
+      class QuestBase:
+        def __init_subclass__(cls, **kwargs: Any) -> None:
+            pass
+
+      class Quest(QuestBase):
+        pass
+
+      class SubQuest(Quest, arbitrary="string"):
+        pass
+    |}
+    [];
   ()
 
 

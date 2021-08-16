@@ -1492,7 +1492,12 @@ module State (Context : Context) = struct
             ~name:"__init_subclass__"
             ~instantiated:(Type.Primitive parent_class)
             parent_class
-          >>| Annotated.Attribute.parent
+          >>= fun attribute ->
+          Option.some_if
+            (AnnotatedAttribute.defined attribute
+            && String.equal (AnnotatedAttribute.parent attribute) parent_class)
+            attribute
+          >>| AnnotatedAttribute.parent
         in
         parent
         >>| Reference.show
