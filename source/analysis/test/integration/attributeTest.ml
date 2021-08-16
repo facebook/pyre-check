@@ -1081,6 +1081,36 @@ let test_check_attribute_initialization context =
     |}
     [];
 
+  (* Test instantiation of attributes via `__init_subclass__`. *)
+  assert_type_errors
+    {|
+      from typing import ClassVar
+      from abc import ABCMeta
+
+      class AbstractBase(metaclass=ABCMeta):
+          foo: ClassVar[int]
+          def __init_subclass__(cls, foo: int) -> None:
+              cls.foo = foo
+
+      class SubClass(AbstractBase, foo=1):
+        pass
+    |}
+    [];
+  (* TODO(T98000466): `__init_subclass__` should not instantiate attributes for the current class
+     when it is non abstract, only subclasses. Add an error here. *)
+  assert_type_errors
+    {|
+      from typing import ClassVar
+
+      class NonAbstractBase:
+          foo: ClassVar[int]
+          def __init_subclass__(cls, foo: int) -> None:
+              cls.foo = foo
+
+      class SubClass(NonAbstractBase, foo=1):
+        pass
+    |}
+    [];
   ()
 
 
