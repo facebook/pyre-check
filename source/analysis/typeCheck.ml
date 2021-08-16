@@ -1473,6 +1473,61 @@ module State (Context : Context) = struct
       else
         errors
     in
+    let check_init_subclass_call resolution errors =
+      let init_subclass_arguments =
+        Node.create define ~location
+        |> Annotated.Define.create
+        |> Annotated.Define.parent_definition ~resolution:global_resolution
+        >>| Node.value
+        >>| (fun { ClassSummary.bases = { init_subclass_arguments; _ }; _ } ->
+              init_subclass_arguments)
+        |> Option.value ~default:[]
+      in
+      let init_subclass_parent =
+        let find_init_subclass parent_class =
+          GlobalResolution.attribute_from_class_name
+            ~resolution:global_resolution
+            ~transitive:false
+            ~accessed_through_class:true
+            ~name:"__init_subclass__"
+            ~instantiated:(Type.Primitive parent_class)
+            parent_class
+          >>| Annotated.Attribute.parent
+        in
+        parent
+        >>| Reference.show
+        >>| GlobalResolution.successors ~resolution:global_resolution
+        >>= List.find_map ~f:find_init_subclass
+      in
+      match init_subclass_parent with
+      | Some parent ->
+          let implicit_call =
+            Expression.Call
+              {
+                callee =
+                  {
+                    Node.location;
+                    value =
+                      Name
+                        (Name.Attribute
+                           {
+                             base =
+                               Expression.Name (create_name ~location parent)
+                               |> Node.create ~location;
+                             attribute = "__init_subclass__";
+                             special = false;
+                           });
+                  };
+                arguments = init_subclass_arguments;
+              }
+            |> Node.create ~location
+          in
+          let { Resolved.errors = init_subclass_errors; _ } =
+            forward_expression ~resolution ~expression:implicit_call
+          in
+          init_subclass_errors @ errors
+      | None -> errors
+    in
     let check_behavioral_subtyping resolution errors =
       let is_whitelisted_dunder_method define =
         let whitelist =
@@ -1737,6 +1792,7 @@ module State (Context : Context) = struct
         |> check_return_annotation resolution
         |> check_decorators resolution
         |> check_base_annotations resolution
+        |> check_init_subclass_call resolution
         |> check_behavioral_subtyping resolution
         |> check_constructor_return
       in

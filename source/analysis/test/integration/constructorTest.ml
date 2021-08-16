@@ -985,6 +985,87 @@ let test_init_subclass context =
           pass
     |}
     [];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, bird: str) -> None:
+            pass
+
+      class Quest(QuestBase, swallow="african"):
+          pass
+    |}
+    [
+      "Unexpected keyword [28]: Unexpected keyword argument `swallow` to call \
+       `QuestBase.__init_subclass__`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str, coconut: str) -> None:
+            pass
+
+      class Quest(QuestBase, swallow="african"):
+          pass
+    |}
+    ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `coconut`."];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str) -> None:
+            pass
+
+      class Quest(QuestBase, swallow="african", coconut=0):
+          pass
+    |}
+    [
+      "Unexpected keyword [28]: Unexpected keyword argument `coconut` to call \
+       `QuestBase.__init_subclass__`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        pass
+
+      class Quest(QuestBase, swallow="african"):
+          pass
+    |}
+    [
+      "Unexpected keyword [28]: Unexpected keyword argument `swallow` to call \
+       `object.__init_subclass__`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str) -> None:
+            cls.swallow = swallow
+            super().__init_subclass__()
+
+      class Quest(swallow="african", QuestBase):
+          pass
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str) -> None:
+            cls.swallow = swallow
+            super().__init_subclass__()
+
+      class Quest(QuestBase):
+          pass
+    |}
+    ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `swallow`."];
   ()
 
 
