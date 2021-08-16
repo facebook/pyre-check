@@ -27,17 +27,7 @@ jobs:
       - name: Run Pyre
         continue-on-error: true
         run: |
-          pyre --output=json check > errors.json
-
-      - name: Expose Pyre Results
-        uses: actions/upload-artifact@v2
-        with:
-          name: Pyre Results
-          path: errors.json
-
-      - name: Convert to SARIF
-        run: |
-          cat errors.json | ./scripts/convert_results_to_sarif.py > sarif.json
+          pyre --output=sarif check > sarif.json
 
       - name: Expose SARIF Results
         uses: actions/upload-artifact@v2
@@ -52,4 +42,4 @@ jobs:
 
       - name: Fail Command On Errors
         run: |
-          if [ "$(cat errors.json)" != "[]" ]; then exit 1; fi
+          if [ "$(cat sarif.json | grep 'PYRE-ERROR')" != "" ]; then exit 1; fi
