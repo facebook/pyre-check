@@ -1755,10 +1755,10 @@ module State (Context : Context) = struct
                           | None -> errors)
                       | `Right _ -> errors
                     in
-                    let overriden_parameters =
+                    let overridden_parameters =
                       Type.Callable.Overload.parameters implementation |> Option.value ~default:[]
                     in
-                    Type.Callable.Parameter.zip overriden_parameters overriding_parameters
+                    Type.Callable.Parameter.zip overridden_parameters overriding_parameters
                     |> List.fold ~init:errors ~f:check_parameter
                 | _ -> errors)
             | _ -> None
