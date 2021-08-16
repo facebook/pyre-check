@@ -10,8 +10,7 @@ def logging.Logger.debug(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.Logger.info(
@@ -20,8 +19,7 @@ def logging.Logger.info(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.Logger.warning(
@@ -30,8 +28,7 @@ def logging.Logger.warning(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.Logger.error(
@@ -40,8 +37,7 @@ def logging.Logger.error(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.Logger.exception(
@@ -50,8 +46,7 @@ def logging.Logger.exception(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.Logger.critical(
@@ -60,8 +55,7 @@ def logging.Logger.critical(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.Logger.log(
@@ -71,8 +65,7 @@ def logging.Logger.log(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 # logging
@@ -82,8 +75,7 @@ def logging.critical(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.error(
@@ -91,8 +83,7 @@ def logging.error(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.exception(
@@ -100,8 +91,7 @@ def logging.exception(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.warning(
@@ -109,8 +99,7 @@ def logging.warning(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.warn(
@@ -118,8 +107,7 @@ def logging.warn(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.info(
@@ -127,8 +115,7 @@ def logging.info(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.debug(
@@ -136,8 +123,7 @@ def logging.debug(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.log(
@@ -146,8 +132,7 @@ def logging.log(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 # logging.LoggerAdapter
@@ -158,8 +143,7 @@ def logging.LoggerAdapter.debug(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.LoggerAdapter.info(
@@ -168,8 +152,7 @@ def logging.LoggerAdapter.info(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.LoggerAdapter.warning(
@@ -178,8 +161,7 @@ def logging.LoggerAdapter.warning(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.LoggerAdapter.warn(
@@ -188,8 +170,7 @@ def logging.LoggerAdapter.warn(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.LoggerAdapter.error(
@@ -198,8 +179,7 @@ def logging.LoggerAdapter.error(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.LoggerAdapter.exception(
@@ -208,8 +188,7 @@ def logging.LoggerAdapter.exception(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.LoggerAdapter.critical(
@@ -218,8 +197,7 @@ def logging.LoggerAdapter.critical(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
 
 def logging.LoggerAdapter.log(
@@ -229,6 +207,5 @@ def logging.LoggerAdapter.log(
   *args: TaintSink[Logging],
   exc_info: TaintSink[Logging],
   stack_info: TaintSink[Logging],
-  extra: TaintSink[Logging],
-  **kwargs: TaintSink[Logging]
+  extra: TaintSink[Logging]
 ): ...
