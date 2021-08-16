@@ -102,7 +102,6 @@ module.exports = {
             'fb/warning_codes/code-5101',
             'fb/warning_codes/code-5102',
             'fb/warning_codes/code-5103',
-            'fb/warning_codes/code-5104',
             'fb/warning_codes/code-5105',
             'fb/warning_codes/code-5106',
             'fb/warning_codes/code-5107',
