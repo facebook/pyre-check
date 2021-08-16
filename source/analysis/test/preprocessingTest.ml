@@ -209,6 +209,27 @@ let test_expand_string_annotations _ =
     {|
       valid_string_literal: typing.Annotated[int, test.Foo("hello")]
     |};
+  assert_expand
+    {|
+      def foo() -> Parametric["a"]: ...
+    |}
+    {|
+      def foo() -> Parametric[a]: ...
+    |};
+  assert_expand
+    {|
+      def foo() -> TakesParamSpec[["a"]]: ...
+    |}
+    {|
+      def foo() -> TakesParamSpec[[a]]: ...
+    |};
+  assert_expand
+    {|
+      def foo() -> TakesParamSpec[["a", "b"]]: ...
+    |}
+    {|
+      def foo() -> TakesParamSpec[[a, b]]: ...
+    |};
 
   (* Ensure init subclass arguments are not counted as annotations to be expanded *)
   assert_expand

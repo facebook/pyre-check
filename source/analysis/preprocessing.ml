@@ -91,6 +91,7 @@ let transform_string_annotation_expression ~relative =
               callee;
               arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
             }
+      | List elements -> List (List.map elements ~f:transform_expression)
       | String { StringLiteral.value = string_value; _ } -> (
           (* Start at column + 1 since parsing begins after the opening quote of the string literal. *)
           match
