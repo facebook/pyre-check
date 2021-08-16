@@ -1539,6 +1539,8 @@ module State (Context : Context) = struct
           String.Set.of_list
             [
               "__call__";
+              "__delattr__";
+              "__delitem__";
               "__eq__";
               "__getitem__";
               "__ne__";
