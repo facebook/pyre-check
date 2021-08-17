@@ -100,7 +100,30 @@ module Breadcrumb = struct
     | WidenBroadening (* Taint tree was collapsed during widening *)
     | TitoBroadening (* Taint tree was collapsed when applying tito *)
     | IssueBroadening (* Taint tree was collapsed when matching sources and sinks *)
-  [@@deriving show { with_path = false }, compare]
+  [@@deriving compare]
+
+  let pp formatter breadcrumb =
+    let pp_via_value_or_type header tag value =
+      match tag with
+      | None -> Format.fprintf formatter "%s[%s]" header value
+      | Some tag -> Format.fprintf formatter "%s[%s, tag=%s]" header value tag
+    in
+    match breadcrumb with
+    | FormatString -> Format.fprintf formatter "FormatString"
+    | Obscure -> Format.fprintf formatter "Obscure"
+    | Lambda -> Format.fprintf formatter "Lambda"
+    | SimpleVia name -> Format.fprintf formatter "SimpleVia[%s]" name
+    | ViaValue { tag; value } -> pp_via_value_or_type "ViaValue" tag value
+    | ViaType { tag; value } -> pp_via_value_or_type "ViaType" tag value
+    | Tito -> Format.fprintf formatter "Tito"
+    | Type name -> Format.fprintf formatter "Type[%s]" name
+    | Broadening -> Format.fprintf formatter "Broadening"
+    | WidenBroadening -> Format.fprintf formatter "WidenBroadening"
+    | TitoBroadening -> Format.fprintf formatter "TitoBroadening"
+    | IssueBroadening -> Format.fprintf formatter "IssueBroadening"
+
+
+  let show = Format.asprintf "%a" pp
 
   let to_json ~on_all_paths breadcrumb =
     let prefix = if on_all_paths then "always-" else "" in
@@ -145,14 +168,22 @@ module Simple = struct
         parameter: AccessPath.Root.t;
         tag: string option;
       }
-  [@@deriving show { with_path = false }, compare]
+  [@@deriving compare]
 
-  let pp formatter = function
+  let pp formatter simple =
+    let pp_via_value_or_type header parameter tag =
+      match tag with
+      | None -> Format.fprintf formatter "%s[%a]" header AccessPath.Root.pp parameter
+      | Some tag ->
+          Format.fprintf formatter "%s[%a, tag=%s]" header AccessPath.Root.pp parameter tag
+    in
+    match simple with
     | Breadcrumb breadcrumb -> Format.fprintf formatter "%a" Breadcrumb.pp breadcrumb
-    | simple -> pp formatter simple
+    | ViaValueOf { parameter; tag } -> pp_via_value_or_type "ViaValueOf" parameter tag
+    | ViaTypeOf { parameter; tag } -> pp_via_value_or_type "ViaTypeOf" parameter tag
 
 
-  let show simple = Format.asprintf "%a" pp simple
+  let show = Format.asprintf "%a" pp
 
   let via_value_of_breadcrumb ?tag ~argument =
     let feature =
