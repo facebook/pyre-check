@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Base
+
 module ArgumentList = struct
-  type t = string list
+  type t = string list [@@deriving sexp_of]
 
   let to_buck_command arguments =
     let open Core in
@@ -29,6 +31,7 @@ exception
     description: string;
     exit_code: int option;
   }
+[@@deriving sexp_of]
 
 type t = {
   query: ?isolation_prefix:string -> string list -> string Lwt.t;

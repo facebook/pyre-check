@@ -285,7 +285,7 @@ end
 (** This module contains the low-level interfaces for invoking `buck` as an external tool. *)
 module Raw : sig
   module ArgumentList : sig
-    type t
+    type t [@@deriving sexp_of]
     (** This type represents the argument list for a raw Buck invocation. *)
 
     val to_buck_command : t -> string
@@ -298,6 +298,7 @@ module Raw : sig
       description: string;
       exit_code: int option;
     }
+  [@@deriving sexp_of]
   (** Raised when external invocation of `buck` returns an error. The [exit_code] field is set to
       [None] if the external `buck` process gets stopped by a signal. *)
 
