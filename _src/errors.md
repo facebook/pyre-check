@@ -385,10 +385,42 @@ You can fix this error by verifying that your annotation is
 3. properly defined in the module you are importing from. If the module you are importing from has a [stub file](errors.md#third-party-libraries), you should check the definition there.
 4. properly adhere to the additional rules of special types (e.g. `Callable`, `Final`, and `Literal`).
 
+#### Type Aliases
+
 For type aliases, check that your type alias is defined
 
 1. with a valid type on the RHS. If you provide an annotation for the TypeAlias assignment, it must be `typing_extensions.TypeAlias`.
 2. on the global scope, not nested inside a function or class.
+
+#### ParamSpec
+
+For `ParamSpec`, check that you have used both `*args: P.args` and `**kwargs: P.kwargs` in your function's parameters:
+
+```python
+from typing import Callable
+
+from pyre_extensions import ParameterSpecification
+
+P = ParameterSpecification("P")
+
+# OK
+def good(f: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int:
+    return f(*args, **kwargs)
+
+# Error because `**kwargs: P.kwargs` is missing.
+def bad1(f: Callable[P, int], *args: P.args) -> int:
+    return f(*args)
+
+# Error because `*args: P.args` is missing.
+def bad2(f: Callable[P, int], **kwargs: P.kwargs) -> int:
+    return f(**kwargs)
+
+$ pyre
+Undefined or invalid type [11]: Annotation `P.args` is not defined as a type.
+Call error [29]: `typing.Callable[P, int]` cannot be safely called because the types and kinds of its parameters depend on a type variable.
+Undefined or invalid type [11]: Annotation `P.kwargs` is not defined as a type.
+
+```
 
 
 ### 12: Incompatible Awaitable Type
