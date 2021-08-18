@@ -15,7 +15,7 @@ import tempfile
 import urllib.request
 import zipfile
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
