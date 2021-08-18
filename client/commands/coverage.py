@@ -108,17 +108,19 @@ class Coverage(Command):
         *,
         configuration: Configuration,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        working_directory: Optional[str],
     ) -> None:
         super(Coverage, self).__init__(
             command_arguments, original_directory, configuration, analysis_directory
         )
+        self._working_directory: Optional[str] = working_directory
 
     def _run(self) -> None:
         paths = self._find_paths()
         modules = {}
         for path in _parse_paths(paths):
             module = parse_path_to_module(path)
-            relative_path = os.path.relpath(path, self._configuration.project_root)
+            relative_path = os.path.relpath(path, self._working_directory)
             if module is not None:
                 modules[relative_path] = module
         coverage = _collect_coverage(modules)

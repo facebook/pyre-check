@@ -1410,12 +1410,21 @@ def statistics(
 
 
 @pyre.command()
+@click.option(
+    "--working-directory",
+    metavar="DIR",
+    default=os.curdir,
+    show_default="current directory",
+    type=str,
+    help="In the output, make paths relative to directory specified.",
+)
 @click.pass_context
 def coverage(
     context: click.Context,
+    working_directory: str,
 ) -> int:
     """
-    Collect various syntactic metrics on type coverage.
+    Collect line-level type coverage.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
@@ -1424,6 +1433,7 @@ def coverage(
             command_argument,
             original_directory=os.getcwd(),
             configuration=configuration,
+            working_directory=working_directory,
         ),
         configuration,
         command_argument.noninteractive,
