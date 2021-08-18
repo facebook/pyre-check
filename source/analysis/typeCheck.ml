@@ -1552,7 +1552,11 @@ module State (Context : Context) = struct
         String.Set.mem allowlist (Define.unqualified_name define)
       in
       try
-        if Define.is_constructor define || is_allowlisted_dunder_method define then
+        if
+          Define.is_constructor define
+          || Define.is_overloaded_function define
+          || is_allowlisted_dunder_method define
+        then
           errors
         else
           let open Annotated in

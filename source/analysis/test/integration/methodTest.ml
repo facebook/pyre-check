@@ -1379,7 +1379,116 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
     |}
-    []
+    [];
+
+  (* Overrides of overloaded methods. *)
+  assert_default_type_errors
+    {|
+      import typing
+
+      class Foo():
+        @typing.overload
+        def foo(self, input: int) -> int: ...
+        @typing.overload
+        def foo(self, input: str) -> str: ...
+        def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
+          return input
+
+      class Bar(Foo):
+        @typing.overload
+        def foo(self, input: int) -> int:
+          return input
+        @typing.overload
+        def foo(self, input: str) -> str:
+          return input
+        def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
+          return input
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      import typing
+
+      class Foo():
+        @typing.overload
+        def foo(self, input: int) -> int: ...
+        @typing.overload
+        def foo(self, input: str) -> str: ...
+        def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
+          return input
+
+      class Bar(Foo):
+        @typing.overload
+        def foo(self, input: int) -> int:
+          return input
+        def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
+          return input
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      import typing
+
+      class A: pass
+      class B: pass
+      class C: pass
+
+      class Foo():
+        @typing.overload
+        def foo(self, input: A) -> A: ...
+        @typing.overload
+        def foo(self, input: B) -> B: ...
+        @typing.overload
+        def foo(self, input: C) -> C: ...
+        def foo(self, input: typing.Union[A, B, C]) -> typing.Union[A, B, C]:
+          return input
+
+      class Bar(Foo):
+        @typing.overload
+        def foo(self, input: A) -> A:
+          return input
+        @typing.overload
+        def foo(self, input: B) -> B:
+          return input
+        def foo(self, input: typing.Union[A, B]) -> typing.Union[A, B]:
+          return input
+    |}
+    [
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
+       inconsistently. Parameter of type `typing.Union[A, B]` is not a supertype of the overridden \
+       parameter `typing.Union[A, B, C]`.";
+    ];
+  assert_default_type_errors
+    {|
+      import typing
+
+      class A: pass
+      class B: pass
+      class C: pass
+
+      class Foo():
+        @typing.overload
+        def foo(self, input: A) -> A: ...
+        @typing.overload
+        def foo(self, input: B) -> B: ...
+        @typing.overload
+        def foo(self, input: C) -> C: ...
+        def foo(self, input: typing.Union[A, B, C]) -> typing.Union[A, B, C]:
+          return input
+
+      class Bar(Foo):
+        @typing.overload
+        def foo(self, input: A) -> A:
+          return input
+        @typing.overload
+        def foo(self, input: B) -> B:
+          return input
+    |}
+    [
+      "Missing overload implementation [42]: Overloaded function `Bar.foo` must have an \
+       implementation.";
+    ];
+  ()
 
 
 let test_check_nested_class_inheritance context =
