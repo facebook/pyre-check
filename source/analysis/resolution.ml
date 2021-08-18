@@ -11,11 +11,16 @@ open Pyre
 
 type t = {
   global_resolution: GlobalResolution.t;
-  annotation_store: RefinementUnit.t Reference.Map.t;
+  annotation_store: annotation_store;
   type_variables: Type.Variable.Set.t;
   resolve_expression: resolution:t -> Expression.t -> t * Annotation.t;
   resolve_statement: resolution:t -> Statement.t -> resolve_statement_result_t;
   parent: Reference.t option;
+}
+
+and annotation_store = {
+  annotations: RefinementUnit.t Reference.Map.t;
+  temporary_annotations: RefinementUnit.t Reference.Map.t;
 }
 
 and resolve_statement_result_t =
@@ -36,7 +41,7 @@ let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_sta
   }
 
 
-let pp format { annotation_store; type_variables; _ } =
+let pp format { annotation_store = { annotations; temporary_annotations }; type_variables; _ } =
   let annotation_store_entry (reference, refinement_unit) =
     Format.asprintf "%a -> %a" Reference.pp reference RefinementUnit.pp refinement_unit
   in
@@ -44,10 +49,14 @@ let pp format { annotation_store; type_variables; _ } =
   |> List.map ~f:Type.Variable.show
   |> String.concat ~sep:", "
   |> Format.fprintf format "Type variables: [%s]\n";
-  Map.to_alist annotation_store
+  Map.to_alist annotations
   |> List.map ~f:annotation_store_entry
   |> String.concat ~sep:", "
-  |> Format.fprintf format "Annotation Store: [%s]"
+  |> Format.fprintf format "Annotation Store: [%s]";
+  Map.to_alist temporary_annotations
+  |> List.map ~f:annotation_store_entry
+  |> String.concat ~sep:", "
+  |> Format.fprintf format "Temporary Annotation Store: [%s]"
 
 
 let show resolution = Format.asprintf "%a" pp resolution
@@ -123,18 +132,30 @@ let partition_name resolution ~name =
   | _ -> Reference.create_from_list identifiers, Reference.create "", None
 
 
-let set_local ({ annotation_store; _ } as resolution) ~reference ~annotation =
+let set_local
+    ({ annotation_store = { annotations; temporary_annotations }; _ } as resolution)
+    ~reference
+    ~annotation
+  =
   {
     resolution with
     annotation_store =
-      Map.set
-        annotation_store
-        ~key:reference
-        ~data:(RefinementUnit.create () |> RefinementUnit.set_base ~base:annotation);
+      {
+        annotations =
+          Map.set
+            annotations
+            ~key:reference
+            ~data:(RefinementUnit.create () |> RefinementUnit.set_base ~base:annotation);
+        temporary_annotations;
+      };
   }
 
 
-let set_local_with_attributes ({ annotation_store; _ } as resolution) ~name ~annotation =
+let set_local_with_attributes
+    ({ annotation_store = { annotations; temporary_annotations }; _ } as resolution)
+    ~name
+    ~annotation
+  =
   let object_reference, attribute_path, base = partition_name resolution ~name in
   let set_base refinement_unit ~base =
     match RefinementUnit.base refinement_unit, base with
@@ -144,23 +165,27 @@ let set_local_with_attributes ({ annotation_store; _ } as resolution) ~name ~ann
   {
     resolution with
     annotation_store =
-      Map.set
-        annotation_store
-        ~key:object_reference
-        ~data:
-          (Map.find annotation_store object_reference
-          |> Option.value ~default:(RefinementUnit.create ())
-          |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation
-          |> set_base ~base);
+      {
+        annotations =
+          Map.set
+            annotations
+            ~key:object_reference
+            ~data:
+              (Map.find annotations object_reference
+              |> Option.value ~default:(RefinementUnit.create ())
+              |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation
+              |> set_base ~base);
+        temporary_annotations;
+      };
   }
 
 
 let get_local
     ?(global_fallback = true)
     ~reference
-    ({ annotation_store; global_resolution; _ } as resolution)
+    ({ annotation_store = { annotations; _ }; global_resolution; _ } as resolution)
   =
-  match Map.find annotation_store reference with
+  match Map.find annotations reference with
   | Some result when global_fallback || not (is_global resolution ~reference) ->
       RefinementUnit.base result
   | _ when global_fallback ->
@@ -172,10 +197,10 @@ let get_local
 let get_local_with_attributes
     ?(global_fallback = true)
     ~name
-    ({ annotation_store; global_resolution; _ } as resolution)
+    ({ annotation_store = { annotations; _ }; global_resolution; _ } as resolution)
   =
   let object_reference, attribute_path, _ = partition_name resolution ~name in
-  match Map.find annotation_store object_reference with
+  match Map.find annotations object_reference with
   | Some result when global_fallback || not (is_global resolution ~reference:object_reference) ->
       RefinementUnit.annotation result ~reference:attribute_path
   | _ when global_fallback ->
@@ -186,8 +211,14 @@ let get_local_with_attributes
   | _ -> None
 
 
-let unset_local ({ annotation_store; _ } as resolution) ~reference =
-  { resolution with annotation_store = Map.remove annotation_store reference }
+let unset_local
+    ({ annotation_store = { annotations; temporary_annotations }; _ } as resolution)
+    ~reference
+  =
+  {
+    resolution with
+    annotation_store = { annotations = Map.remove annotations reference; temporary_annotations };
+  }
 
 
 let resolve_attribute_access resolution ~base_type ~attribute =
@@ -224,6 +255,12 @@ let type_variable_exists { type_variables; _ } ~variable =
 let all_type_variables_in_scope { type_variables; _ } = Type.Variable.Set.to_list type_variables
 
 let annotation_store { annotation_store; _ } = annotation_store
+
+let annotations { annotation_store = { annotations; _ }; _ } = annotations
+
+let temporary_annotations { annotation_store = { temporary_annotations; _ }; _ } =
+  temporary_annotations
+
 
 let with_annotation_store resolution ~annotation_store = { resolution with annotation_store }
 

@@ -39,22 +39,48 @@ let create_annotation_store ?(immutables = []) annotations =
     in
     !&name, annotation
   in
-  List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
+  {
+    Resolution.annotations = List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
+    temporary_annotations = Reference.Map.empty;
+  }
 
 
 let assert_annotation_store ~expected actual =
   let actual = Resolution.annotation_store actual in
-  let pp_annotation_store formatter annotation_store =
+  let compare_annotation_store
+      {
+        Resolution.annotations = left_annotations;
+        temporary_annotations = left_temporary_annotations;
+      }
+      {
+        Resolution.annotations = right_annotations;
+        temporary_annotations = right_temporary_annotations;
+      }
+    =
+    let equal_map = Reference.Map.equal [%equal: RefinementUnit.t] in
+    equal_map left_annotations right_annotations
+    && equal_map left_temporary_annotations right_temporary_annotations
+  in
+  let pp_annotation_store formatter { Resolution.annotations; temporary_annotations } =
     let annotation_to_string (name, refinement_unit) =
       Format.asprintf "%a -> %a" Reference.pp name RefinementUnit.pp refinement_unit
     in
-    let printed =
-      Map.to_alist annotation_store |> List.map ~f:annotation_to_string |> String.concat ~sep:"\n"
+    let printed_annotations =
+      Map.to_alist annotations |> List.map ~f:annotation_to_string |> String.concat ~sep:"\n"
     in
-    Format.fprintf formatter "%s" printed
+    let printed_temporary_annotations =
+      Map.to_alist temporary_annotations
+      |> List.map ~f:annotation_to_string
+      |> String.concat ~sep:"\n"
+    in
+    Format.fprintf
+      formatter
+      "Annotations: %s\nTemporaryAnnotations: %s"
+      printed_annotations
+      printed_temporary_annotations
   in
   assert_equal
-    ~cmp:(Reference.Map.equal [%equal: RefinementUnit.t])
+    ~cmp:compare_annotation_store
     ~printer:(Format.asprintf "%a" pp_annotation_store)
     ~pp_diff:(diff ~print:pp_annotation_store)
     expected

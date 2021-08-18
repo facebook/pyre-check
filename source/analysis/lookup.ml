@@ -273,14 +273,22 @@ let create_of_module type_environment qualifier =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         TypeCheck.resolution
           global_resolution
-          ~annotation_store:pre_annotations
+          ~annotation_store:
+            {
+              Resolution.annotations = pre_annotations;
+              temporary_annotations = Reference.Map.empty;
+            }
           (module TypeCheck.DummyContext)
       in
       let post_resolution =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         TypeCheck.resolution
           global_resolution
-          ~annotation_store:post_annotations
+          ~annotation_store:
+            {
+              Resolution.annotations = post_annotations;
+              temporary_annotations = Reference.Map.empty;
+            }
           (module TypeCheck.DummyContext)
       in
       Visit.visit

@@ -57,7 +57,7 @@ module DummyContext : Context
 
 val resolution
   :  GlobalResolution.t ->
-  ?annotation_store:RefinementUnit.t Reference.Map.t ->
+  ?annotation_store:Resolution.annotation_store ->
   (module Context) ->
   Resolution.t
 

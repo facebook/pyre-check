@@ -34,7 +34,10 @@ let assert_backward ~resolution precondition statement postcondition =
           in
           !&name, annotation
         in
-        List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
+        {
+          Resolution.annotations = List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
+          temporary_annotations = Reference.Map.empty;
+        }
       in
       Resolution.with_annotation_store resolution ~annotation_store
     in
