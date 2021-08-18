@@ -6614,16 +6614,27 @@ let exit_state ~resolution (module Context : Context) =
        let precondition table id =
          match Hashtbl.find table id with
          | Some { State.resolution = Some exit_resolution; _ } ->
-             let stringify ~key ~data label =
+             let stringify ~temporary ~key ~data label =
                let annotation_string =
                  Type.show (Annotation.annotation data) |> String.strip ~drop:(Char.equal '`')
                in
-               label ^ " " ^ Reference.show key ^ ": " ^ annotation_string
+               let temporary_label = if temporary then "(temp)" else "" in
+               label ^ " " ^ Reference.show key ^ ": " ^ annotation_string ^ temporary_label
              in
-             (* TODO(T70545381): Dump temporary annotations in cfg. *)
-             Resolution.annotations exit_resolution
-             |> Map.filter_map ~f:RefinementUnit.base
-             |> Map.fold ~f:stringify ~init:""
+             let annotations_string =
+               Resolution.annotations exit_resolution
+               |> Map.filter_map ~f:RefinementUnit.base
+               |> Map.fold ~f:(stringify ~temporary:false) ~init:""
+             in
+             let temporary_annotations_string =
+               Resolution.temporary_annotations exit_resolution
+               |> Map.filter_map ~f:RefinementUnit.base
+               |> Map.fold ~f:(stringify ~temporary:true) ~init:""
+             in
+             if String.is_empty temporary_annotations_string then
+               annotations_string
+             else
+               annotations_string ^ " " ^ temporary_annotations_string
          | _ -> ""
        in
        Log.dump
