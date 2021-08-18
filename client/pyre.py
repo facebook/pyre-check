@@ -861,8 +861,7 @@ def infer(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
-    # TODO: Change the condition to `configuration.use_command_v2` once it is ready
-    if False:
+    if configuration.use_command_v2:
         modify_paths = (
             None if not in_place else {Path(path) for path in paths_to_modify}
         )
