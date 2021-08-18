@@ -772,7 +772,7 @@ module State (Context : Context) = struct
           errors
       in
       let check_decorator errors decorator =
-        let is_whitelisted decorator =
+        let is_allowlisted decorator =
           let has_suffix
               { Ast.Statement.Decorator.name = { Node.value = name; _ }; arguments }
               suffix
@@ -791,7 +791,7 @@ module State (Context : Context) = struct
           || is_click_derivative decorator
           || is_attr_validator decorator
         in
-        if is_whitelisted decorator then
+        if is_allowlisted decorator then
           let { Ast.Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } =
             decorator
           in
@@ -1534,8 +1534,8 @@ module State (Context : Context) = struct
       | None -> errors
     in
     let check_behavioral_subtyping resolution errors =
-      let is_whitelisted_dunder_method define =
-        let whitelist =
+      let is_allowlisted_dunder_method define =
+        let allowlist =
           String.Set.of_list
             [
               "__call__";
@@ -1549,10 +1549,10 @@ module State (Context : Context) = struct
               "__sizeof__";
             ]
         in
-        String.Set.mem whitelist (Define.unqualified_name define)
+        String.Set.mem allowlist (Define.unqualified_name define)
       in
       try
-        if Define.is_constructor define || is_whitelisted_dunder_method define then
+        if Define.is_constructor define || is_allowlisted_dunder_method define then
           errors
         else
           let open Annotated in
