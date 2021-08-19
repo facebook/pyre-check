@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import itertools
 import logging
 from pathlib import Path
 from typing import Iterable
@@ -32,6 +33,32 @@ def find_roots(
         return [Path(local_root)]
 
     return [Path.cwd()]
+
+
+def find_paths_to_parse(paths: Iterable[Path]) -> Iterable[Path]:
+    def _should_ignore(path: Path) -> bool:
+        return path.name.startswith("__") or path.name.startswith(".")
+
+    def _get_paths_for_file(target_file: Path) -> Iterable[Path]:
+        return (
+            [target_file]
+            if target_file.suffix == ".py" and not _should_ignore(target_file)
+            else []
+        )
+
+    def _get_paths_in_directory(target_directory: Path) -> Iterable[Path]:
+        return (
+            path
+            for path in target_directory.glob("**/*.py")
+            if not _should_ignore(path)
+        )
+
+    return itertools.chain.from_iterable(
+        _get_paths_for_file(path)
+        if not path.is_dir()
+        else _get_paths_in_directory(path)
+        for path in paths
+    )
 
 
 def run_statistics(

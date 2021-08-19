@@ -10,7 +10,7 @@ import testslide
 
 from .... import configuration, command_arguments
 from ....tests import setup
-from ..statistics import find_roots
+from ..statistics import find_roots, find_paths_to_parse
 
 
 class StatisticsTest(testslide.TestCase):
@@ -69,3 +69,34 @@ class StatisticsTest(testslide.TestCase):
                     ),
                     [root_path],
                 )
+
+    def test_find_paths_to_parse(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(
+                root_path,
+                ["s0.py", "a/s1.py", "b/s2.py", "b/c/s3.py", "b/s4.txt", "b/__s5.py"],
+            )
+            setup.ensure_directories_exists(root_path, ["b/d"])
+            self.assertCountEqual(
+                find_paths_to_parse(
+                    [
+                        root_path / "a/s1.py",
+                        root_path / "b/s2.py",
+                        root_path / "b/s4.txt",
+                    ]
+                ),
+                [
+                    root_path / "a/s1.py",
+                    root_path / "b/s2.py",
+                ],
+            )
+            self.assertCountEqual(
+                find_paths_to_parse([root_path]),
+                [
+                    root_path / "s0.py",
+                    root_path / "a/s1.py",
+                    root_path / "b/s2.py",
+                    root_path / "b/c/s3.py",
+                ],
+            )
