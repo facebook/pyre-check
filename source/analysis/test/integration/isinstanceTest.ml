@@ -29,6 +29,19 @@ let test_check_isinstance context =
         if isinstance(MY_GLOBAL, str):
           reveal_type(MY_GLOBAL)
     |}
+    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `str`."];
+  assert_type_errors
+    {|
+      import typing
+      MY_GLOBAL: typing.Union[int, str] = 1
+
+      def call() -> None: pass
+
+      def foo() -> None:
+        if isinstance(MY_GLOBAL, str):
+          call()
+          reveal_type(MY_GLOBAL)
+    |}
     ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Union[int, str]`."];
   assert_type_errors
     {|
@@ -39,6 +52,21 @@ let test_check_isinstance context =
 
       def foo(f: Foo) -> None:
         if isinstance(f.x, str):
+          reveal_type(f.x)
+    |}
+    ["Revealed type [-1]: Revealed type for `f.x` is `str`."];
+  assert_type_errors
+    {|
+      import typing
+      class Foo:
+        def __init__(self) -> None:
+          self.x: typing.Union[int, str] = 1
+
+      def call() -> None: pass
+
+      def foo(f: Foo) -> None:
+        if isinstance(f.x, str):
+          call()
           reveal_type(f.x)
     |}
     ["Revealed type [-1]: Revealed type for `f.x` is `typing.Union[int, str]`."];

@@ -350,6 +350,18 @@ let test_check_globals context =
           return GLOBAL
         return 0
     |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      GLOBAL: typing.Optional[int]
+      def call() -> None: pass
+      def foo() -> int:
+        if GLOBAL:
+          call()
+          return GLOBAL
+        return 0
+    |}
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|

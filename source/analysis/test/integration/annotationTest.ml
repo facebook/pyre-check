@@ -765,6 +765,18 @@ let test_check_immutable_annotations context =
           return constant
         return 0
     |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      constant: typing.Optional[int]
+      def call() -> None: pass
+      def foo() -> int:
+        if constant is not None:
+          call()
+          return constant
+        return 0
+    |}
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
@@ -1186,6 +1198,20 @@ let test_check_refinement context =
           a: typing.Optional[int] = None
           def bar(self) -> int:
               if self.a is not None:
+                  return self.a
+              else:
+                  return 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      def call() -> None: pass
+      class A:
+          a: typing.Optional[int] = None
+          def bar(self) -> int:
+              if self.a is not None:
+                  call()
                   return self.a
               else:
                   return 1
