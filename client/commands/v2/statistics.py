@@ -16,6 +16,7 @@ from ... import (
     command_arguments,
     configuration as configuration_module,
     statistics_collectors as collectors,
+    statistics,
 )
 from . import remote_logging
 
@@ -185,6 +186,41 @@ def aggregate_statistics(data: StatisticsData) -> AggregatedStatisticsData:
         strict=sum(strictness["strict_count"] for strictness in data.strict.values()),
         unsafe=sum(strictness["unsafe_count"] for strictness in data.strict.values()),
     )
+
+
+def log_to_remote(logger: str, run_id: str, data: Dict[str, Any]) -> None:
+    def _log_fixmes(fixme_type: str, data: Dict[str, int], path: str) -> None:
+        for error_code, count in data.items():
+            statistics.log(
+                statistics.LoggerCategory.FIXME_COUNTS,
+                logger,
+                integers={"count": count},
+                normals={
+                    "run_id": run_id,
+                    "code": error_code,
+                    "type": fixme_type,
+                    "path": path,
+                },
+            )
+
+    for path, counts in data["annotations"].items():
+        statistics.log(
+            statistics.LoggerCategory.ANNOTATION_COUNTS,
+            logger,
+            integers=counts,
+            normals={"run_id": run_id, "path": path},
+        )
+    for path, counts in data["fixmes"].items():
+        _log_fixmes("fixme", counts, path)
+    for path, counts in data["ignores"].items():
+        _log_fixmes("ignore", counts, path)
+    for path, counts in data["strict"].items():
+        statistics.log(
+            statistics.LoggerCategory.STRICT_ADOPTION,
+            logger,
+            integers=counts,
+            normals={"run_id": run_id, "path": path},
+        )
 
 
 def run_statistics(
