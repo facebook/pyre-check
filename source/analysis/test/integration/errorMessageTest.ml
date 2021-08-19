@@ -126,8 +126,6 @@ let test_show_error_traces context =
        test.py:7:4.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
-      "Incompatible return type [7]: Expected `str` but got `unknown`. Type `str` expected on line \
-       8, specified on line 5.";
     ];
   assert_type_errors
     {|

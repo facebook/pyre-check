@@ -126,7 +126,7 @@ let test_check_attributes context =
     |}
     [
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -248,7 +248,7 @@ let test_check_attributes context =
     |}
     [
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -298,7 +298,6 @@ let test_check_attributes context =
     [
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
       ^ "to have type `typing.Optional[int]` but is never initialized.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
   assert_type_errors
     {|
@@ -355,7 +354,6 @@ let test_check_attributes context =
       ^ "has type `int` but no type is specified.";
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` "
       ^ "has type `int` but no type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|
@@ -369,7 +367,7 @@ let test_check_attributes context =
     |}
     [
       "Undefined attribute [16]: `Foo` has no attribute `baz`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
 
   (* Ensure synthetic attribute accesses don't mask errors on real ones. *)
@@ -617,7 +615,24 @@ let test_check_attributes context =
           self.attribute = not_annotated()
           a = self.attribute.something
     |}
-    ["Undefined attribute [16]: `int` has no attribute `something`."];
+    [];
+
+  assert_type_errors
+    {|
+      def returns_string() -> str:
+        return ""
+
+      class Foo:
+        attribute: int = 1
+        def foo(self) -> None:
+          self.attribute = returns_string()
+          a = self.attribute.something
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type \
+       `int` but is used as type `str`.";
+      "Undefined attribute [16]: `int` has no attribute `something`.";
+    ];
 
   (* Do not resolve optional attributes to the optional type. *)
   assert_type_errors

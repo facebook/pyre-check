@@ -897,7 +897,6 @@ let test_check_immutable_annotations context =
     |}
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|

@@ -1044,6 +1044,71 @@ let test_check_temporary_refinement context =
        `typing_extensions.Literal[1]`).";
       "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `float`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      def takes_non_optional_int(input: int) -> None:
+        pass
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        foo.attribute = 1
+        reveal_type(foo.attribute)
+        takes_non_optional_int(foo.attribute)
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        @property
+        def attribute(self) -> Optional[int]:
+          pass
+        @attribute.setter
+        def attribute(self, value: Optional[int]) -> None:
+          pass
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        foo.attribute = 1
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+    ];
+  (* TODO(T70545381): Don't allow refinement if __getattr__ override exists. *)
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+        def __getattr__(self, value: str) -> int:
+          return 1
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        foo.attribute = 1
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`).";
+    ];
   ()
 
 

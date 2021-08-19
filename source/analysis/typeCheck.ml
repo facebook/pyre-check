@@ -4834,9 +4834,12 @@ module State (Context : Context) = struct
                         | Attribute _ as name when is_simple_name name -> (
                             match resolved_base, attribute with
                             | `Attribute (_, parent), Some (attribute, _)
-                              when not
-                                     (Annotated.Attribute.defined attribute
-                                     || is_undefined_attribute parent) ->
+                              when not (Annotated.Attribute.property attribute) ->
+                                let is_temporary_refinement =
+                                  is_temporary_refinement
+                                  || Annotated.Attribute.defined attribute
+                                  || is_undefined_attribute parent
+                                in
                                 Resolution.set_local_with_attributes
                                   ~temporary:is_temporary_refinement
                                   resolution
