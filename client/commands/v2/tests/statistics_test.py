@@ -16,6 +16,7 @@ from ..statistics import (
     find_paths_to_parse,
     parse_text_to_module,
     parse_path_to_module,
+    collect_statistics,
 )
 
 
@@ -136,3 +137,20 @@ class StatisticsTest(testslide.TestCase):
 
             self.assertIsNotNone(parse_path_to_module(source_path))
             self.assertIsNone(parse_path_to_module(root_path / "nonexistent.py"))
+
+    def test_collect_statistics(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(root_path, ["foo.py", "bar.py"])
+            foo_path = root_path / "foo.py"
+            bar_path = root_path / "bar.py"
+
+            data = collect_statistics([foo_path, bar_path], strict_default=False)
+            self.assertIn(str(foo_path), data.annotations)
+            self.assertIn(str(foo_path), data.fixmes)
+            self.assertIn(str(foo_path), data.ignores)
+            self.assertIn(str(foo_path), data.strict)
+            self.assertIn(str(bar_path), data.annotations)
+            self.assertIn(str(bar_path), data.fixmes)
+            self.assertIn(str(bar_path), data.ignores)
+            self.assertIn(str(bar_path), data.strict)
