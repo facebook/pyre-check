@@ -61,6 +61,10 @@ let pp format { annotation_store = { annotations; temporary_annotations }; type_
 
 let show resolution = Format.asprintf "%a" pp resolution
 
+let empty_annotation_store =
+  { annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty }
+
+
 let is_global { global_resolution; _ } ~reference =
   Reference.delocalize reference |> GlobalResolution.global global_resolution |> Option.is_some
 

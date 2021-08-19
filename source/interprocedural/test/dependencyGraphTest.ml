@@ -354,12 +354,8 @@ let test_type_collection context =
     let test_expect (node_id, statement_index, test_expression, expected_type) =
       let key = [%hash: int * int] (node_id, statement_index) in
       let annotation_store =
-        {
-          Resolution.annotations =
-            (LocalAnnotationMap.ReadOnly.get_precondition lookup key
-            |> fun value -> Option.value_exn value);
-          temporary_annotations = Reference.Map.empty;
-        }
+        LocalAnnotationMap.ReadOnly.get_precondition lookup key
+        |> fun value -> Option.value_exn value
       in
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
       let resolution =

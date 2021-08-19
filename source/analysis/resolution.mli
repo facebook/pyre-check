@@ -30,6 +30,8 @@ val create
   unit ->
   t
 
+val empty_annotation_store : annotation_store
+
 val resolve_expression : t -> Expression.t -> t * Type.t
 
 val resolve_expression_to_type : t -> Expression.t -> Type.t

@@ -10,18 +10,33 @@ open Ast
 open Pyre
 
 module Annotations = struct
-  type t = {
-    precondition: RefinementUnit.t Reference.Map.Tree.t;
-    postcondition: RefinementUnit.t Reference.Map.Tree.t;
+  type annotation_store = {
+    annotations: RefinementUnit.t Reference.Map.Tree.t;
+    temporary_annotations: RefinementUnit.t Reference.Map.Tree.t;
   }
   [@@deriving eq]
 
-  let pp_state formatter map =
-    let pp_element ~key ~data =
-      Format.fprintf formatter "\"%a\": \"%a\", " Reference.pp key RefinementUnit.pp data
+  type t = {
+    precondition: annotation_store;
+    postcondition: annotation_store;
+  }
+  [@@deriving eq]
+
+  let pp_state formatter { annotations; temporary_annotations } =
+    let pp_element ~temporary ~key ~data =
+      let temporary_suffix = if temporary then "(temp)" else "" in
+      Format.fprintf
+        formatter
+        "\"%a\": \"%a\"%s, "
+        Reference.pp
+        key
+        RefinementUnit.pp
+        data
+        temporary_suffix
     in
     Format.fprintf formatter "{";
-    Reference.Map.Tree.iteri map ~f:pp_element;
+    Reference.Map.Tree.iteri annotations ~f:(pp_element ~temporary:false);
+    Reference.Map.Tree.iteri temporary_annotations ~f:(pp_element ~temporary:true);
     Format.fprintf formatter "}"
 
 
@@ -58,32 +73,47 @@ let pp formatter statements =
 let show map = Format.asprintf "%a" pp map
 
 let set
-    ?(precondition = Reference.Map.empty)
-    ?(postcondition = Reference.Map.empty)
+    ?(precondition =
+      { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
+    ?(postcondition =
+      { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
     ~key
     local_annotations
   =
+  let convert_to_tree { Resolution.annotations; temporary_annotations } =
+    {
+      Annotations.annotations = Reference.Map.to_tree annotations;
+      temporary_annotations = Reference.Map.to_tree temporary_annotations;
+    }
+  in
   Hashtbl.set
     local_annotations
     ~key
     ~data:
       {
-        Annotations.precondition = Reference.Map.to_tree precondition;
-        postcondition = Reference.Map.to_tree postcondition;
+        Annotations.precondition = convert_to_tree precondition;
+        postcondition = convert_to_tree postcondition;
       }
 
 
 module ReadOnly = struct
   type t = Annotations.t Int.Map.Tree.t
 
+  let convert_to_map { Annotations.annotations; temporary_annotations } =
+    {
+      Resolution.annotations = Reference.Map.of_tree annotations;
+      temporary_annotations = Reference.Map.of_tree temporary_annotations;
+    }
+
+
   let get_precondition local_annotations key =
     Int.Map.Tree.find local_annotations key
-    >>| fun { Annotations.precondition; _ } -> Reference.Map.of_tree precondition
+    >>| fun { Annotations.precondition; _ } -> convert_to_map precondition
 
 
   let get_postcondition local_annotations key =
     Int.Map.Tree.find local_annotations key
-    >>| fun { Annotations.postcondition; _ } -> Reference.Map.of_tree postcondition
+    >>| fun { Annotations.postcondition; _ } -> convert_to_map postcondition
 end
 
 let read_only local_annotations = Hashtbl.to_alist local_annotations |> Int.Map.Tree.of_alist_exn

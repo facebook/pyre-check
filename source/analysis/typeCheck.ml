@@ -1874,8 +1874,7 @@ module State (Context : Context) = struct
     let state =
       let resolution_fixpoint = LocalAnnotationMap.empty () in
       let error_map = LocalErrorMap.empty () in
-      (* TODO(T70545381): Use full annotation store in resolution fixpoint. *)
-      let postcondition = Resolution.annotations resolution in
+      let postcondition = Resolution.annotation_store resolution in
       let key = [%hash: int * int] (Cfg.entry_index, 0) in
       LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition;
       LocalErrorMap.set error_map ~key ~errors;
@@ -5915,9 +5914,8 @@ module State (Context : Context) = struct
           match post_resolution with
           | None -> ()
           | Some post_resolution ->
-              (* TODO(T70545381): Use full annotation store in resolution fixpoint. *)
-              let precondition = Resolution.annotations resolution in
-              let postcondition = Resolution.annotations post_resolution in
+              let precondition = Resolution.annotation_store resolution in
+              let postcondition = Resolution.annotation_store post_resolution in
               LocalAnnotationMap.set state.resolution_fixpoint ~key ~precondition ~postcondition
         in
         { state with resolution = post_resolution }
@@ -5952,8 +5950,7 @@ end
 
 let resolution
     global_resolution
-    ?(annotation_store =
-      { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
+    ?(annotation_store = Resolution.empty_annotation_store)
     (module Context : Context)
   =
   let module State = State (Context) in
@@ -5973,15 +5970,14 @@ let resolution
 
 
 let resolution_with_key ~global_resolution ~local_annotations ~parent ~key context =
-  let annotations =
+  let annotation_store =
     Option.value_map
       local_annotations
       ~f:(fun map ->
         LocalAnnotationMap.ReadOnly.get_precondition map key
-        |> Option.value ~default:Reference.Map.empty)
-      ~default:Reference.Map.empty
+        |> Option.value ~default:Resolution.empty_annotation_store)
+      ~default:Resolution.empty_annotation_store
   in
-  let annotation_store = { Resolution.annotations; temporary_annotations = Reference.Map.empty } in
   resolution global_resolution ~annotation_store context |> Resolution.with_parent ~parent
 
 

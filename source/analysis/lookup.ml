@@ -265,30 +265,22 @@ let create_of_module type_environment qualifier =
       let pre_annotations, post_annotations =
         let key = [%hash: int * int] (node_id, statement_index) in
         ( LocalAnnotationMap.ReadOnly.get_precondition annotation_lookup key
-          |> Option.value ~default:Reference.Map.empty,
+          |> Option.value ~default:Resolution.empty_annotation_store,
           LocalAnnotationMap.ReadOnly.get_postcondition annotation_lookup key
-          |> Option.value ~default:Reference.Map.empty )
+          |> Option.value ~default:Resolution.empty_annotation_store )
       in
       let pre_resolution =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         TypeCheck.resolution
           global_resolution
-          ~annotation_store:
-            {
-              Resolution.annotations = pre_annotations;
-              temporary_annotations = Reference.Map.empty;
-            }
+          ~annotation_store:pre_annotations
           (module TypeCheck.DummyContext)
       in
       let post_resolution =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         TypeCheck.resolution
           global_resolution
-          ~annotation_store:
-            {
-              Resolution.annotations = post_annotations;
-              temporary_annotations = Reference.Map.empty;
-            }
+          ~annotation_store:post_annotations
           (module TypeCheck.DummyContext)
       in
       Visit.visit
