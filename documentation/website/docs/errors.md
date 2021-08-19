@@ -70,6 +70,42 @@ def zeroes(number_of_elements: int) -> List[float]:
   return a # Type checks!
 ```
 
+#### Contravariance
+
+`Callable`, on the other hand, is [contravariant](https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)#Contravariant_method_parameter_type) in its parameter types. This means that, when checking if `Callable[[A], None]` is compatible with `Callable[[B], None]`, we check if `B` is compatible with `A`, not the other way around. This is because the former should be capable of accepting any arguments accepted by the latter.
+
+For example, a function of type `Callable[[Base], int]` may be given an argument of type `Child2`. But if we passed in a function of type `Callable[[Child1], int]`, this could fail at runtime:
+
+```python
+class Base: pass
+
+class Child1(Base):
+    size: int = 42
+
+# No size field.
+class Child2(Base): pass
+
+def print_child2_size(get_size: Callable[[Base], int]) -> None:
+    child2 = Child2()
+    size = get_size(child2)
+    print(size)
+
+def size_of_child1(child1: Child1) -> int:
+    return child1.size
+
+print_child2_size(size_of_child1) # BAD!
+
+# At runtime:
+# AttributeError: 'Child2' object has no attribute 'size'
+```
+
+To prevent such errors, Pyre raises a type error when violating contravariance:
+
+```
+$ pyre
+Incompatible parameter type [6]: Expected `typing.Callable[[Base], int]` for 1st positional only parameter to call `print_child2_size` but got `typing.Callable(size_of_child1)[[Named(child1, Child1)], int]`.
+```
+
 ### Optional Attributes
 A common pattern in Python is to check whether an attribute is `None` before accessing its value. E.g.
 
