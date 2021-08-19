@@ -1088,7 +1088,6 @@ let test_check_temporary_refinement context =
       "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
       "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
     ];
-  (* TODO(T70545381): Don't allow refinement if __getattr__ override exists. *)
   assert_type_errors
     {|
       from typing import Optional
@@ -1106,8 +1105,7 @@ let test_check_temporary_refinement context =
     |}
     [
       "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
-      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: \
-       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
     ];
   ()
 

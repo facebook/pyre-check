@@ -4227,40 +4227,30 @@ module State (Context : Context) = struct
                           Annotation.original target_annotation, true
                       | _ -> Type.Top, false
                     in
-                    let is_undefined_attribute parent =
-                      (* TODO(T64156088): To catch errors against the implicit call to a custom
-                         definition of `__setattr__`, we should run signature select against the
-                         value type. *)
-                      let is_getattr_defined =
-                        let attribute =
-                          match Type.resolve_class parent with
-                          | Some [{ instantiated; class_name; _ }] ->
-                              GlobalResolution.attribute_from_class_name
-                                class_name
-                                ~accessed_through_class:false
-                                ~transitive:true
-                                ~resolution:global_resolution
-                                ~name:"__getattr__"
-                                ~instantiated
-                          | _ -> None
-                        in
-                        match attribute with
-                        | Some attribute when Annotated.Attribute.defined attribute -> (
-                            match
-                              Annotated.Attribute.annotation attribute |> Annotation.annotation
-                            with
-                            | Type.Parametric
-                                {
-                                  name = "BoundMethod";
-                                  parameters =
-                                    [Single (Callable { implementation = { annotation; _ }; _ }); _];
-                                }
-                            | Type.Callable { implementation = { annotation; _ }; _ } ->
-                                Type.is_any annotation
-                            | _ -> false)
-                        | _ -> false
+                    let find_getattr parent =
+                      let attribute =
+                        match Type.resolve_class parent with
+                        | Some [{ instantiated; class_name; _ }] ->
+                            GlobalResolution.attribute_from_class_name
+                              class_name
+                              ~accessed_through_class:false
+                              ~transitive:true
+                              ~resolution:global_resolution
+                              ~name:"__getattr__"
+                              ~instantiated
+                        | _ -> None
                       in
-                      not is_getattr_defined
+                      match attribute with
+                      | Some attribute when Annotated.Attribute.defined attribute -> (
+                          match
+                            Annotated.Attribute.annotation attribute |> Annotation.annotation
+                          with
+                          | Type.Parametric
+                              { name = "BoundMethod"; parameters = [Single (Callable _); _] }
+                          | Type.Callable _ ->
+                              Some attribute
+                          | _ -> None)
+                      | _ -> None
                     in
                     let is_global =
                       match name with
@@ -4411,12 +4401,37 @@ module State (Context : Context) = struct
                                        ~resolution:global_resolution
                                        (Type.single_parameter parent)
                                 in
-                                if is_meta_typed_dictionary then
+                                let is_getattr_returning_any_defined =
+                                  match
+                                    find_getattr parent
+                                    >>| AnnotatedAttribute.annotation
+                                    >>| Annotation.annotation
+                                  with
+                                  | Some
+                                      (Type.Parametric
+                                        {
+                                          name = "BoundMethod";
+                                          parameters =
+                                            [
+                                              Single
+                                                (Callable { implementation = { annotation; _ }; _ });
+                                              _;
+                                            ];
+                                        })
+                                  | Some (Type.Callable { implementation = { annotation; _ }; _ })
+                                    ->
+                                      Type.is_any annotation
+                                  | _ -> false
+                                in
+                                if is_meta_typed_dictionary || is_getattr_returning_any_defined then
                                   (* Ignore the error from the attribute declaration `Movie.name =
                                      ...`, which would raise an error because `name` was removed as
                                      an attribute from the TypedDictionary. *)
                                   errors
-                                else if is_undefined_attribute parent then
+                                else
+                                  (* TODO(T64156088): To catch errors against the implicit call to a
+                                     custom definition of `__setattr__`, we should run signature
+                                     select against the value type. *)
                                   let parent_source_path =
                                     let ast_environment =
                                       GlobalResolution.ast_environment global_resolution
@@ -4438,8 +4453,6 @@ module State (Context : Context) = struct
                                            origin =
                                              Error.Class { class_type = parent; parent_source_path };
                                          })
-                                else
-                                  errors
                             | _ -> errors
                           in
                           let check_nested_explicit_type_alias errors =
@@ -4834,11 +4847,11 @@ module State (Context : Context) = struct
                         | Attribute _ as name when is_simple_name name -> (
                             match resolved_base, attribute with
                             | `Attribute (_, parent), Some (attribute, _)
-                              when not (Annotated.Attribute.property attribute) ->
+                              when not
+                                     (Annotated.Attribute.property attribute
+                                     || Option.is_some (find_getattr parent)) ->
                                 let is_temporary_refinement =
-                                  is_temporary_refinement
-                                  || Annotated.Attribute.defined attribute
-                                  || is_undefined_attribute parent
+                                  is_temporary_refinement || Annotated.Attribute.defined attribute
                                 in
                                 Resolution.set_local_with_attributes
                                   ~temporary:is_temporary_refinement
