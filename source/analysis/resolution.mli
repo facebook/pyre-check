@@ -55,9 +55,14 @@ val resolve_attribute_access : t -> base_type:Type.t -> attribute:string -> Type
 
 val partition_name : t -> name:Expression.Name.t -> Reference.t * Reference.t * Annotation.t option
 
-val set_local : t -> reference:Reference.t -> annotation:Annotation.t -> t
+val set_local : ?temporary:bool -> t -> reference:Reference.t -> annotation:Annotation.t -> t
 
-val set_local_with_attributes : t -> name:Expression.Name.t -> annotation:Annotation.t -> t
+val set_local_with_attributes
+  :  ?temporary:bool ->
+  t ->
+  name:Expression.Name.t ->
+  annotation:Annotation.t ->
+  t
 
 val get_local : ?global_fallback:bool -> reference:Reference.t -> t -> Annotation.t option
 
@@ -68,6 +73,8 @@ val get_local_with_attributes
   Annotation.t option
 
 val unset_local : t -> reference:Reference.t -> t
+
+val clear_temporary_annotations : t -> t
 
 val is_global : t -> reference:Reference.t -> bool
 

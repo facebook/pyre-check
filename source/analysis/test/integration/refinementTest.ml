@@ -386,7 +386,10 @@ let test_check_global_refinement context =
         if x is not None:
           reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`."]
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`).";
+    ]
 
 
 let test_check_local_refinement context =
@@ -1018,6 +1021,32 @@ let test_check_final_attribute_refinement context =
   ()
 
 
+let test_check_temporary_refinement context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      MY_GLOBAL = 1.0
+
+      def arbitrary_call() -> None:
+        pass
+
+      def test() -> None:
+        reveal_type(MY_GLOBAL)
+        global MY_GLOBAL
+        MY_GLOBAL = 1
+        reveal_type(MY_GLOBAL)
+        arbitrary_call()
+        reveal_type(MY_GLOBAL)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `float`.";
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `float` (inferred: \
+       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `float`.";
+    ];
+  ()
+
+
 let () =
   "refinement"
   >::: [
@@ -1029,5 +1058,6 @@ let () =
          "check_assert_contains_none" >:: test_assert_contains_none;
          "check_callable" >:: test_check_callable;
          "check_final_attribute_refinement" >:: test_check_final_attribute_refinement;
+         "check_temporary_refinement" >:: test_check_temporary_refinement;
        ]
   |> Test.run

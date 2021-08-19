@@ -743,10 +743,7 @@ let test_check_immutable_annotations context =
         constant: str
         constant = "hi"
     |}
-    [
-      "Incompatible variable type [9]: constant is declared to have type `int` but is used as type \
-       `str`.";
-    ];
+    [];
   assert_type_errors
     {|
       import typing

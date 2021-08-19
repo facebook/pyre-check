@@ -126,7 +126,10 @@ let test_reveal_type context =
          x = 1
          reveal_type(x)
      |}
-    ["Revealed type [-1]: Revealed type for `x` is `float`."];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `float` (inferred: \
+       `typing_extensions.Literal[1]`).";
+    ];
   assert_type_errors
     {|
        import typing

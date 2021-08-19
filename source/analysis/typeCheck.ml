@@ -509,10 +509,13 @@ module State (Context : Context) = struct
         let annotation_map_less_or_equal left right =
           Map.fold ~init:true ~f:(entry_less_or_equal right RefinementUnit.equal) left
         in
+        let temporary_annotation_map_less_or_equal left right =
+          Map.fold ~init:true ~f:(entry_less_or_equal left RefinementUnit.equal) right
+        in
         annotation_map_less_or_equal
           (Resolution.annotations left_resolution)
           (Resolution.annotations right_resolution)
-        && annotation_map_less_or_equal
+        && temporary_annotation_map_less_or_equal
              (Resolution.temporary_annotations left_resolution)
              (Resolution.temporary_annotations right_resolution)
 
@@ -529,6 +532,17 @@ module State (Context : Context) = struct
       | `Right _ ->
           Some (RefinementUnit.create ~base:(Annotation.create Type.Top) ())
     in
+    let merge_temporary_annotation_stores ~key:_ = function
+      | `Both (left, right) ->
+          Some
+            (RefinementUnit.join
+               ~global_resolution:(Resolution.global_resolution left_resolution)
+               left
+               right)
+      | `Left _
+      | `Right _ ->
+          None
+    in
     let annotation_store =
       {
         Resolution.annotations =
@@ -538,7 +552,7 @@ module State (Context : Context) = struct
             (Resolution.annotations right_resolution);
         temporary_annotations =
           Map.merge
-            ~f:merge_annotation_stores
+            ~f:merge_temporary_annotation_stores
             (Resolution.temporary_annotations left_resolution)
             (Resolution.temporary_annotations right_resolution);
       }
@@ -569,6 +583,21 @@ module State (Context : Context) = struct
               Some previous
           | _ -> None
         in
+        let widen_temporary_annotations ~key:_ annotation =
+          match annotation with
+          | `Both (previous, next) ->
+              Some
+                (RefinementUnit.widen
+                   ~global_resolution
+                   ~widening_threshold
+                   ~previous
+                   ~next
+                   ~iteration)
+          | `Left _
+          | `Right _ ->
+              None
+          | _ -> None
+        in
         let annotation_store =
           {
             Resolution.annotations =
@@ -578,7 +607,7 @@ module State (Context : Context) = struct
                 (Resolution.annotations next_resolution);
             temporary_annotations =
               Map.merge
-                ~f:widen_annotations
+                ~f:widen_temporary_annotations
                 (Resolution.temporary_annotations previous_resolution)
                 (Resolution.temporary_annotations next_resolution);
           }
@@ -2832,7 +2861,7 @@ module State (Context : Context) = struct
                 ~arguments
         in
         {
-          resolution = updated_resolution;
+          resolution = Resolution.clear_temporary_annotations updated_resolution;
           errors = updated_errors;
           resolved;
           resolved_annotation = None;
@@ -4731,87 +4760,92 @@ module State (Context : Context) = struct
                             errors, true
                     in
                     let propagate_annotations ~errors ~is_valid_annotation ~resolved_value_weakened =
-                      if is_global && not (Define.is_toplevel Context.define.value) then
-                        resolution, errors
-                      else
-                        let refine_annotation annotation refined =
-                          RefinementUnit.refine ~global_resolution annotation refined
+                      let is_temporary_refinement =
+                        is_global && not (Define.is_toplevel Context.define.value)
+                      in
+                      let refine_annotation annotation refined =
+                        RefinementUnit.refine ~global_resolution annotation refined
+                      in
+                      let annotation =
+                        (* Do not refine targets explicitly annotated as 'Any' to allow for escape
+                           hatch *)
+                        (* Do not refine targets with invariance mismatch as we cannot keep the
+                           inferred type up to date for mutable containers *)
+                        let invariance_mismatch =
+                          GlobalResolution.is_invariance_mismatch
+                            global_resolution
+                            ~right:expected
+                            ~left:resolved_value
                         in
-                        let annotation =
-                          (* Do not refine targets explicitly annotated as 'Any' to allow for escape
-                             hatch *)
-                          (* Do not refine targets with invariance mismatch as we cannot keep the
-                             inferred type up to date for mutable containers *)
-                          let invariance_mismatch =
-                            GlobalResolution.is_invariance_mismatch
-                              global_resolution
-                              ~right:expected
-                              ~left:resolved_value
+                        if explicit && is_valid_annotation then
+                          let guide_annotation =
+                            Annotation.create_immutable ~final:is_final guide
                           in
-                          if explicit && is_valid_annotation then
-                            let guide_annotation =
-                              Annotation.create_immutable ~final:is_final guide
-                            in
-                            if
-                              Type.is_concrete resolved_value
-                              && (not (Type.is_any guide))
-                              && not invariance_mismatch
-                            then
-                              refine_annotation guide_annotation resolved_value
-                            else
-                              guide_annotation
-                          else if is_immutable then
-                            if
-                              Type.is_any (Annotation.original target_annotation)
-                              || invariance_mismatch
-                            then
-                              target_annotation
-                            else
-                              refine_annotation target_annotation guide
-                          else
-                            Annotation.create guide
-                        in
-                        let errors, annotation =
                           if
-                            (not explicit)
-                            && Type.Variable.contains_escaped_free_variable
-                                 (Annotation.annotation annotation)
+                            Type.is_concrete resolved_value
+                            && (not (Type.is_any guide))
+                            && not invariance_mismatch
                           then
-                            let kind =
-                              Error.IncompleteType
-                                {
-                                  target = { Node.location; value = target_value };
-                                  annotation = resolved_value_weakened;
-                                  attempted_action = Naming;
-                                }
-                            in
-                            let converted =
-                              Type.Variable.convert_all_escaped_free_variables_to_anys
-                                (Annotation.annotation annotation)
-                            in
-                            ( emit_error ~errors ~location ~kind,
-                              { annotation with annotation = converted } )
+                            refine_annotation guide_annotation resolved_value
                           else
-                            errors, annotation
-                        in
-                        let resolution =
-                          match name with
-                          | Identifier identifier ->
-                              Resolution.set_local
-                                resolution
-                                ~reference:(Reference.create identifier)
-                                ~annotation
-                          | Attribute _ as name when is_simple_name name -> (
-                              match resolved_base, attribute with
-                              | `Attribute (_, parent), Some (attribute, _)
-                                when not
-                                       (Annotated.Attribute.defined attribute
-                                       || is_undefined_attribute parent) ->
-                                  Resolution.set_local_with_attributes resolution ~name ~annotation
-                              | _ -> resolution)
-                          | _ -> resolution
-                        in
-                        resolution, errors
+                            guide_annotation
+                        else if is_immutable then
+                          if
+                            Type.is_any (Annotation.original target_annotation)
+                            || invariance_mismatch
+                          then
+                            target_annotation
+                          else
+                            refine_annotation target_annotation guide
+                        else
+                          Annotation.create guide
+                      in
+                      let errors, annotation =
+                        if
+                          (not explicit)
+                          && Type.Variable.contains_escaped_free_variable
+                               (Annotation.annotation annotation)
+                        then
+                          let kind =
+                            Error.IncompleteType
+                              {
+                                target = { Node.location; value = target_value };
+                                annotation = resolved_value_weakened;
+                                attempted_action = Naming;
+                              }
+                          in
+                          let converted =
+                            Type.Variable.convert_all_escaped_free_variables_to_anys
+                              (Annotation.annotation annotation)
+                          in
+                          ( emit_error ~errors ~location ~kind,
+                            { annotation with annotation = converted } )
+                        else
+                          errors, annotation
+                      in
+                      let resolution =
+                        match name with
+                        | Identifier identifier ->
+                            Resolution.set_local
+                              ~temporary:is_temporary_refinement
+                              resolution
+                              ~reference:(Reference.create identifier)
+                              ~annotation
+                        | Attribute _ as name when is_simple_name name -> (
+                            match resolved_base, attribute with
+                            | `Attribute (_, parent), Some (attribute, _)
+                              when not
+                                     (Annotated.Attribute.defined attribute
+                                     || is_undefined_attribute parent) ->
+                                Resolution.set_local_with_attributes
+                                  ~temporary:is_temporary_refinement
+                                  resolution
+                                  ~name
+                                  ~annotation
+                            | _ -> resolution)
+                        | _ -> resolution
+                      in
+                      resolution, errors
                     in
                     let resolved_value_weakened =
                       GlobalResolution.resolve_mutable_literals
@@ -5071,8 +5105,8 @@ module State (Context : Context) = struct
                 | _ -> None)
             | _ -> None
           in
-          let set_local name annotation =
-            Resolution.set_local_with_attributes resolution ~name ~annotation
+          let set_local ~temporary name annotation =
+            Resolution.set_local_with_attributes ~temporary resolution ~name ~annotation
           in
           match Node.value test with
           | False ->
@@ -5117,13 +5151,13 @@ module State (Context : Context) = struct
                 match refinable_annotation name with
                 (* Allow Anys [especially from placeholder stubs] to clobber *)
                 | Some _ when Type.is_any annotation ->
-                    Some (Annotation.create annotation |> set_local name)
+                    Some (Annotation.create annotation |> set_local ~temporary:false name)
                 | Some existing_annotation when refinement_unnecessary existing_annotation ->
-                    Some (set_local name existing_annotation)
+                    Some (set_local ~temporary:false name existing_annotation)
                 (* Clarify Anys if possible *)
                 | Some existing_annotation
                   when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
-                    Some (Annotation.create annotation |> set_local name)
+                    Some (Annotation.create annotation |> set_local ~temporary:false name)
                 | None -> Some resolution
                 | Some existing_annotation ->
                     let existing_type = Annotation.annotation existing_annotation in
@@ -5131,7 +5165,9 @@ module State (Context : Context) = struct
                       partition existing_type ~boundary:annotation
                     in
                     if not (Type.is_unbound consistent_with_boundary) then
-                      Some (Annotation.create consistent_with_boundary |> set_local name)
+                      Some
+                        (Annotation.create consistent_with_boundary
+                        |> set_local ~temporary:false name)
                     else if
                       GlobalResolution.less_or_equal
                         global_resolution
@@ -5142,7 +5178,7 @@ module State (Context : Context) = struct
                            ~left:annotation
                            ~right:existing_type
                     then
-                      Some (Annotation.create annotation |> set_local name)
+                      Some (Annotation.create annotation |> set_local ~temporary:false name)
                     else
                       None
               in
@@ -5166,9 +5202,9 @@ module State (Context : Context) = struct
                       partition (Annotation.annotation existing_annotation) ~boundary:undefined
                     in
                     if Type.equal consistent_with_boundary Type.Bottom then
-                      Annotation.create undefined |> set_local name
+                      Annotation.create undefined |> set_local ~temporary:false name
                     else
-                      Annotation.create consistent_with_boundary |> set_local name
+                      Annotation.create consistent_with_boundary |> set_local ~temporary:false name
                 | _ -> resolution
               in
               Some resolution, errors
@@ -5264,7 +5300,7 @@ module State (Context : Context) = struct
                     in
                     not_consistent_with_boundary
                     >>| Annotation.create
-                    >>| (fun annotation -> set_local name annotation)
+                    >>| (fun annotation -> set_local ~temporary:false name annotation)
                     |> Option.value ~default:resolution
                 | _ -> resolution
               in
