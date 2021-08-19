@@ -1369,8 +1369,7 @@ def start(
 
 
 @pyre.command()
-# TODO[T60916205]: Rename this argument, it doesn't make sense anymore
-@click.argument("filter_paths", type=filesystem.exists, nargs=-1)
+@click.argument("filter_paths", type=str, nargs=-1)
 @click.option(
     "--log-results",
     is_flag=True,
@@ -1401,6 +1400,7 @@ def statistics(
             configuration,
             command_arguments.StatisticsArguments(
                 filter_paths=list(filter_paths),
+                log_identifier=command_argument.log_identifier,
                 log_results=log_results,
                 print_aggregates=print_aggregates,
             ),

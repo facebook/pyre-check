@@ -5,9 +5,11 @@
 
 import dataclasses
 import itertools
+import json
 import logging
+import time
 from pathlib import Path
-from typing import Any, Callable, Dict, Mapping, Iterable, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Mapping, Iterable, Optional, Union
 
 import libcst as cst
 
@@ -17,6 +19,7 @@ from ... import (
     configuration as configuration_module,
     statistics_collectors as collectors,
     statistics,
+    log,
 )
 from . import remote_logging
 
@@ -133,7 +136,7 @@ class StatisticsData:
     strict: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
-def collect_statistics(sources: Sequence[Path], strict_default: bool) -> StatisticsData:
+def collect_statistics(sources: Iterable[Path], strict_default: bool) -> StatisticsData:
     modules: Dict[Path, cst.Module] = {}
     for path in sources:
         module = parse_path_to_module(path)
@@ -227,7 +230,29 @@ def run_statistics(
     configuration: configuration_module.Configuration,
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> commands.ExitCode:
-    LOG.warning("Coming soon...")
+    data = collect_statistics(
+        find_paths_to_parse(find_roots(configuration, statistics_arguments)),
+        strict_default=configuration.strict,
+    )
+
+    if statistics_arguments.print_aggregates:
+        aggregated_data = aggregate_statistics(data)
+        log.stdout.write(json.dumps(dataclasses.asdict(aggregated_data), indent=4))
+    else:
+        log.stdout.write(json.dumps(dataclasses.asdict(data), indent=4))
+        if statistics_arguments.log_results:
+            logger = configuration.logger
+            if logger is None:
+                LOG.warning("Skip remote logging since no logger is specified.")
+            else:
+                log_identifier = statistics_arguments.log_identifier
+                run_id = (
+                    log_identifier
+                    if log_identifier is not None
+                    else str(time.time_ns())
+                )
+                log_to_remote(logger, run_id, dataclasses.asdict(data))
+
     return commands.ExitCode.SUCCESS
 
 
