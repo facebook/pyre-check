@@ -151,6 +151,42 @@ def collect_statistics(sources: Sequence[Path], strict_default: bool) -> Statist
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class AggregatedStatisticsData:
+    annotations: Dict[str, int] = dataclasses.field(default_factory=dict)
+    fixmes: int = 0
+    ignores: int = 0
+    strict: int = 0
+    unsafe: int = 0
+
+
+def aggregate_statistics(data: StatisticsData) -> AggregatedStatisticsData:
+    aggregate_annotations = {
+        "return_count": 0,
+        "annotated_return_count": 0,
+        "globals_count": 0,
+        "annotated_globals_count": 0,
+        "parameter_count": 0,
+        "annotated_parameter_count": 0,
+        "attribute_count": 0,
+        "annotated_attribute_count": 0,
+        "partially_annotated_function_count": 0,
+        "fully_annotated_function_count": 0,
+        "line_count": 0,
+    }
+    for annotation_data in data.annotations.values():
+        for key in aggregate_annotations.keys():
+            aggregate_annotations[key] += annotation_data[key]
+
+    return AggregatedStatisticsData(
+        annotations=aggregate_annotations,
+        fixmes=sum(len(fixmes) for fixmes in data.fixmes.values()),
+        ignores=sum(len(ignores) for ignores in data.ignores.values()),
+        strict=sum(strictness["strict_count"] for strictness in data.strict.values()),
+        unsafe=sum(strictness["unsafe_count"] for strictness in data.strict.values()),
+    )
+
+
 def run_statistics(
     configuration: configuration_module.Configuration,
     statistics_arguments: command_arguments.StatisticsArguments,
