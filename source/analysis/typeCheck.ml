@@ -4477,10 +4477,10 @@ module State (Context : Context) = struct
                           let check_previously_annotated errors =
                             match name with
                             | Name.Identifier identifier ->
-                                let is_locally_defined =
+                                let is_defined =
                                   Option.is_some
                                     (Resolution.get_local
-                                       ~global_fallback:false
+                                       ~global_fallback:true
                                        ~reference:(Reference.create identifier)
                                        resolution)
                                 in
@@ -4492,7 +4492,8 @@ module State (Context : Context) = struct
                                 in
                                 if
                                   explicit
-                                  && is_locally_defined
+                                  && (not (Define.is_toplevel define))
+                                  && is_defined
                                   && not is_reannotation_with_same_type
                                 then
                                   emit_error

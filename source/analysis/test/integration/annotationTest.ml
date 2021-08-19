@@ -743,7 +743,10 @@ let test_check_immutable_annotations context =
         constant: str
         constant = "hi"
     |}
-    [];
+    [
+      "Illegal annotation target [35]: Target `constant` cannot be annotated after it is first \
+       declared.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -815,7 +818,11 @@ let test_check_immutable_annotations context =
           constant: str
         return constant
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
+    [
+      "Illegal annotation target [35]: Target `constant` cannot be annotated after it is first \
+       declared.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ];
   assert_type_errors
     {|
       def foo(x: int) -> None:
