@@ -4,13 +4,19 @@
 # LICENSE file in the root directory of this source tree.
 
 import tempfile
+import textwrap
 from pathlib import Path
 
 import testslide
 
 from .... import configuration, command_arguments
 from ....tests import setup
-from ..statistics import find_roots, find_paths_to_parse
+from ..statistics import (
+    find_roots,
+    find_paths_to_parse,
+    parse_text_to_module,
+    parse_path_to_module,
+)
 
 
 class StatisticsTest(testslide.TestCase):
@@ -100,3 +106,33 @@ class StatisticsTest(testslide.TestCase):
                     root_path / "b/c/s3.py",
                 ],
             )
+
+    def test_parse_text_to_module(self) -> None:
+        self.assertIsNotNone(
+            parse_text_to_module(
+                textwrap.dedent(
+                    """
+                    def foo() -> int:
+                        pass
+                    """
+                )
+            )
+        )
+        self.assertIsNone(
+            parse_text_to_module(
+                textwrap.dedent(
+                    """
+                    def foo() ->
+                    """
+                )
+            )
+        )
+
+    def test_parse_path_to_module(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            source_path = root_path / "source.py"
+            source_path.write_text("reveal_type(42)")
+
+            self.assertIsNotNone(parse_path_to_module(source_path))
+            self.assertIsNone(parse_path_to_module(root_path / "nonexistent.py"))

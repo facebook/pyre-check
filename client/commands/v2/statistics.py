@@ -6,7 +6,9 @@
 import itertools
 import logging
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
+
+import libcst as cst
 
 from ... import commands, command_arguments, configuration as configuration_module
 from . import remote_logging
@@ -59,6 +61,20 @@ def find_paths_to_parse(paths: Iterable[Path]) -> Iterable[Path]:
         else _get_paths_in_directory(path)
         for path in paths
     )
+
+
+def parse_text_to_module(text: str) -> Optional[cst.Module]:
+    try:
+        return cst.parse_module(text)
+    except cst.ParserSyntaxError:
+        return None
+
+
+def parse_path_to_module(path: Path) -> Optional[cst.Module]:
+    try:
+        return parse_text_to_module(path.read_text())
+    except FileNotFoundError:
+        return None
 
 
 def run_statistics(
