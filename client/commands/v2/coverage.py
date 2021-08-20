@@ -4,17 +4,31 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
+from pathlib import Path
 
 from ... import commands, configuration as configuration_module
-from . import remote_logging
+from . import remote_logging, statistics
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+def find_root(
+    configuration: configuration_module.Configuration, working_directory: Path
+) -> Path:
+    local_root = configuration.local_root
+    if local_root is not None:
+        return Path(local_root)
+
+    return working_directory
 
 
 def run_coverage(
     configuration: configuration_module.Configuration, working_directory: str
 ) -> commands.ExitCode:
-    LOG.warning("Coming soon...")
+    sources = statistics.find_paths_to_parse(
+        [find_root(configuration, Path(working_directory))]
+    )
+    LOG.warning(f"SOURCES = {list(sources)}")
     return commands.ExitCode.SUCCESS
 
 
