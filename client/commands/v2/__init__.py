@@ -5,6 +5,7 @@
 
 from . import backend_arguments  # noqa F401
 from . import check  # noqa F401
+from . import coverage  # noqa F401
 from . import incremental  # noqa F401
 from . import infer  # noqa F401
 from . import initialize  # noqa F401
