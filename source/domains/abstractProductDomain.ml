@@ -294,8 +294,9 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
     let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
      fun part op ~f product ->
-      match part with
-      | Self -> Base.transform part op ~f product
+      match part, op with
+      | Self, _ -> Base.transform part op ~f product
+      | _, Context (Self, _) -> Base.transform part op ~f product
       | _ ->
           let transform (Slot slot) =
             let value = get slot product in
@@ -311,8 +312,9 @@ module Make (Config : PRODUCT_CONFIG) = struct
         : type a f b. a part -> using:([ `Reduce ], a, f, b) operation -> f:f -> init:b -> t -> b
       =
      fun part ~using:op ~f ~init product ->
-      match part with
-      | Self -> Base.reduce part ~using:op ~f ~init product
+      match part, op with
+      | Self, _ -> Base.reduce part ~using:op ~f ~init product
+      | _, Context (Self, _) -> Base.reduce part ~using:op ~f ~init product
       | _ ->
           let fold (Slot slot) =
             let value = get slot product in
@@ -328,8 +330,9 @@ module Make (Config : PRODUCT_CONFIG) = struct
           a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
       =
      fun part op ~f product ->
-      match part with
-      | Self -> Base.partition part op ~f product
+      match part, op with
+      | Self, _ -> Base.partition part op ~f product
+      | _, Context (Self, _) -> Base.partition part op ~f product
       | _ ->
           let partition (Slot slot) : (b, t) Core_kernel.Map.Poly.t =
             let value = get slot product in
