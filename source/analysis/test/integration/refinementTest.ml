@@ -1174,6 +1174,153 @@ let test_check_temporary_refinement context =
       "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
       "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      class Bar:
+        def unrelated_call(self) -> None:
+          pass
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        foo.attribute = 1
+        reveal_type(foo.attribute)
+        bar = Bar()
+        reveal_type(foo.attribute)
+        if not foo.attribute:
+          return
+        reveal_type(foo.attribute)
+        bar.unrelated_call()
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      def interleaving_call() -> None: pass
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        if not foo.attribute:
+          return
+        local_copy = foo.attribute
+        interleaving_call()
+        reveal_type(foo.attribute)
+        reveal_type(local_copy)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `local_copy` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      class Bar:
+        foo: Optional[Foo] = Foo()
+
+      def interleaving_call() -> None: pass
+
+      def test(bar: Bar) -> None:
+        if bar.foo.attribute is not None:
+          return
+        reveal_type(bar.foo)
+        reveal_type(bar.foo.attribute)
+
+        if bar.foo and bar.foo.attribute:
+          reveal_type(bar.foo.attribute)
+    |}
+    [
+      "Undefined attribute [16]: `Optional` has no attribute `attribute`.";
+      "Revealed type [-1]: Revealed type for `bar.foo` is `Optional[Foo]`.";
+      "Revealed type [-1]: Revealed type for `bar.foo.attribute` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `bar.foo.attribute` is `Optional[int]` (inferred: \
+       `int`).";
+    ];
+  (* TODO(T98646613): Refinement should not stick here. *)
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      def interleaving_call() -> None: pass
+
+      def test(foo: Foo) -> None:
+        if not foo.attribute:
+          return interleaving_call()
+        reveal_type(foo.attribute)
+    |}
+    ["Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`)."];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      class Bar:
+        attribute: Optional[int] = 1
+
+      def interleaving_call() -> None:
+        pass
+
+      def test(foo: Foo, bar: Bar) -> None:
+        if not foo.attribute or not bar.attribute:
+          return
+        reveal_type(foo.attribute)
+        reveal_type(bar.attribute)
+
+        interleaving_call()
+
+        if not foo.attribute and not bar.attribute:
+          return
+        reveal_type(foo.attribute)
+        reveal_type(bar.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `bar.attribute` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `bar.attribute` is `Optional[int]`.";
+    ];
+  (* TODO(T98646613): Refinement should not stick here. *)
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      def interleaving_call() -> None:
+        pass
+
+      def test(foo: Foo) -> None:
+        if not foo.attribute or interleaving_call():
+          return
+        reveal_type(foo.attribute)
+    |}
+    ["Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`)."];
   ()
 
 
