@@ -14,6 +14,7 @@ let commands =
     "check", Check.check_command;
     "rage", Rage.command;
     "infer", Infer.infer_command;
+    "newanalyze", NewAnalyze.command;
     "newcheck", NewCheck.command;
     "newinfer", NewInfer.command;
     "newserver", NewServer.command;
