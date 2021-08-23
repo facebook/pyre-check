@@ -7,6 +7,17 @@
 
 open Core
 
+module ExitStatus : sig
+  type t =
+    | Ok
+    | PyreError
+    | BuckInternalError
+    | BuckUserError
+  [@@deriving sexp, compare, hash]
+
+  val exit_code : t -> int
+end
+
 module CheckConfiguration : sig
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
@@ -20,3 +31,5 @@ module CheckConfiguration : sig
 end
 
 val command : Command.t
+
+val on_exception : exn -> ExitStatus.t Lwt.t

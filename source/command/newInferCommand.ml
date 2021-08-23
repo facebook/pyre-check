@@ -8,20 +8,8 @@
 open Core
 module Path = PyrePath
 
-module ExitStatus = struct
-  type t =
-    | Ok
-    | PyreError
-    | BuckInternalError
-    | BuckUserError
-  [@@deriving sexp, compare, hash]
-
-  let exit_code = function
-    | Ok -> 0
-    | PyreError -> 1
-    | BuckInternalError -> 2
-    | BuckUserError -> 3
-end
+(* Infer command uses the same exit code scheme as check command. *)
+module ExitStatus = NewCheckCommand.ExitStatus
 
 module InferMode = struct
   type t =
@@ -231,32 +219,6 @@ let run_infer infer_configuration =
       | InferMode.Interprocedural -> run_infer_interprocedural ~configuration ~build_system ())
 
 
-let on_infer_exception = function
-  | Buck.Raw.BuckError { arguments; description; exit_code } ->
-      Log.error
-        "Cannot build the project: %s. To reproduce this error, run `%s`."
-        description
-        (Buck.Raw.ArgumentList.to_buck_command arguments);
-      let exit_status =
-        match exit_code with
-        | Some exit_code when exit_code < 10 -> ExitStatus.BuckUserError
-        | _ -> ExitStatus.BuckInternalError
-      in
-      Lwt.return exit_status
-  | Buck.Builder.JsonError message ->
-      Log.error "Cannot build the project because Buck returns malformed JSON: %s" message;
-      Lwt.return ExitStatus.BuckUserError
-  | Buck.Builder.LinkTreeConstructionError message ->
-      Log.error
-        "Cannot build the project because Pyre encounters a fatal error while constructing a link \
-         tree: %s"
-        message;
-      Lwt.return ExitStatus.BuckUserError
-  | _ as exn ->
-      Log.error "Pyre encountered an internal exception: %s" (Exn.to_string exn);
-      Lwt.return ExitStatus.PyreError
-
-
 let run_infer configuration_file =
   let exit_status =
     match
@@ -289,7 +251,8 @@ let run_infer configuration_file =
           ~memory_profiling_output
           ();
 
-        Lwt_main.run (Lwt.catch (fun () -> run_infer infer_configuration) on_infer_exception)
+        Lwt_main.run
+          (Lwt.catch (fun () -> run_infer infer_configuration) NewCheckCommand.on_exception)
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)

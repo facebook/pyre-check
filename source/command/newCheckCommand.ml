@@ -182,7 +182,7 @@ let run_check check_configuration =
       Lwt.return ExitStatus.Ok)
 
 
-let on_check_exception = function
+let on_exception = function
   | Buck.Raw.BuckError { arguments; description; exit_code } ->
       Log.error
         "Cannot build the project: %s. To reproduce this error, run `%s`."
@@ -241,7 +241,7 @@ let run_check configuration_file =
           ~memory_profiling_output
           ();
 
-        Lwt_main.run (Lwt.catch (fun () -> run_check check_configuration) on_check_exception)
+        Lwt_main.run (Lwt.catch (fun () -> run_check check_configuration) on_exception)
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)
