@@ -120,13 +120,15 @@ def process_field(input: int) -> None:
 
 def process_data(data: Data) -> None:
   if data.field:
-    # ...
+    # ... interleaving logic
     process_field(data.field)  # Error: expected `int` but got `Optional[int]`
 ```
 
-The above fails to type-check because Pyre cannot guarantee that `data.field` is not `None` even after checking explicitly in the line before: `field` could be set to `None` by another thread or it could be a property that returns something different the next time we access it.
+The above fails to type-check because Pyre cannot guarantee that `data.field` remains not `None` if the interleaving logic between the explicit check and the later reference contains anything that may have side effects, like function calls.
 
-The preferred way to make this code type-check is to mark the attribute `Final`, i.e. to specify that it can't be reassigned.
+An interleaving call could set `field` back to `None`, since it's a non local variable and is mutable. Therefore any calls between the None check and the access will invalidate the "not `None`" refinement. If `data.field` is defined as a class property or if the parent class has overridden `__getattr__`, then all bets are off even if there are no interleaving calls.
+
+The preferred way to make this code type-check is to either move the check closer to the access, or to mark the attribute `Final` if it is not meant to be reassigned to, and you can guarantee to the type checker that no interleaving side effects can modify this attribute.
 
 ```python
 from typing import Final, Optional
@@ -144,6 +146,7 @@ Alternatively, it is also safe to assign the attribute to a local variable befor
 def process_data(data: Data) -> None:
   field = data.field
   if field:
+    # ... interleaving logic
     process_field(field)
 ```
 
