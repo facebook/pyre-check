@@ -191,12 +191,14 @@ def aggregate_statistics(data: StatisticsData) -> AggregatedStatisticsData:
     )
 
 
-def log_to_remote(logger: str, run_id: str, data: Dict[str, Any]) -> None:
+def log_to_remote(
+    configuration: configuration_module.Configuration, run_id: str, data: Dict[str, Any]
+) -> None:
     def _log_fixmes(fixme_type: str, data: Dict[str, int], path: str) -> None:
         for error_code, count in data.items():
-            statistics.log(
+            statistics.log_with_configuration(
                 statistics.LoggerCategory.FIXME_COUNTS,
-                logger,
+                configuration,
                 integers={"count": count},
                 normals={
                     "run_id": run_id,
@@ -207,9 +209,9 @@ def log_to_remote(logger: str, run_id: str, data: Dict[str, Any]) -> None:
             )
 
     for path, counts in data["annotations"].items():
-        statistics.log(
+        statistics.log_with_configuration(
             statistics.LoggerCategory.ANNOTATION_COUNTS,
-            logger,
+            configuration,
             integers=counts,
             normals={"run_id": run_id, "path": path},
         )
@@ -218,9 +220,9 @@ def log_to_remote(logger: str, run_id: str, data: Dict[str, Any]) -> None:
     for path, counts in data["ignores"].items():
         _log_fixmes("ignore", counts, path)
     for path, counts in data["strict"].items():
-        statistics.log(
+        statistics.log_with_configuration(
             statistics.LoggerCategory.STRICT_ADOPTION,
-            logger,
+            configuration,
             integers=counts,
             normals={"run_id": run_id, "path": path},
         )
@@ -251,7 +253,7 @@ def run_statistics(
                     if log_identifier is not None
                     else str(time.time_ns())
                 )
-                log_to_remote(logger, run_id, dataclasses.asdict(data))
+                log_to_remote(configuration, run_id, dataclasses.asdict(data))
 
     return commands.ExitCode.SUCCESS
 
