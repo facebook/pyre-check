@@ -86,6 +86,14 @@ val optional_string_member : string -> Yojson.Safe.t -> string option
     - If [json] is indeed a directory but [name] is not presented, return [None].
     - In all other cases, raise {!Yojson.Safe.Util.Type_error}. *)
 
+val optional_int_member : string -> Yojson.Safe.t -> int option
+(** [optional_int_member name json] tries to look up key [name] in [json] as a dictionary.
+
+    - If [json] is indeed a dictionary and [name] is presented, convert the corresponding value to a
+      int and return it.
+    - If [json] is indeed a directory but [name] is not presented, return [None].
+    - In all other cases, raise {!Yojson.Safe.Util.Type_error}. *)
+
 val optional_path_member : string -> Yojson.Safe.t -> PyrePath.t option
 (** [optional_path_member name json] tries to look up key [name] in [json] as a dictionary.
 
