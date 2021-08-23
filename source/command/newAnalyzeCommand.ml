@@ -81,11 +81,112 @@ module AnalyzeConfiguration = struct
     | Undefined (message, _) ->
         Result.Error message
     | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let analysis_configuration_of
+      {
+        base =
+          {
+            NewCommandStartup.BaseConfiguration.source_paths;
+            search_paths;
+            excludes;
+            checked_directory_allowlist;
+            checked_directory_blocklist;
+            extensions;
+            log_path;
+            global_root;
+            local_root;
+            debug;
+            python_version = { Configuration.PythonVersion.major; minor; micro };
+            parallel;
+            number_of_workers;
+            shared_memory =
+              { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+            remote_logging = _;
+            profiling_output = _;
+            memory_profiling_output = _;
+          };
+        dump_call_graph;
+        dump_model_query_results;
+        find_missing_flows;
+        maximum_tito_depth;
+        maximum_trace_length;
+        no_verify;
+        rule_filter;
+        save_results_to;
+        strict;
+        taint_model_paths;
+        use_cache;
+        inline_decorators = _;
+        repository_root = _;
+      }
+    =
+    let source_path =
+      match source_paths with
+      | Configuration.SourcePaths.Simple source_paths -> source_paths
+      | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
+    in
+    let configuration =
+      Configuration.Analysis.create
+        ~parallel
+        ~analyze_external_sources:false
+        ~filter_directories:checked_directory_allowlist
+        ~ignore_all_errors:checked_directory_blocklist
+        ~number_of_workers
+        ~local_root:(Option.value local_root ~default:global_root)
+        ~project_root:global_root
+        ~search_path:(List.map search_paths ~f:SearchPath.normalize)
+        ~taint_model_paths
+        ~strict
+        ~debug
+        ~show_error_traces:false
+        ~excludes
+        ~extensions
+        ~incremental_style:Configuration.Analysis.FineGrained
+        ~include_hints:false
+        ~perform_autocompletion:false
+        ~log_directory:(Path.absolute log_path)
+        ~python_major_version:major
+        ~python_minor_version:minor
+        ~python_micro_version:micro
+        ~shared_memory_heap_size:heap_size
+        ~shared_memory_dependency_table_power:dependency_table_power
+        ~shared_memory_hash_table_power:hash_table_power
+        ~source_path
+        ()
+    in
+    {
+      Configuration.StaticAnalysis.configuration;
+      result_json_path = save_results_to;
+      dump_call_graph;
+      verify_models = not no_verify;
+      rule_filter;
+      find_missing_flows;
+      dump_model_query_results;
+      use_cache;
+      maximum_trace_length;
+      maximum_tito_depth;
+    }
 end
 
-let run_analyze _analyze_configuraiton =
-  Log.warning "Coming soon...";
-  Lwt.return ExitStatus.Ok
+let run_taint_analysis ~configuration:_ ~build_system:_ ~inline_decorators:_ ~repository_root:_ () =
+  Log.warning "Coming soon..."
+
+
+let run_analyze analyze_configuration =
+  let {
+    AnalyzeConfiguration.base = { NewCommandStartup.BaseConfiguration.source_paths; _ };
+    inline_decorators;
+    repository_root;
+    _;
+  }
+    =
+    analyze_configuration
+  in
+  Newserver.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+      let configuration = AnalyzeConfiguration.analysis_configuration_of analyze_configuration in
+      run_taint_analysis ~configuration ~build_system ~inline_decorators ~repository_root ();
+      Lwt.return ExitStatus.Ok)
 
 
 let run_analyze configuration_file =
