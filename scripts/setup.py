@@ -11,6 +11,7 @@ import multiprocessing
 import os
 import shutil
 import subprocess
+import sys
 from enum import Enum
 from pathlib import Path
 from tempfile import mkdtemp
@@ -49,6 +50,19 @@ class OldOpam(Exception):
 class BuildType(Enum):
     EXTERNAL = "external"
     FACEBOOK = "facebook"
+
+
+def _custom_linker_option(pyre_directory: Path, build_type: BuildType) -> str:
+    # HACK: This is a temporary workaround for inconsistent OS installations
+    # in FB-internal CI. Can be removed once all fleets are upgraded.
+    if build_type == BuildType.FACEBOOK and sys.platform == "linux":
+        return (
+            (pyre_directory / "facebook" / "scripts" / "custom_linker_options.txt")
+            .read_text()
+            .rstrip()
+        )
+    else:
+        return ""
 
 
 class Setup(NamedTuple):
@@ -91,7 +105,12 @@ class Setup(NamedTuple):
         with open(pyre_directory / "source" / "dune.in") as dune_in:
             with open(pyre_directory / "source" / "dune", "w") as dune:
                 dune_data = dune_in.read()
-                dune.write(dune_data.replace("%VERSION%", build_type.value))
+                dune.write(
+                    dune_data.replace("%VERSION%", build_type.value).replace(
+                        "%CUSTOM_LINKER_OPTION%",
+                        _custom_linker_option(pyre_directory, build_type),
+                    )
+                )
 
     def check_if_preinstalled(self) -> None:
         if self.environment_variables.get(
