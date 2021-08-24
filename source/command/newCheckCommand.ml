@@ -151,7 +151,7 @@ let do_check configuration =
 let compute_errors ~configuration ~build_system () =
   let errors, ast_environment = do_check configuration in
   List.map
-    errors
+    (List.sort ~compare:Analysis.AnalysisError.compare errors)
     ~f:(Newserver.RequestHandler.instantiate_error ~build_system ~configuration ~ast_environment)
 
 
