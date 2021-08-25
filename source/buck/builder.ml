@@ -477,6 +477,9 @@ let compute_difference_from_changed_paths ~source_root ~buck_options ~targets ch
         |> Lwt.return_ok
   with
   | JsonError message -> Lwt.return_error message
+  | Raw.BuckError { description; _ } ->
+      let message = Format.sprintf "Buck query failed: %s" description in
+      Lwt.return_error message
 
 
 let build_map_and_difference_from_paths
