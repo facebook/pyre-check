@@ -85,7 +85,13 @@ let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_p
       match source_paths with
       | [] -> Lwt.return "{}"
       | source_paths ->
-          let target_string = List.map targets ~f:Target.show |> String.concat ~sep:" " in
+          let target_string =
+            (* Targets need to be quoted since `buck query` can fail with syntax errors if target
+               name contains special characters like `=`. *)
+            let quote_string value = Format.sprintf "\"%s\"" value in
+            let quote_target target = Target.show target |> quote_string in
+            List.map targets ~f:quote_target |> String.concat ~sep:" "
+          in
           List.concat
             [
               ["--json"];
