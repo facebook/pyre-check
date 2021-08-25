@@ -88,6 +88,7 @@ class DecoratorParser:
             argument.s for argument in decorator.args if isinstance(argument, ast.Str)
         }
         decorator_keywords = {
+            # pyre-fixme[22]: The cast is redundant.
             (keyword.arg, cast(ast.Str, keyword.value).s)
             for keyword in decorator.keywords
             if isinstance(keyword.value, ast.Str)
