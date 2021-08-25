@@ -176,7 +176,7 @@ class InferTest(testslide.TestCase):
                     command_arguments.InferArguments(
                         debug_infer=True,
                         sequential=False,
-                        interprocedural=True,
+                        interprocedural=False,
                     ),
                 ),
                 Arguments(
@@ -190,7 +190,7 @@ class InferTest(testslide.TestCase):
                     excludes=["exclude"],
                     extensions=[".ext"],
                     ignore_infer=[str(root_path / "ignores")],
-                    infer_mode=InferMode.INTERPROCEDURAL,
+                    infer_mode=InferMode.LOCAL,
                     relative_local_root="local",
                     number_of_workers=42,
                     parallel=True,
