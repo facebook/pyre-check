@@ -1179,6 +1179,10 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertEqual(configuration.project_root, str(root_path))
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, root_path / ".pyre")
+                self.assertListEqual(
+                    list(configuration.source_directories or []),
+                    [SimpleSearchPathElement(str(root_path))],
+                )
 
     def test_create_from_global_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -1198,6 +1202,10 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
+                self.assertListEqual(
+                    list(configuration.source_directories or []),
+                    [SimpleSearchPathElement(str(root_path))],
+                )
 
     def test_create_from_local_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -1225,6 +1233,10 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertEqual(configuration.relative_local_root, "local")
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
+                self.assertListEqual(
+                    list(configuration.source_directories or []),
+                    [SimpleSearchPathElement(str(root_path))],
+                )
                 self.assertListEqual(
                     list(configuration.search_path),
                     [

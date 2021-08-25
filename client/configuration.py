@@ -1254,7 +1254,7 @@ def create_configuration(
 
     command_argument_configuration = PartialConfiguration.from_command_arguments(
         arguments
-    )
+    ).expand_relative_paths(str(Path.cwd()))
     if found_root is None:
         project_root = Path.cwd()
         relative_local_root = None
@@ -1275,7 +1275,8 @@ def create_configuration(
                 ).expand_relative_paths(str(local_root)),
             )
         partial_configuration = merge_partial_configurations(
-            base=partial_configuration, override=command_argument_configuration
+            base=partial_configuration,
+            override=command_argument_configuration,
         )
 
     configuration = Configuration.from_partial_configuration(
