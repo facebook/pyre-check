@@ -1256,7 +1256,6 @@ let test_check_temporary_refinement context =
       "Revealed type [-1]: Revealed type for `bar.foo.attribute` is `Optional[int]` (inferred: \
        `int`).";
     ];
-  (* TODO(T98646613): Refinement should not stick here. *)
   assert_type_errors
     {|
       from typing import Optional
@@ -1304,7 +1303,6 @@ let test_check_temporary_refinement context =
       "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
       "Revealed type [-1]: Revealed type for `bar.attribute` is `Optional[int]`.";
     ];
-  (* TODO(T98646613): Refinement should not stick here. *)
   assert_type_errors
     {|
       from typing import Optional
@@ -1319,8 +1317,16 @@ let test_check_temporary_refinement context =
         if not foo.attribute or interleaving_call():
           return
         reveal_type(foo.attribute)
+
+      def test_two(foo: Foo) -> None:
+        if interleaving_call() or not foo.attribute:
+          return
+        reveal_type(foo.attribute)
     |}
-    ["Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`)."];
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
+    ];
   ()
 
 
