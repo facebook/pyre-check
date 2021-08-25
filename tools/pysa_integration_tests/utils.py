@@ -155,7 +155,7 @@ def run_pysa_integration_test(
     if run_from_source:
         command = [
             "python",
-            "-m" "client.pyre",
+            "-m" "pyre-check.client.pyre",
             "--noninteractive",
             "analyze",
         ]
