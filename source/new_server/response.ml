@@ -11,9 +11,12 @@ type t =
   | Ok
   | Error of string
   | Info of {
+      (* All fields are required to implement `pyre servers` *)
       version: string;
       pid: int;
       socket: string;
+      global_root: string;
+      relative_local_root: string option;
     }
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Query of Query.Response.t

@@ -145,12 +145,15 @@ let process_request
   =
   match request with
   | Request.GetInfo ->
+      let { Configuration.Analysis.project_root; local_root; _ } = configuration in
       let response =
         Response.Info
           {
             version = Version.version ();
             pid = Unix.getpid () |> Pid.to_int;
             socket = Pyre.Path.absolute socket_path;
+            global_root = Path.show project_root;
+            relative_local_root = Path.get_relative_to_root ~root:project_root ~path:local_root;
           }
       in
       Lwt.return (state, response)
