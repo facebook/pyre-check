@@ -183,11 +183,19 @@ module AnnotationsByName = struct
 
 
       let merge ~global_resolution left right =
-        let combine ~key:_ = function
+        let combine ~key = function
           | `Left value
           | `Right value ->
               Some value
-          | `Both (left, right) -> Some (Value.combine ~global_resolution left right)
+          | `Both (left, right) -> (
+              try Some (Value.combine ~global_resolution left right) with
+              | Analysis.ClassHierarchy.Untracked annotation ->
+                  Statistics.event
+                    ~name:"undefined type during type inference merge"
+                    ~integers:[]
+                    ~normals:["type", annotation; "reference", SerializableReference.show key]
+                    ();
+                  Some left)
         in
         SerializableReference.Map.merge ~f:combine left right
     end

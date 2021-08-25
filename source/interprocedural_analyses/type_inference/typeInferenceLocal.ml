@@ -1011,7 +1011,7 @@ let legacy_infer_for_define
   with
   | ClassHierarchy.Untracked annotation ->
       Statistics.event
-        ~name:"undefined type"
+        ~name:"undefined type during type inference"
         ~integers:[]
         ~normals:["handle", relative; "define", Reference.show name; "type", annotation]
         ();
