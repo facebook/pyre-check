@@ -42,13 +42,13 @@ let assert_taint ?models ~context source expect =
             ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
             ~source:model_source
             ~configuration:TaintConfiguration.default
-            ~functions:None
+            ~callables:None
             ~stubs:(Target.HashSet.create ())
             Target.Map.empty
         in
         assert_bool "Error while parsing models." (List.is_empty errors);
         Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
-        |> FixpointAnalysis.record_initial_models ~functions:[] ~stubs:[])
+        |> FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[])
   |> ignore;
   let defines = source |> Preprocessing.defines |> List.rev in
   let () =

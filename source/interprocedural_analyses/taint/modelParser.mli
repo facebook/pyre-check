@@ -162,7 +162,7 @@ val parse
   ?rule_filter:int list ->
   source:string ->
   configuration:TaintConfiguration.t ->
-  functions:Interprocedural.Target.HashSet.t option ->
+  callables:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->
   TaintResult.call_model Interprocedural.Target.Map.t ->
   T.parse_result

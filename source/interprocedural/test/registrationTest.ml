@@ -36,7 +36,7 @@ include SimpleAnalysis.Register (struct
       ~scheduler:_
       ~static_analysis_configuration:_
       ~environment:_
-      ~functions:_
+      ~callables:_
       ~stubs:_
     =
     AnalysisResult.InitializedModels.empty

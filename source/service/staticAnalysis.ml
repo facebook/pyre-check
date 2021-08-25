@@ -633,9 +633,8 @@ let analyze
   Log.info "Recording initial models in shared memory...";
   let timer = Timer.start () in
   Interprocedural.FixpointAnalysis.record_initial_models
-    ~functions:
-      (List.map callables_with_dependency_information ~f:fst :> Interprocedural.Target.t list)
-    ~stubs:(stubs :> Interprocedural.Target.t list)
+    ~callables:(List.map callables_with_dependency_information ~f:fst)
+    ~stubs
     initial_models;
   Statistics.performance
     ~name:"Recorded initial models"

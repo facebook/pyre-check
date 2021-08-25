@@ -2602,7 +2602,7 @@ let create_model_from_attribute
   >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
 
 
-let create ~resolution ~path ~configuration ~rule_filter ~functions ~stubs source =
+let create ~resolution ~path ~configuration ~rule_filter ~callables ~stubs source =
   let sources_to_keep, sinks_to_keep =
     compute_sources_and_sinks_to_keep ~configuration ~rule_filter
   in
@@ -2623,7 +2623,7 @@ let create ~resolution ~path ~configuration ~rule_filter ~functions ~stubs sourc
     (* The callable is obscure if and only if it is a type stub or it is not in the set of known
        callables. *)
     Hash_set.mem stubs call_target
-    || functions >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
+    || callables >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
   in
   let create_model_or_query = function
     | ParsedSignature ({ call_target; _ } as parsed_signature) ->
@@ -2650,9 +2650,9 @@ let create ~resolution ~path ~configuration ~rule_filter ~functions ~stubs sourc
     (List.map signatures_and_queries ~f:create_model_or_query)
 
 
-let parse ~resolution ?path ?rule_filter ~source ~configuration ~functions ~stubs models =
+let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stubs models =
   let new_models_and_queries, errors =
-    create ~resolution ~path ~rule_filter ~configuration ~functions ~stubs source
+    create ~resolution ~path ~rule_filter ~configuration ~callables ~stubs source
     |> List.partition_result
   in
   let new_models, new_queries =

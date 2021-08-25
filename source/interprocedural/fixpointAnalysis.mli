@@ -17,13 +17,21 @@ val initialize_models
   scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  functions:Target.t list ->
-  stubs:Target.t list ->
+  callables:Target.callable_t list ->
+  stubs:Target.callable_t list ->
   AnalysisResult.model_t AnalysisResult.InitializedModels.t
 
+module Testing : sig
+  val record_initial_models
+    :  targets:Target.t list ->
+    stubs:Target.callable_t list ->
+    AnalysisResult.model_t Target.Map.t ->
+    unit
+end
+
 val record_initial_models
-  :  functions:Target.t list ->
-  stubs:Target.t list ->
+  :  callables:Target.callable_t list ->
+  stubs:Target.callable_t list ->
   AnalysisResult.model_t Target.Map.t ->
   unit
 

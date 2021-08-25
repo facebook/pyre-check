@@ -167,6 +167,7 @@ module Set = Caml.Set.Make (Key)
 module CallableSet = Caml.Set.Make (CallableKey)
 module OverrideSet = Caml.Set.Make (OverrideKey)
 module HashSet = Hash_set.Make (Key)
+module CallableHashSet = Hash_set.Make (CallableKey)
 
 let get_module_and_definition ~resolution callable =
   let get_bodies { class_name; method_name } =

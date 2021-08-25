@@ -165,10 +165,8 @@ let run_analysis
               ~static_analysis_configuration
               ~scheduler
               ~environment:(Analysis.TypeEnvironment.read_only environment)
-              ~functions:
-                (List.map callables_with_dependency_information ~f:fst
-                  :> Interprocedural.Target.t list)
-              ~stubs:(stubs :> Interprocedural.Target.t list)
+              ~callables:(List.map callables_with_dependency_information ~f:fst)
+              ~stubs
           in
 
           let environment, initial_callables =

@@ -130,8 +130,8 @@ module type ANALYZER = sig
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    functions:Target.t list ->
-    stubs:Target.t list ->
+    callables:Target.callable_t list ->
+    stubs:Target.callable_t list ->
     call_model InitializedModels.t
 
   val report

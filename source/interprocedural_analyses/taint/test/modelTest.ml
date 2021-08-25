@@ -75,7 +75,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
       ?rule_filter
       ~source
       ~configuration
-      ~functions:None
+      ~callables:None
       ~stubs:(Target.HashSet.create ())
       Target.Map.empty
   in
@@ -1201,7 +1201,7 @@ let test_invalid_models context =
         ~configuration
         ?path
         ~source:(Test.trim_extra_indentation model_source)
-        ~functions:None
+        ~callables:None
         ~stubs:(Target.HashSet.create ())
         Target.Map.empty
       |> fun { Taint.Model.errors; _ } ->

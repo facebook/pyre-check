@@ -61,7 +61,7 @@ include Taint.Result.Register (struct
       ~static_analysis_configuration:
         { Configuration.StaticAnalysis.rule_filter; find_missing_flows; _ }
       ~environment
-      ~functions
+      ~callables
       ~stubs
       ~initialize_result:
         { Interprocedural.AnalysisResult.InitializedModels.initial_models = models; skip_overrides }
@@ -76,7 +76,7 @@ include Taint.Result.Register (struct
     try
       let models =
         let callables =
-          Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:functions
+          Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
           |> List.filter_map ~f:(function
                  | `Function _ as callable -> Some (callable :> Target.callable_t)
                  | `Method _ as callable -> Some (callable :> Target.callable_t)
@@ -136,7 +136,7 @@ include Taint.Result.Register (struct
            _;
          } as static_analysis_configuration)
       ~environment
-      ~functions
+      ~callables
       ~stubs
     =
     let resolution =
@@ -163,7 +163,7 @@ include Taint.Result.Register (struct
                 ~path
                 ~source
                 ~configuration:taint_configuration
-                ~functions
+                ~callables
                 ~stubs
                 ?rule_filter
                 models
@@ -261,8 +261,9 @@ include Taint.Result.Register (struct
     | _ -> add_models_and_queries_from_sources initial_models
 
 
-  let initialize_models ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
-    let stubs = Target.HashSet.of_list stubs in
+  let initialize_models ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =
+    let callables = (callables :> Target.t list) in
+    let stubs = Target.HashSet.of_list (stubs :> Target.t list) in
 
     Log.info "Parsing taint models...";
     let timer = Timer.start () in
@@ -271,7 +272,7 @@ include Taint.Result.Register (struct
         ~scheduler
         ~static_analysis_configuration
         ~environment
-        ~functions:(Some (Target.HashSet.of_list functions))
+        ~callables:(Some (Target.HashSet.of_list callables))
         ~stubs
     in
     Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
@@ -286,7 +287,7 @@ include Taint.Result.Register (struct
               ~scheduler
               ~static_analysis_configuration
               ~environment:updated_environment
-              ~functions
+              ~callables
               ~stubs
               ~initialize_result
               query_data

@@ -366,7 +366,7 @@ let run_with_taint_models tests ~name =
              (module TypeCheck.DummyContext))
         ~source:model_source
         ~configuration:TaintConfiguration.default
-        ~functions:None
+        ~callables:None
         ~stubs:(Interprocedural.Target.HashSet.create ())
         Target.Map.empty
     in
@@ -376,7 +376,7 @@ let run_with_taint_models tests ~name =
          (List.to_string errors ~f:Taint.Model.display_verification_error))
       (List.is_empty errors);
     Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
-    |> Interprocedural.FixpointAnalysis.record_initial_models ~functions:[] ~stubs:[]
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
   in
   let decorated_tests =
     List.map tests ~f:(fun (name, test) ->
@@ -415,7 +415,7 @@ let type_environment_with_decorators_inlined ~configuration ~taint_configuration
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
-            ~functions:None
+            ~callables:None
             ~stubs:(Interprocedural.Target.HashSet.create ())
             inferred_models
         in
@@ -488,11 +488,13 @@ let initialize
       ~source
     |> fst
     |> List.map ~f:(fun { Service.StaticAnalysis.callable; define; _ } ->
-           (callable :> Target.t), define.Node.value)
+           callable, define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
   let callables = List.map ~f:fst callables in
   let stubs = List.map ~f:fst stubs in
+  let callable_targets = (callables :> Target.t list) in
+  let stub_targets = (stubs :> Target.t list) in
   let initial_models, skip_overrides =
     let inferred_models = Model.infer_class_models ~environment in
     match models with
@@ -503,8 +505,8 @@ let initialize
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
-            ~functions:(Some (Target.HashSet.of_list callables))
-            ~stubs:(Target.HashSet.of_list stubs)
+            ~callables:(Some (Target.HashSet.of_list callable_targets))
+            ~stubs:(Target.HashSet.of_list stub_targets)
             inferred_models
         in
         assert_bool
@@ -524,9 +526,8 @@ let initialize
             ~callables:
               (List.filter_map (List.rev_append stubs callables) ~f:(function
                   | `Function _ as callable -> Some (callable :> Target.callable_t)
-                  | `Method _ as callable -> Some (callable :> Target.callable_t)
-                  | _ -> None))
-            ~stubs:(Target.HashSet.of_list stubs)
+                  | `Method _ as callable -> Some (callable :> Target.callable_t)))
+            ~stubs:(Target.HashSet.of_list stub_targets)
             ~environment
         in
         let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
@@ -540,9 +541,9 @@ let initialize
             in
             Target.Map.set models ~key:callable ~data:model
           in
-          stubs
-          |> List.filter ~f:(fun callable ->
-                 Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
+          stub_targets
+          |> List.filter ~f:(fun stub ->
+                 Target.Map.find models stub >>| Model.is_obscure |> Option.value ~default:true)
           |> List.fold ~init:models ~f:add_obscure_sink
         in
         let models =
@@ -569,8 +570,8 @@ let initialize
       ~source
   in
 
-  let callables = List.rev_append (Target.Map.keys overrides) callables in
-  let callables_to_analyze = List.rev_append stubs callables in
+  let targets = List.rev_append (Target.Map.keys overrides) callable_targets in
+  let callables_to_analyze = List.rev_append stub_targets targets in
   let initial_models_callables = Target.Map.keys initial_models in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
@@ -580,6 +581,6 @@ let initialize
     FixpointState.remove_old keys;
     initial_models
     |> Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind)
-    |> Interprocedural.FixpointAnalysis.record_initial_models ~functions:callables ~stubs
+    |> Interprocedural.FixpointAnalysis.Testing.record_initial_models ~targets ~stubs
   in
   { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }

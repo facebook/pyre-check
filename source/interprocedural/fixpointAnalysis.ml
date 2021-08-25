@@ -19,7 +19,7 @@ let initialize_configuration kind ~static_analysis_configuration =
 
 (* Initialize models for the given analysis.
  * For the taint analysis, this parses taint stubs into models and queries. *)
-let initialize_models kind ~scheduler ~static_analysis_configuration ~environment ~functions ~stubs =
+let initialize_models kind ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =
   let (AnalysisResult.Analysis { analysis; kind = storable_kind }) =
     AnalysisResult.get_abstract_analysis kind
   in
@@ -31,7 +31,7 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
       ~static_analysis_configuration
       ~scheduler
       ~environment
-      ~functions
+      ~callables
       ~stubs
   in
   let specialize_models
@@ -58,26 +58,36 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
   AnalysisResult.InitializedModels.create get_specialized_models
 
 
-(* Save initial models in the shared memory. *)
-let record_initial_models ~functions ~stubs models =
-  let record_models models =
-    let add_model_to_memory ~key:call_target ~data:model =
-      FixpointState.add_predefined FixpointState.Epoch.initial call_target model
+module Testing = struct
+  (* This signature for record_initial_models is unreachable in production, we only have initial
+     models for callable_t. But as a hack the integration tests sometimes directly store initial
+     models on non-callable targets *)
+  let record_initial_models ~targets ~stubs models =
+    let record_models models =
+      let add_model_to_memory ~key:call_target ~data:model =
+        FixpointState.add_predefined FixpointState.Epoch.initial call_target model
+      in
+      Target.Map.iteri models ~f:add_model_to_memory
     in
-    Target.Map.iteri models ~f:add_model_to_memory
-  in
-  (* Augment models with initial inferred and obscure models *)
-  let add_missing_initial_models models =
-    List.filter functions ~f:(fun callable -> not (Target.Map.mem models callable))
-    |> List.fold ~init:models ~f:(fun models callable ->
-           Target.Map.set models ~key:callable ~data:AnalysisResult.empty_model)
-  in
-  let add_missing_obscure_models models =
-    List.filter stubs ~f:(fun callable -> not (Target.Map.mem models callable))
-    |> List.fold ~init:models ~f:(fun models callable ->
-           Target.Map.set models ~key:callable ~data:AnalysisResult.obscure_model)
-  in
-  models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
+    (* Augment models with initial inferred and obscure models *)
+    let add_missing_initial_models models =
+      targets
+      |> List.filter ~f:(fun target -> not (Target.Map.mem models target))
+      |> List.fold ~init:models ~f:(fun models target ->
+             Target.Map.set models ~key:target ~data:AnalysisResult.empty_model)
+    in
+    let add_missing_obscure_models models =
+      (stubs :> Target.t list)
+      |> List.filter ~f:(fun target -> not (Target.Map.mem models target))
+      |> List.fold ~init:models ~f:(fun models target ->
+             Target.Map.set models ~key:target ~data:AnalysisResult.obscure_model)
+    in
+    models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
+end
+
+(* Save initial models in the shared memory. *)
+let record_initial_models ~callables ~stubs models =
+  Testing.record_initial_models ~targets:(callables :> Target.t list) ~stubs models
 
 
 let analysis_failed step ~exn callable ~message =
@@ -453,7 +463,7 @@ type result = {
   callables_to_dump: Target.Set.t;
 }
 
-(* Called on a worker with a set of functions to analyze. *)
+(* Called on a worker with a set of targets to analyze. *)
 let one_analysis_pass ~analysis ~step ~environment ~callables =
   let analysis = AnalysisResult.get_abstract_analysis analysis in
   let analyze_and_cache expensive_callables callable =

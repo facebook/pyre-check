@@ -149,3 +149,5 @@ module CallableSet : Caml.Set.S with type elt = callable_t
 module OverrideSet : Caml.Set.S with type elt = override_t
 
 module HashSet : Core.Hash_set.S with type elt := t
+
+module CallableHashSet : Core.Hash_set.S with type elt := callable_t
