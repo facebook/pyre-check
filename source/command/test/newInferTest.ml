@@ -28,14 +28,17 @@ let test_json_parsing context =
     ~expected:
       {
         InferConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
+        paths_to_modify = None;
         infer_mode = InferMode.Local;
       };
   assert_parsed
     (`Assoc
-      (("infer_mode", `List [`String "Interprocedural"]) :: BaseConfigurationTest.dummy_base_json))
+      (("paths_to_modify", `List [`String "my/module.py"])
+       :: ("infer_mode", `List [`String "Interprocedural"]) :: BaseConfigurationTest.dummy_base_json))
     ~expected:
       {
         InferConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
+        paths_to_modify = Some ["my/module.py"];
         infer_mode = InferMode.Interprocedural;
       };
   ()

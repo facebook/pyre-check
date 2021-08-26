@@ -19,8 +19,11 @@ module InferMode = struct
 end
 
 module InferConfiguration = struct
+  type file_list = string list option [@@deriving yojson, sexp, compare, hash]
+
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
+    paths_to_modify: file_list;
     infer_mode: InferMode.t;
   }
   [@@deriving sexp, compare, hash]
@@ -32,10 +35,13 @@ module InferConfiguration = struct
       match NewCommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error
       | Result.Ok base ->
+          let paths_to_modify =
+            json |> member "paths_to_modify" |> file_list_of_yojson |> Result.ok_or_failwith
+          in
           let infer_mode =
             json |> member "infer_mode" |> InferMode.of_yojson |> Result.ok_or_failwith
           in
-          Result.Ok { base; infer_mode }
+          Result.Ok { base; infer_mode; paths_to_modify }
     with
     | Type_error (message, _)
     | Undefined (message, _) ->
@@ -66,7 +72,7 @@ module InferConfiguration = struct
             profiling_output = _;
             memory_profiling_output = _;
           };
-        infer_mode = _;
+        _;
       }
     =
     let source_path =
