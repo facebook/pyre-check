@@ -101,6 +101,7 @@ class InferArguments:
     annotate_attributes: bool = False
     annotate_from_existing_stubs: bool = False
     debug_infer: bool = False
+    quote_annotations: bool = False
     dequalify: bool = False
     enable_memory_profiling: bool = False
     enable_profiling: bool = False

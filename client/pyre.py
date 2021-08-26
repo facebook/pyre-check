@@ -814,6 +814,18 @@ def incremental(
     ),
 )
 @click.option(
+    "--quote-annotations",
+    is_flag=True,
+    default=False,
+    help=(
+        "Quote all added type annotations? "
+        "This is recommended when using pyre infer prior to pysa "
+        "because it allows us to avoid introducing imports, which "
+        "is important because then the line numbers match checked-in "
+        "code."
+    ),
+)
+@click.option(
     "--dequalify",
     is_flag=True,
     default=False,
@@ -846,6 +858,7 @@ def infer(
     read_stdin: bool,
     annotate_attributes: bool,
     no_future_annotations: bool,
+    quote_annotations: bool,
     dequalify: bool,
     interprocedural: bool,
 ) -> int:
@@ -877,6 +890,7 @@ def infer(
                 enable_memory_profiling=command_argument.enable_memory_profiling,
                 enable_profiling=command_argument.enable_profiling,
                 debug_infer=debug_infer,
+                quote_annotations=quote_annotations,
                 dequalify=dequalify,
                 interprocedural=interprocedural,
                 log_identifier=command_argument.log_identifier,
@@ -889,6 +903,8 @@ def infer(
             ),
         )
     else:
+        # NOTE: pre-v2 infer is in bugfix mode only, some flags
+        # like quote_annotations will be ignored.
         return run_pyre_command(
             commands.Infer(
                 command_argument,

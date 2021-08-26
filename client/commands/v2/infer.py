@@ -337,23 +337,39 @@ def sanitize_annotation(
 class StubGenerationOptions:
     annotate_attributes: bool
     use_future_annotations: bool
+    quote_annotations: bool
     dequalify: bool
+
+    def __post__init__(self) -> None:
+        if self.quote_annotations and (self.use_future_annotations or self.dequalify):
+            raise ValueError(
+                "You should not mix the `quote_annotations` option, which causes pyre "
+                "to generate quoted and qualified annotations, with the "
+                "`use_future_annotations` or `dequalify` options."
+            )
 
 
 @dataclasses.dataclass(frozen=True)
 class TypeAnnotation:
     annotation: Optional[str]
+    quote: bool
     dequalify: bool
 
     @staticmethod
     def from_raw(
         annotation: Optional[str], options: StubGenerationOptions
     ) -> "TypeAnnotation":
-        return TypeAnnotation(annotation=annotation, dequalify=options.dequalify)
+        return TypeAnnotation(
+            annotation=annotation,
+            dequalify=options.dequalify,
+            quote=options.quote_annotations,
+        )
 
     def sanitized(self, prefix: str = "") -> str:
         if self.annotation is None:
             return ""
+        if self.quote:
+            return f'{prefix}"{self.annotation}"'
         else:
             return prefix + sanitize_annotation(
                 self.annotation, dequalify_all=self.dequalify
@@ -367,6 +383,8 @@ class TypeAnnotation:
             return re.split("[^\\w.]+", self.annotation)
 
     def typing_imports(self) -> Set[str]:
+        if self.quote:
+            return set()
         typing_imports = set()
         for simple_type in self._simple_types():
             if simple_type:
@@ -993,6 +1011,7 @@ def run_infer(
                 annotate_attributes=infer_arguments.annotate_attributes,
                 use_future_annotations=not infer_arguments.no_future_annotations,
                 dequalify=infer_arguments.dequalify,
+                quote_annotations=infer_arguments.quote_annotations,
             ),
         )
         if infer_arguments.print_only:

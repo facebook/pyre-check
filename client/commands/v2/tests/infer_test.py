@@ -481,7 +481,10 @@ class ModuleAnnotationTest(testslide.TestCase):
 
         default_path = "test.py"
         default_options = StubGenerationOptions(
-            annotate_attributes=False, use_future_annotations=False, dequalify=False
+            annotate_attributes=False,
+            use_future_annotations=False,
+            quote_annotations=False,
+            dequalify=False,
         )
 
         assert_result(
@@ -593,7 +596,10 @@ class ModuleAnnotationTest(testslide.TestCase):
         )
 
         annotate_attribute_options = StubGenerationOptions(
-            annotate_attributes=True, use_future_annotations=False, dequalify=False
+            annotate_attributes=True,
+            use_future_annotations=False,
+            quote_annotations=False,
+            dequalify=False,
         )
         assert_result(
             path=default_path,
@@ -632,7 +638,10 @@ class ModuleAnnotationTest(testslide.TestCase):
             expected: List[ExpectedModuleAnnotationItem],
         ) -> None:
             default_options = StubGenerationOptions(
-                annotate_attributes=False, use_future_annotations=False, dequalify=False
+                annotate_attributes=False,
+                use_future_annotations=False,
+                quote_annotations=False,
+                dequalify=False,
             )
             self.assertCountEqual(
                 create_module_annotations(infer_output, base_path, default_options),
@@ -738,6 +747,7 @@ class ModuleAnnotationTest(testslide.TestCase):
                 options=StubGenerationOptions(
                     annotate_attributes=False,
                     use_future_annotations=False,
+                    quote_annotations=False,
                     dequalify=False,
                 ),
             ).stubs_path(Path("/root")),
@@ -812,25 +822,51 @@ class InferUtilsTestSuite(testslide.TestCase):
 
 
 class TypeAnnotationTest(testslide.TestCase):
-    def test_sanitized(self) -> None:
-        no_dequalify_options: StubGenerationOptions = StubGenerationOptions(
-            annotate_attributes=False,
-            use_future_annotations=True,
-            dequalify=False,
-        )
-        dequalify_options: StubGenerationOptions = StubGenerationOptions(
-            annotate_attributes=False,
-            use_future_annotations=True,
-            dequalify=True,
-        )
 
-        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=no_dequalify_options)
+    basic_options: StubGenerationOptions = StubGenerationOptions(
+        annotate_attributes=False,
+        use_future_annotations=True,
+        quote_annotations=False,
+        dequalify=False,
+    )
+    quote_options: StubGenerationOptions = StubGenerationOptions(
+        annotate_attributes=False,
+        use_future_annotations=True,
+        quote_annotations=True,
+        dequalify=False,
+    )
+    dequalify_options: StubGenerationOptions = StubGenerationOptions(
+        annotate_attributes=False,
+        use_future_annotations=True,
+        quote_annotations=False,
+        dequalify=True,
+    )
+
+    def test_sanitized(self) -> None:
+        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=self.basic_options)
         self.assertEqual(actual.sanitized(), "foo.Foo[int]")
         self.assertEqual(actual.sanitized(prefix=": "), ": foo.Foo[int]")
 
-        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=dequalify_options)
+        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=self.quote_options)
+        self.assertEqual(actual.sanitized(), '"foo.Foo[int]"')
+        self.assertEqual(actual.sanitized(prefix=": "), ': "foo.Foo[int]"')
+
+        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=self.dequalify_options)
         self.assertEqual(actual.sanitized(), "Foo[int]")
         self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
+
+    def test_typing_imports(self) -> None:
+        actual = TypeAnnotation.from_raw(
+            "typing.Union[int, typing.Optional[str]]",
+            options=self.basic_options,
+        )
+        self.assertEqual(actual.typing_imports(), {"Union", "Optional"})
+
+        actual = TypeAnnotation.from_raw(
+            "typing.Union[int, typing.Optional[str]]",
+            options=self.quote_options,
+        )
+        self.assertEqual(actual.typing_imports(), set())
 
 
 class StubGenerationTest(testslide.TestCase):
@@ -840,6 +876,7 @@ class StubGenerationTest(testslide.TestCase):
         expected: str,
         annotate_attributes: bool = False,
         use_future_annotations: bool = False,
+        quote_annotations: bool = False,
     ) -> None:
         test_path = "/root/test.py"
         infer_output = RawInferOutput.create_from_json(
@@ -864,6 +901,7 @@ class StubGenerationTest(testslide.TestCase):
             options=StubGenerationOptions(
                 annotate_attributes=annotate_attributes,
                 use_future_annotations=use_future_annotations,
+                quote_annotations=quote_annotations,
                 dequalify=False,
             ),
         )
@@ -1282,6 +1320,37 @@ class StubGenerationTest(testslide.TestCase):
 
             def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...
             """,
+        )
+
+    def test_stubs_quote(self) -> None:
+        """
+        Test generating stubs with quoted annotations
+        """
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "Union[int, str]",
+                        "name": "test.with_params",
+                        "parent": None,
+                        "parameters": [
+                            {"name": "y", "annotation": None, "value": "7", "index": 0},
+                            {
+                                "name": "x",
+                                "annotation": "typing.List[int]",
+                                "value": "[5]",
+                                "index": 1,
+                            },
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            """\
+            def with_params(y=7, x: "typing.List[int]" = [5]) -> "Union[int, str]": ...
+            """,
+            quote_annotations=True,
         )
 
     def test_stubs_use_future_annotations(self) -> None:
