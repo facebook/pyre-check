@@ -333,16 +333,6 @@ def sanitize_annotation(
     return annotation
 
 
-def split_imports(types_list: List[str]) -> Set[str]:
-    typing_imports = set()
-    for full_type in types_list:
-        if full_type:
-            split_type = re.findall(r"[\w]+", full_type)
-            if len(split_type) > 1 and split_type[0] == "typing":
-                typing_imports.add(split_type[1])
-    return typing_imports
-
-
 @dataclasses.dataclass(frozen=True)
 class StubGenerationOptions:
     annotate_attributes: bool
@@ -369,12 +359,21 @@ class TypeAnnotation:
                 self.annotation, dequalify_all=self.dequalify
             )
 
-    def split(self) -> List[str]:
+    def _simple_types(self) -> List[str]:
         """Split an annotation into its tokens"""
         if self.annotation is None or self.annotation == "":
             return []
         else:
             return re.split("[^\\w.]+", self.annotation)
+
+    def typing_imports(self) -> Set[str]:
+        typing_imports = set()
+        for simple_type in self._simple_types():
+            if simple_type:
+                split_type = re.findall(r"[\w]+", simple_type)
+                if len(split_type) > 1 and split_type[0] == "typing":
+                    typing_imports.add(split_type[1])
+        return typing_imports
 
     @property
     def missing(self) -> bool:
@@ -410,16 +409,10 @@ class FunctionAnnotation:
         return f"{decorators}{async_}def {name}({parameters}){return_}: ..."
 
     def typing_imports(self) -> Set[str]:
-        return split_imports(
-            self.return_annotation.split()
-            + [
-                split
-                for splits in (
-                    parameter.annotation.split() for parameter in self.parameters
-                )
-                for split in splits
-            ]
-        )
+        typing_imports = self.return_annotation.typing_imports()
+        for parameter in self.parameters:
+            typing_imports |= parameter.annotation.typing_imports()
+        return typing_imports
 
 
 @dataclasses.dataclass(frozen=True)
@@ -441,7 +434,7 @@ class FieldAnnotation:
         return f"{name}: {self.annotation.sanitized()} = ..."
 
     def typing_imports(self) -> Set[str]:
-        return split_imports(self.annotation.split())
+        return self.annotation.typing_imports()
 
 
 @dataclasses.dataclass(frozen=True)
