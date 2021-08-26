@@ -12,6 +12,7 @@ import testslide
 
 from ....tests import setup
 from ..servers import (
+    AllServerStatus,
     RunningServerStatus,
     DefunctServerStatus,
     InvalidServerResponse,
@@ -182,3 +183,40 @@ class ServersTest(testslide.TestCase):
                         DefunctServerStatus(str(bad_socket)),
                     ],
                 )
+
+    def test_to_json(self) -> None:
+        self.assertCountEqual(
+            AllServerStatus(
+                running=[
+                    RunningServerStatus(pid=123, version="abc", global_root="/g0"),
+                    RunningServerStatus(
+                        pid=456,
+                        version="xyz",
+                        global_root="/g1",
+                        relative_local_root="local",
+                    ),
+                ],
+                defunct=[
+                    DefunctServerStatus(socket_path="/p0.sock"),
+                    DefunctServerStatus("/p1.sock"),
+                ],
+            ).to_json(),
+            [
+                {
+                    "status": "running",
+                    "pid": 123,
+                    "version": "abc",
+                    "global_root": "/g0",
+                    "relative_local_root": None,
+                },
+                {
+                    "status": "running",
+                    "pid": 456,
+                    "version": "xyz",
+                    "global_root": "/g1",
+                    "relative_local_root": "local",
+                },
+                {"status": "defunct", "socket": "/p0.sock"},
+                {"status": "defunct", "socket": "/p1.sock"},
+            ],
+        )

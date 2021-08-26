@@ -7,12 +7,12 @@ import dataclasses
 import json
 import logging
 from pathlib import Path
-from typing import Optional, List, Dict, Iterable, Sequence
+from typing import Optional, List, Dict, Iterable, Sequence, Any
 
 import tabulate
 from typing_extensions import TypedDict
 
-from ... import commands, log
+from ... import commands, log, command_arguments
 from . import server_connection, stop
 
 
@@ -85,16 +85,33 @@ class RunningServerStatus:
             message = f"Cannot parse response as JSON: {error}"
             raise InvalidServerResponse(message) from error
 
+    def to_json(self) -> Dict[str, object]:
+        return {
+            "status": "running",
+            "pid": self.pid,
+            "version": self.version,
+            "global_root": self.global_root,
+            "relative_local_root": self.relative_local_root,
+        }
+
 
 @dataclasses.dataclass(frozen=True)
 class DefunctServerStatus:
     socket_path: str
+
+    def to_json(self) -> Dict[str, object]:
+        return {"status": "defunct", "socket": self.socket_path}
 
 
 @dataclasses.dataclass(frozen=True)
 class AllServerStatus:
     running: List[RunningServerStatus] = dataclasses.field(default_factory=list)
     defunct: List[DefunctServerStatus] = dataclasses.field(default_factory=list)
+
+    def to_json(self) -> List[Dict[str, Any]]:
+        return [status.to_json() for status in self.running] + [
+            status.to_json() for status in self.defunct
+        ]
 
 
 def _get_running_server_status(socket_path: Path) -> Optional[RunningServerStatus]:
@@ -146,9 +163,17 @@ def _print_defunct_server_status(defunct_status: Sequence[DefunctServerStatus]) 
         log.stdout.write("\n")
 
 
-def _print_server_status(server_status: AllServerStatus) -> None:
-    _print_running_server_status(server_status.running)
-    _print_defunct_server_status(server_status.defunct)
+def _print_server_status_json(server_status: AllServerStatus) -> None:
+    log.stdout.write(json.dumps(server_status.to_json()))
+    log.stdout.write("\n")
+
+
+def _print_server_status(server_status: AllServerStatus, output_format: str) -> None:
+    if output_format == command_arguments.TEXT:
+        _print_running_server_status(server_status.running)
+        _print_defunct_server_status(server_status.defunct)
+    elif output_format == command_arguments.JSON:
+        _print_server_status_json(server_status)
 
 
 def _stop_server(socket_path: Path) -> None:
@@ -190,12 +215,12 @@ def find_all_servers_under(socket_root: Path) -> AllServerStatus:
     return find_all_servers(get_pyre_socket_files(socket_root))
 
 
-def run_list() -> commands.ExitCode:
+def run_list(output_format: str) -> commands.ExitCode:
     try:
         server_status = find_all_servers_under(
             server_connection.get_default_socket_root()
         )
-        _print_server_status(server_status)
+        _print_server_status(server_status, output_format)
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(

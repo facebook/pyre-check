@@ -255,7 +255,7 @@ def _run_servers_list_command(
     arguments: command_arguments.CommandArguments,
 ) -> ExitCode:
     if arguments.use_command_v2:
-        return v2.servers.run_list()
+        return v2.servers.run_list(arguments.output)
     else:
         configuration = configuration_module.create_configuration(arguments, Path("."))
         return run_pyre_command(
