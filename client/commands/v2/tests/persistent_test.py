@@ -585,3 +585,42 @@ class PersistentTest(testslide.TestCase):
                 ),
             ),
         )
+
+    @setup.async_test
+    async def test_send_message_to_status_bar(self) -> None:
+        bytes_writer = MemoryBytesWriter()
+        server_handler = PyreServerHandler(
+            server_start_options_reader=lambda: PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    source_paths=backend_arguments.SimpleSourcePath(),
+                    log_path="/log/path",
+                    global_root="/global/root",
+                ),
+            ),
+            client_output_channel=TextWriter(bytes_writer),
+            server_state=ServerState(
+                client_capabilities=lsp.ClientCapabilities(
+                    window=lsp.WindowClientCapabilities(
+                        status=lsp.ShowStatusRequestClientCapabilities(),
+                    ),
+                )
+            ),
+        )
+        await server_handler.show_status_message_to_client(
+            message="derp", level=lsp.MessageType.WARNING
+        )
+
+        client_visible_messages = bytes_writer.items()
+        self.assertTrue(len(client_visible_messages) > 0)
+        self.assertEqual(
+            await lsp.read_json_rpc(
+                TextReader(MemoryBytesReader(client_visible_messages[-1]))
+            ),
+            json_rpc.Request(
+                method="window/showStatus",
+                id=0,
+                parameters=json_rpc.ByNameParameters({"type": 2, "message": "derp"}),
+            ),
+        )

@@ -602,20 +602,41 @@ class PyreServerHandler(connection.BackgroundTask):
         self.client_output_channel = client_output_channel
         self.server_state = server_state
 
-    async def show_message_to_client(
+    async def show_status_message_to_client(
         self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
     ) -> None:
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.Request(
-                method="window/showMessage",
-                parameters=json_rpc.ByNameParameters(
-                    {"type": int(level), "message": message}
-                ),
-            ),
-        )
+        def clientSupportsStatusBar(
+            client_capabilities: lsp.ClientCapabilities,
+        ) -> bool:
+            window_capabilities = client_capabilities.window
+            if window_capabilities is not None:
+                return window_capabilities.status is not None
+            else:
+                return False
 
-    async def log_and_show_message_to_client(
+        if clientSupportsStatusBar(self.server_state.client_capabilities):
+            await lsp.write_json_rpc(
+                self.client_output_channel,
+                json_rpc.Request(
+                    id=0,  # the value doesn't matter but the existence does
+                    method="window/showStatus",
+                    parameters=json_rpc.ByNameParameters(
+                        {"type": int(level), "message": message}
+                    ),
+                ),
+            )
+        else:
+            await lsp.write_json_rpc(
+                self.client_output_channel,
+                json_rpc.Request(
+                    method="window/showMessage",
+                    parameters=json_rpc.ByNameParameters(
+                        {"type": int(level), "message": message}
+                    ),
+                ),
+            )
+
+    async def log_and_show_status_message_to_client(
         self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
     ) -> None:
         if level == lsp.MessageType.ERROR:
@@ -626,7 +647,7 @@ class PyreServerHandler(connection.BackgroundTask):
             LOG.info(message)
         else:
             LOG.debug(message)
-        await self.show_message_to_client(message, level)
+        await self.show_status_message_to_client(message, level)
 
     def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
         LOG.info(
@@ -690,9 +711,9 @@ class PyreServerHandler(connection.BackgroundTask):
                 server_input_channel, server_output_channel
             )
         finally:
-            await self.show_message_to_client(
+            await self.show_status_message_to_client(
                 "Lost connection to background Pyre server.",
-                level=lsp.MessageType.WARNING,
+                level=lsp.MessageType.ERROR,
             )
             self.server_state.diagnostics = {}
             await self.show_type_errors_to_client()
@@ -724,9 +745,10 @@ class PyreServerHandler(connection.BackgroundTask):
                 input_channel,
                 output_channel,
             ):
-                await self.log_and_show_message_to_client(
+                await self.log_and_show_status_message_to_client(
                     "Established connection with existing Pyre server at "
-                    f"`{server_identifier}`."
+                    f"`{server_identifier}`.",
+                    level=lsp.MessageType.INFO,
                 )
                 self.server_state.consecutive_start_failure = 0
                 _log_lsp_event(
@@ -739,17 +761,19 @@ class PyreServerHandler(connection.BackgroundTask):
                 )
                 await self.subscribe_to_type_error(input_channel, output_channel)
         except connection.ConnectionFailure:
-            await self.log_and_show_message_to_client(
+            await self.log_and_show_status_message_to_client(
                 f"Starting a new Pyre server at `{server_identifier}` in "
-                "the background..."
+                "the background...",
+                level=lsp.MessageType.WARNING,
             )
 
             start_status = await _start_pyre_server(
                 server_start_options.binary, start_arguments
             )
             if isinstance(start_status, StartSuccess):
-                await self.log_and_show_message_to_client(
-                    f"Pyre server at `{server_identifier}` has been initialized."
+                await self.log_and_show_status_message_to_client(
+                    f"Pyre server at `{server_identifier}` has been initialized.",
+                    level=lsp.MessageType.INFO,
                 )
 
                 async with connection.connect_in_text_mode(socket_path) as (
@@ -780,12 +804,12 @@ class PyreServerHandler(connection.BackgroundTask):
                             "exception": str(start_status.detail),
                         },
                     )
-                    await self.show_message_to_client(
+                    await self.show_status_message_to_client(
                         f"Cannot start a new Pyre server at `{server_identifier}`.",
                         level=lsp.MessageType.ERROR,
                     )
                 else:
-                    await self.show_message_to_client(
+                    await self.show_status_message_to_client(
                         f"Pyre server restart at `{server_identifier}` has been "
                         "failing repeatedly. Disabling The Pyre plugin for now.",
                         level=lsp.MessageType.ERROR,
