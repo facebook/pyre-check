@@ -258,8 +258,29 @@ class TextDocumentClientCapabilities:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
+class ShowStatusRequestClientCapabilities:
+    pass
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class WindowClientCapabilities:
+    work_done_progress: Optional[bool] = None
+    # Custom VSCode extension for status bar
+    status: Optional[ShowStatusRequestClientCapabilities] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
 class ClientCapabilities:
     text_document: Optional[TextDocumentClientCapabilities] = None
+    window: Optional[WindowClientCapabilities] = None
 
 
 @dataclasses_json.dataclass_json(
