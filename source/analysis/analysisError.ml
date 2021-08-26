@@ -53,7 +53,9 @@ type origin =
     }
   | Module of module_reference
 
-and analysis_failure = UnexpectedUndefinedType of string
+and analysis_failure =
+  | UnexpectedUndefinedType of string
+  | FixpointThresholdReached of { define: Reference.t }
 
 and mismatch = {
   actual: Type.t;
@@ -716,6 +718,21 @@ let rec messages ~concise ~signature location kind =
       [Format.asprintf "Terminating analysis - type `%s` not defined." annotation]
   | AnalysisFailure (UnexpectedUndefinedType annotation) ->
       [Format.asprintf "Terminating analysis because type `%s` is not defined." annotation]
+  | AnalysisFailure (FixpointThresholdReached { define }) when concise ->
+      [
+        Format.asprintf
+          "Pyre gave up inferring some types - function `%a` was too complex."
+          pp_reference
+          define;
+      ]
+  | AnalysisFailure (FixpointThresholdReached { define }) ->
+      [
+        Format.asprintf
+          "Pyre gave up inferring types for some variables because function `%a` was too complex."
+          pp_reference
+          define;
+        "Please simplify the function by factoring out some if-statements or for-loops.";
+      ]
   | BroadcastError { expression; left; right } ->
       [
         Format.asprintf

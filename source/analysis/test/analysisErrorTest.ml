@@ -574,6 +574,14 @@ let test_join context =
     (error (Error.AnalysisFailure (UnexpectedUndefinedType "herp")))
     (error Error.Top);
   assert_join
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.bar" })))
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.bar" })))
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.bar" })));
+  assert_join
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.bar" })))
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.not_bar" })))
+    (error Error.Top);
+  assert_join
     (error (revealed_type "a" (Annotation.create Type.integer)))
     (error (revealed_type "a" (Annotation.create Type.float)))
     (error (revealed_type "a" (Annotation.create Type.float)));

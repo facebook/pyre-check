@@ -44,7 +44,9 @@ type origin =
     }
   | Module of module_reference
 
-and analysis_failure = UnexpectedUndefinedType of string
+and analysis_failure =
+  | UnexpectedUndefinedType of string
+  | FixpointThresholdReached of { define: Reference.t }
 
 and mismatch = {
   actual: Type.t;
