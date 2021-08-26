@@ -732,7 +732,11 @@ class PyreServerHandler(connection.BackgroundTask):
             )
         finally:
             await self.show_status_message_to_client(
-                "Lost connection to background Pyre server.",
+                "Lost connection to the background Pyre Server. "
+                "This usually happens when Pyre detect changes in project which "
+                "it was not able to handle incrementally. "
+                "A new Pyre server will be started next time you open or save "
+                "a .py file",
                 short_message="Pyre Stopped",
                 level=lsp.MessageType.ERROR,
             )
@@ -829,7 +833,9 @@ class PyreServerHandler(connection.BackgroundTask):
                         },
                     )
                     await self.show_status_message_to_client(
-                        f"Cannot start a new Pyre server at `{server_identifier}`.",
+                        f"Cannot start a new Pyre server at `{server_identifier}`."
+                        "To get more detailed error message, run `pyre` from "
+                        f"`{server_identifier} on the command line",
                         short_message="Pyre Stopped",
                         level=lsp.MessageType.WARNING,
                     )
