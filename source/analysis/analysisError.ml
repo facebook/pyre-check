@@ -53,6 +53,8 @@ type origin =
     }
   | Module of module_reference
 
+and analysis_failure = UnexpectedUndefinedType of string
+
 and mismatch = {
   actual: Type.t;
   expected: Type.t;
@@ -249,7 +251,7 @@ and invalid_decoration_reason =
     }
 
 and kind =
-  | AnalysisFailure of string
+  | AnalysisFailure of analysis_failure
   | ParserFailure of string
   | IllegalAnnotationTarget of {
       target: Expression.t;
@@ -710,9 +712,9 @@ let rec messages ~concise ~signature location kind =
   let pp_identifier = Identifier.pp_sanitized in
   let kind = weaken_literals kind in
   match kind with
-  | AnalysisFailure annotation when concise ->
+  | AnalysisFailure (UnexpectedUndefinedType annotation) when concise ->
       [Format.asprintf "Terminating analysis - type `%s` not defined." annotation]
-  | AnalysisFailure annotation ->
+  | AnalysisFailure (UnexpectedUndefinedType annotation) ->
       [Format.asprintf "Terminating analysis because type `%s` is not defined." annotation]
   | BroadcastError { expression; left; right } ->
       [
@@ -2547,7 +2549,7 @@ let less_or_equal ~resolution left right =
   [%compare.equal: Location.WithModule.t] left.location right.location
   &&
   match left.kind, right.kind with
-  | AnalysisFailure left, AnalysisFailure right -> String.equal left right
+  | AnalysisFailure left, AnalysisFailure right -> [%equal: analysis_failure] left right
   | ( BroadcastError { expression = left_expression; left = first_left; right = first_right },
       BroadcastError { expression = right_expression; left = second_left; right = second_right } )
     when Expression.equal left_expression right_expression ->
@@ -2895,7 +2897,7 @@ let join ~resolution left right =
   in
   let kind =
     match left.kind, right.kind with
-    | AnalysisFailure left, AnalysisFailure right when String.equal left right ->
+    | AnalysisFailure left, AnalysisFailure right when [%equal: analysis_failure] left right ->
         AnalysisFailure left
     | ( BroadcastError { expression = left_expression; left = first_left; right = first_right },
         BroadcastError { expression = right_expression; left = second_left; right = second_right } )

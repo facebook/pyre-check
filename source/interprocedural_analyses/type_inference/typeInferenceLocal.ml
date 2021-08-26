@@ -1019,7 +1019,7 @@ let legacy_infer_for_define
         [
           Error.create
             ~location:(Location.with_module ~qualifier location)
-            ~kind:(Error.AnalysisFailure annotation)
+            ~kind:(Error.AnalysisFailure (UnexpectedUndefinedType annotation))
             ~define;
         ]
       else

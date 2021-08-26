@@ -566,12 +566,12 @@ let test_join context =
     (error (Error.UndefinedType (Type.Primitive "herp")))
     (error Error.Top);
   assert_join
-    (error (Error.AnalysisFailure "derp"))
-    (error (Error.AnalysisFailure "derp"))
-    (error (Error.AnalysisFailure "derp"));
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "derp")))
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "derp")))
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "derp")));
   assert_join
-    (error (Error.AnalysisFailure "derp"))
-    (error (Error.AnalysisFailure "herp"))
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "derp")))
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "herp")))
     (error Error.Top);
   assert_join
     (error (revealed_type "a" (Annotation.create Type.integer)))
@@ -787,11 +787,11 @@ let test_suppress _ =
   assert_not_suppressed Source.Debug (missing_return Type.Top);
   assert_not_suppressed Source.Debug (missing_return Type.Any);
   assert_not_suppressed Source.Debug (Error.UndefinedType Type.integer);
-  assert_not_suppressed Source.Debug (Error.AnalysisFailure "derp");
+  assert_not_suppressed Source.Debug (Error.AnalysisFailure (UnexpectedUndefinedType "derp"));
   assert_not_suppressed Source.Strict (missing_return Type.Top);
   assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
   assert_not_suppressed Source.Strict (missing_return Type.Any);
-  assert_not_suppressed Source.Strict (Error.AnalysisFailure "int");
+  assert_not_suppressed Source.Strict (Error.AnalysisFailure (UnexpectedUndefinedType "int"));
   assert_suppressed Source.Unsafe (missing_return Type.Top);
   assert_not_suppressed
     Source.Strict
@@ -823,7 +823,7 @@ let test_suppress _ =
     ~signature:untyped_signature
     Source.Unsafe
     (revealed_type "a" (Annotation.create Type.integer));
-  assert_not_suppressed Source.Unsafe (Error.AnalysisFailure "int");
+  assert_not_suppressed Source.Unsafe (Error.AnalysisFailure (UnexpectedUndefinedType "int"));
   assert_suppressed
     Source.Unsafe
     (Error.InvalidTypeParameters

@@ -44,6 +44,8 @@ type origin =
     }
   | Module of module_reference
 
+and analysis_failure = UnexpectedUndefinedType of string
+
 and mismatch = {
   actual: Type.t;
   expected: Type.t;
@@ -240,7 +242,7 @@ and invalid_decoration = {
 }
 
 and kind =
-  | AnalysisFailure of string
+  | AnalysisFailure of analysis_failure
   | ParserFailure of string
   | IllegalAnnotationTarget of {
       target: Expression.t;

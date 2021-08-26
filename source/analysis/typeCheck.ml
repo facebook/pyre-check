@@ -6758,7 +6758,7 @@ let check_define
       let undefined_error =
         Error.create
           ~location:(Location.with_module ~qualifier location)
-          ~kind:(Error.AnalysisFailure annotation)
+          ~kind:(Error.AnalysisFailure (UnexpectedUndefinedType annotation))
           ~define:define_node
       in
       { errors = [undefined_error]; local_annotations = None }
