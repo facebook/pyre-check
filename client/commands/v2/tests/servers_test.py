@@ -31,10 +31,8 @@ class MockServerRequestHandler(socketserver.StreamRequestHandler):
                             {
                                 "pid": 42,
                                 "version": "abc",
-                                "configuration": {
-                                    "global_root": "/global",
-                                    "extra": 0,
-                                },
+                                "global_root": "/global",
+                                "extra": 0,
                             },
                         ]
                     ).encode("utf-8")
@@ -63,19 +61,14 @@ class ServersTest(testslide.TestCase):
         assert_raises('["Info", {"pid": 42}]')
         assert_raises('["Info", {"pid": 42, "version": "derp"}]')
         assert_raises(
-            '["Info", {"pid": 42, "version": "derp", "global_root": "/global"}]'
-        )
-        assert_raises(
             json.dumps(
                 [
                     "Info",
                     {
                         "pid": "42",
                         "version": "derp",
-                        "configuration": {
-                            "global_root": "/global",
-                            "log_path": "/log",
-                        },
+                        "global_root": "/global",
+                        "log_path": "/log",
                     },
                 ]
             )
@@ -87,10 +80,8 @@ class ServersTest(testslide.TestCase):
                     {
                         "pid": 42,
                         "version": "derp",
-                        "configuration": {
-                            "global_root": "/global",
-                            "local_root": 0,
-                        },
+                        "global_root": "/global",
+                        "relative_local_root": 0,
                     },
                 ]
             )
@@ -103,7 +94,7 @@ class ServersTest(testslide.TestCase):
                     {
                         "pid": 42,
                         "version": "abc",
-                        "configuration": {"global_root": "/global"},
+                        "global_root": "/global",
                     },
                 ]
             ),
@@ -116,29 +107,7 @@ class ServersTest(testslide.TestCase):
                     {
                         "pid": 42,
                         "version": "abc",
-                        "configuration": {
-                            "global_root": "/global",
-                            "extra_field": 0,
-                        },
-                    },
-                ]
-            ),
-            expected=RunningServerStatus(
-                pid=42,
-                version="abc",
-                global_root="/global",
-            ),
-        )
-        assert_parsed(
-            json.dumps(
-                [
-                    "Info",
-                    {
-                        "pid": 42,
-                        "version": "abc",
-                        "configuration": {
-                            "global_root": "/global",
-                        },
+                        "global_root": "/global",
                         "extra_field": 0,
                     },
                 ]
@@ -156,10 +125,8 @@ class ServersTest(testslide.TestCase):
                     {
                         "pid": 42,
                         "version": "abc",
-                        "configuration": {
-                            "global_root": "/global",
-                            "local_root": "/global/local",
-                        },
+                        "global_root": "/global",
+                        "extra_field": 0,
                     },
                 ]
             ),
@@ -167,7 +134,25 @@ class ServersTest(testslide.TestCase):
                 pid=42,
                 version="abc",
                 global_root="/global",
-                local_root="/global/local",
+            ),
+        )
+        assert_parsed(
+            json.dumps(
+                [
+                    "Info",
+                    {
+                        "pid": 42,
+                        "version": "abc",
+                        "global_root": "/global",
+                        "relative_local_root": "local",
+                    },
+                ]
+            ),
+            expected=RunningServerStatus(
+                pid=42,
+                version="abc",
+                global_root="/global",
+                relative_local_root="local",
             ),
         )
 

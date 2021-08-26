@@ -38,7 +38,7 @@ class RunningServerStatus:
     pid: int
     version: str
     global_root: str
-    local_root: Optional[str] = None
+    relative_local_root: Optional[str] = None
 
     @staticmethod
     def from_json(input_json: Dict[str, object]) -> "RunningServerStatus":
@@ -50,27 +50,22 @@ class RunningServerStatus:
             raise InvalidServerResponse(
                 f"Expect `version` to be a string but got {version}"
             )
-
-        configuration = input_json.get("configuration", None)
-        if not isinstance(configuration, dict):
-            raise InvalidServerResponse(
-                f"Expect `configuration` to be a dict but got {configuration}"
-            )
-        global_root = configuration.get("global_root", None)
+        global_root = input_json.get("global_root", None)
         if not isinstance(global_root, str):
             raise InvalidServerResponse(
                 f"Expect `global_root` to be a string but got {global_root}"
             )
-        local_root = configuration.get("local_root", None)
-        if local_root is not None and not isinstance(local_root, str):
+        relative_local_root = input_json.get("relative_local_root", None)
+        if relative_local_root is not None and not isinstance(relative_local_root, str):
             raise InvalidServerResponse(
-                f"Expected `local_root` to be a string but got {local_root}"
+                "Expected `relative_local_root` to be a string but got "
+                f"{relative_local_root}"
             )
         return RunningServerStatus(
             pid=pid,
             version=version,
             global_root=global_root,
-            local_root=local_root,
+            relative_local_root=relative_local_root,
         )
 
     @staticmethod
@@ -125,7 +120,7 @@ def _print_running_server_status(running_status: Sequence[RunningServerStatus]) 
                     [
                         status.pid,
                         status.global_root,
-                        status.local_root or "",
+                        status.relative_local_root or "",
                         status.version,
                     ]
                     for status in running_status
@@ -133,7 +128,7 @@ def _print_running_server_status(running_status: Sequence[RunningServerStatus]) 
                 headers=[
                     "PID",
                     "Global Root",
-                    "Local Root",
+                    "Relative Local Root",
                     "Version",
                 ],
             ),
