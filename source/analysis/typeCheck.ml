@@ -26,6 +26,8 @@ module LocalErrorMap = struct
 
   let set error_map ~key ~errors = Int.Table.set error_map ~key ~data:errors
 
+  let append error_map ~key error = Int.Table.add_multi error_map ~key ~data:error
+
   let all_errors error_map = Int.Table.data error_map |> List.concat
 end
 
@@ -562,6 +564,17 @@ module State (Context : Context) = struct
 
   let widening_threshold = 10
 
+  let add_fixpoint_threshold_reached_error error_map =
+    let define = Context.define |> Node.value |> StatementDefine.name |> Node.value in
+    let kind = AnalysisError.AnalysisFailure (FixpointThresholdReached { define }) in
+    let location =
+      Location.with_module ~qualifier:Context.qualifier (Node.location Context.define)
+    in
+    let key = [%hash: int * int] (Cfg.entry_index, 0) in
+    AnalysisError.create ~location ~kind ~define:Context.define
+    |> LocalErrorMap.append ~key error_map
+
+
   let widen ~previous ~next ~iteration =
     match previous.resolution, next.resolution with
     | None, _ -> next
@@ -612,10 +625,13 @@ module State (Context : Context) = struct
                 (Resolution.temporary_annotations next_resolution);
           }
         in
+        let error_map = next.error_map in
+        if iteration > widening_threshold then
+          add_fixpoint_threshold_reached_error error_map;
         {
           resolution = Some (Resolution.with_annotation_store next_resolution ~annotation_store);
           resolution_fixpoint = next.resolution_fixpoint;
-          error_map = next.error_map;
+          error_map;
         }
 
 

@@ -2964,6 +2964,94 @@ let test_enforce_dunder_params context =
   ()
 
 
+let test_fixpoint_threshold context =
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> bool: ...
+
+      def bar() -> None:
+          u = 42
+
+          if foo():
+              x1 = foo()
+              if x1:
+                  x2 = foo()
+                  if x2:
+                      pass
+              else:
+                  pass
+
+              if foo():
+                  pass
+
+              if foo():
+                  x3 = foo()
+                  if x3:
+                      x4 = foo()
+                      if foo():
+                          pass
+                  if foo():
+                      pass
+              pass
+
+          if foo():
+              if foo():
+                  x5 = foo()
+              else:
+                  x6 = foo()
+                  if foo():
+                      pass
+                  else:
+                      pass
+
+          reveal_type(u)
+
+          if foo():
+              if foo():
+                  x7 = foo()
+              pass
+              if foo():
+                  pass
+
+          reveal_type(u)
+
+          if foo():
+              x8 = foo()
+              if x8:
+                  x9 = foo()
+                  if foo():
+                      pass
+                  pass
+              pass
+
+
+          reveal_type(u)
+
+          if foo():
+              x10 = await foo()
+
+              if x10 is not None:
+                  if foo():
+                      pass
+                  elif foo():
+                      pass
+
+          final_type = u
+          reveal_type(final_type)
+    |}
+    [
+      "Analysis failure [30]: Pyre gave up inferring types for some variables because function \
+       `test.bar` was too complex.";
+      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
+      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
+      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
+      "Incompatible awaitable type [12]: Expected an awaitable but got `bool`.";
+      "Revealed type [-1]: Revealed type for `final_type` is `unknown`.";
+    ];
+  ()
+
+
 let () =
   "method"
   >::: [
@@ -2985,5 +3073,6 @@ let () =
          "check_in" >:: test_check_in;
          "check_enter" >:: test_check_enter;
          "enforce_dunder_params" >:: test_enforce_dunder_params;
+         "fixpoint_threshold" >:: test_fixpoint_threshold;
        ]
   |> Test.run
