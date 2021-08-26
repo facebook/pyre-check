@@ -862,12 +862,16 @@ def infer(
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
     if configuration.use_command_v2:
+        working_directory = Path.cwd()
         modify_paths = (
-            None if not in_place else {Path(path) for path in paths_to_modify}
+            None
+            if not in_place
+            else {working_directory / Path(path) for path in paths_to_modify}
         )
         return v2.infer.run(
             configuration,
             command_arguments.InferArguments(
+                working_directory=working_directory,
                 annotate_attributes=annotate_attributes,
                 annotate_from_existing_stubs=annotate_from_existing_stubs,
                 enable_memory_profiling=command_argument.enable_memory_profiling,

@@ -935,11 +935,11 @@ def _annotate_in_place(
 ) -> None:
     tasks: List[AnnotateModuleInPlace] = []
     for full_stub_path in type_directory.rglob("*.pyi"):
-        stub_path = full_stub_path.relative_to(type_directory)
-        code_path = stub_path.with_suffix(".py")
-        full_code_path = working_directory / code_path
+        relative_stub_path = full_stub_path.relative_to(type_directory)
+        relative_code_path = relative_stub_path.with_suffix(".py")
+        full_code_path = working_directory / relative_code_path
 
-        if should_annotate_in_place(code_path, paths_to_modify):
+        if should_annotate_in_place(full_code_path, paths_to_modify):
             tasks.append(
                 AnnotateModuleInPlace(
                     full_stub_path=str(full_stub_path),
@@ -957,7 +957,7 @@ def run_infer(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
 ) -> commands.ExitCode:
-    working_directory = Path.cwd()
+    working_directory = infer_arguments.working_directory
     _check_working_directory(
         working_directory=working_directory,
         global_root=Path(configuration.project_root),

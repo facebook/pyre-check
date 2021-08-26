@@ -174,9 +174,11 @@ class InferTest(testslide.TestCase):
                 create_infer_arguments(
                     infer_configuration,
                     command_arguments.InferArguments(
+                        working_directory=Path("/some/directory"),
                         debug_infer=True,
                         sequential=False,
                         interprocedural=False,
+                        paths_to_modify={Path("path/to/module.py")},
                     ),
                 ),
                 Arguments(

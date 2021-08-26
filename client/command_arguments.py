@@ -97,6 +97,7 @@ class CheckArguments:
 
 @dataclass(frozen=True)
 class InferArguments:
+    working_directory: Path
     annotate_attributes: bool = False
     annotate_from_existing_stubs: bool = False
     debug_infer: bool = False
