@@ -52,8 +52,6 @@ class Arguments:
     debug: bool = False
     excludes: Sequence[str] = dataclasses.field(default_factory=list)
     extensions: Sequence[str] = dataclasses.field(default_factory=list)
-    ignore_infer: Sequence[str] = dataclasses.field(default_factory=list)
-    infer_mode: InferMode = InferMode.LOCAL
     memory_profiling_output: Optional[Path] = None
     number_of_workers: int = 1
     parallel: bool = True
@@ -69,6 +67,10 @@ class Arguments:
     search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
         default_factory=list
     )
+    # infer-specific fields
+    infer_mode: InferMode = InferMode.LOCAL
+    ignore_infer: Sequence[str] = dataclasses.field(default_factory=list)
+    paths_to_modify: Optional[Set[Path]] = None
 
     @property
     def local_root(self) -> Optional[str]:
@@ -79,6 +81,7 @@ class Arguments:
     def serialize(self) -> Dict[str, Any]:
         local_root = self.local_root
         return {
+            # base config fields
             "source_paths": self.source_paths.serialize(),
             "search_paths": [
                 element.command_line_argument() for element in self.search_paths
@@ -87,8 +90,6 @@ class Arguments:
             "checked_directory_allowlist": self.checked_directory_allowlist,
             "checked_directory_blocklist": self.checked_directory_blocklist,
             "extensions": self.extensions,
-            "ignore_infer": self.ignore_infer,
-            "infer_mode": self.infer_mode.serialize(),
             "log_path": self.log_path,
             "global_root": self.global_root,
             **({} if local_root is None else {"local_root": local_root}),
@@ -115,6 +116,13 @@ class Arguments:
                 {}
                 if self.memory_profiling_output is None
                 else {"memory_profiling_output": str(self.memory_profiling_output)}
+            ),
+            "ignore_infer": self.ignore_infer,
+            "infer_mode": self.infer_mode.serialize(),
+            **(
+                {}
+                if self.paths_to_modify is None
+                else {"paths_to_modify": [str(path) for path in self.paths_to_modify]}
             ),
         }
 
@@ -744,7 +752,6 @@ def create_infer_arguments(
         excludes=configuration.excludes,
         extensions=configuration.get_valid_extension_suffixes(),
         ignore_infer=configuration.get_existent_ignore_infer_paths(),
-        infer_mode=infer_mode,
         relative_local_root=configuration.relative_local_root,
         memory_profiling_output=memory_profiling_output,
         number_of_workers=configuration.get_number_of_workers(),
@@ -755,6 +762,8 @@ def create_infer_arguments(
         remote_logging=remote_logging,
         search_paths=configuration.expand_and_get_existent_search_paths(),
         source_paths=source_paths,
+        infer_mode=infer_mode,
+        paths_to_modify=infer_arguments.paths_to_modify,
     )
 
 

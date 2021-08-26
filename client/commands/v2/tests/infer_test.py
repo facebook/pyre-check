@@ -130,11 +130,13 @@ class ArgumentTest(testslide.TestCase):
                 ),
                 profiling_output=Path("/derp"),
                 memory_profiling_output=Path("/derp2"),
+                paths_to_modify={Path("/derp3.py")},
             ),
             [
                 ("profiling_output", "/derp"),
                 ("remote_logging", {"logger": "/logger", "identifier": "baz"}),
                 ("memory_profiling_output", "/derp2"),
+                ("paths_to_modify", ["/derp3.py"]),
             ],
         )
 
@@ -207,6 +209,7 @@ class InferTest(testslide.TestCase):
                             )
                         ]
                     ),
+                    paths_to_modify={Path("path/to/module.py")},
                 ),
             )
 
