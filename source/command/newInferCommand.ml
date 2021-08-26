@@ -108,7 +108,7 @@ module InferConfiguration = struct
       ()
 end
 
-let run_infer_local ~configuration ~build_system () =
+let run_infer_local ~configuration ~build_system ~paths_to_modify () =
   let result =
     Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
         let ({ Service.Infer.global_environment; _ } as environment_data) =
@@ -124,7 +124,12 @@ let run_infer_local ~configuration ~build_system () =
             ~ast_environment
             qualifier
         in
-        Service.Infer.run_infer ~configuration ~scheduler ~filename_lookup environment_data)
+        Service.Infer.run_infer
+          ~configuration
+          ~scheduler
+          ~filename_lookup
+          ~paths_to_modify
+          environment_data)
   in
   if configuration.debug then
     Memory.report_statistics ();
@@ -212,8 +217,8 @@ let run_infer_interprocedural ~configuration ~build_system () =
 let run_infer infer_configuration =
   let {
     InferConfiguration.base = { NewCommandStartup.BaseConfiguration.source_paths; _ };
+    paths_to_modify;
     infer_mode;
-    _;
   }
     =
     infer_configuration
@@ -221,7 +226,7 @@ let run_infer infer_configuration =
   Newserver.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       let configuration = InferConfiguration.analysis_configuration_of infer_configuration in
       match infer_mode with
-      | InferMode.Local -> run_infer_local ~configuration ~build_system ()
+      | InferMode.Local -> run_infer_local ~configuration ~build_system ~paths_to_modify ()
       | InferMode.Interprocedural -> run_infer_interprocedural ~configuration ~build_system ())
 
 

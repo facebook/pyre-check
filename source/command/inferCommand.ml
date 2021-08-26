@@ -242,7 +242,12 @@ let run_infer_local
                 ast_environment
                 qualifier
             in
-            Infer.run_infer ~configuration ~scheduler ~filename_lookup environment_data)
+            Infer.run_infer
+              ~configuration
+              ~scheduler
+              ~filename_lookup
+              ~paths_to_modify:None
+              environment_data)
       in
       if debug then
         Memory.report_statistics ();

@@ -20,5 +20,6 @@ val run_infer
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
+  paths_to_modify:string list option ->
   environment_data ->
   TypeInference.Data.GlobalResult.t

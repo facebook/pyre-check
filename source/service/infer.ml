@@ -61,11 +61,29 @@ let build_environment_data
   { global_environment; qualifiers }
 
 
-let run_infer ~configuration ~scheduler ~filename_lookup { global_environment; qualifiers } =
+let run_infer
+    ~configuration
+    ~scheduler
+    ~filename_lookup
+    ~paths_to_modify
+    { global_environment; qualifiers }
+  =
   Log.info "Running inference...";
   let timer = Timer.start () in
   let global_resolution = GlobalResolution.create global_environment in
   let ast_environment = GlobalResolution.ast_environment global_resolution in
+  let should_analyze =
+    match paths_to_modify with
+    | None -> fun _qualifier -> true
+    | Some paths_to_modify ->
+        let paths_to_modify = String.Set.of_list paths_to_modify in
+        fun qualifier ->
+          qualifier
+          |> filename_lookup
+          >>| String.Set.mem paths_to_modify
+          |> Option.value ~default:false
+  in
+  let qualifiers = qualifiers |> List.filter ~f:should_analyze in
   let map _ qualifiers =
     let analyze_qualifier qualifier =
       let analyze_source source =
@@ -75,9 +93,9 @@ let run_infer ~configuration ~scheduler ~filename_lookup { global_environment; q
           ~filename_lookup
           ~source
       in
-      AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier >>| analyze_source
+      qualifier |> AstEnvironment.ReadOnly.get_processed_source ast_environment >>| analyze_source
     in
-    List.filter_map qualifiers ~f:analyze_qualifier |> List.concat
+    qualifiers |> List.filter_map ~f:analyze_qualifier |> List.concat
   in
   let reduce left right = List.append left right in
   let results =
