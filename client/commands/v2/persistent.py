@@ -256,6 +256,10 @@ async def _publish_diagnostics(
 
 @dataclasses.dataclass
 class ServerState:
+    # Immutable States
+    client_capabilities: lsp.ClientCapabilities = lsp.ClientCapabilities()
+
+    # Mutable States
     consecutive_start_failure: int = 0
     opened_documents: Set[Path] = dataclasses.field(default_factory=set)
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
@@ -268,24 +272,21 @@ class PyreServer:
     input_channel: connection.TextReader
     output_channel: connection.TextWriter
 
-    # Immutable States
-    client_capabilities: lsp.ClientCapabilities
-
-    # Mutable States
-    state: ServerState
+    # `pyre_manager` is responsible for handling all interactions with background
+    # Pyre server.
     pyre_manager: connection.BackgroundTaskManager
+    # NOTE: `state` is mutable and can be changed on `pyre_manager` side.
+    state: ServerState
 
     def __init__(
         self,
         input_channel: connection.TextReader,
         output_channel: connection.TextWriter,
-        client_capabilities: lsp.ClientCapabilities,
         state: ServerState,
         pyre_manager: connection.BackgroundTaskManager,
     ) -> None:
         self.input_channel = input_channel
         self.output_channel = output_channel
-        self.client_capabilities = client_capabilities
         self.state = state
         self.pyre_manager = pyre_manager
 
@@ -859,11 +860,10 @@ async def run_persistent(
 
             client_capabilities = initialize_result.client_capabilities
             LOG.debug(f"Client capabilities: {client_capabilities}")
-            initial_server_state = ServerState()
+            initial_server_state = ServerState(client_capabilities=client_capabilities)
             server = PyreServer(
                 input_channel=stdin,
                 output_channel=stdout,
-                client_capabilities=client_capabilities,
                 state=initial_server_state,
                 pyre_manager=connection.BackgroundTaskManager(
                     PyreServerHandler(

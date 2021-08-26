@@ -246,7 +246,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=server_state,
             pyre_manager=BackgroundTaskManager(NoOpBackgroundTask()),
         )
@@ -310,7 +309,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(bytes_writer),
-            client_capabilities=lsp.ClientCapabilities(),
             state=server_state,
             pyre_manager=fake_task_manager,
         )
@@ -348,7 +346,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=ServerState(),
             pyre_manager=fake_task_manager,
         )
@@ -374,7 +371,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=ServerState(
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD
             ),
@@ -403,7 +399,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=ServerState(opened_documents={test_path}),
             pyre_manager=fake_task_manager,
         )
@@ -426,7 +421,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=ServerState(
                 opened_documents={test_path},
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
