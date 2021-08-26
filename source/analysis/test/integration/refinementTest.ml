@@ -1327,6 +1327,57 @@ let test_check_temporary_refinement context =
       "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
       "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
     ];
+  (* Sanity check composite refinement checks *)
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        a: Optional[int] = 1
+        b: Optional[int] = 1
+
+      def interleaving_call() -> None: pass
+
+      def test(foo: Foo) -> None:
+        if not foo.a or not foo.b:
+          return
+        reveal_type(foo.a)
+        reveal_type(foo.b)
+
+        interleaving_call()
+        if foo.a is None or foo.b is None:
+          return
+        reveal_type(foo.a)
+        reveal_type(foo.b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.a` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.b` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.a` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.b` is `Optional[int]` (inferred: `int`).";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      def test(a: Optional[int], b: Optional[int]) -> None:
+        if not a or not b:
+          return
+        reveal_type(a)
+        reveal_type(b)
+
+      def test_two(a: Optional[int], b: Optional[int]) -> None:
+        if a is None or b is None:
+          return
+        reveal_type(a)
+        reveal_type(b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `b` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `a` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `b` is `Optional[int]` (inferred: `int`).";
+    ];
   ()
 
 
