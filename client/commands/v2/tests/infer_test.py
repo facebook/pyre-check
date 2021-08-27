@@ -480,12 +480,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             )
 
         default_path = "test.py"
-        default_options = StubGenerationOptions(
-            annotate_attributes=False,
-            use_future_annotations=False,
-            quote_annotations=False,
-            dequalify=False,
-        )
+        default_options = StubGenerationOptions()
 
         assert_result(
             path=default_path,
@@ -597,9 +592,6 @@ class ModuleAnnotationTest(testslide.TestCase):
 
         annotate_attribute_options = StubGenerationOptions(
             annotate_attributes=True,
-            use_future_annotations=False,
-            quote_annotations=False,
-            dequalify=False,
         )
         assert_result(
             path=default_path,
@@ -637,12 +629,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             base_path: Path,
             expected: List[ExpectedModuleAnnotationItem],
         ) -> None:
-            default_options = StubGenerationOptions(
-                annotate_attributes=False,
-                use_future_annotations=False,
-                quote_annotations=False,
-                dequalify=False,
-            )
+            default_options = StubGenerationOptions()
             self.assertCountEqual(
                 create_module_annotations(infer_output, base_path, default_options),
                 [
@@ -744,12 +731,7 @@ class ModuleAnnotationTest(testslide.TestCase):
         self.assertEqual(
             ModuleAnnotations(
                 path="derp.py",
-                options=StubGenerationOptions(
-                    annotate_attributes=False,
-                    use_future_annotations=False,
-                    quote_annotations=False,
-                    dequalify=False,
-                ),
+                options=StubGenerationOptions(),
             ).stubs_path(Path("/root")),
             Path("/root/derp.pyi"),
         )
@@ -822,49 +804,38 @@ class InferUtilsTestSuite(testslide.TestCase):
 
 
 class TypeAnnotationTest(testslide.TestCase):
-
-    basic_options: StubGenerationOptions = StubGenerationOptions(
-        annotate_attributes=False,
-        use_future_annotations=True,
-        quote_annotations=False,
-        dequalify=False,
-    )
-    quote_options: StubGenerationOptions = StubGenerationOptions(
-        annotate_attributes=False,
-        use_future_annotations=True,
-        quote_annotations=True,
-        dequalify=False,
-    )
-    dequalify_options: StubGenerationOptions = StubGenerationOptions(
-        annotate_attributes=False,
-        use_future_annotations=True,
-        quote_annotations=False,
-        dequalify=True,
-    )
-
     def test_sanitized(self) -> None:
-        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=self.basic_options)
+        actual = TypeAnnotation.from_raw(
+            "foo.Foo[int]",
+            options=StubGenerationOptions(),
+        )
         self.assertEqual(actual.sanitized(), "foo.Foo[int]")
         self.assertEqual(actual.sanitized(prefix=": "), ": foo.Foo[int]")
 
-        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=self.quote_options)
+        actual = TypeAnnotation.from_raw(
+            "foo.Foo[int]",
+            options=StubGenerationOptions(quote_annotations=True),
+        )
         self.assertEqual(actual.sanitized(), '"foo.Foo[int]"')
         self.assertEqual(actual.sanitized(prefix=": "), ': "foo.Foo[int]"')
 
-        actual = TypeAnnotation.from_raw("foo.Foo[int]", options=self.dequalify_options)
+        actual = TypeAnnotation.from_raw(
+            "foo.Foo[int]",
+            options=StubGenerationOptions(dequalify=True),
+        )
         self.assertEqual(actual.sanitized(), "Foo[int]")
         self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
 
     def test_typing_imports(self) -> None:
         actual = TypeAnnotation.from_raw(
             "typing.Union[int, typing.Optional[str]]",
-            options=self.basic_options,
+            options=StubGenerationOptions(),
         )
         self.assertEqual(actual.typing_imports(), {"Union", "Optional"})
 
         actual = TypeAnnotation.from_raw(
             "typing.Union[int, typing.Optional[str]]",
-            options=self.quote_options,
+            options=StubGenerationOptions(quote_annotations=True),
         )
         self.assertEqual(actual.typing_imports(), set())
 
@@ -902,7 +873,6 @@ class StubGenerationTest(testslide.TestCase):
                 annotate_attributes=annotate_attributes,
                 use_future_annotations=use_future_annotations,
                 quote_annotations=quote_annotations,
-                dequalify=False,
             ),
         )
         if len(module_annotations) != 1:

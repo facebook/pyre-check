@@ -335,10 +335,10 @@ def sanitize_annotation(
 
 @dataclasses.dataclass(frozen=True)
 class StubGenerationOptions:
-    annotate_attributes: bool
-    use_future_annotations: bool
-    quote_annotations: bool
-    dequalify: bool
+    annotate_attributes: bool = False
+    use_future_annotations: bool = False
+    quote_annotations: bool = False
+    dequalify: bool = False
 
     def __post__init__(self) -> None:
         if self.quote_annotations and (self.use_future_annotations or self.dequalify):
