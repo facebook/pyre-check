@@ -32,11 +32,12 @@ The configuration is a `JSON` file. For example,
     "."
   ],
   "search_path": [
-    "/external/library"
+    "/external/library",
+    {"site-package": "foo"}
   ]
 }
 ```
-specifies that the code Pyre checks is in the directory of the configuration and that Pyre should look in an additional directory for library code.
+specifies that the code Pyre checks is in the directory of the configuration and that Pyre should look in an additional directory as well as the `foo` package installed in your environment for library code.
 
 
 You specify additional information to configure Pyre. The following fields are supported:
@@ -46,7 +47,10 @@ You specify additional information to configure Pyre. The following fields are s
  Note: Pyre assumes that all imports are relative to the given source directory. For example, if your source directory is `root/directory`, then an import statement `import module` will be looking to import `root.directory.module`. If you wish to set a different import root for your source directory, you can provide an object `{"import_root": "root", "source": "directory"}` instead of `"root/directory"`. In this case, `import module` will be looking to import `root.module`.
 
 - `search_path`: List of paths to Python modules to include in the typing
-environment. **Note**: `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence.
+environment. `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence. Individual items in the list can take one of the following forms:
+  + A plain string, representing the path to the directory from which Pyre will search for modules.
+  + An object `{"import_root": "root", "source": "directory"}`, which can be used to control import root of the search path. See explaination for `source_directories`.
+  + An object `{"site-package": "package_name"}`. It is equivalent to `{"import_root": "site_root", "source": "package_name"}`, where `site_root` is the return value of [`site.getsitepackages()`](https://docs.python.org/3/library/site.html#site.getsitepackages). This can be useful when you want to add installed `pip` packages as a dependency to your project.
 
 - `exclude`: List of regular expressions such as `".*\/node_modules\/.*"` which
 specify files and directories that should be completely ignored by Pyre. The
