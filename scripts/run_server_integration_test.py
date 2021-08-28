@@ -268,7 +268,9 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str) -> int:
             repository_path,
             debug=False,
         )
-        repository.run_pyre("--save-initial-state-to", saved_state_path, "incremental")
+        repository.run_pyre(
+            "--save-initial-state-to", saved_state_path, "incremental", "--no-watchman"
+        )
         repository.__next__()
         expected_errors = repository.run_pyre("check")
         repository.run_pyre("stop")
@@ -279,7 +281,25 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str) -> int:
             typeshed_zip_path, saved_state_load_directory, repository_path, debug=False
         )
         repository.__next__()
-        repository.run_pyre("--load-initial-state-from", saved_state_path, "start")
+
+        changed_files = [
+            path
+            for path in pathlib.Path(repository.get_repository_directory()).iterdir()
+            if path.suffix == ".py"
+        ]
+        changed_files_path = (
+            pathlib.Path(saved_state_load_directory) / "changed_files.txt"
+        )
+        changed_files_path.write_text("\n".join([str(path) for path in changed_files]))
+
+        repository.run_pyre(
+            "--load-initial-state-from",
+            saved_state_path,
+            "--changed-files-path",
+            str(changed_files_path),
+            "start",
+            "--no-watchman",
+        )
         actual_errors = repository.run_pyre("incremental")
         repository.run_pyre("stop")
 

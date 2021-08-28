@@ -254,7 +254,7 @@ def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitC
 def _run_servers_list_command(
     arguments: command_arguments.CommandArguments,
 ) -> ExitCode:
-    if arguments.use_command_v2:
+    if arguments.use_command_v2 is not False:
         return v2.servers.run_list(arguments.output)
     else:
         configuration = configuration_module.create_configuration(arguments, Path("."))
@@ -1280,7 +1280,7 @@ def servers_stop(context: click.Context) -> int:
     Stop all running servers.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    if command_argument.use_command_v2:
+    if command_argument.use_command_v2 is not False:
         return v2.servers.run_stop()
     else:
         configuration = configuration_module.create_configuration(

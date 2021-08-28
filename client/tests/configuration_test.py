@@ -717,7 +717,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.typeshed, "typeshed")
         self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, False)
-        self.assertEqual(configuration.use_command_v2, False)
+        self.assertEqual(configuration.use_command_v2, True)
         self.assertEqual(configuration.version_hash, "abc")
 
     def test_get_site_roots(self) -> None:

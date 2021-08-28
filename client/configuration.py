@@ -930,7 +930,7 @@ class Configuration:
                 partial_configuration.use_buck_source_database, default=False
             ),
             use_command_v2=_get_optional_value(
-                partial_configuration.use_command_v2, default=False
+                partial_configuration.use_command_v2, default=True
             ),
             version_hash=partial_configuration.version_hash,
         )
