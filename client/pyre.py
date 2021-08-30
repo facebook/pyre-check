@@ -873,57 +873,33 @@ def infer(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-
-    if configuration.use_command_v2:
-        working_directory = Path.cwd()
-        modify_paths = (
-            None
-            if not in_place
-            else {working_directory / Path(path) for path in paths_to_modify}
-        )
-        return v2.infer.run(
-            configuration,
-            command_arguments.InferArguments(
-                working_directory=working_directory,
-                annotate_attributes=annotate_attributes,
-                annotate_from_existing_stubs=annotate_from_existing_stubs,
-                enable_memory_profiling=command_argument.enable_memory_profiling,
-                enable_profiling=command_argument.enable_profiling,
-                debug_infer=debug_infer,
-                quote_annotations=quote_annotations,
-                dequalify=dequalify,
-                interprocedural=interprocedural,
-                log_identifier=command_argument.log_identifier,
-                logging_sections=command_argument.logging_sections,
-                no_future_annotations=no_future_annotations,
-                paths_to_modify=modify_paths,
-                print_only=print_only,
-                read_stdin=read_stdin,
-                sequential=command_argument.sequential,
-            ),
-        )
-    else:
-        # NOTE: pre-v2 infer is in bugfix mode only, some flags
-        # like quote_annotations will be ignored.
-        return run_pyre_command(
-            commands.Infer(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                paths_to_modify={Path(path) for path in paths_to_modify},
-                print_only=print_only,
-                in_place=in_place,
-                annotate_from_existing_stubs=annotate_from_existing_stubs,
-                debug_infer=debug_infer,
-                read_stdin=read_stdin,
-                annotate_attributes=annotate_attributes,
-                use_future_annotations=not no_future_annotations,
-                dequalify=dequalify,
-                interprocedural=interprocedural,
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    working_directory = Path.cwd()
+    modify_paths = (
+        None
+        if not in_place
+        else {working_directory / Path(path) for path in paths_to_modify}
+    )
+    return v2.infer.run(
+        configuration,
+        command_arguments.InferArguments(
+            working_directory=working_directory,
+            annotate_attributes=annotate_attributes,
+            annotate_from_existing_stubs=annotate_from_existing_stubs,
+            enable_memory_profiling=command_argument.enable_memory_profiling,
+            enable_profiling=command_argument.enable_profiling,
+            debug_infer=debug_infer,
+            quote_annotations=quote_annotations,
+            dequalify=dequalify,
+            interprocedural=interprocedural,
+            log_identifier=command_argument.log_identifier,
+            logging_sections=command_argument.logging_sections,
+            no_future_annotations=no_future_annotations,
+            paths_to_modify=modify_paths,
+            print_only=print_only,
+            read_stdin=read_stdin,
+            sequential=command_argument.sequential,
+        ),
+    )
 
 
 @pyre.command()

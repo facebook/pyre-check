@@ -18,7 +18,6 @@ from .command import (  # noqa; noqa; noqa
 from .coverage import Coverage
 from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
-from .infer import Infer as Infer
 from .kill import Kill as Kill
 from .persistent import Persistent as Persistent
 from .profile import Profile as Profile
@@ -38,7 +37,6 @@ COMMANDS: List[Type[CommandParser]] = [
     Coverage,
     Deobfuscate,
     Incremental,
-    Infer,
     Kill,
     Persistent,
     Profile,
