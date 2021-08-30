@@ -9,6 +9,7 @@ import logging
 from typing import Callable, Iterable, List, Optional
 
 from ...api.connection import PyreConnection
+from ...api.query import PyreCache
 from .function_tainter import taint_pyre_functions
 from .generator_specifications import AnnotationSpecification, WhitelistSpecification
 from .model import PyreFunctionDefinitionModel
@@ -27,9 +28,11 @@ class MethodsOfSubclassesGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
         annotations: AnnotationSpecification,
         whitelist: Optional[WhitelistSpecification] = None,
         transitive: bool = False,
+        pyre_cache: Optional[PyreCache] = None,
     ) -> None:
         self.base_classes = base_classes
         self.pyre_connection = pyre_connection
+        self.pyre_cache = pyre_cache
         self.annotations = annotations
         self.whitelist: WhitelistSpecification = whitelist or WhitelistSpecification(
             parameter_name={"self"}
@@ -47,7 +50,10 @@ class MethodsOfSubclassesGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
         models: List[PyreFunctionDefinitionModel] = []
 
         definitions = get_all_subclass_defines_from_pyre(
-            self.base_classes, self.pyre_connection, self.transitive
+            self.base_classes,
+            pyre_connection=self.pyre_connection,
+            transitive=self.transitive,
+            pyre_cache=self.pyre_cache,
         )
 
         if definitions is None:
