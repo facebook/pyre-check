@@ -5408,29 +5408,24 @@ module State (Context : Context) = struct
           | BooleanOperator { BooleanOperator.left; operator; right } -> (
               let update resolution expression =
                 forward_statement ~resolution ~statement:(Statement.assume expression)
-                |> fun (post_resolution, _) ->
-                let resolution = Option.value post_resolution ~default:resolution in
-                Resolution.annotation_store resolution
+                |> fun (post_resolution, _) -> Option.value post_resolution ~default:resolution
               in
               match operator with
               | BooleanOperator.And ->
+                  let resolution = update resolution left in
                   let {
                     Resolution.annotations = left_annotations;
                     temporary_annotations = left_temporary_annotations;
                   }
                     =
-                    update resolution left
-                  in
-                  let resolution =
-                    forward_statement ~resolution ~statement:(Statement.assume left)
-                    |> fun (post_resolution, _) -> Option.value post_resolution ~default:resolution
+                    Resolution.annotation_store resolution
                   in
                   let {
                     Resolution.annotations = right_annotations;
                     temporary_annotations = right_temporary_annotations;
                   }
                     =
-                    update resolution right
+                    update resolution right |> Resolution.annotation_store
                   in
                   let merge ~key:_ = function
                     | `Both (left, right) ->
@@ -5448,21 +5443,12 @@ module State (Context : Context) = struct
                   let resolution = Resolution.with_annotation_store resolution ~annotation_store in
                   Some resolution, errors
               | BooleanOperator.Or ->
-                  let negated_left = update resolution (normalize (negate left)) in
-                  let left_annotation_store = update resolution left in
-                  let resolution =
-                    Resolution.with_annotation_store resolution ~annotation_store:negated_left
+                  let left_resolution = update resolution left in
+                  let right_resolution =
+                    update resolution (normalize (negate left))
+                    |> fun resolution -> update resolution right
                   in
-                  let right_annotation_store = update resolution right in
-                  ( Some
-                      (join_resolutions
-                         (Resolution.with_annotation_store
-                            resolution
-                            ~annotation_store:left_annotation_store)
-                         (Resolution.with_annotation_store
-                            resolution
-                            ~annotation_store:right_annotation_store)),
-                    errors ))
+                  Some (join_resolutions left_resolution right_resolution), errors)
           | ComparisonOperator
               {
                 ComparisonOperator.left;
