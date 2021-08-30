@@ -5412,36 +5412,46 @@ module State (Context : Context) = struct
               in
               match operator with
               | BooleanOperator.And ->
-                  let resolution = update resolution left in
-                  let {
-                    Resolution.annotations = left_annotations;
-                    temporary_annotations = left_temporary_annotations;
-                  }
-                    =
-                    Resolution.annotation_store resolution
+                  let left_resolution =
+                    forward_statement ~resolution ~statement:(Statement.assume left) |> fst
                   in
-                  let {
-                    Resolution.annotations = right_annotations;
-                    temporary_annotations = right_temporary_annotations;
-                  }
-                    =
-                    update resolution right |> Resolution.annotation_store
+                  let right_resolution =
+                    left_resolution
+                    >>= fun resolution ->
+                    forward_statement ~resolution ~statement:(Statement.assume right) |> fst
                   in
-                  let merge ~key:_ = function
-                    | `Both (left, right) ->
-                        Some (RefinementUnit.meet ~global_resolution left right)
-                    | `Left left -> Some left
-                    | `Right right -> Some right
-                  in
-                  let annotation_store =
-                    {
-                      Resolution.annotations = Map.merge ~f:merge left_annotations right_annotations;
-                      temporary_annotations =
-                        Map.merge ~f:merge left_temporary_annotations right_temporary_annotations;
+                  let merge_resolutions left_resolution right_resolution =
+                    let {
+                      Resolution.annotations = left_annotations;
+                      temporary_annotations = left_temporary_annotations;
                     }
+                      =
+                      Resolution.annotation_store left_resolution
+                    in
+                    let {
+                      Resolution.annotations = right_annotations;
+                      temporary_annotations = right_temporary_annotations;
+                    }
+                      =
+                      Resolution.annotation_store right_resolution
+                    in
+                    let merge ~key:_ = function
+                      | `Both (left, right) ->
+                          Some (RefinementUnit.meet ~global_resolution left right)
+                      | `Left left -> Some left
+                      | `Right right -> Some right
+                    in
+                    let annotations = Map.merge ~f:merge left_annotations right_annotations in
+                    let temporary_annotations =
+                      Map.merge ~f:merge left_temporary_annotations right_temporary_annotations
+                    in
+                    let annotation_store = { Resolution.annotations; temporary_annotations } in
+                    Resolution.with_annotation_store left_resolution ~annotation_store
                   in
-                  let resolution = Resolution.with_annotation_store resolution ~annotation_store in
-                  Some resolution, errors
+                  let resolution =
+                    Option.map2 ~f:merge_resolutions left_resolution right_resolution
+                  in
+                  resolution, errors
               | BooleanOperator.Or ->
                   let left_resolution = update resolution left in
                   let right_resolution =

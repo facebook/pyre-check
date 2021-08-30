@@ -394,6 +394,7 @@ let test_walrus_operator context =
 let test_boolean_operators context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
+  (* We see only two revealed types because the `False` branches are unreachable. *)
   assert_type_errors
     {|
       from typing import TypeGuard
@@ -412,8 +413,6 @@ let test_boolean_operators context =
           reveal_type(val)
     |}
     [
-      "Revealed type [-1]: Revealed type for `val` is `int`.";
-      "Revealed type [-1]: Revealed type for `val` is `int`.";
       "Revealed type [-1]: Revealed type for `val` is `int`.";
       "Revealed type [-1]: Revealed type for `val` is `int`.";
     ];
