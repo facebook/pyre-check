@@ -14,7 +14,7 @@ import time
 import traceback
 from dataclasses import replace
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import click
 
@@ -41,7 +41,7 @@ def _log_statistics(
     command: Command,
     start_time: float,
     client_exception_message: str,
-    error_message: str | None,
+    error_message: Optional[str],
     exit_code: int,
 ) -> None:
     configuration = command.configuration
@@ -64,13 +64,17 @@ def _log_statistics(
         )
 
 
-def _show_pyre_version_as_text(binary_version: str | None, client_version: str) -> None:
+def _show_pyre_version_as_text(
+    binary_version: Optional[str], client_version: str
+) -> None:
     if binary_version:
         log.stdout.write(f"Binary version: {binary_version}\n")
     log.stdout.write(f"Client version: {__version__}\n")
 
 
-def _show_pyre_version_as_json(binary_version: str | None, client_version: str) -> None:
+def _show_pyre_version_as_json(
+    binary_version: Optional[str], client_version: str
+) -> None:
     version_json = {
         **({} if binary_version is None else {"binary": binary_version}),
         "client": client_version,
@@ -79,7 +83,7 @@ def _show_pyre_version_as_json(binary_version: str | None, client_version: str) 
 
 
 def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
-    binary_version: str | None = None
+    binary_version: Optional[str] = None
     client_version: str = __version__
     try:
         configuration = configuration_module.create_configuration(arguments, Path("."))
@@ -479,44 +483,44 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 )
 def pyre(
     context: click.Context,
-    local_configuration: str | None,
+    local_configuration: Optional[str],
     version: bool,
     debug: bool,
-    sequential: bool | None,
-    strict: bool | None,
+    sequential: Optional[bool],
+    strict: Optional[bool],
     additional_check: Iterable[str],
     show_error_traces: bool,
     output: str,
     enable_profiling: bool,
     enable_memory_profiling: bool,
     noninteractive: bool,
-    logging_sections: str | None,
-    log_identifier: str | None,
-    dot_pyre_directory: str | None,
-    logger: str | None,
+    logging_sections: Optional[str],
+    log_identifier: Optional[str],
+    dot_pyre_directory: Optional[str],
+    logger: Optional[str],
     target: Iterable[str],
-    use_buck_builder: bool | None,
-    buck_mode: str | None,
-    use_buck_source_database: bool | None,
+    use_buck_builder: Optional[bool],
+    buck_mode: Optional[str],
+    use_buck_source_database: Optional[bool],
     source_directory: Iterable[str],
-    filter_directory: str | None,
+    filter_directory: Optional[str],
     no_saved_state: bool,
     search_path: Iterable[str],
-    binary: str | None,
-    buck_builder_binary: str | None,
+    binary: Optional[str],
+    buck_builder_binary: Optional[str],
     exclude: Iterable[str],
-    typeshed: str | None,
-    save_initial_state_to: str | None,
-    load_initial_state_from: str | None,
-    changed_files_path: str | None,
-    saved_state_project: str | None,
-    features: str | None,
-    use_command_v2: bool | None,
-    isolation_prefix: str | None,
-    python_version: str | None,
-    shared_memory_heap_size: int | None,
-    shared_memory_dependency_table_power: int | None,
-    shared_memory_hash_table_power: int | None,
+    typeshed: Optional[str],
+    save_initial_state_to: Optional[str],
+    load_initial_state_from: Optional[str],
+    changed_files_path: Optional[str],
+    saved_state_project: Optional[str],
+    features: Optional[str],
+    use_command_v2: Optional[bool],
+    isolation_prefix: Optional[str],
+    python_version: Optional[str],
+    shared_memory_heap_size: Optional[int],
+    shared_memory_dependency_table_power: Optional[int],
+    shared_memory_hash_table_power: Optional[int],
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -642,16 +646,16 @@ def analyze(
     analysis: str,
     taint_models_path: Iterable[str],
     no_verify: bool,
-    save_results_to: str | None,
+    save_results_to: Optional[str],
     dump_call_graph: bool,
-    repository_root: str | None,
+    repository_root: Optional[str],
     rule: Iterable[int],
-    find_missing_flows: str | None,
+    find_missing_flows: Optional[str],
     dump_model_query_results: bool,
     use_cache: bool,
     inline_decorators: bool,
-    maximum_trace_length: int | None,
-    maximum_tito_depth: int | None,
+    maximum_trace_length: Optional[int],
+    maximum_tito_depth: Optional[int],
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -1107,7 +1111,9 @@ def query(context: click.Context, query: str) -> int:
     help="Number of server logs to include in the diagnositics. Default to 3.",
 )
 @click.pass_context
-def rage(context: click.Context, output_file: str | None, server_log_count: int) -> int:
+def rage(
+    context: click.Context, output_file: Optional[str], server_log_count: int
+) -> int:
     """
     Collects troubleshooting diagnostics for Pyre, and writes this information
     to the terminal or to a file.
