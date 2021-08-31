@@ -5,11 +5,14 @@
 
 import textwrap
 import unittest
-from typing import List
+from typing import Dict, List
 
 import libcst as cst
+from libcst.metadata import MetadataWrapper
 
 from ..commands.coverage import _collect_coverage
+from ..coverage_collector import CoverageCollector
+from .statistics_test import AnnotationCountCollectorTest
 
 
 class CoverageTest(unittest.TestCase):
@@ -43,3 +46,14 @@ class CoverageTest(unittest.TestCase):
             expected_covered=[],
             expected_uncovered=[1, 2],
         )
+
+
+class CoverageStatisticsEqual(AnnotationCountCollectorTest):
+    def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
+        self.maxDiff = None
+        source_module = MetadataWrapper(
+            cst.parse_module(textwrap.dedent(source.rstrip()))
+        )
+        collector = CoverageCollector()
+        source_module.visit(collector)
+        self.assertDictEqual(collector.build_json(), expected)
