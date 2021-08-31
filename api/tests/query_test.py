@@ -26,7 +26,8 @@ class QueryAPITest(unittest.TestCase):
             [
                 query.Define(
                     name="a.foo",
-                    parameters=[query.DefineParameter(name="x", annotation="int")],
+                    parameters=[query.DefineParameter(
+                        name="x", annotation="int")],
                     return_annotation="int",
                 )
             ],
@@ -56,12 +57,14 @@ class QueryAPITest(unittest.TestCase):
             [
                 query.Define(
                     name="a.foo",
-                    parameters=[query.DefineParameter(name="x", annotation="int")],
+                    parameters=[query.DefineParameter(
+                        name="x", annotation="int")],
                     return_annotation="int",
                 ),
                 query.Define(
                     name="b.bar",
-                    parameters=[query.DefineParameter(name="y", annotation="str")],
+                    parameters=[query.DefineParameter(
+                        name="y", annotation="str")],
                     return_annotation="int",
                 ),
             ],
@@ -70,7 +73,8 @@ class QueryAPITest(unittest.TestCase):
             defines_implementation.return_value = []
             query.defines(pyre_connection, ["a", "b", "c", "d"], batch_size=2)
             defines_implementation.assert_has_calls(
-                [call(pyre_connection, ["a", "b"]), call(pyre_connection, ["c", "d"])]
+                [call(pyre_connection, ["a", "b"]),
+                      call(pyre_connection, ["c", "d"])]
             )
             defines_implementation.reset_calls()
             query.defines(
@@ -99,7 +103,8 @@ class QueryAPITest(unittest.TestCase):
         assert hierarchy is not None
         self.assertEqual(hierarchy.hierarchy, {"Foo": ["object"], "object": []})
         # Reverse hierarchy.
-        self.assertEqual(hierarchy.reverse_hierarchy, {"object": ["Foo"], "Foo": []})
+        self.assertEqual(hierarchy.reverse_hierarchy, {
+                         "object": ["Foo"], "Foo": []})
         # Superclasses.
         self.assertEqual(hierarchy.superclasses("Foo"), ["object"])
         self.assertEqual(hierarchy.superclasses("object"), [])
@@ -370,5 +375,53 @@ class QueryAPITest(unittest.TestCase):
                     stop_column=1,
                     full_error_message="Invalid model for `first.f`: Unrecognized taint annotation `NotAnAnnotation`",  # noqa: B950
                 ),
+            ],
+        )
+
+    def test_types(self) -> None:
+        pyre_connection = MagicMock()
+        pyre_connection.query_server.return_value = {
+            "response": [
+                {
+                    "path": "a.foo",
+                    "types": [
+                        {
+                            "location": {
+                                "start": {
+                                    "line": 2,
+                                    "column": 0
+                                },
+                                "stop": {
+                                    "line": 2,
+                                    "column": 5
+                                }
+                            },
+                            "annotation": "int"
+                        },
+                    ]
+                }
+            ]
+        }
+        self.assertEqual(
+            query.types(pyre_connection, ["a.foo"]),
+            [
+                query.Types(
+                    path="a.foo",
+                    types=[
+                        query.Type(
+                            location={
+                                "start": Position(
+                                    line=2,
+                                    column=0,
+                                ),
+                                "stop": Position(
+                                    line=2,
+                                    column=5,
+                                ),
+                            },
+                            annotation="int"
+                        )
+                    ]
+                )
             ],
         )
