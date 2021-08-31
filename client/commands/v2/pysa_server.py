@@ -58,7 +58,6 @@ class PysaServer:
         pyre_arguments: start.Arguments,
         binary_location: str,
         server_identifier: str,
-        file_tracker: dict,
     ) -> None:
         self.input_channel = input_channel
         self.output_channel = output_channel
@@ -69,11 +68,10 @@ class PysaServer:
         self.pyre_connection = api_connection.PyreConnection(
             Path(self.pyre_arguments.global_root)
         )
-        self.file_tracker = file_tracker
+        self.file_tracker = set()
 
     def invalid_model_to_diagnostic(
-        self,
-        invalid_model: query.InvalidModel,
+        self, invalid_model: query.InvalidModel
     ) -> lsp.Diagnostic:
         return lsp.Diagnostic(
             range=lsp.Range(
@@ -92,8 +90,7 @@ class PysaServer:
         )
 
     def invalid_models_to_diagnostics(
-        self,
-        invalid_models: Sequence[query.InvalidModel],
+        self, invalid_models: Sequence[query.InvalidModel]
     ) -> Dict[Path, List[lsp.Diagnostic]]:
         result: Dict[Path, List[lsp.Diagnostic]] = defaultdict(list)
         for model in invalid_models:
@@ -107,10 +104,9 @@ class PysaServer:
 
     async def update_errors(self) -> None:
         # Publishing empty diagnostics to clear errors in VSCode and reset self.file_tracker
-        for document_path in self.file_tracker.keys():
+        for document_path in self.file_tracker():
             await _publish_diagnostics(self.output_channel, Path(document_path), [])
-        self.file_tracker = {}
-        # await self.log_and_show_message_to_client(f"All files cleared: {self.file_tracker}")
+        self.file_tracker = set()
 
         try:
             model_errors = query.get_invalid_taint_models(self.pyre_connection)
@@ -169,8 +165,7 @@ class PysaServer:
         self, parameters: lsp.DidOpenTextDocumentParameters
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
-        self.file_tracker[str(document_path)] = True
-        # await self.log_and_show_message_to_client(f"Tracking Files: {self.file_tracker}")
+        self.file_tracker.add(str(document_path))
 
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -182,8 +177,6 @@ class PysaServer:
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
-        # self.file_tracker.pop(str(document_path))
-        # await self.log_and_show_message_to_client(f"Closed a file. Tracking: {self.file_tracker}")
 
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -290,7 +283,6 @@ async def run_persistent(
                 binary_location=binary_location,
                 server_identifier=server_identifier,
                 pyre_arguments=pysa_arguments,
-                file_tracker={},
             )
             return await server.run()
         elif isinstance(initialize_result, InitializationFailure):
