@@ -51,7 +51,8 @@ val start_server
   ?on_server_socket_ready:(Pyre.Path.t -> unit Lwt.t) ->
   on_started:(ServerState.t ExclusiveLock.t -> ExitStatus.t Lwt.t) ->
   on_exception:(exn -> ExitStatus.t Lwt.t) ->
-  ServerConfiguration.t ->
+  configuration:Configuration.Analysis.t ->
+  StartOptions.t ->
   ExitStatus.t Lwt.t
 
 (* Start the server and blocks forever until exceptional events occur. Returns immediately when the
@@ -61,5 +62,6 @@ val start_server
    text message to `status_channel` if the channel is still open. *)
 val start_server_and_wait
   :  ?event_channel:Lwt_io.output_channel ->
-  ServerConfiguration.t ->
+  configuration:Configuration.Analysis.t ->
+  StartOptions.t ->
   ExitStatus.t Lwt.t

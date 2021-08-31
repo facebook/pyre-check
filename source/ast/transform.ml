@@ -17,7 +17,7 @@ module type Transformer = sig
 
   val expression : t -> Expression.t -> Expression.t
 
-  val transform_children : t -> Statement.t -> bool
+  val transform_children : t -> Statement.t -> t * bool
 
   val statement : t -> Statement.t -> t * Statement.t list
 end
@@ -33,7 +33,7 @@ module Identity : sig
 
   val expression : 't -> Expression.t -> Expression.t
 
-  val transform_children : 't -> Statement.t -> bool
+  val transform_children : 't -> Statement.t -> 't * bool
 
   val statement : 't -> Statement.t -> 't * Statement.t list
 end = struct
@@ -41,7 +41,7 @@ end = struct
 
   let expression _ expression = expression
 
-  let transform_children _ _ = true
+  let transform_children state _ = state, true
 
   let statement state statement = state, [statement]
 end
@@ -240,11 +240,12 @@ module Make (Transformer : Transformer) = struct
                 origin;
               }
         | Break -> value
-        | Class { Class.name; bases; body; decorators; top_level_unbound_names } ->
+        | Class { Class.name; base_arguments; body; decorators; top_level_unbound_names } ->
             Class
               {
                 Class.name;
-                bases = transform_list bases ~f:(transform_argument ~transform_expression);
+                base_arguments =
+                  transform_list base_arguments ~f:(transform_argument ~transform_expression);
                 body = transform_list body ~f:transform_statement |> List.concat;
                 decorators = transform_list decorators ~f:transform_decorator;
                 top_level_unbound_names;
@@ -359,8 +360,12 @@ module Make (Transformer : Transformer) = struct
         | Statement.YieldFrom expression -> Statement.YieldFrom (transform_expression expression)
       in
       let statement =
-        if Transformer.transform_children !state statement then
-          { statement with Node.value = transform_children (Node.value statement) }
+        let parent_state, should_transform_children =
+          Transformer.transform_children !state statement
+        in
+        if should_transform_children then (
+          state := parent_state;
+          { statement with Node.value = transform_children (Node.value statement) })
         else
           statement
       in
@@ -447,7 +452,7 @@ let transform_expressions ~transform statement =
 
     let expression _ { Node.value; location } = { Node.value = transform value; location }
 
-    let transform_children _ _ = true
+    let transform_children state _ = state, true
 
     let statement state statement = state, [statement]
   end)
@@ -472,3 +477,64 @@ let sanitize_expression expression =
   match transform_expressions ~transform (Statement.Expression expression) with
   | Statement.Expression expression -> expression
   | _ -> expression
+
+
+let sanitize_statement statement =
+  (* The names in the function signatures are not strictly "expressions", so [transform_expressions]
+     doesn't transform them. We have to transform them in a separate pass. *)
+  let module SanitizeSignatures = MakeStatementTransformer (struct
+    type t = unit
+
+    let statement state = function
+      | {
+          Node.value =
+            Statement.Define
+              ({
+                 Define.signature =
+                   { Define.Signature.name = { Node.value = name; _ } as name_node; parameters; _ }
+                   as signature;
+                 _;
+               } as define);
+          _;
+        } as statement ->
+          let transform_parameter
+              ({ Node.value = { Parameter.name; _ } as parameter; _ } as parameter_node)
+            =
+            { parameter_node with value = { parameter with name = Identifier.sanitized name } }
+          in
+
+          ( state,
+            [
+              {
+                statement with
+                value =
+                  Statement.Define
+                    {
+                      define with
+                      signature =
+                        {
+                          signature with
+                          name = { name_node with value = Reference.sanitized name };
+                          parameters = List.map parameters ~f:transform_parameter;
+                        };
+                    };
+              };
+            ] )
+      | statement -> state, [statement]
+  end)
+  in
+  let sanitized_statement =
+    let sanitize_expression expression =
+      Node.create_with_default_location expression |> sanitize_expression |> Node.value
+    in
+    let sanitize_signatures statement =
+      SanitizeSignatures.transform () (Source.create [Node.create_with_default_location statement])
+    in
+    transform_expressions ~transform:sanitize_expression statement
+    |> sanitize_signatures
+    |> SanitizeSignatures.source
+    |> Source.statements
+  in
+  match sanitized_statement with
+  | [{ Node.value = statement; _ }] -> statement
+  | _ -> statement

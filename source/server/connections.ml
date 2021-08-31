@@ -65,7 +65,7 @@ end) : Connections = struct
               Map.set persistent_clients ~key:socket ~data:(failure + 1)
           | _ ->
               Socket.close socket;
-              Map.remove persistent_clients socket )
+              Map.remove persistent_clients socket)
 
 
   let broadcast_response ~connections:{ State.lock; connections; _ } ~response =
@@ -120,7 +120,7 @@ end) : Connections = struct
             ~f:(fun file_notifier_socket ->
               if Unix.File_descr.equal socket file_notifier_socket then (
                 Log.log ~section:`Server "Adding json socket to be removed.";
-                false )
+                false)
               else
                 true)
             json_sockets

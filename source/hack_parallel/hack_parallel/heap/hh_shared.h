@@ -16,7 +16,7 @@
 /*****************************************************************************/
 /* Initializes the shared heap. */
 /* Must be called by the master BEFORE forking the workers! */
-CAMLprim value hh_shared_init( value config_val, value shm_dir_val);
+CAMLprim value hh_shared_init(value config_val, value shm_dir_val);
 value hh_check_heap_overflow(void);
 /* Must be called by every worker before any operation is performed. */
 value hh_connect(value connector);
@@ -55,7 +55,6 @@ CAMLprim value hh_set_can_worker_stop(value val);
 void hh_shared_store(value data);
 CAMLprim value hh_shared_load(void);
 void hh_shared_clear(void);
-
 
 /*****************************************************************************/
 /* Garbage collection. */
@@ -121,14 +120,10 @@ void hh_cleanup_sqlite(void);
 void hh_hashtable_cleanup_sqlite(void);
 
 /* Dependency table. */
-CAMLprim value hh_save_dep_table_sqlite(
-        value out_filename,
-        value build_revision
-);
-CAMLprim value hh_load_dep_table_sqlite(
-        value in_filename,
-        value ignore_hh_version
-);
+CAMLprim value
+hh_save_dep_table_sqlite(value out_filename, value build_revision);
+CAMLprim value
+hh_load_dep_table_sqlite(value in_filename, value ignore_hh_version);
 CAMLprim value hh_get_dep_sqlite(value ocaml_key);
 
 /* Hash table. */
@@ -141,10 +136,9 @@ CAMLprim value hh_get_sqlite(value ocaml_key);
 CAMLprim value hh_save_file_info_init(value ml_path);
 CAMLprim value hh_save_file_info_free(value ml_unit);
 CAMLprim value hh_save_file_info_sqlite(
-        value ml_hash,
-        value ml_name,
-        value ml_kind,
-        value ml_filespec
-);
+    value ml_hash,
+    value ml_name,
+    value ml_kind,
+    value ml_filespec);
 
 #endif

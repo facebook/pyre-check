@@ -13,7 +13,6 @@ type mode =
   | Strict
   | Unsafe
   | Declare
-  | Infer
 [@@deriving compare, eq, show, sexp, hash]
 
 type local_mode =
@@ -155,7 +154,7 @@ module Metadata = struct
                   Int.Map.set
                     ~key:(line_index + 1)
                     ~data:(List.map ~f:Ignore.increment ignores)
-                    ignore_lines )
+                    ignore_lines)
           | None -> ignore_lines
         else
           ignore_lines
@@ -205,6 +204,8 @@ let pp format { statements; _ } =
   List.iter statements ~f:print_statement
 
 
+let pp_all format source = Sexp.pp_hum format (sexp_of_t source)
+
 let location_insensitive_compare left right =
   match Metadata.compare left.metadata right.metadata with
   | x when x <> 0 -> x
@@ -220,8 +221,7 @@ let location_insensitive_compare left right =
           with
           | x when x <> 0 -> x
           | _ ->
-              List.compare Statement.location_insensitive_compare left.statements right.statements )
-      )
+              List.compare Statement.location_insensitive_compare left.statements right.statements))
 
 
 let show source = Format.asprintf "%a" pp source
@@ -229,7 +229,6 @@ let show source = Format.asprintf "%a" pp source
 let mode ~configuration ~local_mode : mode =
   match local_mode, configuration with
   | _, { Configuration.Analysis.debug = true; _ } -> Debug
-  | _, { Configuration.Analysis.infer = true; _ } -> Infer
   | Some { Node.value = Strict; _ }, _ -> Strict
   | Some { Node.value = Unsafe; _ }, _ -> Unsafe
   | Some { Node.value = Declare; _ }, _
@@ -239,8 +238,47 @@ let mode ~configuration ~local_mode : mode =
   | None, _ -> Unsafe
 
 
-let create_from_source_path ~metadata ~source_path statements =
-  { metadata; source_path; top_level_unbound_names = []; statements }
+(* An f-string may span multiple lines. Synthesize ignores for each of the lines using the ignores
+   from the first line. *)
+let synthesize_ignores_for_format_string
+    ( { Node.location = { start = { line = start_line; _ }; stop = { line = stop_line; _ } }; _ },
+      first_line_ignores )
+  =
+  let copy_ignores_from_first_line line =
+    line, List.map first_line_ignores ~f:(fun ignore -> { ignore with Ignore.ignored_line = line })
+  in
+  List.range start_line (stop_line + 1) |> List.map ~f:copy_ignores_from_first_line
+
+
+let noop_collect_format_strings ~ignore_line_map:_ _ = []
+
+let ignored_lines_including_format_strings
+    ?(collect_format_strings_with_ignores = noop_collect_format_strings)
+    ({ metadata = { Metadata.ignore_lines; _ }; _ } as source)
+  =
+  let ignore_line_map =
+    List.map ignore_lines ~f:(fun ({ Ignore.ignored_line; _ } as ignore) -> ignored_line, ignore)
+    |> Int.Map.of_alist_multi
+  in
+  collect_format_strings_with_ignores ~ignore_line_map source
+  |> List.concat_map ~f:synthesize_ignores_for_format_string
+  |> Int.Map.of_alist_reduce ~f:List.append
+  |> Map.merge_skewed ~combine:(fun ~key:_ -> List.append) ignore_line_map
+  |> Int.Map.data
+  |> List.concat_map ~f:(List.dedup_and_sort ~compare:Ignore.compare)
+
+
+let create_from_source_path ?collect_format_strings_with_ignores ~metadata ~source_path statements =
+  let source = { metadata; source_path; top_level_unbound_names = []; statements } in
+  {
+    source with
+    metadata =
+      {
+        metadata with
+        ignore_lines =
+          ignored_lines_including_format_strings ?collect_format_strings_with_ignores source;
+      };
+  }
 
 
 let create
@@ -251,7 +289,7 @@ let create
     statements
   =
   let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority in
-  { metadata; source_path; top_level_unbound_names = []; statements }
+  create_from_source_path ~metadata ~source_path statements
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines

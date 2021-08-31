@@ -30,13 +30,16 @@ end
 module ScratchProject : sig
   type t
 
-  val server_configuration_of : t -> ServerConfiguration.t
+  val configuration_of : t -> Configuration.Analysis.t
+
+  val start_options_of : t -> StartOptions.t
 
   val setup
     :  context:OUnit2.test_ctxt ->
     ?external_sources:(string * string) list ->
     ?include_typeshed_stubs:bool ->
     ?include_helper_builtins:bool ->
+    ?custom_source_root:Pyre.Path.t ->
     ?watchman:Watchman.Raw.t ->
     ?build_system_initializer:BuildSystem.Initializer.t ->
     (* A list of test sources specified in the form of (relative_path, content) *)

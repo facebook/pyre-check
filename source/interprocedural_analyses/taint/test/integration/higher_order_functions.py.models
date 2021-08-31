@@ -6,8 +6,8 @@
     "callable_line": 77,
     "code": 5002,
     "line": 80,
-    "start": 16,
-    "end": 17,
+    "start": 15,
+    "end": 16,
     "filename": "higher_order_functions.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,10 +19,10 @@
               "filename": "higher_order_functions.py",
               "line": 78,
               "start": 17,
-              "end": 32
+              "end": 31
             },
-            "tito": [ { "line": 78, "start": 17, "end": 32 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 78, "start": 17, "end": 31 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "issue-broadening" },
               { "always-via": "broadening" },
@@ -39,10 +39,10 @@
             "root": {
               "filename": "higher_order_functions.py",
               "line": 80,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -77,9 +77,9 @@
               "filename": "higher_order_functions.py",
               "line": 22,
               "start": 40,
-              "end": 55
+              "end": 54
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "issue-broadening" },
               { "always-via": "broadening" },
@@ -103,7 +103,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -125,7 +125,7 @@
     "code": 5002,
     "line": 52,
     "start": 49,
-    "end": 64,
+    "end": 63,
     "filename": "higher_order_functions.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -137,9 +137,9 @@
               "filename": "higher_order_functions.py",
               "line": 52,
               "start": 49,
-              "end": 64
+              "end": 63
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -153,7 +153,7 @@
                 "filename": "higher_order_functions.py",
                 "line": 52,
                 "start": 49,
-                "end": 64
+                "end": 63
               },
               "resolves_to": [
                 "higher_order_functions.higher_order_function_and_sink"
@@ -161,7 +161,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -193,9 +193,9 @@
               "filename": "higher_order_functions.py",
               "line": 52,
               "start": 49,
-              "end": 64
+              "end": 63
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "issue-broadening" },
               { "always-via": "broadening" },
@@ -219,7 +219,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -241,7 +241,7 @@
     "code": 5002,
     "line": 38,
     "start": 29,
-    "end": 44,
+    "end": 43,
     "filename": "higher_order_functions.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -253,9 +253,9 @@
               "filename": "higher_order_functions.py",
               "line": 38,
               "start": 29,
-              "end": 44
+              "end": 43
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -269,13 +269,13 @@
                 "filename": "higher_order_functions.py",
                 "line": 38,
                 "start": 29,
-                "end": 44
+                "end": 43
               },
               "resolves_to": [ "higher_order_functions.higher_order_method" ],
               "port": "formal(arg)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "special_sink" },
               { "always-via": "lambda" }
@@ -311,9 +311,9 @@
               "filename": "higher_order_functions.py",
               "line": 42,
               "start": 11,
-              "end": 26
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -333,7 +333,7 @@
               "port": "formal(self)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -349,8 +349,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{higher_order_functions.Callable::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -379,8 +377,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -409,7 +405,6 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.C.method_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -418,23 +413,21 @@
             "root": {
               "filename": "higher_order_functions.py",
               "line": 27,
-              "start": 20,
-              "end": 23
+              "start": 19,
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.C.self_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)",
@@ -443,24 +436,21 @@
             "root": {
               "filename": "higher_order_functions.py",
               "line": 30,
-              "start": 20,
-              "end": 24
+              "start": 19,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.Callable.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -489,8 +479,6 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.apply",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
@@ -520,7 +508,6 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.goes_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -529,24 +516,21 @@
             "root": {
               "filename": "higher_order_functions.py",
               "line": 10,
-              "start": 16,
-              "end": 19
+              "start": 15,
+              "end": 18
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.has_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -564,7 +548,6 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_function_and_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -573,23 +556,21 @@
             "root": {
               "filename": "higher_order_functions.py",
               "line": 48,
-              "start": 16,
-              "end": 19
+              "start": 15,
+              "end": 18
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_method",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -599,14 +580,14 @@
               "position": {
                 "filename": "higher_order_functions.py",
                 "line": 34,
-                "start": 4,
-                "end": 48
+                "start": 26,
+                "end": 42
               },
               "resolves_to": [ "higher_order_functions.C.method_to_sink" ],
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "special_sink" },
               { "always-via": "lambda" }
@@ -614,8 +595,30 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.sink_args",
+    "sinks": [
+      {
+        "port": "formal(*rest0)[*]",
+        "taint": [
+          {
+            "root": {
+              "filename": "higher_order_functions.py",
+              "line": 85,
+              "start": 19,
+              "end": 22
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -631,13 +634,13 @@
               "filename": "higher_order_functions.py",
               "line": 64,
               "start": 8,
-              "end": 23
+              "end": 22
             },
             "tito": [
               { "line": 65, "start": 14, "end": 22 },
               { "line": 65, "start": 24, "end": 25 }
             ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "via": "tito-broadening" },
               { "via": "broadening" },
@@ -649,26 +652,96 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.test_higher_order_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)",
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 56, "start": 11, "end": 45 } ],
+            "tito": [ { "line": 56, "start": 33, "end": 41 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [ { "via": "tito" }, { "always-via": "lambda" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_location",
+    "sinks": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "higher_order_functions.py",
+                "line": 89,
+                "start": 20,
+                "end": 21
+              },
+              "resolves_to": [ "higher_order_functions.sink_args" ],
+              "port": "formal(*rest0)[*]",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      },
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "higher_order_functions.py",
+                "line": 89,
+                "start": 17,
+                "end": 18
+              },
+              "resolves_to": [ "higher_order_functions.sink_args" ],
+              "port": "formal(*rest0)[*]",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "higher_order_functions.py",
+                "line": 89,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "higher_order_functions.sink_args" ],
+              "port": "formal(*rest0)[*]",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
           }
         ]
       }

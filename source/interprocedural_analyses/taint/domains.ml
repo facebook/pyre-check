@@ -63,7 +63,7 @@ module TraceInfo = struct
         port: AccessPath.Root.t;
         path: Abstract.TreeDomain.Label.path;
         location: Location.WithModule.t;
-        callees: Interprocedural.Callable.t list;
+        callees: Interprocedural.Target.t list;
       }
   [@@deriving compare]
 
@@ -77,7 +77,7 @@ module TraceInfo = struct
           "CallSite(callees=[%s], location=%a, port=%s)"
           (String.concat
              ~sep:", "
-             (List.map ~f:Interprocedural.Callable.external_target_name callees))
+             (List.map ~f:Interprocedural.Target.external_target_name callees))
           Location.WithModule.pp
           location
           port
@@ -89,10 +89,11 @@ module TraceInfo = struct
   (* See implementation in TaintResult. *)
   let has_significant_summary =
     ref
-      (fun (_ : AccessPath.Root.t)
-           (_ : Abstract.TreeDomain.Label.path)
-           (_ : Interprocedural.Callable.non_override_target)
-           -> true)
+      (fun
+        (_ : AccessPath.Root.t)
+        (_ : Abstract.TreeDomain.Label.path)
+        (_ : Interprocedural.Target.non_override_t)
+      -> true)
 
 
   (* Only called when emitting models before we compute the json so we can dedup *)
@@ -103,7 +104,7 @@ module TraceInfo = struct
           Interprocedural.DependencyGraph.expand_callees callees
           |> List.filter ~f:(!has_significant_summary port path)
         in
-        CallSite { location; callees = (callees :> Interprocedural.Callable.t list); port; path }
+        CallSite { location; callees = (callees :> Interprocedural.Target.t list); port; path }
     | _ -> trace
 
 
@@ -117,7 +118,7 @@ module TraceInfo = struct
         let callee_json =
           callees
           |> List.map ~f:(fun callable ->
-                 `String (Interprocedural.Callable.external_target_name callable))
+                 `String (Interprocedural.Target.external_target_name callable))
         in
         let location_json = location_with_module_to_json ~filename_lookup location in
         let port_json = AccessPath.create port path |> AccessPath.to_json in
@@ -151,7 +152,7 @@ module TraceInfo = struct
           } ) ->
         AccessPath.Root.equal port_left port_right
         && Location.WithModule.compare location_left location_right = 0
-        && [%compare.equal: Interprocedural.Callable.t list] callees_left callees_right
+        && [%compare.equal: Interprocedural.Target.t list] callees_left callees_right
         && Abstract.TreeDomain.Label.compare_path path_right path_left = 0
     | _ -> [%compare.equal: t] left right
 
@@ -211,7 +212,8 @@ module FlowDetails = struct
     let slot_domain (type a) (slot : a slot) =
       match slot with
       | SimpleFeature -> (module Features.SimpleSet : Abstract.Domain.S with type t = a)
-      | ReturnAccessPath -> (module Features.ReturnAccessPathSet : Abstract.Domain.S with type t = a)
+      | ReturnAccessPath ->
+          (module Features.ReturnAccessPathSet : Abstract.Domain.S with type t = a)
       | TraceLength -> (module TraceLength : Abstract.Domain.S with type t = a)
       | TitoPosition -> (module Features.TitoPositionSet : Abstract.Domain.S with type t = a)
       | LeafName -> (module Features.LeafNameSet : Abstract.Domain.S with type t = a)
@@ -296,7 +298,7 @@ module type TAINT_DOMAIN = sig
   (* Add trace info at call-site *)
   val apply_call
     :  Location.WithModule.t ->
-    callees:Interprocedural.Callable.t list ->
+    callees:Interprocedural.Target.t list ->
     port:AccessPath.Root.t ->
     path:Abstract.TreeDomain.Label.path ->
     element:t ->
@@ -524,8 +526,7 @@ end = struct
             else
               let open Features in
               let make_leaf_name callee =
-                LeafName.
-                  { leaf = Interprocedural.Callable.external_target_name callee; port = None }
+                LeafName.{ leaf = Interprocedural.Target.external_target_name callee; port = None }
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
           in
@@ -545,16 +546,15 @@ module ForwardTaint = MakeTaint (Sources)
 module BackwardTaint = MakeTaint (Sinks)
 
 module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
-  include Abstract.TreeDomain.Make
-            (struct
-              let max_tree_depth_after_widening () =
-                TaintConfiguration.maximum_tree_depth_after_widening
+  include
+    Abstract.TreeDomain.Make
+      (struct
+        let max_tree_depth_after_widening () = TaintConfiguration.maximum_tree_depth_after_widening
 
-
-              let check_invariants = true
-            end)
-            (Taint)
-            ()
+        let check_invariants = true
+      end)
+      (Taint)
+      ()
 
   let apply_call location ~callees ~port taint_tree =
     let transform_path (path, tip) =
@@ -639,15 +639,16 @@ end
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   module Tree = MakeTaintTree (Taint) ()
 
-  include Abstract.MapDomain.Make
-            (struct
-              let name = "env"
+  include
+    Abstract.MapDomain.Make
+      (struct
+        let name = "env"
 
-              include AccessPath.Root
+        include AccessPath.Root
 
-              let absence_implicitly_maps_to_bottom = true
-            end)
-            (Tree)
+        let absence_implicitly_maps_to_bottom = true
+      end)
+      (Tree)
 
   let create_json ~taint_to_json environment =
     let element_to_json json_list (root, tree) =

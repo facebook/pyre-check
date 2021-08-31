@@ -11,7 +11,7 @@ import logging
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, TextIO, Sequence, List
+from typing import Optional, TextIO, Sequence, List, Tuple
 
 from ... import (
     commands,
@@ -104,24 +104,33 @@ def _parse_log_file_name(name: str) -> Optional[datetime.datetime]:
         return None
 
 
+def _get_server_log_timestamp_and_paths(
+    log_directory: Path,
+) -> List[Tuple[datetime.datetime, Path]]:
+    try:
+        return sorted(
+            (
+                (timestamp, path)
+                for timestamp, path in (
+                    (_parse_log_file_name(path.name), path)
+                    for path in (log_directory / "new_server").iterdir()
+                    if path.is_file()
+                )
+                if timestamp is not None
+            ),
+            key=lambda pair: pair[0],
+            reverse=True,
+        )
+    except Exception:
+        return []
+
+
 def _server_log_sections(
     log_directory: Path, limit: Optional[int] = None
 ) -> List[Section]:
     # Log files are sorted according to server start time: recently started servers
     # will come first.
-    timestamp_and_paths = sorted(
-        (
-            (timestamp, path)
-            for timestamp, path in (
-                (_parse_log_file_name(path.name), path)
-                for path in (log_directory / "new_server").iterdir()
-                if path.is_file()
-            )
-            if timestamp is not None
-        ),
-        key=lambda pair: pair[0],
-        reverse=True,
-    )
+    timestamp_and_paths = _get_server_log_timestamp_and_paths(log_directory)
 
     sections: List[Section] = []
     for timestamp, path in timestamp_and_paths:

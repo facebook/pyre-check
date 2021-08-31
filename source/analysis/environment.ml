@@ -283,7 +283,7 @@ module EnvironmentTable = struct
                              | Some trigger -> (
                                  match TriggerMap.add triggers ~key:trigger ~data:dependency with
                                  | `Duplicate -> triggers
-                                 | `Ok updated -> updated )
+                                 | `Ok updated -> updated)
                              | None -> triggers)
                            upstream_dependencies
                            triggers)

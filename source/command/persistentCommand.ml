@@ -34,18 +34,15 @@ let communicate ~server_socket ~all_uris =
       let process_server_socket () =
         match Socket.read socket with
         | Protocol.LanguageServerProtocolResponse response ->
-            ( try
-                let response =
-                  response |> Yojson.Safe.from_string |> PublishDiagnostics.of_yojson
-                in
-                match response with
-                | Result.Ok diagnostics ->
-                    Hash_set.add all_uris (PublishDiagnostics.uri diagnostics)
-                | _ -> ()
-              with
+            (try
+               let response = response |> Yojson.Safe.from_string |> PublishDiagnostics.of_yojson in
+               match response with
+               | Result.Ok diagnostics -> Hash_set.add all_uris (PublishDiagnostics.uri diagnostics)
+               | _ -> ()
+             with
             | Yojson.Json_error _
             | Failure _ ->
-                () );
+                ());
             LanguageServer.Protocol.write_message
               Out_channel.stdout
               (Yojson.Safe.from_string response);
@@ -71,11 +68,11 @@ let communicate ~server_socket ~all_uris =
             display_nuclide_message "Pyre: Lost connection to server, exiting...";
             raise (ClientExit ("unable to process socket", 0))
     in
-    ( try List.iter read ~f:process_socket with
+    (try List.iter read ~f:process_socket with
     | Unix.Unix_error (error, name, parameters) ->
         Log.log_unix_error (error, name, parameters);
         Unix.close server_socket;
-        raise (ClientExit ("Unix error while processing sockets", 0)) );
+        raise (ClientExit ("Unix error while processing sockets", 0)));
     if List.is_empty read then
       Unix.nanosleep 0.1 |> ignore;
     listen server_socket ()
@@ -149,12 +146,12 @@ let run_command
                 raise (ClientExit ("version mismatch", 1))
           in
           Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);
-          ( match Socket.read server_socket with
+          (match Socket.read server_socket with
           | Protocol.ClientConnectionResponse Protocol.Persistent -> ()
           | _ ->
               let message = "Unexpected json response when attempting persistent connection" in
               Log.info "%s" message;
-              raise (ClientExit ("unexpected json response", 1)) );
+              raise (ClientExit ("unexpected json response", 1)));
           server_socket
         in
         communicate ~server_socket ~all_uris

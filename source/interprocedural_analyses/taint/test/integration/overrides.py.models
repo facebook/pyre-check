@@ -26,7 +26,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -46,7 +46,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -85,7 +85,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -105,7 +105,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -144,7 +144,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -164,7 +164,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -203,7 +203,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -223,7 +223,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -262,7 +262,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           },
           {
@@ -277,7 +277,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -297,7 +297,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -336,7 +336,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -356,7 +356,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -395,7 +395,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -415,7 +415,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -431,8 +431,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -463,8 +461,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.A::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -495,7 +491,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.A::methodA}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -507,21 +502,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.B::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -552,7 +544,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.B::classMethod}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -564,13 +555,12 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -588,22 +578,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.Base::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -634,7 +620,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.Base::classMethod}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -646,20 +631,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.Base::methodA}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -671,7 +654,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -705,22 +688,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.C::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -751,7 +730,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.C::methodA}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -763,7 +741,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -786,8 +764,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.D::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -818,7 +794,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.D::methodA}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -830,7 +805,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -864,22 +839,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{overrides.OverloadedOverride::methodA}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -897,8 +868,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.A.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -931,7 +900,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.A.methodA",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -940,24 +908,21 @@
             "root": {
               "filename": "overrides.py",
               "line": 35,
-              "start": 20,
-              "end": 23
+              "start": 19,
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overrides.B.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -990,7 +955,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.B.classMethod",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -999,16 +963,15 @@
             "root": {
               "filename": "overrides.py",
               "line": 49,
-              "start": 20,
-              "end": 23
+              "start": 19,
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1024,24 +987,20 @@
               "filename": "overrides.py",
               "line": 45,
               "start": 15,
-              "end": 30
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overrides.Base.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1070,8 +1029,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.C.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1104,8 +1061,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.D.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1138,7 +1093,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.D.methodA",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1147,16 +1101,15 @@
             "root": {
               "filename": "overrides.py",
               "line": 71,
-              "start": 20,
-              "end": 23
+              "start": 19,
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1172,23 +1125,20 @@
               "filename": "overrides.py",
               "line": 74,
               "start": 15,
-              "end": 30
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overrides.ExtendsSkipped.method",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -1197,24 +1147,21 @@
             "root": {
               "filename": "overrides.py",
               "line": 181,
-              "start": 20,
-              "end": 23
+              "start": 19,
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "overrides.OverloadedOverride.methodA",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1232,8 +1179,6 @@
   "kind": "model",
   "data": {
     "callable": "overrides.SkippedOverrides.method",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -1244,7 +1189,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "SkipOverrides" ]
   }
 }
 {
@@ -1260,10 +1206,10 @@
               "filename": "overrides.py",
               "line": 158,
               "start": 15,
-              "end": 30
+              "end": 29
             },
-            "tito": [ { "line": 158, "start": 15, "end": 30 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 158, "start": 15, "end": 29 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -1272,7 +1218,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(cls)",

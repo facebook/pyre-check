@@ -44,7 +44,7 @@ module EmptyStubCache = ManagedCache.Make (struct
           with
           | Some definition when Module.empty_stub definition -> true
           | Some _ -> is_empty_stub ~lead ~tail
-          | _ -> false )
+          | _ -> false)
       | _ -> false
     in
     is_empty_stub ~lead:[] ~tail:(Reference.as_list reference)

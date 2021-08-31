@@ -11,15 +11,15 @@ open Ast
 open Statement
 open Analysis
 
-type t = Callable.t list Callable.Map.t
+type t = Target.t list Target.Map.t
 
-type callgraph = Callable.t list Callable.RealMap.t
+type callgraph = Target.t list Target.CallableMap.t
 
 module CallGraphSharedMemory = Memory.Serializer (struct
-  type t = Callable.t list Callable.RealMap.Tree.t
+  type t = Target.t list Target.CallableMap.Tree.t
 
   module Serialized = struct
-    type t = Callable.t list Callable.RealMap.Tree.t
+    type t = Target.t list Target.CallableMap.Tree.t
 
     let prefix = Prefix.make ()
 
@@ -53,22 +53,22 @@ module OverridesSharedMemory = Memory.Serializer (struct
   let deserialize = Fn.id
 end)
 
-let empty = Callable.Map.empty
+let empty = Target.Map.empty
 
-let empty_callgraph = Callable.RealMap.empty
+let empty_callgraph = Target.CallableMap.empty
 
 let empty_overrides = Reference.Map.empty
 
 (* Returns forest of nodes in reverse finish time order. *)
 let depth_first_search edges nodes =
-  let visited = Callable.Hashable.Table.create ~size:(2 * List.length nodes) () in
+  let visited = Target.Hashable.Table.create ~size:(2 * List.length nodes) () in
   let rec visit accumulator node =
     if Hashtbl.mem visited node then
       accumulator
     else (
       Hashtbl.add_exn visited ~key:node ~data:();
-      let successors = Callable.Map.find edges node |> Option.value ~default:[] in
-      node :: List.fold successors ~init:accumulator ~f:visit )
+      let successors = Target.Map.find edges node |> Option.value ~default:[] in
+      node :: List.fold successors ~init:accumulator ~f:visit)
   in
   let partition accumulator node =
     match visit [] node with
@@ -79,35 +79,35 @@ let depth_first_search edges nodes =
 
 
 let reverse_edges edges =
-  let reverse_edges = Callable.Hashable.Table.create () in
+  let reverse_edges = Target.Hashable.Table.create () in
   let walk_reverse_edges ~key:caller ~data:callees =
     let walk_callees callee =
-      match Callable.Hashable.Table.find reverse_edges callee with
-      | None -> Callable.Hashable.Table.add_exn reverse_edges ~key:callee ~data:[caller]
+      match Target.Hashable.Table.find reverse_edges callee with
+      | None -> Target.Hashable.Table.add_exn reverse_edges ~key:callee ~data:[caller]
       | Some callers ->
-          Callable.Hashable.Table.set reverse_edges ~key:callee ~data:(caller :: callers)
+          Target.Hashable.Table.set reverse_edges ~key:callee ~data:(caller :: callers)
     in
     List.iter callees ~f:walk_callees
   in
-  let () = Callable.Map.iteri edges ~f:walk_reverse_edges in
+  let () = Target.Map.iteri edges ~f:walk_reverse_edges in
   let accumulate ~key ~data map =
-    Callable.Map.set map ~key ~data:(List.dedup_and_sort ~compare:Callable.compare data)
+    Target.Map.set map ~key ~data:(List.dedup_and_sort ~compare:Target.compare data)
   in
-  Callable.Hashable.Table.fold reverse_edges ~init:Callable.Map.empty ~f:accumulate
+  Target.Hashable.Table.fold reverse_edges ~init:Target.Map.empty ~f:accumulate
 
 
 let reverse call_graph =
   let reverse ~key ~data reverse_map =
     List.fold data ~init:reverse_map ~f:(fun reverse_map callee ->
-        Callable.Map.add_multi reverse_map ~key:callee ~data:key)
+        Target.Map.add_multi reverse_map ~key:callee ~data:key)
   in
-  Map.fold call_graph ~init:Callable.Map.empty ~f:reverse
+  Map.fold call_graph ~init:Target.Map.empty ~f:reverse
 
 
 let pp_partitions formatter partitions =
   let print_partition partitions =
     let print_partition index accumulator nodes =
-      let nodes_to_string = List.map ~f:Callable.show nodes |> String.concat ~sep:" " in
+      let nodes_to_string = List.map ~f:Target.show nodes |> String.concat ~sep:" " in
       let partition = Format.sprintf "Partition %d: [%s]" index nodes_to_string in
       accumulator ^ "\n" ^ partition
     in
@@ -117,7 +117,7 @@ let pp_partitions formatter partitions =
 
 
 let partition ~edges =
-  let result = depth_first_search edges (Callable.Map.keys edges) in
+  let result = depth_first_search edges (Target.Map.keys edges) in
   let reverse_edges = reverse_edges edges in
   let partitions = depth_first_search reverse_edges (List.concat result) in
   Log.log ~section:`DependencyGraph "%a" pp_partitions partitions;
@@ -127,12 +127,12 @@ let partition ~edges =
 let pp formatter edges =
   let pp_edge (callable, data) =
     let targets =
-      List.map data ~f:Callable.show |> List.sort ~compare:String.compare |> String.concat ~sep:" "
+      List.map data ~f:Target.show |> List.sort ~compare:String.compare |> String.concat ~sep:" "
     in
-    Format.fprintf formatter "%s -> [%s]\n" (Callable.show callable) targets
+    Format.fprintf formatter "%s -> [%s]\n" (Target.show callable) targets
   in
-  let compare (left, _) (right, _) = String.compare (Callable.show left) (Callable.show right) in
-  Callable.Map.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge
+  let compare (left, _) (right, _) = String.compare (Target.show left) (Target.show right) in
+  Target.Map.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge
 
 
 let dump call_graph ~configuration =
@@ -146,13 +146,13 @@ let dump call_graph ~configuration =
   let add_edges ~key:source ~data:targets =
     let add_edge target = Format.asprintf "    \"%s\",\n" target |> Buffer.add_string buffer in
     if not (List.is_empty targets) then (
-      Format.asprintf "  \"%s\": [\n" (Callable.external_target_name source)
+      Format.asprintf "  \"%s\": [\n" (Target.external_target_name source)
       |> Buffer.add_string buffer;
-      List.map targets ~f:Callable.external_target_name
+      List.map targets ~f:Target.external_target_name
       |> List.sort ~compare:String.compare
       |> List.iter ~f:add_edge;
       remove_trailing_comma ();
-      Buffer.add_string buffer "  ],\n" )
+      Buffer.add_string buffer "  ],\n")
   in
   Map.iteri call_graph ~f:add_edges;
   remove_trailing_comma ();
@@ -170,10 +170,10 @@ let dump call_graph ~configuration =
 
 let from_callgraph callgraph =
   let add ~key ~data result =
-    let key = (key :> Callable.t) in
-    Callable.Map.set result ~key ~data
+    let key = (key :> Target.t) in
+    Target.Map.set result ~key ~data
   in
-  Callable.RealMap.fold callgraph ~f:add ~init:Callable.Map.empty
+  Target.CallableMap.fold callgraph ~f:add ~init:Target.Map.empty
 
 
 let union left right =
@@ -184,35 +184,35 @@ let union left right =
 let from_overrides overrides =
   let override_map, all_overrides =
     let add ~key:method_name ~data:subtypes (override_map, all_overrides) =
-      let key = Callable.create_override method_name in
+      let key = Target.create_override method_name in
       let data =
-        List.map subtypes ~f:(fun at_type -> Callable.create_derived_override key ~at_type)
+        List.map subtypes ~f:(fun at_type -> Target.create_derived_override key ~at_type)
       in
-      ( Callable.Map.set override_map ~key ~data,
-        Callable.Set.union all_overrides (Callable.Set.of_list data) )
+      ( Target.Map.set override_map ~key ~data,
+        Target.Set.union all_overrides (Target.Set.of_list data) )
     in
-    Reference.Map.fold overrides ~f:add ~init:(Callable.Map.empty, Callable.Set.empty)
+    Reference.Map.fold overrides ~f:add ~init:(Target.Map.empty, Target.Set.empty)
   in
   let connect_overrides_to_methods override_graph =
     let overrides_to_methods =
       let override_to_method_edge override =
         match override with
         | `OverrideTarget _ as override ->
-            let corresponding_method = Callable.get_corresponding_method override in
+            let corresponding_method = Target.get_corresponding_method override in
             Some (override, [corresponding_method])
         | _ -> None
       in
-      Callable.Map.keys override_graph
+      Target.Map.keys override_graph
       |> List.filter_map ~f:override_to_method_edge
-      |> Callable.Map.of_alist_exn
+      |> Target.Map.of_alist_exn
     in
     union overrides_to_methods override_graph
   in
   (* Create empty entries for leaves, so connect_overrides_to_methods can add self-links *)
-  Callable.Set.fold
+  Target.Set.fold
     (fun override override_map ->
-      if not (Callable.Map.mem override_map override) then
-        Callable.Map.set override_map ~key:override ~data:[]
+      if not (Target.Map.mem override_map override) then
+        Target.Map.set override_map ~key:override ~data:[]
       else
         override_map)
     all_overrides
@@ -279,24 +279,24 @@ let create_overrides ~environment ~source =
 
 let expand_callees callees =
   let rec expand_and_gather expanded = function
-    | (#Callable.real_target | #Callable.object_target) as real -> real :: expanded
-    | #Callable.override_target as override ->
-        let make_override at_type = Callable.create_derived_override override ~at_type in
+    | (#Target.callable_t | #Target.object_t) as real -> real :: expanded
+    | #Target.override_t as override ->
+        let make_override at_type = Target.create_derived_override override ~at_type in
         let overrides =
-          let member = Callable.get_override_reference override in
+          let member = Target.get_override_reference override in
           DependencyGraphSharedMemory.get_overriding_types ~member
           |> Option.value ~default:[]
           |> List.map ~f:make_override
         in
-        Callable.get_corresponding_method override
+        Target.get_corresponding_method override
         :: List.fold overrides ~f:expand_and_gather ~init:expanded
   in
-  List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Callable.compare
+  List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Target.compare
 
 
 type prune_result = {
   dependencies: t;
-  pruned_callables: Callable.t list;
+  pruned_callables: Target.t list;
 }
 
 let prune dependency_graph ~callables_with_dependency_information =
@@ -310,20 +310,20 @@ let prune dependency_graph ~callables_with_dependency_information =
   let callables_to_keep =
     depth_first_search dependency_graph initial_callables
     |> List.concat
-    |> List.dedup_and_sort ~compare:Callable.compare
+    |> List.dedup_and_sort ~compare:Target.compare
   in
   let dependency_graph =
     (* We only keep the keys which were in the original dependency graph to avoid introducing
        spurious override leaves. *)
     let to_edge callable =
-      Callable.Map.find dependency_graph callable >>| fun values -> callable, values
+      Target.Map.find dependency_graph callable >>| fun values -> callable, values
     in
-    Callable.Map.of_alist_exn (List.filter_map callables_to_keep ~f:to_edge)
+    Target.Map.of_alist_exn (List.filter_map callables_to_keep ~f:to_edge)
   in
-  let callables_to_keep = Callable.Set.of_list callables_to_keep in
+  let callables_to_keep = Target.Set.of_list callables_to_keep in
   {
     dependencies = dependency_graph;
     pruned_callables =
       List.filter_map callables_with_dependency_information ~f:(fun (callable, _) ->
-          Option.some_if (Callable.Set.mem callable callables_to_keep) callable);
+          Option.some_if (Target.Set.mem callable callables_to_keep) callable);
   }

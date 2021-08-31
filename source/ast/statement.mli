@@ -71,10 +71,7 @@ module rec Assert : sig
   module Origin : sig
     type t =
       | Assertion
-      | If of {
-          statement: Statement.t;
-          true_branch: bool;
-        }
+      | If of { true_branch: bool }
       | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -94,7 +91,7 @@ end
 and Class : sig
   type t = {
     name: Reference.t Node.t;
-    bases: Expression.Call.Argument.t list;
+    base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -112,6 +109,12 @@ and Class : sig
   val find_define : t -> method_name:Identifier.t -> Define.t Node.t option
 
   val is_frozen : t -> bool
+
+  val base_classes : t -> Expression.t list
+
+  val metaclass : t -> Expression.t option
+
+  val init_subclass_arguments : t -> Expression.Call.Argument.t list
 
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end

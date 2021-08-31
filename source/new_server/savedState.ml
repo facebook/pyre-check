@@ -36,7 +36,7 @@ module Setting = struct
     watchman_connection: Watchman.Raw.Connection.t;
     project_name: string;
     project_metadata: string option;
-    critical_files: ServerConfiguration.CriticalFile.t list;
+    critical_files: CriticalFile.t list;
     target: Path.t;
   }
 end
@@ -63,13 +63,13 @@ let query_exn
           List.map relative_paths ~f:(fun relative ->
               Path.create_relative ~root:watchman_root ~relative)
         in
-        match ServerConfiguration.CriticalFile.find critical_files ~within:changed_files with
+        match CriticalFile.find critical_files ~within:changed_files with
         | Some critical_file ->
             let message =
               Format.asprintf "Watchman detects changes in critical file `%a`" Path.pp critical_file
             in
             raise (SavedStateQueryFailure message)
-        | None -> { Queried.bucket; path; changed_files; target; commit_id } )
+        | None -> { Queried.bucket; path; changed_files; target; commit_id })
   in
   Log.info "Querying watchman for a saved state";
   Watchman.SinceQuery.

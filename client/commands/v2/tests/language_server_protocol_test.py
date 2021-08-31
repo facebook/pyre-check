@@ -23,6 +23,8 @@ from ..language_server_protocol import (
     InitializeParameters,
     Info,
     ClientCapabilities,
+    ShowStatusRequestClientCapabilities,
+    WindowClientCapabilities,
     TextDocumentClientCapabilities,
     TextDocumentSyncClientCapabilities,
     PublishDiagnosticsClientCapabilities,
@@ -207,6 +209,10 @@ class LSPParsingTest(testslide.TestCase):
                         "completion": {},
                         "hover": {},
                     },
+                    "window": {
+                        "workDoneProgress": True,
+                        "status": {"dynamicRegistration": False},
+                    },
                 },
                 "trace": "off",
                 "workspaceFolders": [
@@ -231,7 +237,11 @@ class LSPParsingTest(testslide.TestCase):
                             ),
                             version_support=False,
                         ),
-                    )
+                    ),
+                    window=WindowClientCapabilities(
+                        work_done_progress=True,
+                        status=ShowStatusRequestClientCapabilities(),
+                    ),
                 ),
                 initialization_options=InitializationOptions(notebook_number=12345),
             ),

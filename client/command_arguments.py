@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 
 
 TEXT: str = "text"
@@ -28,7 +28,6 @@ class CommandArguments:
     logging_sections: Optional[str] = None
     log_identifier: Optional[str] = None
     logger: Optional[str] = None
-    formatter: Optional[str] = None
     targets: List[str] = field(default_factory=list)
     use_buck_builder: Optional[bool] = None
     use_buck_source_database: Optional[bool] = None
@@ -97,6 +96,34 @@ class CheckArguments:
 
 
 @dataclass(frozen=True)
+class InferArguments:
+    working_directory: Path
+    annotate_attributes: bool = False
+    annotate_from_existing_stubs: bool = False
+    debug_infer: bool = False
+    quote_annotations: bool = False
+    dequalify: bool = False
+    enable_memory_profiling: bool = False
+    enable_profiling: bool = False
+    interprocedural: bool = False
+    log_identifier: Optional[str] = None
+    logging_sections: Optional[str] = None
+    no_future_annotations: bool = False
+    paths_to_modify: Optional[Set[Path]] = None
+    print_only: bool = False
+    read_stdin: bool = False
+    sequential: bool = False
+
+
+@dataclass(frozen=True)
 class RageArguments:
     output: Optional[Path] = None
     server_log_count: Optional[int] = None
+
+
+@dataclass(frozen=True)
+class StatisticsArguments:
+    filter_paths: List[str] = field(default_factory=list)
+    log_identifier: Optional[str] = None
+    log_results: bool = False
+    print_aggregates: bool = False

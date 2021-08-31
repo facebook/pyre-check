@@ -26,6 +26,8 @@ module type S = sig
 
   val remove : element -> t -> t
 
+  val contains : element -> t -> bool
+
   val singleton : element -> t
 
   val elements : t -> element list
@@ -48,6 +50,8 @@ module Make (Element : ELEMENT) = struct
     let bottom = Set.empty
 
     let is_bottom = Set.is_empty
+
+    let contains = Set.mem
 
     let join left right =
       if left == right then
@@ -146,7 +150,7 @@ module Make (Element : ELEMENT) = struct
           match part with
           | Element -> Format.sprintf "Set(%s).Element" Element.name
           | Self -> Format.sprintf "Set(%s).Self" Element.name
-          | _ -> Base.introspect op )
+          | _ -> Base.introspect op)
 
 
     let create parts =

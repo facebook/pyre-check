@@ -68,7 +68,7 @@ let assert_update ~context ~build_map ~difference ~expected sources =
                   let message = Format.sprintf "%s is expected to be removed" relative in
                   assert_bool message (not (Path.file_exists path))
               | Some content -> assert_content path ~context ~expected:content);
-          Lwt.return_unit )
+          Lwt.return_unit)
 
 
 let assert_fails f =

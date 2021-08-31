@@ -31,7 +31,14 @@ module Request = struct
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
+    | InlineDecorators of {
+        function_reference: Reference.t;
+        decorators_to_skip: Reference.t list;
+      }
   [@@deriving sexp, compare, eq, show]
+
+  let inline_decorators ?(decorators_to_skip = []) function_reference =
+    InlineDecorators { function_reference; decorators_to_skip }
 end
 
 module Response = struct
@@ -111,6 +118,7 @@ module Response = struct
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundPath of string
+      | FunctionDefinition of Statement.Define.t
       | Help of string
       | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
       | Success of string
@@ -196,6 +204,14 @@ module Response = struct
           in
           `List (List.map defines ~f:define_to_yojson)
       | FoundPath path -> `Assoc ["path", `String path]
+      | FunctionDefinition define ->
+          `Assoc
+            [
+              ( "definition",
+                `String
+                  (Statement.show
+                     (Statement.Statement.Define define |> Node.create_with_default_location)) );
+            ]
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping ->
           let reference_to_yojson reference = `String (Reference.show reference) in
@@ -264,6 +280,10 @@ let help () =
         Some
           "validate_taint_models('optional path'): Validates models and returns errors. Defaults \
            to model path in configuration if no parameter is passed in."
+    | InlineDecorators _ ->
+        Some
+          "inline_decorators(qualified_function_name, optional decorators_to_skip=[decorator1, \
+           decorator2]): Shows the function definition after decorators have been inlined."
     | Help _ -> None
   in
   let path = Path.current_working_directory () in
@@ -285,6 +305,7 @@ let help () =
       Type (Node.create_with_default_location Expression.True);
       TypesInFiles [""];
       ValidateTaintModels None;
+      Request.inline_decorators (Reference.create "");
     ]
   |> List.sort ~compare:String.compare
   |> String.concat ~sep:"\n  "
@@ -323,6 +344,38 @@ let rec parse_request_exn query =
             value
         | _ -> raise (InvalidQuery "expected string")
       in
+      let parse_inline_decorators arguments =
+        match arguments with
+        | [name] -> Request.inline_decorators (reference name)
+        | [
+         name;
+         {
+           Call.Argument.name = Some { Node.value = "decorators_to_skip"; _ };
+           value = { Node.value = Expression.List decorators; _ };
+         };
+        ] -> (
+            let decorator_to_reference = function
+              | { Node.value = Expression.Name name; _ } as decorator ->
+                  name_to_reference name |> Result.of_option ~error:decorator
+              | decorator -> Result.Error decorator
+            in
+            let valid_decorators, invalid_decorators =
+              List.map decorators ~f:decorator_to_reference |> List.partition_result
+            in
+            match valid_decorators, invalid_decorators with
+            | decorators_to_skip, [] ->
+                InlineDecorators { function_reference = reference name; decorators_to_skip }
+            | _, invalid_decorators ->
+                InvalidQuery
+                  (Format.asprintf
+                     "inline_decorators: invalid decorators `%s`"
+                     ([%show: Expression.t list] invalid_decorators))
+                |> raise)
+        | _ ->
+            raise
+              (InvalidQuery
+                 "inline_decorators expects qualified name and optional `decorators_to_skip=[...]`")
+      in
       let string argument = argument |> expression |> string_of_expression in
       match String.lowercase name, arguments with
       | "attributes", [name] -> Request.Attributes (reference name)
@@ -353,7 +406,8 @@ let rec parse_request_exn query =
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
       | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] -> Request.ValidateTaintModels (Some (string argument))
-      | _ -> raise (InvalidQuery "unexpected query") )
+      | "inline_decorators", arguments -> parse_inline_decorators arguments
+      | _ -> raise (InvalidQuery "unexpected query"))
   | Ok _ when String.equal query "help" -> Help (help ())
   | Ok _ -> raise (InvalidQuery "unexpected query")
   | Error _ -> raise (InvalidQuery "failed to parse query")
@@ -363,6 +417,31 @@ let parse_request query =
   try Result.Ok (parse_request_exn query) with
   | InvalidQuery reason -> Result.Error reason
 
+
+module InlineDecorators = struct
+  let inline_decorators ~environment ~decorators_to_skip function_reference =
+    let open Interprocedural.DecoratorHelper in
+    let define =
+      GlobalResolution.define
+        (TypeEnvironment.ReadOnly.global_resolution environment)
+        function_reference
+    in
+    let decorator_bodies =
+      all_decorator_bodies environment
+      |> Map.filter_keys ~f:(fun decorator -> Set.mem decorators_to_skip decorator |> not)
+    in
+    match define with
+    | Some define -> (
+        let define_with_inlining =
+          inline_decorators_for_define ~decorator_bodies ~location:Location.any define
+        in
+        match Statement.Statement.Define define_with_inlining |> Transform.sanitize_statement with
+        | Statement.Statement.Define define -> Response.Single (FunctionDefinition define)
+        | _ -> failwith "Expected define")
+    | None ->
+        Response.Error
+          (Format.asprintf "Could not find function `%s`" (Reference.show function_reference))
+end
 
 let rec process_request ~environment ~configuration request =
   let process_request () =
@@ -409,7 +488,7 @@ let rec process_request ~environment ~configuration request =
                 Type.parametric
                   annotation
                   (List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any))
-            | _ -> Type.Primitive annotation )
+            | _ -> Type.Primitive annotation)
         | _ -> annotation
       in
       if ClassHierarchy.is_instantiated order annotation then
@@ -483,8 +562,8 @@ let rec process_request ~environment ~configuration request =
         (* We don't yet support a syntax for fetching property setters. *)
         Single
           (Base.Callees
-             ( Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
-             |> List.map ~f:(fun { Callgraph.callee; _ } -> callee) ))
+             (Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
+             |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)))
     | CalleesWithLocation caller ->
         let instantiate =
           Location.WithModule.instantiate
@@ -528,10 +607,10 @@ let rec process_request ~environment ~configuration request =
             >>| List.concat_map ~f:Analysis.FunctionDefinition.all_bodies
             >>| List.filter ~f:(fun { Node.value = define; _ } ->
                     not
-                      ( Statement.Define.is_toplevel define
+                      (Statement.Define.is_toplevel define
                       || Statement.Define.is_class_toplevel define
                       || Statement.Define.is_overloaded_function define
-                      || filter_define define ))
+                      || filter_define define))
             |> Option.value ~default:[]
           in
           let represent
@@ -691,7 +770,9 @@ let rec process_request ~environment ~configuration request =
                 ~path
                 ~source
                 ~configuration
-                Interprocedural.Callable.Map.empty
+                ~callables:None
+                ~stubs:(Interprocedural.Target.HashSet.create ())
+                Interprocedural.Target.Map.empty
               |> fun { Taint.Model.errors; _ } -> errors
             in
             List.concat_map sources ~f:model_errors
@@ -706,7 +787,12 @@ let rec process_request ~environment ~configuration request =
           else
             Single (Base.ModelVerificationErrors errors)
         with
-        | error -> Error (Exn.to_string error) )
+        | error -> Error (Exn.to_string error))
+    | InlineDecorators { function_reference; decorators_to_skip } ->
+        InlineDecorators.inline_decorators
+          ~environment:(TypeEnvironment.read_only environment)
+          ~decorators_to_skip:(Reference.Set.of_list decorators_to_skip)
+          function_reference
   in
   try process_request () with
   | ClassHierarchy.Untracked untracked ->

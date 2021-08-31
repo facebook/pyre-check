@@ -35,18 +35,18 @@ let assert_annotation_list ~lookup expected =
     ~printer:(String.concat ~sep:", ")
     ~pp_diff:(diff ~print:list_diff)
     expected
-    ( Lookup.get_all_annotations lookup
+    (Lookup.get_all_annotations lookup
     |> List.map ~f:(fun (key, data) -> Format.asprintf "%s/%a" (show_location key) Type.pp data)
-    |> List.sort ~compare:String.compare )
+    |> List.sort ~compare:String.compare)
 
 
 let assert_annotation ~lookup ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     annotation
-    ( Lookup.get_annotation lookup ~position
+    (Lookup.get_annotation lookup ~position
     >>| fun (location, annotation) ->
-    Format.asprintf "%s/%a" (show_location location) Type.pp annotation )
+    Format.asprintf "%s/%a" (show_location location) Type.pp annotation)
 
 
 let test_lookup context =
@@ -131,10 +131,10 @@ let assert_definition_list ~lookup expected =
     ~printer:(String.concat ~sep:", ")
     ~pp_diff:(diff ~print:list_diff)
     expected
-    ( Lookup.get_all_definitions lookup
+    (Lookup.get_all_definitions lookup
     |> List.map ~f:(fun (key, data) ->
            Format.asprintf "%s -> %s" (show_location key) (show_location data))
-    |> List.sort ~compare:String.compare )
+    |> List.sort ~compare:String.compare)
 
 
 let assert_definition ~lookup ~position ~definition =
@@ -171,7 +171,7 @@ let test_lookup_definitions context =
       "12:4-12:7 -> 8:0-9:8";
       "13:12-13:18 -> 2:0-3:13";
       "13:4-13:11 -> 5:0-6:8";
-      "2:16-2:19 -> 112:0-173:32";
+      "2:16-2:19 -> 118:0-179:32";
       "2:4-2:10 -> 2:0-3:13";
       "5:4-5:11 -> 5:0-6:8";
       "8:4-8:7 -> 8:0-9:8";

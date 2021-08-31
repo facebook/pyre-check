@@ -54,6 +54,7 @@ let make_errors ~context ?(handle = "test.py") ?(show_error_traces = false) sour
             def __init__(self) -> None: pass
             def __new__(self) -> typing.Any: pass
             def __sizeof__(self) -> int: pass
+            def __init_subclass__(cls) -> None: pass
           class str(object): pass
         |}
     in
@@ -135,7 +136,7 @@ let poll_for_deletion path =
   let rec poll () =
     if Path.file_exists path then (
       Unix.nanosleep 0.1 |> ignore;
-      poll () )
+      poll ())
     else
       ()
   in

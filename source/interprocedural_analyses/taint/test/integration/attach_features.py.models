@@ -3,7 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.HasMethods.method_with_optionals",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(b)",
@@ -20,10 +19,10 @@
             "root": {
               "filename": "attach_features.py",
               "line": 59,
-              "start": 20,
-              "end": 21
+              "start": 19,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "string_concat_rhs" },
@@ -32,8 +31,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -49,9 +47,9 @@
               "filename": "attach_features.py",
               "line": 63,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -69,8 +67,7 @@
           { "decl": null, "leaves": [ { "kind": "Test" } ] }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -93,9 +90,9 @@
               "filename": "attach_features.py",
               "line": 63,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -126,8 +123,6 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.attach_without_tito",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -169,16 +164,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attach_features.inferred_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(taint_without_feature)",
@@ -187,10 +179,10 @@
             "root": {
               "filename": "attach_features.py",
               "line": 25,
-              "start": 16,
-              "end": 37
+              "start": 15,
+              "end": 36
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -207,10 +199,10 @@
             "root": {
               "filename": "attach_features.py",
               "line": 24,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_rhs" },
               { "always-via": "special_sink" }
@@ -230,10 +222,10 @@
             "root": {
               "filename": "attach_features.py",
               "line": 23,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -241,15 +233,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attach_features.modeled_sink_with_optionals",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(b)",
@@ -266,10 +256,10 @@
             "root": {
               "filename": "attach_features.py",
               "line": 54,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "string_concat_rhs" },
@@ -278,15 +268,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attach_features.sink_is_propagated",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(argument)",
@@ -303,7 +291,7 @@
               "port": "formal(taint_left)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_lhs" },
               { "always-via": "special_sink" }
@@ -311,8 +299,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -324,9 +311,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -356,17 +341,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "attach_features.taint_in_taint_out",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",
@@ -390,7 +371,6 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.tito_and_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -404,10 +384,10 @@
             "root": {
               "filename": "attach_features.py",
               "line": 37,
-              "start": 16,
-              "end": 19
+              "start": 15,
+              "end": 18
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-via": "string_concat_rhs" },
               { "always-via": "special_sink" }
@@ -439,8 +419,6 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.tito_is_propagated",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(arg)",

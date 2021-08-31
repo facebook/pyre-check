@@ -60,7 +60,7 @@ let query_buck_for_normalized_targets
           ["--json"];
           (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
           ["--config"; "client.id=pyre"];
-          Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
+          Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
           [
             "kind(\"python_binary|python_library|python_test\", %s)"
             (* Don't bother with generated rules. *)
@@ -85,12 +85,18 @@ let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_p
       match source_paths with
       | [] -> Lwt.return "{}"
       | source_paths ->
-          let target_string = List.map targets ~f:Target.show |> String.concat ~sep:" " in
+          let target_string =
+            (* Targets need to be quoted since `buck query` can fail with syntax errors if target
+               name contains special characters like `=`. *)
+            let quote_string value = Format.sprintf "\"%s\"" value in
+            let quote_target target = Target.show target |> quote_string in
+            List.map targets ~f:quote_target |> String.concat ~sep:" "
+          in
           List.concat
             [
               ["--json"];
               ["--config"; "client.id=pyre"];
-              Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
+              Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
               [
                 (* This will get only those owner targets that are beneath our targets or the
                    dependencies of our targets. *)
@@ -100,7 +106,7 @@ let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_p
               (* These attributes are all we need to locate the source and artifact relative paths. *)
               ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
             ]
-          |> Raw.query ?isolation_prefix raw )
+          |> Raw.query ?isolation_prefix raw)
 
 
 let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targets =
@@ -113,7 +119,7 @@ let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targe
           ["--show-full-json-output"];
           (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
           ["--config"; "client.id=pyre"];
-          Option.value_map mode ~default:[] ~f:(fun mode -> ["@mode/" ^ mode]);
+          Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
           List.map targets ~f:(fun target ->
               Format.sprintf "%s%s" (Target.show target) source_database_suffix);
         ]
@@ -386,7 +392,7 @@ module BuckChangedTargetsQueryOutput = struct
                   { BuildMap.Partial.MergeResult.IncompatibleItem.key; _ } ->
                   let message = Format.sprintf "Overlapping artifact file detected: %s" key in
                   Result.Error message
-              | BuildMap.Partial.MergeResult.Ok sofar -> merge ~sofar rest ) )
+              | BuildMap.Partial.MergeResult.Ok sofar -> merge ~sofar rest))
     in
     merge ~sofar:BuildMap.Partial.empty outputs
 end
@@ -471,6 +477,9 @@ let compute_difference_from_changed_paths ~source_root ~buck_options ~targets ch
         |> Lwt.return_ok
   with
   | JsonError message -> Lwt.return_error message
+  | Raw.BuckError { description; _ } ->
+      let message = Format.sprintf "Buck query failed: %s" description in
+      Lwt.return_error message
 
 
 let build_map_and_difference_from_paths
@@ -507,7 +516,7 @@ let build_map_and_difference_from_paths
           | Result.Ok build_map -> Lwt.return_ok (build_map, difference)
           | Result.Error artifact_path ->
               Format.sprintf "Cannot determine source path for artifact `%s`" artifact_path
-              |> Lwt.return_error ) )
+              |> Lwt.return_error))
 
 
 let fast_incremental_build_with_normalized_targets

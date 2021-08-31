@@ -27,16 +27,16 @@ let assert_fixpoint ?models ~context source ~expect:{ iterations = expect_iterat
     |> DependencyGraph.reverse
   in
   let iterations =
-    Analysis.compute_fixpoint
+    FixpointAnalysis.compute_fixpoint
       ~scheduler
       ~environment
       ~analysis:TaintAnalysis.abstract_kind
       ~dependencies
-      ~filtered_callables:Callable.Set.empty
+      ~filtered_callables:Target.Set.empty
       ~all_callables:callables_to_analyze
-      Fixpoint.Epoch.initial
+      FixpointState.Epoch.initial
   in
-  assert_bool "Callgraph is empty!" (Callable.RealMap.length callgraph > 0);
+  assert_bool "Target is empty!" (Target.CallableMap.length callgraph > 0);
   assert_equal ~msg:"Fixpoint iterations" expect_iterations iterations ~printer:Int.to_string;
   List.iter ~f:(check_expectation ~environment) expect
 
@@ -45,12 +45,12 @@ let test_fixpoint context =
   assert_fixpoint
     ~context
     {|
-      from builtins import __test_source, __test_sink, __user_controlled
+      from builtins import _test_source, _test_sink, _user_controlled
       def bar():
-        return __test_source()
+        return _test_source()
 
       def qux(arg):
-        __test_sink(arg)
+        _test_sink(arg)
 
       def bad(arg):
         qux(arg)
@@ -70,7 +70,7 @@ let test_fixpoint context =
         bad(x)
 
       def rce_problem():
-        x = __user_controlled()
+        x = _user_controlled()
         eval(x)
 
       class TestMethods:
@@ -101,22 +101,22 @@ let test_fixpoint context =
         x.receiver_sink(5)
 
       def list_sink(list):
-        __test_sink(list[1])
+        _test_sink(list[1])
 
       def list_match():
-        x = [5, __test_source()]
+        x = [5, _test_source()]
         list_sink(x)
 
       def no_list_match():
-        x = [__test_source(), 5]
+        x = [_test_source(), 5]
         list_sink(x)
 
       def getattr_obj_no_match():
-        obj = __user_controlled()
+        obj = _user_controlled()
         getattr(obj, 'foo')
 
       def getattr_field_match(some_obj):
-        field = __user_controlled()
+        field = _user_controlled()
         return getattr(some_obj, field)
 
       def deep_tito(tito, no_tito):
@@ -125,11 +125,11 @@ let test_fixpoint context =
           return y
 
       def test_deep_tito_no_match():
-        obj = deep_tito(__user_controlled(), __test_source())
+        obj = deep_tito(_user_controlled(), _test_source())
         getattr('obj', obj.f.g)
 
       def test_deep_tito_match():
-        obj = deep_tito(__user_controlled(), __test_source())
+        obj = deep_tito(_user_controlled(), _test_source())
         getattr('obj', obj.g.f)
 
       class Class:
@@ -142,14 +142,14 @@ let test_fixpoint context =
       def property_into_sink(input):
         c: Class = ...
         c.tainted = input
-        __test_sink(c.property)
+        _test_sink(c.property)
 
       def uses_property(c: Class):
-        c.tainted = __test_source()
+        c.tainted = _test_source()
         return c.property
 
       def uses_property_but_no_taint(c: Class):
-        c.untainted = __test_source()
+        c.untainted = _test_source()
         return c.property
     |}
     ~expect:
@@ -287,10 +287,10 @@ let test_combined_analysis context =
       def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import __test_sink, __user_controlled
+      from builtins import _test_sink, _user_controlled
       def combined_model(x, y, z):
-        __test_sink(x)
-        return x or __user_controlled()
+        _test_sink(x)
+        return x or _user_controlled()
     |}
     ~expect:
       {
@@ -320,10 +320,10 @@ let test_skipped_analysis context =
       def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import __test_sink, __user_controlled
+      from builtins import _test_sink, _user_controlled
       def skipped_model(x, y, z):
-        __test_sink(x)
-        return x or __user_controlled()
+        _test_sink(x)
+        return x or _user_controlled()
     |}
     ~expect:
       {
@@ -333,7 +333,7 @@ let test_skipped_analysis context =
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Demo"] }]
               ~tito_parameters:["z"]
-              ~analysis_mode:Taint.Result.Mode.SkipAnalysis
+              ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
               "qualifier.skipped_model";
           ];
         iterations = 1;
@@ -350,11 +350,11 @@ let test_sanitized_analysis context =
       def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import __test_sink, __user_controlled
+      from builtins import _test_sink, _user_controlled
       def sanitized_model(x, y, z):
-        eval(__user_controlled())
-        __test_sink(x)
-        return x or __user_controlled()
+        eval(_user_controlled())
+        _test_sink(x)
+        return x or _user_controlled()
     |}
     ~expect:
       {
@@ -365,13 +365,8 @@ let test_sanitized_analysis context =
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Demo"] }]
               ~tito_parameters:["z"]
               ~errors:[{ code = 5001; pattern = ".*" }]
-              ~analysis_mode:
-                (Mode.Sanitize
-                   {
-                     Mode.sources = Some Mode.AllSources;
-                     sinks = Some Mode.AllSinks;
-                     tito = Some AllTito;
-                   })
+              ~sanitize:
+                { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
               "qualifier.sanitized_model";
           ];
         iterations = 1;
@@ -440,7 +435,7 @@ let test_overrides context =
   assert_fixpoint
     ~context
     {|
-      from builtins import __test_source, __test_sink, __user_controlled
+      from builtins import _test_source, _test_sink, _user_controlled
       class Base:
         def split(self):
           pass
@@ -455,18 +450,18 @@ let test_overrides context =
         def split(self): ...
 
         def some_sink(self, arg):
-          __test_sink(arg)
+          _test_sink(arg)
 
       class D(C):
         def some_source(self):
-          return __test_source()
+          return _test_source()
 
         def some_sink(self, arg):
           eval(arg)
 
       class E(Base):
         def some_source(self):
-          return __user_controlled()
+          return _user_controlled()
 
       def test_obscure_override(b: Base):
         return b.split()

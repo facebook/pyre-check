@@ -223,7 +223,7 @@ let make_assert_functions context =
                            ~resolution
                            ~instantiated
                            ~accessed_through_class)
-            | _ -> None )
+            | _ -> None)
       in
       { order with all_attributes = attributes; attribute = attribute_from_attributes attributes }
     in
@@ -257,8 +257,8 @@ let make_assert_functions context =
                   match Type.Tuple (parse_ordered_types value) |> postprocess with
                   | Type.Tuple ordered_type ->
                       Type.Variable.TupleVariadicPair (variable, ordered_type)
-                  | _ -> failwith "expected a tuple" )
-              | _ -> failwith "not available" )
+                  | _ -> failwith "expected a tuple")
+              | _ -> failwith "not available")
           | _ -> failwith "not a variable"
         in
         List.map pairs ~f:parse_pair
@@ -310,11 +310,11 @@ let make_assert_functions context =
       ~cmp:list_of_maps_compare
       ~printer:list_of_map_print
       expected
-      ( TypeOrder.OrderedConstraintsSet.add
-          [constraints]
-          ~new_constraint:(LessOrEqual { left; right })
-          ~order:handler
-      |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler) )
+      (TypeOrder.OrderedConstraintsSet.add
+         [constraints]
+         ~new_constraint:(LessOrEqual { left; right })
+         ~order:handler
+      |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler))
   in
   let assert_add ?(do_prep = true) ?(leave_unbound_in_left = []) ~left ~right =
     let parse_annotation = parse_annotation ~do_prep in
@@ -632,8 +632,8 @@ let test_add_constraint context =
   assert_add
     ~do_prep:false
     ~left:
-      ( "typing.Callable[[typing.Union[int, str]], typing.Union[int, str]]"
-      ^ "[[[int], str][[str], int]]" )
+      ("typing.Callable[[typing.Union[int, str]], typing.Union[int, str]]"
+      ^ "[[[int], str][[str], int]]")
     ~right:"typing.Callable[[test.T3], test.T4]"
     [
       ["test.T3", "int"; "test.T4", "str"];
@@ -891,13 +891,13 @@ let test_add_constraint_type_variable_tuple context =
          (Type.OrderedTypes.Concatenation
             (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic)))
     ~right:
-      ( Type.Tuple
-          (Type.OrderedTypes.Concatenation
-             (Type.OrderedTypes.Concatenation.create
-                ~prefix:[Type.integer]
-                ~suffix:[Type.string]
-                variadic2))
-      |> Type.Variable.mark_all_variables_as_bound )
+      (Type.Tuple
+         (Type.OrderedTypes.Concatenation
+            (Type.OrderedTypes.Concatenation.create
+               ~prefix:[Type.integer]
+               ~suffix:[Type.string]
+               variadic2))
+      |> Type.Variable.mark_all_variables_as_bound)
     [["Ts", "typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"]];
   (* Tuple is covariant. *)
   assert_add ~left:"typing.Tuple[int, str]" ~right:"typing.Tuple[float, str]" [[]];

@@ -45,3 +45,25 @@ tornado.httputil.HTTPServerRequest.body: TaintSource[UserControlled, UserControl
 tornado.httputil.HTTPServerRequest.arguments: TaintSource[UserControlled, UserControlled_Payload]
 tornado.httputil.HTTPServerRequest.query_arguments: TaintSource[UserControlled, UserControlled_Payload]
 tornado.httputil.HTTPServerRequest.body_arguments: TaintSource[UserControlled, UserControlled_Payload]
+
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.extends("tornado.web.RequestHandler", is_transitive=True),
+    AnyOf(
+      name.matches("\.get$"),
+      name.matches("\.post$"),
+      name.matches("\.head$"),
+      name.matches("\.delete$"),
+      name.matches("\.patch$"),
+      name.matches("\.put$"),
+      name.matches("\.options$"),
+    )
+  ],
+  model = [
+    Parameters(
+      TaintSource[UserControlled, UserControlled_Parameter],
+      where=Not(name.equals("self"))
+    )
+  ]
+)

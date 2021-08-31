@@ -11,6 +11,6 @@
 #include <caml/callback.h>
 #include <caml/fail.h>
 
-void raise_assertion_failure(char * msg) {
+void raise_assertion_failure(char* msg) {
   caml_raise_with_string(*caml_named_value("c_assertion_failure"), msg);
 }

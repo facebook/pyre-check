@@ -6,6 +6,7 @@
  *)
 
 module Data = TypeInferenceData
+module Local = TypeInferenceLocal
 module Reporting = TypeInferenceReporting
 module Domain = TypeInferenceDomain
 module Result = TypeInferenceResult

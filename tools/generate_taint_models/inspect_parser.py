@@ -15,10 +15,16 @@ from .parameter import Parameter
 
 def extract_qualified_name(callable_object: Callable[..., object]) -> Optional[str]:
     if inspect.ismethod(callable_object):
-        # pyre-fixme[16]: Anonymous callable has no attribute `__func__`.
+        # pyre-fixme[6]: Expected `(...) -> object` for 1st param but got
+        #  `_StaticFunctionType`.
         return extract_qualified_name(callable_object.__func__)
     else:
         module_name = getattr(callable_object, "__module__", None)
+        # Try and fallback to objclass
+        if module_name is None and (
+            objclass := getattr(callable_object, "__objclass__", None)
+        ):
+            module_name = getattr(objclass, "__module__", None)
         view_name = getattr(
             callable_object, "__qualname__", callable_object.__class__.__qualname__
         )

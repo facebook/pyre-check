@@ -12,7 +12,7 @@ val report
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   filename_lookup:'b ->
-  callables:Interprocedural.Callable.Set.t ->
+  callables:Interprocedural.Target.Set.t ->
   skipped_overrides:'c ->
   fixpoint_timer:Timer.t ->
   fixpoint_iterations:int option ->

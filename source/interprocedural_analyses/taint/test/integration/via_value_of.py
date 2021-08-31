@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import enum
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def return_via_parameter_name(parameter=None):
@@ -44,16 +44,16 @@ def test_via_value_of_does_not_propagate():
 
 
 def tito(parameter, other):
-    ...
+    pass
 
 
 def test_tito():
-    a = tito(__test_source(), "second")
+    a = tito(_test_source(), "second")
     return a
 
 
 def sink_via_value_of(x, y):
-    ...
+    pass
 
 
 def test_sink(element):
@@ -73,7 +73,7 @@ def test_sinks_do_not_propagate(parameter):
 
 
 def attach_to_source(parameter):
-    return __test_source()
+    return _test_source()
 
 
 def test_attach_to_source():
@@ -81,7 +81,7 @@ def test_attach_to_source():
 
 
 def attach_to_sink(parameter, feature):
-    __test_sink(parameter)
+    _test_sink(parameter)
 
 
 def test_attach_to_sink(parameter):

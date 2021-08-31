@@ -53,25 +53,25 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
 
 
 let create_callable = function
-  | `Function name -> !&name |> Callable.create_function
-  | `Method name -> !&name |> Callable.create_method
-  | `Override name -> !&name |> Callable.create_override
+  | `Function name -> !&name |> Target.create_function
+  | `Method name -> !&name |> Target.create_method
+  | `Override name -> !&name |> Target.create_override
 
 
 let compare_dependency_graph call_graph ~expected =
   let expected =
     let map_callee_callers (callee, callers) =
       ( create_callable callee,
-        List.map callers ~f:create_callable |> List.sort ~compare:Callable.compare )
+        List.map callers ~f:create_callable |> List.sort ~compare:Target.compare )
     in
     List.map expected ~f:map_callee_callers
   in
   let call_graph =
     List.map call_graph ~f:(fun (callee, callers) ->
-        callee, List.sort callers ~compare:Callable.compare)
+        callee, List.sort callers ~compare:Target.compare)
   in
   let printer call_graph =
-    Sexp.to_string [%message (call_graph : (Callable.t * Callable.t list) list)]
+    Sexp.to_string [%message (call_graph : (Target.t * Target.t list) list)]
   in
   assert_equal ~printer expected call_graph
 
@@ -80,7 +80,7 @@ let assert_call_graph ?update_environment_with ~context source ~expected =
   let graph =
     create_call_graph ?update_environment_with ~context source
     |> DependencyGraph.from_callgraph
-    |> Callable.Map.to_alist
+    |> Target.Map.to_alist
   in
   compare_dependency_graph graph ~expected
 
@@ -90,7 +90,7 @@ let assert_reverse_call_graph ~context source ~expected =
     create_call_graph ~context source
     |> DependencyGraph.from_callgraph
     |> DependencyGraph.reverse
-    |> Callable.Map.to_alist
+    |> Target.Map.to_alist
   in
   compare_dependency_graph graph ~expected
 
@@ -590,15 +590,15 @@ let test_prune_callables _ =
     =
     let create name =
       if String.is_prefix ~prefix:"O|" (Reference.show name) then
-        Callable.create_override (String.drop_prefix (Reference.show name) 2 |> Reference.create)
+        Target.create_override (String.drop_prefix (Reference.show name) 2 |> Reference.create)
       else
-        Callable.create_method name
+        Target.create_method name
     in
     let callgraph =
       List.map callgraph ~f:(fun (key, values) ->
-          ( Callable.create_method (Reference.create key),
-            List.map values ~f:(fun value -> (create (Reference.create value) :> Callable.t)) ))
-      |> Callable.RealMap.of_alist_exn
+          ( Target.create_method (Reference.create key),
+            List.map values ~f:(fun value -> (create (Reference.create value) :> Target.t)) ))
+      |> Target.CallableMap.of_alist_exn
     in
     let overrides =
       List.map overrides ~f:(fun (key, values) ->
@@ -607,9 +607,9 @@ let test_prune_callables _ =
     in
     let callables_with_dependency_information =
       List.map project_callables ~f:(fun callable ->
-          Callable.create_method (Reference.create callable), true)
+          Target.create_method (Reference.create callable), true)
       @ List.map external_callables ~f:(fun callable ->
-            Callable.create_method (Reference.create callable), false)
+            Target.create_method (Reference.create callable), false)
     in
     let overrides = DependencyGraph.from_overrides overrides in
     let dependencies =
@@ -619,22 +619,22 @@ let test_prune_callables _ =
       DependencyGraph.prune dependencies ~callables_with_dependency_information
     in
     assert_equal
-      ~cmp:(List.equal Callable.equal)
-      ~printer:(List.to_string ~f:Callable.show)
+      ~cmp:(List.equal Target.equal)
+      ~printer:(List.to_string ~f:Target.show)
       (List.map expected_callables ~f:(fun callable ->
-           Callable.create_method (Reference.create callable)))
+           Target.create_method (Reference.create callable)))
       actual_callables;
     assert_equal
       ~cmp:
         (List.equal (fun (left_key, left_values) (right_key, right_values) ->
-             Callable.equal left_key right_key && List.equal Callable.equal left_values right_values))
+             Target.equal left_key right_key && List.equal Target.equal left_values right_values))
       ~printer:
         (List.to_string ~f:(fun (key, values) ->
-             Format.sprintf "%s: %s" (Callable.show key) (List.to_string values ~f:Callable.show)))
+             Format.sprintf "%s: %s" (Target.show key) (List.to_string values ~f:Target.show)))
       (List.map expected_dependencies ~f:(fun (key, values) ->
            ( create (Reference.create key),
              List.map values ~f:(fun value -> create (Reference.create value)) )))
-      (Callable.Map.to_alist actual_dependencies)
+      (Target.Map.to_alist actual_dependencies)
   in
   (* Basic case. *)
   assert_pruned

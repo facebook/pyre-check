@@ -51,10 +51,10 @@ let test_integration path context =
     | Some expected ->
         if String.equal expected actual then (
           remove_old_output ~suffix;
-          None )
+          None)
         else (
           write_output ~suffix actual;
-          Some { path; suffix; expected; actual } )
+          Some { path; suffix; expected; actual })
   in
   let error_on_actual_files { path; suffix; expected; actual } =
     Printf.printf
@@ -106,14 +106,14 @@ let test_integration path context =
       |> DependencyGraph.union overrides
       |> DependencyGraph.reverse
     in
-    Analysis.compute_fixpoint
+    FixpointAnalysis.compute_fixpoint
       ~scheduler:(Test.mock_scheduler ())
       ~environment
       ~analysis:TaintAnalysis.abstract_kind
       ~dependencies
-      ~filtered_callables:Callable.Set.empty
+      ~filtered_callables:Target.Set.empty
       ~all_callables:callables_to_analyze
-      Fixpoint.Epoch.initial
+      FixpointState.Epoch.initial
     |> ignore;
     let serialized_model callable : string =
       let externalization =
@@ -131,8 +131,8 @@ let test_integration path context =
     let divergent_files = [create_call_graph_files callgraph; create_overrides_files overrides] in
     ( divergent_files,
       List.rev_append initial_models_callables callables_to_analyze
-      |> Callable.Set.of_list
-      |> Callable.Set.elements
+      |> Target.Set.of_list
+      |> Target.Set.elements
       |> List.map ~f:serialized_model
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:"" )

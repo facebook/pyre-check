@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 74,
     "start": 27,
-    "end": 42,
+    "end": 41,
     "filename": "properties.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "properties.py",
               "line": 74,
               "start": 27,
-              "end": 42
+              "end": 41
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -35,7 +35,7 @@
                 "filename": "properties.py",
                 "line": 74,
                 "start": 27,
-                "end": 42
+                "end": 41
               },
               "resolves_to": [
                 "properties.DerivedTaintedSetter.my_property$setter"
@@ -43,7 +43,7 @@
               "port": "formal(value)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -61,9 +61,9 @@
     "callable": "properties.property_setter_in_constructor",
     "callable_line": 160,
     "code": 5002,
-    "line": 163,
-    "start": 16,
-    "end": 30,
+    "line": 162,
+    "start": 15,
+    "end": 20,
     "filename": "properties.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -75,10 +75,67 @@
               "filename": "properties.py",
               "line": 161,
               "start": 38,
-              "end": 53
+              "end": 52
             },
-            "tito": [ { "line": 161, "start": 38, "end": 53 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [
+              { "line": 161, "start": 38, "end": 52 },
+              { "line": 162, "start": 15, "end": 18 }
+            ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 162,
+              "start": 15,
+              "end": 20
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.property_setter_in_constructor",
+    "callable_line": 160,
+    "code": 5002,
+    "line": 163,
+    "start": 15,
+    "end": 29,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 161,
+              "start": 38,
+              "end": 52
+            },
+            "tito": [ { "line": 161, "start": 38, "end": 52 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-field" },
               { "first-field": "underlying" },
@@ -95,10 +152,10 @@
             "root": {
               "filename": "properties.py",
               "line": 163,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -116,69 +173,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "properties.property_setter_in_constructor",
-    "callable_line": 160,
-    "code": 5002,
-    "line": 162,
-    "start": 16,
-    "end": 21,
-    "filename": "properties.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "properties.py",
-              "line": 161,
-              "start": 38,
-              "end": 53
-            },
-            "tito": [
-              { "line": 161, "start": 38, "end": 53 },
-              { "line": 162, "start": 16, "end": 19 }
-            ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "root": {
-              "filename": "properties.py",
-              "line": 162,
-              "start": 16,
-              "end": 21
-            },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
     "callable": "properties.sets_tainted_value",
     "callable_line": 97,
     "code": 5002,
     "line": 98,
     "start": 20,
-    "end": 35,
+    "end": 34,
     "filename": "properties.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -190,9 +190,9 @@
               "filename": "properties.py",
               "line": 98,
               "start": 20,
-              "end": 35
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -206,7 +206,7 @@
                 "filename": "properties.py",
                 "line": 98,
                 "start": 20,
-                "end": 35
+                "end": 34
               },
               "resolves_to": [
                 "properties.DerivedTaintedSetter.my_property$setter"
@@ -214,7 +214,7 @@
               "port": "formal(value)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -233,8 +233,8 @@
     "callable_line": 114,
     "code": 5002,
     "line": 120,
-    "start": 16,
-    "end": 19,
+    "start": 15,
+    "end": 18,
     "filename": "properties.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -246,13 +246,13 @@
               "filename": "properties.py",
               "line": 118,
               "start": 10,
-              "end": 25
+              "end": 24
             },
             "tito": [
-              { "line": 118, "start": 10, "end": 25 },
-              { "line": 120, "start": 16, "end": 17 }
+              { "line": 118, "start": 10, "end": 24 },
+              { "line": 120, "start": 15, "end": 16 }
             ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -267,10 +267,10 @@
             "root": {
               "filename": "properties.py",
               "line": 120,
-              "start": 16,
-              "end": 19
+              "start": 15,
+              "end": 18
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -290,8 +290,8 @@
     "callable_line": 129,
     "code": 5002,
     "line": 130,
-    "start": 16,
-    "end": 47,
+    "start": 15,
+    "end": 46,
     "filename": "properties.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -302,8 +302,8 @@
             "root": {
               "filename": "properties.py",
               "line": 130,
-              "start": 16,
-              "end": 47
+              "start": 15,
+              "end": 46
             },
             "leaves": [
               {
@@ -322,10 +322,10 @@
             "root": {
               "filename": "properties.py",
               "line": 130,
-              "start": 16,
-              "end": 47
+              "start": 15,
+              "end": 46
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -358,22 +358,18 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -404,8 +400,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.Class::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -434,13 +428,12 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -474,13 +467,12 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -510,7 +502,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -528,22 +520,18 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.Derived::uses_property_but_no_tito_taint}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -573,7 +561,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -581,16 +569,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.DerivedTaintedSetter::my_property$setter}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(value)",
@@ -602,7 +587,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -625,8 +610,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.GrandDerived::my_property$setter}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -655,22 +638,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.PropertySetterInConstructor::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -701,8 +680,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.SetterMutatesValue::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -757,7 +734,7 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -807,21 +784,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "properties.Class.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -839,8 +813,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.Class.my_property",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -874,13 +846,12 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(other)[tainted]",
@@ -909,10 +880,10 @@
               "filename": "properties.py",
               "line": 22,
               "start": 23,
-              "end": 38
+              "end": 37
             },
             "tito": [ { "line": 23, "start": 15, "end": 19 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -930,14 +901,12 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -960,13 +929,12 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -997,9 +965,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1015,10 +981,10 @@
               "filename": "properties.py",
               "line": 38,
               "start": 23,
-              "end": 38
+              "end": 37
             },
             "tito": [ { "line": 39, "start": 15, "end": 19 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -1026,17 +992,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "properties.Derived.uses_property_but_no_tito_taint",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[tainted]",
@@ -1056,7 +1018,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.DerivedTaintedSetter.my_property$setter",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(value)",
@@ -1065,10 +1026,10 @@
             "root": {
               "filename": "properties.py",
               "line": 84,
-              "start": 20,
-              "end": 25
+              "start": 19,
+              "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1091,8 +1052,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.GrandDerived.my_property$setter",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -1119,16 +1078,14 @@
               "filename": "properties.py",
               "line": 49,
               "start": 15,
-              "end": 30
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1151,22 +1108,18 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(y)",
@@ -1199,8 +1152,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.x",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[underlying]",
@@ -1218,8 +1169,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.x$setter",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x_value)",
@@ -1248,8 +1197,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -1267,8 +1214,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.p",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)[_p]",
@@ -1286,8 +1231,6 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.p$setter",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1330,16 +1273,15 @@
             "root": {
               "filename": "properties.py",
               "line": 62,
-              "start": 20,
-              "end": 24
+              "start": 19,
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1372,7 +1314,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(value)",
@@ -1439,21 +1380,18 @@
               "port": "formal(self)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "properties.test_type_variable_properties_are_resolved",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(x)[tainted]",

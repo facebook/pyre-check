@@ -10,138 +10,282 @@ from typing import Dict
 import libcst as cst
 from libcst.metadata import MetadataWrapper
 
-from ..commands.statistics import _path_wise_counts
 from ..statistics_collectors import (
     AnnotationCountCollector,
     FixmeCountCollector,
+    IgnoreCountCollector,
     StrictCountCollector,
 )
 
 
-class StatisticsCollectorTest(unittest.TestCase):
-    def assert_fixme_count_equal(
-        self, file_content: str, expected_fixmes: Dict[str, int]
-    ) -> None:
-        module = cst.parse_module(
-            textwrap.dedent(file_content).strip().replace("FIXME", "pyre-fixme")
-        )
-        fixme_counts = _path_wise_counts({"test.py": module}, FixmeCountCollector)
-        actual_fixmes = fixme_counts["test.py"].build_json()
-        self.assertEqual(expected_fixmes, actual_fixmes)
+def parse_source(source: str) -> cst.Module:
+    return cst.parse_module(textwrap.dedent(source.rstrip()))
 
-    def test_fixme_count(self) -> None:
-        self.assert_fixme_count_equal(
+
+class AnnotationCountCollectorTest(unittest.TestCase):
+    def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
+        source_module = MetadataWrapper(parse_source(source))
+        collector = AnnotationCountCollector()
+        source_module.visit(collector)
+        self.assertDictEqual(collector.build_json(), expected)
+
+    def test_count_annotations(self) -> None:
+        self.assert_counts(
             """
-            def foo(x: str) -> int:
-                return x  # FIXME[7]
+            def foo(x) -> int:
+                pass
             """,
-            {"7": 1},
-        )
-        self.assert_fixme_count_equal(
-            """
-            def foo(x: str) -> int:
-                # FIXME[7]: comments
-                return x
-            """,
-            {"7": 1},
-        )
-        self.assert_fixme_count_equal(
-            """
-            def foo(x: str) -> int:
-                return x # unrelated # FIXME[7]
-            """,
-            {"7": 1},
-        )
-        self.assert_fixme_count_equal(
-            """
-            def foo(x: str) -> int:
-                return x # unrelated   #  FIXME[7] comments
-            """,
-            {"7": 1},
-        )
-        self.assert_fixme_count_equal(
-            """
-            def foo(x: str) -> int:
-                return x  # FIXME
-            """,
-            {"No Code": 1},
-        )
-        self.assert_fixme_count_equal(
-            """
-            def foo(x: str) -> int:
-                return x  # FIXME: comments
-            """,
-            {"No Code": 1},
-        )
-        self.assert_fixme_count_equal(
-            """
-            def foo(x: str) -> int:
-                return x # FIXME[7, 8]
-            """,
-            {"7": 1, "8": 1},
-        )
-        self.assert_fixme_count_equal(
-            """
-            # FIXME[8]
-            def foo(x: str) -> int:
-                return x # FIXME[7, 8]
-            """,
-            {"7": 1, "8": 2},
+            {
+                "annotated_return_count": 1,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 0,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
         )
 
-    def assert_strict_count_equal(
-        self,
-        file_content: str,
-        expected_strict: Dict[str, int],
-        strict_default: bool = False,
-    ) -> None:
-        module = cst.parse_module(textwrap.dedent(file_content).strip())
-        strict_counts = _path_wise_counts(
-            {"test.py": module}, StrictCountCollector, strict_default
-        )
-        actual_strict = strict_counts["test.py"].build_json()
-        self.assertEqual(expected_strict, actual_strict)
-
-    def test_strict_count(self) -> None:
-        self.assert_strict_count_equal(
+        self.assert_counts(
             """
-            def foo(x: str) -> int:
-                return x  # FIXME[7]
+            def bar(x: int, y):
+                pass
             """,
-            {"strict_count": 0, "unsafe_count": 1},
-        )
-        self.assert_strict_count_equal(
-            """
-            #  pyre-strict
-            def foo(x: str) -> int:
-                return x  # FIXME[7]
-            """,
-            {"strict_count": 1, "unsafe_count": 0},
-        )
-        self.assert_strict_count_equal(
-            """
-            #  pyre-ignore-all-errors[56]
-            def foo(x: str) -> int:
-                return x  # FIXME[7]
-            """,
-            {"strict_count": 1, "unsafe_count": 0},
-            True,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 1,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 2,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
         )
 
-    def assert_annotation_count_equal(
-        self,
-        file_content: str,
-        expected_counts: Dict[str, int],
-    ) -> None:
-        module = cst.parse_module(textwrap.dedent(file_content).strip())
-        annotation_counts = _path_wise_counts(
-            {"test.py": MetadataWrapper(module)}, AnnotationCountCollector
+        self.assert_counts(
+            """
+            a = foo()
+            b: int = bar()
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 2,
+                "annotated_parameter_count": 0,
+                "return_count": 0,
+                "globals_count": 2,
+                "parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
         )
-        actual_counts = annotation_counts["test.py"].build_json()
-        self.assertEqual(expected_counts, actual_counts)
 
-    def test_annotation_count(self) -> None:
-        self.assert_annotation_count_equal(
+        self.assert_counts(
+            """
+            class A:
+                a: int = 100
+                b = ""
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 0,
+                "return_count": 0,
+                "globals_count": 0,
+                "parameter_count": 0,
+                "attribute_count": 2,
+                "annotated_attribute_count": 2,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 5,
+            },
+        )
+
+        # For now, don't count annotations inside of functions
+        self.assert_counts(
+            """
+            def foo():
+                a: int = 100
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 0,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
+        )
+
+        self.assert_counts(
+            """
+            def foo():
+                def bar(x: int) -> int:
+                    pass
+            """,
+            {
+                "annotated_return_count": 1,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 1,
+                "return_count": 2,
+                "globals_count": 0,
+                "parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 1,
+                "line_count": 5,
+            },
+        )
+
+        self.assert_counts(
+            """
+            class A:
+                def bar(self, x: int):
+                    pass
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 2,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 2,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 5,
+            },
+        )
+
+        self.assert_counts(
+            """
+            class A:
+                def bar(this, x: int) -> None:
+                    pass
+            """,
+            {
+                "annotated_return_count": 1,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 2,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 2,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 1,
+                "line_count": 5,
+            },
+        )
+
+        self.assert_counts(
+            """
+            class A:
+                @classmethod
+                def bar(cls, x: int):
+                    pass
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 2,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 2,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 6,
+            },
+        )
+
+        self.assert_counts(
+            """
+            def bar(self, x: int):
+                pass
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 1,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 2,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
+        )
+
+        self.assert_counts(
+            """
+            class A:
+                @staticmethod
+                def bar(self, x: int) -> None:
+                    pass
+            """,
+            {
+                "annotated_return_count": 1,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 1,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 2,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 6,
+            },
+        )
+
+        self.assert_counts(
+            """
+            def foo(x):
+                def bar(x):
+                    return x
+                return bar
+
+            class A:
+                @foo(42)
+                def baz(self): ...
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 1,
+                "return_count": 3,
+                "globals_count": 0,
+                "parameter_count": 3,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 10,
+            },
+        )
+
+        self.assert_counts(
             """
             def foo(x: str) -> str:
                 return x
@@ -157,10 +301,10 @@ class StatisticsCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
-                "line_count": 3,
+                "line_count": 4,
             },
         )
-        self.assert_annotation_count_equal(
+        self.assert_counts(
             """
             class Test:
                 def foo(self, input: str) -> None:
@@ -183,6 +327,209 @@ class StatisticsCollectorTest(unittest.TestCase):
                 "annotated_attribute_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 2,
-                "line_count": 10,
+                "line_count": 11,
             },
+        )
+        # Ensure globals and attributes with literal values are considered annotated.
+        self.assert_counts(
+            """
+            x: int = 1
+            y = 2
+            z = foo
+
+            class Foo:
+                x = 1
+                y = foo
+            """,
+            {
+                "return_count": 0,
+                "annotated_return_count": 0,
+                "globals_count": 3,
+                "annotated_globals_count": 3,
+                "parameter_count": 0,
+                "annotated_parameter_count": 0,
+                "attribute_count": 2,
+                "annotated_attribute_count": 2,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 9,
+            },
+        )
+
+
+class FixmeCountCollectorTest(unittest.TestCase):
+    def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
+        source_module = parse_source(source.replace("FIXME", "pyre-fixme"))
+        collector = FixmeCountCollector()
+        source_module.visit(collector)
+        self.assertDictEqual(collector.build_json(), expected)
+
+    def test_count_fixmes(self) -> None:
+        self.assert_counts("# FIXME[2]: Example Error Message", {"2": 1})
+        self.assert_counts(
+            "# FIXME[3]: Example Error Message \n\n\n # FIXME[34]: Example",
+            {"3": 1, "34": 1},
+        )
+        self.assert_counts(
+            "# FIXME[2]: Example Error Message\n\n\n# FIXME[2]: message",
+            {"2": 2},
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x  # FIXME[7]
+            """,
+            {"7": 1},
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                # FIXME[7]: comments
+                return x
+            """,
+            {"7": 1},
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x # unrelated # FIXME[7]
+            """,
+            {"7": 1},
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x # unrelated   #  FIXME[7] comments
+            """,
+            {"7": 1},
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x  # FIXME
+            """,
+            {"No Code": 1},
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x  # FIXME: comments
+            """,
+            {"No Code": 1},
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x # FIXME[7, 8]
+            """,
+            {"7": 1, "8": 1},
+        )
+        self.assert_counts(
+            """
+            # FIXME[8]
+            def foo(x: str) -> int:
+                return x # FIXME[7, 8]
+            """,
+            {"7": 1, "8": 2},
+        )
+
+
+class IgnoreCountCollectorTest(unittest.TestCase):
+    def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
+        source_module = parse_source(source.replace("IGNORE", "pyre-ignore"))
+        collector = IgnoreCountCollector()
+        source_module.visit(collector)
+        self.assertEqual(collector.build_json(), expected)
+
+    def test_count_ignores(self) -> None:
+        self.assert_counts("# IGNORE[2]: Example Error Message", {"2": 1})
+        self.assert_counts(
+            "# IGNORE[3]: Example Error Message \n\n\n # pyre-ignore[34]: Example",
+            {"3": 1, "34": 1},
+        )
+        self.assert_counts(
+            "# IGNORE[2]: Example Error Message\n\n\n# pyre-ignore[2]: message",
+            {"2": 2},
+        )
+
+
+class StrictCountCollectorTest(unittest.TestCase):
+    def assert_counts(
+        self, source: str, expected: Dict[str, int], default_strict: bool
+    ) -> None:
+        source_module = parse_source(source)
+        collector = StrictCountCollector(default_strict)
+        source_module.visit(collector)
+        self.assertEqual(collector.build_json(), expected)
+
+    def test_strict_files(self) -> None:
+        self.assert_counts(
+            """
+            # pyre-unsafe
+
+            def foo():
+                return 1
+            """,
+            {"strict_count": 0, "unsafe_count": 1},
+            True,
+        )
+        self.assert_counts(
+            """
+            # pyre-strict
+            def foo():
+                return 1
+            """,
+            {"strict_count": 1, "unsafe_count": 0},
+            False,
+        )
+        self.assert_counts(
+            """
+            def foo():
+                return 1
+            """,
+            {"strict_count": 0, "unsafe_count": 1},
+            False,
+        )
+        self.assert_counts(
+            """
+            def foo():
+                return 1
+            """,
+            {"strict_count": 1, "unsafe_count": 0},
+            True,
+        )
+        self.assert_counts(
+            """
+            # pyre-ignore-all-errors
+            def foo():
+                return 1
+            """,
+            {"strict_count": 0, "unsafe_count": 1},
+            True,
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x
+            """,
+            {"strict_count": 0, "unsafe_count": 1},
+            False,
+        )
+        self.assert_counts(
+            """
+            #  pyre-strict
+            def foo(x: str) -> int:
+                return x
+            """,
+            {"strict_count": 1, "unsafe_count": 0},
+            False,
+        )
+        self.assert_counts(
+            """
+            #  pyre-ignore-all-errors[56]
+            def foo(x: str) -> int:
+                return x
+            """,
+            {"strict_count": 1, "unsafe_count": 0},
+            True,
         )

@@ -32,6 +32,9 @@ Possible queries:
     Returns a JSON with the signature of all defines for given module or class.
   - dump_call_graph()
     Returns a comprehensive JSON of caller -> list of callees.
+  - inline_decorators(qualified_function_name, decorators_to_skip=[decorator1, ...])
+    Returns the function definition after inlining decorators.
+    Allows skipping certain decorators when inlining.
   - less_or_equal(T1, T2)
     Returns whether T1 is a subtype of T2.
   - path_of_module(module)

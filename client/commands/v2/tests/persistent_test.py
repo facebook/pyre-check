@@ -30,6 +30,7 @@ from ..persistent import (
     InitializationFailure,
     InitializationExit,
     PyreServer,
+    PyreServerStartOptions,
     ServerState,
     parse_subscription_response,
     SubscriptionResponse,
@@ -149,6 +150,36 @@ class PersistentTest(testslide.TestCase):
         result = await try_initialize(input_channel, output_channel)
         self.assertIsInstance(result, InitializationExit)
 
+    @setup.async_test
+    async def test_try_initialize_exit__shutdown_after_initialize(self) -> None:
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(
+                    id=0,
+                    method="initialize",
+                    parameters=json_rpc.ByNameParameters(
+                        {
+                            "processId": 42,
+                            "rootUri": None,
+                            "capabilities": {
+                                "textDocument": {
+                                    "publishDiagnostics": {},
+                                    "synchronization": {
+                                        "didSave": True,
+                                    },
+                                },
+                            },
+                        }
+                    ),
+                ),
+                json_rpc.Request(method="shutdown", parameters=None),
+                json_rpc.Request(method="exit", parameters=None),
+            ]
+        )
+        output_channel = create_memory_text_writer()
+        result = await try_initialize(input_channel, output_channel)
+        self.assertIsInstance(result, InitializationExit)
+
     def test_parse_subscription(self) -> None:
         def assert_parsed(response: str, expected: SubscriptionResponse) -> None:
             self.assertEqual(
@@ -215,7 +246,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=server_state,
             pyre_manager=BackgroundTaskManager(NoOpBackgroundTask()),
         )
@@ -279,7 +309,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(bytes_writer),
-            client_capabilities=lsp.ClientCapabilities(),
             state=server_state,
             pyre_manager=fake_task_manager,
         )
@@ -317,7 +346,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=ServerState(),
             pyre_manager=fake_task_manager,
         )
@@ -343,7 +371,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=ServerState(
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD
             ),
@@ -372,7 +399,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=ServerState(opened_documents={test_path}),
             pyre_manager=fake_task_manager,
         )
@@ -395,7 +421,6 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            client_capabilities=lsp.ClientCapabilities(),
             state=ServerState(
                 opened_documents={test_path},
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
@@ -521,12 +546,14 @@ class PersistentTest(testslide.TestCase):
 
         bytes_writer = MemoryBytesWriter()
         server_handler = PyreServerHandler(
-            binary_location="/bin/pyre",
-            server_identifier="foo",
-            pyre_arguments=start.Arguments(
-                source_paths=backend_arguments.SimpleSourcePath(),
-                log_path="/log/path",
-                global_root="/global/root",
+            server_start_options_reader=lambda: PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    source_paths=backend_arguments.SimpleSourcePath(),
+                    log_path="/log/path",
+                    global_root="/global/root",
+                ),
             ),
             client_output_channel=TextWriter(bytes_writer),
             server_state=server_state,
@@ -556,5 +583,44 @@ class PersistentTest(testslide.TestCase):
                 parameters=json_rpc.ByNameParameters(
                     {"uri": "file:///foo.py", "diagnostics": []}
                 ),
+            ),
+        )
+
+    @setup.async_test
+    async def test_send_message_to_status_bar(self) -> None:
+        bytes_writer = MemoryBytesWriter()
+        server_handler = PyreServerHandler(
+            server_start_options_reader=lambda: PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    source_paths=backend_arguments.SimpleSourcePath(),
+                    log_path="/log/path",
+                    global_root="/global/root",
+                ),
+            ),
+            client_output_channel=TextWriter(bytes_writer),
+            server_state=ServerState(
+                client_capabilities=lsp.ClientCapabilities(
+                    window=lsp.WindowClientCapabilities(
+                        status=lsp.ShowStatusRequestClientCapabilities(),
+                    ),
+                )
+            ),
+        )
+        await server_handler.show_status_message_to_client(
+            message="derp", level=lsp.MessageType.WARNING
+        )
+
+        client_visible_messages = bytes_writer.items()
+        self.assertTrue(len(client_visible_messages) > 0)
+        self.assertEqual(
+            await lsp.read_json_rpc(
+                TextReader(MemoryBytesReader(client_visible_messages[-1]))
+            ),
+            json_rpc.Request(
+                method="window/showStatus",
+                id=0,
+                parameters=json_rpc.ByNameParameters({"type": 2, "message": "derp"}),
             ),
         )

@@ -67,7 +67,7 @@ module Record : sig
 
       type 'annotation t [@@deriving compare, eq, sexp, show, hash]
 
-      val unpack_public_name : string
+      type 'annotation record_broadcast [@@deriving compare, eq, sexp, show, hash]
 
       val pp_unpackable
         :  pp_type:(Format.formatter -> 'annotation -> unit) ->
@@ -105,6 +105,32 @@ module Record : sig
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
         'annotation ->
+        'annotation t
+
+      val create_unpackable_from_concrete_against_concatenation
+        :  concrete:'annotation list ->
+        concatenation:'annotation t ->
+        'annotation record_unpackable
+
+      val create_unpackable_from_concatenation_against_concatenation
+        :  compare_t:('annotation -> 'annotation -> int) ->
+        'annotation t ->
+        'annotation t ->
+        'annotation record_unpackable
+
+      val create_from_concrete_against_concatenation
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        concrete:'annotation list ->
+        concatenation:'annotation t ->
+        'annotation t
+
+      val create_from_concatenation_against_concatenation
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        compare_t:('annotation -> 'annotation -> int) ->
+        'annotation t ->
+        'annotation t ->
         'annotation t
     end
 
@@ -217,14 +243,30 @@ module Record : sig
 
     val name : 'annotation record -> Identifier.t
   end
+
+  module TypeOperation : sig
+    module Compose : sig
+      type 'annotation t = 'annotation OrderedTypes.record
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+
+    type 'annotation record = Compose of 'annotation Compose.t
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module Monomial : sig
+  module Operation : sig
+    type 'a t
+  end
+
   type 'a variable [@@deriving compare, eq, sexp, show, hash]
 
   type 'a t [@@deriving eq, sexp, compare, hash, show]
 
   val create_variable : 'a Record.Variable.RecordUnary.record -> 'a variable
+
+  val create_product : 'a Record.OrderedTypes.Concatenation.record_unpackable -> 'a variable
 end
 
 module Polynomial : sig
@@ -234,6 +276,7 @@ module Polynomial : sig
 
   val show_normal
     :  show_variable:('a Record.Variable.RecordUnary.record -> string) ->
+    show_type:(Format.formatter -> 'a -> unit) ->
     'a t ->
     string
 
@@ -241,9 +284,16 @@ module Polynomial : sig
 
   val create_from_int : int -> 'a t
 
+  val create_from_operation : 'a Monomial.Operation.t -> 'a t
+
   val create_from_variables_list
     :  compare_t:('a -> 'a -> int) ->
     (int * ('a Record.Variable.RecordUnary.record * int) list) list ->
+    'a t
+
+  val create_from_monomial_variables_list
+    :  compare_t:('a -> 'a -> int) ->
+    (int * ('a Monomial.variable * int) list) list ->
     'a t
 
   val add : compare_t:('a -> 'a -> int) -> 'a t -> 'a t -> 'a t
@@ -306,6 +356,7 @@ and t =
   | RecursiveType of t Record.RecursiveType.record
   | Top
   | Tuple of t Record.OrderedTypes.record
+  | TypeOperation of t Record.TypeOperation.record
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
   | IntExpression of t RecordIntExpression.t
@@ -517,6 +568,11 @@ module Callable : sig
 
   val map_parameters : t -> f:(parameters -> parameters) -> t
 
+  val map_parameters_with_result
+    :  t ->
+    f:(parameters -> (parameters, 'error) result) ->
+    (t, 'error) result
+
   val map_annotation : t -> f:(type_t -> type_t) -> t
 
   val with_return_annotation : t -> annotation:type_t -> t
@@ -579,6 +635,24 @@ module RecursiveType : sig
   end
 end
 
+module TypeOperation : sig
+  include module type of struct
+    include Record.TypeOperation
+  end
+
+  module Compose : sig
+    include module type of struct
+      include Record.TypeOperation.Compose
+    end
+
+    type t = type_t Record.TypeOperation.Compose.t
+
+    val create : t -> type_t option
+  end
+
+  type t = type_t Record.TypeOperation.record
+end
+
 val contains_callable : t -> bool
 
 val is_any : t -> bool
@@ -635,6 +709,8 @@ val contains_any : t -> bool
 
 val contains_unknown : t -> bool
 
+val contains_undefined : t -> bool
+
 val expression_contains_any : Expression.t -> bool
 
 (* Contains `Bottom` or variables. *)
@@ -667,6 +743,8 @@ val async_generator_value : t -> t option
 val awaitable_value : t -> t option
 
 val coroutine_value : t -> t option
+
+val typeguard_annotation : t -> t option
 
 val parameters : t -> Parameter.t list option
 
@@ -710,6 +788,8 @@ module OrderedTypes : sig
     :  parse_annotation:(Expression.t -> type_t) ->
     Expression.t ->
     type_t Concatenation.t option
+
+  val broadcast : type_t -> type_t -> type_t
 end
 
 val split : t -> t * Parameter.t list
@@ -779,6 +859,8 @@ module Variable : sig
     val mark_as_bound : t -> t
 
     val mark_as_escaped : t -> t
+
+    val mark_as_free : t -> t
 
     val namespace : t -> namespace:Namespace.t -> t
 
@@ -911,6 +993,10 @@ module Variable : sig
   val namespace : t -> namespace:Namespace.t -> t
 
   val mark_all_variables_as_bound : ?specific:t list -> type_t -> type_t
+
+  val mark_all_variables_as_free : ?specific:t list -> type_t -> type_t
+
+  val mark_as_bound : t -> t
 
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 

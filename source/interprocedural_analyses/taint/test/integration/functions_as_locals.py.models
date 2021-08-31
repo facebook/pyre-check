@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 58,
     "start": 9,
-    "end": 24,
+    "end": 23,
     "filename": "functions_as_locals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "functions_as_locals.py",
               "line": 58,
               "start": 9,
-              "end": 24
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -35,13 +35,13 @@
                 "filename": "functions_as_locals.py",
                 "line": 58,
                 "start": 9,
-                "end": 24
+                "end": 23
               },
               "resolves_to": [ "functions_as_locals.barB" ],
               "port": "formal(arg2)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -65,7 +65,7 @@
     "code": 5002,
     "line": 57,
     "start": 6,
-    "end": 21,
+    "end": 20,
     "filename": "functions_as_locals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -77,9 +77,9 @@
               "filename": "functions_as_locals.py",
               "line": 57,
               "start": 6,
-              "end": 21
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -93,13 +93,13 @@
                 "filename": "functions_as_locals.py",
                 "line": 57,
                 "start": 6,
-                "end": 21
+                "end": 20
               },
               "resolves_to": [ "functions_as_locals.barA" ],
               "port": "formal(arg1)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -131,9 +131,9 @@
               "filename": "functions_as_locals.py",
               "line": 15,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -153,7 +153,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -185,9 +185,9 @@
               "filename": "functions_as_locals.py",
               "line": 15,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -207,7 +207,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -239,9 +239,9 @@
               "filename": "functions_as_locals.py",
               "line": 33,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -261,7 +261,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -293,9 +293,9 @@
               "filename": "functions_as_locals.py",
               "line": 33,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -315,7 +315,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -331,7 +331,6 @@
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.C.m",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -340,23 +339,21 @@
             "root": {
               "filename": "functions_as_locals.py",
               "line": 28,
-              "start": 20,
-              "end": 23
+              "start": 19,
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.barA",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg1)",
@@ -365,23 +362,21 @@
             "root": {
               "filename": "functions_as_locals.py",
               "line": 44,
-              "start": 16,
-              "end": 20
+              "start": 15,
+              "end": 19
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.barB",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg2)",
@@ -390,10 +385,10 @@
             "root": {
               "filename": "functions_as_locals.py",
               "line": 48,
-              "start": 16,
-              "end": 20
+              "start": 15,
+              "end": 19
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "special_sink" }
@@ -401,15 +396,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.foo",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -418,23 +411,21 @@
             "root": {
               "filename": "functions_as_locals.py",
               "line": 11,
-              "start": 16,
-              "end": 19
+              "start": 15,
+              "end": 18
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.local_tito",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -451,20 +442,18 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.method_tito",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
@@ -481,12 +470,11 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

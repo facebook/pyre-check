@@ -390,7 +390,6 @@ class PartialConfiguration:
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
-    formatter: Optional[str] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -418,7 +417,6 @@ class PartialConfiguration:
     @staticmethod
     def _get_extra_keys() -> Set[str]:
         return {
-            "accept_command_v2",
             "create_open_source_configuration",
             "saved_state",
             "stable_client",
@@ -449,7 +447,6 @@ class PartialConfiguration:
             excludes=arguments.exclude,
             extensions=[],
             file_hash=None,
-            formatter=arguments.formatter,
             ignore_all_errors=[],
             ignore_infer=[],
             isolation_prefix=arguments.isolation_prefix,
@@ -628,7 +625,6 @@ class PartialConfiguration:
                     for json in ensure_list(configuration_json, "extensions")
                 ],
                 file_hash=file_hash,
-                formatter=ensure_option_type(configuration_json, "formatter", str),
                 ignore_all_errors=ensure_string_list(
                     configuration_json, "ignore_all_errors"
                 ),
@@ -701,9 +697,6 @@ class PartialConfiguration:
         buck_builder_binary = self.buck_builder_binary
         if buck_builder_binary is not None:
             buck_builder_binary = expand_relative_path(root, buck_builder_binary)
-        formatter = self.formatter
-        if formatter is not None:
-            formatter = expand_relative_path(root, formatter)
         logger = self.logger
         if logger is not None:
             logger = expand_relative_path(root, logger)
@@ -729,7 +722,6 @@ class PartialConfiguration:
             excludes=self.excludes,
             extensions=self.extensions,
             file_hash=self.file_hash,
-            formatter=formatter,
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
@@ -798,7 +790,6 @@ def merge_partial_configurations(
         excludes=prepend_base(base.excludes, override.excludes),
         extensions=prepend_base(base.extensions, override.extensions),
         file_hash=overwrite_base(base.file_hash, override.file_hash),
-        formatter=overwrite_base(base.formatter, override.formatter),
         ignore_all_errors=prepend_base(
             base.ignore_all_errors, override.ignore_all_errors
         ),
@@ -865,7 +856,6 @@ class Configuration:
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
-    formatter: Optional[str] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -915,7 +905,6 @@ class Configuration:
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             file_hash=partial_configuration.file_hash,
-            formatter=partial_configuration.formatter,
             ignore_all_errors=partial_configuration.ignore_all_errors,
             ignore_infer=partial_configuration.ignore_infer,
             isolation_prefix=partial_configuration.isolation_prefix,
@@ -941,7 +930,7 @@ class Configuration:
                 partial_configuration.use_buck_source_database, default=False
             ),
             use_command_v2=_get_optional_value(
-                partial_configuration.use_command_v2, default=False
+                partial_configuration.use_command_v2, default=True
             ),
             version_hash=partial_configuration.version_hash,
         )
@@ -966,7 +955,6 @@ class Configuration:
         binary = self.binary
         buck_builder_binary = self.buck_builder_binary
         buck_mode = self.buck_mode
-        formatter = self.formatter
         isolation_prefix = self.isolation_prefix
         logger = self.logger
         number_of_workers = self.number_of_workers
@@ -992,7 +980,6 @@ class Configuration:
             "do_not_ignore_all_errors_in": list(self.do_not_ignore_all_errors_in),
             "excludes": list(self.excludes),
             "extensions": list(self.extensions),
-            **({"formatter": formatter} if formatter is not None else {}),
             "ignore_all_errors": list(self.ignore_all_errors),
             "ignore_infer": list(self.ignore_infer),
             **(
@@ -1075,7 +1062,6 @@ class Configuration:
             excludes=self.excludes,
             extensions=self.extensions,
             file_hash=self.file_hash,
-            formatter=self.formatter,
             ignore_all_errors=self.ignore_all_errors,
             ignore_infer=self.ignore_infer,
             isolation_prefix=self.isolation_prefix,
@@ -1256,19 +1242,19 @@ def create_configuration(
         if found_root is None:
             raise InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
-                + f"{CONFIGURATION_FILE} file was found in {search_base}"
+                + f" {CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
         elif found_root.local_root is None:
             raise InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
-                + f"{LOCAL_CONFIGURATION_FILE} file was found in {search_base}"
+                + f" {LOCAL_CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
 
     command_argument_configuration = PartialConfiguration.from_command_arguments(
         arguments
-    )
+    ).expand_relative_paths(str(Path.cwd()))
     if found_root is None:
         project_root = Path.cwd()
         relative_local_root = None
@@ -1289,7 +1275,8 @@ def create_configuration(
                 ).expand_relative_paths(str(local_root)),
             )
         partial_configuration = merge_partial_configurations(
-            base=partial_configuration, override=command_argument_configuration
+            base=partial_configuration,
+            override=command_argument_configuration,
         )
 
     configuration = Configuration.from_partial_configuration(

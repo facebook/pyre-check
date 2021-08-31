@@ -104,7 +104,7 @@ module Make (Element : ELEMENT) = struct
       | Element, Filter -> (
           match set with
           | Universe -> Universe
-          | InvertedSet set -> InvertedSet (Set.filter f set) )
+          | InvertedSet set -> InvertedSet (Set.filter f set))
       | _ -> Base.transform part op ~f set
 
 
@@ -116,11 +116,11 @@ module Make (Element : ELEMENT) = struct
       | Element, Acc -> (
           match set with
           | Universe -> init
-          | InvertedSet set -> Set.fold f set init )
+          | InvertedSet set -> Set.fold f set init)
       | Element, Exists -> (
           match set with
           | Universe -> init
-          | InvertedSet set -> init || Set.exists f set )
+          | InvertedSet set -> init || Set.exists f set)
       | _ -> Base.reduce part ~using:op ~f ~init set
 
 
@@ -142,7 +142,7 @@ module Make (Element : ELEMENT) = struct
                 let key = f element in
                 Core_kernel.Map.Poly.update result key ~f:(update element)
               in
-              Set.fold f set Core_kernel.Map.Poly.empty )
+              Set.fold f set Core_kernel.Map.Poly.empty)
       | Element, ByFilter -> (
           match set with
           | Universe -> Core_kernel.Map.Poly.empty
@@ -152,7 +152,7 @@ module Make (Element : ELEMENT) = struct
                 | None -> result
                 | Some key -> Core_kernel.Map.Poly.update result key ~f:(update element)
               in
-              Set.fold f set Core_kernel.Map.Poly.empty )
+              Set.fold f set Core_kernel.Map.Poly.empty)
       | _ -> Base.partition part op ~f set
 
 
@@ -166,7 +166,7 @@ module Make (Element : ELEMENT) = struct
           match part with
           | Element -> Format.sprintf "InvertedSet(%s).Element" Element.name
           | Self -> Format.sprintf "InvertedSet(%s).Self" Element.name
-          | _ -> Base.introspect op )
+          | _ -> Base.introspect op)
 
 
     let create parts =

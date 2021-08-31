@@ -12,6 +12,64 @@ let test_check_isinstance context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
   let assert_strict_type_errors = assert_strict_type_errors ~context in
+  assert_type_errors
+    {|
+      import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if isinstance(x, int):
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      import typing
+      MY_GLOBAL: typing.Union[int, str] = 1
+
+      def foo() -> None:
+        if isinstance(MY_GLOBAL, str):
+          reveal_type(MY_GLOBAL)
+    |}
+    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `str`."];
+  assert_type_errors
+    {|
+      import typing
+      MY_GLOBAL: typing.Union[int, str] = 1
+
+      def call() -> None: pass
+
+      def foo() -> None:
+        if isinstance(MY_GLOBAL, str):
+          call()
+          reveal_type(MY_GLOBAL)
+    |}
+    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Union[int, str]`."];
+  assert_type_errors
+    {|
+      import typing
+      class Foo:
+        def __init__(self) -> None:
+          self.x: typing.Union[int, str] = 1
+
+      def foo(f: Foo) -> None:
+        if isinstance(f.x, str):
+          reveal_type(f.x)
+    |}
+    ["Revealed type [-1]: Revealed type for `f.x` is `str`."];
+  assert_type_errors
+    {|
+      import typing
+      class Foo:
+        def __init__(self) -> None:
+          self.x: typing.Union[int, str] = 1
+
+      def call() -> None: pass
+
+      def foo(f: Foo) -> None:
+        if isinstance(f.x, str):
+          call()
+          reveal_type(f.x)
+    |}
+    ["Revealed type [-1]: Revealed type for `f.x` is `typing.Union[int, str]`."];
   assert_default_type_errors
     {|
       def f(x) -> int:
@@ -300,6 +358,60 @@ let test_check_isinstance context =
        Union[Tuple[int, X], int])]`.";
       "Revealed type [-1]: Revealed type for `x` is `Union[Tuple[int, test.X (resolves to \
        Union[Tuple[int, X], int])], int]`.";
+    ];
+  (* Using a nonexistent or Any class in isinstance should not raise an error. *)
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, Type
+      import enum
+
+      # pyre-fixme[5]: Ignore the lack of annotation for Bar.
+      # pyre-fixme[16]: Intentionally using a nonexistent class from enum.
+      Bar = enum.NonExistent
+
+      def foo() -> None:
+        x = ...
+        reveal_type(x)
+        reveal_type(Bar)
+
+        # No error about Bar or enum.NonExistent being unsuitable.
+        isinstance(x, Bar)
+        isinstance(x, enum.NonExistent)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `Bar` is `typing.Any`.";
+      "Undefined attribute [16]: Module `enum` has no attribute `NonExistent`.";
+    ];
+  (* A try-except block desugars to branches with `isinstance` checks at the start. *)
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, Type
+      import enum
+
+      # pyre-fixme[5]: Ignore the lack of annotation for Bar.
+      # pyre-fixme[16]: Intentionally using a nonexistent class from enum.
+      Bar = enum.NonExistent
+
+      def foo() -> None:
+        try:
+          print("hello")
+        except Bar as exception:
+          print(exception)
+    |}
+    [];
+  (* TODO(T95581122): `y` should be narrowed to `int`. *)
+  assert_type_errors
+    {|
+      import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if isinstance(y := x, int):
+          reveal_type(x)
+          reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Optional[int]`.";
     ];
   ()
 

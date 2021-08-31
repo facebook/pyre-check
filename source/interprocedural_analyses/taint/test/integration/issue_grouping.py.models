@@ -111,7 +111,6 @@
   "kind": "model",
   "data": {
     "callable": "issue_grouping.multi_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(d)[a]",
@@ -147,36 +146,31 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "issue_grouping.sink_a",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SinkA" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "issue_grouping.sink_b",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(arg)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SinkB" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -188,9 +182,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -202,8 +194,6 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

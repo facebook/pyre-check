@@ -90,7 +90,7 @@ let index annotation =
       OrderIndices.write_through annotation encoded;
       match OrderIndices.get_no_cache annotation with
       | Some index -> index
-      | None -> failwith "read-your-own-write consistency was violated" )
+      | None -> failwith "read-your-own-write consistency was violated")
 
 
 let indices annotations =

@@ -39,7 +39,8 @@ type expectation = {
   returns: Taint.Sources.t list;
   errors: error_expectation list;
   obscure: bool option;
-  analysis_mode: Taint.Result.Mode.t;
+  sanitize: Taint.Result.Sanitize.t;
+  analysis_modes: Taint.Result.ModeSet.t;
 }
 
 let outcome
@@ -50,7 +51,8 @@ let outcome
     ?(returns = [])
     ?(errors = [])
     ?obscure
-    ?(analysis_mode = Taint.Result.Mode.Normal)
+    ?(sanitize = Taint.Result.Sanitize.empty)
+    ?(analysis_modes = Taint.Result.ModeSet.empty)
     define_name
   =
   {
@@ -62,28 +64,33 @@ let outcome
     returns;
     errors;
     obscure;
-    analysis_mode;
+    sanitize;
+    analysis_modes;
   }
 
 
 let get_model callable =
   let error =
     Base.Error.of_exn
-      (OUnitTest.OUnit_failure (Format.asprintf "model not found for %a" Callable.pp callable))
+      (OUnitTest.OUnit_failure (Format.asprintf "model not found for %a" Target.pp callable))
   in
-  let model = Fixpoint.get_model callable |> Option.value_exn ?here:None ~error ?message:None in
-  ( model |> Result.get_model Taint.Result.kind |> Option.value ~default:Taint.Result.empty_model,
+  let model =
+    FixpointState.get_model callable |> Option.value_exn ?here:None ~error ?message:None
+  in
+  ( model
+    |> AnalysisResult.get_model Taint.Result.kind
+    |> Option.value ~default:Taint.Result.empty_model,
     model.is_obscure )
 
 
 let create_callable kind define_name =
   let name = Reference.create define_name in
   match kind with
-  | `Method -> Callable.create_method name
-  | `Function -> Callable.create_function name
-  | `PropertySetter -> Callable.create_property_setter name
-  | `Override -> Callable.create_override name
-  | `Object -> Callable.create_object name
+  | `Method -> Target.create_method name
+  | `Function -> Target.create_function name
+  | `PropertySetter -> Target.create_property_setter name
+  | `Override -> Target.create_override name
+  | `Object -> Target.create_object name
 
 
 let check_expectation
@@ -98,7 +105,8 @@ let check_expectation
       errors;
       kind;
       obscure;
-      analysis_mode = expected_analysis_mode;
+      sanitize = expected_sanitize;
+      analysis_modes = expected_analysis_modes;
     }
   =
   let callable = create_callable kind define_name in
@@ -135,8 +143,9 @@ let check_expectation
         String.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let { backward; forward; mode }, is_obscure = get_model callable in
-  assert_equal ~printer:Taint.Result.Mode.show mode expected_analysis_mode;
+  let { backward; forward; sanitize; modes }, is_obscure = get_model callable in
+  assert_equal ~printer:Taint.Result.ModeSet.show modes expected_analysis_modes;
+  assert_equal ~printer:Taint.Result.Sanitize.show sanitize expected_sanitize;
   let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue
@@ -306,8 +315,8 @@ let check_expectation
 
   (* Check errors *)
   let actual_errors =
-    Fixpoint.get_result callable
-    |> Result.get_result Taint.Result.kind
+    FixpointState.get_result callable
+    |> AnalysisResult.get_result Taint.Result.kind
     >>| List.map ~f:Flow.generate_error
     |> Option.value ~default:[]
   in
@@ -327,18 +336,18 @@ let run_with_taint_models tests ~name =
   let set_up_taint_models ~context =
     let model_source =
       {|
-      def __test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
-      def __test_source() -> TaintSource[Test, Via[special_source]]: ...
-      def __tito( *x: TaintInTaintOut, **kw: TaintInTaintOut): ...
+      def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
+      def _test_source() -> TaintSource[Test, Via[special_source]]: ...
+      def _tito( *x: TaintInTaintOut, **kw: TaintInTaintOut): ...
       def eval(arg: TaintSink[RemoteCodeExecution]): ...
-      def __user_controlled() -> TaintSource[UserControlled]: ...
+      def _user_controlled() -> TaintSource[UserControlled]: ...
       def getattr(
           o: TaintInTaintOut[Via[object]],
           name: TaintSink[GetAttr],
           default: TaintInTaintOut[Via[default]] = ...,
       ): ...
 
-      taint.__global_sink: TaintSink[Test] = ...
+      taint._global_sink: TaintSink[Test] = ...
       ClassWithSinkAttribute.attribute: TaintSink[Test] = ...
 
       def copy(obj: TaintInTaintOut[Via[copy]]): ...
@@ -357,15 +366,17 @@ let run_with_taint_models tests ~name =
              (module TypeCheck.DummyContext))
         ~source:model_source
         ~configuration:TaintConfiguration.default
-        Callable.Map.empty
+        ~callables:None
+        ~stubs:(Interprocedural.Target.HashSet.create ())
+        Target.Map.empty
     in
     assert_bool
       (Format.sprintf
          "The models shouldn't have any parsing errors: %s."
          (List.to_string errors ~f:Taint.Model.display_verification_error))
       (List.is_empty errors);
-    Callable.Map.map models ~f:(Interprocedural.Result.make_model Taint.Result.kind)
-    |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[]
+    Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
   in
   let decorated_tests =
     List.map tests ~f:(fun (name, test) ->
@@ -380,43 +391,47 @@ let run_with_taint_models tests ~name =
 type test_environment = {
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
-  callables_to_analyze: Callable.t list;
-  initial_models_callables: Callable.t list;
+  callables_to_analyze: Target.t list;
+  initial_models_callables: Target.t list;
   environment: TypeEnvironment.ReadOnly.t;
 }
 
-let type_environment_with_decorators_inlined ~configuration environment =
-  let decorator_bodies =
-    DecoratorHelper.all_decorator_bodies (TypeEnvironment.read_only environment)
+let type_environment_with_decorators_inlined ~configuration ~taint_configuration ~models environment
+  =
+  let read_only_environment = TypeEnvironment.read_only environment in
+  let inferred_models = Model.infer_class_models ~environment:read_only_environment in
+  let models =
+    match models with
+    | None -> inferred_models
+    | Some source ->
+        let resolution =
+          TypeCheck.resolution
+            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+            (TypeEnvironment.ReadOnly.global_resolution read_only_environment)
+            (module TypeCheck.DummyContext)
+        in
+        let { Taint.Model.models; _ } =
+          Model.parse
+            ~resolution
+            ~source:(Test.trim_extra_indentation source)
+            ~configuration:taint_configuration
+            ~callables:None
+            ~stubs:(Interprocedural.Target.HashSet.create ())
+            inferred_models
+        in
+        models
   in
-  let environment =
-    AstEnvironment.create
-      ~additional_preprocessing:
-        (DecoratorHelper.inline_decorators
-           ~environment:(TypeEnvironment.read_only environment)
-           ~decorator_bodies)
-      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
-    |> AnnotatedGlobalEnvironment.create
-    |> TypeEnvironment.create
+  let decorators_to_skip =
+    Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind) models
+    |> Taint.Result.decorators_to_skip
   in
-  let all_internal_paths =
-    let get_internal_path source_path =
-      let path = SourcePath.full_path ~configuration source_path in
-      Option.some_if (SourcePath.is_internal_path ~configuration path) path
-    in
-    ModuleTracker.source_paths
-      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
-    |> List.filter_map ~f:get_internal_path
-  in
-  let _ =
-    Server.IncrementalCheck.recheck
-      ~configuration
-      ~scheduler:(Test.mock_scheduler ())
-      ~environment
-      ~errors:(Ast.Reference.Table.create ())
-      all_internal_paths
-  in
-  TypeEnvironment.read_only environment
+  DecoratorHelper.type_environment_with_decorators_inlined
+    ~configuration
+    ~scheduler:(Test.mock_scheduler ())
+    ~recheck:Server.IncrementalCheck.recheck
+    ~decorators_to_skip
+    environment
+  |> TypeEnvironment.read_only
 
 
 let initialize
@@ -435,7 +450,9 @@ let initialize
     in
     Test.ScratchProject.configuration_of project, type_environment, errors
   in
-  let environment = type_environment_with_decorators_inlined ~configuration environment in
+  let environment =
+    type_environment_with_decorators_inlined ~configuration ~taint_configuration ~models environment
+  in
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
@@ -443,19 +460,19 @@ let initialize
       (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
     |> fun option -> Option.value_exn option
   in
-  ( if not (List.is_empty errors) then
-      let errors =
-        errors
-        |> List.map ~f:(fun error ->
-               AnalysisError.instantiate
-                 ~show_error_traces:false
-                 ~lookup:
-                   (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
-                 error
-               |> AnalysisError.Instantiated.description)
-        |> String.concat ~sep:"\n"
-      in
-      failwithf "Pyre errors were found in `%s`:\n%s" handle errors () );
+  (if not (List.is_empty errors) then
+     let errors =
+       errors
+       |> List.map ~f:(fun error ->
+              AnalysisError.instantiate
+                ~show_error_traces:false
+                ~lookup:
+                  (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
+                error
+              |> AnalysisError.Instantiated.description)
+       |> String.concat ~sep:"\n"
+     in
+     failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
 
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let resolution =
@@ -471,9 +488,13 @@ let initialize
       ~source
     |> fst
     |> List.map ~f:(fun { Service.StaticAnalysis.callable; define; _ } ->
-           (callable :> Callable.t), define.Node.value)
+           callable, define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
+  let callables = List.map ~f:fst callables in
+  let stubs = List.map ~f:fst stubs in
+  let callable_targets = (callables :> Target.t list) in
+  let stub_targets = (stubs :> Target.t list) in
   let initial_models, skip_overrides =
     let inferred_models = Model.infer_class_models ~environment in
     match models with
@@ -484,6 +505,8 @@ let initialize
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
+            ~callables:(Some (Target.HashSet.of_list callable_targets))
+            ~stubs:(Target.HashSet.of_list stub_targets)
             inferred_models
         in
         assert_bool
@@ -502,24 +525,25 @@ let initialize
             ~models
             ~callables:
               (List.filter_map (List.rev_append stubs callables) ~f:(function
-                  | (`Function _ as callable), _ -> Some (callable :> Callable.real_target)
-                  | (`Method _ as callable), _ -> Some (callable :> Callable.real_target)
-                  | _ -> None))
+                  | `Function _ as callable -> Some (callable :> Target.callable_t)
+                  | `Method _ as callable -> Some (callable :> Target.callable_t)))
+            ~stubs:(Target.HashSet.of_list stub_targets)
             ~environment
         in
-        let remove_sinks models = Callable.Map.map ~f:Model.remove_sinks models in
+        let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
         let add_obscure_sinks models =
           let add_obscure_sink models callable =
             let model =
-              Callable.Map.find models callable
+              Target.Map.find models callable
               |> Option.value ~default:Taint.Result.empty_model
               |> Model.add_obscure_sink ~resolution ~call_target:callable
+              |> Model.remove_obscureness
             in
-            Callable.Map.set models ~key:callable ~data:model
+            Target.Map.set models ~key:callable ~data:model
           in
-          stubs
-          |> List.map ~f:fst
-          |> List.filter ~f:(fun callable -> not (Callable.Map.mem models callable))
+          stub_targets
+          |> List.filter ~f:(fun stub ->
+                 Target.Map.find models stub >>| Model.is_obscure |> Option.value ~default:true)
           |> List.fold ~init:models ~f:add_obscure_sink
         in
         let models =
@@ -546,18 +570,17 @@ let initialize
       ~source
   in
 
-  let callables = List.map ~f:fst callables |> List.rev_append (Callable.Map.keys overrides) in
-  let stubs = List.map ~f:fst stubs in
-  let callables_to_analyze = List.rev_append stubs callables in
-  let initial_models_callables = Callable.Map.keys initial_models in
+  let targets = List.rev_append (Target.Map.keys overrides) callable_targets in
+  let callables_to_analyze = List.rev_append stub_targets targets in
+  let initial_models_callables = Target.Map.keys initial_models in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   let () =
-    let keys = Fixpoint.KeySet.of_list callables_to_analyze in
-    Fixpoint.remove_new keys;
-    Fixpoint.remove_old keys;
+    let keys = FixpointState.KeySet.of_list callables_to_analyze in
+    FixpointState.remove_new keys;
+    FixpointState.remove_old keys;
     initial_models
-    |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
-    |> Interprocedural.Analysis.record_initial_models ~functions:callables ~stubs
+    |> Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind)
+    |> Interprocedural.FixpointAnalysis.Testing.record_initial_models ~targets ~stubs
   in
   { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }

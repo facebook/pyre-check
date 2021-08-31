@@ -99,7 +99,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           match starred with
           | Starred.Once expression
           | Starred.Twice expression ->
-              visit_expression expression )
+              visit_expression expression)
       | String { StringLiteral.kind = Format expressions; _ } ->
           List.iter expressions ~f:visit_expression
       | String { kind = Mixed substrings; _ } ->
@@ -142,9 +142,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Assert { Assert.test; message; _ } ->
           visit_expression test;
           Option.iter ~f:visit_expression message
-      | Class { Class.name; bases; body; decorators; _ } ->
+      | Class { Class.name; base_arguments; body; decorators; _ } ->
           visit_node ~state ~visitor (Reference name);
-          List.iter bases ~f:(visit_argument ~visit_expression);
+          List.iter base_arguments ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.map decorators ~f:Decorator.to_expression |> List.iter ~f:visit_expression
       | Define { Define.signature; captures; body; unbound_names = _ } ->
@@ -298,7 +298,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
             List.iter ~f:visit_statement body;
             List.iter ~f:visit_handler handlers;
             List.iter ~f:visit_statement orelse;
-            List.iter ~f:visit_statement finally )
+            List.iter ~f:visit_statement finally)
       else
         ();
       state := Visitor.statement source !state { Node.location; value }
@@ -503,3 +503,17 @@ let rec collect_non_generic_type_names { Node.value; _ } =
       List.concat_map ~f:collect_non_generic_type_names elements
   | Name name -> name_to_reference name >>| Reference.show |> Option.to_list
   | _ -> []
+
+
+let collect_format_strings_with_ignores ~ignore_line_map source =
+  let module CollectIgnoredFormatStrings = ExpressionCollector (struct
+    type t = Expression.t * Ignore.t list
+
+    let predicate = function
+      | { Node.value = Expression.String { kind = Mixed _ | Format _; _ }; location } as expression
+        ->
+          Map.find ignore_line_map (Location.line location) >>| fun ignores -> expression, ignores
+      | _ -> None
+  end)
+  in
+  CollectIgnoredFormatStrings.collect source

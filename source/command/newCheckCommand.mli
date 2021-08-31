@@ -7,28 +7,23 @@
 
 open Core
 
+module ExitStatus : sig
+  type t =
+    | Ok
+    | PyreError
+    | BuckInternalError
+    | BuckUserError
+  [@@deriving sexp, compare, hash]
+
+  val exit_code : t -> int
+end
+
 module CheckConfiguration : sig
   type t = {
-    source_paths: Configuration.SourcePaths.t;
-    search_paths: SearchPath.t list;
-    excludes: string list;
-    checked_directory_allowlist: PyrePath.t list;
-    checked_directory_blocklist: PyrePath.t list;
-    extensions: Configuration.Extension.t list;
-    log_path: PyrePath.t;
-    global_root: PyrePath.t;
-    local_root: PyrePath.t option;
-    debug: bool;
+    base: NewCommandStartup.BaseConfiguration.t;
     strict: bool;
-    python_version: Configuration.PythonVersion.t;
     show_error_traces: bool;
-    parallel: bool;
-    number_of_workers: int;
-    shared_memory: Configuration.SharedMemory.t;
     additional_logging_sections: string list;
-    remote_logging: Configuration.RemoteLogging.t option;
-    profiling_output: string option;
-    memory_profiling_output: string option;
   }
   [@@deriving sexp, compare, hash]
 
@@ -36,3 +31,5 @@ module CheckConfiguration : sig
 end
 
 val command : Command.t
+
+val on_exception : exn -> ExitStatus.t Lwt.t

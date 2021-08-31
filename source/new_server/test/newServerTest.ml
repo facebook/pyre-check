@@ -67,18 +67,18 @@ end
 module ScratchProject = struct
   type t = {
     context: test_ctxt;
-    server_configuration: ServerConfiguration.t;
+    configuration: Configuration.Analysis.t;
+    start_options: StartOptions.t;
     watchman: Watchman.Raw.t option;
     build_system_initializer: BuildSystem.Initializer.t;
   }
-
-  let server_configuration_of { server_configuration; _ } = server_configuration
 
   let setup
       ~context
       ?(external_sources = [])
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
+      ?custom_source_root
       ?watchman
       ?build_system_initializer
       sources
@@ -90,7 +90,11 @@ module ScratchProject = struct
     in
     (* We assume that there's only one checked source directory that acts as the global root as
        well. *)
-    let source_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let source_root =
+      match custom_source_root with
+      | Some source_root -> source_root
+      | None -> bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    in
     (* We assume that there's only one external source directory. *)
     let external_root =
       bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
@@ -101,61 +105,66 @@ module ScratchProject = struct
       else
         external_sources
     in
-    let log_root = bracket_tmpdir context |> Path.create_absolute in
+    let log_root = bracket_tmpdir context in
     List.iter sources ~f:(add_source ~root:source_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
     (* We assume that watchman root is the same as global root. *)
     let watchman_root = Option.map watchman ~f:(fun _ -> source_root) in
-    let server_configuration =
+    let configuration =
+      Configuration.Analysis.create
+        ~parallel:false
+        ~analyze_external_sources:false
+        ~filter_directories:[source_root]
+        ~ignore_all_errors:[]
+        ~number_of_workers:1
+        ~local_root:source_root
+        ~project_root:source_root
+        ~search_path:[SearchPath.Root external_root]
+        ~strict:false
+        ~debug:false
+        ~show_error_traces:false
+        ~excludes:[]
+        ~extensions:[]
+        ~store_type_check_resolution:false
+        ~incremental_style:Configuration.Analysis.FineGrained
+        ~log_directory:log_root
+        ~source_path:[SearchPath.Root source_root]
+        ()
+    in
+    let start_options =
       {
-        ServerConfiguration.source_paths =
-          Configuration.SourcePaths.Simple [SearchPath.Root source_root];
-        search_paths = [SearchPath.Root external_root];
-        excludes = [];
-        checked_directory_allowlist = [source_root];
-        checked_directory_blocklist = [];
-        extensions = [];
-        log_path = log_root;
-        global_root = source_root;
-        local_root = None;
+        StartOptions.source_paths = Configuration.SourcePaths.Simple [SearchPath.Root source_root];
         watchman_root;
-        taint_model_paths = [];
-        debug = false;
-        strict = false;
-        python_version = Configuration.PythonVersion.default;
-        show_error_traces = false;
-        store_type_check_resolution = false;
         critical_files = [];
         saved_state_action = None;
-        parallel = false;
-        number_of_workers = 1;
-        shared_memory = Configuration.SharedMemory.default;
-        additional_logging_sections = [];
-        remote_logging = None;
-        profiling_output = None;
-        memory_profiling_output = None;
       }
     in
     {
       context;
-      server_configuration;
+      configuration;
+      start_options;
       watchman;
       build_system_initializer =
         Option.value build_system_initializer ~default:BuildSystem.Initializer.null;
     }
 
 
+  let configuration_of { configuration; _ } = configuration
+
+  let start_options_of { start_options; _ } = start_options
+
   let test_server_with
       ?(expected_exit_status = Start.ExitStatus.Ok)
       ?on_server_socket_ready
       ~f
-      { context; server_configuration; watchman; build_system_initializer }
+      { context; configuration; start_options; watchman; build_system_initializer }
     =
     let open Lwt.Infix in
     Memory.reset_shared_memory ();
     Caml.Filename.set_temp_dir_name "/tmp";
     Start.start_server
-      server_configuration
+      start_options
+      ~configuration
       ?watchman
       ~build_system_initializer
       ?on_server_socket_ready

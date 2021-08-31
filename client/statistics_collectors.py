@@ -104,7 +104,6 @@ class AnnotationCountCollector(StatisticsCollector):
         return_is_annotated = node.returns is not None
         if return_is_annotated:
             self.annotated_return_count += 1
-
         annotated_parameters = self._check_parameter_annotations(node.params.params)
 
         if return_is_annotated and (annotated_parameters == len(node.params.params)):
@@ -124,10 +123,25 @@ class AnnotationCountCollector(StatisticsCollector):
     def visit_Assign(self, node: cst.Assign) -> None:
         if self.in_function_definition():
             return
+        implicitly_annotated_literal = False
+        if isinstance(node.value, cst.BaseNumber) or isinstance(
+            node.value, cst.BaseString
+        ):
+            implicitly_annotated_literal = True
+        implicitly_annotated_value = False
+        if isinstance(node.value, cst.Name) or isinstance(node.value, cst.Call):
+            # An over-approximation of global values that do not need an explicit
+            # annotation. Erring on the side of reporting these as annotated to
+            # avoid showing false positives to users.
+            implicitly_annotated_value = True
         if self.in_class_definition():
             self.attribute_count += 1
+            if implicitly_annotated_literal or implicitly_annotated_value:
+                self.annotated_attribute_count += 1
         else:
             self.globals_count += 1
+            if implicitly_annotated_literal or implicitly_annotated_value:
+                self.annotated_globals_count += 1
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
         if self.in_function_definition():

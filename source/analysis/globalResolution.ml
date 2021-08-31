@@ -181,8 +181,8 @@ let is_invariance_mismatch resolution ~left ~right =
                 | Ok zipped ->
                     List.map zipped ~f:(fun ((left, right), variance) -> variance, left, right)
                     |> Option.some
-                | _ -> None )
-            | _ -> None )
+                | _ -> None)
+            | _ -> None)
         | _ -> None
       in
       let due_to_invariant_variable (variance, left, right) =
@@ -252,7 +252,7 @@ let attribute_from_class_name
               ~undecorated_signature:None
               ~problem:None
             |> Option.some
-        | None -> None )
+        | None -> None)
   in
   AttributeResolution.ReadOnly.attribute
     ~instantiated
@@ -554,7 +554,7 @@ let overrides class_name ~resolution ~name =
   successors class_name ~resolution |> List.find_map ~f:find_override
 
 
-let get_decorator_define resolution decorator_name =
+let define resolution decorator_name =
   (* Nested function bodies are empty by default. We have to fill them in. *)
   let rec get_define define_name =
     function_definition resolution define_name

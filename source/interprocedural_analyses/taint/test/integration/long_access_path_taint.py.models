@@ -3,8 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{long_access_path_taint.C::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(request)",
@@ -74,8 +72,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(request)",
@@ -145,8 +141,6 @@
   "kind": "model",
   "data": {
     "callable": "long_access_path_taint.C.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(request)",
@@ -220,8 +214,6 @@
   "kind": "model",
   "data": {
     "callable": "long_access_path_taint.C.async_create",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(request)",

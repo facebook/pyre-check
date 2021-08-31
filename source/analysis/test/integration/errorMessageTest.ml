@@ -88,7 +88,7 @@ let test_show_error_traces context =
         b = 2
         reveal_type(a + b)
     |}
-    ["Revealed type [-1]: Revealed type for `a.__add__(b)` is `int`."];
+    ["Revealed type [-1]: Revealed type for `a.__add__(b)` is `typing_extensions.Literal[3]`."];
   assert_type_errors
     {|
       from typing import List
@@ -126,8 +126,6 @@ let test_show_error_traces context =
        test.py:7:4.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
-      "Incompatible return type [7]: Expected `str` but got `unknown`. Type `str` expected on line \
-       8, specified on line 5.";
     ];
   assert_type_errors
     {|

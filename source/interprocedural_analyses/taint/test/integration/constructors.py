@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Any, Dict
 
 
@@ -36,14 +36,14 @@ def test_construction(request: HttpRequest):
 
 class SourceInConstructor:
     def __init__(self):
-        self.x = __test_source()
+        self.x = _test_source()
         self.y = 0
 
 
 def test_source_in_constructor():
     c = SourceInConstructor()
-    __test_sink(c.x)
-    __test_sink(c.y)
+    _test_sink(c.x)
+    _test_sink(c.y)
 
 
 class ParentWithInit:
@@ -53,12 +53,12 @@ class ParentWithInit:
 
 class ChildWithNew(ParentWithInit):
     def __new__(cls, input):
-        __test_sink(input)
+        _test_sink(input)
         return object.__new__(cls)
 
 
 def test_new_thing():
-    c = ChildWithNew(__test_source())
+    c = ChildWithNew(_test_source())
 
 
 class BothNewAndInit:
@@ -75,7 +75,7 @@ def test_both_new_and_init_callgraph():
 
 class BaseConstructor:
     def __init__(self) -> None:
-        self.x = __test_source()
+        self.x = _test_source()
 
 
 class DerivedConstructor(BaseConstructor):

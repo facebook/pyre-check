@@ -14,31 +14,24 @@
 
 #include <stdint.h>
 
-typedef sqlite3 *sqlite3_ptr;
+typedef sqlite3* sqlite3_ptr;
 
 #define assert_sql(x, y) (assert_sql_with_line((x), (y), __LINE__))
 
-void assert_sql_with_line(
-  int result,
-  int correct_result,
-  int line_number);
+void assert_sql_with_line(int result, int correct_result, int line_number);
 
-void make_all_tables(sqlite3 *db);
+void make_all_tables(sqlite3* db);
 
 void hhfi_insert_row(
-  sqlite3_ptr db,
-  int64_t hash,
-  const char *name,
-  int64_t kind,
-  const char *filespec
-);
+    sqlite3_ptr db,
+    int64_t hash,
+    const char* name,
+    int64_t kind,
+    const char* filespec);
 
-char *hhfi_get_filespec(
-  sqlite3_ptr db,
-  int64_t hash
-);
+char* hhfi_get_filespec(sqlite3_ptr db, int64_t hash);
 
-void hhfi_init_db(const char *path);
+void hhfi_init_db(const char* path);
 void hhfi_free_db(void);
 sqlite3_ptr hhfi_get_db(void);
 

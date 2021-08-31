@@ -3,4 +3,4 @@ Call dependencies
 model_simplification._asdict_inner (fun) -> [dict::items (method) getattr (fun) isinstance (fun) list::__init__ (method) list::append (method) model_simplification._asdict_inner (fun) model_simplification._is_dataclass_instance (fun) model_simplification.fields (fun) object::__new__ (method) tuple::__init__ (method) type::__init__ (method) type::__new__ (method) typing.GenericMeta::__getitem__ (method) typing.Iterable::__iter__ (method) typing.Iterator::__next__ (method) typing.cast (fun)]
 model_simplification.asdict (fun) -> [model_simplification._asdict_inner (fun)]
 model_simplification.asdict_test (fun) -> [model_simplification.asdict (fun)]
-model_simplification.obscure_test (fun) -> [__test_source (fun) type::__init__ (method) type::__new__ (method)]
+model_simplification.obscure_test (fun) -> [_test_source (fun) type::__init__ (method) type::__new__ (method)]

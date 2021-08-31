@@ -114,7 +114,7 @@ let computation_thread
         match origin with
         | Protocol.Request.PersistentSocket socket ->
             let { Request.state; response } = process_request ~state ~request in
-            ( match response with
+            (match response with
             | Some (LanguageServerProtocolResponse _)
             | Some (ServerUuidResponse _)
             | Some (ClientExitResponse Persistent) ->
@@ -129,7 +129,7 @@ let computation_thread
                 StatusUpdate.information ~message:"Done recheck." ~state;
                 broadcast_response state (TypeCheckResponse error_map)
             | Some _ -> Log.error "Unexpected response for persistent client request"
-            | None -> () );
+            | None -> ());
             state
         | Protocol.Request.JSONSocket socket ->
             let write_to_json_socket response =
@@ -144,13 +144,13 @@ let computation_thread
                   Connections.remove_json_socket ~connections:state.connections ~socket |> ignore;
                   Log.error "Socket error"
             in
-            ( match request with
+            (match request with
             | Server.Protocol.Request.StopRequest ->
                 write_to_json_socket (Jsonrpc.Response.Stop.to_json ());
                 Operations.stop ~reason:"explicit request" ~configuration ~scheduler
-            | _ -> () );
+            | _ -> ());
             let { Request.state; response } = process_request ~state ~request in
-            ( match response with
+            (match response with
             | Some (TypeCheckResponse errors) ->
                 List.iter (errors_to_lsp_responses state errors) ~f:(fun response ->
                     Connections.broadcast_to_adapter_sockets
@@ -162,28 +162,28 @@ let computation_thread
             | Some (LanguageServerProtocolResponse response) ->
                 Connections.write_lsp_response_to_json_socket ~socket response;
                 Connections.remove_json_socket ~connections:state.connections ~socket |> ignore
-            | _ -> () );
+            | _ -> ());
             state
         | Protocol.Request.FileNotifier ->
             let { Request.state; response } = process_request ~state ~request in
-            ( match response with
+            (match response with
             | Some response -> broadcast_response state response
-            | None -> () );
+            | None -> ());
             state
         | Protocol.Request.NewConnectionSocket socket ->
             (* Stop requests are special - they require communicating back to the socket, but never
                return, so we need to respond to the request before processing it. *)
             (* TODO: Remove this special handling when we've switched over to json sockets
                completely. *)
-            ( match request with
+            (match request with
             | Server.Protocol.Request.StopRequest -> Socket.write socket StopResponse
-            | _ -> () );
+            | _ -> ());
             let { Request.state; response } = process_request ~state ~request in
-            ( match response with
+            (match response with
             | Some response ->
                 Socket.write_ignoring_epipe socket response;
                 broadcast_response state response
-            | None -> () );
+            | None -> ());
             state
       with
       | uncaught_exception ->
@@ -237,8 +237,8 @@ let computation_thread
 
 
 let request_handler_thread
-    ( ( { Configuration.Server.configuration = { expected_version; local_root; _ }; _ } as
-      server_configuration ),
+    ( ({ Configuration.Server.configuration = { expected_version; local_root; _ }; _ } as
+      server_configuration),
       ({ Server.State.lock; connections = raw_connections } as connections),
       scheduler,
       request_queue )
@@ -255,9 +255,9 @@ let request_handler_thread
     | Protocol.Request.ClientConnectionRequest client, Protocol.Request.NewConnectionSocket socket
       ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
-        ( match client with
+        (match client with
         | Persistent -> Connections.add_persistent_client ~connections ~socket
-        | _ -> () );
+        | _ -> ());
         Socket.write socket (ClientConnectionResponse client)
     | Protocol.Request.ClientConnectionRequest _, _ ->
         Log.error
@@ -293,7 +293,7 @@ let request_handler_thread
       | request -> (
           match request, origin with
           | Some request, Some origin -> queue_request ~origin request
-          | _, _ -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket." )
+          | _, _ -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket.")
     with
     | End_of_file
     | Yojson.Json_error _ ->
@@ -318,14 +318,14 @@ let request_handler_thread
       Log.error
         "Stopping server due to missing source root, %s is not a directory."
         (Path.show local_root);
-      Operations.stop ~reason:"missing source root" ~configuration:server_configuration ~scheduler );
+      Operations.stop ~reason:"missing source root" ~configuration:server_configuration ~scheduler);
     let readable =
       Unix.select
         ~restart:true
         ~read:
-          ( (server_socket :: json_socket :: adapter_socket :: Map.keys persistent_clients)
+          (server_socket :: json_socket :: adapter_socket :: Map.keys persistent_clients
           @ json_sockets
-          @ adapter_sockets )
+          @ adapter_sockets)
         ~write:[]
         ~except:[]
         ~timeout:(`After (Time.of_sec 5.0))
@@ -480,15 +480,16 @@ type run_server_daemon_entry =
 let run_server_daemon_entry : run_server_daemon_entry =
   Daemon.register_entry_point
     "server_daemon"
-    (fun ( socket,
-           json_socket,
-           adapter_socket,
-           server_configuration,
-           log_state,
-           profiling_state,
-           statistics_state )
-         (parent_in_channel, parent_out_channel)
-         ->
+    (fun
+      ( socket,
+        json_socket,
+        adapter_socket,
+        server_configuration,
+        log_state,
+        profiling_state,
+        statistics_state )
+      (parent_in_channel, parent_out_channel)
+    ->
       Daemon.close_in parent_in_channel;
       Daemon.close_out parent_out_channel;
 
@@ -509,16 +510,16 @@ let run_server_daemon_entry : run_server_daemon_entry =
 
 
 let run
-    ( {
-        Configuration.Server.lock_path;
-        socket = { path = socket_path; _ };
-        json_socket = { path = json_socket_path; _ };
-        adapter_socket = { path = adapter_socket_path; _ };
-        log_path;
-        daemonize;
-        configuration = { incremental_style; _ };
-        _;
-      } as server_configuration )
+    ({
+       Configuration.Server.lock_path;
+       socket = { path = socket_path; _ };
+       json_socket = { path = json_socket_path; _ };
+       adapter_socket = { path = adapter_socket_path; _ };
+       log_path;
+       daemonize;
+       configuration = { incremental_style; _ };
+       _;
+     } as server_configuration)
   =
   try
     (fun () ->
@@ -559,10 +560,10 @@ let run
           Daemon.close handle;
           Log.log ~section:`Server "Forked off daemon with pid %d" pid;
           Log.info "Starting the server. Please wait...";
-          pid )
+          pid)
         else (
           acquire_lock ~server_configuration;
-          serve ~socket ~json_socket ~adapter_socket ~server_configuration )
+          serve ~socket ~json_socket ~adapter_socket ~server_configuration)
       with
       | AlreadyRunning ->
           Log.info "Server is already running";
@@ -650,7 +651,6 @@ let run_start_command
     Configuration.Analysis.create
       ?expected_version
       ~debug
-      ~infer:false
       ?configuration_file_hash
       ~strict
       ~show_error_traces
@@ -702,7 +702,7 @@ let run_start_command
         | None, Some _ ->
             Log.error "-load-state-from must be set when -changed-files-path is passed in.";
             exit 1
-        | _ -> None )
+        | _ -> None)
   in
   run
     (Operations.create_configuration

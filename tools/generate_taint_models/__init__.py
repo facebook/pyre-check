@@ -12,7 +12,8 @@ import os
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Type
+from itertools import chain
+from typing import Dict, List, Optional, Set, Mapping, AbstractSet
 
 from typing_extensions import Final
 
@@ -99,7 +100,7 @@ def _parse_arguments(
 
 
 def _report_results(
-    models: Dict[str, Set[Model]], output_directory: Optional[str]
+    models: Mapping[str, AbstractSet[Model]], output_directory: Optional[str]
 ) -> None:
     if output_directory is not None:
         for name in models:
@@ -123,9 +124,7 @@ def _report_results(
             )
         )
     else:
-        all_models = set()
-        for name in models:
-            all_models = all_models.union(models[name])
+        all_models = chain.from_iterable(models.values())
         print("\n".join([str(model) for model in sorted(all_models)]))
 
 

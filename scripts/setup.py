@@ -11,6 +11,7 @@ import multiprocessing
 import os
 import shutil
 import subprocess
+import sys
 from enum import Enum
 from pathlib import Path
 from tempfile import mkdtemp
@@ -34,6 +35,7 @@ DEPENDENCIES = [
     "menhir.20201216",
     "lwt.5.4.0",
     "ounit2-lwt.2.2.4",
+    "pyre-ast.0.1.3",
 ]
 
 
@@ -48,6 +50,19 @@ class OldOpam(Exception):
 class BuildType(Enum):
     EXTERNAL = "external"
     FACEBOOK = "facebook"
+
+
+def _custom_linker_option(pyre_directory: Path, build_type: BuildType) -> str:
+    # HACK: This is a temporary workaround for inconsistent OS installations
+    # in FB-internal CI. Can be removed once all fleets are upgraded.
+    if build_type == BuildType.FACEBOOK and sys.platform == "linux":
+        return (
+            (pyre_directory / "facebook" / "scripts" / "custom_linker_options.txt")
+            .read_text()
+            .rstrip()
+        )
+    else:
+        return ""
 
 
 class Setup(NamedTuple):
@@ -90,7 +105,12 @@ class Setup(NamedTuple):
         with open(pyre_directory / "source" / "dune.in") as dune_in:
             with open(pyre_directory / "source" / "dune", "w") as dune:
                 dune_data = dune_in.read()
-                dune.write(dune_data.replace("%VERSION%", build_type.value))
+                dune.write(
+                    dune_data.replace("%VERSION%", build_type.value).replace(
+                        "%CUSTOM_LINKER_OPTION%",
+                        _custom_linker_option(pyre_directory, build_type),
+                    )
+                )
 
     def check_if_preinstalled(self) -> None:
         if self.environment_variables.get(
@@ -159,6 +179,14 @@ class Setup(NamedTuple):
             ]
         )
         opam_environment_variables = self.opam_environment_variables()
+
+        # This is required to work around a bug in pre-OCaml 4.12 that prevents
+        # `re2` from installing correctly.
+        # See https://github.com/janestreet/re2/issues/31
+        ocamlc_location = self.run(
+            ["ocamlc", "-where"], add_environment_variables=opam_environment_variables
+        )
+        self.run(["rm", "-f", f"{ocamlc_location}/version"])
 
         self.run(
             ["opam", "install", "--yes"] + DEPENDENCIES,
@@ -258,6 +286,7 @@ def setup(runner_type: Type[Setup]) -> None:
     parser.add_argument("--development", action="store_true")
     parser.add_argument("--release", action="store_true")
     parser.add_argument("--build-type", type=BuildType)
+    parser.add_argument("--no-tests", action="store_true")
 
     parsed = parser.parse_args()
 
@@ -290,7 +319,9 @@ def setup(runner_type: Type[Setup]) -> None:
         LOG.info("Environment built successfully, stopping here as requested.")
     else:
         runner.full_setup(
-            pyre_directory, run_tests=True, build_type_override=parsed.build_type
+            pyre_directory,
+            run_tests=not parsed.no_tests,
+            build_type_override=parsed.build_type,
         )
 
 

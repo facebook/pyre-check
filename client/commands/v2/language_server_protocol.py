@@ -48,6 +48,7 @@ def _get_content_length(headers: Iterable[str]) -> int:
             if parts[0] == "content-length":
                 return int(parts[1])
 
+        # pyre-fixme[61]: `parts` may not be initialized here.
         raise json_rpc.ParseError(f"Failed to find content length header from {parts}")
     except ValueError as error:
         raise json_rpc.ParseError(f"Cannot parse content length into integer: {error}")
@@ -257,8 +258,29 @@ class TextDocumentClientCapabilities:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
+class ShowStatusRequestClientCapabilities:
+    pass
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class WindowClientCapabilities:
+    work_done_progress: Optional[bool] = None
+    # Custom VSCode extension for status bar
+    status: Optional[ShowStatusRequestClientCapabilities] = None
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
 class ClientCapabilities:
     text_document: Optional[TextDocumentClientCapabilities] = None
+    window: Optional[WindowClientCapabilities] = None
 
 
 @dataclasses_json.dataclass_json(

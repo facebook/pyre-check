@@ -25,7 +25,13 @@ module Request : sig
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
+    | InlineDecorators of {
+        function_reference: Reference.t;
+        decorators_to_skip: Reference.t list;
+      }
   [@@deriving sexp, compare, eq, show]
+
+  val inline_decorators : ?decorators_to_skip:Reference.t list -> Reference.t -> t
 end
 
 module Response : sig
@@ -103,6 +109,7 @@ module Response : sig
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundPath of string
+      | FunctionDefinition of Statement.Define.t
       | Help of string
       | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
       | Success of string

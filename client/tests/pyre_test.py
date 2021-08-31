@@ -6,40 +6,21 @@
 # pyre-unsafe
 
 import tempfile
-import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
 
 import testslide
 
 from .. import (
     command_arguments,
-    commands,
     configuration,
     pyre,
     recently_used_configurations,
 )
-from ..exceptions import EnvironmentException
 from .setup import (
     ensure_directories_exists,
     switch_working_directory,
     write_configuration_file,
 )
-
-
-class PyreTest(unittest.TestCase):
-    @patch.object(commands.Start, "run")
-    @patch.object(commands.Persistent, "run_null_server")
-    def test_persistent_integration(
-        self, run_null_server: MagicMock, run_start: MagicMock
-    ) -> None:
-        run_start.side_effect = commands.ClientException
-        self.assertEqual(pyre.main(["persistent"]), 2)
-        run_null_server.assert_not_called()
-
-        run_start.side_effect = EnvironmentException
-        self.assertEqual(pyre.main(["persistent"]), 0)
-        run_null_server.assert_has_calls([call(timeout=3600 * 12)])
 
 
 class CreateConfigurationWithRetryTest(testslide.TestCase):

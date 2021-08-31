@@ -60,9 +60,9 @@ end = struct
     Format.fprintf
       formatter
       "%s"
-      ( match operator with
+      (match operator with
       | And -> "and"
-      | Or -> "or" )
+      | Or -> "or")
 
 
   let inverse = function
@@ -76,7 +76,7 @@ end = struct
     | _ -> (
         match [%compare: operator] left.operator right.operator with
         | x when not (Int.equal x 0) -> x
-        | _ -> Expression.location_insensitive_compare left.right right.right )
+        | _ -> Expression.location_insensitive_compare left.right right.right)
 end
 
 and Call : sig
@@ -217,8 +217,8 @@ end = struct
     Format.fprintf
       formatter
       "%s"
-      ( match operator with
-      | Equals -> "="
+      (match operator with
+      | Equals -> "=="
       | GreaterThan -> ">"
       | GreaterThanOrEquals -> ">="
       | In -> "in"
@@ -227,7 +227,7 @@ end = struct
       | LessThan -> "<"
       | LessThanOrEquals -> "<="
       | NotEquals -> "!="
-      | NotIn -> "not in" )
+      | NotIn -> "not in")
 
 
   let override ~location { left; operator; right } =
@@ -271,7 +271,7 @@ end = struct
     | _ -> (
         match [%compare: operator] left.operator right.operator with
         | x when not (Int.equal x 0) -> x
-        | _ -> Expression.location_insensitive_compare left.right right.right )
+        | _ -> Expression.location_insensitive_compare left.right right.right)
 end
 
 and Comprehension : sig
@@ -322,7 +322,7 @@ end = struct
                   right.conditions
               with
               | x when not (Int.equal x 0) -> x
-              | _ -> Bool.compare left.async right.async ) )
+              | _ -> Bool.compare left.async right.async))
   end
 
   type 'element t = {
@@ -437,7 +437,7 @@ end = struct
       | _ -> (
           match [%compare: Identifier.t] left.attribute right.attribute with
           | x when not (Int.equal x 0) -> x
-          | _ -> Bool.compare left.special right.special )
+          | _ -> Bool.compare left.special right.special)
   end
 
   type t =
@@ -502,8 +502,7 @@ end = struct
         match Option.compare Expression.location_insensitive_compare left.value right.value with
         | x when not (Int.equal x 0) -> x
         | _ ->
-            Option.compare Expression.location_insensitive_compare left.annotation right.annotation
-        )
+            Option.compare Expression.location_insensitive_compare left.annotation right.annotation)
 
 
   let location_insensitive_compare =
@@ -637,7 +636,7 @@ end = struct
     | _ -> (
         match Expression.location_insensitive_compare left.test right.test with
         | x when not (Int.equal x 0) -> x
-        | _ -> Expression.location_insensitive_compare left.alternative right.alternative )
+        | _ -> Expression.location_insensitive_compare left.alternative right.alternative)
 end
 
 and UnaryOperator : sig
@@ -677,19 +676,19 @@ end = struct
     Format.fprintf
       formatter
       "%s"
-      ( match operator with
+      (match operator with
       | Invert -> "~"
       | Negative -> "-"
       | Not -> "not"
-      | Positive -> "+" )
+      | Positive -> "+")
 
 
   let override { operator; operand = { Node.location; _ } as operand } =
-    ( match operator with
+    (match operator with
     | Invert -> Some "__invert__"
     | Negative -> Some "__neg__"
     | Not -> None
-    | Positive -> Some "__pos__" )
+    | Positive -> Some "__pos__")
     >>| fun name ->
     Expression.Call
       {
@@ -1031,7 +1030,7 @@ end = struct
           match kind with
           | StringLiteral.Format expressions ->
               Format.fprintf formatter "f\"%s\"(%a)" value pp_expression_list expressions
-          | _ -> Format.fprintf formatter "%s\"%s\"" bytes value )
+          | _ -> Format.fprintf formatter "%s\"%s\"" bytes value)
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           Format.fprintf
             formatter
@@ -1087,7 +1086,7 @@ end = struct
       | Yield yield -> (
           match yield with
           | Some yield -> Format.fprintf formatter "%a" pp_expression_t yield
-          | None -> Format.fprintf formatter "None" )
+          | None -> Format.fprintf formatter "None")
 
 
     let pp = pp_expression_t
@@ -1157,7 +1156,7 @@ let rec normalize { Node.location; value } =
                 left = normalize (negate left);
                 right = normalize (negate right);
               }
-        | _ -> unary )
+        | _ -> unary)
     | _ -> value
   in
   { Node.location; value = normalized }
@@ -1221,7 +1220,7 @@ let name_to_reference name =
     | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
         match get_reversed_identifiers base with
         | Some sofar -> Some (attribute :: sofar)
-        | None -> None )
+        | None -> None)
     | _ -> None
   in
   get_reversed_identifiers name >>| List.rev >>| Reference.create_from_list
@@ -1292,8 +1291,6 @@ let rec sanitized ({ Node.value; location } as expression) =
   | _ -> expression
 
 
-let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z-_0-9\\?]+\\)\\$"
-
 let rec delocalize ({ Node.value; location } as expression) =
   let value =
     match value with
@@ -1302,9 +1299,12 @@ let rec delocalize ({ Node.value; location } as expression) =
           { argument with Call.Argument.value = delocalize value }
         in
         Call { callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
+    | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_$" ->
+        let sanitized = Identifier.sanitized identifier in
+        Name (Name.Identifier sanitized)
     | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_" ->
         let sanitized = Identifier.sanitized identifier in
-        if Str.string_match local_qualifier_pattern identifier 0 then
+        if Str.string_match Reference.local_qualifier_pattern identifier 0 then
           let qualifier =
             Str.matched_group 1 identifier
             |> String.substr_replace_all ~pattern:"?" ~with_:"."
@@ -1314,7 +1314,7 @@ let rec delocalize ({ Node.value; location } as expression) =
           Name (Name.Attribute { base = qualifier; attribute = sanitized; special = false })
         else (
           Log.debug "Unable to extract qualifier from %s" identifier;
-          Name (Name.Identifier sanitized) )
+          Name (Name.Identifier sanitized))
     | Name (Name.Identifier identifier) -> Name (Name.Identifier identifier)
     | Name (Name.Attribute ({ base; _ } as name)) ->
         Name (Name.Attribute { name with base = delocalize base })
@@ -1403,10 +1403,6 @@ let get_item_call base arguments ~location =
         };
       arguments;
     }
-
-
-let is_private_attribute attribute_name =
-  String.is_prefix ~prefix:"__" attribute_name && not (String.is_suffix ~suffix:"__" attribute_name)
 
 
 let is_dunder_attribute attribute_name =

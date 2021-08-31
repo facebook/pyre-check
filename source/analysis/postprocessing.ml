@@ -42,7 +42,7 @@ let ignore ~qualifier { Source.metadata = { Source.Metadata.ignore_lines; _ }; _
           ignored := true
           (* We need to be a bit careful to support the following pattern:
            *  # pyre-ignore[7, 5]
-           *  line_that_only_errors_on_7() *) )
+           *  line_that_only_errors_on_7() *))
         else if List.mem ~equal:( = ) codes error_code then (
           begin
             match Hashtbl.find unused_ignores (Ignore.location ignore) with
@@ -57,7 +57,7 @@ let ignore ~qualifier { Source.metadata = { Source.Metadata.ignore_lines; _ }; _
                     ~data:{ ignore with Ignore.codes = new_codes }
             | _ -> ()
           end;
-          ignored := true )
+          ignored := true)
       in
       let key =
         (* Don't care about module name here since we always operate within the same module *)
@@ -120,7 +120,7 @@ let filter_errors
     let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
     List.filter ~f:keep_error errors
   in
-  List.map errors_by_define ~f:(fun errors -> filter errors)
+  List.map errors_by_define ~f:(fun errors -> filter errors |> List.sort ~compare:Error.compare)
   |> List.concat_map ~f:(Error.join_at_define ~resolution:global_resolution)
   |> Error.join_at_source ~resolution:global_resolution
 

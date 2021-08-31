@@ -12,16 +12,14 @@
               "filename": "list.py",
               "line": 12,
               "start": 9,
-              "end": 24
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -37,9 +35,9 @@
               "filename": "list.py",
               "line": 18,
               "start": 9,
-              "end": 24
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -52,9 +50,9 @@
               "filename": "list.py",
               "line": 19,
               "start": 9,
-              "end": 24
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -67,23 +65,20 @@
               "filename": "list.py",
               "line": 20,
               "start": 9,
-              "end": 24
+              "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "list.zipped_element_to_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -92,15 +87,14 @@
             "root": {
               "filename": "list.py",
               "line": 29,
-              "start": 20,
-              "end": 21
+              "start": 19,
+              "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }

@@ -8,7 +8,7 @@
 import json
 import textwrap
 import unittest
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from unittest.mock import call, patch
 
 from .. import UserError, errors
@@ -18,8 +18,11 @@ from ..errors import (
     PartialErrorSuppression,
     SkippingGeneratedFileException,
     SkippingUnparseableFileException,
+    _map_line_to_start_of_range,
     _get_unused_ignore_codes,
+    _line_ranges_spanned_by_format_strings,
     _remove_unused_ignores,
+    _relocate_errors,
     _suppress_errors,
 )
 
@@ -303,12 +306,12 @@ class ErrorsTest(unittest.TestCase):
 
         # Skip generated files.
         with self.assertRaises(SkippingGeneratedFileException):
-            _suppress_errors("@" "generated", {})
+            _suppress_errors("# @" "generated", {})
 
         # Do not check for generated files with --unsafe.
         try:
             _suppress_errors(
-                "@" "generated",
+                "# @" "generated",
                 {},
                 custom_comment=None,
                 max_line_length=None,
@@ -803,4 +806,193 @@ class ErrorsTest(unittest.TestCase):
             def foo() -> None: pass
             """,
             max_line_length=25,
+        )
+
+    def test_suppress_errors__format_string(self) -> None:
+        self.assertSuppressErrors(
+            {
+                4: [
+                    {
+                        "code": "42",
+                        "description": "Some error",
+                    }
+                ],
+                5: [
+                    {
+                        "code": "42",
+                        "description": "Some error",
+                    },
+                    {
+                        "code": "43",
+                        "description": "Some error",
+                    },
+                ],
+            },
+            """
+            def foo() -> None:
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                {"world" + int("a")}
+                bar
+                \"\"\"
+            """,
+            """
+            def foo() -> None:
+                # FIXME[42]: Some error
+                # FIXME[43]: Some error
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                {"world" + int("a")}
+                bar
+                \"\"\"
+            """,
+        )
+        self.assertSuppressErrors(
+            {
+                4: [
+                    {
+                        "code": "42",
+                        "description": "Some error 1",
+                    },
+                    {
+                        "code": "42",
+                        "description": "Some error 2",
+                    },
+                ],
+            },
+            """
+            def foo() -> None:
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                {"world" + int("a")}
+                bar
+                \"\"\"
+            """,
+            """
+            def foo() -> None:
+                # FIXME[42]: Some error 1
+                # FIXME[42]: Some error 2
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                {"world" + int("a")}
+                bar
+                \"\"\"
+            """,
+        )
+
+    def assertLinesSpanned(
+        self, source: str, expected_lines: List[Tuple[int, int]]
+    ) -> None:
+        self.assertEqual(
+            list(
+                _line_ranges_spanned_by_format_strings(textwrap.dedent(source)).values()
+            ),
+            expected_lines,
+        )
+
+    def test_lines_spanned_by_format_strings(self) -> None:
+        self.assertLinesSpanned(
+            """
+            def foo() -> None:
+                f\"\"\"
+                foo
+                {1 + "hello"}
+                bar
+                \"\"\"
+
+                f\"\"\"
+                bar
+                \"\"\"
+            """,
+            [(3, 7), (9, 11)],
+        )
+        self.assertLinesSpanned(
+            """
+            def foo() -> None:
+                f"{1 + "hello"}"
+            """,
+            [(3, 3)],
+        )
+        # Skip checking of format strings in case libcst barfs on the parsing.
+        self.assertLinesSpanned(
+            """
+            def cannot_parse()
+            """,
+            [],
+        )
+
+    def test_map_line_to_start_of_range(self) -> None:
+        self.assertEqual(
+            _map_line_to_start_of_range([(3, 3), (3, 5), (9, 13)]),
+            {3: 3, 4: 3, 5: 3, 9: 9, 10: 9, 11: 9, 12: 9, 13: 9},
+        )
+        self.assertEqual(
+            _map_line_to_start_of_range([]),
+            {},
+        )
+        # Intervals shouldn't overlap, but if they do, we will prefer the earlier one.
+        self.assertEqual(
+            _map_line_to_start_of_range([(3, 5), (4, 6)]),
+            {3: 3, 4: 3, 5: 3, 6: 4},
+        )
+
+    def test_relocate_errors(self) -> None:
+        errors = {
+            1: [
+                {"code": "1", "description": "description"},
+                {"code": "2", "description": "description"},
+            ],
+            2: [
+                {"code": "3", "description": "description"},
+                {"code": "4", "description": "description"},
+            ],
+            3: [
+                {"code": "5", "description": "description"},
+                {"code": "6", "description": "description"},
+            ],
+        }
+        self.assertEqual(
+            _relocate_errors(
+                errors,
+                {},
+            ),
+            errors,
+        )
+        self.assertEqual(
+            _relocate_errors(
+                errors,
+                {2: 1, 3: 1},
+            ),
+            {
+                1: [
+                    {"code": "1", "description": "description"},
+                    {"code": "2", "description": "description"},
+                    {"code": "3", "description": "description"},
+                    {"code": "4", "description": "description"},
+                    {"code": "5", "description": "description"},
+                    {"code": "6", "description": "description"},
+                ],
+            },
+        )
+        self.assertEqual(
+            _relocate_errors(
+                errors,
+                {1: 1, 2: 2, 3: 2},
+            ),
+            {
+                1: [
+                    {"code": "1", "description": "description"},
+                    {"code": "2", "description": "description"},
+                ],
+                2: [
+                    {"code": "3", "description": "description"},
+                    {"code": "4", "description": "description"},
+                    {"code": "5", "description": "description"},
+                    {"code": "6", "description": "description"},
+                ],
+            },
         )

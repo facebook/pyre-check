@@ -26,21 +26,20 @@ let bool_member ?default name json = member name json |> to_bool_with_default ?d
 
 let int_member ?default name json = member name json |> to_int_with_default ?default
 
-let optional_string_member name json =
+let optional_member ~f name json =
   member name json
   |> function
   | `Null -> None
-  | _ as element -> Some (to_string element)
+  | _ as element -> Some (f element)
 
+
+let optional_string_member = optional_member ~f:to_string
+
+let optional_int_member = optional_member ~f:to_int
 
 let path_member name json = member name json |> to_path
 
-let optional_path_member name json =
-  member name json
-  |> function
-  | `Null -> None
-  | _ as element -> Some (to_path element)
-
+let optional_path_member = optional_member ~f:to_path
 
 let list_member ?default ~f name json =
   member name json

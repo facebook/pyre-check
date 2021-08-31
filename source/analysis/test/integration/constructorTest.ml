@@ -940,7 +940,8 @@ let test_infer_constructor_attributes context =
       "Revealed type [-1]: Revealed type for `a.y` is `int`.";
       "Revealed type [-1]: Revealed type for `a.x` is `int`.";
       "Revealed type [-1]: Revealed type for `a._x` is `int`.";
-      "Revealed type [-1]: Revealed type for `a.__x` is `int`.";
+      (* Private attribute throws undefined attribute error. *)
+      "Revealed type [-1]: Revealed type for `a.__x` is `unknown`.";
     ]
 
 
@@ -967,6 +968,134 @@ let test_newtype context =
         return T(7, "A")
     |}
     ["Too many arguments [19]: Call `T.__init__` expects 1 positional argument, 2 were provided."];
+  ()
+
+
+let test_init_subclass context =
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str) -> None:
+            cls.swallow = swallow
+            super().__init_subclass__()
+
+      class Quest(QuestBase, swallow="african"):
+          pass
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, bird: str) -> None:
+            pass
+
+      class Quest(QuestBase, swallow="african"):
+          pass
+    |}
+    [
+      "Unexpected keyword [28]: Unexpected keyword argument `swallow` to call \
+       `QuestBase.__init_subclass__`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str, coconut: str) -> None:
+            pass
+
+      class Quest(QuestBase, swallow="african"):
+          pass
+    |}
+    ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `coconut`."];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str) -> None:
+            pass
+
+      class Quest(QuestBase, swallow="african", coconut=0):
+          pass
+    |}
+    [
+      "Unexpected keyword [28]: Unexpected keyword argument `coconut` to call \
+       `QuestBase.__init_subclass__`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        pass
+
+      class Quest(QuestBase, swallow="african"):
+          pass
+    |}
+    [
+      "Unexpected keyword [28]: Unexpected keyword argument `swallow` to call \
+       `object.__init_subclass__`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str) -> None:
+            cls.swallow = swallow
+            super().__init_subclass__()
+
+      class Quest(swallow="african", QuestBase):
+          pass
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class QuestBase:
+        swallow: str = ""
+        def __init_subclass__(cls, swallow: str) -> None:
+            cls.swallow = swallow
+            super().__init_subclass__()
+
+      class Quest(QuestBase):
+          pass
+    |}
+    ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `swallow`."];
+  assert_type_errors
+    ~context
+    {|
+      from typing import Any
+      class QuestBase:
+        def __init_subclass__(cls, **kwargs: Any) -> None:
+            pass
+
+      class Quest(QuestBase):
+        pass
+
+      class Quest2(QuestBase, arbitrary="string"):
+        pass
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      from typing import Any
+      class QuestBase:
+        def __init_subclass__(cls, **kwargs: Any) -> None:
+            pass
+
+      class Quest(QuestBase):
+        pass
+
+      class SubQuest(Quest, arbitrary="string"):
+        pass
+    |}
+    [];
   ()
 
 
@@ -1006,6 +1135,90 @@ let test_dictionary_constructor context =
   ()
 
 
+let test_register_buffer_attribute context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Foo(nn.Module):
+        def __init__(self) -> None:
+          super(Foo, self).__init__()
+          self.register_buffer("foo", torch.zeros(10, 20))
+          self.register_buffer("foo_persistent", torch.zeros(10, 20), persistent=False)
+          self.register_buffer("none_buffer", None)
+
+        def bar(self) -> None:
+          reveal_type(self.foo)
+          reveal_type(self.foo_persistent)
+          reveal_type(self.none_buffer)
+
+      def baz() -> None:
+        y = Foo().foo
+        reveal_type(y)
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `none_buffer` of class `Foo` has type `None` \
+       but no type is specified.";
+      "Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`.";
+      "Revealed type [-1]: Revealed type for `self.foo_persistent` is `torch.Tensor`.";
+      "Revealed type [-1]: Revealed type for `self.none_buffer` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `y` is `torch.Tensor`.";
+    ];
+  (* No spurious "uninitialized attribute" error if someone also explicitly declares the attribute. *)
+  assert_type_errors
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Foo(nn.Module):
+        foo: torch.Tensor
+
+        def __init__(self) -> None:
+          super(Foo, self).__init__()
+          self.register_buffer("foo", torch.zeros(10, 20))
+
+        def bar(self) -> None:
+          reveal_type(self.foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`."];
+  assert_type_errors
+    {|
+      import torch
+      import torch.nn as nn
+
+      def not_a_literal() -> str: ...
+
+      class Foo(nn.Module):
+        def __init__(self) -> None:
+          super(Foo, self).__init__()
+          self.register_buffer("foo", "not a tensor or None")
+
+        def bar(self) -> None:
+          reveal_type(self.foo)
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `foo` declared in class `Foo` has type \
+       `torch.Tensor` but is used as type `str`.";
+      "Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`.";
+    ];
+  (* TODO(T80453653): We shouldn't respect `register_buffer` in non-Modules. *)
+  assert_type_errors
+    {|
+      import torch
+      class NotAModule:
+        def __init__(self) -> None:
+          super(NotAModule, self).__init__()
+          self.register_buffer("foo", torch.zeros(10, 20))
+
+        def bar(self) -> None:
+          reveal_type(self.foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`."];
+  ()
+
+
 let () =
   "constructor"
   >::: [
@@ -1014,6 +1227,8 @@ let () =
          "check_constructors" >:: test_check_constructors;
          "check_infer_constructor_attributes" >:: test_infer_constructor_attributes;
          "newtype" >:: test_newtype;
+         "init_subclass" >:: test_init_subclass;
          "check_dictionary_constructor" >:: test_dictionary_constructor;
+         "register_buffer_attribute" >:: test_register_buffer_attribute;
        ]
   |> Test.run

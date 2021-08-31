@@ -169,7 +169,7 @@ module ReadOnly = struct
                     Some
                       (ResolvedReference.PlaceholderStub
                          { stub_module = checked_module; remaining = sofar })
-                | _ -> resolve_placeholder_stub sofar prefixes )
+                | _ -> resolve_placeholder_stub sofar prefixes)
           in
           (* Make sure none of the parent of `current_module` is placeholder stub *)
           resolve_placeholder_stub names_to_resolve (Reference.as_list current_module |> List.rev)
@@ -210,7 +210,7 @@ module ReadOnly = struct
                                 ~current_module:
                                   (Reference.create next_name |> Reference.combine current_module)
                                 ~names_to_resolve:rest_names
-                                () )
+                                ())
                       | Some (Module.Export.NameAlias { from; name }) ->
                           if Reference.equal current_module from then
                             (* This could legitimately happen when an __init__ module trying to
@@ -238,7 +238,7 @@ module ReadOnly = struct
                                  name = next_name;
                                  export = ResolvedReference.Exported export;
                                  remaining = rest_names;
-                               }) ) ) ) )
+                               })))))
     in
     resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
 
@@ -475,13 +475,13 @@ end = struct
     let function_and_class_dependents =
       DependencyKey.RegisteredSet.union
         (ClassDefinitions.KeySet.of_list class_additions |> ClassDefinitions.get_all_dependents)
-        ( FunctionDefinitions.KeySet.of_list define_additions
-        |> FunctionDefinitions.get_all_dependents )
+        (FunctionDefinitions.KeySet.of_list define_additions
+        |> FunctionDefinitions.get_all_dependents)
     in
     DependencyKey.RegisteredSet.union
       function_and_class_dependents
-      ( UnannotatedGlobals.KeySet.of_list unannotated_global_additions
-      |> UnannotatedGlobals.get_all_dependents )
+      (UnannotatedGlobals.KeySet.of_list unannotated_global_additions
+      |> UnannotatedGlobals.get_all_dependents)
 
 
   let direct_data_purge
@@ -534,7 +534,7 @@ end = struct
       | None -> (
           match AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier with
           | true -> Some (Module.create_implicit ())
-          | false -> None )
+          | false -> None)
     in
     let module_exists ?dependency qualifier =
       let qualifier =
@@ -578,7 +578,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     in
     {
       Class.name = Node.create_with_default_location (Reference.create name);
-      bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
+      base_arguments = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
       body;
       decorators = [];
       top_level_unbound_names = [];
@@ -741,6 +741,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make "typing_extensions.Literal" ~bases:catch_all_generic;
       make "typing_extensions.Annotated" ~bases:catch_all_generic;
       make "typing_extensions.TypeAlias";
+      make "typing_extensions.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
     ]
   in
   let builtin_classes =
@@ -801,7 +802,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
           let value =
             Type.expression (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
           in
-          { definition with Class.bases = [{ name = None; value }] }
+          { definition with Class.base_arguments = [{ name = None; value }] }
       | _ -> definition
     in
     WriteOnly.set_class_definition

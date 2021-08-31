@@ -5,7 +5,7 @@
 
 # flake8: noqa
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Awaitable, Callable, TypeVar
 
 from pyre_extensions import ParameterSpecification
@@ -16,7 +16,7 @@ P = ParameterSpecification("P")
 
 def with_logging(f: Callable[[int], None]) -> Callable[[int], None]:
     def inner(x: int) -> None:
-        __test_sink(x)
+        _test_sink(x)
         f(x)
 
     return inner
@@ -36,7 +36,7 @@ def with_logging_no_sink(f: Callable[[int], None]) -> Callable[[int], None]:
 
 @with_logging_no_sink
 def foo_with_sink(x: int) -> None:
-    __test_sink(x)
+    _test_sink(x)
     print(x)
 
 
@@ -47,7 +47,7 @@ def with_logging_async(
         try:
             result = await f(y)
         except Exception:
-            __test_sink(y)
+            _test_sink(y)
 
     return inner
 
@@ -59,7 +59,7 @@ async def foo_async(x: str) -> None:
 
 def with_logging_args_kwargs(f: Callable) -> Callable:
     def inner(*args, **kwargs) -> None:
-        __test_sink(kwargs)
+        _test_sink(kwargs)
         f(*args, **kwargs)
 
     return inner
@@ -79,12 +79,12 @@ def with_logging_args_kwargs_no_sink(f: Callable) -> Callable:
 
 @with_logging_args_kwargs_no_sink
 def foo_args_kwargs_with_sink(x: str, y: int) -> None:
-    __test_sink(y)
+    _test_sink(y)
 
 
 def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
     def inner(y: str) -> None:
-        __test_sink(y)
+        _test_sink(y)
         callable(y)
 
     return inner
@@ -92,7 +92,7 @@ def with_logging_sink(callable: Callable[[str], None]) -> Callable[[str], None]:
 
 def with_logging_source(callable: Callable[[str], None]) -> Callable[[str], None]:
     def inner(y: str) -> None:
-        callable(y + __test_source())
+        callable(y + _test_source())
 
     return inner
 
@@ -114,7 +114,7 @@ def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
     def _inner_decorator(f: Callable) -> Callable:
         def inner(*args: object, **kwargs: object) -> None:
             print("Logging to:", logger_name)
-            __test_sink(args)
+            _test_sink(args)
             f(*args, **kwargs)
 
         return inner
@@ -132,7 +132,7 @@ def with_logging_first_parameter(
 ) -> Callable[Concatenate[int, P], None]:
     def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
         if first_parameter != 42:
-            __test_sink(first_parameter)
+            _test_sink(first_parameter)
             return
 
         f(first_parameter, *args, **kwargs)
@@ -161,7 +161,7 @@ def with_logging_helper_functions(
 
     def after(*args: object, **kwargs: object) -> None:
         print("after", kwargs)
-        __test_sink(args)
+        _test_sink(args)
 
     return inner
 
@@ -177,7 +177,7 @@ T = TypeVar("T", bound="Foo")
 class Foo:
     def sink_method(self, x: str) -> None:
         print(x)
-        __test_sink(x)
+        _test_sink(x)
 
     @with_logging_args_kwargs_no_sink
     def foo(self, x: str) -> None:
@@ -200,29 +200,29 @@ class Foo:
 
 
 def main() -> None:
-    foo(__test_source())
-    foo_with_sink(__test_source())
-    await foo_async(__test_source())
+    foo(_test_source())
+    foo_with_sink(_test_source())
+    await foo_async(_test_source())
 
-    foo_args_kwargs(__test_source())
+    foo_args_kwargs(_test_source())
 
     # No issue because the taint is on the second parameter.
-    foo_args_kwargs_with_sink(__test_source(), 0)
+    foo_args_kwargs_with_sink(_test_source(), 0)
     # Issue.
-    foo_args_kwargs_with_sink("hello", __test_source())
+    foo_args_kwargs_with_sink("hello", _test_source())
 
     foo_with_shady_decorators("hello")
 
-    foo_using_decorator_factory(__test_source())
+    foo_using_decorator_factory(_test_source())
 
-    foo_log_first_parameter(__test_source(), "hello")
+    foo_log_first_parameter(_test_source(), "hello")
 
-    foo_with_helper_function(__test_source(), "hello")
+    foo_with_helper_function(_test_source(), "hello")
 
-    Foo().foo(__test_source())
+    Foo().foo(_test_source())
 
-    Foo().bar(__test_source())
+    Foo().bar(_test_source())
 
-    Foo().self_has_generic_type(Foo(), __test_source())
+    Foo().self_has_generic_type(Foo(), _test_source())
 
-    Foo.some_class_method(__test_source())
+    Foo.some_class_method(_test_source())

@@ -646,7 +646,7 @@ let test_check_return_unimplemented context =
         def run(self) -> int:
               pass
 
-      class MyABC2(meta=ABCMeta):
+      class MyABC2(metaclass=ABCMeta):
         @abstractmethod
         def run(self) -> int:
             pass

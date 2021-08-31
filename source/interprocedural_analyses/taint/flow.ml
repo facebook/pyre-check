@@ -259,7 +259,7 @@ let generate_error ({ code; issue_location; define; _ } as issue) =
 
 
 let to_json ~filename_lookup callable issue =
-  let callable_name = Interprocedural.Callable.external_target_name callable in
+  let callable_name = Interprocedural.Target.external_target_name callable in
   let _, detail = get_name_and_detailed_message issue in
   let message = detail in
   let source_traces =

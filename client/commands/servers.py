@@ -74,7 +74,12 @@ class Servers(Command):
     ) -> None:
         if output_format == command_arguments.JSON:
             server_details = [
-                {"pid": details.pid, "name": details.name}
+                {
+                    "pid": details.pid,
+                    "relative_local_root": None
+                    if details.is_root()
+                    else details.local_root,
+                }
                 for details in all_server_details
             ]
             log.stdout.write(json.dumps(server_details))

@@ -194,7 +194,7 @@ let process_get_definition_request
           | ModuleTracker.PathLookup.Found source_path ->
               let path = SourcePath.full_path ~configuration source_path in
               TextDocumentDefinitionResponse.create ~id ~start ~stop ~path
-          | _ -> TextDocumentDefinitionResponse.create_empty ~id )
+          | _ -> TextDocumentDefinitionResponse.create_empty ~id)
     in
     TextDocumentDefinitionResponse.to_yojson response
     |> Yojson.Safe.to_string
@@ -454,12 +454,12 @@ let rec process
           update_open_documents ~state (File.path file);
           { state; response = None }
       | SaveDocument path ->
-          ( if Random.bool () then
-              let { Configuration.Analysis.local_root; filter_directories; project_root; _ } =
-                configuration
-              in
-              Telemetry.send_telemetry () ~f:(fun _ ->
-                  Telemetry.create_update_message ~local_root ~project_root ~filter_directories) );
+          (if Random.bool () then
+             let { Configuration.Analysis.local_root; filter_directories; project_root; _ } =
+               configuration
+             in
+             Telemetry.send_telemetry () ~f:(fun _ ->
+                 Telemetry.create_update_message ~local_root ~project_root ~filter_directories));
 
           let configuration = { configuration with include_hints = true } in
           process_type_check_request ~state ~configuration [path]

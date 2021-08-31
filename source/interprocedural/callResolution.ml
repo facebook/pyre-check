@@ -27,7 +27,7 @@ let extract_constant_name { Node.value = expression; _ } =
         when String.for_all name ~f:(fun character ->
                  (not (Char.is_alpha character)) || Char.is_uppercase character) ->
           Some name
-      | _ -> None )
+      | _ -> None)
   | _ -> None
 
 

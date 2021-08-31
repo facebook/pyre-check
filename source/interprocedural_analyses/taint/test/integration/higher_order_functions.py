@@ -3,11 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def goes_to_sink(arg):
-    __test_sink(arg)
+    _test_sink(arg)
 
 
 def has_tito(arg):
@@ -19,15 +19,15 @@ def higher_order_function(f, arg):
 
 
 def test_higher_order_function():
-    higher_order_function(goes_to_sink, __test_source())
+    higher_order_function(goes_to_sink, _test_source())
 
 
 class C:
     def method_to_sink(self, arg):
-        __test_sink(arg)
+        _test_sink(arg)
 
     def self_to_sink(self):
-        __test_sink(self)
+        _test_sink(self)
 
 
 def higher_order_method(c: C, arg):
@@ -35,21 +35,21 @@ def higher_order_method(c: C, arg):
 
 
 def test_higher_order_method():
-    higher_order_method(C(), __test_source())
+    higher_order_method(C(), _test_source())
 
 
 def test_higher_order_method_self():
-    c: C = __test_source()
+    c: C = _test_source()
     higher_order_function(c.self_to_sink)
 
 
 def higher_order_function_and_sink(f, arg):
     f(arg)
-    __test_sink(arg)
+    _test_sink(arg)
 
 
 def test_higher_order_function_and_sink():
-    higher_order_function_and_sink(goes_to_sink, __test_source())
+    higher_order_function_and_sink(goes_to_sink, _test_source())
 
 
 def test_higher_order_tito(x):
@@ -61,7 +61,7 @@ def apply(f, x):
 
 
 def source_through_tito():
-    x = __test_source()
+    x = _test_source()
     y = apply(has_tito, x)
     return y
 
@@ -75,6 +75,15 @@ class Callable:
 
 
 def callable_class():
-    c = Callable(__test_source())
+    c = Callable(_test_source())
     # Even if c is a callable, we should still propagate the taint on it.
-    __test_sink(c)
+    _test_sink(c)
+
+
+def sink_args(*args):
+    for arg in args:
+        _test_sink(arg)
+
+
+def test_location(x: int, y: Callable, z: int):
+    sink_args(x, y, z)

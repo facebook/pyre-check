@@ -34,7 +34,7 @@ let redirect_special_calls
               string_callee
           in
           { Call.callee; arguments = [] }
-      | _ -> { Call.callee = string_callee; arguments = [] } )
+      | _ -> { Call.callee = string_callee; arguments = [] })
   | Name (Name.Identifier "abs"), [{ Call.Argument.value; _ }] ->
       { Call.callee = callee value "__abs__"; arguments = [] }
   | Name (Name.Identifier "repr"), [{ Call.Argument.value; _ }] ->

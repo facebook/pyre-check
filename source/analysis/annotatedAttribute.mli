@@ -100,6 +100,8 @@ val async_property : 'a t -> bool
 
 val parent : 'a t -> Type.Primitive.t
 
+val parent_name : 'a t -> Identifier.t
+
 val initialized : 'a t -> initialized
 
 val defined : 'a t -> bool
@@ -111,6 +113,10 @@ val static : instantiated -> bool
 val property : 'a t -> bool
 
 val visibility : 'a t -> visibility
+
+val is_private : 'a t -> bool
+
+val public_name : 'a t -> Identifier.t
 
 val is_final : 'a t -> bool
 

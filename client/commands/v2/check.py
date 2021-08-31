@@ -9,9 +9,8 @@ import json
 import logging
 import os
 import subprocess
-import tempfile
 from pathlib import Path
-from typing import Sequence, Optional, Dict, Any, Iterator, IO, List
+from typing import Sequence, Optional, Dict, Any, Iterator, List
 
 from ... import (
     commands,
@@ -193,20 +192,6 @@ def create_check_arguments_and_cleanup(
         arguments.source_paths.cleanup()
 
 
-@dataclasses.dataclass
-class _LogFile:
-    name: str
-    file: IO[str]
-
-
-@contextlib.contextmanager
-def backend_log_file() -> Iterator[_LogFile]:
-    with tempfile.NamedTemporaryFile(
-        mode="w", prefix="pyre_check", suffix=".log", delete=True
-    ) as argument_file:
-        yield _LogFile(name=argument_file.name, file=argument_file.file)
-
-
 class InvalidCheckResponse(Exception):
     pass
 
@@ -238,7 +223,7 @@ def parse_type_error_response(response: str) -> List[error.Error]:
 
 
 def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode:
-    with backend_log_file() as log_file:
+    with backend_arguments.backend_log_file(prefix="pyre_check") as log_file:
         with start.background_logging(Path(log_file.name)):
             result = subprocess.run(
                 command,
@@ -248,6 +233,8 @@ def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode
             )
             return_code = result.returncode
 
+            # Interpretation of the return code needs to be kept in sync with
+            # `command/newCheckCommand.ml`.
             if return_code == 0:
                 type_errors = parse_type_error_response(result.stdout)
                 incremental.display_type_errors(type_errors, output=output)
@@ -256,9 +243,15 @@ def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode
                     if len(type_errors) == 0
                     else commands.ExitCode.FOUND_ERRORS
                 )
+            elif return_code == 2:
+                LOG.error("Pyre encountered a failure within buck.")
+                return commands.ExitCode.BUCK_INTERNAL_ERROR
+            elif return_code == 3:
+                LOG.error("Pyre encountered an error when building the buck targets.")
+                return commands.ExitCode.BUCK_USER_ERROR
             else:
                 LOG.error(
-                    f"Check command exited with non-zero return code: {return_code}"
+                    f"Check command exited with non-zero return code: {return_code}."
                 )
                 return commands.ExitCode.FAILURE
 

@@ -100,7 +100,7 @@ let test_errors _ =
       ~msg:"Error"
       ~printer:(List.to_string ~f:Int.to_string)
       codes
-      (List.map errors ~f:(fun error -> Interprocedural.Error.(error.kind.code)))
+      (List.map errors ~f:(fun error -> Interprocedural.Error.code error))
   in
   assert_errors ~source_tree:source_tree_a ~sink_tree:sink_tree_a [5001];
   assert_errors ~source_tree:source_tree_b ~sink_tree:sink_tree_b [5002];

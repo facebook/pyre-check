@@ -126,7 +126,7 @@ module Raw = struct
                 let message =
                   Format.sprintf "Cannot parse JSON from watchman response: %s" message
                 in
-                Lwt.return (Response.Error message) )
+                Lwt.return (Response.Error message))
       in
       let shutdown () =
         Log.info "Shutting down watchman connection...";
@@ -156,7 +156,6 @@ module Filter = struct
   [@@deriving sexp, compare, hash]
 
   let from_server_configurations ~critical_files ~extensions ~source_paths () =
-    let open ServerConfiguration in
     let base_name_of = function
       | CriticalFile.BaseName name -> Some name
       | CriticalFile.FullPath path -> Some (Path.last path)
@@ -170,11 +169,11 @@ module Filter = struct
       |> fun set ->
       Set.add set ".pyre_configuration.local"
       |> fun set ->
-      ( match source_paths with
+      (match source_paths with
       | Configuration.SourcePaths.Buck _ ->
           let set = Set.add set "TARGETS" in
           Set.add set "BUCK"
-      | Configuration.SourcePaths.Simple _ -> set )
+      | Configuration.SourcePaths.Simple _ -> set)
       |> Set.to_list
     in
     let extension_of = function
@@ -260,14 +259,14 @@ module Subscriber = struct
                       "Cannot determinte the initial clock from response %s"
                       (Yojson.Safe.to_string error)
                   in
-                  raise (SubscriptionError message) )
+                  raise (SubscriptionError message))
           | _ as error ->
               let message =
                 Format.sprintf
                   "Subscription rejected by watchman. Response: %s"
                   (Yojson.Safe.to_string error)
               in
-              raise (SubscriptionError message) )
+              raise (SubscriptionError message))
     in
     Lwt.catch do_subscribe (fun exn ->
         (* Make sure the connection is properly shut down when an exception is raised. *)
@@ -296,38 +295,50 @@ module Subscriber = struct
                  our current view of the filesystem may not be accurate anymore. *)
               raise (SubscriptionError "Received `is_fresh_instance` message from watchman")
           | _, _ -> (
-              match Yojson.Safe.Util.member "files" response with
-              | `Null ->
-                  (* This could be a "state-enter"/"state-leave" message which can also be safely
-                     ignored. *)
-                  do_listen ()
-              | files_json -> (
-                  try
-                    let root =
-                      Yojson.Safe.Util.(member "root" response |> to_string) |> Path.create_absolute
-                    in
-                    let changed_paths =
-                      Yojson.Safe.Util.(convert_each to_string files_json)
-                      |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
-                    in
-                    f changed_paths >>= fun () -> do_listen ()
-                  with
-                  | Yojson.Json_error message ->
-                      let message =
-                        Format.sprintf
-                          "Cannot parse JSON result from watchman subscription: %s"
-                          message
-                      in
-                      raise (SubscriptionError message)
-                  | Yojson.Safe.Util.Type_error (message, json)
-                  | Yojson.Safe.Util.Undefined (message, json) ->
-                      let message =
-                        Format.sprintf
-                          "Unexpected JSON format for watchman subscription: %s. %s."
-                          (Yojson.Safe.to_string json)
-                          message
-                      in
-                      raise (SubscriptionError message) ) ) )
+              match Yojson.Safe.Util.member "canceled" response with
+              | `Bool true ->
+                  (* This means the susbscription is cancelled by watchman. We should not keep
+                     going. *)
+                  raise (SubscriptionError "Subscription is cancelled by watchman")
+              | _ -> (
+                  let () =
+                    match Yojson.Safe.Util.member "warning" response with
+                    | `String message -> Log.warning "Received watchman warning: %s" message
+                    | _ -> ()
+                  in
+                  match Yojson.Safe.Util.member "files" response with
+                  | `Null ->
+                      (* This could be a "state-enter"/"state-leave" message which can also be
+                         safely ignored. *)
+                      do_listen ()
+                  | files_json -> (
+                      try
+                        let root =
+                          Yojson.Safe.Util.(member "root" response |> to_string)
+                          |> Path.create_absolute
+                        in
+                        let changed_paths =
+                          Yojson.Safe.Util.(convert_each to_string files_json)
+                          |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
+                        in
+                        f changed_paths >>= fun () -> do_listen ()
+                      with
+                      | Yojson.Json_error message ->
+                          let message =
+                            Format.sprintf
+                              "Cannot parse JSON result from watchman subscription: %s"
+                              message
+                          in
+                          raise (SubscriptionError message)
+                      | Yojson.Safe.Util.Type_error (message, json)
+                      | Yojson.Safe.Util.Undefined (message, json) ->
+                          let message =
+                            Format.sprintf
+                              "Unexpected JSON format for watchman subscription: %s. %s."
+                              (Yojson.Safe.to_string json)
+                              message
+                          in
+                          raise (SubscriptionError message)))))
     in
     Lwt.finalize do_listen (fun () -> Raw.Connection.shutdown connection ())
 

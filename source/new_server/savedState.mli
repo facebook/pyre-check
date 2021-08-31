@@ -15,7 +15,7 @@ module Setting : sig
     watchman_connection: Watchman.Raw.Connection.t;
     project_name: string;
     project_metadata: string option;
-    critical_files: ServerConfiguration.CriticalFile.t list;
+    critical_files: CriticalFile.t list;
     target: Path.t;
   }
 end

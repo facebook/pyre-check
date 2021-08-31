@@ -30,28 +30,28 @@ let variable_r, escaped_variable_r =
 
 
 let compare_sig_t left right =
-  let default = SignatureSelectionTypes.equal_sig_t left right in
+  let open SignatureSelectionTypes in
+  let default = equal_sig_t left right in
   match left, right with
-  | ( SignatureSelectionTypes.NotFound
-        { reason = Some left_reason; closest_return_annotation = left_closest },
-      SignatureSelectionTypes.NotFound
-        { reason = Some right_reason; closest_return_annotation = right_closest } )
+  | ( NotFound { reason = Some left_reason; closest_return_annotation = left_closest },
+      NotFound { reason = Some right_reason; closest_return_annotation = right_closest } )
     when Type.equal left_closest right_closest -> (
       let equal_invalid_argument left right =
-        Option.compare
-          Expression.location_insensitive_compare
-          left.SignatureSelectionTypes.expression
-          right.SignatureSelectionTypes.expression
-        = 0
+        Option.compare Expression.location_insensitive_compare left.expression right.expression = 0
         && Type.equal left.annotation right.annotation
       in
       match left_reason, right_reason with
       | InvalidKeywordArgument left, InvalidKeywordArgument right
       | InvalidVariableArgument left, InvalidVariableArgument right ->
           equal_invalid_argument left.value right.value
-      | Mismatch left, Mismatch right ->
-          SignatureSelectionTypes.equal_mismatch left.value right.value
-      | _ -> default )
+      | Mismatches left, Mismatches right ->
+          let equal_single_mismatch left right =
+            match left, right with
+            | Mismatch left, Mismatch right -> equal_mismatch left.value right.value
+            | _, _ -> equal_mismatch_reason left right
+          in
+          List.equal equal_single_mismatch left right
+      | _ -> default)
   | _ -> default
 
 
@@ -138,8 +138,8 @@ let test_unresolved_select context =
         let arguments, expression =
           match
             AstEnvironment.ReadOnly.get_processed_source
-              ( AnnotatedGlobalEnvironment.ast_environment global_environment
-              |> AstEnvironment.read_only )
+              (AnnotatedGlobalEnvironment.ast_environment global_environment
+              |> AstEnvironment.read_only)
               (Reference.create "test")
             >>| Source.statements
             >>| List.rev
@@ -240,18 +240,20 @@ let test_unresolved_select context =
               closest_return_annotation = parse_return closest;
               reason = Some (UnexpectedKeyword ("$parameter$" ^ name));
             }
-      | `NotFoundMismatch (actual, expected, name, position) ->
+      | `NotFoundMismatch mismatch_reasons ->
           let reason =
-            { actual; expected; name; position }
-            |> Node.create_with_default_location
-            |> fun mismatch -> Some (Mismatch mismatch)
+            List.map mismatch_reasons ~f:(fun (actual, expected, name, position) ->
+                { actual; expected; name; position }
+                |> Node.create_with_default_location
+                |> fun mismatch -> Mismatch mismatch)
+            |> fun mismatches -> Some (Mismatches mismatches)
           in
           NotFound { closest_return_annotation; reason }
       | `NotFoundMismatchWithClosest (closest, actual, expected, name, position) ->
           let reason =
             { actual; expected; name; position }
             |> Node.create_with_default_location
-            |> fun mismatch -> Some (Mismatch mismatch)
+            |> fun mismatch -> Some (Mismatches [Mismatch mismatch])
           in
           NotFound { closest_return_annotation = parse_return closest; reason }
       | `NotFound (closest, reason) ->
@@ -304,16 +306,16 @@ let test_unresolved_select context =
   assert_select
     "[[int], int]"
     "('string')"
-    (`NotFoundMismatch (Type.literal_string "string", Type.integer, None, 1));
+    (`NotFoundMismatch [Type.literal_string "string", Type.integer, None, 1]);
   assert_select "[[int], int]" "(name='string')" (`NotFoundUnexpectedKeyword "name");
   assert_select "[[int], int]" "(*[1])" (`Found "int");
-  assert_select "[[str], int]" "(*[1])" (`NotFoundMismatch (Type.integer, Type.string, None, 1));
+  assert_select "[[str], int]" "(*[1])" (`NotFoundMismatch [Type.integer, Type.string, None, 1]);
   assert_select "[[int, str], int]" "(*[1], 'asdf')" (`NotFoundTooManyArguments (2, 3));
   assert_select "[[object], None]" "(union)" (`Found "None");
   assert_select
     "[[int], None]"
     "(union)"
-    (`NotFoundMismatch (Type.union [Type.integer; Type.string], Type.integer, None, 1));
+    (`NotFoundMismatch [Type.union [Type.integer; Type.string], Type.integer, None, 1]);
   assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundTooManyArguments (1, 2));
 
   (* Traverse variable arguments. *)
@@ -323,11 +325,12 @@ let test_unresolved_select context =
   assert_select
     "[[Variable(str)], int]"
     "(1, 2)"
-    (`NotFoundMismatch (Type.literal_integer 1, Type.string, None, 1));
+    (`NotFoundMismatch
+      [Type.literal_integer 1, Type.string, None, 1; Type.literal_integer 2, Type.string, None, 2]);
   assert_select
     "[[Variable(str)], int]"
     "('string', 2)"
-    (`NotFoundMismatch (Type.literal_integer 2, Type.string, None, 2));
+    (`NotFoundMismatch [Type.literal_integer 2, Type.string, None, 2]);
   assert_select "[[Variable(int)], int]" "(*[1, 2], 3)" (`Found "int");
   assert_select "[[Variable(int), Named(a, str)], int]" "(*[1, 2], a='string')" (`Found "int");
   assert_select
@@ -337,7 +340,7 @@ let test_unresolved_select context =
   assert_select
     "[[Variable(int)], int]"
     "(*['string'])"
-    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+    (`NotFoundMismatch [Type.string, Type.integer, None, 1]);
 
   (* KeywordOnly *)
   assert_select "[[KeywordOnly(i, int)], int]" "(i=1)" (`Found "int");
@@ -378,12 +381,12 @@ let test_unresolved_select context =
   assert_select
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
-    (`NotFoundMismatch (Type.literal_integer 2, Type.string, Some "$parameter$j", 2));
+    (`NotFoundMismatch [Type.literal_integer 2, Type.string, Some "$parameter$j", 2]);
   assert_select "[[Named(i, int), Named(j, int)], int]" "(**{'j': 1, 'i': 2})" (`Found "int");
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
-    "(**{'j': 'string', 'i': 'string'})"
-    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+    "( **{'j': 'string', 'i': 'string'})"
+    (`NotFoundMismatch [Type.string, Type.integer, None, 1; Type.string, Type.integer, None, 1]);
 
   (* Test iterable and mapping expansions. *)
   assert_select "[[int], int]" "(*[1])" (`Found "int");
@@ -410,7 +413,7 @@ let test_unresolved_select context =
   assert_select
     "[[Named(i, str)], int]"
     "(**(ExtendsDictStrInt()))"
-    (`NotFoundMismatch (Type.integer, Type.string, None, 1));
+    (`NotFoundMismatch [Type.integer, Type.string, None, 1]);
   assert_select "[[Named(i, int), Named(j, int)], int]" "(**({}), j=2)" (`Found "int");
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
@@ -423,18 +426,20 @@ let test_unresolved_select context =
     "[[typing.Callable[[typing.Any], int]], int]"
     "(str)"
     (`NotFoundMismatch
-      ( Type.meta Type.string,
-        Type.Callable.create
-          ~parameters:
-            (Type.Callable.Defined
-               [
-                 Type.Callable.Parameter.PositionalOnly
-                   { index = 0; annotation = Type.Any; default = false };
-               ])
-          ~annotation:Type.integer
-          (),
-        None,
-        1 ));
+      [
+        ( Type.meta Type.string,
+          Type.Callable.create
+            ~parameters:
+              (Type.Callable.Defined
+                 [
+                   Type.Callable.Parameter.PositionalOnly
+                     { index = 0; annotation = Type.Any; default = false };
+                 ])
+            ~annotation:Type.integer
+            (),
+          None,
+          1 );
+      ]);
 
   (* Keywords. *)
   assert_select "[[Keywords()], int]" "()" (`Found "int");
@@ -447,11 +452,15 @@ let test_unresolved_select context =
   assert_select
     "[[Keywords(str)], int]"
     "(a=1, b=2)"
-    (`NotFoundMismatch (Type.literal_integer 1, Type.string, Some "$parameter$a", 1));
+    (`NotFoundMismatch
+      [
+        Type.literal_integer 1, Type.string, Some "$parameter$a", 1;
+        Type.literal_integer 2, Type.string, Some "$parameter$b", 2;
+      ]);
   assert_select
     "[[Keywords(str)], int]"
     "(a='string', b=2)"
-    (`NotFoundMismatch (Type.literal_integer 2, Type.string, Some "$parameter$b", 2));
+    (`NotFoundMismatch [Type.literal_integer 2, Type.string, Some "$parameter$b", 2]);
 
   (* Constraint resolution. *)
   assert_select "[[_T], _T]" "(1)" (`Found "$literal_one");
@@ -517,14 +526,17 @@ let test_unresolved_select context =
          closest_return_annotation = escaped_variable_r;
          reason =
            Some
-             (Mismatch
-                (Node.create_with_default_location
-                   {
-                     SignatureSelectionTypes.actual = Type.literal_string "string";
-                     expected = variable_r;
-                     name = None;
-                     position = 1;
-                   }));
+             (Mismatches
+                [
+                  Mismatch
+                    (Node.create_with_default_location
+                       {
+                         SignatureSelectionTypes.actual = Type.literal_string "string";
+                         expected = variable_r;
+                         name = None;
+                         position = 1;
+                       });
+                ]);
        });
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "int");
 
@@ -547,14 +559,17 @@ let test_unresolved_select context =
          closest_return_annotation = escaped_variable_r;
          reason =
            Some
-             (Mismatch
-                (Node.create_with_default_location
-                   {
-                     SignatureSelectionTypes.actual = Type.list Type.string;
-                     expected = Type.list variable_r;
-                     name = None;
-                     position = 1;
-                   }));
+             (Mismatches
+                [
+                  Mismatch
+                    (Node.create_with_default_location
+                       {
+                         SignatureSelectionTypes.actual = Type.list Type.string;
+                         expected = Type.list variable_r;
+                         name = None;
+                         position = 1;
+                       });
+                ]);
        });
   assert_select_direct
     ~arguments:[]
@@ -702,7 +717,7 @@ let test_unresolved_select context =
   assert_select
     "[[int], None]"
     "('string')"
-    (`NotFoundMismatch (Type.literal_string "string", Type.integer, None, 1));
+    (`NotFoundMismatch [Type.literal_string "string", Type.integer, None, 1]);
   assert_select "[[typing.Callable[[_T], bool]], _T]" "(g)" (`Found "int");
   assert_select "[[typing.Callable[[_T], typing.List[bool]]], _T]" "(f)" (`Found "int");
 
@@ -833,12 +848,15 @@ let test_resolved_select context =
          closest_return_annotation = Type.integer;
          reason =
            Some
-             (Mismatch
-                {
-                  location = Location.any;
-                  value =
-                    { actual = Type.integer; expected = Type.string; name = None; position = 1 };
-                });
+             (Mismatches
+                [
+                  Mismatch
+                    {
+                      location = Location.any;
+                      value =
+                        { actual = Type.integer; expected = Type.string; name = None; position = 1 };
+                    };
+                ]);
        });
   assert_select
     ~arguments:[{ expression = None; kind = Positional; resolved = Type.literal_integer 1 }]
@@ -923,9 +941,9 @@ let test_resolved_select context =
                (* Only "local" variables should be marked as escaped *)
                Single
                  (Variable
-                    ( Type.Variable.Unary.create "X"
+                    (Type.Variable.Unary.create "X"
                     |> Type.Variable.Unary.mark_as_escaped
-                    |> Type.Variable.Unary.namespace ~namespace ));
+                    |> Type.Variable.Unary.namespace ~namespace));
              ];
        });
   ()

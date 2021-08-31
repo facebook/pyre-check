@@ -1,0 +1,234 @@
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test1_")
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[])
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test2_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        Not(name.matches("foo"))
+      ]
+    )
+  ]
+)
+
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test3_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        Not(name.matches("a")),
+        Not(type_annotation.equals("str"))
+      ]
+    )
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test4_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        AnyOf(
+          type_annotation.equals("typing.List[str]"),
+          type_annotation.equals("model_query_parameters_where.C")
+        )
+      ]
+    )
+  ]
+)
+
+
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.matches("Test5"),
+    name.matches("test5_")
+  ],
+  model = [
+    Parameters(
+      TaintSink[Test],
+      where=[
+        Not(name.equals("self")),
+        AnyOf(
+          type_annotation.matches("typing.List"),
+          type_annotation.matches("C"),
+          type_annotation.is_annotated_type()
+        )
+      ]
+    )
+  ]
+)
+
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test6_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        AnyOf(
+          index.equals(0),
+          Not(AnyOf(
+            index.equals(0),
+            index.equals(1),
+            index.equals(3),
+          ))
+        )
+      ]
+    )
+  ]
+)
+
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.matches("Test7"),
+    name.matches("test7_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        index.equals(1)
+      ]
+    )
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test8_")
+  ],
+  model = [
+    Parameters(TaintSource[Test])
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test9_")
+  ],
+  model = [
+    Parameters(TaintSource[Test])
+  ]
+)
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test9_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[SourceA],
+      where=[
+        index.equals(0)
+      ]
+    )
+  ]
+)
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test9_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[SourceB],
+      where=[
+        index.equals(1)
+      ]
+    )
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test10_")
+  ],
+  model = [
+    Parameters(TaintSource[Test])
+  ]
+)
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test10_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[SourceA],
+      where=[
+        type_annotation.is_annotated_type()
+      ]
+    )
+  ]
+)
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test10_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[SourceB],
+      where=[
+        name.equals("b")
+      ]
+    )
+  ]
+)
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test10_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[SourceC],
+      where=[
+        name.matches("foo")
+      ]
+    )
+  ]
+)
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test10_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[SourceD],
+      where=[
+        type_annotation.matches("typing.List")
+      ]
+    )
+  ]
+)

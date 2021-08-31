@@ -7,11 +7,10 @@ import itertools
 import json
 import logging
 import re
-import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import libcst
 import libcst.matchers as libcst_matchers
@@ -25,6 +24,8 @@ MAX_LINES_PER_FIXME: int = 4
 
 PyreError = Dict[str, Any]
 PathsToErrors = Dict[Path, List[PyreError]]
+LineRange = Tuple[int, int]
+LineToErrors = Dict[int, List[Dict[str, str]]]
 
 
 class LineBreakTransformer(libcst.CSTTransformer):
@@ -186,7 +187,8 @@ class Errors:
                 )
             else:
                 raise UserError(
-                    f"Encountered invalid output when checking for pyre errors: `{json_string}`."
+                    "Encountered invalid output when checking for pyre errors: "
+                    f"`{json_string}`."
                 )
 
     @staticmethod
@@ -261,81 +263,6 @@ def _filter_errors(
 ) -> List[Dict[str, Any]]:
     if only_fix_error_code is not None:
         errors = [error for error in errors if error["code"] == only_fix_error_code]
-    return errors
-
-
-def errors_from_targets(
-    project_directory: Path,
-    path: str,
-    targets: List[str],
-    check_alternate_names: bool = True,
-) -> Errors:
-    buck_test_command = (
-        ["buck", "test", "--show-full-json-output"] + targets + ["--", "--run-disabled"]
-    )
-    buck_test = subprocess.run(
-        buck_test_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    errors = Errors.empty()
-    if buck_test.returncode == 0:
-        # Successful run with no type errors
-        LOG.info("No errors in %s...", path)
-    elif buck_test.returncode == 32:
-        buck_test_output = buck_test.stdout.decode().split("\n")
-        pyre_error_pattern = re.compile(r"\W*(.*\.pyi?):(\d*):(\d*) (.* \[(\d*)\]: .*)")
-        errors = {}
-        for output_line in buck_test_output:
-            matched = pyre_error_pattern.match(output_line)
-            if matched:
-                path = matched.group(1)
-                line = int(matched.group(2))
-                column = int(matched.group(3))
-                description = matched.group(4)
-                code = matched.group(5)
-                error = {
-                    "line": line,
-                    "column": column,
-                    "path": project_directory / path,
-                    "code": code,
-                    "description": description,
-                    "concise_description": description,
-                }
-                errors[(line, column, path, code)] = error
-        errors = Errors(list(errors.values()))
-    elif check_alternate_names and buck_test.returncode == 5:
-        # Generated type check target was not named as expected.
-        LOG.warning("Could not find buck test targets: %s", targets)
-        LOG.info("Looking for similar targets...")
-        targets_to_retry = []
-        for target in targets:
-            query_command = ["buck", "query", target]
-            similar_targets = subprocess.run(
-                query_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            output = similar_targets.stdout.decode()
-            error_output = similar_targets.stderr.decode()
-            if output:
-                targets_to_retry.append(output.strip())
-            elif error_output:
-                typecheck_targets = [
-                    target.strip()
-                    for target in error_output.split("\n")
-                    if target.strip().endswith("-pyre-typecheck")
-                ]
-                targets_to_retry += typecheck_targets
-        if targets_to_retry:
-            LOG.info("Retrying similar targets: %s", targets_to_retry)
-            errors = errors_from_targets(
-                project_directory, path, targets_to_retry, check_alternate_names=False
-            )
-        else:
-            LOG.error("No similar targets to retry.")
-    else:
-        LOG.error(
-            "Failed to run buck test command:\n\t%s\n\n%s",
-            " ".join(buck_test_command),
-            buck_test.stderr.decode(),
-        )
     return errors
 
 
@@ -448,26 +375,52 @@ def _remove_unused_ignores(line: str, errors: List[Dict[str, str]]) -> str:
         )
 
 
-def _suppress_errors(
-    input: str,
+def _line_ranges_spanned_by_format_strings(
+    source: str,
+) -> Dict[libcst.CSTNode, LineRange]:
+    def _code_range_to_line_range(
+        code_range: libcst._position.CodeRange,
+    ) -> LineRange:
+        return code_range.start.line, code_range.end.line
+
+    try:
+        wrapper = libcst.metadata.MetadataWrapper(libcst.parse_module(source))
+    except libcst._exceptions.ParserSyntaxError as exception:
+        # NOTE: This should not happen. If a file is unparseable for libcst, it
+        # would probably have been unparseable for Pyre as well. In that case,
+        # we would not have raised a 404 parse error and not reached here in the
+        # first place. Still, catch the exception and just skip the special
+        # handling of format strings.
+        LOG.warning(
+            "Not moving out fixmes from f-strings because"
+            f" libcst failed to parse the file: {exception}"
+        )
+        return {}
+
+    position_map = wrapper.resolve(libcst.metadata.PositionProvider)
+    return {
+        format_string: _code_range_to_line_range(position_map[format_string])
+        for format_string in libcst_matchers.findall(
+            wrapper.module, libcst_matchers.FormattedString()
+        )
+    }
+
+
+def _map_line_to_start_of_range(line_ranges: List[LineRange]) -> Dict[int, int]:
+    target_line_map = {}
+    for start, end in reversed(line_ranges):
+        for line in range(start, end + 1):
+            target_line_map[line] = start
+    return target_line_map
+
+
+def _lines_after_suppressing_errors(
+    lines: List[str],
     errors: Dict[int, List[Dict[str, str]]],
-    custom_comment: Optional[str] = None,
-    max_line_length: Optional[int] = None,
-    truncate: bool = False,
-    unsafe: bool = False,
-) -> str:
-    if not unsafe and "@" "generated" in input:
-        raise SkippingGeneratedFileException()
-
-    lines: List[str] = input.split("\n")
-
-    # Do not suppress parse errors.
-    if any(
-        error["code"] == "404" for error_list in errors.values() for error in error_list
-    ):
-        raise SkippingUnparseableFileException()
-
-    # Replace lines in file.
+    custom_comment: Optional[str],
+    max_line_length: Optional[int],
+    truncate: bool,
+) -> List[str]:
     new_lines = []
     removing_pyre_comments = False
     line_break_block_errors: List[List[str]] = []
@@ -529,6 +482,77 @@ def _suppress_errors(
             )
             new_lines.extend(comments)
         new_lines.append(line)
+
+    return new_lines
+
+
+def _relocate_errors(
+    errors: LineToErrors, target_line_map: Dict[int, int]
+) -> LineToErrors:
+    relocated = defaultdict(list)
+    for line, errors in errors.items():
+        target_line = target_line_map.get(line)
+        if target_line is None:
+            target_line = line
+        else:
+            LOG.info(
+                f"Relocating the following fixmes from line {line}"
+                f" to line {target_line} because line {line} is within"
+                f" a multi-line format string:\n{errors}"
+            )
+
+        relocated[target_line].extend(errors)
+    return relocated
+
+
+def _relocate_errors_inside_format_strings(
+    errors: LineToErrors, source: str
+) -> LineToErrors:
+    def _expression_to_string(expression: libcst.BaseExpression) -> str:
+        return libcst.Module(
+            [libcst.SimpleStatementLine([libcst.Expr(expression)])]
+        ).code.strip()
+
+    format_string_line_ranges = _line_ranges_spanned_by_format_strings(source)
+    if len(format_string_line_ranges) == 0:
+        return errors
+
+    log_lines = ["Lines spanned by format strings:"]
+    for format_string, line_range in format_string_line_ranges.items():
+        # pyre-fixme[6]: Expected BaseExpression but got CSTNode.
+        log_lines.append(f"{_expression_to_string(format_string)}: {line_range}")
+    LOG.debug("\n".join(log_lines))
+
+    return _relocate_errors(
+        errors, _map_line_to_start_of_range(list(format_string_line_ranges.values()))
+    )
+
+
+def _suppress_errors(
+    input: str,
+    errors: LineToErrors,
+    custom_comment: Optional[str] = None,
+    max_line_length: Optional[int] = None,
+    truncate: bool = False,
+    unsafe: bool = False,
+) -> str:
+    if not unsafe and "@" "generated" in input:
+        raise SkippingGeneratedFileException()
+
+    lines: List[str] = input.split("\n")
+
+    # Do not suppress parse errors.
+    if any(
+        error["code"] == "404" for error_list in errors.values() for error in error_list
+    ):
+        raise SkippingUnparseableFileException()
+
+    errors = _relocate_errors_inside_format_strings(errors, input)
+
+    new_lines = _lines_after_suppressing_errors(
+        lines, errors, custom_comment, max_line_length, truncate
+    )
+
     output = "\n".join(new_lines)
     if not unsafe:
         ast.check_stable(input, output)

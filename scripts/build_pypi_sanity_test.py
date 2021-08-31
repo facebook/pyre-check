@@ -5,11 +5,14 @@
 
 import argparse
 import json
+import logging
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
 from venv import EnvBuilder
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class AssertionError(Exception):
@@ -27,30 +30,32 @@ def validate_configuration(temporary_project_path: Path) -> None:
         configuration = json.loads(configuration_path.read_text())
     except json.JSONDecodeError:
         raise AssertionError(f"Invalid configuration at `{configuration_path}`")
-    print(f"Successfully created configuration at `{configuration_path}`:")
-    print(json.dumps(configuration, indent=2))
+    LOG.warning(f"Successfully created configuration at `{configuration_path}`:")
+    LOG.warning(json.dumps(configuration, indent=2))
 
-    # Confirm configuration contains actual typeshed and taint files.
-    typeshed_path = Path(configuration["typeshed"])
+    # Confirm configuration contains taint files.
     taint_path = Path(configuration["taint_models_path"])
-    binary = Path(configuration["binary"])
-
     production_assert(taint_path.is_dir(), "Taint path is not a directory.")
-    production_assert(
-        (taint_path / "taint.config").is_file(), "Taint config is not included."
-    )
 
-    production_assert(typeshed_path.is_dir(), "Typeshed was not installed.")
-    production_assert(
-        (typeshed_path / "stdlib").is_dir(), "`stdlib` was not included in typeshed."
-    )
-
-    production_assert(binary.is_file(), "Binary was not included in pypi package.")
+    # Confirm configuration explicit typeshed and binary are valid. Missing fields are
+    # expected if typeshed and binary can be found in a standard location.
+    typeshed_path = configuration.get("typeshed")
+    if typeshed_path:
+        typeshed_path = Path(typeshed_path)
+        production_assert(typeshed_path.is_dir(), "Explicit typeshed path is invalid.")
+        production_assert(
+            (typeshed_path / "stdlib").is_dir(),
+            "`stdlib` was not included in typeshed.",
+        )
+    binary_path = configuration.get("binary")
+    if binary_path:
+        binary_path = Path(binary_path)
+        production_assert(binary_path.is_file(), "Explicit binary path is invalid.")
 
 
 def run_sanity_test(version: str, use_wheel: bool) -> None:
     message = "wheel" if use_wheel else "source distribution"
-    print(f"Sanity testing {message}")
+    LOG.warning(f"Sanity testing {message}")
     with tempfile.TemporaryDirectory() as temporary_venv:
         venv = Path(temporary_venv)
         builder = EnvBuilder(system_site_packages=False, clear=True, with_pip=True)
@@ -60,11 +65,13 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
         pyre_upgrade_path = venv / "bin" / "pyre-upgrade"
 
         # Confirm that pypi package can be successfully installed
+        LOG.warning("Testing PyPi package installation...")
         wheel_flag = "--only-binary" if use_wheel else "--no-binary"
         subprocess.run(
             [
                 venv / "bin" / "pip",
                 "install",
+                "--proxy=http://fwdproxy:8080/",
                 "--index-url",
                 "https://test.pypi.org/simple/",
                 "--extra-index-url",
@@ -83,7 +90,9 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             python_file_path = temporary_project_path / "a.py"
             python_file_path.touch()
             python_file_path.write_text("# pyre-strict \ndef foo():\n\treturn 1")
+
             # Confirm we can run `pyre init` successfully.
+            LOG.warning("Testing `pyre init`...")
             init_process = subprocess.run(
                 [str(pyre_path), "init"],
                 cwd=temporary_project_path,
@@ -98,6 +107,7 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             validate_configuration(temporary_project_path)
 
             # Confirm `pyre` reports errors as expected.
+            LOG.warning("Testing `pyre` error reporting...")
             result = subprocess.run(
                 [pyre_path, "--output=json", "check"],
                 capture_output=True,
@@ -106,7 +116,7 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             try:
                 errors = json.loads(result.stdout)
             except json.JSONDecodeError:
-                error_message = result.stderr
+                error_message = result.stderr.decode()
                 raise AssertionError(
                     f"Pyre did not successfully finish type checking: {error_message}"
                 )
@@ -118,6 +128,7 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             )
 
             # Confirm `pyre-upgrade` runs successfully.
+            LOG.warning("Testing `pyre upgrade`...")
             upgrade_process = subprocess.run(
                 [str(pyre_upgrade_path), "fixme"],
                 cwd=temporary_project_path,
@@ -139,7 +150,8 @@ def main() -> None:
     arguments = parser.parse_args()
     version: str = arguments.version
     run_sanity_test(version, use_wheel=True)
-    run_sanity_test(version, use_wheel=False)
+    # TODO(T94611472): Fix PyPi source distribution
+    # run_sanity_test(version, use_wheel=False)
 
 
 if __name__ == "__main__":

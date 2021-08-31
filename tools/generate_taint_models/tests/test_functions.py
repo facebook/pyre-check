@@ -27,13 +27,13 @@ def testE(x: int, **kwargs: str) -> None:
 
 
 class TestClass:
-    def __init__(self):
+    def __init__(self) -> None:
         ...
 
-    def methodA(self, x: int):
+    def methodA(self, x: int) -> None:
         ...
 
-    def methodB(self, *args: str):
+    def methodB(self, *args: str) -> None:
         ...
 
 
@@ -42,12 +42,12 @@ class TestChildClassA(TestClass):
 
 
 class TestGrandChildClassA(TestChildClassA):
-    def __init__(self, x: int):
+    def __init__(self, x: int) -> None:
         ...
 
 
 class TestChildClassB(TestClass):
-    def __init__(self, x: int):
+    def __init__(self, x: int) -> None:
         ...
 
 

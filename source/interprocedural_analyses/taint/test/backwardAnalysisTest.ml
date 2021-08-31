@@ -26,10 +26,12 @@ let assert_taint ~context source expected =
     |> fun option -> Option.value_exn option
   in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
-  let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
+  let () =
+    List.map ~f:Target.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
+  in
   let analyze_and_store_in_order define =
-    let call_target = Callable.create define in
-    let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
+    let call_target = Target.create define in
+    let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
       Interprocedural.CallGraph.call_graph_of_define
         ~environment:(TypeEnvironment.read_only environment)
@@ -45,9 +47,9 @@ let assert_taint ~context source expected =
         ~triggered_sinks:(Ast.Location.Table.create ())
     in
     let model = { Taint.Result.empty_model with backward } in
-    Result.empty_model
-    |> Result.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
+    AnalysisResult.empty_model
+    |> AnalysisResult.with_model Taint.Result.kind model
+    |> FixpointState.add_predefined FixpointState.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
   List.iter ~f:(check_expectation ~environment:(TypeEnvironment.read_only environment)) expected;
@@ -110,7 +112,7 @@ let test_sink context =
       def test_sink(parameter0, tainted_parameter1):
         unused_parameter = parameter0
         command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
-        __test_sink(command_unsafe)
+        _test_sink(command_unsafe)
     |}
     [
       outcome
@@ -143,10 +145,10 @@ let test_rce_and_test_sink context =
     ~context
     {|
       def test_rce_and_test_sink(test_only, rce_only, both):
-        __test_sink(test_only)
+        _test_sink(test_only)
         eval(rce_only)
         if True:
-          __test_sink(both)
+          _test_sink(both)
         else:
           eval(both)
     |}
@@ -178,7 +180,7 @@ let test_tito_sink context =
 
       def test_tito_sink(parameter0, tainted_parameter1):
         tainted = test_called_tito(tainted_parameter1, parameter0)
-        __test_sink(tainted)
+        _test_sink(tainted)
     |}
     [
       outcome
@@ -213,7 +215,7 @@ let test_apply_method_model_at_call_site context =
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
-          __test_sink(command_unsafe)
+          _test_sink(command_unsafe)
 
       class Bar:
         def qux(self, not_tainted_parameter):
@@ -235,7 +237,7 @@ let test_apply_method_model_at_call_site context =
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
-          __test_sink(command_unsafe)
+          _test_sink(command_unsafe)
 
       class Bar:
         def qux(self, not_tainted_parameter):
@@ -252,7 +254,7 @@ let test_apply_method_model_at_call_site context =
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
-          __test_sink(command_unsafe)
+          _test_sink(command_unsafe)
 
       class Bar:
         def qux(self, not_tainted_parameter):
@@ -273,7 +275,7 @@ let test_apply_method_model_at_call_site context =
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
-          __test_sink(command_unsafe)
+          _test_sink(command_unsafe)
 
       class Bar:
         def qux(self, not_tainted_parameter):
@@ -289,7 +291,7 @@ let test_apply_method_model_at_call_site context =
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
-          __test_sink(command_unsafe)
+          _test_sink(command_unsafe)
 
       class Bar:
         def qux(self, not_tainted_parameter):
@@ -323,7 +325,7 @@ let test_apply_method_model_at_call_site context =
       class Baz:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
-          __test_sink(command_unsafe)
+          _test_sink(command_unsafe)
 
       def taint_across_union_receiver_types(condition, tainted_parameter):
         if condition:
@@ -375,7 +377,7 @@ let test_sequential_call_path context =
     {|
       class Foo:
         def sink(self, argument) -> Foo:
-            __test_sink(argument)
+            _test_sink(argument)
             return self
     |}
     [
@@ -390,7 +392,7 @@ let test_sequential_call_path context =
     {|
       class Foo:
         def sink(self, argument) -> Foo:
-            __test_sink(argument)
+            _test_sink(argument)
             return self
 
       def sequential_with_single_sink(first, second, third):
@@ -408,7 +410,7 @@ let test_sequential_call_path context =
     {|
       class Foo:
         def sink(self, argument) -> Foo:
-            __test_sink(argument)
+            _test_sink(argument)
             return self
 
       def sequential_with_two_sinks(first, second, third):
@@ -431,7 +433,7 @@ let test_sequential_call_path context =
     {|
       class Foo:
         def sink(self, argument) -> Foo:
-            __test_sink(argument)
+            _test_sink(argument)
             return self
 
       def sequential_with_redefine(first, second, third):
@@ -455,7 +457,7 @@ let test_sequential_call_path context =
     {|
       class Foo:
         def sink(self, argument) -> Foo:
-            __test_sink(argument)
+            _test_sink(argument)
             return self
 
       def sequential_with_distinct_sinks(first, second, third):
@@ -479,7 +481,7 @@ let test_sequential_call_path context =
     {|
       class Foo:
         def sink(self, argument) -> Foo:
-            __test_sink(argument)
+            _test_sink(argument)
             return self
 
       def sequential_with_self_propagation(first, second, third):
@@ -505,7 +507,7 @@ let test_chained_call_path context =
     {|
       class Foo:
         def sink(self, argument1) -> Foo:
-            __test_sink(argument1)
+            _test_sink(argument1)
             return self
 
       def chained(parameter0, parameter1, parameter2):
@@ -530,7 +532,7 @@ let test_chained_call_path context =
             return self
 
         def sink(self, argument1) -> Foo:
-            __test_sink(argument1)
+            _test_sink(argument1)
             return self
 
       def chained_with_tito(parameter0, parameter1, parameter2):
@@ -555,7 +557,7 @@ let test_dictionary context =
     {|
       def dictionary_sink(arg):
         {
-          "a": __test_sink(arg),
+          "a": _test_sink(arg),
         }
 
       def dictionary_tito(arg):
@@ -622,7 +624,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_sink(arg):
-        second = { **(__test_sink(arg)) }
+        second = { **(_test_sink(arg)) }
         return second
     |}
     [
@@ -635,7 +637,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_sink(arg):
-        d = { __test_sink(arg): "a" }
+        d = { _test_sink(arg): "a" }
     |}
     [
       outcome
@@ -647,7 +649,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_sink(arg):
-        d = { __test_sink(a): "a" for a in arg }
+        d = { _test_sink(a): "a" for a in arg }
     |}
     [
       outcome
@@ -659,7 +661,7 @@ let test_dictionary context =
     ~context
     {|
       def dictionary_sink(arg):
-        d = { "a": __test_sink(a) for a in arg }
+        d = { "a": _test_sink(a) for a in arg }
     |}
     [
       outcome
@@ -673,7 +675,7 @@ let test_dictionary context =
       def key_sink(arg1, arg2):
         d = { arg1: arg2 }
         for k, v in d.items():
-          __test_sink(k)
+          _test_sink(k)
     |}
     [
       outcome
@@ -688,28 +690,28 @@ let test_comprehensions context =
     ~context
     {|
       def sink_in_iterator(arg):
-          [ x for x in __test_sink(arg) ]
+          [ x for x in _test_sink(arg) ]
 
       def sink_in_expression(data):
-          [ __test_sink(x) for x in data ]
+          [ _test_sink(x) for x in data ]
 
       def tito(data):
           return [x for x in data ]
 
       def sink_in_set_iterator(arg):
-          { x for x in __test_sink(arg) }
+          { x for x in _test_sink(arg) }
 
       def sink_in_set_expression(data):
-          { __test_sink(x) for x in data }
+          { _test_sink(x) for x in data }
 
       def tito_set(data):
           return { x for x in data }
 
       def sink_in_generator_iterator(arg):
-          gen = (x for x in __test_sink(arg))
+          gen = (x for x in _test_sink(arg))
 
       def sink_in_generator_expression(data):
-          gen = (__test_sink(x) for x in data)
+          gen = (_test_sink(x) for x in data)
 
       def tito_generator(data):
           return (x for x in data)
@@ -750,7 +752,7 @@ let test_list context =
     ~context
     {|
       def sink_in_list(arg):
-          return [ 1, __test_sink(arg), "foo" ]
+          return [ 1, _test_sink(arg), "foo" ]
 
       def list_same_index(arg):
           list = [ 1, arg, "foo" ]
@@ -831,7 +833,7 @@ let test_tuple context =
     ~context
     {|
       def sink_in_tuple(arg):
-          return ( 1, __test_sink(arg), "foo" )
+          return ( 1, _test_sink(arg), "foo" )
 
       def tuple_same_index(arg):
           tuple = ( 1, arg, "foo" )
@@ -880,7 +882,7 @@ let test_lambda context =
     ~context
     {|
       def sink_in_lambda(arg):
-          f = lambda x : x + __test_sink(arg)
+          f = lambda x : x + _test_sink(arg)
 
       def lambda_tito(arg):
           f = lambda x : x + arg
@@ -900,7 +902,7 @@ let test_set context =
     ~context
     {|
       def sink_in_set(arg):
-          return { 1, __test_sink(arg), "foo" }
+          return { 1, _test_sink(arg), "foo" }
 
       def set_index(arg):
           set = { 1, arg, "foo" }
@@ -925,20 +927,20 @@ let test_starred context =
     ~context
     {|
       def sink_in_starred(arg):
-          __tito( *[ 1, __test_sink(arg), "foo" ] )
+          _tito( *[ 1, _test_sink(arg), "foo" ] )
 
       def sink_in_starred_starred(arg):
-          __tito( **{
+          _tito( **{
               "a": 1,
-              "b": __test_sink(arg),
+              "b": _test_sink(arg),
               "c": "foo",
           })
 
       def tito_in_starred(arg):
-          return __tito( *[ 1, arg, "foo" ] )
+          return _tito( *[ 1, arg, "foo" ] )
 
       def tito_in_starred_starred(arg):
-          return __tito( **{
+          return _tito( **{
               "a": 1,
               "b": arg,
               "c": "foo",
@@ -963,16 +965,16 @@ let test_ternary context =
     ~context
     {|
       def sink_in_then(arg, cond):
-          x = __test_sink(arg) if cond else None
+          x = _test_sink(arg) if cond else None
 
       def sink_in_else(arg, cond):
-          x = "foo" if cond else __test_sink(arg)
+          x = "foo" if cond else _test_sink(arg)
 
       def sink_in_both(arg1, arg2, cond):
-          x = __test_sink(arg1) if cond else __test_sink(arg2)
+          x = _test_sink(arg1) if cond else _test_sink(arg2)
 
       def sink_in_cond(arg1, arg2, cond):
-          x = arg1 if __test_sink(cond) else arg2
+          x = arg1 if _test_sink(cond) else arg2
 
       def tito_in_then(arg, cond):
           return arg if cond else None
@@ -1015,7 +1017,7 @@ let test_unary context =
     ~context
     {|
       def sink_in_unary(arg):
-          x = not __test_sink(arg)
+          x = not _test_sink(arg)
 
       def tito_via_unary(arg):
           return not arg
@@ -1034,7 +1036,7 @@ let test_walrus context =
     ~context
     {|
       def sink_in_walrus(arg):
-          x := __test_sink(arg)
+          x := _test_sink(arg)
 
       def tito_via_walrus(arg):
           return (x := arg)
@@ -1053,13 +1055,13 @@ let test_yield context =
     ~context
     {|
       def sink_in_yield(arg):
-          yield __test_sink(arg)
+          yield _test_sink(arg)
 
       def tito_via_yield(arg):
           yield arg
 
       def sink_in_yield_from(arg):
-          yield from __test_sink(arg)
+          yield from _test_sink(arg)
 
       def tito_via_yield_from(arg):
           yield from arg
@@ -1407,7 +1409,7 @@ let test_decorator context =
     {|
       @$strip_first_parameter
       def decorated(self, into_sink):
-        __test_sink(into_sink)
+        _test_sink(into_sink)
 
       def using_decorated(into_decorated):
         decorated(into_decorated)
@@ -1429,7 +1431,7 @@ let test_assignment context =
     ~context
     {|
       def assigns_to_sink(assigned_to_sink):
-        taint.__global_sink = assigned_to_sink
+        taint._global_sink = assigned_to_sink
     |}
     [
       outcome
@@ -1471,12 +1473,12 @@ let test_access_paths context =
       def access_downward_closed(arg):
         o = { 'a': arg }
         x = o.a
-        __test_sink(x.g)
+        _test_sink(x.g)
 
       def access_non_taint(arg):
         o = { 'a': arg }
         x = o.b
-        __test_sink(x.g)
+        _test_sink(x.g)
     |}
     [
       outcome
@@ -1489,7 +1491,7 @@ let test_access_paths context =
     ~context
     {|
       def access_through_expression(arg):
-        __test_sink(" ".join(arg))
+        _test_sink(" ".join(arg))
     |}
     [
       outcome
@@ -1505,7 +1507,7 @@ let test_for_loops context =
     {|
       def sink_through_for(arg):
         for element in arg:
-          __test_sink(element)
+          _test_sink(element)
     |}
     [
       outcome

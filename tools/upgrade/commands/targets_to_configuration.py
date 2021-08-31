@@ -7,7 +7,7 @@ import argparse
 import logging
 import subprocess
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import libcst
 from typing_extensions import Final
@@ -16,6 +16,7 @@ from ..configuration import Configuration
 from ..errors import Errors
 from ..filesystem import (
     LocalMode,
+    Target,
     add_local_mode,
     find_directories,
     find_files,
@@ -68,6 +69,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         fixme_threshold: int,
         pyre_only: bool,
         strict: bool,
+        only_clean_targets: bool,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._subdirectory: Final[Optional[str]] = subdirectory
@@ -75,6 +77,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         self._fixme_threshold: int = fixme_threshold
         self._pyre_only: bool = pyre_only
         self._strict: bool = strict
+        self._only_clean_targets: bool = only_clean_targets
 
     @staticmethod
     def from_arguments(
@@ -89,6 +92,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             fixme_threshold=arguments.fixme_threshold,
             pyre_only=arguments.pyre_only,
             strict=arguments.strict,
+            only_clean_targets=arguments.only_clean_targets,
         )
 
     @classmethod
@@ -122,6 +126,11 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             action="store_true",
             help="Only convert pyre targets to configuration.",
         )
+        parser.add_argument(
+            "--only-clean-targets",
+            action="store_true",
+            help="Only perform target cleanup without affecting pyre configurations.",
+        )
 
     def remove_target_typing_fields(self, files: List[Path]) -> None:
         LOG.info("Removing typing options from %s targets files", len(files))
@@ -137,6 +146,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 r"check_types \?=.*",
                 r"check_types_options \?=.*",
                 r"typing_options \?=.*",
+                r"type_checker \?=.*",
             ]
             remove_typing_fields_command = [
                 "sed",
@@ -169,6 +179,16 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             self._repository.add_paths([configuration_path])
         return configuration
 
+    def collect_full_targets(self, targets: Dict[str, List[Target]]) -> List[str]:
+        new_targets = []
+        for path, targets in targets.items():
+            new_targets += [
+                "//" + path.replace("/TARGETS", "") + ":" + target.name
+                for target in targets
+                if target.check_types
+            ]
+        return new_targets
+
     def convert_directory(self, directory: Path) -> None:
         all_targets = find_targets(directory, pyre_only=self._pyre_only)
         if not all_targets:
@@ -184,15 +204,8 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         )
 
         # Collect targets.
-        new_targets = []
-        targets_files = []
-        for path, targets in all_targets.items():
-            targets_files.append(Path(path))
-            new_targets += [
-                "//" + path.replace("/TARGETS", "") + ":" + target.name
-                for target in targets
-            ]
-
+        new_targets = self.collect_full_targets(all_targets)
+        targets_files = [Path(path) for path in all_targets.keys()]
         configuration = self.find_or_create_configuration(directory, new_targets)
 
         # Try setting a glob target.
@@ -309,8 +322,24 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         # TODO(T62926437): Basic integration testing.
         subdirectory = self._subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
+
+        if self._only_clean_targets:
+            LOG.info(
+                "Cleaning typecheck targets from `%s`.",
+                subdirectory,
+            )
+            LOG.info("No pyre configurations will be affected.")
+            all_targets = find_targets(subdirectory, pyre_only=self._pyre_only)
+            if not all_targets:
+                LOG.warning("No targets found.")
+                return
+            targets_files = [Path(path) for path in all_targets.keys()]
+            self.remove_target_typing_fields(targets_files)
+            return
+
         LOG.info(
-            "Converting typecheck targets to pyre configurations in `%s`", subdirectory
+            "Converting typecheck targets to pyre configurations in `%s`.",
+            subdirectory,
         )
         configuration_directories = self._gather_directories(subdirectory)
         converted = []

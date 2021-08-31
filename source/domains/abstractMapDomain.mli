@@ -21,7 +21,8 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) : sig
   include AbstractDomainCore.S
 
   type _ AbstractDomainCore.part +=
-    | Key : Key.t AbstractDomainCore.part | KeyValue : (Key.t * Element.t) AbstractDomainCore.part
+    | Key : Key.t AbstractDomainCore.part
+    | KeyValue : (Key.t * Element.t) AbstractDomainCore.part
 
   (* Replace map at key with new element or set if missing. *)
   val set : t -> key:Key.t -> data:Element.t -> t

@@ -68,11 +68,11 @@ let run_rage log_directory _unused_source_directory () =
     let configuration = Configuration.Analysis.create ?log_directory ~source_path:[] () in
     let logs =
       get_mercurial_base ()
-      :: get_mercurial_status ()
-      :: get_mercurial_diff ()
-      :: get_mercurial_reflog ()
-      :: get_watchman_watched_directories ()
-      :: get_pyre_locks ()
+      ::
+      get_mercurial_status ()
+      ::
+      get_mercurial_diff ()
+      :: get_mercurial_reflog () :: get_watchman_watched_directories () :: get_pyre_locks ()
       @ Service.Rage.get_logs configuration
     in
     List.iter ~f:display_log logs
@@ -86,7 +86,7 @@ let command =
   let open Command.Spec in
   Command.basic_spec
     ~summary:"Reports debugging diagnostics for Pyre to the standard output."
-    ( empty
+    (empty
     +> flag "-log-directory" (optional string) ~doc:"Location to write logs and other data"
-    +> anon (maybe_with_default "." ("source-root" %: string)) )
+    +> anon (maybe_with_default "." ("source-root" %: string)))
     run_rage

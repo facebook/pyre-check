@@ -26,7 +26,7 @@ module T = struct
       }
     | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
     | AddFeatureToArgument
-      (* Special marker to designate modifying the state the parameter passed in. *)
+  (* Special marker to designate modifying the state the parameter passed in. *)
   [@@deriving compare, eq, sexp, hash]
 end
 

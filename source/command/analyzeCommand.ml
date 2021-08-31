@@ -15,43 +15,6 @@ let get_analysis_kind = function
       failwith "bad argument"
 
 
-let type_environment_with_decorators_inlined ~configuration ~scheduler environment =
-  let open Analysis in
-  let open Interprocedural in
-  let open Ast in
-  let decorator_bodies =
-    DecoratorHelper.all_decorator_bodies (TypeEnvironment.read_only environment)
-  in
-  let environment =
-    AstEnvironment.create
-      ~additional_preprocessing:
-        (DecoratorHelper.inline_decorators
-           ~environment:(TypeEnvironment.read_only environment)
-           ~decorator_bodies)
-      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
-    |> AnnotatedGlobalEnvironment.create
-    |> TypeEnvironment.create
-  in
-  let all_internal_paths =
-    let get_internal_path source_path =
-      let path = SourcePath.full_path ~configuration source_path in
-      Option.some_if (SourcePath.is_internal_path ~configuration path) path
-    in
-    ModuleTracker.source_paths
-      (AstEnvironment.module_tracker (TypeEnvironment.ast_environment environment))
-    |> List.filter_map ~f:get_internal_path
-  in
-  let _ =
-    Server.IncrementalCheck.recheck
-      ~configuration
-      ~scheduler
-      ~environment
-      ~errors:(Ast.Reference.Table.create ())
-      all_internal_paths
-  in
-  environment
-
-
 let run_analysis
     analysis
     result_json_path
@@ -171,48 +134,85 @@ let run_analysis
     (fun () ->
       let timer = Timer.start () in
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          Interprocedural.Analysis.initialize_configuration
+          Interprocedural.FixpointAnalysis.initialize_configuration
             ~static_analysis_configuration
             analysis_kind;
-          let cached_environment =
-            if use_cache then Service.StaticAnalysis.Cache.load_environment ~configuration else None
-          in
+
           let environment =
-            match cached_environment with
-            | Some loaded_environment ->
-                Log.warning "Using cached type environment.";
-                loaded_environment
-            | _ ->
-                let configuration =
-                  (* In order to get an accurate call graph and type information, we need to ensure
-                     that we schedule a type check for external files. *)
-                  { configuration with analyze_external_sources = true }
-                in
-                Log.info "No cached type environment loaded, starting a clean run.";
-                Service.Check.check
-                  ~scheduler
-                  ~configuration
-                  ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
-                |> fun { environment; _ } ->
-                if use_cache then
-                  Service.StaticAnalysis.Cache.save_environment ~configuration ~environment;
-                environment
+            Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache
           in
-          let environment =
-            if inline_decorators then (
-              Log.info "Inlining decorators for taint analysis...";
-              type_environment_with_decorators_inlined ~configuration ~scheduler environment )
-            else
-              environment
-          in
-          let ast_environment =
-            Analysis.TypeEnvironment.ast_environment environment
-            |> Analysis.AstEnvironment.read_only
-          in
+
           let qualifiers =
             Analysis.TypeEnvironment.module_tracker environment
             |> Analysis.ModuleTracker.tracked_explicit_modules
           in
+
+          let initial_callables =
+            Service.StaticAnalysis.fetch_initial_callables
+              ~scheduler
+              ~configuration
+              ~environment:(Analysis.TypeEnvironment.read_only environment)
+              ~qualifiers
+              ~use_cache
+          in
+
+          let initialized_models =
+            let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
+              initial_callables
+            in
+            Interprocedural.FixpointAnalysis.initialize_models
+              analysis_kind
+              ~static_analysis_configuration
+              ~scheduler
+              ~environment:(Analysis.TypeEnvironment.read_only environment)
+              ~callables:(List.map callables_with_dependency_information ~f:fst)
+              ~stubs
+          in
+
+          let environment, initial_callables =
+            if inline_decorators then (
+              Log.info "Inlining decorators for taint analysis...";
+              let timer = Timer.start () in
+              let { Interprocedural.AnalysisResult.InitializedModels.initial_models; _ } =
+                Interprocedural.AnalysisResult.InitializedModels.get_models initialized_models
+              in
+              let updated_environment =
+                Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
+                  ~configuration
+                  ~scheduler
+                  ~recheck:Server.IncrementalCheck.recheck
+                  ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
+                  environment
+              in
+              Statistics.performance
+                ~name:"Inlined decorators"
+                ~phase_name:"Inlining decorators"
+                ~timer
+                ();
+
+              let updated_initial_callables =
+                (* We need to re-fetch initial callables, since inlining creates new callables. *)
+                Service.StaticAnalysis.fetch_initial_callables
+                  ~scheduler
+                  ~configuration
+                  ~environment:(Analysis.TypeEnvironment.read_only updated_environment)
+                  ~qualifiers
+                  ~use_cache:false
+              in
+              updated_environment, updated_initial_callables)
+            else
+              environment, initial_callables
+          in
+
+          let environment = Analysis.TypeEnvironment.read_only environment in
+          let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
+
+          let { Interprocedural.AnalysisResult.InitializedModels.initial_models; skip_overrides } =
+            Interprocedural.AnalysisResult.InitializedModels.get_models_including_generated_models
+              initialized_models
+              ~updated_environment:(Some environment)
+          in
+
           let filename_lookup path_reference =
             match repository_root with
             | Some root ->
@@ -233,8 +233,11 @@ let run_analysis
             ~analysis:analysis_kind
             ~static_analysis_configuration
             ~filename_lookup
-            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~environment
             ~qualifiers
+            ~initial_callables
+            ~initial_models
+            ~skip_overrides
             ();
           let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
           Statistics.performance

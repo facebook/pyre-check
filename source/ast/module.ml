@@ -43,7 +43,7 @@ module ExportMap = struct
         | "__package__"
         | "__dict__" ->
             Some (Export.Name Export.Name.GlobalVariable)
-        | _ -> None )
+        | _ -> None)
 
 
   let to_alist = Identifier.Map.Tree.to_alist
@@ -100,12 +100,12 @@ let create_for_testing ~stub =
 
 
 let create
-    ( {
-        Source.source_path = { SourcePath.is_stub; qualifier; _ } as source_path;
-        statements;
-        metadata = { Source.Metadata.local_mode; _ };
-        _;
-      } as source )
+    ({
+       Source.source_path = { SourcePath.is_stub; qualifier; _ } as source_path;
+       statements;
+       metadata = { Source.Metadata.local_mode; _ };
+       _;
+     } as source)
   =
   let exports =
     let open UnannotatedGlobal in
@@ -136,8 +136,8 @@ let create
                       _;
                     } ) ->
                   true
-              | _ -> false )
-          | _ -> false )
+              | _ -> false)
+          | _ -> false)
       | _ -> false
     in
     let collect_export sofar { Collector.Result.name; unannotated_global } =

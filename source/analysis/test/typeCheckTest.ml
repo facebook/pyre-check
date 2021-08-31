@@ -39,22 +39,48 @@ let create_annotation_store ?(immutables = []) annotations =
     in
     !&name, annotation
   in
-  List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
+  {
+    Resolution.annotations = List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
+    temporary_annotations = Reference.Map.empty;
+  }
 
 
 let assert_annotation_store ~expected actual =
   let actual = Resolution.annotation_store actual in
-  let pp_annotation_store formatter annotation_store =
+  let compare_annotation_store
+      {
+        Resolution.annotations = left_annotations;
+        temporary_annotations = left_temporary_annotations;
+      }
+      {
+        Resolution.annotations = right_annotations;
+        temporary_annotations = right_temporary_annotations;
+      }
+    =
+    let equal_map = Reference.Map.equal [%equal: RefinementUnit.t] in
+    equal_map left_annotations right_annotations
+    && equal_map left_temporary_annotations right_temporary_annotations
+  in
+  let pp_annotation_store formatter { Resolution.annotations; temporary_annotations } =
     let annotation_to_string (name, refinement_unit) =
       Format.asprintf "%a -> %a" Reference.pp name RefinementUnit.pp refinement_unit
     in
-    let printed =
-      Map.to_alist annotation_store |> List.map ~f:annotation_to_string |> String.concat ~sep:"\n"
+    let printed_annotations =
+      Map.to_alist annotations |> List.map ~f:annotation_to_string |> String.concat ~sep:"\n"
     in
-    Format.fprintf formatter "%s" printed
+    let printed_temporary_annotations =
+      Map.to_alist temporary_annotations
+      |> List.map ~f:annotation_to_string
+      |> String.concat ~sep:"\n"
+    in
+    Format.fprintf
+      formatter
+      "Annotations: %s\nTemporaryAnnotations: %s"
+      printed_annotations
+      printed_temporary_annotations
   in
   assert_equal
-    ~cmp:(Reference.Map.equal [%equal: RefinementUnit.t])
+    ~cmp:compare_annotation_store
     ~printer:(Format.asprintf "%a" pp_annotation_store)
     ~pp_diff:(diff ~print:pp_annotation_store)
     expected
@@ -821,6 +847,23 @@ let test_forward_expression context =
   assert_forward "yield undefined" (Type.generator Type.Top);
   assert_forward "yield" (Type.generator Type.none);
 
+  (* Broadcasts *)
+  assert_forward
+    ~environment:
+      {|
+      Ts = pyre_extensions.TypeVarTuple("Ts")
+      Rs = pyre_extensions.TypeVarTuple("Rs")
+      def foo(
+        x: typing.Tuple[pyre_extensions.Unpack[Ts]],
+        y: typing.Tuple[pyre_extensions.Unpack[Rs]]
+      ) -> pyre_extensions.Broadcast[
+        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[pyre_extensions.Unpack[Rs]],
+      ]: ...
+    |}
+    "foo((2, 2), (3, 3))"
+    Type.Any;
+
   (* Meta-types *)
   assert_forward
     "typing.Optional[int]"
@@ -906,7 +949,7 @@ let test_forward_statement context =
         | statement :: rest -> (
             match Resolution.resolve_statement resolution statement with
             | Resolution.Unreachable -> None
-            | Resolution.Reachable { resolution; _ } -> process_statement resolution rest )
+            | Resolution.Reachable { resolution; _ } -> process_statement resolution rest)
       in
       process_statement resolution parsed
     in
@@ -1875,6 +1918,223 @@ let test_calls context =
     ]
 
 
+let test_unpack_callable_and_self_argument context =
+  let parse ~global_resolution annotation =
+    parse_single_expression ~preprocess:true annotation
+    |> GlobalResolution.parse_annotation global_resolution
+  in
+  let assert_unpack_type ?(source = "") ~signature_select given expected =
+    let global_resolution =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      in
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
+    let actual =
+      TypeCheck.unpack_callable_and_self_argument
+        ~signature_select
+        ~global_resolution
+        (parse ~global_resolution given)
+    in
+    let expected =
+      expected >>| fun (callable, self_argument) -> { TypeOperation.callable; self_argument }
+    in
+    assert_equal
+      ~printer:[%show: TypeOperation.callable_and_self_argument option]
+      ~cmp:[%eq: TypeOperation.callable_and_self_argument option]
+      actual
+      expected
+  in
+  let assert_unpack ?(source = "") given expected =
+    let global_resolution =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      in
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
+    let expected =
+      expected
+      >>= fun (expected_string, self_argument) ->
+      match parse ~global_resolution expected_string with
+      | Callable callable -> Some (callable, self_argument)
+      | _ -> assert false
+    in
+    assert_unpack_type ~source given expected
+  in
+  let signature_select ?(pairs = []) ~arguments:_ ~callable ~self_argument:_ =
+    match pairs with
+    | [(Type.Any, right)] -> SignatureSelectionTypes.Found { selected_return_annotation = right }
+    | _ ->
+        List.find ~f:(fun (left, _) -> [%eq: Type.t] left (Type.Callable callable)) pairs
+        >>| (fun (_, right) -> SignatureSelectionTypes.Found { selected_return_annotation = right })
+        |> Option.value
+             ~default:
+               (SignatureSelectionTypes.NotFound
+                  { closest_return_annotation = Type.Bottom; reason = None })
+  in
+  let default_select ~arguments:_ ~callable:_ ~self_argument:_ =
+    SignatureSelectionTypes.Found { selected_return_annotation = Type.integer }
+  in
+
+  assert_unpack
+    ~signature_select:default_select
+    "typing.Callable[[int], int]"
+    (Some ("typing.Callable[[int], int]", None));
+  assert_unpack_type
+    ~signature_select:default_select
+    "typing.Any"
+    (Some
+       ( {
+           kind = Anonymous;
+           implementation = { annotation = Type.Any; parameters = Undefined };
+           overloads = [];
+         },
+         None ));
+  assert_unpack_type
+    ~signature_select:default_select
+    "typing.Any"
+    (Some
+       ( {
+           kind = Anonymous;
+           implementation = { annotation = Type.Any; parameters = Undefined };
+           overloads = [];
+         },
+         None ));
+  assert_unpack
+    ~signature_select:default_select
+    "typing.Callable[[int], int]"
+    (Some ("typing.Callable[[int], int]", None));
+  assert_unpack
+    ~signature_select:default_select
+    "BoundMethod[typing.Callable[[int], bool], str]"
+    (Some ("typing.Callable[[int], bool]", Some Type.string));
+  assert_unpack
+    ~signature_select:default_select
+    ~source:
+      {|
+        from typing import Generic, TypeVar
+        T = TypeVar("T")
+        class Foo(Generic[T]):
+          def __call__(self, x: int) -> T: ...
+      |}
+    "BoundMethod[test.Foo[str], int]"
+    (Some ("typing.Callable[[Named(x, int)], str]", Some Type.integer));
+  assert_unpack_type
+    ~signature_select:default_select
+    ~source:
+      {|
+        class Foo:
+          def __call__(self, x: bool) -> str: ...
+        class Bar:
+          def __call__(self, x: str) -> int: ...
+      |}
+    "pyre_extensions.Compose[test.Foo, test.Bar]"
+    (Some
+       ( {
+           Type.Callable.kind = Type.Callable.Named (Reference.create "test.Foo.__call__");
+           implementation =
+             {
+               parameters =
+                 Type.Callable.Defined
+                   [
+                     Type.Callable.Parameter.Named
+                       {
+                         name = "$parameter$self";
+                         annotation = Type.Primitive "test.Foo";
+                         default = false;
+                       };
+                     Type.Callable.Parameter.Named
+                       { name = "$parameter$x"; annotation = Type.bool; default = false };
+                   ];
+               annotation = Type.integer;
+             };
+           overloads = [];
+         },
+         Some (Type.Primitive "test.Foo") ));
+  assert_unpack
+    ~signature_select:default_select
+    ~source:
+      {|
+        from typing import Callable
+        class Bar:
+          __call__: Callable[[int], int] = ...
+        class Foo():
+          __call__ : Bar = ...
+      |}
+    "BoundMethod[test.Foo, int]"
+    (Some ("typing.Callable[[int], int]", Some Type.integer));
+  assert_unpack
+    ~signature_select:default_select
+    ~source:
+      {|
+        from typing import Callable
+        class Baz:
+          __call__: Callable[[int], int] = ...
+        class Bar:
+          __call__: Baz = ...
+        class Foo():
+          __call__ : Bar = ...
+      |}
+    "BoundMethod[test.Foo, int]"
+    None;
+  assert_unpack
+    ~signature_select:default_select
+    ~source:
+      {|
+        class Bar:
+          __call__: int
+        class Foo():
+          __call__ : Bar = ...
+      |}
+    "BoundMethod[test.Foo, int]"
+    None;
+  assert_unpack
+    ~signature_select:default_select
+    ~source:
+      {|
+        from typing import Callable
+        from pyre_extensions import Compose
+        class Bar2:
+          __call__: Compose[Callable[[int], int], Callable[[int], int]] = ...
+        class Baz2:
+          __call__: Compose[Callable[[int], int], Callable[[int], int]] = ...
+      |}
+    "pyre_extensions.Compose[test.Bar2, test.Baz2]"
+    (Some ("typing.Callable[[int], int]", None));
+  assert_unpack ~signature_select:default_select "typing.Tuple[int, str]" None;
+  assert_unpack
+    ~signature_select:
+      (signature_select
+         ~pairs:
+           [
+             ( Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [PositionalOnly { index = 0; annotation = Type.integer; default = false }])
+                 ~annotation:Type.float
+                 (),
+               Type.float );
+             ( Type.Callable.create
+                 ~parameters:
+                   (Type.Callable.Defined
+                      [PositionalOnly { index = 0; annotation = Type.float; default = false }])
+                 ~annotation:Type.string
+                 (),
+               Type.string );
+           ])
+    {|
+      pyre_extensions.Compose[
+        pyre_extensions.Compose[
+          typing.Callable[[bool], int],
+          typing.Callable[[int], float]
+        ],
+        typing.Callable[[float], str]
+      ]
+    |}
+    (Some ("typing.Callable[[bool], str]", None));
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -1889,5 +2149,6 @@ let () =
          "object_callables" >:: test_object_callables;
          "callable_selection" >:: test_callable_selection;
          "calls" >:: test_calls;
+         "unpack_callable_and_self_argument" >:: test_unpack_callable_and_self_argument;
        ]
   |> Test.run

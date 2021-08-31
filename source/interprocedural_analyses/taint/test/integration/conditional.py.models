@@ -102,8 +102,6 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "MySource" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

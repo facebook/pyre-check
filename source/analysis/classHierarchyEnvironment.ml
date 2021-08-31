@@ -45,8 +45,8 @@ let get_parents alias_environment name ~dependency =
       alias_environment
   in
   (* Register normal annotations. *)
-  let extract_supertype { Call.Argument.value; _ } =
-    let value = delocalize value in
+  let extract_supertype base_expression =
+    let value = delocalize base_expression in
     match Node.value value with
     | Call _
     | Name _ -> (
@@ -65,12 +65,12 @@ let get_parents alias_environment name ~dependency =
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype;
             None
         | Type.Primitive supertype -> Some (supertype, parameters)
-        | _ -> None )
+        | _ -> None)
     | _ -> None
   in
-  let bases ({ Node.value = { ClassSummary.bases; _ }; _ } as definition) =
+  let bases ({ Node.value = { ClassSummary.bases = { base_classes; _ }; _ }; _ } as definition) =
     let inferred_base = AnnotatedBases.inferred_generic_base definition ~parse_annotation in
-    inferred_base @ bases
+    inferred_base @ base_classes
   in
   let add_special_parents parents =
     let simples = List.map ~f:(fun parent -> parent, []) in
@@ -115,8 +115,6 @@ let get_parents alias_environment name ~dependency =
       let parents =
         class_summary
         |> bases
-        (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-        |> List.filter ~f:(fun { Call.Argument.name; _ } -> Option.is_none name)
         |> List.filter_map ~f:extract_supertype
         |> add_special_parents
         |> List.filter ~f:is_not_primitive_cycle
@@ -213,7 +211,7 @@ module ReadOnly = struct
       unannotated_global_environment |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
     in
     let class_hierarchy =
-      ( module struct
+      (module struct
         let edges = get_edges read_only ?dependency:None
 
         let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency:None
@@ -223,7 +221,7 @@ module ReadOnly = struct
             unannotated_global_environment
             key
           |> Option.is_some
-      end : ClassHierarchy.Handler )
+      end : ClassHierarchy.Handler)
     in
     ClassHierarchy.check_integrity class_hierarchy ~indices
 
@@ -233,7 +231,7 @@ module ReadOnly = struct
     let unannotated_global_environment =
       AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
     in
-    ( module struct
+    (module struct
       let edges = get_edges read_only ?dependency
 
       let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency
@@ -243,7 +241,7 @@ module ReadOnly = struct
           unannotated_global_environment
           ?dependency
           key
-    end : ClassHierarchy.Handler )
+    end : ClassHierarchy.Handler)
 
 
   let variables ?(default = None) read_only ?dependency class_name =

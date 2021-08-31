@@ -6,6 +6,33 @@ sidebar_label: Advanced Topics
 
 This page documents less straightforward bits of Pysa.
 
+## Obscure models
+
+When Pysa does not have enough information about a function or method, it will
+make basic assumptions about its behavior. This is referred to as an **obscure
+model**. Most notably, it assumes that the function or method propagates the
+taint from its arguments to its return value.
+
+This usually happens when Pysa doesn't know about the callee of a function call:
+
+```python
+def foo(f: Any):
+    x = input()
+    y = f(x) # no information about `f`, y will be considered tainted.
+    eval(y)
+```
+
+Functions and methods defined in type stubs or in a different language (for
+instance, in C or C++ binding) will also be treated as obscure models.
+
+To prevent a function or method to be marked as obscure, one can use the
+`@SkipObscure` taint annotation in a `.pysa` file:
+
+```python
+@SkipObscure
+def module.foo(): ...
+```
+
 ## Tainting Specific `kwargs`
 
 Sometimes, a function can have potential sinks mixed together with benign
@@ -234,7 +261,7 @@ method.
 
 By default, Pysa skips overrides on some functions that are typically
 problematic. You can find the full list of default-skipped functions in
-[`stubs/taint/skipped_overrides.pysa`](https://github.com/facebook/pyre-check/blob/master/stubs/taint/skipped_overrides.pysa)
+[`stubs/taint/skipped_overrides.pysa`](https://github.com/facebook/pyre-check/blob/main/stubs/taint/skipped_overrides.pysa)
 
 ## Limit the trace length for better signal and performance
 
@@ -301,3 +328,44 @@ This option can also be added in the `taint.config` as follows:
   }
 }
 ```
+
+# Inlining Decorators during Analysis
+
+By default, Pysa ignores issues that arise in the bodies of decorators. For example, it misses issues like decorators logging data. In the code below, Pysa will not catch the flow from `loggable_string` to the sink within the decorator `with_logging`:
+
+```python
+def with_logging(f: Callable[[str], None]) -> Callable[[str], None]:
+
+  def inner(y: str) -> None:
+    log_to_my_sink(y)
+    f(y)
+
+  return inner
+
+@with_logging
+def foo(z: str) -> None:
+  print(z)
+
+foo(loggable_string)
+```
+
+However, Pysa has the ability to inline decorators within functions before analyzing them so that it can catch such flows. This is currently an experimental feature hidden behind the `--inline-decorators` flag.
+
+## Prevent Inlining Decorators with `SkipDecoratorWhenInlining`
+
+Decorator inlining comes at the cost of increasing the analysis time and also increasing the lengths of traces. If you would like to prevent certain decorators from being inlined, you can mark them in your `.pysa` file using `@SkipDecoratorWhenInlining`:
+
+```python
+# foo.pysa
+@SkipDecoratorWhenInlining
+def foo.decorator_to_be_skipped(f): ...
+```
+
+```python
+# foo.py
+@decorator_to_be_skipped
+def bar(x: int) -> None:
+  pass
+```
+
+This will prevent the decorator from being inlined when analyzing `bar`. Note that we use `@SkipDecoratorWhenInlining` on the decorator that is to be skipped, not the function on which the decorator is applied.

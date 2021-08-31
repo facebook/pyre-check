@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Pyre
 
 module Assign = struct
   type t = {
@@ -29,7 +30,7 @@ module Assign = struct
         | _ -> (
             match Expression.location_insensitive_compare left.value right.value with
             | x when not (Int.equal x 0) -> x
-            | _ -> [%compare: Reference.t option] left.parent right.parent ) )
+            | _ -> [%compare: Reference.t option] left.parent right.parent))
 end
 
 module Import = struct
@@ -122,10 +123,7 @@ module rec Assert : sig
   module Origin : sig
     type t =
       | Assertion
-      | If of {
-          statement: Statement.t;
-          true_branch: bool;
-        }
+      | If of { true_branch: bool }
       | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -144,20 +142,14 @@ end = struct
   module Origin = struct
     type t =
       | Assertion
-      | If of {
-          statement: Statement.t;
-          true_branch: bool;
-        }
+      | If of { true_branch: bool }
       | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right : int =
       match left, right with
       | Assertion, Assertion -> 0
-      | If left, If right -> (
-          match Statement.location_insensitive_compare left.statement right.statement with
-          | x when not (Int.equal x 0) -> x
-          | _ -> Bool.compare left.true_branch right.true_branch )
+      | If left, If right -> Bool.compare left.true_branch right.true_branch
       | While left, While right -> Bool.compare left.true_branch right.true_branch
       | Assertion, _ -> -1
       | If _, _ -> -1
@@ -177,13 +169,13 @@ end = struct
     | _ -> (
         match Option.compare Expression.location_insensitive_compare left.message right.message with
         | x when not (Int.equal x 0) -> x
-        | _ -> Origin.location_insensitive_compare left.origin right.origin )
+        | _ -> Origin.location_insensitive_compare left.origin right.origin)
 end
 
 and Class : sig
   type t = {
     name: Reference.t Node.t;
-    bases: Expression.Call.Argument.t list;
+    base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -202,11 +194,17 @@ and Class : sig
 
   val is_frozen : t -> bool
 
+  val base_classes : t -> Expression.t list
+
+  val metaclass : t -> Expression.t option
+
+  val init_subclass_arguments : t -> Expression.Call.Argument.t list
+
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end = struct
   type t = {
     name: Reference.t Node.t;
-    bases: Expression.Call.Argument.t list;
+    base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
@@ -220,7 +218,10 @@ end = struct
     | x when not (Int.equal x 0) -> x
     | _ -> (
         match
-          List.compare Expression.Call.Argument.location_insensitive_compare left.bases right.bases
+          List.compare
+            Expression.Call.Argument.location_insensitive_compare
+            left.base_arguments
+            right.base_arguments
         with
         | x when not (Int.equal x 0) -> x
         | _ -> (
@@ -238,7 +239,7 @@ end = struct
                     List.compare
                       Define.NameAccess.compare
                       left.top_level_unbound_names
-                      right.top_level_unbound_names ) ) )
+                      right.top_level_unbound_names)))
 
 
   let toplevel_define { name = { Node.value; _ }; top_level_unbound_names; body; _ } =
@@ -291,6 +292,39 @@ end = struct
       | _ -> false
     in
     List.exists decorators ~f:is_frozen_dataclass
+
+
+  let base_classes { base_arguments; _ } =
+    List.fold
+      ~init:[]
+      ~f:(fun base_classes { Expression.Call.Argument.name; value } ->
+        if Option.is_some name then base_classes else value :: base_classes)
+      base_arguments
+    |> List.rev
+
+
+  let metaclass { base_arguments; _ } =
+    List.find
+      ~f:(fun { Expression.Call.Argument.name; _ } ->
+        match name with
+        | Some { Node.value = base_argument_name; _ }
+          when String.equal base_argument_name "metaclass" ->
+            true
+        | _ -> false)
+      base_arguments
+    >>| fun { Expression.Call.Argument.value; _ } -> value
+
+
+  let init_subclass_arguments { base_arguments; _ } =
+    List.filter
+      ~f:(fun { Expression.Call.Argument.name; _ } ->
+        match name with
+        | Some { Node.value = base_argument_name; _ }
+          when String.equal base_argument_name "metaclass" ->
+            false
+        | Some _ -> true
+        | None -> false)
+      base_arguments
 end
 
 and Define : sig
@@ -504,7 +538,7 @@ end = struct
                               | _ ->
                                   [%compare: Reference.t option]
                                     left.nesting_define
-                                    right.nesting_define ) ) ) ) ) )
+                                    right.nesting_define))))))
 
 
     let create_toplevel ~qualifier =
@@ -580,8 +614,8 @@ end = struct
     let is_class_method ({ parent; _ } as signature) =
       let valid_names = ["__init_subclass__"; "__new__"; "__class_getitem__"] in
       Option.is_some parent
-      && ( Set.exists Recognized.classmethod_decorators ~f:(has_decorator signature)
-         || List.mem valid_names (unqualified_name signature) ~equal:String.equal )
+      && (Set.exists Recognized.classmethod_decorators ~f:(has_decorator signature)
+         || List.mem valid_names (unqualified_name signature) ~equal:String.equal)
 
 
     let is_class_property ({ parent; _ } as signature) =
@@ -618,6 +652,7 @@ end = struct
       else
         String.equal name "__init__"
         || String.equal name "__new__"
+        || String.equal name "__init_subclass__"
         || (in_test && is_test_setup signature)
 
 
@@ -707,7 +742,7 @@ end = struct
                 right.unbound_names
             with
             | x when not (Int.equal x 0) -> x
-            | _ -> List.compare Statement.location_insensitive_compare left.body right.body ) )
+            | _ -> List.compare Statement.location_insensitive_compare left.body right.body))
 
 
   let create_toplevel ~unbound_names ~qualifier ~statements =
@@ -906,7 +941,7 @@ end = struct
                   List.compare Statement.location_insensitive_compare left.orelse right.orelse
                 with
                 | x when not (Int.equal x 0) -> x
-                | _ -> Bool.compare left.async right.async ) ) )
+                | _ -> Bool.compare left.async right.async)))
 end
 
 and If : sig
@@ -932,7 +967,7 @@ end = struct
     | _ -> (
         match List.compare Statement.location_insensitive_compare left.body right.body with
         | x when not (Int.equal x 0) -> x
-        | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse )
+        | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse)
 end
 
 and Try : sig
@@ -973,7 +1008,7 @@ end = struct
       | _ -> (
           match [%compare: Identifier.t option] left.name right.name with
           | x when not (Int.equal x 0) -> x
-          | _ -> List.compare Statement.location_insensitive_compare left.body right.body )
+          | _ -> List.compare Statement.location_insensitive_compare left.body right.body)
   end
 
   type t = {
@@ -1042,8 +1077,7 @@ end = struct
         | _ -> (
             match List.compare Statement.location_insensitive_compare left.orelse right.orelse with
             | x when not (Int.equal x 0) -> x
-            | _ -> List.compare Statement.location_insensitive_compare left.finally right.finally )
-        )
+            | _ -> List.compare Statement.location_insensitive_compare left.finally right.finally))
 end
 
 and While : sig
@@ -1069,7 +1103,7 @@ end = struct
     | _ -> (
         match List.compare Statement.location_insensitive_compare left.body right.body with
         | x when not (Int.equal x 0) -> x
-        | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse )
+        | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse)
 end
 
 and With : sig
@@ -1103,7 +1137,7 @@ end = struct
     | _ -> (
         match List.compare Statement.location_insensitive_compare left.body right.body with
         | x when not (Int.equal x 0) -> x
-        | _ -> Bool.compare left.async right.async )
+        | _ -> Bool.compare left.async right.async)
 
 
   let preamble { items; async; _ } =
@@ -1402,7 +1436,7 @@ module PrettyPrinter = struct
       value
 
 
-  and pp_class formatter { Class.name; bases; body; decorators; _ } =
+  and pp_class formatter { Class.name; base_arguments; body; decorators; _ } =
     Format.fprintf
       formatter
       "%a@[<v 2>class %a(%a):@;@[<v>%a@]@;@]"
@@ -1411,7 +1445,7 @@ module PrettyPrinter = struct
       Reference.pp
       (Node.value name)
       Expression.pp_expression_argument_list
-      bases
+      base_arguments
       pp_statement_list
       body
 

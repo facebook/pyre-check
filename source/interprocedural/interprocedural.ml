@@ -6,13 +6,13 @@
  *)
 
 module AnalysisKind = AnalysisKind
-module Analysis = InterproceduralAnalysis
-module Callable = Callable
+module FixpointAnalysis = FixpointAnalysis
+module Target = Target
 module CallGraph = CallGraph
 module CallResolution = CallResolution
 module DecoratorHelper = DecoratorHelper
 module DependencyGraph = DependencyGraph
 module DependencyGraphSharedMemory = DependencyGraphSharedMemory
-module Error = InterproceduralError
-module Fixpoint = Fixpoint
-module Result = InterproceduralResult
+module Error = Error
+module FixpointState = FixpointState
+module AnalysisResult = AnalysisResult

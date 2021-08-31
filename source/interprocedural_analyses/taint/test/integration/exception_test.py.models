@@ -9,8 +9,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -23,8 +22,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -46,9 +44,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -70,9 +66,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -95,7 +89,18 @@
         ]
       }
     ],
-    "sinks": [],
-    "tito": []
+    "tito": [
+      {
+        "port": "formal(ex)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 8, "start": 15, "end": 17 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
+            "features": [ { "always-via": "obscure" } ]
+          }
+        ]
+      }
+    ]
   }
 }

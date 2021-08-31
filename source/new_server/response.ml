@@ -11,11 +11,13 @@ type t =
   | Ok
   | Error of string
   | Info of {
+      (* All fields are required to implement `pyre servers` *)
       version: string;
       pid: int;
       socket: string;
-      configuration: ServerConfiguration.t;
+      global_root: string;
+      relative_local_root: string option;
     }
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
-  | Query of Server.Query.Response.t
+  | Query of Query.Response.t
 [@@deriving sexp, compare, to_yojson]

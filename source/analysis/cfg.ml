@@ -231,8 +231,7 @@ let create define =
         Node.connect_option orelse join;
         Node.connect split join;
         create statements jumps join
-    | ( { Ast.Node.value = Statement.If ({ If.test; body; orelse; _ } as conditional); _ } as
-      statement )
+    | { Ast.Node.value = Statement.If ({ If.test; body; orelse; _ } as conditional); _ }
       :: statements ->
         (* -> [split] -> [body]
          *       |          |
@@ -244,16 +243,14 @@ let create define =
         let body_node =
           let body_statements =
             let test = Expression.normalize test in
-            Statement.assume ~origin:(Assert.Origin.If { statement; true_branch = true }) test
-            :: body
+            Statement.assume ~origin:(Assert.Origin.If { true_branch = true }) test :: body
           in
           create body_statements jumps split
         in
         Node.connect_option body_node join;
         let orelse_statements =
           let test = Expression.negate test |> Expression.normalize in
-          Statement.assume ~origin:(Assert.Origin.If { statement; true_branch = false }) test
-          :: orelse
+          Statement.assume ~origin:(Assert.Origin.If { true_branch = false }) test :: orelse
         in
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
@@ -379,7 +376,7 @@ let create define =
         | { Ast.Node.value = Yield _; _ } ->
             Node.connect node jumps.yield;
             create statements jumps node
-        | _ -> create statements jumps node )
+        | _ -> create statements jumps node)
     | [] -> Some predecessor
   in
   let jumps = { break = normal; continue = normal; error; normal; yield } in

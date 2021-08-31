@@ -245,19 +245,20 @@ let assert_source_equal ?(location_insensitive = false) left right =
   let right = { right with Source.metadata } in
   let cmp =
     if location_insensitive then
-      fun left right ->
-    Source.equal { left with statements = [] } { right with statements = [] }
-    && List.equal
-         (fun left right -> Statement.location_insensitive_compare left right = 0)
-         left.statements
-         right.statements
+      fun left right -> Source.location_insensitive_compare left right = 0
     else
       Source.equal
+  in
+  let print_difference format (left, right) =
+    if Source.equal { left with Source.statements = [] } { right with Source.statements = [] } then
+      diff ~print:Source.pp format (left, right)
+    else
+      diff ~print:Source.pp_all format (left, right)
   in
   assert_equal
     ~cmp
     ~printer:(fun source -> Format.asprintf "%a" Source.pp source)
-    ~pp_diff:(diff ~print:Source.pp)
+    ~pp_diff:print_difference
     left
     right
 
@@ -419,16 +420,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def awaitable_int() -> typing.Awaitable[int]: ...
         def condition() -> bool: ...
 
-        def __test_sink(arg: Any) -> None: ...
-        def __test_source() -> Any: ...
+        def _test_sink(arg: Any) -> None: ...
+        def _test_source() -> Any: ...
         class TestCallableTarget:
           def __call__(self) -> int: ...
         def to_callable_target(f: typing.Callable[..., Any]) -> TestCallableTarget: ...
-        def __tito( *x: Any, **kw: Any) -> Any: ...
-        __global_sink: Any
+        def _tito( *x: Any, **kw: Any) -> Any: ...
+        _global_sink: Any
         def copy(obj: object) -> object: ...
         def pyre_dump() -> None: ...
-        def __user_controlled() -> Any: ...
+        def _user_controlled() -> Any: ...
         class ClassWithSinkAttribute():
           attribute: Any = ...
 
@@ -469,6 +470,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           SupportsComplex, SupportsRound, IO, BinaryIO, Union, final,
           ItemsView, KeysView, ValuesView, ByteString, Optional, AnyStr, Type, Text,
         )
+        from pyre_extensions import Add, Multiply, Divide
+        from typing_extensions import Literal
 
         _T = TypeVar('_T')
         _T_co = TypeVar('_T_co', covariant=True)
@@ -504,6 +507,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __delattr__(self, name: str) -> None: ...
           def __sizeof__(self) -> int: ...
           def __reduce__(self) -> tuple: ...
+          def __dir__(self) -> Iterable[str]: ...
+          def __init_subclass__(cls) -> None: ...
 
         class ellipsis: ...
         Ellipsis: ellipsis
@@ -570,6 +575,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __gt__(self, x: float) -> bool: ...
           def __ge__(self, x: float) -> bool: ...
 
+        N1 = TypeVar("N1", bound=int)
+        N2 = TypeVar("N2", bound=int)
 
         class int:
           @overload
@@ -585,10 +592,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           @property
           def denominator(self) -> int: ...
           def conjugate(self) -> int: ...
-          def __add__(self, x: int) -> int: ...
-          def __sub__(self, x: int) -> int: ...
-          def __mul__(self, x: int) -> int: ...
-          def __floordiv__(self, x: int) -> int: ...
+          def __add__(self: N1, x: N2) -> Add[N1, N2]: ...
+          def __sub__(self: N1, x: N2) -> Add[N1, Multiply[Literal[-1], N2]]: ...
+          def __mul__(self: N1, x: N2) -> Multiply[N1, N2]: ...
+          def __floordiv__(self: N1, x: N2) -> Divide[N1, N2]: ...
           if sys.version_info < (3,):
               def __div__(self, x: int) -> int: ...
           def __truediv__(self, x: int) -> float: ...
@@ -938,6 +945,20 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       );
     ]
   in
+  let torch_stubs =
+    [
+      ( "torch/__init__.pyi",
+        {|
+          class Tensor: ...
+
+          def zeros( *args: object, **kwargs: object) -> Tensor: ...
+        |}
+      );
+      "torch/nn/__init__.pyi", {|
+          class Module: ...
+        |};
+    ]
+  in
   [
     ( "sys.py",
       {|
@@ -1188,7 +1209,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     );
     ( "functools.pyi",
       {|
-        from typing import TypeVar, Generic, Callable, Tuple, Any, Dict, Optional
+        from typing import TypeVar, Generic, Callable, Tuple, Any, Dict, Optional, Sequence
+        _AnyCallable = Callable[..., Any]
         _T = TypeVar("_T")
         _S = TypeVar("_S")
 
@@ -1219,6 +1241,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         ) -> Callable[[Callable[..., _T]], _lru_cache_wrapper[_T]]:
             ...
 
+        def wraps(
+          wrapped: _AnyCallable,
+          assigned: Sequence[str] = ...,
+          updated: Sequence[str] = ...
+        ) -> Callable[[_T], _T]: ...
        |}
     );
     ( "subprocess.pyi",
@@ -1279,6 +1306,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Literal: _SpecialForm = ...
 
         TypeAlias: _SpecialForm = ...
+
+        TypeGuard: _SpecialForm = ...
         |}
     );
     ( "collections.pyi",
@@ -1379,7 +1408,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |}
     );
     "taint.pyi", {|
-        __global_sink: Any = ...
+        _global_sink: Any = ...
         |};
     ( "unittest.pyi",
       {|
@@ -1424,6 +1453,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _T = TypeVar("_T")
         _A = TypeVar("_A", bound=int)
         _B = TypeVar("_B", bound=int)
+        _T1 = TypeVar("_T1")
+        _T2 = TypeVar("_T2")
+
 
         def none_throws(optional: Optional[_T]) -> _T: ...
         def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
@@ -1432,6 +1464,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def classproperty(f: Any) -> Any: ...
         class Add(Generic[_A, _B], int): pass
         class Multiply(Generic[_A, _B], int): pass
+        class Subtract(Generic[_A, _B], int): pass
         class Divide(Generic[_A, _B], int): pass
         _Ts = ListVariadic("_Ts")
         class Length(Generic[_Ts], int): pass
@@ -1447,7 +1480,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
                 contravariant: bool = ...,
             ) -> None: ...
 
+        _Rs = TypeVarTuple("_Rs")
         class Unpack(Generic[_T]): ...
+        class Broadcast(Generic[_T1, _T2]): ...
+        class BroadcastError(Generic[_T1, _T2]): ...
+        class Compose(Generic[_Rs]): ...
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",
@@ -2581,6 +2618,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
   ]
   @ sqlalchemy_stubs
   @ sqlalchemy_1_4_stubs
+  @ torch_stubs
 
 
 let mock_signature =
@@ -2669,7 +2707,6 @@ module ScratchProject = struct
       ?(show_error_traces = false)
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
-      ?(infer = false)
       sources
     =
     let add_source ~root (relative, content) =
@@ -2695,7 +2732,6 @@ module ScratchProject = struct
         ~features:{ Configuration.Features.default with go_to_definition = true }
         ~show_error_traces
         ~parallel:false
-        ~infer
         ()
     in
     let external_sources =
@@ -2838,7 +2874,6 @@ type test_update_environment_with_t = {
 let assert_errors
     ?(debug = true)
     ?(strict = false)
-    ?(infer = false)
     ?(show_error_traces = false)
     ?(concise = false)
     ?(handle = "test.py")
@@ -2849,13 +2884,13 @@ let assert_errors
     source
     errors
   =
-  ( if SourcePath.qualifier_of_relative handle |> Reference.is_empty then
-      let message =
-        Format.sprintf
-          "Cannot use %s as test file name: Empty qualifier in test is no longer acceptable."
-          handle
-      in
-      failwith message );
+  (if SourcePath.qualifier_of_relative handle |> Reference.is_empty then
+     let message =
+       Format.sprintf
+         "Cannot use %s as test file name: Empty qualifier in test is no longer acceptable."
+         handle
+     in
+     failwith message);
 
   let descriptions =
     let errors =
@@ -2875,7 +2910,7 @@ let assert_errors
           AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only,
           TypeEnvironment.create global_environment )
       in
-      let configuration = { configuration with debug; strict; infer } in
+      let configuration = { configuration with debug; strict } in
       let source =
         List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
             String.equal handle relative)
@@ -2900,9 +2935,9 @@ let assert_errors
         AnalysisError.Instantiated.description error
     in
     let found_any = not (List.is_empty errors_with_any_location) in
-    ( if found_any then
-        let errors = List.map ~f:(show_description ~concise) errors |> String.concat ~sep:"\n" in
-        Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore );
+    (if found_any then
+       let errors = List.map ~f:(show_description ~concise) errors |> String.concat ~sep:"\n" in
+       Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore);
     assert_false found_any;
     let to_string error =
       let description = show_description ~concise error in
@@ -3018,13 +3053,13 @@ module MockClassHierarchyHandler = struct
   let set table ~key ~data = Hashtbl.set table ~key ~data
 
   let handler order =
-    ( module struct
+    (module struct
       let edges = Hashtbl.find order.edges
 
       let extends_placeholder_stub _ = false
 
       let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
-    end : ClassHierarchy.Handler )
+    end : ClassHierarchy.Handler)
 
 
   let connect ?(parameters = []) order ~predecessor ~successor =

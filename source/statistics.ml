@@ -247,7 +247,8 @@ let log_exception caught_exception ~fatal ~origin =
     ~integers:[]
     ~normals:
       [
-        "exception", Exn.to_string caught_exception;
+        ( "exception",
+          Exn.to_string caught_exception |> fun message -> String.drop_suffix message 512 );
         "exception backtrace", Printexc.get_backtrace ();
         "exception origin", origin;
         ("fatal", if fatal then "true" else "false");

@@ -126,7 +126,7 @@ let test_check_attributes context =
     |}
     [
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -162,6 +162,25 @@ let test_check_attributes context =
     [
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` must have a type "
       ^ "that does not contain `Any`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      class Foo:
+        bar = {}
+        baz = {"key": "string"}
+        def foo(self) -> None:
+          self.bar["key"] = 1
+          self.bar["key"] = "string"
+          self.baz["key"] = 1
+          self.baz["key"] = "string"
+    |}
+    [
+      "Incomplete type [37]: Type `typing.Dict[Variable[_KT], Variable[_VT]]` inferred for \
+       `test.Foo.bar` is incomplete, add an explicit annotation.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has no type specified.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
+       `dict.__setitem__` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -229,7 +248,7 @@ let test_check_attributes context =
     |}
     [
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -279,7 +298,6 @@ let test_check_attributes context =
     [
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
       ^ "to have type `typing.Optional[int]` but is never initialized.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
   assert_type_errors
     {|
@@ -294,7 +312,6 @@ let test_check_attributes context =
     [
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
       ^ "to have type `typing.Optional[int]` but is never initialized.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
   assert_type_errors
     {|
@@ -336,7 +353,6 @@ let test_check_attributes context =
       ^ "has type `int` but no type is specified.";
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` "
       ^ "has type `int` but no type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|
@@ -348,10 +364,7 @@ let test_check_attributes context =
             self.baz = 5
           return self.baz
     |}
-    [
-      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
+    ["Undefined attribute [16]: `Foo` has no attribute `baz`."];
 
   (* Ensure synthetic attribute accesses don't mask errors on real ones. *)
   assert_strict_type_errors
@@ -598,7 +611,24 @@ let test_check_attributes context =
           self.attribute = not_annotated()
           a = self.attribute.something
     |}
-    ["Undefined attribute [16]: `int` has no attribute `something`."];
+    [];
+
+  assert_type_errors
+    {|
+      def returns_string() -> str:
+        return ""
+
+      class Foo:
+        attribute: int = 1
+        def foo(self) -> None:
+          self.attribute = returns_string()
+          a = self.attribute.something
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type \
+       `int` but is used as type `str`.";
+      "Undefined attribute [16]: `int` has no attribute `something`.";
+    ];
 
   (* Do not resolve optional attributes to the optional type. *)
   assert_type_errors
@@ -1062,6 +1092,36 @@ let test_check_attribute_initialization context =
     |}
     [];
 
+  (* Test instantiation of attributes via `__init_subclass__`. *)
+  assert_type_errors
+    {|
+      from typing import ClassVar
+      from abc import ABCMeta
+
+      class AbstractBase(metaclass=ABCMeta):
+          foo: ClassVar[int]
+          def __init_subclass__(cls, foo: int) -> None:
+              cls.foo = foo
+
+      class SubClass(AbstractBase, foo=1):
+        pass
+    |}
+    [];
+  (* TODO(T98000466): `__init_subclass__` should not instantiate attributes for the current class
+     when it is non abstract, only subclasses. Add an error here. *)
+  assert_type_errors
+    {|
+      from typing import ClassVar
+
+      class NonAbstractBase:
+          foo: ClassVar[int]
+          def __init_subclass__(cls, foo: int) -> None:
+              cls.foo = foo
+
+      class SubClass(NonAbstractBase, foo=1):
+        pass
+    |}
+    [];
   ()
 
 
@@ -1086,6 +1146,21 @@ let test_check_missing_attribute context =
           self.a = 1
     |}
     [];
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.a = []
+      def test(foo: Foo) -> None:
+        reveal_type(foo.a)
+    |}
+    [
+      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `self.a` is incomplete, \
+       add an explicit annotation.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
+      (* TODO(T78211867): We should know `foo.a` is a `List`. *)
+      "Revealed type [-1]: Revealed type for `foo.a` is `unknown`.";
+    ];
   assert_type_errors
     {|
       class Foo:

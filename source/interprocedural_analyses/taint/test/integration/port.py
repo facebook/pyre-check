@@ -3,17 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def source_field():
     result = {}
-    result.a = __test_source()
+    result.a = _test_source()
     return result
 
 
 def sink_field(arg):
-    __test_sink(arg.a)
+    _test_sink(arg.a)
 
 
 def match_flows():
@@ -58,10 +58,10 @@ def match_star_star_arg_directly():
 class Foo:
     @property
     def some_source():
-        return __test_source()
+        return _test_source()
 
 
 def refer_to_method_as_field(foo: Foo):
     # This comes up in Instagram due to @cached_property decorators
     taint = foo.some_source
-    __test_sink(taint)
+    _test_sink(taint)

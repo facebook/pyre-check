@@ -123,9 +123,9 @@ let test_subscription _ =
           assert_failure "Expected an exception to raise but did not get one";
         Lwt.return_unit)
       (fun exn ->
-        ( if not should_raise then
-            let message = Format.sprintf "Unexpected exception: %s" (Exn.to_string exn) in
-            assert_failure message );
+        (if not should_raise then
+           let message = Format.sprintf "Unexpected exception: %s" (Exn.to_string exn) in
+           assert_failure message);
         Lwt.return_unit)
   in
 
@@ -233,6 +233,15 @@ let test_subscription _ =
       update_response ["foo.py"];
       update_response ~clock:"fake:clock:1" ~is_fresh_instance:true ["bar.py"];
     ]
+  >>= fun () ->
+  (* Correctly identify cancellation response. *)
+  assert_updates
+    ~should_raise:true
+    ~expected:[]
+    [
+      initial_success_response;
+      Yojson.Safe.Util.combine (update_response ["foo.py"]) (`Assoc ["canceled", `Bool true]);
+    ]
   >>= fun () -> Lwt.return_unit
 
 
@@ -277,7 +286,6 @@ let test_filter_creation context =
     assert_equal ~ctxt:context ~cmp ~printer (sorted expected_suffixes) (sorted actual_suffixes)
   in
 
-  let open ServerConfiguration in
   let open Configuration in
   let open Watchman.Filter in
   assert_filter

@@ -2,9 +2,9 @@ name: lint
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
   workflow_dispatch:
 
@@ -14,13 +14,36 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
 
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install black==20.8b1
+      - name: Install black
+        run: pip install black==21.4b2
 
-      - name: Run Black
-        run: |
-          black --check --diff .
+      - name: Run black
+        run: black --check --diff .
+
+  usort:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+
+      - name: Install usort
+        run: pip install usort==0.6.4
+
+      - name: Run usort
+        run: usort diff . && usort check .
+
+  flake8:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8
+        run: flake8

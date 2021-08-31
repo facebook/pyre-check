@@ -23,7 +23,7 @@ module Forward : sig
   val empty : model
 end
 
-module Mode : sig
+module Sanitize : sig
   type sanitize_sources =
     | AllSources
     | SpecificSources of Sources.t list
@@ -40,19 +40,43 @@ module Mode : sig
       }
   [@@deriving show, compare, eq]
 
-  type sanitize = {
+  type t = {
     sources: sanitize_sources option;
     sinks: sanitize_sinks option;
     tito: sanitize_tito option;
   }
   [@@deriving show, eq]
 
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val join : t -> t -> t
+end
+
+module Mode : sig
   type t =
+    | Obscure
     | SkipAnalysis (* Don't analyze at all *)
-    | Sanitize of sanitize
-    (* Analyze, but throw away inferred model *)
-    | Normal
-  [@@deriving show, eq]
+    | SkipDecoratorWhenInlining
+    | SkipOverrides
+  [@@deriving show, compare]
+end
+
+module ModeSet : sig
+  type t [@@deriving show]
+
+  val singleton : Mode.t -> t
+
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val add : Mode.t -> t -> t
+
+  val remove : Mode.t -> t -> t
+
+  val contains : Mode.t -> t -> bool
 
   val join : t -> t -> t
 end
@@ -60,22 +84,29 @@ end
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  mode: Mode.t;
+  sanitize: Sanitize.t;
+  modes: ModeSet.t;
 }
 
-val is_empty_model : call_model -> bool
+val is_empty_model : with_modes:ModeSet.t -> call_model -> bool
 
 val empty_skip_model : call_model (* Skips analysis *)
+
+val should_externalize_model : call_model -> bool
 
 type result = Flow.issue list
 
 include
-  Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
+  Interprocedural.AnalysisResult.ANALYSIS_RESULT_WITH_REGISTRATION
     with type result := result
      and type call_model := call_model
 
 val model_to_json
   :  filename_lookup:(Ast.Reference.t -> string option) ->
-  Interprocedural.Callable.t ->
+  Interprocedural.Target.t ->
   call_model ->
   Yojson.Safe.t
+
+val decorators_to_skip
+  :  Interprocedural.AnalysisResult.model_t Interprocedural.Target.Map.t ->
+  Ast.Reference.Set.t

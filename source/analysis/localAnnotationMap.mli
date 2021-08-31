@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Ast
-
 type t
 
 val empty : unit -> t
@@ -18,8 +16,8 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 
 val set
-  :  ?precondition:RefinementUnit.t Reference.Map.t ->
-  ?postcondition:RefinementUnit.t Reference.Map.t ->
+  :  ?precondition:Resolution.annotation_store ->
+  ?postcondition:Resolution.annotation_store ->
   key:int ->
   t ->
   unit
@@ -27,9 +25,9 @@ val set
 module ReadOnly : sig
   type t
 
-  val get_precondition : t -> int -> RefinementUnit.t Reference.Map.t option
+  val get_precondition : t -> int -> Resolution.annotation_store option
 
-  val get_postcondition : t -> int -> RefinementUnit.t Reference.Map.t option
+  val get_postcondition : t -> int -> Resolution.annotation_store option
 end
 
 val read_only : t -> ReadOnly.t

@@ -5,6 +5,8 @@ about: Reporting problems or unexpected behavior with Pysa (Python Static Analys
 ---
 
 # Pysa Bug
+**Pre-submission checklist**
+[ ] I've checked the list of [common issues](https://pyre-check.org/docs/pysa-quickstart/#common-issues) and mine does not appear
 
 **Bug description**
 Please enter a clear and concise description of what the bug is.

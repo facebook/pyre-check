@@ -7,7 +7,7 @@
     "code": 5002,
     "line": 45,
     "start": 4,
-    "end": 62,
+    "end": 61,
     "filename": "builder_pattern.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,10 +19,10 @@
               "filename": "builder_pattern.py",
               "line": 45,
               "start": 46,
-              "end": 61
+              "end": 60
             },
-            "tito": [ { "line": 45, "start": 46, "end": 61 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 45, "start": 46, "end": 60 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -39,13 +39,13 @@
                 "filename": "builder_pattern.py",
                 "line": 45,
                 "start": 4,
-                "end": 62
+                "end": 61
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
               "port": "formal(self)[_saved]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -78,10 +78,10 @@
               "filename": "builder_pattern.py",
               "line": 76,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "tito": [ { "line": 76, "start": 8, "end": 23 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 76, "start": 8, "end": 22 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -104,7 +104,7 @@
               "port": "formal(self)[_saved]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -137,10 +137,10 @@
               "filename": "builder_pattern.py",
               "line": 58,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "tito": [ { "line": 58, "start": 8, "end": 23 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 58, "start": 8, "end": 22 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -163,7 +163,7 @@
               "port": "formal(self)[_saved]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -180,8 +180,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{builder_pattern.Builder::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -199,8 +197,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -218,8 +214,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -237,7 +231,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.async_save",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[_saved]",
@@ -246,24 +239,21 @@
             "root": {
               "filename": "builder_pattern.py",
               "line": 27,
-              "start": 20,
-              "end": 31
+              "start": 19,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_not_saved",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(not_saved)",
@@ -292,8 +282,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_not_saved_through_typevar",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(not_saved)",
@@ -322,8 +310,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_saved",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(saved)",
@@ -352,8 +338,6 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_saved_through_typevar",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(saved)",

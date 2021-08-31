@@ -204,6 +204,77 @@ let test_collect_non_generic_type_names _ =
   ()
 
 
+let test_collect_format_strings_with_ignores _ =
+  let assert_format_strings_with_ignores source expected =
+    let ({ Source.metadata = { ignore_lines; _ }; _ } as source) = parse source in
+    let ignore_line_map =
+      List.map ignore_lines ~f:(fun ({ Ignore.ignored_line; _ } as ignore) -> ignored_line, ignore)
+      |> Int.Map.of_alist_multi
+    in
+    let format_strings_with_ignores =
+      Visit.collect_format_strings_with_ignores ~ignore_line_map source
+      |> List.map ~f:snd
+      |> List.map
+           ~f:
+             (List.map ~f:(fun { Ignore.codes; ignored_line; kind; _ } -> ignored_line, kind, codes))
+    in
+    assert_equal
+      ~cmp:[%equal: (int * Ignore.kind * int list) list list]
+      ~printer:[%show: (int * Ignore.kind * int list) list list]
+      expected
+      format_strings_with_ignores
+  in
+  let open Ignore in
+  assert_format_strings_with_ignores
+    {|
+      def foo() -> None:
+        # pyre-ignore[7]
+        # pyre-fixme[58, 42]
+        # Some comment.
+        f"""
+        foo
+        bar
+        {1 + "hello"}
+        baz
+        """
+    |}
+    [[6, PyreIgnore, [7]; 6, PyreFixme, [58; 42]]];
+  assert_format_strings_with_ignores
+    {|
+      def foo() -> None:
+        # pyre-fixme[58]
+        # Some comment.
+        f"""
+        {1 + "hello2"}
+        """ f"""
+        {1 + "hello3"}
+        """ f"""
+        {1 + "hello4"}
+        """
+    |}
+    [[5, PyreFixme, [58]]];
+  assert_format_strings_with_ignores
+    {|
+      def foo() -> None:
+        # type: ignore
+        f"{1 + 'hello'}"
+
+        # pyre-fixme[58]
+        f"{1 + 'hello'}"
+    |}
+    [[7, PyreFixme, [58]]; [4, TypeIgnore, []]];
+  assert_format_strings_with_ignores
+    {|
+      def foo() -> None:
+        # Unignored format string
+        f"""
+        {1 + "world"}
+        """
+    |}
+    [];
+  ()
+
+
 let test_node_visitor _ =
   let module Visitor = struct
     type t = int String.Table.t
@@ -348,6 +419,7 @@ let () =
          "collect" >:: test_collect;
          "collect_location" >:: test_collect_location;
          "collect_non_generic_type_names" >:: test_collect_non_generic_type_names;
+         "collect_format_strings_with_ignores" >:: test_collect_format_strings_with_ignores;
          "node_visitor" >:: test_node_visitor;
          "statement_visitor" >:: test_statement_visitor;
          "statement_visitor_source" >:: test_statement_visitor_source;

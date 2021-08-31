@@ -50,7 +50,7 @@ module Make (Element : ELEMENT) = struct
       | Name part -> (
           match part with
           | Self -> Format.sprintf "Simple(%s).Self" Element.name
-          | _ -> Base.introspect op )
+          | _ -> Base.introspect op)
 
 
     let create parts =

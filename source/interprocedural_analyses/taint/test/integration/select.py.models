@@ -10,17 +10,13 @@
           { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "dict.get",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -47,9 +43,9 @@
               "filename": "select.py",
               "line": 21,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "access_token" },
@@ -58,9 +54,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -76,9 +70,9 @@
               "filename": "select.py",
               "line": 26,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
@@ -87,9 +81,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -105,9 +97,9 @@
               "filename": "select.py",
               "line": 31,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
@@ -116,9 +108,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -266,8 +256,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -325,7 +314,6 @@
   "kind": "model",
   "data": {
     "callable": "select.view_entry_get",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(request)[GET]",
@@ -347,8 +335,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -442,8 +429,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {

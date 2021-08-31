@@ -287,8 +287,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{multiple_sources.Node::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(id)",
@@ -317,8 +315,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(id)",
@@ -347,8 +343,6 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(id)",
@@ -377,8 +371,6 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.get",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(id)",
@@ -411,7 +403,6 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.send",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(vc)",
@@ -432,7 +423,7 @@
         ]
       }
     ],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -444,9 +435,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -458,16 +447,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "multiple_sources.combines_tests_and_context",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(vc)",
@@ -487,15 +473,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_context",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(vc)",
@@ -516,15 +500,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_input",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(id)",
@@ -551,8 +533,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -566,9 +547,7 @@
           { "decl": null, "leaves": [ { "kind": "PermissiveContext" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -582,8 +561,6 @@
           { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

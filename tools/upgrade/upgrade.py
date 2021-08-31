@@ -24,7 +24,6 @@ from .commands.fix_configuration import FixConfiguration
 from .commands.fixme import Fixme
 from .commands.fixme_all import FixmeAll
 from .commands.fixme_single import FixmeSingle
-from .commands.fixme_targets import FixmeTargets
 from .commands.global_version_update import GlobalVersionUpdate
 from .commands.strict_default import StrictDefault
 from .commands.support_sqlalchemy import SupportSqlalchemy
@@ -82,10 +81,6 @@ def run(repository: Repository) -> None:
     # Subcommand: Fixme all errors in all projects with local configurations.
     fixme_all = commands.add_parser("fixme-all")
     FixmeAll.add_arguments(fixme_all)
-
-    # Subcommand: Fixme all errors in targets running type checking
-    fixme_targets = commands.add_parser("fixme-targets")
-    FixmeTargets.add_arguments(fixme_targets)
 
     # Subcommand: Remove targets integration and replace with configuration
     targets_to_configuration = commands.add_parser("targets-to-configuration")

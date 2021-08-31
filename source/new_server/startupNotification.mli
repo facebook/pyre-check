@@ -14,9 +14,6 @@
    the contents for earlier invocations. *)
 val produce : log_path:Pyre.Path.t -> string -> unit
 
-(* A wrapper around `produce` that takes `ServerConfiguration.t` instead. *)
-val produce_for_configuration : server_configuration:ServerConfiguration.t -> string -> unit
-
 (* If there's a file under `log_path` that's been written by `produce` before, return the content
    and remove the file. *)
 val consume : log_path:Pyre.Path.t -> unit -> string option

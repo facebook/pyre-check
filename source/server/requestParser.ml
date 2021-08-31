@@ -66,7 +66,7 @@ let parse_and_translate
         | Ok _ -> None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "textDocument/didClose" -> (
         match DidCloseTextDocument.of_yojson request with
         | Ok
@@ -88,7 +88,7 @@ let parse_and_translate
             None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "textDocument/didOpen" -> (
         match DidOpenTextDocument.of_yojson request with
         | Ok
@@ -106,7 +106,7 @@ let parse_and_translate
             None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "textDocument/didChange" -> (
         match DidChangeTextDocument.of_yojson request with
         | Ok
@@ -131,7 +131,7 @@ let parse_and_translate
             None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "textDocument/didSave" -> (
         match DidSaveTextDocument.of_yojson request with
         | Ok
@@ -150,7 +150,7 @@ let parse_and_translate
             None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "textDocument/completion" -> (
         match CompletionRequest.of_yojson request with
         | Ok
@@ -166,7 +166,7 @@ let parse_and_translate
         | Ok _ -> None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "textDocument/hover" -> (
         match HoverRequest.of_yojson request with
         | Ok
@@ -186,7 +186,7 @@ let parse_and_translate
         | Ok _ -> None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "textDocument/codeAction" -> (
         match CodeActionRequest.of_yojson request with
         | Ok
@@ -205,7 +205,7 @@ let parse_and_translate
         | Ok _ -> None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "workspace/executeCommand" -> (
         match ExecuteCommandRequest.of_yojson request with
         | Ok
@@ -218,7 +218,7 @@ let parse_and_translate
         | Ok _ -> None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "updateFiles" -> (
         match UpdateFiles.of_yojson request with
         | Ok { UpdateFiles.parameters = Some { files; invalidated = targets; _ }; _ } ->
@@ -226,12 +226,12 @@ let parse_and_translate
             if not (List.is_empty targets) then (
               let targets = strings_to_scratch_paths targets |> List.map ~f:Path.show in
               Log.info "Invalidate %d symlinks" (List.length targets);
-              List.iter targets ~f:(Hashtbl.remove symlink_targets_to_sources) );
+              List.iter targets ~f:(Hashtbl.remove symlink_targets_to_sources));
             Some (TypeCheckRequest files)
         | Ok _ -> None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "displayTypeErrors" -> (
         match LanguageServer.Types.DisplayTypeErrors.of_yojson request with
         | Ok { LanguageServer.Types.DisplayTypeErrors.parameters = Some { files }; _ } ->
@@ -240,13 +240,13 @@ let parse_and_translate
         | Ok _ -> Some (DisplayTypeErrors [])
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "shutdown" -> (
         match ShutdownRequest.of_yojson request with
         | Ok { ShutdownRequest.id; _ } -> Some (ClientShutdownRequest id)
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "window/showStatus" -> (
         match LanguageServer.Types.ShowStatusRequest.of_yojson request with
         | Ok { parameters = Some inner_parameters; _ } -> Some (ShowStatusRequest inner_parameters)
@@ -255,14 +255,14 @@ let parse_and_translate
             None
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "exit" -> Some (ClientExitRequest Persistent)
     | "telemetry/rage" -> (
         match RageRequest.of_yojson request with
         | Ok { id; _ } -> Some (RageRequest id)
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
+            None)
     | "initialize" -> (
         match InitializeRequest.of_yojson request with
         | Ok request ->
@@ -273,7 +273,7 @@ let parse_and_translate
               ~section:`Server
               "Error: Could not parse initialize request message for record field: %s"
               error;
-            None )
+            None)
     | "initialized" -> Some InitializedRequest
     | unmatched_method ->
         Log.log ~section:`Server "Unhandled %s" unmatched_method;

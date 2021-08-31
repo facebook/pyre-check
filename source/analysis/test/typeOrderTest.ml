@@ -913,7 +913,7 @@ let test_less_or_equal context =
       | annotation -> (
           match attributes with
           | Some attributes -> attributes annotation
-          | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation) )
+          | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation))
     in
     let aliases = create_type_alias_table aliases in
     less_or_equal
@@ -1869,7 +1869,10 @@ let test_join context =
     in
     assert_type_equal
       (parse_annotation expected)
-      (join ~attributes order (parse_annotation left) (parse_annotation right))
+      (join ~attributes order (parse_annotation left) (parse_annotation right));
+    assert_type_equal
+      (parse_annotation expected)
+      (join ~attributes order (parse_annotation right) (parse_annotation left))
   in
   (* Primitive types. *)
   assert_join "list" "typing.Sized" "typing.Sized";
@@ -1925,6 +1928,8 @@ let test_join context =
     "typing.Optional[typing.List[int]]"
     "typing.List[$bottom]"
     "typing.Optional[typing.List[int]]";
+  assert_join "typing.List[int]" "typing.List[typing.Any]" "typing.List[typing.Any]";
+  assert_join "typing.List[typing.Any]" "typing.List[int]" "typing.List[typing.Any]";
   assert_join
     "typing.Optional[typing.Set[int]]"
     "typing.Set[$bottom]"
@@ -1953,6 +1958,10 @@ let test_join context =
     "typing.Optional[float]"
     "typing.Union[float, int]"
     "typing.Optional[typing.Union[float, int]]";
+  assert_join
+    "typing.List[typing.Any]"
+    "typing.Union[typing.List[int], typing.List[str]]"
+    "typing.List[typing.Any]";
 
   assert_join
     "typing.Tuple[int, int]"
@@ -2225,7 +2234,7 @@ let test_join context =
        variance_order
        (Type.parametric "LinkedList" ![Type.Any])
        (Type.parametric "LinkedList" ![Type.integer]))
-    (Type.parametric "LinkedList" ![Type.integer]);
+    (Type.parametric "LinkedList" ![Type.Any]);
   (* Contravariant *)
   assert_type_equal
     (join

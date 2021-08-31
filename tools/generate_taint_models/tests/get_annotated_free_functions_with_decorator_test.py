@@ -11,7 +11,6 @@ from typing import List, Set
 from unittest.mock import MagicMock, mock_open, patch
 
 from .. import annotated_function_generator
-from .. import get_annotated_free_functions_with_decorator
 from ..generator_specifications import (
     AllParametersAnnotation,
     AnnotationSpecification,

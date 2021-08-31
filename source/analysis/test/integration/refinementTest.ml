@@ -146,17 +146,22 @@ let test_assert_is_none context =
     {|
       from dataclasses import dataclass
       from typing import Optional, Final
+
       class NormalClass():
         x: Optional[int] = None
+
       class ClassWithFinalAttribute():
         def __init__(self, x: Optional[int]) -> None:
           self.x: Final[Optional[int]] = x
+
       @dataclass
       class UnfrozenDataClass():
         x: Optional[int]
+
       @dataclass(frozen=True)
       class FrozenDataClass():
         x: Optional[int]
+
       class ReadOnlyPropertyClass():
         state: bool = True
         @property
@@ -166,12 +171,14 @@ let test_assert_is_none context =
             return None
           else:
             return 8
+
       def foo() -> None:
         normal_class: Final[NormalClass]
         class_with_final_attribute: Final[ClassWithFinalAttribute]
         unfrozen_dataclass: Final[UnfrozenDataClass]
         frozen_dataclass: Final[FrozenDataClass]
         read_only_property_class: Final[ReadOnlyPropertyClass]
+
         if normal_class.x is not None:
           reveal_type(normal_class.x)
         if class_with_final_attribute.x is not None:
@@ -184,30 +191,36 @@ let test_assert_is_none context =
           reveal_type(read_only_property_class.x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `normal_class.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `normal_class.x` is `Optional[int]` (inferred: `int`).";
       "Revealed type [-1]: Revealed type for `class_with_final_attribute.x` is `Optional[int]` \
        (inferred: `int`, final).";
-      "Revealed type [-1]: Revealed type for `unfrozen_dataclass.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `unfrozen_dataclass.x` is `Optional[int]` (inferred: \
+       `int`).";
       "Revealed type [-1]: Revealed type for `frozen_dataclass.x` is `Optional[int]` (inferred: \
        `int`, final).";
       "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `Optional[int]` \
-       (final).";
+       (inferred: `int`, final).";
     ];
   assert_type_errors
     {|
       from dataclasses import dataclass
       from typing import Optional, Final
+
       class NormalClass():
         x: Optional[int] = None
+
       class ClassWithFinalAttribute():
         def __init__(self, x: Optional[int]) -> None:
           self.x: Final[Optional[int]] = x
+
       @dataclass
       class UnfrozenDataClass():
         x: Optional[int]
+
       @dataclass(frozen=True)
       class FrozenDataClass():
         x: Optional[int]
+
       class ReadOnlyPropertyClass():
         state: bool = True
         @property
@@ -217,6 +230,9 @@ let test_assert_is_none context =
             return None
           else:
             return 8
+
+      def interleaving_call() -> None: pass
+
       def foo() -> None:
         normal_class: Final[NormalClass] = ...
         class_with_final_attribute: Final[ClassWithFinalAttribute] = ...
@@ -224,14 +240,19 @@ let test_assert_is_none context =
         frozen_dataclass: Final[FrozenDataClass] = ...
         read_only_property_class: Final[ReadOnlyPropertyClass] = ...
         if normal_class.x is None:
+          interleaving_call()
           reveal_type(normal_class.x)
         if class_with_final_attribute.x is None:
+          interleaving_call()
           reveal_type(class_with_final_attribute.x)
         if unfrozen_dataclass.x is None:
+          interleaving_call()
           reveal_type(unfrozen_dataclass.x)
         if frozen_dataclass.x is None:
+          interleaving_call()
           reveal_type(frozen_dataclass.x)
         if read_only_property_class.x is None:
+          interleaving_call()
           reveal_type(read_only_property_class.x)
     |}
     [
@@ -246,17 +267,22 @@ let test_assert_is_none context =
     {|
       from dataclasses import dataclass
       from typing import Optional, Final
+
       class NormalClass():
         x: float = 3.14
+
       class ClassWithFinalAttribute():
         def __init__(self, x: float) -> None:
           self.x: Final[float] = x
+
       @dataclass
       class UnfrozenDataClass():
         x: float
+
       @dataclass(frozen=True)
       class FrozenDataClass():
         x: float
+
       class ReadOnlyPropertyClass():
         state: bool = True
         @property
@@ -266,6 +292,9 @@ let test_assert_is_none context =
             return 8.2
           else:
             return 8
+
+      def interleaving_call() -> None: pass
+
       def foo() -> None:
         normal_class: Final[NormalClass] = ...
         class_with_final_attribute: Final[ClassWithFinalAttribute] = ...
@@ -273,14 +302,19 @@ let test_assert_is_none context =
         frozen_dataclass: Final[FrozenDataClass] = ...
         read_only_property_class: Final[ReadOnlyPropertyClass] = ...
         if isinstance(normal_class.x, int):
+          interleaving_call()
           reveal_type(normal_class.x)
         if isinstance(class_with_final_attribute.x, int):
+          interleaving_call()
           reveal_type(class_with_final_attribute.x)
         if isinstance(unfrozen_dataclass.x, int):
+          interleaving_call()
           reveal_type(unfrozen_dataclass.x)
         if isinstance(frozen_dataclass.x, int):
+          interleaving_call()
           reveal_type(frozen_dataclass.x)
         if isinstance(read_only_property_class.x, int):
+          interleaving_call()
           reveal_type(read_only_property_class.x)
     |}
     [
@@ -294,21 +328,29 @@ let test_assert_is_none context =
     {|
       from dataclasses import dataclass
       from typing import Optional, Final
+
       @dataclass(frozen=True)
       class InnerFrozenDataClass():
         x: Optional[int]
+
       @dataclass(frozen=True)
       class FrozenDataClass():
         inner: InnerFrozenDataClass
+
       @dataclass
       class UnfrozenDataClass():
         inner: InnerFrozenDataClass
+
+      def interleaving_call() -> None: pass
+
       def foo() -> None:
         unfrozen_dataclass: Final[UnfrozenDataClass] = ...
         frozen_dataclass: Final[FrozenDataClass] = ...
         if unfrozen_dataclass.inner.x is not None:
+          interleaving_call()
           reveal_type(unfrozen_dataclass.inner.x)
         if frozen_dataclass.inner.x is not None:
+          interleaving_call()
           reveal_type(frozen_dataclass.inner.x)
     |}
     [
@@ -344,12 +386,20 @@ let test_check_global_refinement context =
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
 
+      def call() -> None: pass
+
       def foo() -> None:
         a = A(3)
         if a.x:
           reveal_type(a.x)
+        if a.x:
+          call()
+          reveal_type(a.x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `typing.Optional[int]`."];
+    [
+      "Revealed type [-1]: Revealed type for `a.x` is `typing.Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `a.x` is `typing.Optional[int]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -364,29 +414,45 @@ let test_check_global_refinement context =
           self.assertIsNotNone(a.x)
           reveal_type(a.x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `typing.Optional[int]`."];
+    ["Revealed type [-1]: Revealed type for `a.x` is `typing.Optional[int]` (inferred: `int`)."];
   assert_type_errors
     {|
       import typing
       MY_GLOBAL: typing.Optional[int] = 1
 
+      def call() -> None: pass
+
       def foo() -> None:
         if MY_GLOBAL:
           reveal_type(MY_GLOBAL)
+          call()
+          reveal_type(MY_GLOBAL)
     |}
-    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Optional[int]`."];
+    [
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Optional[int]` (inferred: \
+       `int`).";
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Optional[int]`.";
+    ];
   assert_type_errors
     {|
       import typing
       x: typing.Optional[int] = 1
+
+      def call() -> None: pass
 
       def foo() -> None:
         global x
         x = 1
         if x is not None:
           reveal_type(x)
+          call()
+          reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`."]
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+    ]
 
 
 let test_check_local_refinement context =
@@ -399,6 +465,36 @@ let test_check_local_refinement context =
           reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."];
+  assert_type_errors
+    {|
+      import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if (y := x):
+          reveal_type(x)
+          reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      def foo(x: typing.Optional[int]) -> None:
+        if (y := x) is not None:
+          reveal_type(x)
+          reveal_type(y)
+        if (y := x) is None:
+          reveal_type(x)
+          reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+      (* TODO(T95581122): should be None *)
+      "Revealed type [-1]: Revealed type for `y` is `typing.Optional[int]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -482,38 +578,35 @@ let test_check_local_refinement context =
   ()
 
 
-let test_check_isinstance context =
+let test_check_if_else_clause context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       import typing
       def foo(x: typing.Optional[int]) -> None:
-        if isinstance(x, int):
+        if x is None:
+          reveal_type(x)
+        else:
           reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `None`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`).";
+    ];
   assert_type_errors
     {|
       import typing
-      MY_GLOBAL: typing.Union[int, str] = 1
-
-      def foo() -> None:
-        if isinstance(MY_GLOBAL, str):
-          reveal_type(MY_GLOBAL)
+      def foo(x: typing.Optional[int]) -> None:
+        if x:
+          reveal_type(x)
+        else:
+          reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Union[int, str]`."];
-  assert_type_errors
-    {|
-      import typing
-      class Foo:
-        def __init__(self) -> None:
-          self.x: typing.Union[int, str] = 1
-
-      def foo(f: Foo) -> None:
-        if isinstance(f.x, str):
-          reveal_type(f.x)
-    |}
-    ["Revealed type [-1]: Revealed type for `f.x` is `typing.Union[int, str]`."]
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
+    ];
+  ()
 
 
 let test_assert_contains_none context =
@@ -771,6 +864,10 @@ let test_check_final_attribute_refinement context =
       def foo(a: Actor) -> None:
         if a.name is not None:
           expects_str(a.name)
+
+        if a.name is not None:
+          expects_str("unrelated call")
+          expects_str(a.name)
     |}
     [
       "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
@@ -991,33 +1088,295 @@ let test_check_final_attribute_refinement context =
   ()
 
 
-let test_type_guard context =
+let test_check_temporary_refinement context =
   let assert_type_errors = assert_type_errors ~context in
-
-  (* From PEP 647: https://www.python.org/dev/peps/pep-0647/.
-
-     TODO(T90609807): This is not implemented yet in Pyre. This is mainly to unblock use of
-     TypeGuard in typeshed. *)
   assert_type_errors
     {|
-      from typing import Any, List, TypeGuard
+      MY_GLOBAL = 1.0
 
-      # pyre-ignore[2]: Should not have Any.
-      def is_str_list(val: List[Any]) -> TypeGuard[List[str]]:
-        """Determines whether all objects in the list are strings"""
-        # pyre-ignore[7]: Returning bool expected TypeGuard.
-        return all(isinstance(x, str) for x in val)
+      def arbitrary_call() -> None:
+        pass
 
-      def foo(xs: List[int | str]) -> None:
-        my_bool: bool = is_str_list(xs)
-        if my_bool:
-          reveal_type(xs)
-        else:
-          reveal_type(xs)
+      def test() -> None:
+        reveal_type(MY_GLOBAL)
+        global MY_GLOBAL
+        MY_GLOBAL = 1
+        reveal_type(MY_GLOBAL)
+        arbitrary_call()
+        reveal_type(MY_GLOBAL)
     |}
     [
-      "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
-      "Revealed type [-1]: Revealed type for `xs` is `List[typing.Union[int, str]]`.";
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `float`.";
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `float` (inferred: \
+       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `float`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      def takes_non_optional_int(input: int) -> None:
+        pass
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        foo.attribute = 1
+        reveal_type(foo.attribute)
+        takes_non_optional_int(foo.attribute)
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        @property
+        def attribute(self) -> Optional[int]:
+          pass
+        @attribute.setter
+        def attribute(self, value: Optional[int]) -> None:
+          pass
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        foo.attribute = 1
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+        def __getattr__(self, value: str) -> int:
+          return 1
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        foo.attribute = 1
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      class Bar:
+        def unrelated_call(self) -> None:
+          pass
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        foo.attribute = 1
+        reveal_type(foo.attribute)
+        bar = Bar()
+        reveal_type(foo.attribute)
+        if not foo.attribute:
+          return
+        reveal_type(foo.attribute)
+        bar.unrelated_call()
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      def interleaving_call() -> None: pass
+
+      def test(foo: Foo) -> None:
+        reveal_type(foo.attribute)
+        if not foo.attribute:
+          return
+        local_copy = foo.attribute
+        interleaving_call()
+        reveal_type(foo.attribute)
+        reveal_type(local_copy)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `local_copy` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      class Bar:
+        foo: Optional[Foo] = Foo()
+
+      def interleaving_call() -> None: pass
+
+      def test(bar: Bar) -> None:
+        if bar.foo.attribute is not None:
+          return
+        reveal_type(bar.foo)
+        reveal_type(bar.foo.attribute)
+
+        if bar.foo and bar.foo.attribute:
+          reveal_type(bar.foo.attribute)
+    |}
+    [
+      "Undefined attribute [16]: `Optional` has no attribute `attribute`.";
+      "Revealed type [-1]: Revealed type for `bar.foo` is `Optional[Foo]`.";
+      "Revealed type [-1]: Revealed type for `bar.foo.attribute` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `bar.foo.attribute` is `Optional[int]` (inferred: \
+       `int`).";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      def interleaving_call() -> None: pass
+
+      def test(foo: Foo) -> None:
+        if not foo.attribute:
+          return interleaving_call()
+        reveal_type(foo.attribute)
+    |}
+    ["Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`)."];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      class Bar:
+        attribute: Optional[int] = 1
+
+      def interleaving_call() -> None:
+        pass
+
+      def test(foo: Foo, bar: Bar) -> None:
+        if not foo.attribute or not bar.attribute:
+          return
+        reveal_type(foo.attribute)
+        reveal_type(bar.attribute)
+
+        interleaving_call()
+
+        if not foo.attribute and not bar.attribute:
+          return
+        reveal_type(foo.attribute)
+        reveal_type(bar.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `bar.attribute` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `bar.attribute` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        attribute: Optional[int] = 1
+
+      def interleaving_call() -> None:
+        pass
+
+      def test(foo: Foo) -> None:
+        if not foo.attribute or interleaving_call():
+          return
+        reveal_type(foo.attribute)
+
+      def test_two(foo: Foo) -> None:
+        if interleaving_call() or not foo.attribute:
+          return
+        reveal_type(foo.attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.attribute` is `Optional[int]` (inferred: `int`).";
+    ];
+  (* Sanity check composite refinement checks *)
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo:
+        a: Optional[int] = 1
+        b: Optional[int] = 1
+
+      def interleaving_call() -> None: pass
+
+      def test(foo: Foo) -> None:
+        if not foo.a or not foo.b:
+          return
+        reveal_type(foo.a)
+        reveal_type(foo.b)
+
+        interleaving_call()
+        if foo.a is None or foo.b is None:
+          return
+        reveal_type(foo.a)
+        reveal_type(foo.b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.a` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.b` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.a` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `foo.b` is `Optional[int]` (inferred: `int`).";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      def test(a: Optional[int], b: Optional[int]) -> None:
+        if not a or not b:
+          return
+        reveal_type(a)
+        reveal_type(b)
+
+      def test_two(a: Optional[int], b: Optional[int]) -> None:
+        if a is None or b is None:
+          return
+        reveal_type(a)
+        reveal_type(b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `b` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `a` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `b` is `Optional[int]` (inferred: `int`).";
     ];
   ()
 
@@ -1029,10 +1388,10 @@ let () =
          "check_assert_is" >:: test_assert_is;
          "check_global_refinement" >:: test_check_global_refinement;
          "check_local_refinement" >:: test_check_local_refinement;
-         "check_isinstance" >:: test_check_isinstance;
+         "check_if_else_clause" >:: test_check_if_else_clause;
          "check_assert_contains_none" >:: test_assert_contains_none;
          "check_callable" >:: test_check_callable;
          "check_final_attribute_refinement" >:: test_check_final_attribute_refinement;
-         "type_guard" >:: test_type_guard;
+         "check_temporary_refinement" >:: test_check_temporary_refinement;
        ]
   |> Test.run

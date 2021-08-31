@@ -19,9 +19,9 @@
               "filename": "model_query.py",
               "line": 154,
               "start": 17,
-              "end": 32
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -69,9 +69,9 @@
               "filename": "model_query.py",
               "line": 154,
               "start": 17,
-              "end": 32
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -108,9 +108,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -122,9 +120,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -136,9 +132,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -150,16 +144,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{model_query.AttributeTestClass3.attribute}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
@@ -168,15 +159,13 @@
           { "decl": null, "leaves": [ { "kind": "SinkB" } ] }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{model_query.AttributeTestClass3.instance}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal($global)",
@@ -185,8 +174,7 @@
           { "decl": null, "leaves": [ { "kind": "SinkC" } ] }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -201,9 +189,7 @@
           { "decl": null, "leaves": [ { "kind": "SourceD" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -218,9 +204,7 @@
           { "decl": null, "leaves": [ { "kind": "SourceE" } ] }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -232,9 +216,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -246,9 +228,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -260,9 +240,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -274,17 +252,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass1::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -302,8 +276,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass2::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -321,8 +293,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass3::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -340,8 +310,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass4::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -359,8 +327,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass5::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -378,8 +344,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass6::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -397,8 +361,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass7::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -416,8 +378,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{model_query.AttributeTestClass8::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -435,8 +395,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -454,8 +412,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{type::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -473,8 +429,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass1.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -492,8 +446,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass2.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -511,8 +463,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass3.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -530,8 +480,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass4.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -549,8 +497,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass5.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -568,8 +514,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass6.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -587,8 +531,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass7.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -606,8 +548,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass8.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(self)",
@@ -644,9 +584,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -664,9 +602,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -688,9 +624,7 @@
         "port": "formal(self)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -702,9 +636,7 @@
         "port": "formal(y)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -716,9 +648,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceB" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -730,9 +660,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceC" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -744,9 +672,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceC" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -758,9 +684,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceC" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -778,16 +702,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_1",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[attribute]",
@@ -796,16 +717,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 129,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -815,8 +735,8 @@
     "callable_line": 127,
     "code": 1001,
     "line": 129,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "model_query.py",
     "message": "[SourceA] to [Test]",
     "traces": [
@@ -827,8 +747,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 129,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -846,10 +766,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 129,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -862,7 +782,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_10",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[foo_instance]",
@@ -871,16 +790,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 174,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -890,8 +808,8 @@
     "callable_line": 172,
     "code": 1002,
     "line": 174,
-    "start": 16,
-    "end": 30,
+    "start": 15,
+    "end": 29,
     "filename": "model_query.py",
     "message": "[SourceB] to [Test]",
     "traces": [
@@ -902,8 +820,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 174,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
             "leaves": [
               {
@@ -921,10 +839,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 174,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -937,7 +855,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_11",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[foo_attribute]",
@@ -946,16 +863,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 179,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -965,8 +881,8 @@
     "callable_line": 177,
     "code": 1002,
     "line": 179,
-    "start": 16,
-    "end": 31,
+    "start": 15,
+    "end": 30,
     "filename": "model_query.py",
     "message": "[SourceB] to [Test]",
     "traces": [
@@ -977,8 +893,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 179,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
             "leaves": [
               {
@@ -996,10 +912,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 179,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1012,7 +928,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_12",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[foo_instance]",
@@ -1021,16 +936,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 184,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1040,8 +954,8 @@
     "callable_line": 182,
     "code": 1002,
     "line": 184,
-    "start": 16,
-    "end": 30,
+    "start": 15,
+    "end": 29,
     "filename": "model_query.py",
     "message": "[SourceB] to [Test]",
     "traces": [
@@ -1052,8 +966,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 184,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
             "leaves": [
               {
@@ -1071,10 +985,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 184,
-              "start": 16,
-              "end": 30
+              "start": 15,
+              "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1087,7 +1001,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_2",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[instance]",
@@ -1096,16 +1009,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 134,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1115,8 +1027,8 @@
     "callable_line": 132,
     "code": 1001,
     "line": 134,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query.py",
     "message": "[SourceA] to [Test]",
     "traces": [
@@ -1127,8 +1039,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 134,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -1146,10 +1058,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 134,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1162,7 +1074,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_3",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[attribute]",
@@ -1171,16 +1082,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 139,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1190,8 +1100,8 @@
     "callable_line": 137,
     "code": 1001,
     "line": 139,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "model_query.py",
     "message": "[SourceA] to [Test]",
     "traces": [
@@ -1202,8 +1112,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 139,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -1221,10 +1131,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 139,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1237,7 +1147,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_4",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[instance]",
@@ -1246,16 +1155,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 144,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1265,8 +1173,8 @@
     "callable_line": 142,
     "code": 1001,
     "line": 144,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query.py",
     "message": "[SourceA] to [Test]",
     "traces": [
@@ -1277,8 +1185,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 144,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -1296,10 +1204,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 144,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1352,8 +1260,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1614,7 +1521,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_8",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[instance]",
@@ -1623,16 +1529,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1642,8 +1547,8 @@
     "callable_line": 162,
     "code": 1003,
     "line": 164,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query.py",
     "message": "[SourceC] to [Test]",
     "traces": [
@@ -1654,8 +1559,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -1673,10 +1578,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1692,8 +1597,8 @@
     "callable_line": 162,
     "code": 1005,
     "line": 164,
-    "start": 16,
-    "end": 26,
+    "start": 15,
+    "end": 25,
     "filename": "model_query.py",
     "message": "[SourceE] to [Test]",
     "traces": [
@@ -1704,8 +1609,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
             "leaves": [
               {
@@ -1723,10 +1628,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 164,
-              "start": 16,
-              "end": 26
+              "start": 15,
+              "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1739,7 +1644,6 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_9",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[foo_attribute]",
@@ -1748,16 +1652,15 @@
             "root": {
               "filename": "model_query.py",
               "line": 169,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1767,8 +1670,8 @@
     "callable_line": 167,
     "code": 1002,
     "line": 169,
-    "start": 16,
-    "end": 31,
+    "start": 15,
+    "end": 30,
     "filename": "model_query.py",
     "message": "[SourceB] to [Test]",
     "traces": [
@@ -1779,8 +1682,8 @@
             "root": {
               "filename": "model_query.py",
               "line": 169,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
             "leaves": [
               {
@@ -1798,10 +1701,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 169,
-              "start": 16,
-              "end": 31
+              "start": 15,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1825,9 +1728,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1845,9 +1746,7 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1859,9 +1758,7 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1873,16 +1770,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "model_query.no_alarm_1",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[nomatch_attribute1]",
@@ -1891,10 +1785,10 @@
             "root": {
               "filename": "model_query.py",
               "line": 188,
-              "start": 16,
-              "end": 36
+              "start": 15,
+              "end": 35
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -1906,23 +1800,21 @@
             "root": {
               "filename": "model_query.py",
               "line": 189,
-              "start": 16,
-              "end": 35
+              "start": 15,
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "model_query.no_alarm_2",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)[nomatch_instance2]",
@@ -1931,26 +1823,25 @@
             "root": {
               "filename": "model_query.py",
               "line": 193,
-              "start": 16,
-              "end": 35
+              "start": 15,
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           },
           {
             "root": {
               "filename": "model_query.py",
               "line": 194,
-              "start": 16,
-              "end": 35
+              "start": 15,
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -1962,9 +1853,7 @@
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1976,9 +1865,7 @@
         "port": "formal(y)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -1991,8 +1878,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -2014,9 +1900,7 @@
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -2038,8 +1922,6 @@
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

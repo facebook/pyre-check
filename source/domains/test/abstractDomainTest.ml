@@ -97,7 +97,7 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
     let test_values v1 v2 =
       if not (phys_equal v1 v2) then (
         assert_bool "v1 <= v2" (not (Domain.less_or_equal ~left:v1 ~right:v2));
-        assert_bool "v2 <= v1" (not (Domain.less_or_equal ~left:v2 ~right:v1)) )
+        assert_bool "v2 <= v1" (not (Domain.less_or_equal ~left:v2 ~right:v1)))
     in
     test_cartesian ~title:"unrelated" ~f:test_values Domain.unrelated
 
@@ -114,8 +114,8 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
     let right_join_s = Domain.show right_join in
     assert_bool
       (Format.sprintf "join symmetry: %s, %s" join_s right_join_s)
-      ( Domain.less_or_equal ~left:join ~right:right_join
-      && Domain.less_or_equal ~left:right_join ~right:join )
+      (Domain.less_or_equal ~left:join ~right:right_join
+      && Domain.less_or_equal ~left:right_join ~right:join)
 
 
   let test_widen_conformance ~iteration v1 v2 =
@@ -1104,13 +1104,7 @@ module PairStringMapIntToString = struct
   let test_additional _ =
     let () =
       assert_equal
-        "Product [\n\
-        \  left\n\
-        \    Set(strings)\n\
-        \  right\n\
-        \    ints -> (strict)\n\
-        \      Set(strings)\n\
-         ]"
+        "Product [\n  left\n    Set(strings)\n  right\n    ints -> (strict)\n      Set(strings)\n]"
         (introspect Structure |> String.concat ~sep:"\n")
         ~printer:Fn.id
     in
@@ -2031,18 +2025,19 @@ end
 module TestSimpleDomain = TestAbstractDomain (PathDomain)
 
 module TreeOfStringSets = struct
-  include AbstractTreeDomain.Make
-            (struct
-              let max_tree_depth_after_widening () = 3
+  include
+    AbstractTreeDomain.Make
+      (struct
+        let max_tree_depth_after_widening () = 3
 
-              let check_invariants = true
-            end)
-            (struct
-              include StringSet
+        let check_invariants = true
+      end)
+      (struct
+        include StringSet
 
-              let transform_on_widening_collapse = Fn.id
-            end)
-            ()
+        let transform_on_widening_collapse = Fn.id
+      end)
+      ()
 
   let parse_path path =
     let parse_element element =
@@ -2309,9 +2304,7 @@ module TreeOfStringSets = struct
     assert_show ~expected:"[a]" (parse_tree ["", ["a"]]);
     assert_show ~expected:"[a, b]" (parse_tree ["", ["a"; "b"]]);
     assert_show ~expected:"{\n   [a] -> [a]\n}" (parse_tree ["a", ["a"]]);
-    assert_show
-      ~expected:"{\n   [a] -> [a]\n   [b] -> [b]\n}"
-      (parse_tree ["a", ["a"]; "b", ["b"]]);
+    assert_show ~expected:"{\n   [a] -> [a]\n   [b] -> [b]\n}" (parse_tree ["a", ["a"]; "b", ["b"]]);
     assert_show
       ~expected:"{\n   [a]\n   [b] -> [b]\n   [c][d] -> [c]\n}"
       (parse_tree ["", ["a"]; "b", ["b"]; "c.d", ["c"]]);
@@ -2615,7 +2608,14 @@ module OverUnderStringSet = struct
     (* Test empty *)
     assert_bool "bottom is empty" (is_empty bottom);
     assert_bool "empty is empty" (is_empty empty);
-    assert_bool "subtraction is empty" (is_empty (subtract set_a ~from:set_a_over))
+    assert_bool "subtraction is empty" (is_empty (subtract set_a ~from:set_a_over));
+
+    (* Test expand *)
+    assert_equal
+      set_a
+      (transform Element Expand ~f:(fun e -> [e; "c"]) set_b)
+      ~printer:show
+      ~cmp:compare
 
 
   let test_context _ = ()

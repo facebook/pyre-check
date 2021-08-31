@@ -102,7 +102,7 @@ let resolve_callable_protocol
       | Type.Parametric { name = "BoundMethod"; parameters = [Single _; Single _] }
       | Callable _ ->
           Some annotation
-      | _ -> None )
+      | _ -> None)
 
 
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order
@@ -381,15 +381,15 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
      possible solutions to the constraints set you have built up with List.filter_map
      ~f:OrderedConstraints.solve *)
   and solve_less_or_equal
-      ( {
-          class_hierarchy =
-            { instantiate_successors_parameters; variables; is_transitive_successor; _ };
-          is_protocol;
-          assumptions = { protocol_assumptions; _ } as assumptions;
-          get_typed_dictionary;
-          metaclass;
-          _;
-        } as order )
+      ({
+         class_hierarchy =
+           { instantiate_successors_parameters; variables; is_transitive_successor; _ };
+         is_protocol;
+         assumptions = { protocol_assumptions; _ } as assumptions;
+         get_typed_dictionary;
+         metaclass;
+         _;
+       } as order)
       ~constraints
       ~left
       ~right
@@ -595,7 +595,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               | _ ->
                   resolve_callable_protocol ~order ~assumption:right left
                   >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
-                  |> Option.value ~default:impossible )
+                  |> Option.value ~default:impossible)
           | _ -> impossible
         in
         List.append through_protocol_hierarchy through_meta_hierarchy
@@ -624,7 +624,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left ~right)
                   |> List.concat_map ~f:(fun constraints ->
-                         solve_less_or_equal order ~constraints ~left:right ~right:left) )
+                         solve_less_or_equal order ~constraints ~left:right ~right:left))
           | ( Type.Variable.ParameterVariadicPair (_, left),
               Type.Variable.ParameterVariadicPair (_, right) ) ->
               let left = Type.Callable.create ~parameters:left ~annotation:Type.Any () in
@@ -685,7 +685,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                    ~total:(Type.TypedDictionary.are_fields_total fields))
             in
             solve_less_or_equal order ~constraints ~left ~right
-        | None, None -> solve_less_or_equal_primitives ~source ~target )
+        | None, None -> solve_less_or_equal_primitives ~source ~target)
     | Type.Parametric { name = source; _ }, Type.Primitive target ->
         solve_less_or_equal_primitives ~source ~target
     (* A <= B -> A <= Optional[B].*)
@@ -751,6 +751,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.Literal _ -> impossible
     | Type.Literal _, _ ->
         solve_less_or_equal order ~constraints ~left:(Type.weaken_literals left) ~right
+    | Type.TypeOperation _, _
+    | _, Type.TypeOperation _ ->
+        impossible
 
 
   and solve_ordered_types_less_or_equal order ~left ~right ~constraints =
@@ -775,7 +778,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 solve_non_variadic_pairs
                   ~pairs:(prefix_pairs @ middle_pairs @ suffix_pairs)
                   constraints
-            | Unequal_lengths -> impossible )
+            | Unequal_lengths -> impossible)
         | Concrete concrete, Concatenation concatenation -> (
             match
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation,
@@ -796,7 +799,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                          ~constraints
                          ~left:(Type.union concrete)
                          ~right:unbounded_element)
-            | _ -> impossible )
+            | _ -> impossible)
         | Concatenation concatenation, Concrete concrete -> (
             match
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic concatenation,
@@ -809,7 +812,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                        (OrderedConstraints.add_upper_bound
                           ~order
                           ~pair:(Type.Variable.TupleVariadicPair (variadic, Concrete concrete)))
-            | _ -> impossible )
+            | _ -> impossible)
         | Concatenation left_concatenation, Concatenation right_concatenation -> (
             match
               ( Type.OrderedTypes.Concatenation.extract_sole_variadic left_concatenation,
@@ -856,7 +859,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                              ~constraints
                              ~left:Type.object_primitive
                              ~right:right_unbounded_element)
-                | _ -> impossible ) )
+                | _ -> impossible))
       in
       Type.OrderedTypes.split_matching_elements_by_length left right
       >>| solve_split_ordered_types
@@ -878,11 +881,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
      Note that classes that refer to themselves don't suffer from this since subtyping for two
      classes just follows from the class hierarchy. *)
   and instantiate_protocol_parameters_with_solve
-      ( {
-          class_hierarchy = { variables; _ };
-          assumptions = { protocol_assumptions; _ } as assumptions;
-          _;
-        } as order )
+      ({
+         class_hierarchy = { variables; _ };
+         assumptions = { protocol_assumptions; _ } as assumptions;
+         _;
+       } as order)
       ~solve_candidate_less_or_equal_protocol
       ~candidate
       ~protocol
@@ -1011,7 +1014,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               order_with_new_assumption
               ~candidate
               ~protocol_annotation
-            >>| instantiate_protocol_generics )
+            >>| instantiate_protocol_generics)
 
 
   and instantiate_protocol_parameters

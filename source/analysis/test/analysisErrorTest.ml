@@ -89,7 +89,8 @@ let incompatible_return_type
 
 
 let undefined_attribute actual =
-  Error.UndefinedAttribute { attribute = "foo"; origin = Error.Class actual }
+  Error.UndefinedAttribute
+    { attribute = "foo"; origin = Error.Class { class_type = actual; parent_source_path = None } }
 
 
 let unexpected_keyword name callee =
@@ -565,12 +566,20 @@ let test_join context =
     (error (Error.UndefinedType (Type.Primitive "herp")))
     (error Error.Top);
   assert_join
-    (error (Error.AnalysisFailure "derp"))
-    (error (Error.AnalysisFailure "derp"))
-    (error (Error.AnalysisFailure "derp"));
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "derp")))
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "derp")))
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "derp")));
   assert_join
-    (error (Error.AnalysisFailure "derp"))
-    (error (Error.AnalysisFailure "herp"))
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "derp")))
+    (error (Error.AnalysisFailure (UnexpectedUndefinedType "herp")))
+    (error Error.Top);
+  assert_join
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.bar" })))
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.bar" })))
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.bar" })));
+  assert_join
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.bar" })))
+    (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.not_bar" })))
     (error Error.Top);
   assert_join
     (error (revealed_type "a" (Annotation.create Type.integer)))
@@ -725,13 +734,23 @@ let test_filter context =
     (UndefinedAttribute
        {
          attribute = "something";
-         origin = Class (Type.Callable.create ~annotation:Type.integer ());
+         origin =
+           Class
+             {
+               class_type = Type.Callable.create ~annotation:Type.integer ();
+               parent_source_path = None;
+             };
        });
   assert_filtered
     (UndefinedAttribute
        {
          attribute = "assert_not_called";
-         origin = Class (Type.Callable.create ~annotation:Type.integer ());
+         origin =
+           Class
+             {
+               class_type = Type.Callable.create ~annotation:Type.integer ();
+               parent_source_path = None;
+             };
        });
   assert_unfiltered
     (UndefinedAttribute
@@ -739,9 +758,13 @@ let test_filter context =
          attribute = "something";
          origin =
            Class
-             (Type.parametric
-                "BoundMethod"
-                [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer]);
+             {
+               class_type =
+                 Type.parametric
+                   "BoundMethod"
+                   [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
+               parent_source_path = None;
+             };
        });
   assert_filtered
     (UndefinedAttribute
@@ -749,9 +772,13 @@ let test_filter context =
          attribute = "assert_not_called";
          origin =
            Class
-             (Type.parametric
-                "BoundMethod"
-                [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer]);
+             {
+               class_type =
+                 Type.parametric
+                   "BoundMethod"
+                   [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
+               parent_source_path = None;
+             };
        });
 
   ()
@@ -768,16 +795,11 @@ let test_suppress _ =
   assert_not_suppressed Source.Debug (missing_return Type.Top);
   assert_not_suppressed Source.Debug (missing_return Type.Any);
   assert_not_suppressed Source.Debug (Error.UndefinedType Type.integer);
-  assert_not_suppressed Source.Debug (Error.AnalysisFailure "derp");
-  assert_suppressed Source.Infer (missing_return Type.Top);
-  assert_suppressed Source.Infer (missing_return Type.Any);
-  assert_not_suppressed Source.Infer (missing_return Type.integer);
-  assert_suppressed Source.Infer (Error.UndefinedType Type.integer);
-  assert_suppressed Source.Infer (Error.AnalysisFailure "int");
+  assert_not_suppressed Source.Debug (Error.AnalysisFailure (UnexpectedUndefinedType "derp"));
   assert_not_suppressed Source.Strict (missing_return Type.Top);
   assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
   assert_not_suppressed Source.Strict (missing_return Type.Any);
-  assert_not_suppressed Source.Strict (Error.AnalysisFailure "int");
+  assert_not_suppressed Source.Strict (Error.AnalysisFailure (UnexpectedUndefinedType "int"));
   assert_suppressed Source.Unsafe (missing_return Type.Top);
   assert_not_suppressed
     Source.Strict
@@ -809,7 +831,7 @@ let test_suppress _ =
     ~signature:untyped_signature
     Source.Unsafe
     (revealed_type "a" (Annotation.create Type.integer));
-  assert_not_suppressed Source.Unsafe (Error.AnalysisFailure "int");
+  assert_not_suppressed Source.Unsafe (Error.AnalysisFailure (UnexpectedUndefinedType "int"));
   assert_suppressed
     Source.Unsafe
     (Error.InvalidTypeParameters
@@ -917,18 +939,32 @@ let test_description _ =
     assert_equal ~printer:Fn.id expected actual
   in
   assert_messages
-    (UndefinedAttribute { attribute = "at"; origin = Class Type.integer })
+    (UndefinedAttribute
+       { attribute = "at"; origin = Class { class_type = Type.integer; parent_source_path = None } })
     "Undefined attribute [16]: `int` has no attribute `at`.";
   assert_messages
     (UndefinedAttribute
-       { attribute = "at"; origin = Class (Type.Callable.create ~annotation:Type.integer ()) })
+       {
+         attribute = "at";
+         origin =
+           Class
+             {
+               class_type = Type.Callable.create ~annotation:Type.integer ();
+               parent_source_path = None;
+             };
+       })
     "Undefined attribute [16]: Anonymous callable has no attribute `at`.";
   assert_messages
     (UndefinedAttribute
        {
          attribute = "at";
          origin =
-           Class (Type.Callable.create ~name:(Reference.create "named") ~annotation:Type.integer ());
+           Class
+             {
+               class_type =
+                 Type.Callable.create ~name:(Reference.create "named") ~annotation:Type.integer ();
+               parent_source_path = None;
+             };
        })
     "Undefined attribute [16]: Callable `named` has no attribute `at`.";
   (* TODO(T64161566): Don't pretend these are just Callables *)
@@ -938,9 +974,13 @@ let test_description _ =
          attribute = "at";
          origin =
            Class
-             (Type.parametric
-                "BoundMethod"
-                [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer]);
+             {
+               class_type =
+                 Type.parametric
+                   "BoundMethod"
+                   [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
+               parent_source_path = None;
+             };
        })
     "Undefined attribute [16]: Anonymous callable has no attribute `at`.";
   assert_messages
@@ -949,16 +989,20 @@ let test_description _ =
          attribute = "at";
          origin =
            Class
-             (Type.parametric
-                "BoundMethod"
-                [
-                  Single
-                    (Type.Callable.create
-                       ~name:(Reference.create "named")
-                       ~annotation:Type.integer
-                       ());
-                  Single Type.integer;
-                ]);
+             {
+               class_type =
+                 Type.parametric
+                   "BoundMethod"
+                   [
+                     Single
+                       (Type.Callable.create
+                          ~name:(Reference.create "named")
+                          ~annotation:Type.integer
+                          ());
+                     Single Type.integer;
+                   ];
+               parent_source_path = None;
+             };
        })
     "Undefined attribute [16]: Callable `named` has no attribute `at`.";
   ()

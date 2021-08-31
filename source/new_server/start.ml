@@ -87,7 +87,7 @@ module ClientRequest = struct
       | Result.Error _ -> (
           match Request.of_yojson json with
           | Result.Ok request -> Request request
-          | Result.Error _ -> Error "Malformed JSON request" )
+          | Result.Error _ -> Error "Malformed JSON request")
     with
     | Yojson.Json_error message -> Error message
 end
@@ -97,12 +97,24 @@ let handle_request ~state request =
   let on_uncaught_server_exception exn =
     Log.info "Uncaught server exception: %s" (Exn.to_string exn);
     let () =
-      let { ServerState.server_configuration; _ } = state in
-      StartupNotification.produce_for_configuration
-        ~server_configuration
+      let { ServerState.configuration; _ } = state in
+      StartupNotification.produce
+        ~log_path:configuration.log_directory
         "Restarting Pyre server due to unexpected crash"
     in
-    Statistics.log_exception exn ~fatal:true ~origin:"server";
+    let origin =
+      match exn with
+      | Buck.Raw.BuckError _
+      | Buck.Builder.JsonError _
+      | Buck.Builder.LinkTreeConstructionError _ ->
+          "buck"
+      | Watchman.ConnectionError _
+      | Watchman.SubscriptionError _
+      | Watchman.QueryError _ ->
+          "watchman"
+      | _ -> "server"
+    in
+    Statistics.log_exception exn ~fatal:true ~origin;
     Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state ()
   in
   Lwt.catch
@@ -192,10 +204,9 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
 let initialize_server_state
     ?watchman_subscriber
     ?build_system_initializer
-    ( { ServerConfiguration.log_path; saved_state_action; critical_files; source_paths; _ } as
-    server_configuration )
+    ~configuration:({ Configuration.Analysis.log_directory; _ } as configuration)
+    { StartOptions.source_paths; saved_state_action; critical_files; _ }
   =
-  let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
   (* This is needed to initialize shared memory. *)
   let _ = Memory.get_heap_handle configuration in
   let start_from_scratch ~build_system () =
@@ -217,8 +228,9 @@ let initialize_server_state
       table
     in
     ServerState.create
-      ~socket_path:(socket_path_of log_path)
-      ~server_configuration
+      ~socket_path:(socket_path_of log_directory)
+      ~critical_files
+      ~configuration
       ~build_system
       ~type_environment:environment
       ~error_table
@@ -273,7 +285,7 @@ let initialize_server_state
             in
             Watchman.Raw.with_connection raw ~f:(fun watchman_connection ->
                 let target =
-                  Path.create_relative ~root:log_path ~relative:"new_server/server.state"
+                  Path.create_relative ~root:log_directory ~relative:"new_server/server.state"
                 in
                 SavedState.query_and_fetch_exn
                   {
@@ -398,8 +410,9 @@ let initialize_server_state
                   Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
                   let error_table = Server.SavedState.ServerErrors.load () in
                   ServerState.create
-                    ~socket_path:(socket_path_of log_path)
-                    ~server_configuration
+                    ~socket_path:(socket_path_of log_directory)
+                    ~critical_files
+                    ~configuration
                     ~build_system
                     ~type_environment
                     ~error_table
@@ -409,22 +422,19 @@ let initialize_server_state
                 Statistics.event ~name:"saved state success" ();
                 Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
                 |> RequestHandler.process_request ~state:loaded_state
-                >>= fun (new_state, _) -> Lwt.return new_state ) )
+                >>= fun (new_state, _) -> Lwt.return new_state))
   in
   let open Lwt.Infix in
   let get_initial_state ~build_system_initializer () =
     match saved_state_action with
-    | Some
-        (ServerConfiguration.SavedStateAction.LoadFromFile
-          { shared_memory_path; changed_files_path }) ->
+    | Some (SavedStateAction.LoadFromFile { shared_memory_path; changed_files_path }) ->
         with_performance_logging
           ~normals:["initialization method", "saved state"]
           ~name:"initialization"
           (fun _ ->
             fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
             >>= load_from_saved_state ~build_system_initializer)
-    | Some (ServerConfiguration.SavedStateAction.LoadFromProject { project_name; project_metadata })
-      ->
+    | Some (SavedStateAction.LoadFromProject { project_name; project_metadata }) ->
         let normals =
           let normals =
             ["initialization method", "saved state"; "saved_state_project", project_name]
@@ -446,7 +456,7 @@ let initialize_server_state
       { ServerState.configuration; type_environment; error_table; build_system; _ }
     =
     match saved_state_action with
-    | Some (ServerConfiguration.SavedStateAction.SaveToFile { shared_memory_path }) ->
+    | Some (SavedStateAction.SaveToFile { shared_memory_path }) ->
         Memory.SharedMemory.collect `aggressive;
         Analysis.TypeEnvironment.module_tracker type_environment
         |> Analysis.ModuleTracker.SharedMemory.store;
@@ -478,10 +488,7 @@ let initialize_server_state
   Lwt.return (ExclusiveLock.create state)
 
 
-let get_watchman_subscriber
-    ?watchman
-    { ServerConfiguration.watchman_root; critical_files; extensions; source_paths; _ }
-  =
+let get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions ~source_paths () =
   let open Lwt.Infix in
   match watchman_root with
   | None -> Lwt.return_none
@@ -516,20 +523,25 @@ let on_watchman_update ~server_state paths =
 let with_server
     ?watchman
     ?build_system_initializer
+    ~configuration:({ Configuration.Analysis.log_directory; extensions; _ } as configuration)
     ~f
-    ({ ServerConfiguration.log_path; _ } as server_configuration)
+    ({ StartOptions.source_paths; watchman_root; critical_files; _ } as start_options)
   =
   let open Lwt in
-  let socket_path = socket_path_of log_path in
+  let socket_path = socket_path_of log_directory in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
-  get_watchman_subscriber ?watchman server_configuration
+  get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions ~source_paths ()
   >>= fun watchman_subscriber ->
   LwtSocketServer.PreparedSocket.create_from_path socket_path
   >>= fun prepared_socket ->
   (* We do not want the expensive server initialization to happen before we start to accept client
      requests. *)
-  initialize_server_state ?watchman_subscriber ?build_system_initializer server_configuration
+  initialize_server_state
+    ?watchman_subscriber
+    ?build_system_initializer
+    ~configuration
+    start_options
   >>= fun server_state ->
   LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_state)
   >>= fun server ->
@@ -585,18 +597,19 @@ let start_server
     ?(on_server_socket_ready = fun _ -> Lwt.return_unit)
     ~on_started
     ~on_exception
-    server_configuration
+    ~configuration
+    start_options
   =
   let open Lwt in
   let f (socket_path, server_state) =
     on_server_socket_ready socket_path >>= fun _ -> on_started server_state
   in
   catch
-    (fun () -> with_server ?watchman ?build_system_initializer server_configuration ~f)
+    (fun () -> with_server ?watchman ?build_system_initializer ~configuration start_options ~f)
     on_exception
 
 
-let start_server_and_wait ?event_channel server_configuration =
+let start_server_and_wait ?event_channel ~configuration start_options =
   let open Lwt in
   let write_event event =
     match event_channel with
@@ -611,7 +624,8 @@ let start_server_and_wait ?event_channel server_configuration =
             | exn -> Lwt.fail exn)
   in
   start_server
-    server_configuration
+    start_options
+    ~configuration
     ~on_server_socket_ready:(fun socket_path ->
       (* An empty message signals that server socket has been created. *)
       write_event (ServerEvent.SocketCreated socket_path))
@@ -647,20 +661,10 @@ let start_server_and_wait ?event_channel server_configuration =
               | _ -> ServerEvent.ErrorKind.BuckInternal
             in
             ( kind,
-              let arguments =
-                let quote argument =
-                  if String.contains argument ' ' then
-                    (* This makes sure that the buck command gets properly escaped by the shell. *)
-                    Format.sprintf "'%s'" argument
-                  else
-                    argument
-                in
-                List.map arguments ~f:quote
-              in
               Format.sprintf
                 "Cannot build the project: %s. To reproduce this error, run `%s`."
                 description
-                (String.concat ~sep:" " ("buck" :: arguments)) )
+                (Buck.Raw.ArgumentList.to_buck_command arguments) )
         | Buck.Builder.JsonError message ->
             ( ServerEvent.ErrorKind.Pyre,
               Format.sprintf

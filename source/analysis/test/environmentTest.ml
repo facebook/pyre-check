@@ -415,8 +415,8 @@ let test_register_implicit_submodules context =
   let global_resolution = GlobalResolution.create environment in
   assert_bool
     "Can get the source of a/b/c.py"
-    ( AstEnvironment.ReadOnly.get_raw_source ast_environment (Reference.create "a.b.c")
-    |> Option.is_some );
+    (AstEnvironment.ReadOnly.get_raw_source ast_environment (Reference.create "a.b.c")
+    |> Option.is_some);
   assert_bool
     "Can get the module definition of a/b/c.py"
     (GlobalResolution.module_exists global_resolution (Reference.create "a.b.c"));
@@ -747,16 +747,14 @@ let test_populate context =
   assert_global "test.Class.property" None;
 
   (* Loops. *)
-  ( try
-      populate
-        ~context
-        ["test.py", {|
+  (try
+     populate ~context ["test.py", {|
         def foo(cls):
           class cls(cls): pass
       |}]
-      |> ignore
-    with
-  | ClassHierarchy.Cyclic _ -> assert_unreached () );
+     |> ignore
+   with
+  | ClassHierarchy.Cyclic _ -> assert_unreached ());
 
   (* Check meta variables are registered. *)
   let assert_global =
@@ -1316,9 +1314,9 @@ let test_update_and_compute_dependencies context =
            ~f:SharedMemoryKeys.DependencyKey.RegisteredSet.union
            ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty
       |> SharedMemoryKeys.DependencyKey.RegisteredSet.filter (function registered ->
-             ( match SharedMemoryKeys.DependencyKey.get_key registered with
+             (match SharedMemoryKeys.DependencyKey.get_key registered with
              | SharedMemoryKeys.TypeCheckDefine _ -> true
-             | _ -> false ))
+             | _ -> false))
     in
     List.iter expected_state_after_update ~f:assert_state;
     assert_equal

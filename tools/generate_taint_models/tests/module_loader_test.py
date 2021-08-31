@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
-from typing import IO, Any
+from typing import IO
 from unittest.mock import MagicMock, mock_open, patch
 
 from .. import module_loader

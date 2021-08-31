@@ -36,8 +36,8 @@ let socket_path ?(create = false) ?(name = "server") configuration =
         ~root:(Path.create_absolute ~follow_symbolic_links:true Filename.temp_dir_name)
         ~relative:(Format.sprintf "pyre_%s_%s.sock" name pid)
     in
-    ( try Unix.unlink (Path.absolute link_path) with
-    | Unix.Unix_error _ -> () );
+    (try Unix.unlink (Path.absolute link_path) with
+    | Unix.Unix_error _ -> ());
     Unix.symlink ~target:(Path.absolute socket_path) ~link_name:(Path.absolute link_path);
     socket_path
 
@@ -138,18 +138,18 @@ let log_configuration { Configuration.Analysis.features; incremental_style; _ } 
 let start
     ~connections
     ~configuration:
-      ( {
-          Configuration.Server.configuration =
-            {
-              Configuration.Analysis.expected_version;
-              store_type_check_resolution;
-              local_root;
-              project_root;
-              _;
-            } as configuration;
-          saved_state_action;
-          _;
-        } as server_configuration )
+      ({
+         Configuration.Server.configuration =
+           {
+             Configuration.Analysis.expected_version;
+             store_type_check_resolution;
+             local_root;
+             project_root;
+             _;
+           } as configuration;
+         saved_state_action;
+         _;
+       } as server_configuration)
     ()
   =
   let state =
@@ -175,12 +175,12 @@ let start
         | SavedState.IncompatibleState reason ->
             Log.warning "Unable to load saved state, falling back to a full start.";
             Statistics.event ~name:"saved state failure" ~normals:["reason", reason] ();
-            start_from_scratch ~connections ~configuration () )
+            start_from_scratch ~connections ~configuration ())
     | _ -> start_from_scratch ~connections ~configuration ()
   in
-  ( match saved_state_action with
+  (match saved_state_action with
   | Some (Save saved_state_path) -> SavedState.save ~configuration ~saved_state_path state
-  | _ -> () );
+  | _ -> ());
   log_configuration configuration;
   Telemetry.send_telemetry () ~f:(fun _ ->
       Telemetry.create_session_start_message ~local_root ~project_root);
@@ -213,12 +213,14 @@ let stop
   exit 0
 
 
-let connect ~retries ~configuration:({ Configuration.Analysis.expected_version; _ } as configuration)
+let connect
+    ~retries
+    ~configuration:({ Configuration.Analysis.expected_version; _ } as configuration)
   =
   let rec connect attempt =
     if attempt >= retries then (
       Log.error "Could not connect to server after %d retries" attempt;
-      raise ConnectionFailure );
+      raise ConnectionFailure);
 
     (* The socket path is computed in each iteration because the server might set up a symlink after
        a connection attempt - in that case, we want to avoid using the stale file. *)
@@ -232,11 +234,11 @@ let connect ~retries ~configuration:({ Configuration.Analysis.expected_version; 
         | `Failure ->
             Log.info "Client could not connect.";
             Unix.sleep 1;
-            connect (attempt + 1) )
+            connect (attempt + 1))
       else (
         Log.info "No valid socket found.";
         Unix.sleep 1;
-        connect (attempt + 1) )
+        connect (attempt + 1))
     with
     | ServerNotRunning ->
         Log.info "Waiting for server...";

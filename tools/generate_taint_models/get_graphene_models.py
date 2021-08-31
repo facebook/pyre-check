@@ -10,6 +10,7 @@ import re
 from typing import Callable, Iterable, List, Optional
 
 from ...api.connection import PyreConnection
+from ...api.query import PyreCache
 from .generator_specifications import (
     AnnotationSpecification,
     WhitelistSpecification,
@@ -30,8 +31,10 @@ class GrapheneModelsGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
         pyre_connection: PyreConnection,
         annotations: Optional[AnnotationSpecification] = None,
         whitelist: Optional[WhitelistSpecification] = None,
+        pyre_cache: Optional[PyreCache] = None,
     ) -> None:
         self.pyre_connection = pyre_connection
+        self.pyre_cache = pyre_cache
 
         self.annotations: AnnotationSpecification = (
             annotations or default_entrypoint_taint
@@ -71,6 +74,7 @@ class GrapheneModelsGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
                 generator_to_filter=MethodsOfSubclassesGenerator(
                     base_classes=base_classes,
                     pyre_connection=self.pyre_connection,
+                    pyre_cache=self.pyre_cache,
                     annotations=self.annotations,
                     whitelist=self.whitelist,
                 ),

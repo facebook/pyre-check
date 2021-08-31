@@ -6,7 +6,7 @@
 # pyre-strict
 
 import logging
-from typing import Dict, Iterable, List, Optional, Set
+from typing import TypeVar, Type, Dict, Iterable, List, Optional, Set
 
 from ...api import query
 from ...api.connection import PyreConnection
@@ -26,9 +26,14 @@ def _flatten_subclass_tree(target: str, class_hierarchy: ClassHierarchy) -> Set[
 
 
 def get_all_subclasses_from_pyre(
-    targets: Iterable[str], pyre_connection: PyreConnection, transitive: bool = False
+    targets: Iterable[str],
+    pyre_connection: PyreConnection,
+    transitive: bool = False,
+    pyre_cache: Optional[query.PyreCache] = None,
 ) -> Optional[Dict[str, List[str]]]:
-    class_hierarchy = query.get_class_hierarchy(pyre_connection)
+    class_hierarchy = query.get_cached_class_hierarchy(
+        pyre_connection=pyre_connection, pyre_cache=pyre_cache
+    )
     if class_hierarchy is not None:
         LOG.debug(f"For {targets}, found class hierarchy: {class_hierarchy.hierarchy}")
         result: Dict[str, List[str]] = {}
@@ -47,9 +52,17 @@ def get_all_subclasses_from_pyre(
 
 
 def get_all_subclass_defines_from_pyre(
-    targets: Iterable[str], pyre_connection: PyreConnection, transitive: bool = False
+    targets: Iterable[str],
+    pyre_connection: PyreConnection,
+    transitive: bool = False,
+    pyre_cache: Optional[query.PyreCache] = None,
 ) -> Optional[Dict[str, List[query.Define]]]:
-    subclasses = get_all_subclasses_from_pyre(targets, pyre_connection, transitive)
+    subclasses = get_all_subclasses_from_pyre(
+        targets,
+        pyre_connection=pyre_connection,
+        transitive=transitive,
+        pyre_cache=pyre_cache,
+    )
 
     if subclasses is not None:
         return {
@@ -58,3 +71,16 @@ def get_all_subclass_defines_from_pyre(
         }
     else:
         return None
+
+
+T = TypeVar("T")
+
+
+def get_all_subclasses_from_environment(parent_class: Type[T]) -> Iterable[Type[T]]:
+    return set(parent_class.__subclasses__()).union(
+        [
+            grandchild
+            for child in parent_class.__subclasses__()
+            for grandchild in get_all_subclasses_from_environment(child)
+        ]
+    )

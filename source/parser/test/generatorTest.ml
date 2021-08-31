@@ -3455,7 +3455,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Pass];
            decorators = [decorator "bar"];
            top_level_unbound_names = [];
@@ -3467,7 +3467,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Pass];
            decorators = [];
            top_level_unbound_names = [];
@@ -3479,7 +3479,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Define
@@ -3510,7 +3510,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Define
@@ -3560,7 +3560,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo.bar";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Pass];
            decorators = [];
            top_level_unbound_names = [];
@@ -3572,10 +3572,28 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases =
+           base_arguments =
              [
                { Call.Argument.name = None; value = +Expression.Integer 1 };
                { Call.Argument.name = None; value = +Expression.Integer 2 };
+             ];
+           body = [+Statement.Expression (+Expression.Integer 1)];
+           decorators = [];
+           top_level_unbound_names = [];
+         };
+    ];
+  assert_parsed_equal
+    "class foo(init_subclass_arg=\"literal_string\"):\n\t1"
+    [
+      +Statement.Class
+         {
+           Class.name = + !&"foo";
+           base_arguments =
+             [
+               {
+                 Call.Argument.name = Some ~+"init_subclass_arg";
+                 value = +Expression.String (StringLiteral.create "literal_string");
+               };
              ];
            body = [+Statement.Expression (+Expression.Integer 1)];
            decorators = [];
@@ -3588,7 +3606,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases =
+           base_arguments =
              [
                { Call.Argument.name = None; value = +Expression.Integer 1 };
                { Call.Argument.name = None; value = +Expression.Starred (Starred.Twice !"kwargs") };
@@ -3604,7 +3622,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Assign
@@ -3625,7 +3643,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Assign
@@ -3646,7 +3664,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Assign
@@ -3667,7 +3685,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [{ Call.Argument.name = None; value = !"superfoo" }];
+           base_arguments = [{ Call.Argument.name = None; value = !"superfoo" }];
            body =
              [
                +Statement.Define
@@ -3698,7 +3716,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Define
@@ -3749,7 +3767,7 @@ let test_class _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.If
@@ -4900,7 +4918,7 @@ let test_stubs _ =
       +Statement.Class
          {
            Class.name = + !&"A";
-           bases = [];
+           base_arguments = [];
            body =
              [
                +Statement.Assign
@@ -5012,7 +5030,7 @@ let test_stubs _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];
@@ -5024,7 +5042,7 @@ let test_stubs _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];
@@ -5036,7 +5054,7 @@ let test_stubs _ =
       +Statement.Class
          {
            Class.name = + !&"foo";
-           bases = [];
+           base_arguments = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];

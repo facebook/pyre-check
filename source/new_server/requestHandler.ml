@@ -16,26 +16,26 @@ let module_of_path ~configuration ~module_tracker path =
   | _ -> None
 
 
+let instantiate_path ~build_system ~configuration ~ast_environment qualifier =
+  AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier
+  |> Option.bind ~f:(BuildSystem.lookup_source build_system)
+  |> Option.map ~f:Path.absolute
+
+
 let instantiate_error
     ~build_system
     ~configuration:({ Configuration.Analysis.show_error_traces; _ } as configuration)
     ~ast_environment
     error
   =
-  let lookup qualifier =
-    AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier
-    |> Option.bind ~f:(BuildSystem.lookup_source build_system)
-    |> Option.map ~f:Path.absolute
-  in
-  AnalysisError.instantiate ~show_error_traces ~lookup error
+  AnalysisError.instantiate
+    ~show_error_traces
+    ~lookup:(instantiate_path ~build_system ~configuration ~ast_environment)
+    error
 
 
 let instantiate_errors ~build_system ~configuration ~ast_environment errors =
   List.map errors ~f:(instantiate_error ~build_system ~configuration ~ast_environment)
-
-
-let find_critical_file ~server_configuration:{ ServerConfiguration.critical_files; _ } paths =
-  ServerConfiguration.CriticalFile.find critical_files ~within:paths
 
 
 let process_display_type_error_request
@@ -79,26 +79,26 @@ let process_display_type_error_request
 
 let process_incremental_update_request
     ~state:
-      ( {
-          ServerState.server_configuration;
-          configuration;
-          type_environment;
-          error_table;
-          subscriptions;
-          build_system;
-          _;
-        } as state )
+      ({
+         ServerState.critical_files;
+         configuration;
+         type_environment;
+         error_table;
+         subscriptions;
+         build_system;
+         _;
+       } as state)
     paths
   =
   let open Lwt.Infix in
   let paths = List.map paths ~f:Path.create_absolute in
-  match find_critical_file ~server_configuration paths with
+  match CriticalFile.find critical_files ~within:paths with
   | Some path ->
       Format.asprintf
         "Pyre needs to restart as it is notified on potential changes in `%a`"
         Path.pp
         path
-      |> StartupNotification.produce_for_configuration ~server_configuration;
+      |> StartupNotification.produce ~log_path:configuration.log_directory;
       Stop.log_and_stop_waiting_server ~reason:"critical file update" ~state ()
   | None -> (
       BuildSystem.update build_system paths
@@ -136,24 +136,24 @@ let process_incremental_update_request
           in
           List.map subscriptions ~f:(fun subscription -> Subscription.send ~response subscription)
           |> Lwt.join
-          >>= fun () -> Lwt.return state )
+          >>= fun () -> Lwt.return state)
 
 
 let process_request
-    ~state:
-      ( { ServerState.socket_path; server_configuration; configuration; type_environment; _ } as
-      state )
+    ~state:({ ServerState.socket_path; configuration; type_environment; build_system; _ } as state)
     request
   =
   match request with
   | Request.GetInfo ->
+      let { Configuration.Analysis.project_root; local_root; _ } = configuration in
       let response =
         Response.Info
           {
             version = Version.version ();
             pid = Unix.getpid () |> Pid.to_int;
             socket = Pyre.Path.absolute socket_path;
-            configuration = server_configuration;
+            global_root = Path.show project_root;
+            relative_local_root = Path.get_relative_to_root ~root:project_root ~path:local_root;
           }
       in
       Lwt.return (state, response)
@@ -167,7 +167,8 @@ let process_request
   | Request.Query query_text ->
       let response =
         Response.Query
-          (Server.Query.parse_and_process_request
+          (Query.parse_and_process_request
+             ~build_system
              ~environment:type_environment
              ~configuration
              query_text)

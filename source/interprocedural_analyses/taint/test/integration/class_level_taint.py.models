@@ -3,7 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "class_level_taint.ClassSink.sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(argument)",
@@ -13,8 +12,7 @@
         "port": "formal(self)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -26,16 +24,13 @@
         "port": "result",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "class_level_taint.test",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(class_sink)",
@@ -53,8 +48,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {

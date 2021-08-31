@@ -128,7 +128,7 @@ let rec weaken_mutable_literals
           make_weakened_type
             ~typed_dictionary_errors:(List.concat_map weakened_types ~f:typed_dictionary_errors)
             resolved
-      | Unequal_lengths -> make_weakened_type resolved )
+      | Unequal_lengths -> make_weakened_type resolved)
   | ( Some { Node.value = Expression.List items; _ },
       Type.Parametric { name = "list" as container_name; parameters = [Single actual_item_type] },
       Type.Parametric { name = "list"; parameters = [Single expected_item_type] } )
@@ -160,10 +160,10 @@ let rec weaken_mutable_literals
       in
       make_weakened_type
         ~typed_dictionary_errors
-        ( if comparator ~left:weakened_item_type ~right:expected_item_type then
-            expected
+        (if comparator ~left:weakened_item_type ~right:expected_item_type then
+           expected
         else
-          Type.parametric container_name [Single weakened_item_type] )
+          Type.parametric container_name [Single weakened_item_type])
   | ( Some { Node.value = Expression.ListComprehension _; _ },
       Type.Parametric { name = "list"; parameters = [Single actual] },
       Type.Parametric { name = "list"; parameters = [Single expected_parameter] } )
@@ -200,11 +200,11 @@ let rec weaken_mutable_literals
           make_weakened_type
             ~typed_dictionary_errors:
               (List.concat_map weakened_item_types ~f:typed_dictionary_errors)
-            ( if comparator ~left:weakened_type ~right:expected then
-                expected
+            (if comparator ~left:weakened_type ~right:expected then
+               expected
             else
-              weakened_type )
-      | Unequal_lengths -> make_weakened_type resolved )
+              weakened_type)
+      | Unequal_lengths -> make_weakened_type resolved)
   | ( Some { Node.value = Expression.Tuple items; _ },
       Type.Tuple (Concrete actual_item_types),
       Type.Tuple (Concatenation concatenation) ) ->
@@ -231,10 +231,10 @@ let rec weaken_mutable_literals
             Some
               (make_weakened_type
                  ~typed_dictionary_errors
-                 ( if comparator ~left:weakened_item_type ~right:expected_item_type then
-                     expected
+                 (if comparator ~left:weakened_item_type ~right:expected_item_type then
+                    expected
                  else
-                   resolved ))
+                   resolved))
         | Unequal_lengths -> None
       in
       Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
@@ -385,7 +385,7 @@ let rec weaken_mutable_literals
                         (List.concat_map erroneous_weakened_types ~f:typed_dictionary_errors)
                       resolved)
           |> Option.value ~default:(make_weakened_type resolved)
-      | None -> make_weakened_type resolved )
+      | None -> make_weakened_type resolved)
   | ( Some { Node.value = Expression.Dictionary _; _ },
       _,
       Type.Parametric { name = "typing.Mapping" as generic_name; parameters } )
@@ -467,7 +467,7 @@ let rec weaken_mutable_literals
             make_weakened_type expected
           else
             make_weakened_type actual_literal
-      | _ -> make_weakened_type resolved )
+      | _ -> make_weakened_type resolved)
   | _, _, Type.RecursiveType recursive_type ->
       let ({ resolved = weakened_fallback_type; _ } as weakened_type) =
         weaken_mutable_literals
@@ -541,13 +541,13 @@ and weaken_dictionary_entries
   in
   make_weakened_type
     ~typed_dictionary_errors:(key_errors @ value_errors)
-    ( if
-      comparator ~left:weakened_key_type ~right:expected_key_type
-      && comparator ~left:weakened_value_type ~right:expected_value_type
+    (if
+     comparator ~left:weakened_key_type ~right:expected_key_type
+     && comparator ~left:weakened_value_type ~right:expected_value_type
     then
-        expected
+       expected
     else
-      Type.dictionary ~key:weakened_key_type ~value:weakened_value_type )
+      Type.dictionary ~key:weakened_key_type ~value:weakened_value_type)
 
 
 and weaken_by_distributing_union
@@ -591,7 +591,7 @@ and weaken_by_distributing_union
             ~expected
             ~resolve_items_individually
             ~comparator:comparator_without_override
-      | None -> make_weakened_type resolved )
+      | None -> make_weakened_type resolved)
   | _ -> make_weakened_type resolved
 
 

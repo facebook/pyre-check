@@ -154,7 +154,7 @@ module Label = struct
     | left :: left_rest, right :: right_rest -> (
         match compare left right with
         | 0 -> compare_path left_rest right_rest
-        | n -> n )
+        | n -> n)
     | [], [] -> 0
     | [], _ -> -1
     | _, [] -> 1
@@ -164,10 +164,10 @@ module Label = struct
 end
 
 module Make (Config : CONFIG) (Element : ELEMENT) () = struct
-  module Checks = ( val if Config.check_invariants then
-                          (module WithChecks)
-                        else
-                          (module WithoutChecks) : CHECK )
+  module Checks = (val if Config.check_invariants then
+                         (module WithChecks)
+                       else
+                         (module WithoutChecks) : CHECK)
 
   module LabelMap = struct
     module Map = Map.Make (Label)
@@ -175,8 +175,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
     let filter_mapi ~f map =
       Map.mapi (fun key data -> f ~key ~data) map
-      |> Map.filter (fun _key ->
-           function
+      |> Map.filter (fun _key -> function
            | None -> false
            | Some _ -> true)
       |> Map.map (fun selected -> Option.value_exn selected)
@@ -444,7 +443,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     =
     if must_widen_depth widen_depth then
       (* Collapse left_tree and right_tree to achieve depth limit. Note that left_tree is a leaf,
-         only if the widen depth was exactly the depth of left_tree.  *)
+         only if the widen depth was exactly the depth of left_tree. *)
       let collapsed_left_element =
         collapse ~transform:transform_on_collapse ~widen_depth left_tree
       in
@@ -495,7 +494,6 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
          joined.[l] = left_tree[l] merge right_star if l in L
          joined.[r] = right_tree[r] merge left_star if r in R
          joined.[<keys>] = left_tree[<keys>] merge right_tree[<keys>]
-
     *)
     let left_star = LabelMap.find_opt Label.AnyIndex left_tree in
     let right_star = LabelMap.find_opt Label.AnyIndex right_tree in
@@ -535,7 +533,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                    ~widen_depth
                    (Some left_subtree)
                    right_star)
-                accumulator )
+                accumulator)
       | Label.Field _ -> (
           match LabelMap.find_opt element right_tree with
           | Some right_subtree ->
@@ -557,7 +555,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                   (Some left_subtree)
                   None
               in
-              set_or_remove element join_tree accumulator )
+              set_or_remove element join_tree accumulator)
     in
     (* merge_right takes care of R *)
     let merge_right ~key:element ~data:right_subtree accumulator =
@@ -587,7 +585,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                   None
                   (Some right_subtree)
               in
-              set_or_remove element join_tree accumulator )
+              set_or_remove element join_tree accumulator)
     in
     let left_done = LabelMap.fold ~init:LabelMap.empty left_tree ~f:merge_left in
     LabelMap.fold ~init:left_done right_tree ~f:merge_right
@@ -630,7 +628,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                   (assign_or_join_path ~do_join ~ancestors ~tree:existing rest ~subtree)
                   children
               in
-              create_node_option element children )
+              create_node_option element children)
 
 
   and join_each_index ~ancestors rest ~subtree ~key:element ~data:tree =
@@ -689,14 +687,14 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                 match LabelMap.find_opt Label.AnyIndex children with
                 | Some subtree ->
                     read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree
-                | None -> ancestors, None )
+                | None -> ancestors, None)
             | Some subtree ->
-                read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree )
+                read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree)
         | _ -> (
             match LabelMap.find_opt label_element children with
             | None -> ancestors, None
             | Some subtree ->
-                read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree ) )
+                read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree))
 
 
   (** Read the subtree at path p within t. Returns the pair ancestors, tree_at_tip. *)
@@ -820,13 +818,13 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
             | Some right_subtree ->
                 (* in common *)
                 less_or_equal_tree left_subtree right_ancestors right_subtree
-                |> Checks.option_construct ~message:(fun () -> Label.show label_element) )
+                |> Checks.option_construct ~message:(fun () -> Label.show label_element))
         | Label.Field _ -> (
             match LabelMap.find_opt label_element right_label_map with
             | Some right_subtree -> less_or_equal_tree left_subtree right_ancestors right_subtree
             | None ->
                 less_or_equal_option_tree (Some left_subtree) right_ancestors None
-                |> Checks.option_construct ~message:(fun () -> "[right <keys>]") )
+                |> Checks.option_construct ~message:(fun () -> "[right <keys>]"))
       in
       (* Check that all non-star indexes on right are larger than star1,
          unless they were matched directly. *)
@@ -961,7 +959,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       | `Both (left_tree, mold) -> (
           match shape_tree ~transform ~ancestors left_tree ~mold with
           | Some merged -> LabelMap.add result ~key ~data:merged
-          | None -> result )
+          | None -> result)
       | `Right _mold -> failwith "Invariant broken. Mold should not have more branches"
       | `Left _ -> failwith "Invariant broken. Left branch should have been lifted"
     in
@@ -1161,7 +1159,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
           match part with
           | Path -> Format.sprintf "Tree.Path"
           | Self -> Format.sprintf "Tree.Self"
-          | _ -> Element.introspect op )
+          | _ -> Element.introspect op)
 
 
     let create parts =

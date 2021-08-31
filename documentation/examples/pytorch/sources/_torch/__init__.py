@@ -10,7 +10,6 @@ from typing import TypeVar
 
 import torch
 from pyre_extensions import Generic, ListVariadic
-from pyre_extensions.type_variable_operators import Concatenate
 from torch import cat, mm, randn, unsqueeze  # noqa
 
 from .nn import Linear  # noqa

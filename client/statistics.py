@@ -52,7 +52,6 @@ def log(
         subprocess.run([logger, category.value], input=statistics)
     except Exception:
         LOG.warning("Unable to log using `%s`", logger)
-        LOG.info(traceback.format_exc())
 
 
 def log_with_configuration(

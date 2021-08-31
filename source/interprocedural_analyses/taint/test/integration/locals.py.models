@@ -6,8 +6,8 @@
     "callable_line": 15,
     "code": 5002,
     "line": 20,
-    "start": 16,
-    "end": 29,
+    "start": 15,
+    "end": 28,
     "filename": "locals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -19,9 +19,9 @@
               "filename": "locals.py",
               "line": 18,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "has": "first-index" },
               { "first-index": "x" },
@@ -37,10 +37,10 @@
             "root": {
               "filename": "locals.py",
               "line": 20,
-              "start": 16,
-              "end": 29
+              "start": 15,
+              "end": 28
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -74,9 +74,9 @@
               "filename": "locals.py",
               "line": 18,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -96,7 +96,7 @@
               "port": "formal(x)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -112,7 +112,6 @@
   "kind": "model",
   "data": {
     "callable": "locals.named_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -121,16 +120,15 @@
             "root": {
               "filename": "locals.py",
               "line": 12,
-              "start": 16,
-              "end": 17
+              "start": 15,
+              "end": 16
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -142,9 +140,7 @@
         "port": "formal(x)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
@@ -154,8 +150,8 @@
     "callable_line": 28,
     "code": 5002,
     "line": 29,
-    "start": 16,
-    "end": 29,
+    "start": 15,
+    "end": 28,
     "filename": "locals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -183,10 +179,10 @@
             "root": {
               "filename": "locals.py",
               "line": 29,
-              "start": 16,
-              "end": 29
+              "start": 15,
+              "end": 28
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]

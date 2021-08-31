@@ -5,11 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type result = {
-  module_tracker: Analysis.ModuleTracker.t;
-  ast_environment: Analysis.AstEnvironment.t;
+type environment_data = {
   global_environment: Analysis.AnnotatedGlobalEnvironment.ReadOnly.t;
-  errors: Analysis.InferenceError.t list;
+  qualifiers: Ast.Reference.t list;
 }
 
-val infer : configuration:Configuration.Analysis.t -> scheduler:Scheduler.t -> unit -> result
+val build_environment_data
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  unit ->
+  environment_data
+
+val run_infer
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  filename_lookup:(Ast.Reference.t -> string option) ->
+  paths_to_modify:string list option ->
+  environment_data ->
+  TypeInference.Data.GlobalResult.t

@@ -1,0 +1,14 @@
+ModelQuery(
+  find = "attributes",
+  where = [
+    AnyOf(
+      parent.extends("wtforms.form.Form", is_transitive=True),
+      parent.extends("flaskwtf.form.FlaskForm", is_transitive=True),
+    ),
+  ],
+  model = [
+    AttributeModel(
+      TaintSource[UserControlled, UserControlled_Parameter],
+    )
+  ]
+)

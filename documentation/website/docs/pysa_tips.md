@@ -96,12 +96,18 @@ django.http.request.HttpRequest.GET: TaintSource[UserControlled]
 
 **There is a huge gotcha here**: If you had both an empty `stubs/django.pyi`
 file, and the `stubs/django/http/request.pyi` file shown above, pyre will see
-the `django.pyi` file first and ignore the `request.pyi` file. This would mean
-that your stub of `HttpRequest` would be missed, and your `HttpRequest.COOKIES`
-and `HttpRequest.GET` annotations would cause errors when running Pysa. The fix
-is simply to delete the `django.pyi` file. When deleting that file, you may all
-of a sudden see new typing errors for other types within Django, for which
-you'll need to add new .`pyi` files at the appropriate locations.
+the `django.pyi` file first and ignore the `request.pyi` file (following
+[PEP 484](https://www.python.org/dev/peps/pep-0484/#stub-files)). This would
+mean that your stub of `HttpRequest` would be missed, and your
+`HttpRequest.COOKIES` and `HttpRequest.GET` annotations would cause errors when
+running Pysa. The fix is simply to delete the `django.pyi` file. When deleting
+that file, you may all of a sudden see new typing errors for other types within
+Django, for which you'll need to add new .`pyi` files at the appropriate
+locations.
+
+Since definitions in type stubs don't have bodies, all functions and methods
+will be treated as [obscure models](pysa_advanced.md#obscure-models). If this
+leads to false positives, you will want to write a model for it.
 
 ## Helpful Python knowledge
 

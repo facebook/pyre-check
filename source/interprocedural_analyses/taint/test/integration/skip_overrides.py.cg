@@ -1,4 +1,0 @@
-@generated
-Call dependencies
-skip_overrides.test_no_taint_if_model_exists (fun) -> [__test_source (fun) skip_overrides.C::not_obscure (method)]
-skip_overrides.test_returning_obscure_taint_if_no_model (fun) -> [__test_source (fun) skip_overrides.C::obscure (method)]

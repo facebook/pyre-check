@@ -330,15 +330,6 @@ def create_server_arguments(
         else None
     )
 
-    logger = configuration.logger
-    remote_logging = (
-        backend_arguments.RemoteLogging(
-            logger=logger, identifier=start_arguments.log_identifier or ""
-        )
-        if logger is not None
-        else None
-    )
-
     return Arguments(
         log_path=configuration.log_directory,
         global_root=configuration.project_root,
@@ -361,7 +352,9 @@ def create_server_arguments(
         profiling_output=profiling_output,
         python_version=configuration.get_python_version(),
         shared_memory=configuration.shared_memory,
-        remote_logging=remote_logging,
+        remote_logging=backend_arguments.RemoteLogging.create(
+            configuration.logger, start_arguments.log_identifier
+        ),
         saved_state_action=None
         if start_arguments.no_saved_state
         else get_saved_state_action(

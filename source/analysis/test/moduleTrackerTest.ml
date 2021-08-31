@@ -68,13 +68,13 @@ let test_creation context =
       ~configuration
       ~search_root
       ~relative
-      ( {
-          SourcePath.priority = actual_priority;
-          is_stub = actual_is_stub;
-          is_external = actual_is_external;
-          is_init = actual_is_init;
-          _;
-        } as source_path )
+      ({
+         SourcePath.priority = actual_priority;
+         is_stub = actual_is_stub;
+         is_external = actual_is_external;
+         is_init = actual_is_init;
+         _;
+       } as source_path)
     =
     let expected_path = Path.create_relative ~root:search_root ~relative in
     let actual_path = SourcePath.full_path ~configuration source_path in
@@ -645,7 +645,7 @@ let test_creation context =
      * - local_root is the local root
      * - search_root is the root of other search paths
      * - both derp and durp lives under search_root
-     * - search_root is whitelisted with filter_directories and durp is blacklisted with ignore_all_errors
+     * - search_root is allowlisted with filter_directories and durp is denylisted with ignore_all_errors
      * We want to make sure that the is_external field is correct for this setup. *)
     let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
     let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in

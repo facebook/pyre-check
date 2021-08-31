@@ -114,7 +114,7 @@ module UninstantiatedAttributeTable = struct
       ()
     else (
       Caml.Hashtbl.add attributes name attribute;
-      names := name :: !names )
+      names := name :: !names)
 
 
   let mark_as_implicitly_initialized_if_uninitialized { attributes; _ } name =
@@ -148,7 +148,7 @@ module UninstantiatedAttributeTable = struct
                 Option.compare compare_element (lookup_name left name) (lookup_name right name)
               with
               | 0 -> compare_elements names
-              | nonzero -> nonzero )
+              | nonzero -> nonzero)
         in
         compare_elements left_names
     | nonzero -> nonzero
@@ -466,7 +466,7 @@ module ClassDecorators = struct
                   | _ -> (
                       match extract_dataclass_field_arguments (attribute, value) with
                       | Some arguments -> List.find_map arguments ~f:get_default_value
-                      | _ -> Some value )
+                      | _ -> Some value)
                 in
                 let collect_parameters parameters (attribute, value) =
                   (* Parameters must be annotated attributes *)
@@ -677,7 +677,7 @@ let partial_apply_self { Type.Callable.implementation; overloads; _ } ~order ~se
         in
         match instantiated with
         | Type.Callable { implementation; overloads; _ } -> implementation, overloads
-        | _ -> implementation, overloads )
+        | _ -> implementation, overloads)
     | _ -> implementation, overloads
   in
   let drop_self { Type.Callable.annotation; parameters } =
@@ -1072,12 +1072,12 @@ class base class_metadata_environment dependency =
         ~include_generated_attributes
         ~in_test
         ~accessed_via_metaclass
-        ({ Node.value = { ClassSummary.name; _ }; _ } as parent) =
-      let class_name = Reference.show name in
+        ({ Node.value = { ClassSummary.name = parent_name; _ }; _ } as parent) =
+      let class_name = Reference.show parent_name in
       let unannotated_attributes
           ~include_generated_attributes
           ~in_test
-          { Node.value = class_summary; _ }
+          ({ Node.value = class_summary; _ } as parent)
         =
         let attributes =
           ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
@@ -1105,13 +1105,13 @@ class base class_metadata_environment dependency =
           ClassMetadataEnvironment.ReadOnly.successors
             class_metadata_environment
             ?dependency
-            (Reference.show name)
+            class_name
           |> List.filter_map ~f:class_definition
         in
         let name_annotation_pairs =
           let name_annotation_pair attribute =
             let name = AnnotatedAttribute.name attribute in
-            if Expression.is_dunder_attribute name || Expression.is_private_attribute name then
+            if Expression.is_dunder_attribute name || AnnotatedAttribute.is_private attribute then
               None
             else
               let annotation =
@@ -1148,7 +1148,7 @@ class base class_metadata_environment dependency =
         in
         let constructor =
           {
-            Type.Callable.kind = Named (Reference.create ~prefix:name "__init__");
+            Type.Callable.kind = Named (Reference.create ~prefix:parent_name "__init__");
             implementation = { annotation = Type.none; parameters };
             overloads = [];
           }
@@ -1259,13 +1259,13 @@ class base class_metadata_environment dependency =
         in
         let get_field_attributes
             ~include_generated_attributes
-            { Node.value = { bases; _ } as class_summary; _ }
+            { Node.value = { bases = { ClassSummary.base_classes; _ }; _ } as class_summary; _ }
           =
           let required =
             not
-              (List.exists bases ~f:(fun { value; _ } ->
+              (List.exists base_classes ~f:(fun base_expression ->
                    String.equal
-                     (Expression.show value)
+                     (Expression.show base_expression)
                      (Type.TypedDictionary.class_name ~total:false)))
           in
           ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
@@ -1353,10 +1353,9 @@ class base class_metadata_environment dependency =
         in
         let all_special_methods =
           constructor
-          :: ( get_field_attributes
-                 ~include_generated_attributes:true
-                 base_typed_dictionary_definition
-             |> List.filter_map ~f:overload_method )
+          ::
+          (get_field_attributes ~include_generated_attributes:true base_typed_dictionary_definition
+          |> List.filter_map ~f:overload_method)
         in
         List.iter ~f:(UninstantiatedAttributeTable.add table) all_special_methods
       in
@@ -1704,7 +1703,7 @@ class base class_metadata_environment dependency =
                   {
                     getter = instantiate_property_annotation getter;
                     setter = setter >>| instantiate_property_annotation;
-                  } )
+                  })
       in
 
       let annotation, original =
@@ -1823,7 +1822,7 @@ class base class_metadata_environment dependency =
                             parameters =
                               Defined [self_parameter; create_parameter (Type.tuple meta_types)];
                           },
-                          [] ) )
+                          [] ))
               in
               Type.Callable { callable with implementation; overloads }
           | Parametric { name = "type"; parameters = [Single meta_parameter] }, "__call__", "type"
@@ -1863,14 +1862,14 @@ class base class_metadata_environment dependency =
                   in
                   match TypeOrder.OrderedConstraintsSet.solve ~order constraints with
                   | Some solution -> ConstraintsSet.Solution.instantiate solution annotation
-                  | None -> Type.Top )
+                  | None -> Type.Top)
             in
             match setter_annotation with
             | Some setter_annotation ->
                 solve_property getter_annotation, solve_property setter_annotation
             | None ->
                 let annotation = solve_property getter_annotation in
-                annotation, annotation )
+                annotation, annotation)
         | Attribute annotation -> (
             let annotation =
               match annotation with
@@ -1968,7 +1967,7 @@ class base class_metadata_environment dependency =
                             (* We unsoundly assume all callables are callables with the `function`
                                `__get__` *)
                             `HadDescriptor (function_dunder_get callable)
-                        | `DunderSet -> `NotDescriptor instantiated )
+                        | `DunderSet -> `NotDescriptor instantiated)
                     | _ -> (
                         let attribute =
                           let attribute_name =
@@ -2006,7 +2005,7 @@ class base class_metadata_environment dependency =
                         | Some _ ->
                             (* In theory we could support `__get__`s or `__set__`s that are not just
                                Callables, but for now lets just ignore that *)
-                            `DescriptorNotACallable )
+                            `DescriptorNotACallable)
                 in
 
                 match Type.resolve_class annotation with
@@ -2059,8 +2058,8 @@ class base class_metadata_environment dependency =
                         in
                         List.map elements_and_get_results ~f:process |> collect
                     in
-                    get_type, set_type )
-            | None -> annotation, annotation )
+                    get_type, set_type)
+            | None -> annotation, annotation)
       in
       AnnotatedAttribute.instantiate
         attribute
@@ -2198,7 +2197,7 @@ class base class_metadata_environment dependency =
                     | "__init_subclass__", Callable _
                     | "__class_getitem__", Callable _ ->
                         Type.parametric "typing.ClassMethod" [Single resolved]
-                    | _ -> resolved )
+                    | _ -> resolved)
                 | Error _ -> Any
               in
               ( UninstantiatedAnnotation.Attribute annotation,
@@ -2247,7 +2246,7 @@ class base class_metadata_environment dependency =
                   false,
                   ReadOnly Unrefinable,
                   None,
-                  None ) )
+                  None ))
       in
       let initialized =
         match kind with
@@ -2272,23 +2271,23 @@ class base class_metadata_environment dependency =
           { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation }
         ~visibility
         ~abstract:
-          ( match kind with
+          (match kind with
           | Method { signatures; _ } ->
               List.exists signatures ~f:Define.Signature.is_abstract_method
-          | _ -> false )
+          | _ -> false)
         ~async_property:
-          ( match kind with
+          (match kind with
           | Property { async; _ } -> async
-          | _ -> false )
+          | _ -> false)
         ~class_variable
         ~defined
         ~initialized
         ~name:attribute_name
         ~parent:parent_name
         ~property:
-          ( match kind with
+          (match kind with
           | Property _ -> true
-          | _ -> false )
+          | _ -> false)
         ~undecorated_signature
         ~problem
 
@@ -2296,28 +2295,20 @@ class base class_metadata_environment dependency =
       (* See
          https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
          for why we need to consider all metaclasses. *)
-      let rec handle ({ Node.value = { ClassSummary.bases; _ }; _ } as original) =
+      let rec handle
+          ({ Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ } as
+          original)
+        =
         let open Expression in
         let parse_annotation = self#parse_annotation ~assumptions ?validation:None in
         let metaclass_candidates =
-          let explicit_metaclass =
-            let find_explicit_metaclass = function
-              | { Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
-                  Some (parse_annotation value)
-              | _ -> None
-            in
-            List.find_map ~f:find_explicit_metaclass bases
-          in
+          let explicit_metaclass = metaclass >>| parse_annotation in
           let metaclass_of_bases =
             let explicit_bases =
-              let base_to_class { Call.Argument.value; _ } =
-                delocalize value |> parse_annotation |> Type.split |> fst
+              let base_to_class base_expression =
+                delocalize base_expression |> parse_annotation |> Type.split |> fst
               in
-              List.filter
-                ~f:(function
-                  | { Call.Argument.name = None; _ } -> true
-                  | _ -> false)
-                bases
+              base_classes
               |> List.map ~f:base_to_class
               |> List.filter_map ~f:(class_definition class_metadata_environment ~dependency)
               |> List.filter ~f:(fun base_class ->
@@ -2355,7 +2346,7 @@ class base class_metadata_environment dependency =
                 (* If we get Bottom here, we don't have a "most derived metaclass", so default to
                    one. *)
                 first
-            | _ -> candidate )
+            | _ -> candidate)
       in
       UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
         (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
@@ -2484,7 +2475,7 @@ class base class_metadata_environment dependency =
           | None ->
               (* Constructor on concrete class or fully specified generic,
                * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
-              Option.value (fully_specified_type callee) ~default:Type.Any )
+              Option.value (fully_specified_type callee) ~default:Type.Any)
       | Name (Identifier "None") -> Type.Any
       | Name name when is_simple_name name -> (
           let reference = name_to_reference_exn name in
@@ -2508,7 +2499,7 @@ class base class_metadata_environment dependency =
                   ~overloads
               in
               Result.ok decorated |> Option.value ~default:Type.Any
-          | _ -> resolve_name expression )
+          | _ -> resolve_name expression)
       | Name _ -> resolve_name expression
       | Complex _ -> Type.complex
       | Dictionary { Dictionary.entries; keywords = [] } ->
@@ -2545,7 +2536,7 @@ class base class_metadata_environment dependency =
       | String { StringLiteral.kind; _ } -> (
           match kind with
           | StringLiteral.Bytes -> Type.bytes
-          | _ -> Type.string )
+          | _ -> Type.string)
       | Ternary { Ternary.target; alternative; _ } ->
           let annotation =
             TypeOrder.join
@@ -2571,7 +2562,7 @@ class base class_metadata_environment dependency =
         let simple_decorator_name =
           match decorator with
           | Some (ModuleAttribute { from; name; remaining; _ }) ->
-              Reference.create_from_list (Reference.as_list from @ (name :: remaining))
+              Reference.create_from_list (Reference.as_list from @ name :: remaining)
               |> Reference.show
           | _ -> Reference.show name
         in
@@ -2742,7 +2733,7 @@ class base class_metadata_environment dependency =
                             ~special_method:true
                         with
                         | Some (Callable callable) -> Some callable
-                        | _ -> None ) )
+                        | _ -> None))
               in
               let apply_arguments_to_decorator_factory ~factory_callable ~arguments =
                 let arguments =
@@ -2801,7 +2792,7 @@ class base class_metadata_environment dependency =
                         match extract_callable fetched with
                         | None -> make_error (NonCallableDecoratorFactory fetched)
                         | Some factory_callable ->
-                            apply_arguments_to_decorator_factory ~factory_callable ~arguments ) )
+                            apply_arguments_to_decorator_factory ~factory_callable ~arguments))
               in
               match resolved_decorator with
               | Error error -> Result.Error error
@@ -2822,7 +2813,7 @@ class base class_metadata_environment dependency =
                       | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
                           Ok selected_return_annotation
                       | NotFound { reason; _ } ->
-                          make_error (ApplicationFailed { reason; callable }) ) ) )
+                          make_error (ApplicationFailed { reason; callable }))))
       in
       let parse =
         let parser =
@@ -3191,7 +3182,7 @@ class base class_metadata_environment dependency =
                       match resolved with
                       | Type.Tuple ordered_types -> Either.First ordered_types
                       (* We don't support unpacking unbounded tuples yet. *)
-                      | annotation -> Either.Second { expression; annotation } )
+                      | annotation -> Either.Second { expression; annotation })
                   | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
                 in
                 List.rev arguments |> List.partition_map ~f:extract
@@ -3200,8 +3191,11 @@ class base class_metadata_environment dependency =
               | [] -> Ok extracted
               | not_bounded_tuple :: _ ->
                   Error
-                    (MismatchWithTupleVariadicTypeVariable
-                       { variable = expected; mismatch = NotBoundedTuple not_bounded_tuple })
+                    (Mismatches
+                       [
+                         MismatchWithTupleVariadicTypeVariable
+                           { variable = expected; mismatch = NotBoundedTuple not_bounded_tuple };
+                       ])
             in
             let concatenate extracted =
               let concatenated =
@@ -3217,8 +3211,11 @@ class base class_metadata_environment dependency =
               | Some concatenated -> Ok concatenated
               | None ->
                   Error
-                    (MismatchWithTupleVariadicTypeVariable
-                       { variable = expected; mismatch = CannotConcatenate extracted })
+                    (Mismatches
+                       [
+                         MismatchWithTupleVariadicTypeVariable
+                           { variable = expected; mismatch = CannotConcatenate extracted };
+                       ])
             in
             let solve concatenated =
               let updated_constraints_set =
@@ -3232,8 +3229,11 @@ class base class_metadata_environment dependency =
                 Ok updated_constraints_set
               else
                 Error
-                  (MismatchWithTupleVariadicTypeVariable
-                     { variable = expected; mismatch = ConstraintFailure concatenated })
+                  (Mismatches
+                     [
+                       MismatchWithTupleVariadicTypeVariable
+                         { variable = expected; mismatch = ConstraintFailure concatenated };
+                     ])
             in
             let make_signature_match = function
               | Ok constraints_set -> { signature_match with constraints_set }
@@ -3288,7 +3288,7 @@ class base class_metadata_environment dependency =
                       position;
                     }
                     |> Node.create ~location
-                    |> fun mismatch -> Mismatch mismatch
+                    |> fun mismatch -> Mismatches [Mismatch mismatch]
                   in
                   { reasons with annotation = mismatch :: annotation }
                 in
@@ -3401,15 +3401,15 @@ class base class_metadata_environment dependency =
                         match weakening_error with
                         | Some weakening_error ->
                             add_annotation_error signature_match weakening_error
-                        | None -> argument_annotation |> set_constraints_and_reasons ) )
+                        | None -> argument_annotation |> set_constraints_and_reasons))
               in
               match is_generic_lambda key arguments with
               | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)
-              | None -> List.rev arguments |> check signature_match )
+              | None -> List.rev arguments |> check signature_match)
         in
         let check_if_solution_exists
-            ( { constraints_set; reasons = { annotation; _ } as reasons; callable; _ } as
-            signature_match )
+            ({ constraints_set; reasons = { annotation; _ } as reasons; callable; _ } as
+            signature_match)
           =
           let solution =
             TypeOrder.OrderedConstraintsSet.solve
@@ -3518,7 +3518,7 @@ class base class_metadata_environment dependency =
                              (VariableIsExactly (UnaryPair (parameter_variable, parameter_type)))
                            ~order
                     in
-                    { signature_match with constraints_set = updated_constraints } )
+                    { signature_match with constraints_set = updated_constraints })
           in
           Map.fold ~init:signature_match ~f:update argument_mapping
         in
@@ -3531,9 +3531,16 @@ class base class_metadata_environment dependency =
         let arity_rank = List.length arity in
         let positions, annotation_rank =
           let count_unique (positions, count) = function
-            | Mismatch { Node.value = { position; _ }; _ } when not (Set.mem positions position) ->
-                Set.add positions position, count + 1
-            | Mismatch _ -> positions, count
+            | Mismatches mismatches ->
+                let count_unique_mismatches (positions, count) mismatch =
+                  match mismatch with
+                  | Mismatch { Node.value = { position; _ }; _ }
+                    when not (Set.mem positions position) ->
+                      Set.add positions position, count + 1
+                  | Mismatch _ -> positions, count
+                  | _ -> positions, count + 1
+                in
+                List.fold ~init:(positions, count) mismatches ~f:count_unique_mismatches
             | _ -> positions, count + 1
           in
           List.fold ~init:(Int.Set.empty, 0) ~f:count_unique annotation
@@ -3594,14 +3601,22 @@ class base class_metadata_environment dependency =
                  expect them to fall out in this way (see Mapping.get) *)
               |> Type.Variable.collapse_all_escaped_variable_unions
           in
-          let rev_filter_out_self_argument_errors =
-            let is_not_self_argument = function
-              | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
+          let rev_filter_out_self_argument_errors reasons =
+            let filter_too_many_arguments = function
               (* These would come from methods lacking a self argument called on an instance *)
               | TooManyArguments { expected; _ } -> not (Int.equal expected (-1))
               | _ -> true
             in
-            List.rev_filter ~f:is_not_self_argument
+            let filter_mismatches reason =
+              match reason with
+              | Mismatches mismatches ->
+                  Mismatches
+                    (List.filter mismatches ~f:(function
+                        | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
+                        | _ -> true))
+              | _ -> reason
+            in
+            List.map (List.rev_filter ~f:filter_too_many_arguments reasons) ~f:filter_mismatches
           in
           match
             ( rev_filter_out_self_argument_errors arity,
@@ -3615,9 +3630,8 @@ class base class_metadata_environment dependency =
                 | CallingParameterVariadicTypeVariable -> 1
                 | InvalidKeywordArgument _ -> 0
                 | InvalidVariableArgument _ -> 0
-                | Mismatch { Node.value = { position; _ }; _ } -> 0 - position
+                | Mismatches _ -> -1
                 | MissingArgument _ -> 1
-                | MismatchWithTupleVariadicTypeVariable _ -> 1
                 | MutuallyRecursiveTypeVariables -> 1
                 | ProtocolInstantiation _ -> 1
                 | TooManyArguments _ -> 1
@@ -3628,9 +3642,27 @@ class base class_metadata_environment dependency =
                 if importance reason > importance best_reason then
                   reason
                 else
-                  best_reason
+                  match best_reason, reason with
+                  | Mismatches mismatches, Mismatches other_mismatches ->
+                      Mismatches (List.append mismatches other_mismatches)
+                  | _, _ -> best_reason
               in
-              let reason = Some (List.fold ~init:reason ~f:get_most_important reasons) in
+              let sort_mismatches reason =
+                match reason with
+                | Mismatches mismatches ->
+                    let compare_mismatches mismatch other_mismatch =
+                      match mismatch, other_mismatch with
+                      | ( Mismatch { Node.value = { position; _ }; _ },
+                          Mismatch { Node.value = { position = other_position; _ }; _ } ) ->
+                          position - other_position
+                      | _, _ -> 0
+                    in
+                    Mismatches (List.sort mismatches ~compare:compare_mismatches)
+                | _ -> reason
+              in
+              let reason =
+                Some (List.fold ~init:reason ~f:get_most_important reasons |> sort_mismatches)
+              in
               NotFound { closest_return_annotation = instantiated_return_annotation; reason }
         in
         let { implementation = { annotation = default_return_annotation; _ }; _ } = callable in
@@ -3676,11 +3708,11 @@ class base class_metadata_environment dependency =
               let first_unlabeled, remainder = List.split_n unlabeled (List.length head) in
               first_unlabeled, labeled @ remainder
             in
-            let ( {
-                    constraints_set;
-                    reasons = { arity = head_arity; annotation = head_annotation };
-                    _;
-                  } as head_signature )
+            let ({
+                   constraints_set;
+                   reasons = { arity = head_arity; annotation = head_annotation };
+                   _;
+                 } as head_signature)
               =
               match_arity
                 base_signature_match
@@ -3717,7 +3749,7 @@ class base class_metadata_environment dependency =
             |> List.concat_map ~f:solve_back
             |> function
             | [] -> [head_signature]
-            | nonempty -> nonempty )
+            | nonempty -> nonempty)
         | ParameterVariadicTypeVariable { head; variable } -> (
             let combines_into_variable ~positional_component ~keyword_component =
               Type.Variable.Variadic.Parameters.Components.combine
@@ -3744,7 +3776,7 @@ class base class_metadata_environment dependency =
                     base_signature_match with
                     reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
                   };
-                ] )
+                ])
       in
 
       let get_match signatures =
@@ -3862,10 +3894,11 @@ class base class_metadata_environment dependency =
       in
       let definitions =
         class_name
-        :: ClassMetadataEnvironment.ReadOnly.successors
-             class_metadata_environment
-             ?dependency
-             class_name
+        ::
+        ClassMetadataEnvironment.ReadOnly.successors
+          class_metadata_environment
+          ?dependency
+          class_name
       in
       let definition_index parent =
         parent

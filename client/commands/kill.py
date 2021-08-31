@@ -182,6 +182,7 @@ class Kill(Command):
             subprocess.run(command)
             LOG.debug(f"Ran {command}")
         except Exception as exception:
+            # pyre-fixme[61]: `command` may not be initialized here.
             LOG.debug(f"Could not run `{command}`: {exception}")
 
     def _kill_binary_processes(self) -> None:

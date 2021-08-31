@@ -13,7 +13,6 @@ open Expression
 open Statement
 open Test
 module StatementClass = Class
-module Argument = Call.Argument
 
 let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
@@ -48,8 +47,8 @@ let test_inferred_generic_base context =
       GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in
     assert_equal
-      ~printer:[%show: Argument.t list]
-      ~cmp:(List.equal Argument.equal)
+      ~printer:[%show: Expression.t list]
+      ~cmp:(List.equal Expression.equal)
       expected
       (Annotated.Bases.inferred_generic_base target ~parse_annotation)
   in
@@ -70,12 +69,7 @@ let test_inferred_generic_base context =
        class C(List[_T]):
          pass
      |}
-    [
-      {
-        Argument.name = None;
-        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T"]);
-      };
-    ];
+    [Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T"])];
   assert_inferred_generic
     ~target:"test.List"
     {|
@@ -94,14 +88,8 @@ let test_inferred_generic_base context =
       class Foo(typing.Dict[_T1, _T2]): pass
     |}
     [
-      {
-        Argument.name = None;
-        value =
-          Type.expression
-            (Type.parametric
-               "typing.Generic"
-               !![Type.variable "test._T1"; Type.variable "test._T2"]);
-      };
+      Type.expression
+        (Type.parametric "typing.Generic" !![Type.variable "test._T1"; Type.variable "test._T2"]);
     ];
   assert_inferred_generic
     ~target:"test.Foo"
@@ -109,12 +97,7 @@ let test_inferred_generic_base context =
       _T1 = typing.TypeVar('_T1')
       class Foo(typing.Dict[_T1, _T1]): pass
     |}
-    [
-      {
-        Argument.name = None;
-        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T1"]);
-      };
-    ];
+    [Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T1"])];
   assert_inferred_generic
     ~target:"test.Foo"
     {|
@@ -123,18 +106,14 @@ let test_inferred_generic_base context =
       class Foo(Base[TParams]): pass
     |}
     [
-      {
-        Argument.name = None;
-        value =
-          Type.expression
-            (Type.parametric
-               "typing.Generic"
-               [
-                 Type.Parameter.CallableParameters
-                   (Type.Variable.Variadic.Parameters.self_reference
-                      (Type.Variable.Variadic.Parameters.create "test.TParams"));
-               ]);
-      };
+      Type.expression
+        (Type.parametric
+           "typing.Generic"
+           [
+             Type.Parameter.CallableParameters
+               (Type.Variable.Variadic.Parameters.self_reference
+                  (Type.Variable.Variadic.Parameters.create "test.TParams"));
+           ]);
     ];
   assert_inferred_generic
     ~target:"test.Child"
@@ -146,18 +125,14 @@ let test_inferred_generic_base context =
       class Child(Base[*Ts]): ...
     |}
     [
-      {
-        Argument.name = None;
-        value =
-          Type.expression
-            (Type.parametric
-               "typing.Generic"
-               [
-                 Unpacked
-                   (Type.OrderedTypes.Concatenation.create_unpackable
-                      (Type.Variable.Variadic.Tuple.create "test.Ts"));
-               ]);
-      };
+      Type.expression
+        (Type.parametric
+           "typing.Generic"
+           [
+             Unpacked
+               (Type.OrderedTypes.Concatenation.create_unpackable
+                  (Type.Variable.Variadic.Tuple.create "test.Ts"));
+           ]);
     ];
   ()
 

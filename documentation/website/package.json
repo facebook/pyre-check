@@ -18,7 +18,7 @@
     "@docusaurus/preset-classic": "^2.0.0-alpha.61",
     "classnames": "^2.2.6",
     "codemirror": "^5.59.0",
-    "docusaurus-plugin-internaldocs-fb": "^0.8.5",
+    "docusaurus-plugin-internaldocs-fb": "^0.9.2",
     "internaldocs-fb-helpers": "^1.2.0",
     "react": "^16.10.2",
     "react-codemirror2": "^7.2.1",

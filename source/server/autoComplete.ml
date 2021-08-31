@@ -127,7 +127,7 @@ let get_module_members_list ~resolution ~cursor_position:{ Location.line; column
       | Module.Export.(Name (Define _ | GlobalVariable)) -> (
           match GlobalResolution.global global_resolution fully_qualified_member_reference with
           | Some { AttributeResolution.Global.annotation; _ } -> Annotation.annotation annotation
-          | _ -> Type.Any )
+          | _ -> Type.Any)
       | Module.Export.(Module _ | NameAlias _) ->
           (* Don't bother with these. *)
           Type.Any
@@ -233,4 +233,4 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             else
               class_attributes_list
           in
-          with_dummy_file_and_state ~f:get_items ~path ~content ~state )
+          with_dummy_file_and_state ~f:get_items ~path ~content ~state)

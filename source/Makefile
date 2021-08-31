@@ -15,10 +15,6 @@ dev:
 test: all
 	@OUNIT_SHARDS="1" dune runtest -j auto --profile dev
 
-.PHONY: server_integration_test
-server_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ../scripts/run_server_integration_test.py ../command/test/integration/fake_repository/
-
 .PHONY: stubs_integration_test
 stubs_integration_test: all
 	make -C ../stubs/integration_test

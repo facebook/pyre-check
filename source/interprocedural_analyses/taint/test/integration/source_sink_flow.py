@@ -3,15 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def bar():
-    return __test_source()
+    return _test_source()
 
 
 def qux(arg):
-    __test_sink(arg)
+    _test_sink(arg)
 
 
 def bad(ok, arg):

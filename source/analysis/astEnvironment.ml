@@ -114,11 +114,19 @@ type parse_result =
       is_suppressed: bool;
     }
 
+let create_source ~metadata ~source_path statements =
+  Source.create_from_source_path
+    ~collect_format_strings_with_ignores:Visit.collect_format_strings_with_ignores
+    ~metadata
+    ~source_path
+    statements
+
+
 let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source_path) =
   let parse_lines lines =
     let metadata = Source.Metadata.parse ~qualifier lines in
     match Parser.parse ~relative lines with
-    | Ok statements -> Success (Source.create_from_source_path ~metadata ~source_path statements)
+    | Ok statements -> Success (create_source ~metadata ~source_path statements)
     | Error error ->
         let is_suppressed =
           let { Source.Metadata.local_mode; ignore_codes; _ } = metadata in
@@ -220,7 +228,7 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
                       ()
                   | Some (Result.Ok source) ->
                       wildcard_exports_of source |> List.iter ~f:(Hash_set.add transitive_exports);
-                      Visitor.visit [] source |> Queue.enqueue_all worklist )
+                      Visitor.visit [] source |> Queue.enqueue_all worklist)
             in
             search_wildcard_imports ()
       in
@@ -251,7 +259,7 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
                     |> fun value -> [{ statement with Node.value }]
               in
               state, expanded_import
-          | None -> state, [statement] )
+          | None -> state, [statement])
       | _ -> state, [statement]
   end)
   in
@@ -280,7 +288,7 @@ let get_and_preprocess_source
       let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
       let metadata = Source.Metadata.parse ~qualifier fallback_source in
       let statements = Parser.parse_exn ~relative fallback_source in
-      Source.create_from_source_path ~metadata ~source_path statements |> preprocessing
+      create_source ~metadata ~source_path statements |> preprocessing
 
 
 let parse_sources ~configuration ~scheduler ~ast_environment source_paths =
@@ -370,7 +378,7 @@ let update
               (RawSources.KeySet.of_list changed_modules)
             |> RawSources.KeySet.elements
           in
-          { UpdateResult.triggered_dependencies; invalidated_modules } )
+          { UpdateResult.triggered_dependencies; invalidated_modules })
   | ColdStart ->
       let timer = Timer.start () in
       Log.info

@@ -34,6 +34,7 @@ class Target(NamedTuple):
     name: str
     strict: bool
     pyre: bool
+    check_types: bool
 
 
 class TargetCollector(builtin_ast.NodeVisitor):
@@ -44,28 +45,70 @@ class TargetCollector(builtin_ast.NodeVisitor):
 
     def visit_Call(self, node: builtin_ast.Call) -> None:
         target_fields = node.keywords
-        check_types = False
-        uses_pyre = True
-        is_strict = False
         name = None
+        check_types = False
+        is_strict = False
+        uses_pyre = True
+        has_typing_settings = False
         for field in target_fields:
-            value = field.value
-            if field.arg == "name":
-                if isinstance(value, builtin_ast.Str):
-                    name = value.s
-            elif field.arg == "check_types":
-                if isinstance(value, builtin_ast.NameConstant):
-                    check_types = check_types or value.value
-            elif field.arg == "check_types_options":
-                if isinstance(value, builtin_ast.Str):
-                    uses_pyre = uses_pyre and "mypy" not in value.s.lower()
-                    is_strict = is_strict or (uses_pyre and "strict" in value.s.lower())
-            elif field.arg == "typing_options":
-                if isinstance(value, builtin_ast.Str):
-                    is_strict = is_strict or "strict" in value.s.lower()
-        if name and check_types and (not self._pyre_only or uses_pyre):
-            self._targets.append(Target(name, is_strict, uses_pyre))
+            name = self._get_name(field, name)
+            check_types = self._get_check_types(field, check_types)
+            is_strict = self._get_strict(field, is_strict, uses_pyre)
+            uses_pyre = self._get_uses_pyre(field, uses_pyre)
+            has_typing_settings = self._get_has_typing_settings(
+                field, has_typing_settings
+            )
+
+        if name and has_typing_settings and (not self._pyre_only or uses_pyre):
+            self._targets.append(Target(name, is_strict, uses_pyre, check_types))
         self._contains_strict = self._contains_strict or is_strict
+
+    def _get_name(
+        self, field: builtin_ast.keyword, name: Optional[str]
+    ) -> Optional[str]:
+        value = field.value
+        if field.arg == "name":
+            if isinstance(value, builtin_ast.Str):
+                return value.s
+        return name
+
+    def _get_check_types(self, field: builtin_ast.keyword, check_types: bool) -> bool:
+        value = field.value
+        if field.arg == "check_types":
+            if isinstance(value, builtin_ast.NameConstant):
+                return check_types or value.value
+        return check_types
+
+    def _get_strict(
+        self, field: builtin_ast.keyword, is_strict: bool, uses_pyre: bool
+    ) -> bool:
+        value = field.value
+        if field.arg == "check_types_options":
+            if isinstance(value, builtin_ast.Str):
+                return is_strict or (uses_pyre and "strict" in value.s.lower())
+        elif field.arg == "typing_options":
+            if isinstance(value, builtin_ast.Str):
+                is_strict = is_strict or "strict" in value.s.lower()
+        return is_strict
+
+    def _get_uses_pyre(self, field: builtin_ast.keyword, uses_pyre: bool) -> bool:
+        value = field.value
+        if field.arg == "check_types_options":
+            if isinstance(value, builtin_ast.Str):
+                return uses_pyre and "mypy" not in value.s.lower()
+        return uses_pyre
+
+    def _get_has_typing_settings(
+        self, field: builtin_ast.keyword, has_typing_settings: bool
+    ) -> bool:
+        return (
+            has_typing_settings
+            or field.arg == "type_checker"
+            or field.arg == "typing_options"
+            or field.arg == "check_types_options"
+            or field.arg == "check_types"
+            or field.arg == "typing"
+        )
 
     def result(self) -> List[Target]:
         return self._targets

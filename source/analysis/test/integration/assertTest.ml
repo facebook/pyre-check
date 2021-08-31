@@ -38,6 +38,7 @@ let test_check_assert context =
           pass
     |}
     [];
+  (* TODO(T93984519): Uninitialized local should not throw an error in these. *)
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -48,7 +49,7 @@ let test_check_assert context =
           assert False
         return int_to_int(x)
     |}
-    [];
+    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -59,7 +60,7 @@ let test_check_assert context =
           assert False, "unreachable, surely"
         return int_to_int(x)
     |}
-    [];
+    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -70,7 +71,7 @@ let test_check_assert context =
           assert not True
         return int_to_int(x)
     |}
-    [];
+    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -175,11 +176,7 @@ let test_check_assert context =
         if isinstance(y, stringish_types):
           pass
    |}
-    [
-      "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
-       typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd positional only parameter to call \
-       `isinstance` but got `typing.Any`.";
-    ];
+    [];
   ()
 
 
@@ -393,6 +390,70 @@ let test_check_impossible_assert context =
          pass
    |}
     [];
+  assert_type_errors
+    {|
+      def f() -> None:
+        a = None
+        b = None
+
+        for c in [2, 3, 4]:
+          a = c
+          b = c
+
+        reveal_type(a)
+        assert a is not None and b is not None
+        reveal_type(a)
+
+        if a >= 0:
+          pass
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `typing.Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `a` is `int`.";
+    ];
+  ()
+
+
+let test_if_statement context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      def foo(some_int: int) -> None:
+        x: Optional[int] = None
+        y: Optional[int] = None
+
+        for _ in [1]:
+          x = some_int
+          y = some_int
+
+        if x is None or y is None:
+          return None
+
+        reveal_type(x)
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `y` is `Optional[int]` (inferred: `int`).";
+    ];
+  (* No revealed types because that code is unreachable. *)
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      def foo(some_int: int) -> None:
+        x: Optional[int] = None
+        y: Optional[int] = None
+
+        if x is None or y is None:
+          return None
+
+        reveal_type(x)
+        reveal_type(y)
+    |}
+    [];
   ()
 
 
@@ -403,5 +464,6 @@ let () =
          "check_assert_functions" >:: test_check_assert_functions;
          "check_all" >:: test_check_all;
          "check_impossible_assert" >:: test_check_impossible_assert;
+         "if_statement" >:: test_if_statement;
        ]
   |> Test.run

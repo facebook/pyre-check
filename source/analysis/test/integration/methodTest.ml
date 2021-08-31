@@ -534,6 +534,8 @@ let test_check_method_parameters context =
     [
       "Incompatible parameter type [6]: "
       ^ "Expected `str` for 1st positional only parameter to call `foo` but got `int`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call "
+      ^ "`foo` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -589,6 +591,8 @@ let test_check_method_parameters context =
     [
       "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter "
       ^ "to call `foo` but got `int`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
+       `foo` but got `int`.";
     ];
 
   (* Special Methods *)
@@ -869,7 +873,7 @@ let test_check_method_parameters context =
     {|
       xs = (1, 2, 3)
       def foo(x: int, y: int, z: str) -> None: ...
-      foo(*xs)
+      foo( *xs )
     |}
     [
       "4: Incompatible parameter type [6]: Expected `str` for 3rd positional only parameter to \
@@ -1311,19 +1315,6 @@ let test_check_behavioral_subtyping context =
        `float`.";
     ];
 
-  (* Dunder methods must end with dunder. *)
-  assert_type_errors
-    {|
-      class Foo():
-        def __f(self, a: float) -> None: ...
-      class Bar(Foo):
-        def __f(self, a: int) -> None: pass
-    |}
-    [
-      "Inconsistent override [14]: `test.Bar.__f` overrides method defined in `Foo` inconsistently. "
-      ^ "Parameter of type `int` is not a supertype of the overridden parameter `float`.";
-    ];
-
   (* Weakening of object precondition is not possible. *)
   assert_type_errors
     {|
@@ -1388,7 +1379,116 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
     |}
-    []
+    [];
+
+  (* Overrides of overloaded methods. *)
+  assert_default_type_errors
+    {|
+      import typing
+
+      class Foo():
+        @typing.overload
+        def foo(self, input: int) -> int: ...
+        @typing.overload
+        def foo(self, input: str) -> str: ...
+        def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
+          return input
+
+      class Bar(Foo):
+        @typing.overload
+        def foo(self, input: int) -> int:
+          return input
+        @typing.overload
+        def foo(self, input: str) -> str:
+          return input
+        def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
+          return input
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      import typing
+
+      class Foo():
+        @typing.overload
+        def foo(self, input: int) -> int: ...
+        @typing.overload
+        def foo(self, input: str) -> str: ...
+        def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
+          return input
+
+      class Bar(Foo):
+        @typing.overload
+        def foo(self, input: int) -> int:
+          return input
+        def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
+          return input
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      import typing
+
+      class A: pass
+      class B: pass
+      class C: pass
+
+      class Foo():
+        @typing.overload
+        def foo(self, input: A) -> A: ...
+        @typing.overload
+        def foo(self, input: B) -> B: ...
+        @typing.overload
+        def foo(self, input: C) -> C: ...
+        def foo(self, input: typing.Union[A, B, C]) -> typing.Union[A, B, C]:
+          return input
+
+      class Bar(Foo):
+        @typing.overload
+        def foo(self, input: A) -> A:
+          return input
+        @typing.overload
+        def foo(self, input: B) -> B:
+          return input
+        def foo(self, input: typing.Union[A, B]) -> typing.Union[A, B]:
+          return input
+    |}
+    [
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
+       inconsistently. Parameter of type `typing.Union[A, B]` is not a supertype of the overridden \
+       parameter `typing.Union[A, B, C]`.";
+    ];
+  assert_default_type_errors
+    {|
+      import typing
+
+      class A: pass
+      class B: pass
+      class C: pass
+
+      class Foo():
+        @typing.overload
+        def foo(self, input: A) -> A: ...
+        @typing.overload
+        def foo(self, input: B) -> B: ...
+        @typing.overload
+        def foo(self, input: C) -> C: ...
+        def foo(self, input: typing.Union[A, B, C]) -> typing.Union[A, B, C]:
+          return input
+
+      class Bar(Foo):
+        @typing.overload
+        def foo(self, input: A) -> A:
+          return input
+        @typing.overload
+        def foo(self, input: B) -> B:
+          return input
+    |}
+    [
+      "Missing overload implementation [42]: Overloaded function `Bar.foo` must have an \
+       implementation.";
+    ];
+  ()
 
 
 let test_check_nested_class_inheritance context =
@@ -2347,8 +2447,8 @@ let test_check_static context =
     {|
       import typing
       class Foo:
-        def __init_subclass__(cls) -> typing.Type[Foo]:
-          return cls
+        def __init_subclass__(cls) -> None:
+          return
         def __new__(cls) -> typing.Type[Foo]:
           return cls
         def __class_getitem__(cls, key: int) -> typing.Type[Foo]:
@@ -2600,8 +2700,69 @@ let test_check_private_member_access context =
     |}
     [
       "Incompatible return type [7]: Expected `bool` but got `unknown`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
     ];
+  assert_type_errors
+    ~context
+    {|
+      class Base:
+        def __private_method(self) -> None:
+          return
+
+      class Child(Base):
+        def test(self) -> None:
+          self.__private_method
+    |}
+    [
+      "Undefined attribute [16]: `Child` has no attribute `__private_method`. `__private_method` \
+       looks like a private attribute, which is not accessible from outside its parent class.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class Foo:
+          __private = 1
+
+      def test(foo: Foo) -> None:
+          access = foo.__private
+          foo.__private = 1
+    |}
+    [
+      "Undefined attribute [16]: `Foo` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      import typing
+      T = typing.TypeVar("T", bound="Base")
+
+      class Base:
+        def __init__(self: T) -> None:
+          self.__private = 1
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+    from typing import *
+
+    T = TypeVar("T", bound="Foo")
+
+    class Foo:
+        def test(self: T) -> T:
+            self.derp
+            self.__herp
+            return self
+
+        def __herp(self, value: bool) -> None:
+            return
+
+        def derp(self, value: bool) -> None:
+            return
+    |}
+    [];
   assert_type_errors
     ~context
     {|
@@ -2612,12 +2773,16 @@ let test_check_private_member_access context =
       class Child(Base):
         def __init__(self) -> None:
           self.y = 1
-      def foo(x: typing.Union[Base, Child]) -> bool:
-        return x.__private
+      def foo(union: typing.Union[Base, Child], child: Child, base: Base) -> None:
+        x = union.__private
+        y = base.__private
+        z = child.__private
     |}
     [
-      "Incompatible return type [7]: Expected `bool` but got `unknown`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
+      "Undefined attribute [16]: `Child` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2628,7 +2793,11 @@ let test_check_private_member_access context =
       def foo(x: Base) -> bool:
         return x.__private
     |}
-    ["Undefined attribute [16]: `Base` has no attribute `__private`."];
+    [
+      "Incompatible return type [7]: Expected `bool` but got `unknown`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -2641,7 +2810,11 @@ let test_check_private_member_access context =
       def foo() -> bool:
         return [Base(), Child()][1].__private
     |}
-    ["Undefined attribute [16]: `Base` has no attribute `__private`."];
+    [
+      "Incompatible return type [7]: Expected `bool` but got `unknown`.";
+      "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
+       private attribute, which is not accessible from outside its parent class.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -2653,13 +2826,14 @@ let test_check_private_member_access context =
       class Child(Base):
         def public_method(self) -> None:
           self.__private_method()
-      def foo() -> bool:
+      def foo() -> None:
         return [Base(), Child()][1].__private_method()
     |}
     [
-      "Undefined attribute [16]: `Child` has no attribute `__private_method`.";
-      "Incompatible return type [7]: Expected `bool` but got `None`.";
-      "Undefined attribute [16]: `Base` has no attribute `__private_method`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_method`. `__private_method` \
+       looks like a private attribute, which is not accessible from outside its parent class.";
+      "Undefined attribute [16]: `Base` has no attribute `__private_method`. `__private_method` \
+       looks like a private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2680,8 +2854,11 @@ let test_check_private_member_access context =
     |}
     [
       "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
-      "Undefined attribute [16]: `GenericChild` has no attribute `__private`.";
-      "Undefined attribute [16]: `GenericBase` has no attribute `__private`.";
+      "Undefined attribute [16]: `GenericChild` has no attribute `__private`. `__private` looks \
+       like a private attribute, which is not accessible from outside its parent class.";
+      "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
+      "Undefined attribute [16]: `GenericBase` has no attribute `__private`. `__private` looks \
+       like a private attribute, which is not accessible from outside its parent class.";
     ];
   assert_type_errors
     ~context
@@ -2734,12 +2911,21 @@ let test_check_private_member_access context =
 
     |}
     [
-      "Undefined attribute [16]: `typing.Type` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
-      "Undefined attribute [16]: `typing.Type` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `ExampleClass` has no attribute `_Child__private_static_method`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`. \
+       `__private_static_method` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`. \
+       `__private_static_method` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`. \
+       `__private_static_method` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`. \
+       `__private_static_method` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
+      "Undefined attribute [16]: `ExampleClass` has no attribute \
+       `_NonChild__private_static_method`.";
     ];
   ()
 
@@ -2778,6 +2964,94 @@ let test_enforce_dunder_params context =
   ()
 
 
+let test_fixpoint_threshold context =
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> bool: ...
+
+      def bar() -> None:
+          u = 42
+
+          if foo():
+              x1 = foo()
+              if x1:
+                  x2 = foo()
+                  if x2:
+                      pass
+              else:
+                  pass
+
+              if foo():
+                  pass
+
+              if foo():
+                  x3 = foo()
+                  if x3:
+                      x4 = foo()
+                      if foo():
+                          pass
+                  if foo():
+                      pass
+              pass
+
+          if foo():
+              if foo():
+                  x5 = foo()
+              else:
+                  x6 = foo()
+                  if foo():
+                      pass
+                  else:
+                      pass
+
+          reveal_type(u)
+
+          if foo():
+              if foo():
+                  x7 = foo()
+              pass
+              if foo():
+                  pass
+
+          reveal_type(u)
+
+          if foo():
+              x8 = foo()
+              if x8:
+                  x9 = foo()
+                  if foo():
+                      pass
+                  pass
+              pass
+
+
+          reveal_type(u)
+
+          if foo():
+              x10 = await foo()
+
+              if x10 is not None:
+                  if foo():
+                      pass
+                  elif foo():
+                      pass
+
+          final_type = u
+          reveal_type(final_type)
+    |}
+    [
+      "Analysis failure [30]: Pyre gave up inferring types for some variables because function \
+       `test.bar` was too complex.";
+      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
+      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
+      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
+      "Incompatible awaitable type [12]: Expected an awaitable but got `bool`.";
+      "Revealed type [-1]: Revealed type for `final_type` is `unknown`.";
+    ];
+  ()
+
+
 let () =
   "method"
   >::: [
@@ -2799,5 +3073,6 @@ let () =
          "check_in" >:: test_check_in;
          "check_enter" >:: test_check_enter;
          "enforce_dunder_params" >:: test_enforce_dunder_params;
+         "fixpoint_threshold" >:: test_fixpoint_threshold;
        ]
   |> Test.run

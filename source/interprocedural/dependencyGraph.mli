@@ -8,14 +8,14 @@
 open Ast
 open Analysis
 
-type t = Callable.t list Callable.Map.t
+type t = Target.t list Target.Map.t
 
-type callgraph = Callable.t list Callable.RealMap.t
+type callgraph = Target.t list Target.CallableMap.t
 
 module CallGraphSharedMemory : sig
-  val store : Callable.t list Callable.RealMap.Tree.t -> unit
+  val store : Target.t list Target.CallableMap.Tree.t -> unit
 
-  val load : unit -> Callable.t list Callable.RealMap.Tree.t
+  val load : unit -> Target.t list Target.CallableMap.Tree.t
 end
 
 (* Maps method names to closest sub-types that override them next *)
@@ -33,7 +33,7 @@ val empty_callgraph : callgraph
 
 val empty_overrides : overrides
 
-val partition : edges:t -> Callable.t list list
+val partition : edges:t -> Target.t list list
 (** Returns a partition of nodes for strongly connected components in the dependency graph *)
 
 val reverse : t -> t
@@ -41,7 +41,7 @@ val reverse : t -> t
 
 val pp : Format.formatter -> t -> unit
 
-val pp_partitions : Format.formatter -> Callable.t list list -> unit
+val pp_partitions : Format.formatter -> Target.t list list -> unit
 
 val dump : t -> configuration:Configuration.Analysis.t -> unit
 
@@ -53,15 +53,15 @@ val create_overrides : environment:TypeEnvironment.ReadOnly.t -> source:Source.t
 
 val union : t -> t -> t
 
-val expand_callees : Callable.t list -> Callable.non_override_target list
+val expand_callees : Target.t list -> Target.non_override_t list
 
 type prune_result = {
   dependencies: t;
-  pruned_callables: Callable.t list;
+  pruned_callables: Target.t list;
 }
 
 (* Our analyses distinguish callables which are part of the project being analyzed and those
    belonging to dependencies. The prune operation restricts our callgraph to the subgraph reachable
    from the project callables. During this operation, we also return a list of pruned callables to
    analyze, i.e. we remove irrelevant dependencies from consideration. *)
-val prune : t -> callables_with_dependency_information:(Callable.t * bool) list -> prune_result
+val prune : t -> callables_with_dependency_information:(Target.t * bool) list -> prune_result

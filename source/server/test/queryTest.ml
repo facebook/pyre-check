@@ -57,6 +57,7 @@ let test_parse_query context =
     let open Expression in
     Expression.Name (Name.Identifier name) |> Node.create_with_default_location
   in
+  let open Query.Request in
   assert_parses "less_or_equal(int, bool)" (LessOrEqual (!"int", !"bool"));
   assert_parses "less_or_equal (int, bool)" (LessOrEqual (!"int", !"bool"));
   assert_parses "less_or_equal(  int, int)" (LessOrEqual (!"int", !"int"));
@@ -102,7 +103,19 @@ let test_parse_query context =
   assert_parses "batch(defines(a.b))" (Batch [Defines [Reference.create "a.b"]]);
   assert_parses
     "batch(defines(a.b), types(path='a.py'))"
-    (Batch [Defines [Reference.create "a.b"]; TypesInFiles ["a.py"]])
+    (Batch [Defines [Reference.create "a.b"]; TypesInFiles ["a.py"]]);
+  assert_parses "inline_decorators(a.b.c)" (inline_decorators !&"a.b.c");
+  assert_parses
+    "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, a.b.decorator2])"
+    (InlineDecorators
+       {
+         function_reference = !&"a.b.c";
+         decorators_to_skip = [!&"a.b.decorator1"; !&"a.b.decorator2"];
+       });
+  assert_fails_to_parse "inline_decorators(a.b.c, a.b.d)";
+  assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=a.b.decorator1)";
+  assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, 1 + 1])";
+  ()
 
 
 let assert_query_response_equal ~context ~expected actual =
@@ -219,7 +232,6 @@ let test_handle_query_basic context =
   assert_type_query_response
     ~source:{|
     class C: pass
-  
     class D(C): pass
   |}
     ~query:"superclasses(test.C, test.D)"
@@ -313,8 +325,8 @@ let test_handle_query_basic context =
          class B(A): ...
       |}
     ~query:
-      ( "is_compatible_with(typing.Type[test.B],"
-      ^ "typing.Coroutine[typing.Any, typing.Any, typing.Type[test.A]])" )
+      ("is_compatible_with(typing.Type[test.B],"
+      ^ "typing.Coroutine[typing.Any, typing.Any, typing.Type[test.A]])")
     ~actual:(Type.meta (Type.Primitive "test.B"))
     ~expected:(Type.meta (Type.Primitive "test.A"))
     true;
@@ -1116,11 +1128,155 @@ let test_handle_query_pysa context =
   ()
 
 
+let test_inline_decorators context =
+  let configuration, environment =
+    let project =
+      ScratchProject.setup
+        ~context
+        ~show_error_traces:true
+        ~include_helper_builtins:false
+        [
+          ( "test.py",
+            {|
+              from logging import with_logging
+              from decorators import identity, not_inlinable
+
+              @with_logging
+              @not_inlinable
+              @identity
+              def foo(a: int) -> int:
+                return a
+
+              def not_decorated(a: int) -> int:
+                return a
+            |}
+          );
+          ( "logging.py",
+            {|
+              def with_logging(f):
+                def inner( *args, **kwargs) -> int:
+                  print(args, kwargs)
+                  return f( *args, **kwargs)
+
+                return inner
+            |}
+          );
+          ( "decorators.py",
+            {|
+              def identity(f):
+                def inner( *args, **kwargs) -> int:
+                  return f( *args, **kwargs)
+
+                return inner
+
+              def not_inlinable(f):
+                return f
+            |}
+          );
+        ]
+    in
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.build_type_environment project
+    in
+    ScratchProject.configuration_of project, type_environment
+  in
+  let assert_response request expected_response =
+    let actual_response =
+      Query.process_request ~environment ~configuration request
+      |> Query.Response.to_yojson
+      |> Yojson.Safe.to_string
+    in
+    let indentation = 6 in
+    let expected_response =
+      expected_response
+      |> String.split ~on:'\n'
+      |> List.map ~f:(fun s -> String.drop_prefix s indentation)
+      |> String.concat ~sep:"\n"
+      |> Yojson.Safe.from_string
+      |> Yojson.Safe.to_string
+    in
+    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
+  in
+  assert_response
+    (Query.Request.inline_decorators (Reference.create "test.foo"))
+    ({|
+      {
+      "response": {
+        "definition": "def test.foo(a: int) -> int:
+        def _original_function(a: int) -> int:
+          return a|}
+    ^ "\n        "
+    ^ {|
+        def _inlined_identity(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          return _original_function(a)|}
+    ^ "\n        "
+    ^ {|
+        def _inlined_with_logging(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          print(_args, _kwargs)
+          return _inlined_identity(a)|}
+    ^ "\n        "
+    ^ {|
+        return _inlined_with_logging(a)
+      "
+      }
+      }
+    |});
+  assert_response
+    (Query.Request.inline_decorators (Reference.create "test.non_existent"))
+    {|
+      {
+        "error": "Could not find function `test.non_existent`"
+      }
+|};
+  assert_response
+    (Query.Request.inline_decorators (Reference.create "test.not_decorated"))
+    {|
+      {
+        "response": {
+          "definition": "def test.not_decorated(a: int) -> int:
+        return a
+      "  }
+      }
+|};
+  assert_response
+    (Query.Request.InlineDecorators
+       {
+         function_reference = Reference.create "test.foo";
+         decorators_to_skip = [!&"decorators.identity"; !&"some.non_existent.decorator"];
+       })
+    ({|
+      {
+        "response": {
+          "definition": "def test.foo(a: int) -> int:
+        def _original_function(a: int) -> int:
+          return a|}
+    ^ "\n        "
+    ^ {|
+        def _inlined_with_logging(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          print(_args, _kwargs)
+          return _original_function(a)|}
+    ^ "\n        "
+    ^ {|
+        return _inlined_with_logging(a)
+      "
+        }
+      }
+    |});
+  ()
+
+
 let () =
   "query"
   >::: [
          "parse_query" >:: test_parse_query;
          "handle_query_basic" >:: test_handle_query_basic;
          "handle_query_pysa" >:: test_handle_query_pysa;
+         "inline_decorators" >:: test_inline_decorators;
        ]
   |> Test.run

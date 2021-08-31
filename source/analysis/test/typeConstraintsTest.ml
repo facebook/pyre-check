@@ -43,7 +43,7 @@ module DiamondOrder = struct
           List.for_all2 left right ~f:(fun left right -> always_less_or_equal () ~left ~right)
         with
         | Ok result -> result
-        | _ -> false )
+        | _ -> false)
     | _ -> false
 
 

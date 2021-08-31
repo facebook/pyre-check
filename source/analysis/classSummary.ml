@@ -176,7 +176,7 @@ end = struct
         ReadOnly { getter = { self = right_self; return = right_return } } ) -> (
         match Option.compare Expression.location_insensitive_compare left_self right_self with
         | x when not (Int.equal x 0) -> x
-        | _ -> Option.compare Expression.location_insensitive_compare left_return right_return )
+        | _ -> Option.compare Expression.location_insensitive_compare left_return right_return)
     | ( ReadWrite
           {
             getter = { self = left_getter_self; return = left_getter_return };
@@ -211,7 +211,7 @@ end = struct
                     Option.compare
                       Expression.location_insensitive_compare
                       left_setter_value
-                      right_setter_value ) ) )
+                      right_setter_value)))
     | _ -> -1
 
 
@@ -221,7 +221,7 @@ end = struct
     | _ -> (
         match Bool.compare left.class_property right.class_property with
         | x when not (Int.equal x 0) -> x
-        | _ -> location_insensitive_compare_property_kind left.kind right.kind )
+        | _ -> location_insensitive_compare_property_kind left.kind right.kind)
 
 
   let location_insensitive_compare_method left right =
@@ -252,7 +252,7 @@ end = struct
               | 0 -> Expression.location_insensitive_compare left_expression right_expression
               | nonzero -> nonzero
             in
-            List.compare compare_expression_and_origin left.values right.values )
+            List.compare compare_expression_and_origin left.values right.values)
 
 
   let location_insensitive_compare_kind left right =
@@ -375,7 +375,7 @@ module ClassAttributes = struct
                 ~init:map
                 ~f:(fun map target -> simple_attribute ~map ~target ~annotation)
                 targets
-          | _ -> map )
+          | _ -> map)
       | _ -> map
     in
     let merge_attributes name = function
@@ -527,11 +527,11 @@ module ClassAttributes = struct
 
     let create
         ~location
-        ( {
-            Define.signature =
-              { name = { Node.value = name; _ }; return_annotation; parameters; parent; _ };
-            _;
-          } as define )
+        ({
+           Define.signature =
+             { name = { Node.value = name; _ }; return_annotation; parameters; parent; _ };
+           _;
+         } as define)
       =
       let inspect_decorators name =
         let async = Define.is_async define in
@@ -590,7 +590,7 @@ module ClassAttributes = struct
     | _ -> right
 
 
-  let create ({ Class.name = { Node.value = name; _ }; body; _ } as definition) =
+  let create ({ Class.name = { Node.value = parent_name; _ }; body; _ } as definition) =
     let explicitly_assigned_attributes =
       let assigned_attributes map { Node.location; value } =
         let open Expression in
@@ -603,7 +603,7 @@ module ClassAttributes = struct
               _;
             } ->
             let add_attribute map ({ Node.location; _ } as target) value =
-              Attribute.name ~parent:name target
+              Attribute.name ~parent:parent_name target
               |> function
               | Some name ->
                   let attribute =
@@ -623,7 +623,7 @@ module ClassAttributes = struct
               map
         | Assign { Assign.target = { Node.value = Tuple targets; _ }; value; _ } ->
             let add_attribute index map ({ Node.location; _ } as target) =
-              Attribute.name ~parent:name target
+              Attribute.name ~parent:parent_name target
               |> function
               | Some name ->
                   let value =
@@ -668,7 +668,7 @@ module ClassAttributes = struct
             in
             List.foldi ~init:map ~f:add_attribute targets
         | Assign { Assign.target; annotation; value; _ } -> (
-            Attribute.name ~parent:name target
+            Attribute.name ~parent:parent_name target
             |> function
             | Some name ->
                 let frozen = Class.is_frozen definition in
@@ -683,7 +683,7 @@ module ClassAttributes = struct
                     ()
                 in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute
-            | _ -> map )
+            | _ -> map)
         | _ -> map
       in
       List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
@@ -722,7 +722,7 @@ module ClassAttributes = struct
                     | Getter getter -> Some getter, existing_setter
                   in
                   Identifier.SerializableMap.set map ~key:name ~data
-              | None -> map )
+              | None -> map)
           | _ -> map
         in
         let consolidate = function
@@ -801,9 +801,9 @@ module ClassAttributes = struct
         let callable_attributes map { Node.location; value } =
           match value with
           | Statement.Define
-              ( { Define.signature = { name = { Node.value = target; _ }; _ } as signature; _ } as
-              define ) ->
-              Attribute.name (Expression.from_reference ~location target) ~parent:name
+              ({ Define.signature = { name = { Node.value = target; _ }; _ } as signature; _ } as
+              define) ->
+              Attribute.name (Expression.from_reference ~location target) ~parent:parent_name
               >>| (fun name ->
                     let attribute =
                       match Identifier.SerializableMap.find_opt name map with
@@ -1029,10 +1029,17 @@ module ClassAttributes = struct
 end
 
 module ClassSummary = struct
+  type bases = {
+    base_classes: Expression.t list;
+    metaclass: Expression.t option;
+    init_subclass_arguments: Expression.Call.Argument.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
   type t = {
     name: Reference.t;
     qualifier: Reference.t;
-    bases: Expression.Call.Argument.t list;
+    bases: bases;
     decorators: Decorator.t list;
     class_attributes: ClassAttributes.t;
   }
@@ -1040,9 +1047,15 @@ module ClassSummary = struct
 
   let create
       ~qualifier
-      ( { Ast.Statement.Class.name = { Node.value = name; _ }; bases; decorators; _ } as
-      class_definition )
+      ({ Ast.Statement.Class.name = { Node.value = name; _ }; decorators; _ } as class_definition)
     =
+    let bases =
+      {
+        base_classes = Ast.Statement.Class.base_classes class_definition;
+        metaclass = Ast.Statement.Class.metaclass class_definition;
+        init_subclass_arguments = Ast.Statement.Class.init_subclass_arguments class_definition;
+      }
+    in
     {
       name;
       qualifier;
@@ -1052,47 +1065,45 @@ module ClassSummary = struct
     }
 
 
-  let is_protocol { bases; _ } =
-    let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
+  let is_protocol { bases = { base_classes; _ }; _ } =
+    let is_protocol { Node.value; _ } =
       let open Expression in
-      match name, value with
-      | ( None,
-          Expression.Call
-            {
-              callee =
-                {
-                  Node.value =
-                    Name
-                      (Attribute
-                        {
-                          base =
-                            {
-                              Node.value =
-                                Name
-                                  (Attribute
-                                    {
-                                      base = { Node.value = Name (Identifier typing); _ };
-                                      attribute = "Protocol";
-                                      _;
-                                    });
-                              _;
-                            };
-                          attribute = "__getitem__";
-                          _;
-                        });
-                  _;
-                };
-              _;
-            } )
-      | ( None,
-          Name
-            (Attribute
-              { base = { Node.value = Name (Identifier typing); _ }; attribute = "Protocol"; _ }) )
+      match value with
+      | Expression.Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name
+                    (Attribute
+                      {
+                        base =
+                          {
+                            Node.value =
+                              Name
+                                (Attribute
+                                  {
+                                    base = { Node.value = Name (Identifier typing); _ };
+                                    attribute = "Protocol";
+                                    _;
+                                  });
+                            _;
+                          };
+                        attribute = "__getitem__";
+                        _;
+                      });
+                _;
+              };
+            _;
+          }
+      | Name
+          (Attribute
+            { base = { Node.value = Name (Identifier typing); _ }; attribute = "Protocol"; _ })
         when String.equal typing "typing" || String.equal typing "typing_extensions" ->
           true
       | _ -> false
     in
-    List.exists ~f:is_protocol bases
+    List.exists ~f:is_protocol base_classes
 
 
   let has_decorator { decorators; _ } decorator =
@@ -1104,25 +1115,29 @@ module ClassSummary = struct
     has_decorator definition "typing.final" || has_decorator definition "typing_extensions.final"
 
 
-  let is_abstract { bases; _ } =
-    let abstract_metaclass { Expression.Call.Argument.value; _ } =
-      let open Expression in
+  let is_abstract { bases = { base_classes; metaclass; _ }; _ } =
+    let open Expression in
+    let is_abstract_base_class { Node.value; _ } =
       match value with
-      | {
-       Node.value =
-         Expression.Name
-           (Attribute
-             {
-               base = { Node.value = Name (Identifier "abc"); _ };
-               attribute = "ABCMeta" | "ABC";
-               _;
-             });
-       _;
-      } ->
+      | Expression.Name
+          (Attribute { base = { Node.value = Name (Identifier "abc"); _ }; attribute = "ABC"; _ })
+        ->
           true
       | _ -> false
     in
-    List.exists bases ~f:abstract_metaclass
+    let is_abstract_metaclass = function
+      | Some
+          {
+            Node.value =
+              Expression.Name
+                (Attribute
+                  { base = { Node.value = Name (Identifier "abc"); _ }; attribute = "ABCMeta"; _ });
+            _;
+          } ->
+          true
+      | _ -> false
+    in
+    List.exists base_classes ~f:is_abstract_base_class || is_abstract_metaclass metaclass
 
 
   let fields_tuple_value { class_attributes; _ } =
@@ -1157,6 +1172,8 @@ module ClassSummary = struct
   let name { name; _ } = name
 
   let bases { bases; _ } = bases
+
+  let base_classes { bases = { base_classes; _ }; _ } = base_classes
 
   let constructor_attributes { class_attributes = { ClassAttributes.constructor_attributes; _ }; _ }
     =

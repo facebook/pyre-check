@@ -79,9 +79,9 @@
               "filename": "parametric_models.py",
               "line": 49,
               "start": 8,
-              "end": 23
+              "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [ { "always-via": "special_source" } ]
           }
         ]
@@ -145,8 +145,7 @@
         ]
       }
     ],
-    "sinks": [],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -161,15 +160,13 @@
         ]
       }
     ],
-    "sinks": [],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "parametric_models.inferred_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -204,15 +201,13 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -221,14 +216,13 @@
         ]
       }
     ],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink_subkind_a",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -240,14 +234,13 @@
         ]
       }
     ],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink_subkind_b",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(x)",
@@ -259,6 +252,6 @@
         ]
       }
     ],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }

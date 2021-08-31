@@ -5,14 +5,14 @@
 
 # flake8: noqa
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 
 
 def alternate_fields():
-    d = {"a": __test_source(), "b": __test_source()}
+    d = {"a": _test_source(), "b": _test_source()}
     if 1 > 2:
         x = d["a"]
     else:
         x = d["b"]
-    __test_sink(x)
+    _test_sink(x)
     return x

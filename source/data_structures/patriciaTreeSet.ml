@@ -218,7 +218,7 @@ module Tree (Element : ELEMENT) = struct
                 else
                   Node { prefix; branching_bit; left; right = new_right }
             else
-              join_disjoint leaf_element leaf prefix tree )
+              join_disjoint leaf_element leaf prefix tree)
 
 
   let rec union left right =
@@ -543,7 +543,7 @@ module Tree (Element : ELEMENT) = struct
             else
               Some (Node { prefix; branching_bit; left = new_left; right = new_right })
         | new_left, None -> new_left
-        | None, new_right -> new_right )
+        | None, new_right -> new_right)
 
 
   let rec cardinal = function

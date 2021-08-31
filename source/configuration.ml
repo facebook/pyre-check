@@ -97,12 +97,12 @@ module SourcePaths = struct
         | `String "simple" -> (
             match member "paths" json with
             | `List search_path_jsons -> parse_search_path_jsons search_path_jsons
-            | _ -> parsing_failed () )
+            | _ -> parsing_failed ())
         | `String "buck" -> (
             match Buck.of_yojson json with
             | Result.Ok buck -> Result.Ok (Buck buck)
-            | Result.Error error -> Result.Error error )
-        | _ -> parsing_failed () )
+            | Result.Error error -> Result.Error error)
+        | _ -> parsing_failed ())
     | _ -> parsing_failed ()
 
 
@@ -255,8 +255,6 @@ module Analysis = struct
   [@@deriving show]
 
   type t = {
-    infer: bool;
-    uninitialized_local: bool;
     configuration_file_hash: string option;
     parallel: bool;
     analyze_external_sources: bool;
@@ -279,7 +277,6 @@ module Analysis = struct
     include_hints: bool;
     perform_autocompletion: bool;
     features: Features.t;
-    ignore_infer: Path.t list;
     log_directory: Path.t;
     python_major_version: int;
     python_minor_version: int;
@@ -289,14 +286,11 @@ module Analysis = struct
   [@@deriving show]
 
   let equal first second =
-    Bool.equal first.infer second.infer
-    && [%compare.equal: string option] first.expected_version second.expected_version
+    [%compare.equal: string option] first.expected_version second.expected_version
     && Bool.equal first.strict second.strict
 
 
   let create
-      ?(infer = false)
-      ?(uninitialized_local = false)
       ?configuration_file_hash
       ?(parallel = true)
       ?(analyze_external_sources = false)
@@ -318,7 +312,6 @@ module Analysis = struct
       ?(include_hints = false)
       ?(perform_autocompletion = false)
       ?(features = Features.default)
-      ?(ignore_infer = [])
       ?log_directory
       ?(python_major_version = default_python_major_version)
       ?(python_minor_version = default_python_minor_version)
@@ -330,8 +323,6 @@ module Analysis = struct
       ()
     =
     {
-      infer;
-      uninitialized_local;
       configuration_file_hash;
       parallel;
       analyze_external_sources;
@@ -360,11 +351,10 @@ module Analysis = struct
       include_hints;
       perform_autocompletion;
       features;
-      ignore_infer;
       log_directory =
-        ( match log_directory with
+        (match log_directory with
         | Some directory -> Path.create_absolute directory
-        | None -> Path.append local_root ~element:".pyre" );
+        | None -> Path.append local_root ~element:".pyre");
       python_major_version;
       python_minor_version;
       python_micro_version;

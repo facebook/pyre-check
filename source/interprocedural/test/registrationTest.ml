@@ -9,7 +9,7 @@ open Core
 open OUnit2
 open Interprocedural
 
-module SimpleAnalysis = Interprocedural.Result.Make (struct
+module SimpleAnalysis = Interprocedural.AnalysisResult.Make (struct
   type result = string
 
   type call_model = int [@@deriving show]
@@ -36,10 +36,10 @@ include SimpleAnalysis.Register (struct
       ~scheduler:_
       ~static_analysis_configuration:_
       ~environment:_
-      ~functions:_
+      ~callables:_
       ~stubs:_
     =
-    { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
+    AnalysisResult.InitializedModels.empty
 
 
   let analyze ~environment:_ ~callable:_ ~qualifier:_ ~define:_ ~existing:_ = "some result", 5
@@ -61,7 +61,9 @@ let test_simple_analysis _ =
   match AnalysisKind.analysis_by_name SimpleAnalysis.name with
   | None -> assert_failure "Lookup of analysis module failed."
   | Some analysis_kind ->
-      let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis analysis_kind in
+      let (AnalysisResult.Analysis { analysis; _ }) =
+        AnalysisResult.get_abstract_analysis analysis_kind
+      in
       let module Analysis = (val analysis) in
       assert_equal (Analysis.empty_model |> Analysis.show_call_model) "0";
       assert_equal (Analysis.obscure_model |> Analysis.show_call_model) "-1";

@@ -1,8 +1,8 @@
 @generated
 Call dependencies
-select.first_index (fun) -> [__test_source (fun)]
-select.first_index_numeric (fun) -> [__test_source (fun)]
-select.first_index_unknown (fun) -> [__test_source (fun)]
+select.first_index (fun) -> [_test_source (fun)]
+select.first_index_numeric (fun) -> [_test_source (fun)]
+select.first_index_unknown (fun) -> [_test_source (fun)]
 select.return_is_RCE (fun) -> [dict::get (method)]
 select.view_entry_field (fun) -> [eval (fun)]
 select.view_entry_get (fun) -> [dict::get (method) eval (fun)]

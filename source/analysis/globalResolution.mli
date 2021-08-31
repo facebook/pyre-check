@@ -96,7 +96,7 @@ val aliases
   Type.Primitive.t ->
   Type.alias option
 
-val base_is_from_placeholder_stub : t -> Expression.Call.Argument.t -> bool
+val base_is_from_placeholder_stub : t -> Expression.t -> bool
 
 val module_exists : t -> Reference.t -> bool
 
@@ -251,4 +251,4 @@ val overrides
 (* If the given type is a subtype of generic type `AsName[X]`, return X *)
 val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list option
 
-val get_decorator_define : t -> Reference.t -> Define.t option
+val define : t -> Reference.t -> Define.t option

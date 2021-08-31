@@ -248,12 +248,12 @@ module HoverResponse = struct
       jsonrpc = "2.0";
       id;
       result =
-        ( result
+        (result
         >>| fun { location = { Ast.Location.start; stop; _ }; contents } ->
         {
           HoverResult.contents = { language = "python"; value = contents };
           range = Some (Range.create ~start ~stop);
-        } );
+        });
       error = None;
     }
 

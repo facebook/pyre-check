@@ -6,8 +6,8 @@
     "callable_line": 23,
     "code": 5002,
     "line": 24,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "http_request.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -18,8 +18,8 @@
             "root": {
               "filename": "http_request.py",
               "line": 24,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -37,10 +37,10 @@
             "root": {
               "filename": "http_request.py",
               "line": 24,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -56,8 +56,8 @@
     "callable_line": 18,
     "code": 5002,
     "line": 20,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "http_request.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -68,8 +68,8 @@
             "root": {
               "filename": "http_request.py",
               "line": 20,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -87,10 +87,10 @@
             "root": {
               "filename": "http_request.py",
               "line": 20,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -106,8 +106,8 @@
     "callable_line": 13,
     "code": 5002,
     "line": 15,
-    "start": 16,
-    "end": 27,
+    "start": 15,
+    "end": 26,
     "filename": "http_request.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -118,8 +118,8 @@
             "root": {
               "filename": "http_request.py",
               "line": 15,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
             "leaves": [
               {
@@ -137,10 +137,10 @@
             "root": {
               "filename": "http_request.py",
               "line": 15,
-              "start": 16,
-              "end": 27
+              "start": 15,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -159,8 +159,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": []
+    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }
 {
@@ -173,7 +172,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": []
+    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }

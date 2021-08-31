@@ -94,7 +94,7 @@ module Make (Element : ELEMENT) = struct
           | Concrete e, Add -> if e = f then p else Top
           | Concrete e, Map -> Concrete (f e)
           | Concrete e, Filter -> if f e then p else Bottom
-          | _ -> Base.transform part op ~f p )
+          | _ -> Base.transform part op ~f p)
       | _ -> Base.transform part op ~f p
 
 
@@ -121,7 +121,7 @@ module Make (Element : ELEMENT) = struct
           | Top
           | Bottom ->
               Core_kernel.Map.Poly.empty
-          | Concrete e -> Core_kernel.Map.Poly.singleton (f e) flat )
+          | Concrete e -> Core_kernel.Map.Poly.singleton (f e) flat)
       | Element, ByFilter -> (
           match flat with
           | Top
@@ -130,7 +130,7 @@ module Make (Element : ELEMENT) = struct
           | Concrete e -> (
               match f e with
               | None -> Core_kernel.Map.Poly.empty
-              | Some key -> Core_kernel.Map.Poly.singleton key flat ) )
+              | Some key -> Core_kernel.Map.Poly.singleton key flat))
       | _ -> Base.partition part op ~f flat
 
 
@@ -144,7 +144,7 @@ module Make (Element : ELEMENT) = struct
           match part with
           | Element -> Format.sprintf "Flat(%s).Element" Element.name
           | Self -> Format.sprintf "Flat(%s).Self" Element.name
-          | _ -> Base.introspect op )
+          | _ -> Base.introspect op)
 
 
     let create parts =

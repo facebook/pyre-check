@@ -24,7 +24,7 @@ module T = struct
     | Some content -> Some content
     | None -> (
         try Some (In_channel.read_all (Path.absolute path)) with
-        | Sys_error _ -> None )
+        | Sys_error _ -> None)
 
 
   let content_exn { path; content } =
@@ -53,7 +53,7 @@ module T = struct
               Core.Unix.mkdir_p directory;
               Hashtbl.set existing_directories ~key:directory ~data:()
             with
-            | Sys_error _ -> Log.info "Could not create directory `%s`" directory )
+            | Sys_error _ -> Log.info "Could not create directory `%s`" directory)
     in
     make_directories ();
     match content with

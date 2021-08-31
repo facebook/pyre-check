@@ -437,7 +437,7 @@ module OrderedConstraints (Order : OrderType) = struct
           match member with
           | Some found_member when is_literal_integer found_member -> member
           | Some (Type.Union union) when List.for_all union ~f:is_literal_integer -> member
-          | _ -> None )
+          | _ -> None)
 
 
     let merge_solution_in { upper_bound; lower_bound } ~variable ~solution =
@@ -506,7 +506,7 @@ module OrderedConstraints (Order : OrderType) = struct
           match Solution.instantiate solution callable with
           | Type.Callable { implementation = { parameters = instantiated_parameters; _ }; _ } ->
               Singleton instantiated_parameters
-          | _ -> failwith "impossible" )
+          | _ -> failwith "impossible")
 
 
     let is_trivial interval ~variable =
@@ -576,7 +576,7 @@ module OrderedConstraints (Order : OrderType) = struct
       | SingletonTuple ordered_type -> (
           match Solution.instantiate solution (Type.Tuple ordered_type) with
           | Type.Tuple instantiated_ordered_type -> SingletonTuple instantiated_ordered_type
-          | _ -> failwith "impossible" )
+          | _ -> failwith "impossible")
 
 
     let is_trivial interval ~variable =

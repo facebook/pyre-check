@@ -5,7 +5,6 @@
 
 import errno
 import fcntl
-import functools
 import logging
 import os
 import shutil

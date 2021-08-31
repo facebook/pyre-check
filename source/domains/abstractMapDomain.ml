@@ -347,7 +347,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
           | Key -> Format.sprintf "Map(%s).Key" Key.name
           | KeyValue -> Format.sprintf "Map(%s).KeyValue" Key.name
           | Self -> Format.sprintf "Map(%s).Self" Key.name
-          | _ -> Element.introspect op )
+          | _ -> Element.introspect op)
 
 
     let subtract to_remove ~from =

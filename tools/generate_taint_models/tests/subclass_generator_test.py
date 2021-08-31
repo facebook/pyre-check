@@ -15,9 +15,9 @@ from .. import subclass_generator
 class SubclassGeneratorTest(unittest.TestCase):
     # pyre-fixme[56]: Argument `tools.pyre.api.query` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(query, "get_class_hierarchy")
+    @patch.object(query, "get_cached_class_hierarchy")
     def test_get_all_subclasses_from_pyre(
-        self, get_class_hierarchy_mock: MagicMock
+        self, get_cached_class_hierarchy_mock: MagicMock
     ) -> None:
         class_hierarchy = query.ClassHierarchy(
             {
@@ -30,7 +30,7 @@ class SubclassGeneratorTest(unittest.TestCase):
                 "object": [],
             }
         )
-        get_class_hierarchy_mock.return_value = class_hierarchy
+        get_cached_class_hierarchy_mock.return_value = class_hierarchy
 
         # Ensure we don't find 'GrandChild' when 'transitive' is defaulted to False
         self.assertEqual(

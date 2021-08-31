@@ -124,7 +124,9 @@ def django.http.response.HttpResponse.content(self, value: TaintSink[XSS]): ...
 # This is a sink with the right content type, but it's way too noisy to triage:
 # def django.http.response.HttpResponse.__init__(self, content: TaintSink[XSS], *args, **kwargs): ...
 
+@SkipObscure
 def django.utils.html.escape(text: TaintInTaintOut[Via[escape_html]]): ...
+@SkipObscure
 def django.utils.html.conditional_escape(text: TaintInTaintOut[Via[escape_html]]): ...
 
 # Django sessions.
@@ -132,6 +134,7 @@ django.contrib.sessions.backends.base.SessionBase.session_key: TaintSource[UserS
 django.contrib.sessions.backends.base.SessionBase._session_key: TaintSource[UserSecrets] = ...
 
 
+@SkipObscure
 def django.db.models.manager.Manager.get(
     self: TaintInTaintOut[LocalReturn],
     *args: TaintInTaintOut[LocalReturn],

@@ -72,9 +72,9 @@ class ServersCommandTest(unittest.TestCase):
         log_stdout.assert_called_once_with(
             json.dumps(
                 [
-                    {"pid": 789, "name": "<root>"},
-                    {"pid": 456, "name": "bar/baz"},
-                    {"pid": 123, "name": "foo"},
+                    {"pid": 789, "relative_local_root": None},
+                    {"pid": 456, "relative_local_root": "bar/baz"},
+                    {"pid": 123, "relative_local_root": "foo"},
                 ]
             )
         )

@@ -19,10 +19,10 @@
               "filename": "callables.py",
               "line": 56,
               "start": 42,
-              "end": 57
+              "end": 56
             },
-            "tito": [ { "line": 56, "start": 42, "end": 57 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 56, "start": 42, "end": 56 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -47,7 +47,7 @@
               "port": "formal(self)[tainted]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
@@ -64,8 +64,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.AbstractEventProcessor::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(benign)",
@@ -105,7 +103,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.AbstractEventProcessor::async_call_tainted}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[tainted]",
@@ -117,20 +114,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.AbstractEventProcessor::async_run}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[benign]",
@@ -142,20 +137,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.ConcreteEventProcessor::async_call_tainted}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[tainted]",
@@ -167,20 +160,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.ConcreteEventProcessor::async_run}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[benign]",
@@ -192,21 +183,18 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{callables.ProcessorInfo::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(processor_type)",
@@ -239,8 +227,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{type::__init__}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(benign)",
@@ -295,8 +281,6 @@
   "kind": "model",
   "data": {
     "callable": "callables.AbstractEventProcessor.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(benign)",
@@ -336,7 +320,6 @@
   "kind": "model",
   "data": {
     "callable": "callables.ConcreteEventProcessor.async_call_tainted",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[tainted]",
@@ -345,23 +328,21 @@
             "root": {
               "filename": "callables.py",
               "line": 33,
-              "start": 20,
-              "end": 32
+              "start": 19,
+              "end": 31
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "callables.ConcreteEventProcessor.async_run",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(self)[benign]",
@@ -370,24 +351,21 @@
             "root": {
               "filename": "callables.py",
               "line": 30,
-              "start": 20,
-              "end": 31
+              "start": 19,
+              "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "callables.ProcessorInfo.__init__",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(processor_type)",

@@ -83,11 +83,11 @@ let test_create_overload context =
     assert_equal
       ~cmp:(Type.Callable.equal_overload Type.equal)
       expected
-      ( source
+      (source
       |> Test.parse
       |> last_statement_define
       |> (fun { Define.signature; _ } -> { signature with parent })
-      |> Callable.create_overload_without_applying_decorators ~parser ~variables )
+      |> Callable.create_overload_without_applying_decorators ~parser ~variables)
   in
   assert_overload
     {|

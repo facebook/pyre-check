@@ -69,9 +69,9 @@ let test_uri context =
 let test_from_uri context =
   let path, root = root context in
   let uri = "file://" ^ path in
-  ( match Path.from_uri uri with
+  (match Path.from_uri uri with
   | Some path_from_uri -> assert_equal root path_from_uri
-  | None -> assert_unreached () );
+  | None -> assert_unreached ());
   let invalid_schema = "invalid-schema://" ^ path in
   Path.from_uri invalid_schema |> Option.is_none |> assert_true;
   let invalid_uri = "file://" ^ path ^/ "some/invalid/uri" in

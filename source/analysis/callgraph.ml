@@ -61,9 +61,9 @@ let callee_to_yojson ?locations callee =
              "class_name", `String (Type.class_name class_name |> Reference.show);
              ( "dispatch",
                `String
-                 ( match dispatch with
+                 (match dispatch with
                  | Dynamic -> "dynamic"
-                 | Static -> "static" ) );
+                 | Static -> "static") );
            ])
   | PropertySetter { direct_target; class_name } ->
       `Assoc
@@ -202,7 +202,7 @@ module DefaultBuilder : Builder = struct
                 ~name:attribute
               >>| extract_callables ~annotation
               |> Option.value ~default:[]
-          | _ -> [] )
+          | _ -> [])
       | None, Some defines ->
           List.map defines ~f:(function
               | Named define -> Some (Function define)
@@ -257,10 +257,10 @@ module DefaultBuilder : Builder = struct
                         ~is_optional_class_attribute:true
                         instantiated
                         attribute
-                | None -> () )
+                | None -> ())
             | Some _
             | None ->
-                () )
+                ())
         | _ -> ()
     in
     List.iter attributes ~f:register;

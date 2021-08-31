@@ -49,13 +49,17 @@ let test_cleanup context =
     BuildSystem.Initializer.create_for_testing ~initialize ~load ()
   in
   let open Lwt.Infix in
-  let server_configuration =
-    ScratchProject.setup ~context ~include_typeshed_stubs:false ~include_helper_builtins:false []
-    |> ScratchProject.server_configuration_of
+  let configuration, start_options =
+    let project =
+      ScratchProject.setup ~context ~include_typeshed_stubs:false ~include_helper_builtins:false []
+    in
+    ScratchProject.configuration_of project, ScratchProject.start_options_of project
   in
+
   Caml.Filename.set_temp_dir_name "/tmp";
   Start.start_server
-    server_configuration
+    start_options
+    ~configuration
     ~build_system_initializer
     ~on_exception:(fun exn -> raise exn)
     ~on_started:(fun _ ->
@@ -96,8 +100,8 @@ let test_type_errors context =
     let open Lwt.Infix in
     let global_root =
       Client.current_server_state client
-      |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
-      global_root
+      |> fun { ServerState.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
+      project_root
     in
     test_source_path := Path.create_relative ~root:global_root ~relative:"test.py";
     let expected_error =
@@ -120,7 +124,6 @@ let test_type_errors context =
             ( "concise_description",
               `String
                 "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
-            "inference", `Assoc [];
             "define", `String "test.$toplevel";
           ])
       |> Result.ok_or_failwith
@@ -184,8 +187,8 @@ let test_update context =
     let open Lwt.Infix in
     let root =
       Client.current_server_state client
-      |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
-      global_root
+      |> fun { ServerState.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
+      project_root
     in
     test_artifact_path := Path.create_relative ~root ~relative:"test.py";
 
@@ -215,7 +218,6 @@ let test_update context =
             ( "concise_description",
               `String
                 "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
-            "inference", `Assoc [];
             "define", `String "test.$toplevel";
           ])
       |> Result.ok_or_failwith
@@ -414,7 +416,7 @@ let test_buck_update_without_rebuild context =
           File.create source_database_path ~content |> File.write;
           is_rebuild := true;
           Format.asprintf {| { "//foo:bar#source-db": "%a" } |} Path.pp source_database_path
-          |> Lwt.return )
+          |> Lwt.return)
         else
           assert_failure "`buck build` is not expected to be invoked again after the initial build"
       in

@@ -7,7 +7,7 @@
 
 #ifndef HH_ASSERT_H
 #define HH_ASSERT_H
-void raise_assertion_failure(char * msg);
+void raise_assertion_failure(char* msg);
 
 /**
  * Concatenate the __LINE__ and __FILE__ strings in a macro.

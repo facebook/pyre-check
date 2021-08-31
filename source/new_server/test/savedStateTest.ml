@@ -11,10 +11,102 @@ open Lwt.Infix
 open Newserver
 module Path = Pyre.Path
 
+let test_configuration_parsing context =
+  let assert_parsed ~expected json_string =
+    let json = Yojson.Safe.from_string json_string in
+    match SavedStateAction.of_yojson json with
+    | Result.Error message ->
+        let message = Format.sprintf "Unexpected JSON parsing failure: %s" message in
+        assert_failure message
+    | Result.Ok actual ->
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: SavedStateAction.t]
+          ~printer:(fun value -> Sexp.to_string_hum ([%sexp_of: SavedStateAction.t] value))
+          expected
+          actual
+  in
+  let assert_not_parsed json_string =
+    let json = Yojson.Safe.from_string json_string in
+    match SavedStateAction.of_yojson json with
+    | Result.Ok _ -> assert_failure "Unexpected JSON parsing success"
+    | Result.Error _ -> ()
+  in
+
+  assert_not_parsed {|"derp"|};
+  assert_not_parsed "42";
+  assert_not_parsed "[]";
+
+  assert_parsed
+    {|
+      [
+        "load_from_file",
+        {
+          "shared_memory_path": "/some/path"
+        }
+      ]
+    |}
+    ~expected:
+      (SavedStateAction.LoadFromFile
+         { shared_memory_path = Path.create_absolute "/some/path"; changed_files_path = None });
+  assert_parsed
+    {|
+      [
+        "load_from_file",
+        {
+          "shared_memory_path": "/some/path",
+          "changed_files_path": "/some/other/path"
+        }
+      ]
+    |}
+    ~expected:
+      (SavedStateAction.LoadFromFile
+         {
+           shared_memory_path = Path.create_absolute "/some/path";
+           changed_files_path = Some (Path.create_absolute "/some/other/path");
+         });
+  assert_parsed
+    {|
+      [
+        "save_to_file",
+        {
+          "shared_memory_path": "/some/path"
+        }
+      ]
+    |}
+    ~expected:
+      (SavedStateAction.SaveToFile { shared_memory_path = Path.create_absolute "/some/path" });
+  assert_parsed
+    {|
+      [
+        "load_from_project",
+        {
+          "project_name": "my_project"
+        }
+      ]
+    |}
+    ~expected:
+      (SavedStateAction.LoadFromProject { project_name = "my_project"; project_metadata = None });
+  assert_parsed
+    {|
+      [
+        "load_from_project",
+        {
+          "project_name": "my_project",
+          "project_metadata": "my_metadata"
+        }
+      ]
+    |}
+    ~expected:
+      (SavedStateAction.LoadFromProject
+         { project_name = "my_project"; project_metadata = Some "my_metadata" });
+  ()
+
+
 let test_query context =
   let watchman_root = Path.create_absolute "/fake/root" in
   let target = Path.create_absolute "/fake/target" in
-  let critical_files = [ServerConfiguration.CriticalFile.BaseName ".pyre_configuration"] in
+  let critical_files = [CriticalFile.BaseName ".pyre_configuration"] in
   let watchman_filter =
     { Watchman.Filter.base_names = [".pyre_configuration"]; suffixes = [".py"] }
   in
@@ -151,4 +243,10 @@ let test_query context =
   assert_queried ~response:(`Assoc ["error", `String "Fake watchman error"]) ~expected:None ()
 
 
-let () = "savedstate_test" >::: ["query" >:: OUnitLwt.lwt_wrapper test_query] |> Test.run
+let () =
+  "savedstate_test"
+  >::: [
+         "configuration_parsing" >:: test_configuration_parsing;
+         "query" >:: OUnitLwt.lwt_wrapper test_query;
+       ]
+  |> Test.run

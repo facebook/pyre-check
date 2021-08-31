@@ -33,11 +33,30 @@ val all_decorator_bodies
   :  TypeEnvironment.ReadOnly.t ->
   define_and_originating_module Reference.Map.t
 
+val inline_decorators_for_define
+  :  decorator_bodies:define_and_originating_module Reference.Map.t ->
+  location:Location.t ->
+  Define.t ->
+  Define.t
+
 val inline_decorators
-  :  environment:TypeEnvironment.ReadOnly.t ->
-  decorator_bodies:define_and_originating_module Reference.Map.t ->
+  :  decorator_bodies:define_and_originating_module Reference.Map.t ->
   Source.t ->
   Source.t
+
+val type_environment_with_decorators_inlined
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  recheck:
+    (configuration:Configuration.Analysis.t ->
+    scheduler:Scheduler.t ->
+    environment:Analysis.TypeEnvironment.t ->
+    errors:Analysis.AnalysisError.t list Ast.Reference.Table.t ->
+    PyrePath.t list ->
+    Ast.Reference.t list * Analysis.AnalysisError.t list) ->
+  decorators_to_skip:Reference.Set.t ->
+  TypeEnvironment.t ->
+  TypeEnvironment.t
 
 val sanitize_defines : strip_decorators:bool -> Source.t -> Source.t
 

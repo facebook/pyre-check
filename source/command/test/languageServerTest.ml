@@ -418,14 +418,13 @@ let test_initialize_request_parses _ =
 
 let test_initialize_response _ =
   assert_equal
-    ( InitializeResponse.default
-        (int_request_id 1)
-        ~server_uuid:"1234"
-        ~features:
-          { autocomplete = true; hover = true; click_to_fix = true; go_to_definition = true }
+    (InitializeResponse.default
+       (int_request_id 1)
+       ~server_uuid:"1234"
+       ~features:{ autocomplete = true; hover = true; click_to_fix = true; go_to_definition = true }
     |> InitializeResponse.to_yojson
-    |> Yojson.Safe.sort )
-    ( {|
+    |> Yojson.Safe.sort)
+    ({|
       {
         "id": 1,
         "jsonrpc": "2.0",
@@ -449,16 +448,16 @@ let test_initialize_response _ =
         }
       }
      |}
-    |> Yojson.Safe.from_string );
+    |> Yojson.Safe.from_string);
   assert_equal
-    ( InitializeResponse.default
-        (string_request_id "961810f9-ed94-4044-a7c8-82b4135925a7")
-        ~server_uuid:"1234"
-        ~features:
-          { autocomplete = false; hover = false; click_to_fix = false; go_to_definition = false }
+    (InitializeResponse.default
+       (string_request_id "961810f9-ed94-4044-a7c8-82b4135925a7")
+       ~server_uuid:"1234"
+       ~features:
+         { autocomplete = false; hover = false; click_to_fix = false; go_to_definition = false }
     |> InitializeResponse.to_yojson
-    |> Yojson.Safe.sort )
-    ( {|
+    |> Yojson.Safe.sort)
+    ({|
       {
         "id": "961810f9-ed94-4044-a7c8-82b4135925a7",
         "jsonrpc": "2.0",
@@ -477,7 +476,7 @@ let test_initialize_response _ =
         }
       }
      |}
-    |> Yojson.Safe.from_string )
+    |> Yojson.Safe.from_string)
 
 
 let test_language_server_protocol_read_message context =

@@ -96,6 +96,8 @@ def _find_paths(local_configuration: Optional[str], paths: Set[str]) -> List[Pat
 
 
 class Statistics(Command):
+    """Collect total number of annotations, fixme-s and other statistics."""
+
     NAME = "statistics"
 
     def __init__(

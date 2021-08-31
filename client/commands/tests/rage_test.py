@@ -55,8 +55,6 @@ class RageTest(unittest.TestCase):
         self.assertTrue(lines[2].startswith("Configured binary version:"))
         self.assertEqual(lines[3], "<SERVER RAGE>")
 
-    # pyre-fixme[56]: Pyre was not able to infer the type of argument `[]` to decorator
-    # factory `unittest.mock.patch.object`.
     @patch.object(recently_used_configurations.Cache, "get_all_items", return_value=[])
     @patch("sys.stdout", new_callable=io.StringIO)
     @patch("subprocess.run")
@@ -168,8 +166,6 @@ class RageTest(unittest.TestCase):
         rage_command._call_client_for_root_project(sys.stdout)
         call_client.assert_called_once()
 
-    # pyre-fixme[56]: Argument `[]` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(recently_used_configurations.Cache, "get_all_items", return_value=[])
     @patch.object(commands.Servers, "is_root_server_running", return_value=False)
     @patch.object(commands.Command, "_call_client")

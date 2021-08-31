@@ -44,6 +44,40 @@ class FilesystemTest(unittest.TestCase):
         python_binary(
             name = "target_name",
             main_module = "path.to.module",
+            typing = "False",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+        """
+        expected_targets = [
+            Target("target_name", strict=False, pyre=True, check_types=False),
+        ]
+        self.assert_collector(source, expected_targets, False)
+
+        source = """
+        load("@path:python_binary.bzl", "python_binary")
+
+        python_binary(
+            name = "target_name",
+            main_module = "path.to.module",
+            check_types_options = "strict",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+        """
+        expected_targets = [
+            Target("target_name", strict=True, pyre=True, check_types=False),
+        ]
+        self.assert_collector(source, expected_targets, False)
+
+        source = """
+        load("@path:python_binary.bzl", "python_binary")
+
+        python_binary(
+            name = "target_name",
+            main_module = "path.to.module",
             check_types = True,
             deps = [
                 ":dependency_target_name",
@@ -61,7 +95,10 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
         """
-        expected_targets = [Target("target_name", strict=False, pyre=True)]
+        expected_targets = [
+            Target("target_name", strict=False, pyre=True, check_types=True),
+            Target("test_target_name", strict=False, pyre=True, check_types=False),
+        ]
         self.assert_collector(source, expected_targets, False)
 
         source = """
@@ -88,8 +125,8 @@ class FilesystemTest(unittest.TestCase):
         )
         """
         expected_targets = [
-            Target("target_name", strict=False, pyre=True),
-            Target("test_target_name", strict=False, pyre=True),
+            Target("target_name", strict=False, pyre=True, check_types=True),
+            Target("test_target_name", strict=False, pyre=True, check_types=True),
         ]
         self.assert_collector(source, expected_targets, False)
 
@@ -117,7 +154,9 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
         """
-        expected_targets = [Target("target_name", strict=False, pyre=True)]
+        expected_targets = [
+            Target("target_name", strict=False, pyre=True, check_types=True)
+        ]
         self.assert_collector(source, expected_targets, True)
 
         source = """
@@ -144,7 +183,9 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
         """
-        expected_targets = [Target("target_name", strict=False, pyre=True)]
+        expected_targets = [
+            Target("target_name", strict=False, pyre=True, check_types=True)
+        ]
         self.assert_collector(source, expected_targets, True)
 
     def test_filesystem_list_bare(self) -> None:

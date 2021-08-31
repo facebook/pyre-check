@@ -31,8 +31,8 @@ let test_default_builder context =
     assert_equal
       ~printer
       expected
-      ( Callgraph.DefaultBuilder.get_all_callees ()
-      |> List.map ~f:(fun { Callgraph.callee; _ } -> callee) )
+      (Callgraph.DefaultBuilder.get_all_callees ()
+      |> List.map ~f:(fun { Callgraph.callee; _ } -> callee))
   in
   let make_named name =
     let name = Reference.create name in

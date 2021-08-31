@@ -234,11 +234,11 @@ let run
   let module Fixpoint = Fixpoint.Make (State) in
   let define = Source.top_level_define_node source in
   let check
-      ( {
-          Node.value =
-            { Define.signature = { Define.Signature.name = { Node.value = name; _ }; _ }; _ };
-          _;
-        } as define )
+      ({
+         Node.value =
+           { Define.signature = { Define.Signature.name = { Node.value = name; _ }; _ }; _ };
+         _;
+       } as define)
     =
     let cfg = Cfg.create (Node.value define) in
     Fixpoint.backward ~cfg ~initial:(State.initial ~define)

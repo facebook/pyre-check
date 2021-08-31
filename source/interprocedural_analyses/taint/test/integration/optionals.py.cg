@@ -1,5 +1,5 @@
 @generated
 Call dependencies
-optionals.Client::offer (method) -> [__test_sink (fun)]
+optionals.Client::offer (method) -> [_test_sink (fun)]
 optionals.ClientSingleton::get_instance (method) -> [object::__init__ (method) object::__new__ (method)]
-optionals.test (fun) -> [__test_source (fun) optionals.Client::offer (method) optionals.ClientSingleton::get_instance (method)]
+optionals.test (fun) -> [_test_source (fun) optionals.Client::offer (method) optionals.ClientSingleton::get_instance (method)]

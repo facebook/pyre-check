@@ -10,7 +10,7 @@ open Core
 open OUnit2
 open Test
 open TestHelper
-module Callable = Interprocedural.Callable
+module Target = Interprocedural.Target
 open Taint
 open Model.ModelQuery
 
@@ -70,7 +70,14 @@ let set_up_environment ?source ?rules ~context ~model_source () =
     | None -> None
   in
   let ({ Taint.Model.errors; skip_overrides; _ } as parse_result) =
-    Taint.Model.parse ~resolution ?rule_filter ~source ~configuration Callable.Map.empty
+    Taint.Model.parse
+      ~resolution
+      ?rule_filter
+      ~source
+      ~configuration
+      ~callables:None
+      ~stubs:(Target.HashSet.create ())
+      Target.Map.empty
   in
   assert_bool
     (Format.sprintf
@@ -96,18 +103,11 @@ let assert_model ?source ?rules ?expected_skipped_overrides ~context ~model_sour
     | None -> ()
   end;
   let get_model callable =
-    let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
-    Callable.Map.find models callable |> Option.value_exn ?here:None ?error:None ~message, false
+    let message = Format.asprintf "Model %a missing" Interprocedural.Target.pp callable in
+    Target.Map.find models callable |> Option.value_exn ?here:None ?error:None ~message, false
     (* obscure *)
   in
   List.iter ~f:(check_expectation ~environment ~get_model) expect
-
-
-let assert_no_model ?source ?rules ~context ~model_source callable =
-  let { Taint.Model.models; _ }, _, _ =
-    set_up_environment ?source ?rules ~context ~model_source ()
-  in
-  assert_false (Callable.Map.mem models callable)
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
@@ -263,13 +263,8 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some Mode.AllSources;
-                 sinks = Some Mode.AllSinks;
-                 tito = Some AllTito;
-               })
+          ~sanitize:
+            { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -282,8 +277,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = None })
+          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
           "test.taint";
       ]
     ();
@@ -296,8 +290,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = None; sinks = Some Mode.AllSinks; tito = None })
+          ~sanitize:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
           "test.taint";
       ]
     ();
@@ -310,7 +303,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:(Mode.Sanitize { Mode.sources = None; sinks = None; tito = Some AllTito })
+          ~sanitize:{ Sanitize.sources = None; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -325,9 +318,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               { Mode.sources = Some Mode.AllSources; sinks = None; tito = Some AllTito })
+          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -341,9 +332,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               { Mode.sources = Some Mode.AllSources; sinks = None; tito = Some AllTito })
+          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -356,13 +345,12 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              sinks = None;
+              tito = None;
+            }
           "test.taint";
       ]
     ();
@@ -376,16 +364,15 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources =
-                   Some
-                     (Mode.SpecificSources
-                        [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources =
+                Some
+                  (SpecificSources
+                     [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]);
+              sinks = None;
+              tito = None;
+            }
           "test.taint";
       ]
     ();
@@ -399,19 +386,18 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = None;
-                 sinks = None;
-                 tito =
-                   Some
-                     (Mode.SpecificTito
-                        {
-                          sanitized_tito_sources = [Sources.NamedSource "Test"];
-                          sanitized_tito_sinks = [];
-                        });
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = [Sources.NamedSource "Test"];
+                       sanitized_tito_sinks = [];
+                     });
+            }
           "test.taint";
       ]
     ();
@@ -425,19 +411,18 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = None;
-                 sinks = None;
-                 tito =
-                   Some
-                     (Mode.SpecificTito
-                        {
-                          sanitized_tito_sources = [];
-                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
-                        });
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = [];
+                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                     });
+            }
           "test.taint";
       ]
     ();
@@ -451,19 +436,18 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito =
-                   Some
-                     (Mode.SpecificTito
-                        {
-                          sanitized_tito_sources = [];
-                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
-                        });
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = [];
+                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                     });
+            }
           "test.taint";
       ]
     ();
@@ -477,19 +461,18 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = None;
-                 sinks = None;
-                 tito =
-                   Some
-                     (Mode.SpecificTito
-                        {
-                          sanitized_tito_sources = [Sources.NamedSource "Test"];
-                          sanitized_tito_sinks = [Sinks.NamedSink "Test"];
-                        });
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = [Sources.NamedSource "Test"];
+                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                     });
+            }
           "test.taint";
       ]
     ();
@@ -499,13 +482,8 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some Mode.AllSources;
-                 Mode.sinks = Some Mode.AllSinks;
-                 Mode.tito = Some Mode.AllTito;
-               })
+          ~sanitize:
+            { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
           "django.http.Request.GET";
       ]
     ();
@@ -515,8 +493,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize { Mode.sources = Some Mode.AllSources; sinks = None; tito = None })
+          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
           "django.http.Request.GET";
       ]
     ();
@@ -526,8 +503,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize { sources = None; Mode.sinks = Some Mode.AllSinks; tito = None })
+          ~sanitize:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
           "django.http.Request.GET";
       ]
     ();
@@ -537,13 +513,12 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources = Some (Mode.SpecificSources [Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              sinks = None;
+              tito = None;
+            }
           "django.http.Request.GET";
       ]
     ();
@@ -553,13 +528,12 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 sources = None;
-                 Mode.sinks = Some (Mode.SpecificSinks [Sinks.NamedSink "Test"]);
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = Some (SpecificSinks [Sinks.NamedSink "Test"]);
+              tito = None;
+            }
           "django.http.Request.GET";
       ]
     ();
@@ -569,16 +543,13 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 Mode.sources =
-                   Some
-                     (Mode.SpecificSources
-                        [Sources.NamedSource "TestTest"; Sources.NamedSource "Test"]);
-                 sinks = None;
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources =
+                Some (SpecificSources [Sources.NamedSource "TestTest"; Sources.NamedSource "Test"]);
+              sinks = None;
+              tito = None;
+            }
           "django.http.Request.GET";
       ]
     ();
@@ -588,15 +559,30 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~analysis_mode:
-            (Mode.Sanitize
-               {
-                 sources = None;
-                 Mode.sinks =
-                   Some (Mode.SpecificSinks [Sinks.NamedSink "TestSink"; Sinks.NamedSink "Test"]);
-                 tito = None;
-               })
+          ~sanitize:
+            {
+              Sanitize.sources = None;
+              sinks = Some (SpecificSinks [Sinks.NamedSink "TestSink"; Sinks.NamedSink "Test"]);
+              tito = None;
+            }
           "django.http.Request.GET";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @Sanitize
+      @SkipDecoratorWhenInlining
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sanitize:
+            { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipDecoratorWhenInlining)
+          "test.taint";
       ]
     ()
 
@@ -978,10 +964,13 @@ let test_class_models context =
     ~model_source:"class test.SkipMe(SkipAnalysis): ..."
     ~expect:
       [
-        outcome ~kind:`Method ~analysis_mode:Taint.Result.Mode.SkipAnalysis "test.SkipMe.method";
         outcome
           ~kind:`Method
-          ~analysis_mode:Taint.Result.Mode.SkipAnalysis
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
+          "test.SkipMe.method";
+        outcome
+          ~kind:`Method
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
           "test.SkipMe.method_with_multiple_parameters";
       ]
     ();
@@ -1028,8 +1017,33 @@ let test_skip_analysis context =
       @SkipAnalysis
       def test.taint(x): ...
     |}
-    ~expect:[outcome ~kind:`Function ~analysis_mode:Taint.Result.Mode.SkipAnalysis "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
+          "test.taint";
+      ]
     ()
+
+
+let test_skip_inlining_decorator context =
+  let open Taint.Result in
+  let assert_model = assert_model ~context in
+  assert_model
+    ~model_source:{|
+      @SkipDecoratorWhenInlining
+      def test.my_decorator(f): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(ModeSet.singleton SkipDecoratorWhenInlining)
+          "test.my_decorator";
+      ]
+    ();
+  ()
 
 
 let test_taint_in_taint_out_update_models context =
@@ -1187,7 +1201,9 @@ let test_invalid_models context =
         ~configuration
         ?path
         ~source:(Test.trim_extra_indentation model_source)
-        Callable.Map.empty
+        ~callables:None
+        ~stubs:(Target.HashSet.create ())
+        Target.Map.empty
       |> fun { Taint.Model.errors; _ } ->
       List.hd errors
       >>| Taint.Model.display_verification_error
@@ -1356,13 +1372,26 @@ let test_invalid_models context =
       {|
       ModelQuery(
         find = "attributes",
-        where = any_decorator.name.matches("app.route"),
+        where = Decorator(name.matches("app.route")),
         model = AttributeModel(TaintSource[Test])
       )
     |}
     ~expect:
-      "`any_decorator.name.matches` is not a valid constraint for model queries with find clause \
-       of kind `attributes`."
+      "`Decorator` is not a valid constraint for model queries with find clause of kind \
+       `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = parent.matches("foo"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`parent.matches` is not a valid constraint for model queries with find clause of kind \
+       `functions`."
     ();
 
   assert_invalid_model
@@ -1934,7 +1963,7 @@ let test_invalid_models context =
       def test.foo(x): ...
     |}
     ~expect:
-      {|Invalid model for `test.foo`: `ModelParser.T.Source {source = A; breadcrumbs = [(SimpleVia "featureA")];
+      {|Invalid model for `test.foo`: `ModelParser.T.Source {source = A; breadcrumbs = [SimpleVia[featureA]];
   path = ; leaf_names = []; leaf_name_provided = false}` is not a supported taint annotation for sanitizers.|}
     ();
   assert_invalid_model
@@ -2322,8 +2351,7 @@ let test_filter_by_rules context =
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "test.taint"]
     ();
-  assert_no_model
-    ~context
+  assert_model
     ~rules:
       [
         {
@@ -2335,7 +2363,8 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
-    (Callable.create_function (Ast.Reference.create "test.taint"));
+    ~expect:[outcome ~kind:`Function ~returns:[] "test.taint"]
+    ();
   assert_model
     ~rules:
       [
@@ -2356,8 +2385,7 @@ let test_filter_by_rules context =
           "test.taint";
       ]
     ();
-  assert_no_model
-    ~context
+  assert_model
     ~rules:
       [
         {
@@ -2369,7 +2397,8 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
-    (Callable.create_function (Ast.Reference.create "test.taint"));
+    ~expect:[outcome ~kind:`Function ~sink_parameters:[] "test.taint"]
+    ();
   assert_model
     ~rules:
       [
@@ -3148,7 +3177,7 @@ let test_query_parsing context =
       {|
     ModelQuery(
      find = "methods",
-     where = any_decorator.name.matches("foo"),
+     where = Decorator(name.matches("foo")),
      model = [Returns([TaintSource[Test]])],
     )
   |}
@@ -3156,7 +3185,11 @@ let test_query_parsing context =
       [
         {
           name = None;
-          query = [DecoratorNameConstraint "foo"];
+          query =
+            [
+              DecoratorConstraint
+                { name_constraint = Matches (Re2.create_exn "foo"); arguments_constraint = None };
+            ];
           rule_kind = MethodModel;
           productions =
             [
@@ -3172,6 +3205,78 @@ let test_query_parsing context =
                          leaf_name_provided = false;
                        });
                 ];
+            ];
+        };
+      ]
+    ();
+
+  (* Parameters *)
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+       name = "get_POST_annotated_sources",
+       find = "functions",
+       where = [Decorator(name.matches("api_view"))],
+       model = [
+         Parameters(
+           TaintSink[Test],
+           where=[
+              Not(AnyOf(
+                name.matches("self"),
+                name.matches("cls"),
+                type_annotation.matches("IGWSGIRequest"),
+                type_annotation.matches("HttpRequest"),
+              ))
+           ]
+         )
+       ]
+    )
+    |}
+    ~expect:
+      [
+        {
+          name = Some "get_POST_annotated_sources";
+          query =
+            [
+              DecoratorConstraint
+                {
+                  name_constraint = Matches (Re2.create_exn "api_view");
+                  arguments_constraint = None;
+                };
+            ];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              ParameterTaint
+                {
+                  where =
+                    [
+                      Not
+                        (AnyOf
+                           [
+                             ParameterConstraint.NameConstraint (Matches (Re2.create_exn "self"));
+                             ParameterConstraint.NameConstraint (Matches (Re2.create_exn "cls"));
+                             ParameterConstraint.AnnotationConstraint
+                               (AnnotationNameConstraint (Matches (Re2.create_exn "IGWSGIRequest")));
+                             ParameterConstraint.AnnotationConstraint
+                               (AnnotationNameConstraint (Matches (Re2.create_exn "HttpRequest")));
+                           ]);
+                    ];
+                  taint =
+                    [
+                      TaintAnnotation
+                        (Model.Sink
+                           {
+                             sink = Sinks.NamedSink "Test";
+                             breadcrumbs = [];
+                             path = [];
+                             leaf_names = [];
+                             leaf_name_provided = false;
+                           });
+                    ];
+                };
             ];
         };
       ]
@@ -3192,6 +3297,7 @@ let () =
          "query_parsing" >:: test_query_parsing;
          "sanitize" >:: test_sanitize;
          "skip_analysis" >:: test_skip_analysis;
+         "skip_inlining_decorator" >:: test_skip_inlining_decorator;
          "sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "sink_models" >:: test_sink_models;
          "source_breadcrumbs" >:: test_source_breadcrumbs;

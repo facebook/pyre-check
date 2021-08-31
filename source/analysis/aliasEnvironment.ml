@@ -229,14 +229,14 @@ let extract_alias unannotated_global_environment name ~dependency =
                 let value_annotation = Type.create ~aliases:Type.empty_aliases value in
                 if
                   not
-                    ( Type.contains_unknown target_annotation
+                    (Type.contains_unknown target_annotation
                     || Type.contains_unknown value_annotation
-                    || Type.equal value_annotation target_annotation )
+                    || Type.equal value_annotation target_annotation)
                 then
                   Some (TypeAlias { target = name; value })
                 else
-                  None )
-        | _ -> None )
+                  None)
+        | _ -> None)
     | UnannotatedGlobal.Imported import -> (
         if
           UnannotatedGlobalEnvironment.ReadOnly.class_exists
@@ -253,7 +253,7 @@ let extract_alias unannotated_global_environment name ~dependency =
               None
           | _ ->
               let value = from_reference ~location:Location.any original_name in
-              Some (TypeAlias { target = name; value }) )
+              Some (TypeAlias { target = name; value }))
     | TupleAssign _
     | Class
     | Define _ ->
@@ -310,7 +310,7 @@ let produce_alias empty_stub_environment global_name ~dependency =
                 |> Option.all
                 >>| String.Map.of_alist_exn
                 >>| UnresolvedAlias.unchecked_resolve ~target:current ~unparsed
-                >>| fun alias -> Type.TypeAlias alias )
+                >>| fun alias -> Type.TypeAlias alias)
       in
       extract_alias
         (EmptyStubEnvironment.ReadOnly.unannotated_global_environment empty_stub_environment)

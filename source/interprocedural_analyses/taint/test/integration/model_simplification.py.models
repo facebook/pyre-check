@@ -3,7 +3,6 @@
   "kind": "model",
   "data": {
     "callable": "model_simplification._asdict_inner",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(obj)",
@@ -151,7 +150,6 @@
   "kind": "model",
   "data": {
     "callable": "model_simplification.asdict",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(obj)",
@@ -213,7 +211,6 @@
   "kind": "model",
   "data": {
     "callable": "model_simplification.asdict_test",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(obj)",
@@ -270,10 +267,10 @@
               "filename": "model_simplification.py",
               "line": 79,
               "start": 21,
-              "end": 36
+              "end": 35
             },
-            "tito": [ { "line": 79, "start": 21, "end": 36 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 79, "start": 21, "end": 35 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -282,7 +279,6 @@
         ]
       }
     ],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(obj)",

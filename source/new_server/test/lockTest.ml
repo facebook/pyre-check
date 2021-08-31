@@ -40,7 +40,7 @@ let test_exclusive_lock _ =
       (* Dump the random seed for better reproducibility. *)
       Log.dump "Random seed of the run: %d" random_seed;
       let message = Format.sprintf "Expected %d but got %d" expected actual in
-      assert_failure message )
+      assert_failure message)
   in
   let open Lwt.Infix in
   let lock = ExclusiveLock.create (ref 0, ref 1, ref 2) in

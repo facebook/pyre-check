@@ -18,8 +18,7 @@ type 'a approximation = {
 module type S = sig
   include AbstractSetDomain.S
 
-  type _ AbstractDomainCore.part +=
-    | ElementAndUnder : element approximation AbstractDomainCore.part
+  type _ AbstractDomainCore.part += ElementAndUnder : element approximation AbstractDomainCore.part
 
   val empty : t
 
@@ -56,7 +55,9 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
     type element = Element.t
 
     type _ part +=
-      | Self : t part | Element : Element.t part | ElementAndUnder : Element.t approximation part
+      | Self : t part
+      | Element : Element.t part
+      | ElementAndUnder : Element.t approximation part
 
     let bottom = Bottom
 
@@ -200,10 +201,16 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
     let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
      fun part op ~f set ->
       match part, op, set with
-      | Element, Map, Bottom -> set
+      | Element, (Expand | Map), Bottom -> set
       | Element, Map, BiSet _ ->
           to_approximation set
           |> ListLabels.map ~f:(fun e -> { e with element = f e.element })
+          |> of_approximation
+      | Element, Expand, BiSet _ ->
+          to_approximation set
+          |> ListLabels.map ~f:(fun e ->
+                 ListLabels.map (f e.element) ~f:(fun v -> { e with element = v }))
+          |> ListLabels.flatten
           |> of_approximation
       | Element, Add, _ -> add set f
       | Element, Filter, Bottom -> set
@@ -211,9 +218,11 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
           let over = Set.filter f over in
           let under = Set.filter f under in
           make ~old:set ~over ~under
-      | ElementAndUnder, Map, Bottom -> set
+      | ElementAndUnder, (Expand | Map), Bottom -> set
       | ElementAndUnder, Map, BiSet _ ->
           to_approximation set |> ListLabels.map ~f |> of_approximation
+      | ElementAndUnder, Expand, BiSet _ ->
+          to_approximation set |> ListLabels.map ~f |> ListLabels.flatten |> of_approximation
       | ElementAndUnder, Add, _ -> add_element set f
       | ElementAndUnder, Filter, Bottom -> Bottom
       | ElementAndUnder, Filter, BiSet _ ->
@@ -306,7 +315,7 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
           | Element -> Format.sprintf "OverAndUnderSet(%s).Element" Element.name
           | ElementAndUnder -> Format.sprintf "OverAndUnderSet(%s).ElementAndUnder" Element.name
           | Self -> Format.sprintf "OverAndUnderSet(%s).Self" Element.name
-          | _ -> Base.introspect op )
+          | _ -> Base.introspect op)
 
 
     let create parts : t =
@@ -351,6 +360,11 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
 
 
     let add element set = add set element
+
+    let contains element = function
+      | Bottom -> false
+      | BiSet { over; _ } -> Set.mem element over
+
 
     let meet = Base.meet
 

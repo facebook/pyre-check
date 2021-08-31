@@ -3,13 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import __test_sink, __test_source
+from builtins import _test_sink, _test_source
 from typing import Optional
 
 
 class Client:
     def offer(self, message):
-        __test_sink(message)
+        _test_sink(message)
 
 
 class ClientSingleton:
@@ -21,4 +21,4 @@ client: ClientSingleton = ClientSingleton()
 
 
 def test():
-    client.get_instance().offer(__test_source())
+    client.get_instance().offer(_test_source())

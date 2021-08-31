@@ -209,6 +209,59 @@ let test_expand_string_annotations _ =
     {|
       valid_string_literal: typing.Annotated[int, test.Foo("hello")]
     |};
+  assert_expand
+    {|
+      def foo() -> Parametric["a"]: ...
+    |}
+    {|
+      def foo() -> Parametric[a]: ...
+    |};
+  assert_expand
+    {|
+      def foo() -> TakesParamSpec[["a"]]: ...
+    |}
+    {|
+      def foo() -> TakesParamSpec[[a]]: ...
+    |};
+  assert_expand
+    {|
+      def foo() -> TakesParamSpec[["a", "b"]]: ...
+    |}
+    {|
+      def foo() -> TakesParamSpec[[a, b]]: ...
+    |};
+
+  (* Ensure init subclass arguments are not counted as annotations to be expanded *)
+  assert_expand
+    {|
+      class Foo("BaseClass"):
+        pass
+
+      class Bar(metaclass="BaseClass"):
+        pass
+
+      class Baz(init_subclass_arg="BaseClass"):
+        pass
+    |}
+    {|
+      class Foo(BaseClass):
+        pass
+
+      class Bar(metaclass=BaseClass):
+        pass
+
+      class Baz(init_subclass_arg="BaseClass"):
+        pass
+    |};
+  assert_expand
+    {|
+      class Foo("BaseClass", BaseClass2, metaclass="BaseClass3", arbitrary="BaseClass4"):
+        pass
+    |}
+    {|
+      class Foo(BaseClass, BaseClass2, metaclass=BaseClass3, arbitrary="BaseClass4"):
+        pass
+    |};
   ()
 
 
@@ -2648,7 +2701,7 @@ let test_expand_implicit_returns _ =
     | { Node.value = Define { body; _ }; _ } :: _ -> (
         match List.rev body with
         | return :: _ -> assert_equal ~printer:Location.show expected_location return.location
-        | _ -> failwith "Preprocessed source's Define body is empty" )
+        | _ -> failwith "Preprocessed source's Define body is empty")
     | _ -> failwith "Preprocessed source failed"
   in
   assert_implicit_return_location
@@ -2741,8 +2794,8 @@ let test_defines _ =
     assert_equal
       ~cmp:Int.equal
       ~printer:Int.to_string
-      ( Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
-      |> List.length )
+      (Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
+      |> List.length)
       (Preprocessing.count_defines source)
   in
   let create_define name =
@@ -2848,7 +2901,13 @@ let test_defines _ =
   let define_bar = create_define "bar" in
   let body = [+Statement.Define define_foo; +Statement.Define define_bar] in
   let parent =
-    { Class.name = + !&"Foo"; bases = []; body; decorators = []; top_level_unbound_names = [] }
+    {
+      Class.name = + !&"Foo";
+      base_arguments = [];
+      body;
+      decorators = [];
+      top_level_unbound_names = [];
+    }
   in
   assert_defines
     [+Statement.Class parent]
@@ -2870,7 +2929,7 @@ let test_classes _ =
   let class_define =
     {
       Class.name = + !&"foo";
-      bases = [];
+      base_arguments = [];
       body =
         [
           +Statement.Define
@@ -2899,7 +2958,7 @@ let test_classes _ =
   let inner =
     {
       Class.name = + !&"bar";
-      bases = [];
+      base_arguments = [];
       body = [+Statement.Pass];
       decorators = [];
       top_level_unbound_names = [];
@@ -2908,7 +2967,7 @@ let test_classes _ =
   let class_define =
     {
       Class.name = + !&"foo";
-      bases = [];
+      base_arguments = [];
       body = [+Statement.Class inner];
       decorators = [];
       top_level_unbound_names = [];
@@ -2923,7 +2982,7 @@ let test_replace_lazy_import _ =
     | Expression.Name name -> (
         match name_to_reference name with
         | Some reference when Reference.equal reference (Reference.create "lazy_import") -> true
-        | _ -> false )
+        | _ -> false)
     | _ -> false
   in
   let assert_replaced source expected =
@@ -4054,7 +4113,7 @@ let test_populate_nesting_define _ =
       +Statement.Class
          {
            Class.name = + !&"C";
-           bases = [];
+           base_arguments = [];
            decorators = [];
            body =
              [
@@ -4127,7 +4186,7 @@ let test_populate_nesting_define _ =
                +Statement.Class
                   {
                     Class.name = + !&"C";
-                    bases = [];
+                    base_arguments = [];
                     decorators = [];
                     body =
                       [
@@ -5036,6 +5095,12 @@ let test_populate_unbound_names _ =
     ~expected:[!&"foo", []];
   assert_unbound_names
     {|
+      def foo() -> None:
+        (x := derp)
+    |}
+    ~expected:[!&"foo", ["derp", location (3, 8) (3, 12)]];
+  assert_unbound_names
+    {|
       import derp
       def foo() -> None:
         derp
@@ -5412,6 +5477,111 @@ let test_union_shorthand _ =
   ()
 
 
+let test_mangle_private_attributes _ =
+  let assert_replace ?(handle = "test.py") source expected =
+    let expected = parse ~handle ~coerce_special_methods:true expected in
+    let actual = parse ~handle source |> Preprocessing.mangle_private_attributes in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_replace
+    {|
+      class Foo:
+        non_private = 1
+        __private = 1
+    |}
+    {|
+      class Foo:
+        non_private = 1
+        _Foo__private = 1
+    |};
+  assert_replace
+    {|
+      class Foo:
+        def _non_private(self) -> None: pass
+        def __private(self) -> None: pass
+        @staticmethod
+        def __private_static(self) -> None: pass
+
+        def __init__(self) -> None:
+          x = __private_name  # arbitrary reference
+          y = self.__private()
+
+      class Bar(Foo):
+        def __init__(self) -> None:
+          x = self.__private()
+    |}
+    {|
+      class Foo:
+        def _non_private(self) -> None: pass
+        def _Foo__private(self) -> None: pass
+        @staticmethod
+        def _Foo__private_static(self) -> None: pass
+
+        def __init__(self) -> None:
+          x = _Foo__private_name  # arbitrary reference
+          y = self._Foo__private()
+
+      class Bar(Foo):
+        def __init__(self) -> None:
+          x = self._Bar__private()
+    |};
+  assert_replace
+    {|
+      class A:
+        class B:
+          def __foo(self):
+            self.__bar
+        __private = 1
+    |}
+    {|
+      class A:
+        class B:
+          def _B__foo(self):
+            self._B__bar
+        _A__private = 1
+    |};
+  assert_replace
+    {|
+      class __A:
+        __private = 1
+      class _B:
+        __private = 1
+    |}
+    {|
+      class __A:
+        _A__private = 1
+      class _B:
+        _B__private = 1
+    |};
+  assert_replace
+    {|
+      class A:
+        class __B:
+          def __foo(self):
+            return
+    |}
+    {|
+      class A:
+        class _A__B:
+          def _B__foo(self):
+            return
+    |};
+  assert_replace
+    {|
+      def foo():
+        class C:
+          def __bar(self):
+            pass
+    |}
+    {|
+      def foo():
+        class C:
+          def _C__bar(self):
+            pass
+    |};
+  ()
+
+
 let test_six_metaclass_decorator _ =
   let assert_replace ?(handle = "test.py") source expected =
     let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
@@ -5654,6 +5824,105 @@ let test_expand_import_python_calls _ =
   ()
 
 
+let test_expand_pytorch_register_buffer _ =
+  let assert_expand ?(handle = "test.py") source expected =
+    let expected = parse ~handle expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source |> Preprocessing.qualify |> Preprocessing.expand_pytorch_register_buffer
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_expand
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Foo(nn.Module):
+        def __init__(self) -> None:
+          super(Foo, self).__init__()
+          self.register_buffer("foo", torch.zeros(10, 20))
+          self.register_buffer("foo_persistent", torch.zeros(10, 20), persistent=False)
+          self.register_buffer("bar", None)
+
+          self.register_buffer(not_a_literal(), torch.zeros(10, 20))
+
+        def some_method() -> None:
+          self.register_buffer("foobar", torch.zeros(30, 40))
+    |}
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Foo(nn.Module):
+        def __init__(self) -> None:
+          super(Foo, self).__init__()
+          self.foo: torch.Tensor = torch.zeros(10, 20)
+          self.foo_persistent: torch.Tensor = torch.zeros(10, 20)
+          self.bar = None
+
+          self.register_buffer(not_a_literal(), torch.zeros(10, 20))
+
+        def some_method() -> None:
+          self.register_buffer("foobar", torch.zeros(30, 40))
+    |};
+  (* TODO(T80453653): We shouldn't preprocess in non-Module constructors. *)
+  assert_expand
+    {|
+      import torch
+      import torch.nn as nn
+
+      class NotAModule:
+        def __init__(self) -> None:
+          super(NotAModule, self).__init__()
+          self.register_buffer("foo", torch.zeros(10, 20))
+    |}
+    {|
+      import torch
+      import torch.nn as nn
+
+      class NotAModule:
+        def __init__(self) -> None:
+          super(NotAModule, self).__init__()
+          self.foo: torch.Tensor = torch.zeros(10, 20)
+    |};
+  assert_expand
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Outer:
+        class Foo(nn.Module):
+          def __init__(self) -> None:
+            super(Foo, self).__init__()
+            self.register_buffer("foo", torch.zeros(10, 20))
+            self.register_buffer("foo_persistent", torch.zeros(10, 20), persistent=False)
+            self.register_buffer("bar", None)
+
+            self.register_buffer(not_a_literal(), torch.zeros(10, 20))
+
+          def some_method() -> None:
+            self.register_buffer("foobar", torch.zeros(30, 40))
+    |}
+    {|
+      import torch
+      import torch.nn as nn
+
+      class Outer:
+        class Foo(nn.Module):
+          def __init__(self) -> None:
+            super(Foo, self).__init__()
+            self.foo: torch.Tensor = torch.zeros(10, 20)
+            self.foo_persistent: torch.Tensor = torch.zeros(10, 20)
+            self.bar = None
+
+            self.register_buffer(not_a_literal(), torch.zeros(10, 20))
+
+          def some_method() -> None:
+            self.register_buffer("foobar", torch.zeros(30, 40))
+    |};
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -5678,8 +5947,10 @@ let () =
          "captures" >:: test_populate_captures;
          "unbound_names" >:: test_populate_unbound_names;
          "union_shorthand" >:: test_union_shorthand;
+         "mangle_private_attributes" >:: test_mangle_private_attributes;
          "six_metaclass_decorator" >:: test_six_metaclass_decorator;
          "expand_starred_type_variable_tuples" >:: test_expand_starred_type_variable_tuples;
          "expand_import_python_calls" >:: test_expand_import_python_calls;
+         "expand_pytorch_register_buffer" >:: test_expand_pytorch_register_buffer;
        ]
   |> Test.run

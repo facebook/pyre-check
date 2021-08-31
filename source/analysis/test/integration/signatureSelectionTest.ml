@@ -633,9 +633,11 @@ let test_check_function_parameter_errors context =
         str_float_to_int(input.undefined, input.undefined)
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter "
-      ^ "to call `str_float_to_int` but got `unknown`.";
+      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call "
+      ^ "`str_float_to_int` but got `unknown`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
+      "Incompatible parameter type [6]: Expected `float` for 2nd positional only parameter "
+      ^ "to call `str_float_to_int` but got `unknown`.";
     ];
   assert_type_errors
     {|
@@ -956,6 +958,8 @@ let test_check_variable_arguments context =
     [
       "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st positional only parameter to call `foo` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call "
+      ^ "`foo` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1004,6 +1008,8 @@ let test_check_variable_arguments context =
     [
       "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st positional only parameter to call `foo` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call "
+      ^ "`foo` but got `str`.";
     ];
   assert_type_errors
     {|

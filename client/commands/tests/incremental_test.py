@@ -325,7 +325,6 @@ class IncrementalTest(unittest.TestCase):
                         "code": -1,
                         "name": "Revealed type",
                         "description": ".Fake error",
-                        "inference": {},
                         "define": "c.$toplevel",
                     }
                 ]

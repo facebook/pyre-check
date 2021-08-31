@@ -75,7 +75,6 @@ class PartialConfigurationTest(unittest.TestCase):
             command_arguments.CommandArguments(
                 local_configuration=None,
                 logger="logger",
-                formatter="formatter",
                 targets=[],
                 use_buck_builder=False,
                 use_buck_source_database=True,
@@ -97,7 +96,6 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.buck_mode, "opt")
         self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
         self.assertListEqual(list(configuration.excludes), ["excludes"])
-        self.assertEqual(configuration.formatter, "formatter")
         self.assertEqual(configuration.logger, "logger")
         self.assertEqual(configuration.oncall, None)
         self.assertListEqual(
@@ -206,12 +204,6 @@ class PartialConfigurationTest(unittest.TestCase):
                 ExtensionElement(".bar", True),
                 ExtensionElement(".baz", False),
             ],
-        )
-        self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"formatter": "foo"})
-            ).formatter,
-            "foo",
         )
         self.assertListEqual(
             list(
@@ -437,7 +429,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
         assert_raises(json.dumps({"exclude": 42}))
         assert_raises(json.dumps({"extensions": 42}))
-        assert_raises(json.dumps({"formatter": 4.2}))
         assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
         assert_raises(json.dumps({"ignore_infer": [False, "bc"]}))
         assert_raises(json.dumps({"logger": []}))
@@ -554,7 +545,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("excludes")
         assert_prepended("extensions")
         assert_overwritten("file_hash")
-        assert_overwritten("formatter")
         assert_prepended("ignore_all_errors")
         assert_prepended("ignore_infer")
         assert_overwritten("logger")
@@ -593,12 +583,6 @@ class PartialConfigurationTest(unittest.TestCase):
             .expand_relative_paths("baz")
             .do_not_ignore_all_errors_in,
             ["baz/foo", "baz/bar"],
-        )
-        self.assertEqual(
-            PartialConfiguration(formatter="foo")
-            .expand_relative_paths("bar")
-            .formatter,
-            "bar/foo",
         )
         self.assertEqual(
             PartialConfiguration(ignore_all_errors=["foo", "bar"])
@@ -680,7 +664,6 @@ class ConfigurationTest(testslide.TestCase):
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
                 file_hash="abc",
-                formatter="formatter",
                 ignore_all_errors=["bar"],
                 ignore_infer=["baz"],
                 logger="logger",
@@ -714,7 +697,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
         self.assertEqual(configuration.file_hash, "abc")
-        self.assertEqual(configuration.formatter, "formatter")
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
         self.assertListEqual(list(configuration.ignore_infer), ["baz"])
         self.assertEqual(configuration.logger, "logger")
@@ -735,7 +717,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.typeshed, "typeshed")
         self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, False)
-        self.assertEqual(configuration.use_command_v2, False)
+        self.assertEqual(configuration.use_command_v2, True)
         self.assertEqual(configuration.version_hash, "abc")
 
     def test_get_site_roots(self) -> None:
@@ -1197,6 +1179,10 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertEqual(configuration.project_root, str(root_path))
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, root_path / ".pyre")
+                self.assertListEqual(
+                    list(configuration.source_directories or []),
+                    [SimpleSearchPathElement(str(root_path))],
+                )
 
     def test_create_from_global_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -1216,6 +1202,10 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
+                self.assertListEqual(
+                    list(configuration.source_directories or []),
+                    [SimpleSearchPathElement(str(root_path))],
+                )
 
     def test_create_from_local_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -1243,6 +1233,10 @@ class ConfigurationTest(testslide.TestCase):
                 self.assertEqual(configuration.relative_local_root, "local")
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
+                self.assertListEqual(
+                    list(configuration.source_directories or []),
+                    [SimpleSearchPathElement(str(root_path))],
+                )
                 self.assertListEqual(
                     list(configuration.search_path),
                     [

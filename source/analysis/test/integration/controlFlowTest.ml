@@ -288,7 +288,7 @@ let test_check_unbound_variables context =
           other = 1
         return result
     |}
-    [];
+    ["Uninitialized local [61]: Local variable `result` may not be initialized here."];
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -296,7 +296,10 @@ let test_check_unbound_variables context =
           result = narnia()
         return result
     |}
-    ["Unbound name [10]: Name `narnia` is used but not defined in the current scope."];
+    [
+      "Unbound name [10]: Name `narnia` is used but not defined in the current scope.";
+      "Uninitialized local [61]: Local variable `result` may not be initialized here.";
+    ];
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -306,7 +309,10 @@ let test_check_unbound_variables context =
           other = 1
         return result
     |}
-    ["Unbound name [10]: Name `narnia` is used but not defined in the current scope."];
+    [
+      "Unbound name [10]: Name `narnia` is used but not defined in the current scope.";
+      "Uninitialized local [61]: Local variable `result` may not be initialized here.";
+    ];
   assert_type_errors
     {|
       def foo() -> int:
@@ -582,7 +588,7 @@ let test_check_while context =
           x = {"a": False}
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, typing.Any]`."];
   assert_type_errors
     {|
       from typing import Dict, Any
@@ -595,7 +601,7 @@ let test_check_while context =
           x = {"a": False}
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, typing.Any]`."];
   assert_type_errors
     {|
       from typing import NoReturn

@@ -18,8 +18,8 @@ ModelQuery(
   find = "functions",
   where = [name.matches("parameters")],
   model = [
-    NamedParameter(name="x", taint = TaintSource[Test]),
-    NamedParameter(name="y", taint = TaintSource[Test, Via[string_concat_lhs]]),
+    Parameters(TaintSource[Test], where=name.equals("x")),
+    Parameters(TaintSource[Test, Via[string_concat_lhs]], where=name.equals("y")),
   ]
 )
 
@@ -28,7 +28,7 @@ ModelQuery(
   find = "functions",
   where = [name.matches("positional")],
   model = [
-    PositionalParameter(index=0, taint = TaintSource[Test]),
+    Parameters(TaintSource[Test], where=index.equals(0)),
   ]
 )
 
@@ -37,8 +37,8 @@ ModelQuery(
   find = "methods",
   where = [name.matches("positional")],
   model = [
-    PositionalParameter(index=0, taint = TaintSource[Test]),
-    PositionalParameter(index=1, taint = TaintSource[Test, Via[string_concat_lhs]]),
+    Parameters(TaintSource[Test], where=index.equals(0)),
+    Parameters(TaintSource[Test, Via[string_concat_lhs]], where=index.equals(1)),
   ]
 )
 
@@ -46,7 +46,7 @@ ModelQuery(
   find = "methods",
   where = [parent.equals("model_query.Base")],
   model = [
-    PositionalParameter(index=0, taint = TaintSource[Test]),
+    Parameters(TaintSource[Test], where=index.equals(0)),
   ]
 )
 
@@ -54,7 +54,7 @@ ModelQuery(
   find = "methods",
   where = [parent.extends("model_query.Base")],
   model = [
-    PositionalParameter(index=1, taint = TaintSource[Test]),
+    Parameters(TaintSource[Test], where=index.equals(1)),
   ]
 )
 

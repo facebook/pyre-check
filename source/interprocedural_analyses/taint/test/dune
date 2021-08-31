@@ -12,7 +12,7 @@
  (names accessPathTest annotationParserTest configurationTest domainTest
    integrationTest featuresTest fixpointTest flowTest forwardAnalysisTest
    backwardAnalysisTest modelTest modelVerificationErrorTest missingFlowsTest
-   modelVerifierTest)
+   modelVerifierTest taintResultTest)
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message ppx_deriving.show))

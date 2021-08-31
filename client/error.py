@@ -105,17 +105,14 @@ class Error:
 
 class LegacyError:
     error: Error
-    inference: str
     ignore_error: bool = False
 
     def __init__(
         self,
         error: Error,
-        inference: str,
         ignore_error: bool,
     ) -> None:
         self.error = error
-        self.inference = inference
         self.ignore_error = ignore_error
 
     @staticmethod
@@ -125,14 +122,12 @@ class LegacyError:
     ) -> "LegacyError":
         return LegacyError(
             error=Error.from_json(error),
-            inference=error["inference"],
             ignore_error=ignore_error or error.get("ignore_error", False),
         )
 
     def with_path(self, path: str) -> "LegacyError":
         return LegacyError(
             error=dataclasses.replace(self.error, path=path),
-            inference=self.inference,
             ignore_error=self.ignore_error,
         )
 
@@ -179,7 +174,6 @@ class LegacyError:
 
     def to_json(self) -> Dict[str, Any]:
         error_mapping = self.error.to_json()
-        error_mapping["inference"] = self.inference
         error_mapping["ignore_error"] = self.ignore_error
         return error_mapping
 

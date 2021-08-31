@@ -17,29 +17,32 @@ open TaintResult
 exception InvalidModel of string
 
 type t = {
-  is_obscure: bool;
-  call_target: Callable.t;
+  call_target: Target.t;
   model: TaintResult.call_model;
 }
 [@@deriving show]
 
 type model_t = t
 
+let is_obscure { modes; _ } = ModeSet.contains Obscure modes
+
+let remove_obscureness ({ modes; _ } as model) = { model with modes = ModeSet.remove Obscure modes }
+
 let remove_sinks model =
   { model with backward = { model.backward with sink_taint = BackwardState.empty } }
 
 
 let add_obscure_sink ~resolution ~call_target model =
-  match Callable.get_real_target call_target with
+  match Target.get_callable_t call_target with
   | None -> model
   | Some real_target -> (
       match
-        Callable.get_module_and_definition
+        Target.get_module_and_definition
           ~resolution:(Resolution.global_resolution resolution)
           real_target
       with
       | None ->
-          let () = Log.warning "Found no definition for %s" (Callable.show call_target) in
+          let () = Log.warning "Found no definition for %s" (Target.show call_target) in
           model
       | Some (_, { value = { signature = { parameters; _ }; _ }; _ }) ->
           let open Domains in
@@ -53,7 +56,7 @@ let add_obscure_sink ~resolution ~call_target model =
           let sink_taint =
             List.fold_left ~init:model.backward.sink_taint ~f:add_parameter_sink parameters
           in
-          { model with backward = { model.backward with sink_taint } } )
+          { model with backward = { model.backward with sink_taint } })
 
 
 let unknown_callee ~location ~call =
@@ -62,7 +65,7 @@ let unknown_callee ~location ~call =
     | Expression.Call { callee; _ } -> callee
     | _ -> Node.create ~location:(Location.strip_module location) call
   in
-  Interprocedural.Callable.create_function
+  Interprocedural.Target.create_function
     (Reference.create
        (Format.asprintf "%a:%a" Location.WithModule.pp location Expression.pp callee))
 
@@ -96,25 +99,31 @@ let register_unknown_callee_model callable =
          ~path:[]
          local_return
   in
-  Interprocedural.Fixpoint.add_predefined
-    Interprocedural.Fixpoint.Epoch.predefined
+  Interprocedural.FixpointState.add_predefined
+    Interprocedural.FixpointState.Epoch.predefined
     callable
-    (Interprocedural.Result.make_model
+    (Interprocedural.AnalysisResult.make_model
        TaintResult.kind
        {
-         TaintResult.forward = TaintResult.Forward.empty;
+         TaintResult.forward = Forward.empty;
          backward = { sink_taint; taint_in_taint_out };
-         mode = SkipAnalysis;
+         sanitize = Sanitize.empty;
+         modes = ModeSet.singleton Mode.SkipAnalysis;
        })
 
 
 let get_callsite_model ~resolution ~call_target ~arguments =
-  let call_target = (call_target :> Callable.t) in
-  match Interprocedural.Fixpoint.get_model call_target with
-  | None -> { is_obscure = true; call_target; model = TaintResult.empty_model }
+  let call_target = (call_target :> Target.t) in
+  match Interprocedural.FixpointState.get_model call_target with
+  | None -> { call_target; model = TaintResult.obscure_model }
   | Some model ->
       let expand_via_value_of
-          { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
+          {
+            forward = { source_taint };
+            backward = { sink_taint; taint_in_taint_out };
+            sanitize;
+            modes;
+          }
         =
         let expand features =
           let transform feature features =
@@ -164,14 +173,25 @@ let get_callsite_model ~resolution ~call_target ~arguments =
             ~f:expand
             taint_in_taint_out
         in
-        { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
+        {
+          forward = { source_taint };
+          backward = { sink_taint; taint_in_taint_out };
+          sanitize;
+          modes;
+        }
       in
       let taint_model =
-        Interprocedural.Result.get_model TaintResult.kind model
+        Interprocedural.AnalysisResult.get_model TaintResult.kind model
         |> Option.value ~default:TaintResult.empty_model
         |> expand_via_value_of
       in
-      { is_obscure = model.is_obscure; call_target; model = taint_model }
+      let taint_model =
+        if model.is_obscure then
+          { taint_model with modes = ModeSet.add Obscure taint_model.modes }
+        else
+          taint_model
+      in
+      { call_target; model = taint_model }
 
 
 let get_global_targets ~resolution ~expression =
@@ -226,7 +246,7 @@ let get_global_targets ~resolution ~expression =
 
 let get_global_models ~resolution ~expression =
   let fetch_model target =
-    let call_target = Callable.create_object target in
+    let call_target = Target.create_object target in
     get_callsite_model ~resolution ~call_target ~arguments:[]
   in
   get_global_targets ~resolution ~expression |> List.map ~f:fetch_model
@@ -291,20 +311,26 @@ module GlobalModel = struct
     List.fold ~init:BackwardState.Tree.bottom ~f:to_tito models
 
 
-  let get_mode { models; _ } =
-    let get_mode existing { model = { TaintResult.mode; _ }; _ } = Mode.join mode existing in
-    List.fold ~init:Mode.Normal ~f:get_mode models
+  let get_sanitize { models; _ } =
+    let get_sanitize existing { model = { TaintResult.sanitize; _ }; _ } =
+      Sanitize.join sanitize existing
+    in
+    List.fold ~init:Sanitize.empty ~f:get_sanitize models
+
+
+  let get_modes { models; _ } =
+    let get_modes existing { model = { TaintResult.modes; _ }; _ } = ModeSet.join modes existing in
+    List.fold ~init:ModeSet.empty ~f:get_modes models
 
 
   let is_sanitized { models; _ } =
-    let is_sanitized_model { model = { TaintResult.mode; _ }; _ } =
-      match mode with
-      | TaintResult.Mode.Sanitize
-          {
-            sources = Some TaintResult.Mode.AllSources;
-            sinks = Some TaintResult.Mode.AllSinks;
-            tito = Some AllTito;
-          } ->
+    let is_sanitized_model { model = { TaintResult.sanitize; _ }; _ } =
+      match sanitize with
+      | {
+       sources = Some TaintResult.Sanitize.AllSources;
+       sinks = Some TaintResult.Sanitize.AllSinks;
+       tito = Some TaintResult.Sanitize.AllTito;
+      } ->
           true
       | _ -> false
     in
@@ -332,6 +358,7 @@ let get_model_sources ~paths =
 let infer_class_models ~environment =
   let open Domains in
   Log.info "Computing inferred models...";
+  let timer = Timer.start () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let fold_taint position existing_state attribute =
     let leaf =
@@ -368,7 +395,8 @@ let infer_class_models ~environment =
             List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
           sink_taint = BackwardState.empty;
         };
-      mode = Normal;
+      sanitize = Sanitize.empty;
+      modes = ModeSet.empty;
     }
   in
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
@@ -394,7 +422,8 @@ let infer_class_models ~environment =
               List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
             sink_taint = BackwardState.empty;
           };
-        mode = Normal;
+        sanitize = Sanitize.empty;
+        modes = ModeSet.empty;
       }
   in
   let compute_models class_name class_summary =
@@ -420,12 +449,20 @@ let infer_class_models ~environment =
   let inferred_models class_name =
     GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
     >>= compute_models class_name
-    >>| fun model -> `Method { Callable.class_name; method_name = "__init__" }, model
+    >>| fun model -> `Method { Target.class_name; method_name = "__init__" }, model
   in
   let all_classes =
     TypeEnvironment.ReadOnly.global_resolution environment
     |> GlobalResolution.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
-  List.filter_map all_classes ~f:inferred_models
-  |> Callable.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)
+  let models =
+    List.filter_map all_classes ~f:inferred_models
+    |> Target.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)
+  in
+  Statistics.performance
+    ~name:"Computed inferred models"
+    ~phase_name:"Computing inferred models"
+    ~timer
+    ();
+  models

@@ -3,22 +3,19 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{obscure_tito.C::taint_parameter}",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Ovr{obscure_tito.C::update}",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(parameter)",
@@ -26,29 +23,27 @@
           { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "obscure_tito.C.taint_parameter",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "tito": []
+    "modes": [ "Obscure" ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "obscure_tito.C.update",
-    "sources": [],
-    "sinks": [],
     "tito": [
       {
         "port": "formal(parameter)",
@@ -56,7 +51,8 @@
           { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -72,10 +68,10 @@
               "filename": "obscure_tito.py",
               "line": 33,
               "start": 20,
-              "end": 35
+              "end": 34
             },
-            "tito": [ { "line": 33, "start": 20, "end": 35 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 33, "start": 20, "end": 34 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "special_source" },
               { "always-via": "obscure" }
@@ -83,16 +79,13 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "obscure_tito.test_obscure_sink",
-    "sources": [],
     "sinks": [
       {
         "port": "formal(parameter)",
@@ -113,8 +106,7 @@
           }
         ]
       }
-    ],
-    "tito": []
+    ]
   }
 }
 {
@@ -130,10 +122,10 @@
               "filename": "obscure_tito.py",
               "line": 27,
               "start": 13,
-              "end": 28
+              "end": 27
             },
-            "tito": [ { "line": 27, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "tito": [ { "line": 27, "start": 13, "end": 27 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" }
@@ -141,8 +133,6 @@
           }
         ]
       }
-    ],
-    "sinks": [],
-    "tito": []
+    ]
   }
 }

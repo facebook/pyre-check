@@ -268,7 +268,6 @@ def run_test_changed_models(
         "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
         "define": "integration_test.lru_cache_test.test_cached_sanitizer",
         "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-        "inference": None,
         "line": 20,
         "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
         "name": "Possible shell injection",

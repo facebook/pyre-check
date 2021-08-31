@@ -13,10 +13,10 @@ open Ast
 val inferred_generic_base
   :  ClassSummary.t Node.t ->
   parse_annotation:(Expression.t -> Type.t) ->
-  Expression.Call.Argument.t list
+  Expression.t list
 
 val base_is_from_placeholder_stub
-  :  Expression.Call.Argument.t ->
+  :  Expression.t ->
   aliases:(?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option) ->
   from_empty_stub:(Reference.t -> bool) ->
   bool

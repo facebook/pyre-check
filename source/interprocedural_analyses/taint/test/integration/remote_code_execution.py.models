@@ -20,10 +20,10 @@
               "filename": "remote_code_execution.py",
               "line": 10,
               "start": 8,
-              "end": 27
+              "end": 26
             },
             "leaves": [
-              { "kind": "UserControlled", "name": "__user_controlled" }
+              { "kind": "UserControlled", "name": "_user_controlled" }
             ]
           }
         ]

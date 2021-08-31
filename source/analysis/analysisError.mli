@@ -32,9 +32,21 @@ type invalid_class_instantiation =
   | ProtocolInstantiation of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
+type module_reference =
+  | ExplicitModule of SourcePath.t
+  | ImplicitModule of Reference.t
+[@@deriving compare, eq, sexp, show, hash]
+
 type origin =
-  | Class of Type.t
-  | Module of Reference.t
+  | Class of {
+      class_type: Type.t;
+      parent_source_path: SourcePath.t option;
+    }
+  | Module of module_reference
+
+and analysis_failure =
+  | UnexpectedUndefinedType of string
+  | FixpointThresholdReached of { define: Reference.t }
 
 and mismatch = {
   actual: Type.t;
@@ -168,7 +180,7 @@ and unawaited_awaitable = {
 and undefined_import =
   | UndefinedModule of Reference.t
   | UndefinedName of {
-      from: Reference.t;
+      from: module_reference;
       name: Identifier.t;
     }
 
@@ -232,7 +244,7 @@ and invalid_decoration = {
 }
 
 and kind =
-  | AnalysisFailure of string
+  | AnalysisFailure of analysis_failure
   | ParserFailure of string
   | IllegalAnnotationTarget of {
       target: Expression.t;
@@ -350,6 +362,7 @@ and kind =
       missing_key: string;
     }
   | UnboundName of Identifier.t
+  | UninitializedLocal of Identifier.t
   | UndefinedAttribute of {
       attribute: Identifier.t;
       origin: origin;
@@ -392,9 +405,52 @@ and kind =
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t
   | UnawaitedAwaitable of unawaited_awaitable
+  (* Errors from run-time edge cases *)
+  | BroadcastError of {
+      expression: Expression.t;
+      left: Type.t;
+      right: Type.t;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
-include BaseError.Error with type kind := kind
+type t = {
+  location: Location.WithModule.t;
+  kind: kind;
+  signature: Statement.Define.Signature.t Node.t;
+}
+[@@deriving compare, eq, show, sexp, hash]
+
+module Instantiated : sig
+  type t [@@deriving sexp, compare, eq, show, hash, yojson { strict = false }]
+
+  val location : t -> Location.WithPath.t
+
+  val path : t -> string
+
+  val code : t -> int
+
+  val description : t -> string
+
+  val long_description : t -> string
+
+  val concise_description : t -> string
+end
+
+include Hashable with type t := t
+
+val create : location:Location.WithModule.t -> kind:kind -> define:Statement.Define.t Node.t -> t
+
+val path : t -> Reference.t
+
+val key : t -> Location.WithModule.t
+
+val code : t -> int
+
+val instantiate
+  :  show_error_traces:bool ->
+  lookup:(Reference.t -> string option) ->
+  t ->
+  Instantiated.t
 
 module Set : Set.S with type Elt.t = t
 

@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from pathlib import Path
 
 from ... import command_arguments, commands, configuration as configuration_module
 from . import incremental, stop, remote_logging
@@ -20,8 +19,9 @@ def run(
 ) -> commands.ExitCode:
     try:
         stop.run_stop(configuration)
-        incremental.run_incremental(configuration, incremental_arguments)
-        return commands.ExitCode.SUCCESS
+        return incremental.run_incremental(
+            configuration, incremental_arguments
+        ).exit_code
     except Exception as error:
         raise commands.ClientException(
             f"Exception occured during pyre restart: {error}"

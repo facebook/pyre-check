@@ -126,6 +126,8 @@ class ModelTest(unittest.TestCase):
         annotations = AnnotationSpecification(
             # pyre-ignore[6]: Too dynamic.
             parameter_annotation=kwargs.get("parameter_annotation"),
+            # pyre-fixme[6]: Expected `Optional[str]` for 2nd param but got
+            #  `Union[None, ParameterAnnotation, str]`.
             returns=kwargs.get("returns"),
         )
         self.assertEqual(

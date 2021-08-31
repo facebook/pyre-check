@@ -5,12 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
+
 type mode =
   | Debug
   | Strict
   | Unsafe
   | Declare
-  | Infer
 [@@deriving compare, eq, show, sexp, hash]
 
 type local_mode =
@@ -52,8 +53,16 @@ type t = {
 }
 [@@deriving compare, eq, hash, show, sexp]
 
+val ignored_lines_including_format_strings
+  :  ?collect_format_strings_with_ignores:
+       (ignore_line_map:Ignore.t list Int.Map.t -> t -> (Expression.t * Ignore.t list) list) ->
+  t ->
+  Ignore.t list
+
 val create_from_source_path
-  :  metadata:Metadata.t ->
+  :  ?collect_format_strings_with_ignores:
+       (ignore_line_map:Ignore.t list Int.Map.t -> t -> (Expression.t * Ignore.t list) list) ->
+  metadata:Metadata.t ->
   source_path:SourcePath.t ->
   Statement.t list ->
   t
@@ -65,6 +74,8 @@ val create
   ?priority:int ->
   Statement.t list ->
   t
+
+val pp_all : Format.formatter -> t -> unit
 
 val location_insensitive_compare : t -> t -> int
 

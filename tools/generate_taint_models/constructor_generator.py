@@ -9,15 +9,10 @@ import logging
 from importlib import import_module
 from typing import Callable, Iterable, List, Optional, Type, TypeVar
 
+from .subclass_generator import get_all_subclasses_from_environment
 
 LOG: logging.Logger = logging.getLogger(__name__)
 T = TypeVar("T")
-
-
-def all_subclasses(parent_class: Type[T]) -> Iterable[Type[T]]:
-    return set(parent_class.__subclasses__()).union(
-        [s for c in parent_class.__subclasses__() for s in all_subclasses(c)]
-    )
 
 
 def gather_all_constructors_in_hierarchy(
@@ -46,7 +41,7 @@ def gather_all_constructors_in_hierarchy(
                 + "__init__ function and thus taint can't be followed. Skipping..."
             )
             continue
-        children_classes = all_subclasses(class_to_taint)
+        children_classes = get_all_subclasses_from_environment(class_to_taint)
 
         all_inits_from_classes.update(
             child.__init__

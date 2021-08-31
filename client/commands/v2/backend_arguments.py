@@ -27,6 +27,16 @@ class RemoteLogging:
     logger: str
     identifier: str = ""
 
+    @staticmethod
+    def create(
+        logger: Optional[str] = None, identifier: Optional[str] = None
+    ) -> "Optional[RemoteLogging]":
+        return (
+            RemoteLogging(logger=logger, identifier=identifier or "")
+            if logger is not None
+            else None
+        )
+
     def serialize(self) -> Dict[str, str]:
         return {"logger": self.logger, "identifier": self.identifier}
 
@@ -134,14 +144,14 @@ def get_source_path(
             isolation_prefix=configuration.isolation_prefix,
         )
 
-    if source_directories is None and targets is not None:
+    if source_directories is not None and targets is not None:
         raise configuration_module.InvalidConfiguration(
-            "`source_directory` and `targets` are mutually exclusive"
+            "`source_directories` and `targets` are mutually exclusive"
         )
 
     raise configuration_module.InvalidConfiguration(
         "Cannot find any source files to analyze. "
-        + "Either `source_directory` or `targets` must be specified."
+        + "Either `source_directories` or `targets` must be specified."
     )
 
 
@@ -194,3 +204,17 @@ def temporary_argument_file(arguments: SerializableArguments) -> Iterator[Path]:
     ) as argument_file:
         _write_argument_file(argument_file, arguments)
         yield Path(argument_file.name)
+
+
+@dataclasses.dataclass
+class LogFile:
+    name: str
+    file: IO[str]
+
+
+@contextlib.contextmanager
+def backend_log_file(prefix: str) -> Iterator[LogFile]:
+    with tempfile.NamedTemporaryFile(
+        mode="w", prefix=prefix, suffix=".log", delete=True
+    ) as argument_file:
+        yield LogFile(name=argument_file.name, file=argument_file.file)

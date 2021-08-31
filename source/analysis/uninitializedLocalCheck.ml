@@ -9,16 +9,129 @@ open Core
 open Ast
 open Pyre
 open Statement
+open Expression
 module Error = AnalysisError
 
 let name = "UninitializedLocal"
+
+module NameAccessSet = Set.Make (Define.NameAccess)
+
+module AccessCollector = struct
+  let rec from_expression collected { Node.value; location = expression_location } =
+    let open Expression in
+    let from_entry collected { Dictionary.Entry.key; value } =
+      let collected = from_expression collected key in
+      from_expression collected value
+    in
+    match value with
+    (* Lambdas are speical -- they bind their own names, which we want to exclude *)
+    | Lambda { Lambda.parameters; body } ->
+        let collected =
+          let from_parameter collected { Node.value = { Parameter.value; _ }; _ } =
+            Option.value_map value ~f:(from_expression collected) ~default:collected
+          in
+          List.fold parameters ~init:collected ~f:from_parameter
+        in
+        let bound_names =
+          List.map parameters ~f:(fun { Node.value = { Parameter.name; _ }; _ } ->
+              Identifier.split_star name |> snd)
+          |> Identifier.Set.of_list
+        in
+        let names_in_body = from_expression NameAccessSet.empty body in
+        let unbound_names_in_body =
+          Set.filter names_in_body ~f:(fun { Define.NameAccess.name; _ } ->
+              not (Identifier.Set.mem bound_names name))
+        in
+        Set.union unbound_names_in_body collected
+    | Name (Name.Identifier identifier) ->
+        (* For simple names, add them to the result *)
+        Set.add collected { Define.NameAccess.name = identifier; location = expression_location }
+    | Name (Name.Attribute _) ->
+        (* For attribute access, we currently skip *)
+        collected
+    (* The rest is boilerplates to make sure that expressions are visited recursively *)
+    | Await await -> from_expression collected await
+    | BooleanOperator { BooleanOperator.left; right; _ }
+    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+        let collected = from_expression collected left in
+        from_expression collected right
+    | Call { Call.callee; arguments } ->
+        let collected = from_expression collected callee in
+        List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
+            from_expression collected value)
+    | Dictionary { Dictionary.entries; keywords } ->
+        let collected = List.fold entries ~init:collected ~f:from_entry in
+        List.fold keywords ~init:collected ~f:from_expression
+    | DictionaryComprehension comprehension -> from_comprehension from_entry collected comprehension
+    | Generator comprehension
+    | ListComprehension comprehension
+    | SetComprehension comprehension ->
+        from_comprehension from_expression collected comprehension
+    | List expressions
+    | Set expressions
+    | Tuple expressions
+    | String { kind = StringLiteral.Format expressions; _ } ->
+        List.fold expressions ~init:collected ~f:from_expression
+    | Starred (Starred.Once expression)
+    | Starred (Starred.Twice expression) ->
+        from_expression collected expression
+    | Ternary { Ternary.target; test; alternative } ->
+        let collected = from_expression collected target in
+        let collected = from_expression collected test in
+        from_expression collected alternative
+    | UnaryOperator { UnaryOperator.operand; _ } -> from_expression collected operand
+    | WalrusOperator { WalrusOperator.value; _ } -> from_expression collected value
+    | Yield yield -> Option.value_map yield ~default:collected ~f:(from_expression collected)
+    | String _
+    | Complex _
+    | Ellipsis
+    | False
+    | Float _
+    | Integer _
+    | True ->
+        collected
+
+
+  (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
+  and from_comprehension :
+        'a.
+        (NameAccessSet.t -> 'a -> NameAccessSet.t) ->
+        NameAccessSet.t ->
+        'a Comprehension.t ->
+        NameAccessSet.t
+    =
+   fun from_element collected { Comprehension.element; generators } ->
+    let bound_names =
+      List.fold
+        generators
+        ~init:Identifier.Set.empty
+        ~f:(fun sofar { Comprehension.Generator.target; _ } ->
+          from_expression NameAccessSet.empty target
+          |> Set.fold ~init:sofar ~f:(fun sofar { Define.NameAccess.name; _ } -> Set.add sofar name))
+    in
+    let names =
+      from_element NameAccessSet.empty element
+      |> fun init ->
+      List.fold
+        generators
+        ~init
+        ~f:(fun sofar { Comprehension.Generator.iterator; conditions; _ } ->
+          let sofar = from_expression sofar iterator in
+          List.fold conditions ~init:sofar ~f:from_expression)
+    in
+    let unbound_names =
+      Set.filter names ~f:(fun { Define.NameAccess.name; _ } ->
+          not (Identifier.Set.mem bound_names name))
+    in
+    Set.union unbound_names collected
+end
 
 let extract_reads_expression expression =
   let name_access_to_identifier_node { Define.NameAccess.name; location } =
     { Node.value = name; location }
   in
-  Preprocessing.AccessCollector.from_expression Preprocessing.NameAccessSet.empty expression
-  |> Preprocessing.NameAccessSet.to_list
+  AccessCollector.from_expression NameAccessSet.empty expression
+  |> NameAccessSet.to_list
   |> List.map ~f:name_access_to_identifier_node
 
 
@@ -55,7 +168,7 @@ let extract_reads_statement { Node.value; _ } =
 module InitializedVariables = Identifier.Set
 
 module type Context = sig
-  val uninitialized_usage : Identifier.t Node.t list Int.Table.t
+  val fixpoint_post_statement : (Statement.t * InitializedVariables.t) Int.Table.t
 end
 
 module State (Context : Context) = struct
@@ -71,6 +184,7 @@ module State (Context : Context) = struct
     signature.parameters
     |> Scope.Binding.of_parameters []
     |> List.map ~f:Scope.Binding.name
+    |> List.map ~f:Identifier.sanitized
     |> InitializedVariables.of_list
 
 
@@ -78,7 +192,7 @@ module State (Context : Context) = struct
     let emit_error { Node.value; location } =
       Error.create
         ~location:(Location.with_module ~qualifier location)
-        ~kind:(Error.UnboundName value)
+        ~kind:(Error.UninitializedLocal value)
         ~define
     in
     let all_locals =
@@ -99,7 +213,14 @@ module State (Context : Context) = struct
     let in_local_scope { Node.value = identifier; _ } =
       identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
     in
-    Int.Table.data Context.uninitialized_usage
+    let uninitialized_usage (statement, initialized) =
+      let is_uninitialized { Node.value = identifier; _ } =
+        not (InitializedVariables.mem initialized (Identifier.sanitized identifier))
+      in
+      extract_reads_statement statement |> List.filter ~f:is_uninitialized
+    in
+    Int.Table.data Context.fixpoint_post_statement
+    |> List.map ~f:uninitialized_usage
     |> List.concat
     |> List.filter ~f:in_local_scope
     |> List.map ~f:emit_error
@@ -112,17 +233,15 @@ module State (Context : Context) = struct
   let widen ~previous ~next ~iteration:_ = join previous next
 
   let forward ~key state ~statement =
-    let is_uninitialized { Node.value = identifier; _ } =
-      not (InitializedVariables.mem state identifier)
+    let new_state =
+      Scope.Binding.of_statement [] statement
+      |> List.map ~f:Scope.Binding.name
+      |> List.map ~f:Identifier.sanitized
+      |> InitializedVariables.of_list
+      |> InitializedVariables.union state
     in
-    let uninitialized_usage =
-      extract_reads_statement statement |> List.filter ~f:is_uninitialized
-    in
-    Hashtbl.set Context.uninitialized_usage ~key ~data:uninitialized_usage;
-    Scope.Binding.of_statement [] statement
-    |> List.map ~f:Scope.Binding.name
-    |> InitializedVariables.of_list
-    |> InitializedVariables.union state
+    Hashtbl.set Context.fixpoint_post_statement ~key ~data:(statement, new_state);
+    new_state
 
 
   let backward ~key:_ _ ~statement:_ = failwith "Not implemented"
@@ -130,7 +249,7 @@ end
 
 let run_on_define ~qualifier define =
   let module Context = struct
-    let uninitialized_usage = Int.Table.create ()
+    let fixpoint_post_statement = Int.Table.create ()
   end
   in
   let module State = State (Context) in

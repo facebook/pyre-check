@@ -282,7 +282,7 @@ let get_global ~resolution name =
       | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
           { from; name; remaining = []; _ } ->
           Some (Reference.combine from (Reference.create name))
-      | _ -> None )
+      | _ -> None)
   | _ -> None
 
 
