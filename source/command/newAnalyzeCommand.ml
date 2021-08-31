@@ -169,8 +169,137 @@ module AnalyzeConfiguration = struct
     }
 end
 
-let run_taint_analysis ~configuration:_ ~build_system:_ ~inline_decorators:_ ~repository_root:_ () =
-  Log.warning "Coming soon..."
+let with_performance_tracking f =
+  let timer = Timer.start () in
+  let result = f () in
+  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+  Statistics.performance
+    ~name:"analyze"
+    ~timer
+    ~integers:
+      [
+        "gc_minor_collections", minor_collections;
+        "gc_major_collections", major_collections;
+        "gc_compactions", compactions;
+      ]
+    ();
+  result
+
+
+let run_taint_analysis
+    ~static_analysis_configuration:
+      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as
+      static_analysis_configuration)
+    ~inline_decorators
+    ~build_system
+    ~repository_root
+    ()
+  =
+  let run () =
+    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        let analysis_kind = TaintAnalysis.abstract_kind in
+        Interprocedural.FixpointAnalysis.initialize_configuration
+          ~static_analysis_configuration
+          analysis_kind;
+
+        let environment = Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache in
+
+        let qualifiers =
+          Analysis.TypeEnvironment.module_tracker environment
+          |> Analysis.ModuleTracker.tracked_explicit_modules
+        in
+
+        let initial_callables =
+          Service.StaticAnalysis.fetch_initial_callables
+            ~scheduler
+            ~configuration
+            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~qualifiers
+            ~use_cache
+        in
+
+        let initialized_models =
+          let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
+            initial_callables
+          in
+          Interprocedural.FixpointAnalysis.initialize_models
+            analysis_kind
+            ~static_analysis_configuration
+            ~scheduler
+            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~callables:(List.map callables_with_dependency_information ~f:fst)
+            ~stubs
+        in
+
+        let environment, initial_callables =
+          if inline_decorators then (
+            Log.info "Inlining decorators for taint analysis...";
+            let timer = Timer.start () in
+            let { Interprocedural.AnalysisResult.InitializedModels.initial_models; _ } =
+              Interprocedural.AnalysisResult.InitializedModels.get_models initialized_models
+            in
+            let updated_environment =
+              Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
+                ~configuration
+                ~scheduler
+                ~recheck:Server.IncrementalCheck.recheck
+                ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
+                environment
+            in
+            Statistics.performance
+              ~name:"Inlined decorators"
+              ~phase_name:"Inlining decorators"
+              ~timer
+              ();
+
+            let updated_initial_callables =
+              (* We need to re-fetch initial callables, since inlining creates new callables. *)
+              Service.StaticAnalysis.fetch_initial_callables
+                ~scheduler
+                ~configuration
+                ~environment:(Analysis.TypeEnvironment.read_only updated_environment)
+                ~qualifiers
+                ~use_cache:false
+            in
+            updated_environment, updated_initial_callables)
+          else
+            environment, initial_callables
+        in
+
+        let environment = Analysis.TypeEnvironment.read_only environment in
+        let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
+
+        let { Interprocedural.AnalysisResult.InitializedModels.initial_models; skip_overrides } =
+          Interprocedural.AnalysisResult.InitializedModels.get_models_including_generated_models
+            initialized_models
+            ~updated_environment:(Some environment)
+        in
+        let filename_lookup path_reference =
+          match
+            Newserver.RequestHandler.instantiate_path
+              ~build_system
+              ~configuration
+              ~ast_environment
+              path_reference
+          with
+          | None -> None
+          | Some full_path ->
+              let root = Option.value repository_root ~default:configuration.local_root in
+              Path.get_relative_to_root ~root ~path:(Path.create_absolute full_path)
+        in
+        Service.StaticAnalysis.analyze
+          ~scheduler
+          ~analysis:analysis_kind
+          ~static_analysis_configuration
+          ~filename_lookup
+          ~environment
+          ~qualifiers
+          ~initial_callables
+          ~initial_models
+          ~skip_overrides
+          ())
+  in
+  with_performance_tracking run
 
 
 let run_analyze analyze_configuration =
@@ -184,8 +313,15 @@ let run_analyze analyze_configuration =
     analyze_configuration
   in
   Newserver.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
-      let configuration = AnalyzeConfiguration.analysis_configuration_of analyze_configuration in
-      run_taint_analysis ~configuration ~build_system ~inline_decorators ~repository_root ();
+      let static_analysis_configuration =
+        AnalyzeConfiguration.analysis_configuration_of analyze_configuration
+      in
+      run_taint_analysis
+        ~static_analysis_configuration
+        ~build_system
+        ~inline_decorators
+        ~repository_root
+        ();
       Lwt.return ExitStatus.Ok)
 
 
