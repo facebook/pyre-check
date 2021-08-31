@@ -14,6 +14,7 @@ import {
   LanguageClient,
   LanguageClientOptions,
   DidChangeConfigurationNotification,
+  ResponseMessage,
 } from "vscode-languageclient/node";
 
 let languageClient: LanguageClient;
@@ -85,7 +86,7 @@ async function copyModel(path: string) {
         path: path,
         position: { line: active.line, character: active.character },
       })
-      .then((response: any) => {
+      .then((response: string) => {
         vscode.env.clipboard.writeText(response);
         vscode.window.showInformationMessage("Model copied to clipboard!");
         console.log(response);

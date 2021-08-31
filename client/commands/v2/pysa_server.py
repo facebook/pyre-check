@@ -65,6 +65,9 @@ class PysaServer:
         self.pyre_arguments = pyre_arguments
         self.binary_location = binary_location
         self.server_identifier = server_identifier
+        self.pyre_connction = api_connection.PyreConnection(
+            Path(self.pyre_arguments.global_root)
+        )
 
     def invalid_model_to_diagnostic(
         self,
@@ -104,11 +107,8 @@ class PysaServer:
 
     async def update_errors(self, document_path: Path) -> None:
         await _publish_diagnostics(self.output_channel, document_path, [])
-        pyre_connection = api_connection.PyreConnection(
-            Path(self.pyre_arguments.global_root)
-        )
         try:
-            model_errors = query.get_invalid_taint_models(pyre_connection)
+            model_errors = query.get_invalid_taint_models(self.pyre_connection)
             diagnostics = self.invalid_models_to_diagnostics(model_errors)
             await self.show_model_errors_to_client(diagnostics)
         except PyreQueryError as e:
@@ -117,29 +117,27 @@ class PysaServer:
             )
 
     async def copy_model(self, document_path: str, position: lsp.Position) -> None:
-        pyre_connection = api_connection.PyreConnection(
-            Path(self.pyre_arguments.global_root)
-        )
         rel_path = relpath(document_path, self.pyre_arguments.global_root)
         try:
+            pyre_connection = api_connection.PyreConnection(
+                Path(self.pyre_arguments.global_root)
+            )
             types = query.types(pyre_connection, [rel_path])
-            for type in types[0].types:
-                start = lsp.Position(
-                    line=type.location["start"].line,
-                    character=type.location["start"].column,
+            for t in types[0].types:
+                start = query.Position(
+                    line=t.location["start"].line,
+                    column=t.location["start"].column,
                 )
-                stop = lsp.Position(
-                    line=type.location["stop"].line,
-                    character=type.location["stop"].column,
+                stop = query.Position(
+                    line=t.location["stop"].line,
+                    column=t.location["stop"].column,
                 )
-                is_after_start = position.line > start.line or (
-                    start.line == position.line and start.character <= position.character
+                selected = query.Position(
+                    line=position.line,
+                    column=position.character,
                 )
-                is_before_end = position.line < stop.line or (
-                    stop.line == position.line and stop.character >= position.character
-                )
-                if is_after_start and is_before_end:
-                    function_model = type.extract_function_model()
+                if selected > start and selected < stop:
+                    function_model = t.extract_function_model()
                     return function_model
         except PyreQueryError as e:
             await self.log_and_show_message_to_client(
@@ -188,7 +186,8 @@ class PysaServer:
                 if request.method == "exit":
                     return 0
                 else:
-                    raise json_rpc.InvalidRequestError("LSP server has been shut down")
+                    raise json_rpc.InvalidRequestError(
+                        "LSP server has been shut down")
 
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
@@ -239,68 +238,75 @@ class PysaServer:
             async with _read_lsp_request(
                 self.input_channel, self.output_channel
             ) as request:
-
-                if request.method == "exit":
-                    return commands.ExitCode.FAILURE
-                elif request.method == "shutdown":
-                    lsp.write_json_rpc(
-                        self.output_channel,
-                        json_rpc.SuccessResponse(id=request.id, result=None),
+                try:
+                    if request.method == "exit":
+                        return commands.ExitCode.FAILURE
+                    elif request.method == "shutdown":
+                        lsp.write_json_rpc(
+                            self.output_channel,
+                            json_rpc.SuccessResponse(
+                                id=request.id, result=None),
+                        )
+                        return await self.wait_for_exit()
+                    elif request.method == "textDocument/didOpen":
+                        parameters = request.parameters
+                        if parameters is None:
+                            raise json_rpc.InvalidRequestError(
+                                "Missing parameters for didOpen method"
+                            )
+                        await self.process_open_request(
+                            lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
+                                parameters
+                            )
+                        )
+                    elif request.method == "textDocument/didClose":
+                        parameters = request.parameters
+                        if parameters is None:
+                            raise json_rpc.InvalidRequestError(
+                                "Missing parameters for didClose method"
+                            )
+                        await self.process_close_request(
+                            lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
+                                parameters
+                            )
+                        )
+                    elif request.method == "textDocument/didSave":
+                        parameters = request.parameters
+                        if parameters is None:
+                            raise json_rpc.InvalidRequestError(
+                                "Missing parameters for didSave method"
+                            )
+                        await self.process_did_save_request(
+                            lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
+                                parameters
+                            )
+                        )
+                    elif request.method == "pysa/copyModel":
+                        parameters = request.parameters
+                        if parameters is None:
+                            raise json_rpc.InvalidRequestError(
+                                "Missing parameters for copyModel method"
+                            )
+                        # processing parameter data sent from VSCode
+                        request.parameters.values['path'] = request.parameters.values['path']['path']
+                        request.parameters.values['position']['line'] = request.parameters.values['position']['line'] + 1
+                        copied_model = await self.process_copy_model_request(
+                            lsp.DidCopyModelParameters.from_json_rpc_parameters(
+                                parameters)
+                        )
+                        await lsp.write_json_rpc(
+                            self.output_channel,
+                            json_rpc.SuccessResponse(
+                                id=request.id, result=copied_model),
+                        )
+                    elif request.id is not None:
+                        raise lsp.RequestCancelledError(
+                            "Request not supported yet")
+                except Exception as e:
+                    self.log_and_show_message_to_client(
+                        str(e), lsp.MessageType.ERROR
                     )
-                    return await self.wait_for_exit()
-                elif request.method == "textDocument/didOpen":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for didOpen method"
-                        )
-                    await self.process_open_request(
-                        lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        )
-                    )
-                elif request.method == "textDocument/didClose":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for didClose method"
-                        )
-                    await self.process_close_request(
-                        lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        )
-                    )
-                elif request.method == "textDocument/didSave":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for didSave method"
-                        )
-                    await self.process_did_save_request(
-                        lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        )
-                    )
-                elif request.method == "pysa/copyModel":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for copyModel method"
-                        )
-                    # processing parameter data sent from VSCode
-                    request.parameters.values['path'] = request.parameters.values['path']['path']
-                    request.parameters.values['position']['line'] = request.parameters.values['position']['line'] + 1
-                    copied_model = await self.process_copy_model_request(
-                        lsp.DidCopyModelParameters.from_json_rpc_parameters(
-                            parameters)
-                    )
-                    await lsp.write_json_rpc(
-                        self.output_channel,
-                        json_rpc.SuccessResponse(
-                            id=request.id, result=copied_model),
-                    )
-                elif request.id is not None:
-                    raise lsp.RequestCancelledError("Request not supported yet")
+                    raise e
 
 
 async def run_persistent(
@@ -361,7 +367,8 @@ def run(
         )
 
     server_identifier = start.get_server_identifier(configuration)
-    pyre_arguments = start.create_server_arguments(configuration, start_arguments)
+    pyre_arguments = start.create_server_arguments(
+        configuration, start_arguments)
     if pyre_arguments.watchman_root is None:
         raise commands.ClientException(
             (

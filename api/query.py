@@ -40,6 +40,19 @@ class Position(NamedTuple):
     line: int
     column: int
 
+    def __eq__(self, other):
+        return (self.line == other.line and other.column == self.column
+                )
+
+    def __gt__(self, other):
+        return (self.line > other.line or (
+            other.line == self.line and other.column <= self.column
+        ))
+
+    def __lt__(self, other):
+        return (self.line < other.line or (
+            other.line == self.line and other.column >= self.column))
+
 
 class Location(NamedTuple):
     path: str
@@ -59,7 +72,7 @@ class Type(NamedTuple):
         if not functions:
             raise NotImplementedError(
                 "Selected position is not of type Callable")
-        model = "def {}({}):".format(functions[0], ", ".join(params))
+        model = "def {}({}): ...".format(functions[0], ", ".join(params))
         return model
 
 
@@ -151,11 +164,12 @@ def defines(
         return _defines(pyre_connection, modules)
     if batch_size <= 0:
         raise ValueError(
-            "batch_size must a positive integer, provided: `{}`".format(batch_size)
+            "batch_size must a positive integer, provided: `{}`".format(
+                batch_size)
         )
     found_defines: List[Define] = []
     module_chunks = [
-        modules[index : index + batch_size]
+        modules[index: index + batch_size]
         for index in range(0, len(modules), batch_size)
     ]
     for modules in module_chunks:
@@ -187,7 +201,8 @@ def _get_batch(
         yield iterable
     elif batch_size <= 0:
         raise ValueError(
-            "batch_size must a positive integer, provided: `{}`".format(batch_size)
+            "batch_size must a positive integer, provided: `{}`".format(
+                batch_size)
         )
     else:
         iterator = iter(iterable)
