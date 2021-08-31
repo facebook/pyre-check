@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import annotations
-
 import json
 import logging
 import subprocess
@@ -208,8 +206,8 @@ class Configuration:
         description: str,
         should_clean: bool,
         command_input: Optional[str],
-        stderr_flag: subprocess._FILE = subprocess.PIPE,
-    ) -> Optional[subprocess.CompletedProcess[str]]:
+        stderr_flag: "subprocess._FILE" = subprocess.PIPE,
+    ) -> Optional["subprocess.CompletedProcess[str]"]:
         if should_clean:
             try:
                 # If building targets, run clean or space may run out on device!
