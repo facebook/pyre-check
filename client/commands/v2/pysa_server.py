@@ -13,7 +13,7 @@ import asyncio
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Sequence, Dict
+from typing import List, Sequence, Dict, Set
 
 from ....api import query, connection as api_connection
 from ....api.connection import PyreQueryError
@@ -68,7 +68,7 @@ class PysaServer:
         self.pyre_connection = api_connection.PyreConnection(
             Path(self.pyre_arguments.global_root)
         )
-        self.file_tracker = set()
+        self.file_tracker: Set[Path] = set()
 
     def invalid_model_to_diagnostic(
         self, invalid_model: query.InvalidModel
@@ -104,13 +104,17 @@ class PysaServer:
 
     async def update_errors(self) -> None:
         # Publishing empty diagnostics to clear errors in VSCode and reset self.file_tracker
-        for document_path in self.file_tracker():
-            await _publish_diagnostics(self.output_channel, Path(document_path), [])
+        for document_path in self.file_tracker:
+            await _publish_diagnostics(self.output_channel, document_path, [])
         self.file_tracker = set()
 
         try:
             model_errors = query.get_invalid_taint_models(self.pyre_connection)
             diagnostics = self.invalid_models_to_diagnostics(model_errors)
+            # Keep track of files we publish diagnostics for
+            for path in diagnostics.keys():
+                self.file_tracker.add(path)
+
             await self.show_model_errors_to_client(diagnostics)
         except PyreQueryError as e:
             await self.log_and_show_message_to_client(
@@ -165,7 +169,6 @@ class PysaServer:
         self, parameters: lsp.DidOpenTextDocumentParameters
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
-        self.file_tracker.add(str(document_path))
 
         if document_path is None:
             raise json_rpc.InvalidRequestError(
