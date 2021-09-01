@@ -14,7 +14,7 @@ import libcst as cst
 from libcst._exceptions import ParserSyntaxError
 from libcst.metadata import MetadataWrapper
 
-from .. import command_arguments, log, statistics
+from .. import command_arguments, log, statistics_logger
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..statistics_collectors import (
@@ -160,8 +160,8 @@ class Statistics(Command):
     def _log_to_scuba(self, run_id: str, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
             for path, counts in data["annotations"].items():
-                statistics.log_with_configuration(
-                    statistics.LoggerCategory.ANNOTATION_COUNTS,
+                statistics_logger.log_with_configuration(
+                    statistics_logger.LoggerCategory.ANNOTATION_COUNTS,
                     configuration=self._configuration,
                     integers=counts,
                     normals={"run_id": run_id, "path": path},
@@ -171,8 +171,8 @@ class Statistics(Command):
             for path, counts in data["ignores"].items():
                 self._log_fixmes(run_id, "ignore", counts, path)
             for path, counts in data["strict"].items():
-                statistics.log_with_configuration(
-                    statistics.LoggerCategory.STRICT_ADOPTION,
+                statistics_logger.log_with_configuration(
+                    statistics_logger.LoggerCategory.STRICT_ADOPTION,
                     configuration=self._configuration,
                     integers=counts,
                     normals={"run_id": run_id, "path": path},
@@ -182,8 +182,8 @@ class Statistics(Command):
         self, run_id: str, fixme_type: str, data: Dict[str, int], path: str
     ) -> None:
         for error_code, count in data.items():
-            statistics.log_with_configuration(
-                statistics.LoggerCategory.FIXME_COUNTS,
+            statistics_logger.log_with_configuration(
+                statistics_logger.LoggerCategory.FIXME_COUNTS,
                 configuration=self._configuration,
                 integers={"count": count},
                 normals={

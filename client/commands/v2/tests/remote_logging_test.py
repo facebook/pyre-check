@@ -8,17 +8,17 @@ from typing import Optional, Dict, Callable, TypeVar
 
 import testslide
 
-from .... import statistics, commands, configuration as configuration_module
+from .... import statistics_logger, commands, configuration as configuration_module
 from ..remote_logging import (
     log_usage,
     log_usage_with_additional_info,
     ExitCodeWithAdditionalLogging,
 )
 
-# Type signature of `statistics.log`
+# Type signature of `statistics_logger.log`
 LoggingApiTypeSignature = Callable[
     [
-        statistics.LoggerCategory,
+        statistics_logger.LoggerCategory,
         str,
         Optional[Dict[str, int]],
         Optional[Dict[str, Optional[str]]],
@@ -48,11 +48,11 @@ class RemoteLoggingTest(testslide.TestCase):
         expected_normals_subset: Optional[Dict[str, Optional[str]]] = None,
     ) -> LoggingApiTypeSignature:
         """
-        Call this method to create a mock `statistics.log` function intended to be
-        used like this:
+        Call this method to create a mock `statistics_logger.log` function
+         intended to be used like this:
 
         ```
-        self.mock_callable(statistics, 'log')\
+        self.mock_callable(statistics_logger, 'log')\
         .with_implementation(
             self._create_logging_api(
                 expected_integers_subset=...,
@@ -66,7 +66,7 @@ class RemoteLoggingTest(testslide.TestCase):
         """
 
         def mock_logging_api(
-            category: statistics.LoggerCategory,
+            category: statistics_logger.LoggerCategory,
             logger: str,
             integers: Optional[Dict[str, int]],
             normals: Optional[Dict[str, Optional[str]]],
@@ -88,7 +88,7 @@ class RemoteLoggingTest(testslide.TestCase):
 
     def test_log_success(self) -> None:
         command_name: str = "test"
-        self.mock_callable(statistics, "log").with_implementation(
+        self.mock_callable(statistics_logger, "log").with_implementation(
             self._create_logging_api(
                 expected_integers_subset={"exit_code": commands.ExitCode.SUCCESS},
                 expected_normals_subset={"command": command_name},
@@ -111,7 +111,7 @@ class RemoteLoggingTest(testslide.TestCase):
 
     def test_log_success_with_additional_info(self) -> None:
         command_name: str = "test"
-        self.mock_callable(statistics, "log").with_implementation(
+        self.mock_callable(statistics_logger, "log").with_implementation(
             self._create_logging_api(
                 expected_integers_subset={"exit_code": commands.ExitCode.SUCCESS},
                 expected_normals_subset={"command": command_name, "foo": "bar"},
@@ -137,7 +137,7 @@ class RemoteLoggingTest(testslide.TestCase):
     def test_log_failure(self) -> None:
         command_name: str = "test"
         exception: TestException = TestException()
-        self.mock_callable(statistics, "log").with_implementation(
+        self.mock_callable(statistics_logger, "log").with_implementation(
             self._create_logging_api(
                 expected_integers_subset={"exit_code": commands.ExitCode.FAILURE},
                 expected_normals_subset={"client_exception": str(exception)},

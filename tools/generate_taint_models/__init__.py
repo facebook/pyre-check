@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Set, Mapping, AbstractSet
 from typing_extensions import Final
 
 from ...api.connection import PyreConnection
-from ...client import statistics
+from ...client import statistics_logger
 from .annotated_function_generator import (  # noqa
     AnnotatedFunctionGenerator,
     FunctionVisitor,
@@ -161,8 +161,8 @@ def run_from_parsed_arguments(
 
         if logger_executable is not None:
             elapsed_time_milliseconds = int(elapsed_time_seconds * 1000)
-            statistics.log(
-                statistics.LoggerCategory.PERFORMANCE,
+            statistics_logger.log(
+                statistics_logger.LoggerCategory.PERFORMANCE,
                 integers={"time": elapsed_time_milliseconds},
                 normals={
                     "name": "model generation",

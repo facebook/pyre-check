@@ -23,7 +23,7 @@ from ... import (
     command_arguments,
     commands,
     configuration as configuration_module,
-    statistics,
+    statistics_logger,
 )
 from . import (
     backend_arguments,
@@ -60,8 +60,8 @@ def _log_lsp_event(
         logger = remote_logging.logger
         if logger is not None:
             log_identifier = remote_logging.identifier
-            statistics.log(
-                category=statistics.LoggerCategory.LSP_EVENTS,
+            statistics_logger.log(
+                category=statistics_logger.LoggerCategory.LSP_EVENTS,
                 logger=logger,
                 integers=integers,
                 normals={

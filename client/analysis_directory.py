@@ -17,7 +17,7 @@ from pathlib import Path
 from time import time
 from typing import ContextManager, Dict, List, NamedTuple, Optional, Set, Tuple
 
-from . import buck, json_rpc, log, statistics
+from . import buck, json_rpc, log, statistics_logger
 from .buck import BuckBuilder, find_buck_root
 from .configuration import Configuration, SearchPathElement, SimpleSearchPathElement
 from .exceptions import EnvironmentException
@@ -282,9 +282,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         if not configuration or not configuration.logger:
             return
 
-        statistics.log_with_configuration(
+        statistics_logger.log_with_configuration(
             configuration=configuration,
-            category=statistics.LoggerCategory.BUCK_EVENTS,
+            category=statistics_logger.LoggerCategory.BUCK_EVENTS,
             integers={
                 "runtime": int(runtime * 1000),
                 "number_of_user_changed_files": number_of_user_changed_files,

@@ -24,7 +24,7 @@ from . import (
     filesystem,
     log,
     recently_used_configurations,
-    statistics as statistics_module,
+    statistics_logger,
 )
 from .commands import Command, ExitCode, v2
 from .commands.analyze import MissingFlowsKind
@@ -44,8 +44,8 @@ def _log_statistics(
 ) -> None:
     configuration = command.configuration
     if configuration is not None:
-        statistics_module.log_with_configuration(
-            category=statistics_module.LoggerCategory.USAGE,
+        statistics_logger.log_with_configuration(
+            category=statistics_logger.LoggerCategory.USAGE,
             configuration=configuration,
             integers={
                 "exit_code": exit_code,

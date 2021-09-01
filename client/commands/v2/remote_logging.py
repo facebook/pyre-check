@@ -13,7 +13,12 @@ from pyre_extensions import ParameterSpecification
 from pyre_extensions.type_variable_operators import Concatenate
 from typing_extensions import Protocol
 
-from ... import commands, configuration as configuration_module, statistics, version
+from ... import (
+    commands,
+    configuration as configuration_module,
+    statistics_logger,
+    version,
+)
 
 TParams = ParameterSpecification("TParams")
 
@@ -78,8 +83,8 @@ def log_usage_with_additional_info(command_name: str) -> _DecoratorWithDynamicLo
             def log_success(
                 exit_code: int, additional_logging: Dict[str, Optional[str]]
             ) -> None:
-                statistics.log_with_configuration(
-                    category=statistics.LoggerCategory.USAGE,
+                statistics_logger.log_with_configuration(
+                    category=statistics_logger.LoggerCategory.USAGE,
                     configuration=configuration,
                     integers={
                         "exit_code": exit_code,
@@ -91,8 +96,8 @@ def log_usage_with_additional_info(command_name: str) -> _DecoratorWithDynamicLo
             def log_failure(
                 error: Exception, exit_code: int = commands.ExitCode.FAILURE
             ) -> None:
-                statistics.log_with_configuration(
-                    category=statistics.LoggerCategory.USAGE,
+                statistics_logger.log_with_configuration(
+                    category=statistics_logger.LoggerCategory.USAGE,
                     configuration=configuration,
                     integers={
                         "exit_code": exit_code,

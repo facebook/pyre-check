@@ -18,7 +18,7 @@ from ... import (
     command_arguments,
     configuration as configuration_module,
     statistics_collectors as collectors,
-    statistics,
+    statistics_logger,
     log,
 )
 from . import remote_logging
@@ -196,8 +196,8 @@ def log_to_remote(
 ) -> None:
     def _log_fixmes(fixme_type: str, data: Dict[str, int], path: str) -> None:
         for error_code, count in data.items():
-            statistics.log_with_configuration(
-                statistics.LoggerCategory.FIXME_COUNTS,
+            statistics_logger.log_with_configuration(
+                statistics_logger.LoggerCategory.FIXME_COUNTS,
                 configuration,
                 integers={"count": count},
                 normals={
@@ -209,8 +209,8 @@ def log_to_remote(
             )
 
     for path, counts in data["annotations"].items():
-        statistics.log_with_configuration(
-            statistics.LoggerCategory.ANNOTATION_COUNTS,
+        statistics_logger.log_with_configuration(
+            statistics_logger.LoggerCategory.ANNOTATION_COUNTS,
             configuration,
             integers=counts,
             normals={"run_id": run_id, "path": path},
@@ -220,8 +220,8 @@ def log_to_remote(
     for path, counts in data["ignores"].items():
         _log_fixmes("ignore", counts, path)
     for path, counts in data["strict"].items():
-        statistics.log_with_configuration(
-            statistics.LoggerCategory.STRICT_ADOPTION,
+        statistics_logger.log_with_configuration(
+            statistics_logger.LoggerCategory.STRICT_ADOPTION,
             configuration,
             integers=counts,
             normals={"run_id": run_id, "path": path},
