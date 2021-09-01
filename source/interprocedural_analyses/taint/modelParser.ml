@@ -117,6 +117,7 @@ module T = struct
 
     type model_constraint =
       | NameConstraint of name_constraint
+      | AnnotationConstraint of annotation_constraint
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of ParameterConstraint.t
       | AnyOf of model_constraint list

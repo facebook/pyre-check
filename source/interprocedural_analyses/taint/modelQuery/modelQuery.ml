@@ -245,6 +245,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
       Target.class_name callable
       >>| is_ancestor ~resolution ~is_transitive class_name
       |> Option.value ~default:false
+  | _ -> failwith "impossible case"
 
 
 let apply_callable_productions ~resolution ~productions ~callable =
@@ -449,6 +450,13 @@ let rec attribute_matches_constraint query_constraint ~resolution ~attribute =
   match query_constraint with
   | ModelQuery.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint (Reference.show attribute)
+  | ModelQuery.AnnotationConstraint annotation_constraint ->
+      let resolution =
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        Analysis.TypeCheck.resolution resolution (module Analysis.TypeCheck.DummyContext)
+      in
+      let annotation = Resolution.resolve_reference resolution attribute in
+      matches_annotation_constraint ~annotation_constraint ~annotation
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(attribute_matches_constraint ~resolution ~attribute)
   | ModelQuery.Not query_constraint ->

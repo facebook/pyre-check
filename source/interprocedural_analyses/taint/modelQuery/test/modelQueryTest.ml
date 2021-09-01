@@ -1538,6 +1538,139 @@ let test_apply_rule context =
       }
     ~attribute_name:"test.E.z"
     ~expected:[];
+  assert_applied_rules_for_attribute
+    ~source:{|
+      class C:
+        x: int
+        y: str
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:{|
+      class C:
+        x: int
+        y: str
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.y"
+    ~expected:[];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class Foo1:
+        ...
+      class Foo2:
+        ...
+      class Bar:
+        ...
+      class C:
+        x: Foo1
+        y: Foo2
+        z: Bar
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class Foo1:
+        ...
+      class Foo2:
+        ...
+      class Bar:
+        ...
+      class C:
+        x: Foo1
+        y: Foo2
+        z: Bar
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.y"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      class Foo1:
+        ...
+      class Foo2:
+        ...
+      class Bar:
+        ...
+      class C:
+        x: Foo1
+        y: Foo2
+        z: Bar
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.z"
+    ~expected:[];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      from typing import Annotated
+      class C:
+        x: int
+        y: Annotated[str, "foo"]
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnnotationConstraint IsAnnotatedTypeConstraint];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.x"
+    ~expected:[];
+  assert_applied_rules_for_attribute
+    ~source:
+      {|
+      from typing import Annotated
+      class C:
+        x: int
+        y: Annotated[str, "foo"]
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnnotationConstraint IsAnnotatedTypeConstraint];
+        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
+        rule_kind = AttributeModel;
+      }
+    ~attribute_name:"test.C.y"
+    ~expected:[source "Test"];
 
   (* Test 'Not' clause *)
   assert_applied_rules
