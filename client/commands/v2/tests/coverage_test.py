@@ -10,8 +10,9 @@ from typing import List
 import testslide
 
 from .... import configuration
+from ....coverage_collector import FileCoverage
 from ....tests import setup
-from ..coverage import find_root, collect_coverage_for_paths, FileCoverage
+from ..coverage import find_root, collect_coverage_for_paths
 
 
 class CoverageTest(testslide.TestCase):

@@ -10,8 +10,6 @@ import os
 from pathlib import Path
 from typing import Optional, Iterable, List
 
-import libcst as cst
-
 from ... import (
     commands,
     configuration as configuration_module,
@@ -33,34 +31,13 @@ def find_root(
     return working_directory
 
 
-@dataclasses.dataclass(frozen=True)
-class FileCoverage:
-    filepath: str
-    covered_lines: List[int]
-    uncovered_lines: List[int]
-
-
-def collect_coverage_for_module(relative_path: str, module: cst.Module) -> FileCoverage:
-    module_with_metadata = cst.MetadataWrapper(module)
-    coverage_collector = collector.CoverageCollector()
-    try:
-        module_with_metadata.visit(coverage_collector)
-    except RecursionError:
-        LOG.warning(f"LibCST encountered recursion error in `{relative_path}`")
-    return FileCoverage(
-        filepath=relative_path,
-        covered_lines=sorted(coverage_collector.covered_lines),
-        uncovered_lines=sorted(coverage_collector.uncovered_lines),
-    )
-
-
 def collect_coverage_for_path(
     path: Path, working_directory: str
-) -> Optional[FileCoverage]:
+) -> Optional[collector.FileCoverage]:
     module = statistics.parse_path_to_module(path)
     relative_path = os.path.relpath(str(path), working_directory)
     return (
-        collect_coverage_for_module(relative_path, module)
+        collector.collect_coverage_for_module(relative_path, module)
         if module is not None
         else None
     )
@@ -68,8 +45,8 @@ def collect_coverage_for_path(
 
 def collect_coverage_for_paths(
     paths: Iterable[Path], working_directory: str
-) -> List[FileCoverage]:
-    result: List[FileCoverage] = []
+) -> List[collector.FileCoverage]:
+    result: List[collector.FileCoverage] = []
     for path in paths:
         coverage = collect_coverage_for_path(path, working_directory)
         if coverage is not None:

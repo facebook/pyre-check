@@ -18,7 +18,7 @@ from libcst.metadata import MetadataWrapper
 from .. import command_arguments
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..coverage_collector import CoverageCollector
+from ..coverage_collector import collect_coverage_for_module
 from .command import Command
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -80,19 +80,7 @@ class FileCoverage:
 def _collect_coverage(modules: Mapping[str, cst.Module]) -> List[FileCoverage]:
     coverage = []
     for path, module in modules.items():
-        module_with_metadata = MetadataWrapper(module)
-        coverage_collector = CoverageCollector()
-        try:
-            module_with_metadata.visit(coverage_collector)
-        except RecursionError:
-            LOG.warning(f"LibCST encountered recursion error in `{path}`")
-        coverage.append(
-            FileCoverage(
-                filepath=str(path),
-                covered_lines=sorted(coverage_collector.covered_lines),
-                uncovered_lines=sorted(coverage_collector.uncovered_lines),
-            )
-        )
+        coverage.append(collect_coverage_for_module(path, module))
     return coverage
 
 

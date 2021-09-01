@@ -5,18 +5,23 @@
 
 
 import dataclasses
+import itertools
+import logging
+from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable, Optional, Dict, List, Sequence
+from typing import Set, Iterable, Dict, List, Sequence
 
 import libcst as cst
 from libcst.metadata import CodeRange, PositionProvider
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
 class AnnotationInfo:
     node: cst.CSTNode
     is_annotated: bool
-    code_range: Optional[CodeRange] = None
+    code_range: CodeRange
 
 
 @dataclasses.dataclass(frozen=True)
@@ -41,6 +46,43 @@ class FunctionAnnotationInfo:
     @property
     def is_fully_annotated(self) -> bool:
         return self.annotation_kind == FunctionAnnotationInfo.Kind.FULLY
+
+
+@dataclass(frozen=True)
+class CoveredAndUncoveredRanges:
+    covered_ranges: List[CodeRange]
+    uncovered_ranges: List[CodeRange]
+
+
+@dataclass(frozen=True)
+class CoveredAndUncoveredLines:
+    covered_lines: Set[int]
+    uncovered_lines: Set[int]
+
+
+@dataclass(frozen=True)
+class FileCoverage:
+    filepath: str
+    covered_lines: List[int]
+    uncovered_lines: List[int]
+
+
+def collect_coverage_for_module(relative_path: str, module: cst.Module) -> FileCoverage:
+    module_with_metadata = cst.MetadataWrapper(module)
+    coverage_collector = CoverageCollector()
+    try:
+        module_with_metadata.visit(coverage_collector)
+    except RecursionError:
+        LOG.warning(f"LibCST encountered recursion error in `{relative_path}`")
+    covered_and_uncovered_ranges = coverage_collector.covered_and_uncovered_ranges()
+    covered_and_uncovered_lines = _covered_and_uncovered_ranges_to_lines(
+        covered_and_uncovered_ranges
+    )
+    return FileCoverage(
+        filepath=relative_path,
+        covered_lines=sorted(covered_and_uncovered_lines.covered_lines),
+        uncovered_lines=sorted(covered_and_uncovered_lines.uncovered_lines),
+    )
 
 
 class CoverageCollector(cst.CSTVisitor):
@@ -99,6 +141,9 @@ class CoverageCollector(cst.CSTVisitor):
             "line_count": self.line_count,
         }
 
+    def _code_range(self, node: cst.CSTNode) -> CodeRange:
+        return self.get_metadata(PositionProvider, node)
+
     def in_class_definition(self) -> bool:
         return self.class_definition_depth > 0
 
@@ -121,7 +166,9 @@ class CoverageCollector(cst.CSTVisitor):
             is_annotated = parameter.annotation is not None or self._is_self_or_cls(
                 index
             )
-            self.parameters.append(AnnotationInfo(parameter, is_annotated))
+            self.parameters.append(
+                AnnotationInfo(parameter, is_annotated, self._code_range(parameter))
+            )
             if is_annotated:
                 annotated_parameter_count += 1
         return annotated_parameter_count
@@ -135,8 +182,13 @@ class CoverageCollector(cst.CSTVisitor):
                     break
         self.function_definition_depth += 1
 
-        return_is_annotated = node.returns is not None
-        self.returns.append(AnnotationInfo(node, return_is_annotated))
+        if node.returns is None:
+            code_range = self._code_range(node.whitespace_before_colon)
+            return_is_annotated = False
+        else:
+            code_range = self._code_range(node.returns)
+            return_is_annotated = True
+        self.returns.append(AnnotationInfo(node, return_is_annotated, code_range))
         annotated_parameters = self._check_parameter_annotations(node.params.params)
 
         if return_is_annotated and (annotated_parameters == len(node.params.params)):
@@ -145,7 +197,7 @@ class CoverageCollector(cst.CSTVisitor):
             annotation_kind = FunctionAnnotationInfo.Kind.PARTIALLY
         else:
             annotation_kind = FunctionAnnotationInfo.Kind.NO
-        code_range = self.get_metadata(PositionProvider, node)
+        code_range = self._code_range(node.body)
         self.functions.append(FunctionAnnotationInfo(node, annotation_kind, code_range))
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
@@ -171,20 +223,22 @@ class CoverageCollector(cst.CSTVisitor):
             # annotation. Erring on the side of reporting these as annotated to
             # avoid showing false positives to users.
             implicitly_annotated_value = True
+        code_range = self._code_range(node)
         if self.in_class_definition():
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
-            self.attributes.append(AnnotationInfo(node, is_annotated))
+            self.attributes.append(AnnotationInfo(node, is_annotated, code_range))
         else:
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
-            self.globals.append(AnnotationInfo(node, is_annotated))
+            self.globals.append(AnnotationInfo(node, is_annotated, code_range))
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
         if self.in_function_definition():
             return
+        code_range = self._code_range(node)
         if self.in_class_definition():
-            self.attributes.append(AnnotationInfo(node, True))
+            self.attributes.append(AnnotationInfo(node, True, code_range))
         else:
-            self.globals.append(AnnotationInfo(node, True))
+            self.globals.append(AnnotationInfo(node, True, code_range))
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.class_definition_depth += 1
@@ -196,18 +250,32 @@ class CoverageCollector(cst.CSTVisitor):
         file_range = self.get_metadata(PositionProvider, original_node)
         self.line_count = file_range.end.line
 
-    def _code_ranges_to_lines(self, code_ranges: Iterable[CodeRange]) -> List[int]:
-        lines = set()
-        for code_range in code_ranges:
-            lines |= set(range(code_range.start.line, code_range.end.line + 1))
-        return list(lines)
+    def covered_and_uncovered_ranges(self) -> CoveredAndUncoveredRanges:
+        covered_ranges = []
+        uncovered_ranges = []
+        for info in itertools.chain(
+            self.globals, self.attributes, self.parameters, self.returns
+        ):
+            if info.is_annotated:
+                covered_ranges.append(info.code_range)
+            else:
+                uncovered_ranges.append(info.code_range)
+        return CoveredAndUncoveredRanges(covered_ranges, uncovered_ranges)
 
-    @property
-    def covered_lines(self) -> List[int]:
-        covered_ranges = [info.code_range for info in self.covered_functions()]
-        return self._code_ranges_to_lines(filter(None, covered_ranges))
 
-    @property
-    def uncovered_lines(self) -> List[int]:
-        uncovered_ranges = [info.code_range for info in self.uncovered_functions()]
-        return self._code_ranges_to_lines(filter(None, uncovered_ranges))
+def _code_ranges_to_lines(code_ranges: Iterable[CodeRange]) -> Set[int]:
+    lines: Set[int] = set()
+    for code_range in code_ranges:
+        lines |= set(range(code_range.start.line - 1, code_range.end.line))
+    return lines
+
+
+def _covered_and_uncovered_ranges_to_lines(
+    covered_and_uncovered_ranges: CoveredAndUncoveredRanges,
+) -> CoveredAndUncoveredLines:
+    covered_lines = _code_ranges_to_lines(covered_and_uncovered_ranges.covered_ranges)
+    uncovered_lines = _code_ranges_to_lines(
+        covered_and_uncovered_ranges.uncovered_ranges
+    )
+    # We show partially covered lines as covered
+    return CoveredAndUncoveredLines(covered_lines, uncovered_lines - covered_lines)
