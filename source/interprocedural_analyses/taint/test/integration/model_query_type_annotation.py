@@ -91,3 +91,24 @@ class Test6_C:
 
     def test6_no_taint_1(self, x) -> str:
         pass
+
+
+class Test7_C:
+    taint_1: int = 0
+    taint_2: int = 0
+    no_taint_1: List[int] = []
+    no_taint_2: str = ""
+
+
+class Test8_C:
+    taint_1: str = ""
+    taint_2: List[str] = []
+    no_taint_1: List[int] = []
+    no_taint_2: int = 0
+
+
+class Test9_C:
+    taint_1: Annotated[str, "foo"] = ""
+    taint_2: Annotated[int, "bar"] = 0
+    no_taint_1: List[int] = []
+    no_taint_2: int = 0

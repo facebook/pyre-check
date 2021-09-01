@@ -1053,6 +1053,24 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         >>= fun name_constraint -> Ok (ModelQuery.NameConstraint name_constraint)
     | Expression.Call
         {
+          Call.callee =
+            {
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                    { base = { Node.value = Name (Name.Identifier "type_annotation"); _ }; _ });
+              _;
+            } as callee;
+          _;
+        } -> (
+        match is_callable_clause_kind find_clause with
+        | true -> Error (invalid_model_query_where_clause ~path ~location callee)
+        | _ ->
+            parse_annotation_constraint ~path ~location constraint_expression
+            >>= fun annotation_constraint ->
+            Ok (ModelQuery.AnnotationConstraint annotation_constraint))
+    | Expression.Call
+        {
           Call.callee = { Node.value = Expression.Name (Name.Identifier "Decorator"); _ } as callee;
           arguments;
         } -> (

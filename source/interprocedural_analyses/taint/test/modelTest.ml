@@ -1457,6 +1457,84 @@ let test_invalid_models context =
       "`parent.matches` is not a valid constraint for model queries with find clause of kind \
        `functions`."
     ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = type_annotation.equals("int"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`type_annotation.equals` is not a valid constraint for model queries with find clause of \
+       kind `functions`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = type_annotation.equals("int"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`type_annotation.equals` is not a valid constraint for model queries with find clause of \
+       kind `methods`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = type_annotation.matches("int"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`type_annotation.matches` is not a valid constraint for model queries with find clause of \
+       kind `functions`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = type_annotation.matches("int"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`type_annotation.matches` is not a valid constraint for model queries with find clause of \
+       kind `methods`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "functions",
+        where = type_annotation.is_annotated_type(),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`type_annotation.is_annotated_type` is not a valid constraint for model queries with find \
+       clause of kind `functions`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "methods",
+        where = type_annotation.is_annotated_type(),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`type_annotation.is_annotated_type` is not a valid constraint for model queries with find \
+       clause of kind `methods`."
+    ();
 
   assert_invalid_model
     ~model_source:
