@@ -52,6 +52,7 @@ module T = struct
       }
     | InvalidArgumentsClause of Expression.t
     | InvalidNameClause of Expression.t
+    | InvalidTypeAnnotationClause of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
         reason: string;
@@ -144,6 +145,8 @@ let description error =
       Format.asprintf "`%s` is not a valid arguments clause." (Expression.show expression)
   | InvalidNameClause expression ->
       Format.asprintf "`%s` is not a valid name clause." (Expression.show expression)
+  | InvalidTypeAnnotationClause expression ->
+      Format.asprintf "`%s` is not a valid type annotation clause." (Expression.show expression)
   | InvalidParameterExclude expression ->
       Format.asprintf
         "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
@@ -248,6 +251,7 @@ let code { kind; _ } =
   | InvalidNameClause _ -> 24
   | ParseError -> 25
   | InvalidArgumentsClause _ -> 26
+  | InvalidTypeAnnotationClause _ -> 27
 
 
 let display { kind = error; path; location } =

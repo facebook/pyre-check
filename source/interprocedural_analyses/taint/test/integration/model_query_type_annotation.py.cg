@@ -1,0 +1,17 @@
+@generated
+Call dependencies
+model_query_type_annotation.Test2_C::test2_f1 (method) -> []
+model_query_type_annotation.Test2_C::test2_f2 (method) -> []
+model_query_type_annotation.Test2_C::test2_f3 (method) -> []
+model_query_type_annotation.Test6_C::test6_no_taint_1 (method) -> []
+model_query_type_annotation.Test6_C::test6_taint_1 (method) -> []
+model_query_type_annotation.Test6_C::test6_taint_2 (method) -> []
+model_query_type_annotation.test1_f1 (fun) -> []
+model_query_type_annotation.test1_f2 (fun) -> []
+model_query_type_annotation.test3_f1 (fun) -> []
+model_query_type_annotation.test3_f2 (fun) -> []
+model_query_type_annotation.test4_no_taint_1 (fun) -> []
+model_query_type_annotation.test4_taint_1 (fun) -> []
+model_query_type_annotation.test5_no_taint_1 (fun) -> []
+model_query_type_annotation.test5_taint_1 (fun) -> []
+model_query_type_annotation.test5_taint_2 (fun) -> []

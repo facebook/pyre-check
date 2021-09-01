@@ -1372,6 +1372,70 @@ let test_invalid_models context =
       {|
       ModelQuery(
         find = "attributes",
+        where = AnyOf(
+          parent.matches("foo"),
+          any_parameter.annotation.equals("int")
+        ),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`any_parameter.annotation.equals` is not a valid constraint for model queries with find \
+       clause of kind `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = AnyOf(
+          parent.matches("foo"),
+          any_parameter.annotation.matches("int")
+        ),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`any_parameter.annotation.matches` is not a valid constraint for model queries with find \
+       clause of kind `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = AnyOf(
+          parent.matches("foo"),
+          return_annotation.equals("int")
+        ),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`return_annotation.equals` is not a valid constraint for model queries with find clause of \
+       kind `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
+        where = AnyOf(
+          parent.matches("foo"),
+          return_annotation.matches("str")
+        ),
+        model = AttributeModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "`return_annotation.matches` is not a valid constraint for model queries with find clause of \
+       kind `attributes`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        find = "attributes",
         where = Decorator(name.matches("app.route")),
         model = AttributeModel(TaintSource[Test])
       )

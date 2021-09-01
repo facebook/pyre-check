@@ -50,6 +50,7 @@ module T : sig
       }
     | InvalidArgumentsClause of Expression.t
     | InvalidNameClause of Expression.t
+    | InvalidTypeAnnotationClause of Expression.t
     | InvalidTaintAnnotation of {
         taint_annotation: Expression.t;
         reason: string;

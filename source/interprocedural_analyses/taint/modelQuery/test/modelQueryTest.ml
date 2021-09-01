@@ -919,6 +919,178 @@ let test_apply_rule context =
               leaf_name_provided = false;
             } );
       ];
+  (* Type annotation constraint for callables *)
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [AnnotationConstraint IsAnnotatedTypeConstraint];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "b"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            AnyParameterConstraint
+              (AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str"))));
+          ];
+        productions =
+          [
+            ParameterTaint
+              {
+                where =
+                  [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 2; name = "c"; positional_only = false }),
+          source "Test" );
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 1; name = "b"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+       def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [AnyParameterConstraint (AnnotationConstraint (AnnotationNameConstraint (Equals "int")))];
+        productions =
+          [
+            ParameterTaint
+              {
+                where = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
+                taint = [TaintAnnotation (source "Test")];
+              };
+          ];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:
+      [
+        ( Taint.Model.ParameterAnnotation
+            (AccessPath.Root.PositionalParameter
+               { position = 3; name = "d"; positional_only = false }),
+          source "Test" );
+      ];
+  assert_applied_rules
+    ~source:{|
+       def foo() -> int: ...
+       def bar() -> str: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+       def foo() -> int: ...
+       def bar() -> str: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.bar")
+    ~expected:[];
+  assert_applied_rules
+    ~source:{|
+       def foo() -> str: ...
+       def bar() -> List[str]: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+       def foo() -> str: ...
+       def bar() -> typing.List[str]: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.bar")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+       def foo() -> typing.Annotated[str, "foo"]: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ReturnConstraint IsAnnotatedTypeConstraint];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:{|
+       def foo() -> typing.Annotated[str, "foo"]: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "foo")))];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
+
   (* Decorator names. *)
   assert_applied_rules
     ~source:

@@ -1,0 +1,67 @@
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test1_"),
+    any_parameter.annotation.equals("str")
+  ],
+  model = [
+    Parameters(TaintSource[Test])
+  ]
+)
+
+ModelQuery(
+  find = "methods",
+  where = [
+    name.matches("test2_"),
+    parent.equals("model_query_type_annotation.Test2_C"),
+    any_parameter.annotation.matches("Test2_T")
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[Not(name.equals("self")), type_annotation.matches("Test2_T")])
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test3_"),
+    any_parameter.annotation.is_annotated_type()
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[type_annotation.is_annotated_type()])
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test4_"),
+    return_annotation.equals("str")
+  ],
+  model = [
+    Returns(TaintSource[Test])
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+    name.matches("test5_"),
+    return_annotation.matches("Test5_T")
+  ],
+  model = [
+    Returns(TaintSource[Test])
+  ]
+)
+
+ModelQuery(
+  find = "methods",
+  where = [
+    name.matches("test6_"),
+    parent.equals("model_query_type_annotation.Test6_C"),
+    return_annotation.is_annotated_type()
+  ],
+  model = [
+    Returns(TaintSource[Test])
+  ]
+)
