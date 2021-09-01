@@ -938,10 +938,13 @@ def _write_stubs(
         module.write_stubs(type_directory=type_directory)
 
 
-def should_annotate_in_place(path: Path, paths_to_modify: Set[Path]) -> bool:
+def should_annotate_in_place(
+    path: Path,
+    paths_to_modify: Optional[Set[Path]],
+) -> bool:
     return (
         True
-        if len(paths_to_modify) == 0
+        if paths_to_modify is None
         else any(path in paths_to_modify for path in (path, *path.parents))
     )
 
@@ -949,7 +952,7 @@ def should_annotate_in_place(path: Path, paths_to_modify: Set[Path]) -> bool:
 def _annotate_in_place(
     working_directory: Path,
     type_directory: Path,
-    paths_to_modify: Set[Path],
+    paths_to_modify: Optional[Set[Path]],
     debug_infer: bool,
     number_of_workers: int,
 ) -> None:
@@ -985,10 +988,10 @@ def run_infer(
     )
 
     type_directory = _get_type_directory(Path(configuration.log_directory))
-    paths_to_modify = infer_arguments.paths_to_modify
+    in_place = infer_arguments.in_place
 
     if infer_arguments.annotate_from_existing_stubs:
-        if paths_to_modify is None:
+        if not in_place:
             raise ValueError(
                 "`--annotate-from-existing-stubs` cannot be used without the"
                 " `--in-place` flag"
@@ -996,7 +999,7 @@ def run_infer(
         _annotate_in_place(
             working_directory=working_directory,
             type_directory=type_directory,
-            paths_to_modify=paths_to_modify,
+            paths_to_modify=infer_arguments.paths_to_modify,
             debug_infer=infer_arguments.debug_infer,
             number_of_workers=configuration.get_number_of_workers(),
         )
@@ -1018,11 +1021,11 @@ def run_infer(
             _print_inferences(infer_output, module_annotations)
         else:
             _write_stubs(type_directory, module_annotations)
-            if paths_to_modify is not None:
+            if in_place:
                 _annotate_in_place(
                     working_directory=working_directory,
                     type_directory=type_directory,
-                    paths_to_modify=paths_to_modify,
+                    paths_to_modify=infer_arguments.paths_to_modify,
                     debug_infer=infer_arguments.debug_infer,
                     number_of_workers=configuration.get_number_of_workers(),
                 )

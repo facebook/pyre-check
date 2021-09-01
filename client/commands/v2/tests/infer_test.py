@@ -7,7 +7,7 @@ import dataclasses
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Any, Iterable, Tuple, Dict, List, Set
+from typing import Any, Iterable, Tuple, Dict, List, Optional, Set
 
 import testslide
 
@@ -428,13 +428,13 @@ class InferTest(testslide.TestCase):
     def test_should_annotate_in_place(self) -> None:
         def assert_should_annotate_in_place(
             path: Path,
-            paths_to_modify: Set[Path],
+            paths_to_modify: Optional[Set[Path]],
             expected: bool,
         ) -> None:
             self.assertEqual(should_annotate_in_place(path, paths_to_modify), expected)
 
         assert_should_annotate_in_place(
-            paths_to_modify=set(),
+            paths_to_modify=None,
             path=Path("any/path/will/do"),
             expected=True,
         )

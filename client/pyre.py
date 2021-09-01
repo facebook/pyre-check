@@ -852,7 +852,7 @@ def incremental(
 @click.pass_context
 def infer(
     context: click.Context,
-    paths_to_modify: Iterable[str],
+    paths_to_modify: List[str],
     print_only: bool,
     in_place: bool,
     annotate_from_existing_stubs: bool,
@@ -878,7 +878,7 @@ def infer(
     working_directory = Path.cwd()
     modify_paths = (
         None
-        if not in_place
+        if len(paths_to_modify) == 0
         else {working_directory / Path(path) for path in paths_to_modify}
     )
     return v2.infer.run(
@@ -896,6 +896,7 @@ def infer(
             log_identifier=command_argument.log_identifier,
             logging_sections=command_argument.logging_sections,
             no_future_annotations=no_future_annotations,
+            in_place=in_place,
             paths_to_modify=modify_paths,
             print_only=print_only,
             read_stdin=read_stdin,
