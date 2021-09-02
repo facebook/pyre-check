@@ -307,24 +307,34 @@ let type_breadcrumbs ~resolution annotation =
     in
     annotation >>| matches_at_leaves ~f |> Option.value ~default:false
   in
-  let is_scalar =
-    let scalar_predicate return_type =
-      GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.number
-      || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.enumeration
-    in
-    matches_at_leaves annotation ~f:scalar_predicate
-  in
   let is_boolean =
     matches_at_leaves annotation ~f:(fun left ->
         GlobalResolution.less_or_equal resolution ~left ~right:Type.bool)
   in
+  let is_integer =
+    matches_at_leaves annotation ~f:(fun left ->
+        GlobalResolution.less_or_equal resolution ~left ~right:Type.integer)
+  in
+  let is_float =
+    matches_at_leaves annotation ~f:(fun left ->
+        GlobalResolution.less_or_equal resolution ~left ~right:Type.float)
+  in
+  let is_enumeration =
+    matches_at_leaves annotation ~f:(fun left ->
+        GlobalResolution.less_or_equal resolution ~left ~right:Type.enumeration)
+  in
+  let is_scalar = is_boolean || is_integer || is_float || is_enumeration in
   let add_if cond type_name features =
     if cond then
       SimpleSet.add (Simple.Breadcrumb (Breadcrumb.Type type_name)) features
     else
       features
   in
-  SimpleSet.bottom |> add_if (is_scalar || is_boolean) "scalar" |> add_if is_boolean "bool"
+  SimpleSet.bottom
+  |> add_if is_scalar "scalar"
+  |> add_if is_boolean "bool"
+  |> add_if is_integer "integer"
+  |> add_if is_enumeration "enumeration"
 
 
 let simple_via ~allowed name =

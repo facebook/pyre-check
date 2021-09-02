@@ -148,7 +148,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -166,7 +169,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },

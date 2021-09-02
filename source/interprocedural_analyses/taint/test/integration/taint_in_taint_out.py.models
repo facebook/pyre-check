@@ -860,6 +860,7 @@
               { "has": "first-field" },
               { "first-field": "add_tito" },
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "string_concat_lhs" }
             ]
           }
@@ -909,6 +910,7 @@
               { "has": "first-field" },
               { "first-field": "add_tito" },
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "string_concat_lhs" }
             ]
           }

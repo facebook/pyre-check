@@ -29,6 +29,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_source" }
             ]
           }
@@ -52,6 +53,7 @@
     ],
     "features": [
       { "always-type": "scalar" },
+      { "always-type": "integer" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -102,6 +104,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -110,6 +113,7 @@
     ],
     "features": [
       { "always-type": "scalar" },
+      { "always-type": "integer" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -160,6 +164,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -168,6 +173,7 @@
     ],
     "features": [
       { "always-type": "scalar" },
+      { "always-type": "integer" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -269,6 +275,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_source" }
             ]
           }
@@ -302,6 +309,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -328,6 +336,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -361,6 +370,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -387,6 +397,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           },
@@ -407,6 +418,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           },
@@ -427,6 +439,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -453,6 +466,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -479,6 +493,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           },
@@ -497,6 +512,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -523,6 +539,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -579,6 +596,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -658,6 +676,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -684,6 +703,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           },
@@ -704,6 +724,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -730,6 +751,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -756,6 +778,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }

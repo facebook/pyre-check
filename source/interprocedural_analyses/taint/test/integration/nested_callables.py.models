@@ -44,6 +44,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -52,6 +53,7 @@
     ],
     "features": [
       { "always-type": "scalar" },
+      { "always-type": "integer" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -130,6 +132,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -184,6 +187,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -210,6 +214,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -243,6 +248,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -269,6 +275,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }

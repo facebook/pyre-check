@@ -425,7 +425,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -452,7 +455,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -470,7 +476,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -560,6 +569,7 @@
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "obscure" }
             ]
           }
@@ -582,6 +592,7 @@
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "tito" }
             ]
           }
@@ -604,6 +615,7 @@
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "tito" }
             ]
           }
@@ -624,7 +636,11 @@
             "decl": null,
             "tito": [ { "line": 40, "start": 19, "end": 20 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "type": "scalar" }, { "via": "tito" } ]
+            "features": [
+              { "type": "scalar" },
+              { "type": "integer" },
+              { "via": "tito" }
+            ]
           }
         ]
       }
@@ -664,6 +680,7 @@
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "tito" }
             ]
           }
@@ -690,7 +707,11 @@
               { "kind": "LocalReturn", "name": "[1]", "depth": 0 },
               { "kind": "LocalReturn", "name": "[0]", "depth": 0 }
             ],
-            "features": [ { "type": "scalar" }, { "via": "tito" } ]
+            "features": [
+              { "type": "scalar" },
+              { "type": "integer" },
+              { "via": "tito" }
+            ]
           }
         ]
       }

@@ -209,7 +209,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -332,7 +335,7 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
             ],
-            "features": [ { "type": "scalar" } ]
+            "features": [ { "type": "scalar" }, { "type": "integer" } ]
           }
         ]
       },
@@ -394,7 +397,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },

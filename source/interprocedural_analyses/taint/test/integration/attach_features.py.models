@@ -12,6 +12,7 @@
             "leaves": [ { "kind": "Attach" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "string_concat_rhs" }
             ]
           },
@@ -25,6 +26,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "string_concat_rhs" },
               { "always-via": "special_sink" }
             ]
@@ -249,6 +251,7 @@
             "leaves": [ { "kind": "Attach" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "string_concat_rhs" }
             ]
           },
@@ -262,6 +265,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "string_concat_rhs" },
               { "always-via": "special_sink" }
             ]

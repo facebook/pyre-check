@@ -30,17 +30,22 @@ let test_add_type_breadcrumb context =
     in
     assert_equal ~printer:(String.concat ~sep:", ") ~cmp:(List.equal String.equal) expected actual
   in
-  assert_type_based_breadcrumbs Type.integer ["scalar"];
   assert_type_based_breadcrumbs Type.bool ["bool"; "scalar"];
-  assert_type_based_breadcrumbs Type.float ["scalar"];
-  assert_type_based_breadcrumbs (Type.optional Type.integer) ["scalar"];
+  assert_type_based_breadcrumbs Type.enumeration ["enumeration"; "scalar"];
+  assert_type_based_breadcrumbs Type.integer ["integer"; "scalar"];
   assert_type_based_breadcrumbs (Type.optional Type.bool) ["bool"; "scalar"];
+  assert_type_based_breadcrumbs (Type.optional Type.enumeration) ["enumeration"; "scalar"];
+  assert_type_based_breadcrumbs (Type.optional Type.integer) ["integer"; "scalar"];
   assert_type_based_breadcrumbs Type.none [];
   assert_type_based_breadcrumbs Type.Any [];
-  assert_type_based_breadcrumbs (Type.awaitable Type.integer) ["scalar"];
   assert_type_based_breadcrumbs (Type.awaitable Type.bool) ["bool"; "scalar"];
+  assert_type_based_breadcrumbs (Type.awaitable Type.enumeration) ["enumeration"; "scalar"];
+  assert_type_based_breadcrumbs (Type.awaitable Type.integer) ["integer"; "scalar"];
   assert_type_based_breadcrumbs (Type.awaitable (Type.optional Type.bool)) ["bool"; "scalar"];
-  assert_type_based_breadcrumbs (Type.awaitable (Type.optional Type.integer)) ["scalar"]
+  assert_type_based_breadcrumbs
+    (Type.awaitable (Type.optional Type.enumeration))
+    ["enumeration"; "scalar"];
+  assert_type_based_breadcrumbs (Type.awaitable (Type.optional Type.integer)) ["integer"; "scalar"]
 
 
 let () = "features" >::: ["add_type_breadcrumb" >:: test_add_type_breadcrumb] |> Test.run

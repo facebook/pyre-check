@@ -44,6 +44,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -52,6 +53,7 @@
     ],
     "features": [
       { "always-type": "scalar" },
+      { "always-type": "integer" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -111,6 +113,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -126,7 +129,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -164,7 +170,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "UserControlled" } ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -184,7 +193,10 @@
                 "name": "dataclass_taint.WeirdDataClass.__init__"
               }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -206,7 +218,10 @@
                 "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -220,7 +235,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -243,7 +261,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -281,7 +302,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "UserControlled" } ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -301,7 +325,10 @@
                 "name": "dataclass_taint.WeirdDataClass.__init__"
               }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -323,7 +350,10 @@
                 "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -340,6 +370,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -355,7 +386,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -378,7 +412,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -453,6 +490,7 @@
             "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "integer" },
               { "always-via": "special_sink" }
             ]
           }
@@ -468,7 +506,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -566,7 +607,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "UserControlled" } ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -586,7 +630,10 @@
                 "name": "dataclass_taint.WeirdDataClass.__init__"
               }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -608,7 +655,10 @@
                 "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
               }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
@@ -622,7 +672,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[bad_sink]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -645,7 +698,10 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       },
@@ -987,7 +1043,10 @@
                 "name": "dataclass_taint.WeirdDataClass.__init__"
               }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "integer" }
+            ]
           }
         ]
       }
