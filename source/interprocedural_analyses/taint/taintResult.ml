@@ -9,19 +9,25 @@ open Core
 open Domains
 open Pyre
 
-let json_to_string json =
-  Yojson.Safe.to_string json
-  |> Yojson.Safe.prettify
-  |> String.split ~on:'\n'
-  |> List.map ~f:(fun line -> "      " ^ line)
-  |> String.concat ~sep:"\n"
+let json_to_string ~indent json =
+  let lines = Yojson.Safe.to_string json |> Yojson.Safe.prettify |> String.split ~on:'\n' in
+  match lines with
+  | [line] -> line
+  | lines ->
+      lines
+      |> List.map ~f:(fun line -> indent ^ line)
+      |> String.concat ~sep:"\n"
+      |> fun content -> "\n" ^ content
 
 
 module Forward = struct
   type model = { source_taint: ForwardState.t }
 
   let pp_model formatter { source_taint } =
-    Format.fprintf formatter "    Sources:\n%s" (json_to_string (ForwardState.to_json source_taint))
+    Format.fprintf
+      formatter
+      "  Sources: %s"
+      (json_to_string ~indent:"    " (ForwardState.to_json source_taint))
 
 
   let show_model = Format.asprintf "%a" pp_model
@@ -57,9 +63,9 @@ module Backward = struct
   let pp_model formatter { taint_in_taint_out; sink_taint } =
     Format.fprintf
       formatter
-      "    Taint-in-taint-out:\n%s\n    Sinks:\n%s"
-      (json_to_string (BackwardState.to_json taint_in_taint_out))
-      (json_to_string (BackwardState.to_json sink_taint))
+      "  Taint-in-taint-out: %s\n  Sinks: %s"
+      (json_to_string ~indent:"    " (BackwardState.to_json taint_in_taint_out))
+      (json_to_string ~indent:"    " (BackwardState.to_json sink_taint))
 
 
   let show_model = Format.asprintf "%a" pp_model
@@ -228,7 +234,7 @@ module Sanitize = struct
 
 
   let pp_model formatter sanitize =
-    Format.fprintf formatter "%s" (json_to_string (to_json sanitize))
+    Format.fprintf formatter "  Sanitize: %s" (json_to_string ~indent:"    " (to_json sanitize))
 end
 
 module Mode = struct
@@ -264,6 +270,9 @@ module ModeSet = struct
   let equal left right = T.less_or_equal ~left ~right && T.less_or_equal ~left:right ~right:left
 
   let to_json modes = `List (modes |> T.elements |> List.map ~f:Mode.to_json)
+
+  let pp_model formatter modes =
+    Format.fprintf formatter "  Modes: %s" (json_to_string ~indent:"    " (to_json modes))
 end
 
 type call_model = {
@@ -276,14 +285,14 @@ type call_model = {
 let pp_call_model formatter { forward; backward; sanitize; modes } =
   Format.fprintf
     formatter
-    "  Forward:\n%a\n  Backward:\n%a\n  Sanitize: %a\n  Modes: %a\n"
+    "%a\n%a\n%a\n%a"
     Forward.pp_model
     forward
     Backward.pp_model
     backward
     Sanitize.pp_model
     sanitize
-    ModeSet.pp
+    ModeSet.pp_model
     modes
 
 
