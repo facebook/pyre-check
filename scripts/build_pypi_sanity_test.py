@@ -97,7 +97,8 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
                 [str(pyre_path), "init"],
                 cwd=temporary_project_path,
                 input=b"n\n.\n",
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
             error_message = init_process.stderr.decode()
             production_assert(
@@ -110,7 +111,8 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             LOG.warning("Testing `pyre` error reporting...")
             result = subprocess.run(
                 [pyre_path, "--output=json", "check"],
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 cwd=temporary_project_path,
             )
             try:
@@ -133,7 +135,8 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
                 [str(pyre_upgrade_path), "fixme"],
                 cwd=temporary_project_path,
                 input=b"[]",
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
             error_message = upgrade_process.stderr.decode()
             production_assert(
