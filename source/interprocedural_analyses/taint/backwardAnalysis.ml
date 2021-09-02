@@ -136,7 +136,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         ~call_expression
         location
         arguments
-        state
+        initial_state
         call_taint
         call_targets
       =
@@ -176,7 +176,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> BackwardState.Tree.prepend actual_path
           |> BackwardState.Tree.join taint_tree
         in
-        let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } state =
+        let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } =
           let global_sink =
             Model.get_global_model
               ~resolution
@@ -186,7 +186,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> Model.GlobalModel.get_sink
           in
           let access_path = of_expression ~resolution argument in
-          get_taint access_path state |> BackwardState.Tree.join global_sink
+          get_taint access_path initial_state |> BackwardState.Tree.join global_sink
         in
         let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
           let translate_tito (tito_path, element) argument_taint =
@@ -225,7 +225,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 | Sinks.ParameterUpdate n -> (
                     match List.nth arguments n with
                     | None -> BackwardState.Tree.empty
-                    | Some argument -> get_argument_taint ~resolution ~argument state)
+                    | Some argument -> get_argument_taint ~resolution ~argument)
                 | _ -> failwith "unexpected tito sink"
               in
               let compute_tito_depth leaf depth =
@@ -276,7 +276,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> BackwardState.Tree.prepend actual_path
           |> BackwardState.Tree.join taint_tree
         in
-        let analyze_argument ~obscure_taint state ((argument, sink_matches), (_dup, tito_matches)) =
+        let analyze_argument
+            ~obscure_taint
+            (arguments_taint, state)
+            ((argument, sink_matches), (_dup, tito_matches))
+          =
           let location =
             Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
           in
@@ -315,7 +319,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        BackwardState.Tree.join sink_state state)
             | _ -> taint_in_taint_out
           in
-          let argument_taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
+          let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
           let state =
             match AccessPath.of_expression ~resolution argument with
             | Some { AccessPath.root; path } ->
@@ -339,7 +343,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   { taint = BackwardState.assign ~root ~path taint state.taint }
             | None -> state
           in
-          analyze_unstarred_expression ~resolution argument_taint argument state
+          taint :: arguments_taint, state
         in
         let obscure_taint =
           if TaintResult.ModeSet.contains Obscure modes then
@@ -365,7 +369,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           else
             BackwardState.Tree.bottom
         in
-        List.fold ~f:(analyze_argument ~obscure_taint) combined_matches ~init:state
+        List.rev combined_matches
+        |> List.fold ~f:(analyze_argument ~obscure_taint) ~init:([], initial_state)
       in
       let call_targets =
         match call_targets with
@@ -402,15 +407,31 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.create_leaf
           in
           let state =
-            List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
+            List.fold_right
+              ~f:(analyze_argument ~resolution obscure_taint)
+              arguments
+              ~init:initial_state
           in
           match call_expression with
           | Expression.Call { callee; _ } ->
               analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
           | _ -> state)
       | call_targets ->
-          List.map call_targets ~f:analyze_call_target
-          |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
+          let arguments_taint, state =
+            List.map call_targets ~f:analyze_call_target
+            |> List.fold
+                 ~f:(fun (arguments_taint, state) (new_arguments_taint, new_state) ->
+                   ( List.map2_exn arguments_taint new_arguments_taint ~f:BackwardState.Tree.join,
+                     FixpointState.join state new_state ))
+                 ~init:
+                   ( List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom),
+                     FixpointState.create () )
+          in
+          List.zip_exn arguments arguments_taint
+          |> List.fold
+               ~init:state
+               ~f:(fun state ({ Call.Argument.value = argument; _ }, argument_taint) ->
+                 analyze_unstarred_expression ~resolution argument_taint argument state)
 
 
     and analyze_constructor_call

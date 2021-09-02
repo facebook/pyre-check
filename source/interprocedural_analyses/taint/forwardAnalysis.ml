@@ -125,13 +125,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         ?(collapse_tito = true)
         call_location
         arguments
-        state
+        initial_state
         call_targets
       =
       (* We keep a table of kind -> set of triggered labels across all targets, and merge triggered
          sinks at the end. *)
       let triggered_sinks = String.Hash_set.create () in
-      let apply_call_target state argument_taint call_target =
+      let apply_call_target state arguments_taint call_target =
         let ({ Model.model = { TaintResult.forward; backward; sanitize; modes }; _ } as taint_model)
           =
           Model.get_callsite_model ~resolution ~call_target ~arguments
@@ -150,7 +150,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> AccessPath.match_actuals_to_formals arguments
         in
         let combined_matches =
-          List.zip_exn sink_argument_matches tito_argument_matches |> List.zip_exn argument_taint
+          List.zip_exn sink_argument_matches tito_argument_matches |> List.zip_exn arguments_taint
         in
         let combine_sink_taint location taint_tree { root; actual_path; formal_path } =
           BackwardState.read ~root ~path:[] backward.sink_taint
@@ -449,7 +449,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |>> ForwardState.Tree.join taint_accumulator
           in
           let callee_taint, state =
-            analyze_expression ~resolution ~state ~expression:callee
+            analyze_expression ~resolution ~state:initial_state ~expression:callee
             |>> ForwardState.Tree.transform
                   FlowDetails.tito_position_element
                   Add
@@ -458,16 +458,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           List.fold_left arguments ~init:(callee_taint, state) ~f:(analyze_argument ~resolution)
           |>> ForwardState.Tree.transform ForwardTaint.simple_feature Add ~f:Features.obscure
       | call_targets ->
-          let argument_taint, state =
-            let compute_argument_taint (argument_taint, state) argument =
+          let arguments_taint, state =
+            let compute_argument_taint (arguments_taint, state) argument =
               let taint, state =
                 analyze_unstarred_expression ~resolution argument.Call.Argument.value state
               in
-              taint :: argument_taint, state
+              taint :: arguments_taint, state
             in
-            List.rev arguments |> List.fold ~init:([], state) ~f:compute_argument_taint
+            List.rev arguments |> List.fold ~init:([], initial_state) ~f:compute_argument_taint
           in
-          List.map call_targets ~f:(apply_call_target state argument_taint)
+          List.map call_targets ~f:(apply_call_target state arguments_taint)
           |> List.fold
                ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
                ~f:(fun (taint, state) (new_taint, new_state) ->
