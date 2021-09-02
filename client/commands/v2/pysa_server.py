@@ -106,14 +106,13 @@ class PysaServer:
         # Publishing empty diagnostics to clear errors in VSCode and reset self.file_tracker
         for document_path in self.file_tracker:
             await _publish_diagnostics(self.output_channel, document_path, [])
-        self.file_tracker = set()
+        self.file_tracker.clear()
 
         try:
             model_errors = query.get_invalid_taint_models(self.pyre_connection)
             diagnostics = self.invalid_models_to_diagnostics(model_errors)
             # Keep track of files we publish diagnostics for
-            for path in diagnostics.keys():
-                self.file_tracker.add(path)
+            self.file_tracker.update(diagnostics.keys())
 
             await self.show_model_errors_to_client(diagnostics)
         except PyreQueryError as e:
