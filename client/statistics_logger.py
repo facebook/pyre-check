@@ -9,7 +9,6 @@ import os
 import platform
 import subprocess
 import time
-import traceback
 from enum import Enum
 from typing import Dict, Optional
 
