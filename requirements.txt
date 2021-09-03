@@ -1,3 +1,4 @@
+dataclasses==0.6; python_version < "3.7"
 async-generator
 click
 dataclasses-json
