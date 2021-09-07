@@ -35,8 +35,8 @@ from .persistent import (
     InitializationSuccess,
     InitializationFailure,
 )
-from api import query, connection as api_connection
-from api.connection import PyreQueryError
+from ....api import query, connection as api_connection
+from ....api.connection import PyreQueryError
 from typing import List, Sequence, Dict
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ class PysaServer:
         self.pyre_arguments = pyre_arguments
         self.binary_location = binary_location
         self.server_identifier = server_identifier
-        self.pyre_connction = api_connection.PyreConnection(
+        self.pyre_connection = api_connection.PyreConnection(
             Path(self.pyre_arguments.global_root)
         )
 
@@ -119,10 +119,10 @@ class PysaServer:
     async def copy_model(self, document_path: str, position: lsp.Position) -> None:
         rel_path = relpath(document_path, self.pyre_arguments.global_root)
         try:
-            pyre_connection = api_connection.PyreConnection(
-                Path(self.pyre_arguments.global_root)
-            )
-            types = query.types(pyre_connection, [rel_path])
+            # pyre_connection = api_connection.PyreConnection(
+            #     Path(self.pyre_arguments.global_root)
+            # )
+            types = query.types(self.pyre_connection, [rel_path])
             for t in types[0].types:
                 start = query.Position(
                     line=t.location["start"].line,
@@ -186,8 +186,7 @@ class PysaServer:
                 if request.method == "exit":
                     return 0
                 else:
-                    raise json_rpc.InvalidRequestError(
-                        "LSP server has been shut down")
+                    raise json_rpc.InvalidRequestError("LSP server has been shut down")
 
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
@@ -244,8 +243,7 @@ class PysaServer:
                     elif request.method == "shutdown":
                         lsp.write_json_rpc(
                             self.output_channel,
-                            json_rpc.SuccessResponse(
-                                id=request.id, result=None),
+                            json_rpc.SuccessResponse(id=request.id, result=None),
                         )
                         return await self.wait_for_exit()
                     elif request.method == "textDocument/didOpen":
@@ -288,29 +286,34 @@ class PysaServer:
                                 "Missing parameters for copyModel method"
                             )
                         # processing parameter data sent from VSCode
-                        request.parameters.values['path'] = request.parameters.values['path']['path']
-                        request.parameters.values['position']['line'] = request.parameters.values['position']['line'] + 1
+                        request.parameters.values["path"] = request.parameters.values[
+                            "path"
+                        ]["path"]
+                        request.parameters.values["position"]["line"] = (
+                            request.parameters.values["position"]["line"] + 1
+                        )
                         copied_model = await self.process_copy_model_request(
                             lsp.DidCopyModelParameters.from_json_rpc_parameters(
-                                parameters)
+                                parameters
+                            )
                         )
                         await lsp.write_json_rpc(
                             self.output_channel,
                             json_rpc.SuccessResponse(
-                                id=request.id, result=copied_model),
+                                id=request.id, result=copied_model
+                            ),
                         )
                     elif request.id is not None:
-                        raise lsp.RequestCancelledError(
-                            "Request not supported yet")
+                        raise lsp.RequestCancelledError("Request not supported yet")
                 except Exception as e:
-                    self.log_and_show_message_to_client(
-                        str(e), lsp.MessageType.ERROR
-                    )
+                    self.log_and_show_message_to_client(str(e), lsp.MessageType.ERROR)
                     raise e
 
 
 async def run_persistent(
-    binary_location: str, server_identifier: str, pysa_arguments: start.Arguments
+    binary_location: str,
+    server_identifier: str,
+    pysa_arguments: start.Arguments,
 ) -> int:
     stdin, stdout = await connection.create_async_stdin_stdout()
     while True:
@@ -367,8 +370,7 @@ def run(
         )
 
     server_identifier = start.get_server_identifier(configuration)
-    pyre_arguments = start.create_server_arguments(
-        configuration, start_arguments)
+    pyre_arguments = start.create_server_arguments(configuration, start_arguments)
     if pyre_arguments.watchman_root is None:
         raise commands.ClientException(
             (

@@ -41,17 +41,17 @@ class Position(NamedTuple):
     column: int
 
     def __eq__(self, other):
-        return (self.line == other.line and other.column == self.column
-                )
+        return self.line == other.line and other.column == self.column
 
     def __gt__(self, other):
-        return (self.line > other.line or (
+        return self.line > other.line or (
             other.line == self.line and other.column <= self.column
-        ))
+        )
 
     def __lt__(self, other):
-        return (self.line < other.line or (
-            other.line == self.line and other.column >= self.column))
+        return self.line < other.line or (
+            other.line == self.line and other.column >= self.column
+        )
 
 
 class Location(NamedTuple):
@@ -65,13 +65,11 @@ class Type(NamedTuple):
     annotation: str
 
     def extract_function_model(self) -> str:
-        functions = re.findall(
-            "(?<=typing.Callable\().*?(?=\))", self.annotation)
+        functions = re.findall("(?<=typing.Callable\().*?(?=\))", self.annotation)
         params = re.findall("(?<=Named\().*?(?=,)", self.annotation)
         # if selected position is not a function
         if not functions:
-            raise NotImplementedError(
-                "Selected position is not of type Callable")
+            raise NotImplementedError("Selected position is not of type Callable")
         model = "def {}({}): ...".format(functions[0], ", ".join(params))
         return model
 
@@ -80,7 +78,7 @@ class Types(NamedTuple):
     path: str
     types: List[Type]
 
-    
+
 @dataclass(frozen=True)
 class Annotation:
     type_name: str
@@ -176,12 +174,11 @@ def defines(
         return _defines(pyre_connection, modules)
     if batch_size <= 0:
         raise ValueError(
-            "batch_size must a positive integer, provided: `{}`".format(
-                batch_size)
+            "batch_size must a positive integer, provided: `{}`".format(batch_size)
         )
     found_defines: List[Define] = []
     module_chunks = [
-        modules[index: index + batch_size]
+        modules[index : index + batch_size]
         for index in range(0, len(modules), batch_size)
     ]
     for modules in module_chunks:
@@ -257,8 +254,7 @@ def _get_batch(
         yield iterable
     elif batch_size <= 0:
         raise ValueError(
-            "batch_size must a positive integer, provided: `{}`".format(
-                batch_size)
+            "batch_size must a positive integer, provided: `{}`".format(batch_size)
         )
     else:
         iterator = iter(iterable)

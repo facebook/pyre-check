@@ -26,8 +26,7 @@ class QueryAPITest(unittest.TestCase):
             [
                 query.Define(
                     name="a.foo",
-                    parameters=[query.DefineParameter(
-                        name="x", annotation="int")],
+                    parameters=[query.DefineParameter(name="x", annotation="int")],
                     return_annotation="int",
                 )
             ],
@@ -57,14 +56,12 @@ class QueryAPITest(unittest.TestCase):
             [
                 query.Define(
                     name="a.foo",
-                    parameters=[query.DefineParameter(
-                        name="x", annotation="int")],
+                    parameters=[query.DefineParameter(name="x", annotation="int")],
                     return_annotation="int",
                 ),
                 query.Define(
                     name="b.bar",
-                    parameters=[query.DefineParameter(
-                        name="y", annotation="str")],
+                    parameters=[query.DefineParameter(name="y", annotation="str")],
                     return_annotation="int",
                 ),
             ],
@@ -73,8 +70,7 @@ class QueryAPITest(unittest.TestCase):
             defines_implementation.return_value = []
             query.defines(pyre_connection, ["a", "b", "c", "d"], batch_size=2)
             defines_implementation.assert_has_calls(
-                [call(pyre_connection, ["a", "b"]),
-                      call(pyre_connection, ["c", "d"])]
+                [call(pyre_connection, ["a", "b"]), call(pyre_connection, ["c", "d"])]
             )
             defines_implementation.reset_calls()
             query.defines(
@@ -103,8 +99,7 @@ class QueryAPITest(unittest.TestCase):
         assert hierarchy is not None
         self.assertEqual(hierarchy.hierarchy, {"Foo": ["object"], "object": []})
         # Reverse hierarchy.
-        self.assertEqual(hierarchy.reverse_hierarchy, {
-                         "object": ["Foo"], "Foo": []})
+        self.assertEqual(hierarchy.reverse_hierarchy, {"object": ["Foo"], "Foo": []})
         # Superclasses.
         self.assertEqual(hierarchy.superclasses("Foo"), ["object"])
         self.assertEqual(hierarchy.superclasses("object"), [])
@@ -456,18 +451,12 @@ class QueryAPITest(unittest.TestCase):
                     "types": [
                         {
                             "location": {
-                                "start": {
-                                    "line": 2,
-                                    "column": 0
-                                },
-                                "stop": {
-                                    "line": 2,
-                                    "column": 5
-                                }
+                                "start": {"line": 2, "column": 0},
+                                "stop": {"line": 2, "column": 5},
                             },
-                            "annotation": "int"
+                            "annotation": "int",
                         },
-                    ]
+                    ],
                 }
             ]
         }
@@ -479,18 +468,18 @@ class QueryAPITest(unittest.TestCase):
                     types=[
                         query.Type(
                             location={
-                                "start": Position(
+                                "start": query.Position(
                                     line=2,
                                     column=0,
                                 ),
-                                "stop": Position(
+                                "stop": query.Position(
                                     line=2,
                                     column=5,
                                 ),
                             },
-                            annotation="int"
+                            annotation="int",
                         )
-                    ]
+                    ],
                 )
             ],
         )
