@@ -42,6 +42,8 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
         return cst.parse_module(path.read_text())
     except (ParserSyntaxError, FileNotFoundError):
         return None
+    except UnicodeDecodeError as error:
+        raise RuntimeError(f"error decoding file at path {path}") from error
 
 
 def parse_path_to_metadata_module(path: Path) -> Optional[MetadataWrapper]:
