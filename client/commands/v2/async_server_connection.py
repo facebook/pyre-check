@@ -236,7 +236,28 @@ class StreamBytesWriter(BytesWriter):
 
     async def close(self) -> None:
         self.stream_writer.close()
-        await self.stream_writer.wait_closed()
+        await self._stream_writer_wait_closed()
+
+    async def _stream_writer_wait_closed(self) -> None:
+        """
+        StreamWriter does not have a `wait_closed` method prior to python
+        3.7. For 3.6 compatibility we have to hack it with an async busy
+        loop that waits
+        - first for the transport to be aware that it is closing
+        - then for the socket to become unmapped
+
+        This approach is inspired by the solution in qemu.aqmp.util.
+        """
+        if sys.version_info >= (3, 7):
+            return await self.stream_writer.wait_closed()
+
+        while not self.stream_writer.transport.is_closing():
+            await asyncio.sleep(0)
+
+        transport_socket: sys.IO = self.stream_writer.transport.get_extra_info("socket")
+        if transport_socket is not None:
+            while transport_socket.fileno() != -1:
+                await asyncio.sleep(0)
 
 
 @asynccontextmanager
