@@ -1,2 +1,20 @@
 [tool.usort]
 first_party_detection = false
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py36, py37, py38, py39
+skipsdist = True
+
+[testenv]
+passenv =
+    http_proxy
+    https_proxy
+deps =
+    -rrequirements.txt
+allowlist_externals =
+    bash
+commands =
+    bash scripts/run-python-tests.sh
+"""
