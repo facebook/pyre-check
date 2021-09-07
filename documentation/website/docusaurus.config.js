@@ -87,13 +87,13 @@ module.exports = {
             },
           ],
         },
-        fbContent({
-          internal: {
+        ...fbContent({
+          internal: [{
             to: 'docs/fb/development-getting-started',
             label: 'Internal',
             position: 'left',
-          },
-          external: {},
+          }],
+          external: [],
         }),
         {
           href: 'https://github.com/facebook/pyre-check',
