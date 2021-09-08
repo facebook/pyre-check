@@ -63,7 +63,7 @@ $ pip install -r requirements.txt
 $ ./scripts/run-python-tests.sh
 ```
 
-When installing and running `pyre` from PyPi, the entry point to the executable is actually `client/pyre.py`. To be able to run this file from anywhere, add the directory containing `pyre-check` directory `PYTHONPATH` and subsequently assign `pyre` as an alias for `pyre-check.client.pyre`. For the `pyre` command to correctly point to the compiled binary, also set the environment variable `PYRE_BINARY` to `source/build/default/main.exe`.
+When installing and running `pyre` from PyPi, the entry point to the executable is actually `client/pyre.py`. To be able to run this file from anywhere, add the directory containing the `pyre-check` directory to the `PYTHONPATH` environment variable and subsequently assign `pyre` as an alias for `pyre-check.client.pyre`. For the `pyre` command to correctly point to the compiled binary, also set the environment variable `PYRE_BINARY` to `source/build/default/main.exe`.
 
 ```bash
 $ echo "alias pyre='PYTHONPATH=\"/path/to/pyre-check/..:\$PYTHONPATH\" python -m pyre-check.client.pyre'" >> ~/.bashrc
