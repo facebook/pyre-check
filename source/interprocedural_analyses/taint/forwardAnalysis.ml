@@ -1805,8 +1805,6 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
   in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let extract_model { FixpointState.taint; _ } =
-    (* Explicitly declared taint is not propagated to the result and needs to be picked up from the
-       existing model. *)
     let features_to_attach = extract_features_to_attach existing_model.forward.source_taint in
     let source_taint =
       extract_source_model ~define:define.value ~resolution ~features_to_attach taint
