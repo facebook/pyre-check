@@ -220,19 +220,8 @@ module FlowDetails = struct
 
 
   let strip_tito_positions =
-    transform Features.TitoPositionSet.Self Abstract.Domain.Map ~f:(fun _ ->
-        Features.TitoPositionSet.bottom)
+    transform Features.TitoPositionSet.Self Map ~f:(fun _ -> Features.TitoPositionSet.bottom)
 
-
-  let leaf_name_set = Features.LeafNameSet.Self
-
-  let simple_feature = Features.SimpleSet.Element
-
-  let simple_feature_element = Features.SimpleSet.ElementAndUnder
-
-  let simple_feature_self = Features.SimpleSet.Self
-
-  let tito_position_element = Features.TitoPositionSet.Element
 
   let product_pp = pp (* shadow *)
 
@@ -262,21 +251,6 @@ module type TAINT_DOMAIN = sig
   val ignore_kind_at_call : kind -> bool
 
   val trace_info : TraceInfo.t Abstract.Domain.part
-
-  val flow_details : FlowDetails.t Abstract.Domain.part
-
-  val leaf_name_set : Features.LeafNameSet.t Abstract.Domain.part
-
-  val simple_feature : Features.Simple.t Abstract.Domain.part
-
-  val simple_feature_element
-    : Features.Simple.t Abstract.OverUnderSetDomain.approximation Abstract.Domain.part
-
-  val simple_feature_self : Features.SimpleSet.t Abstract.Domain.part
-
-  val first_indices : Features.FirstIndexSet.t Abstract.Domain.part
-
-  val first_fields : Features.FirstFieldSet.t Abstract.Domain.part
 
   val add_features : Features.SimpleSet.t -> t -> t
 
@@ -366,20 +340,6 @@ end = struct
 
   let trace_info = Map.Key
 
-  let flow_details = FlowDetails.Self
-
-  let leaf_name_set = FlowDetails.leaf_name_set
-
-  let simple_feature = FlowDetails.simple_feature
-
-  let simple_feature_self = FlowDetails.simple_feature_self
-
-  let simple_feature_element = FlowDetails.simple_feature_element
-
-  let first_fields = Features.FirstFieldSet.Self
-
-  let first_indices = Features.FirstIndexSet.Self
-
   let kinds map =
     Map.fold kind ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Kind.compare
 
@@ -406,7 +366,7 @@ end = struct
           :: leaves
         in
         let breadcrumbs =
-          FlowDetails.(fold simple_feature_element ~f:gather_json ~init:[] features)
+          FlowDetails.fold Features.SimpleSet.ElementAndUnder ~f:gather_json ~init:[] features
         in
         let leaves =
           FlowDetails.get FlowDetails.Slots.LeafName features
@@ -461,7 +421,7 @@ end = struct
       KindTaintDomain.Map.to_alist kind_taint |> List.map ~f:(leaf_to_json trace_info)
     in
     (* expand now do dedup possibly abstract targets that resolve to the same concrete ones *)
-    let taint = Map.transform Key Abstract.Domain.Map ~f:TraceInfo.expand_call_site taint in
+    let taint = Map.transform Key Map ~f:TraceInfo.expand_call_site taint in
     let elements = Map.to_alist taint |> List.concat_map ~f:trace_to_json in
     `List elements
 
@@ -472,9 +432,7 @@ end = struct
     create_json ~trace_info_to_json:(TraceInfo.to_external_json ~filename_lookup)
 
 
-  let add_features features =
-    transform FlowDetails.simple_feature_self Abstract.Domain.Add ~f:features
-
+  let add_features features = transform Features.SimpleSet.Self Add ~f:features
 
   let transform_on_widening_collapse =
     (* using an always-feature here would break the widening invariant: a <= a widen b *)
@@ -503,7 +461,7 @@ end = struct
       let kind_taint =
         KindTaintDomain.transform
           Features.TitoPositionSet.Self
-          Abstract.Domain.Map
+          Map
           ~f:(fun _ -> Features.TitoPositionSet.bottom)
           kind_taint
       in
@@ -513,8 +471,7 @@ end = struct
           let increase_length n = if n < max_int then n + 1 else n in
           let trace_info = CallSite { location; callees; port; path } in
           let kind_taint =
-            kind_taint
-            |> KindTaintDomain.transform TraceLength.Self Abstract.Domain.Map ~f:increase_length
+            kind_taint |> KindTaintDomain.transform TraceLength.Self Map ~f:increase_length
           in
           trace_info, kind_taint
       | Declaration { leaf_name_provided } ->
@@ -530,15 +487,11 @@ end = struct
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
           in
           let kind_taint =
-            KindTaintDomain.transform
-              Features.LeafNameSet.Self
-              Abstract.Domain.Add
-              ~f:new_leaf_names
-              kind_taint
+            KindTaintDomain.transform Features.LeafNameSet.Self Add ~f:new_leaf_names kind_taint
           in
           trace_info, kind_taint
     in
-    Map.transform Map.KeyValue Abstract.Domain.Map ~f:apply taint
+    Map.transform Map.KeyValue Map ~f:apply taint
 end
 
 module ForwardTaint = MakeTaint (Sources)
@@ -620,11 +573,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let get_all_features taint_tree =
     let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
-    fold
-      FlowDetails.simple_feature_self
-      ~f:gather_features
-      ~init:Features.SimpleSet.bottom
-      taint_tree
+    fold Features.SimpleSet.Self ~f:gather_features ~init:Features.SimpleSet.bottom taint_tree
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
@@ -702,7 +651,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
     read ~root ~path:[] taint
     |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
     |> Tree.collapse ~transform:Fn.id
-    |> Taint.fold Taint.simple_feature_self ~f:gather_features ~init:Features.SimpleSet.bottom
+    |> Taint.fold Features.SimpleSet.Self ~f:gather_features ~init:Features.SimpleSet.bottom
 end
 
 module ForwardState = MakeTaintEnvironment (ForwardTaint) ()

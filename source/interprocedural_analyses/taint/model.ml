@@ -153,25 +153,11 @@ let get_callsite_model ~resolution ~call_target ~arguments =
           Features.SimpleSet.fold Features.SimpleSet.Element features ~f:transform ~init:features
         in
         let source_taint =
-          ForwardState.transform
-            ForwardTaint.simple_feature_self
-            Abstract.Domain.Map
-            ~f:expand
-            source_taint
+          ForwardState.transform Features.SimpleSet.Self Map ~f:expand source_taint
         in
-        let sink_taint =
-          BackwardState.transform
-            BackwardTaint.simple_feature_self
-            Abstract.Domain.Map
-            ~f:expand
-            sink_taint
-        in
+        let sink_taint = BackwardState.transform Features.SimpleSet.Self Map ~f:expand sink_taint in
         let taint_in_taint_out =
-          BackwardState.transform
-            BackwardTaint.simple_feature_self
-            Abstract.Domain.Map
-            ~f:expand
-            taint_in_taint_out
+          BackwardState.transform Features.SimpleSet.Self Map ~f:expand taint_in_taint_out
         in
         {
           forward = { source_taint };

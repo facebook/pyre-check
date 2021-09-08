@@ -761,8 +761,8 @@ let introduce_sink_taint
           let breadcrumbs = Features.SimpleSet.of_approximation breadcrumbs in
           let leaf_taint =
             BackwardTaint.singleton taint_sink_kind
-            |> BackwardTaint.transform BackwardTaint.leaf_name_set Add ~f:leaf_names
-            |> BackwardTaint.transform BackwardTaint.simple_feature_self Add ~f:breadcrumbs
+            |> BackwardTaint.transform Features.LeafNameSet.Self Add ~f:leaf_names
+            |> BackwardTaint.transform Features.SimpleSet.Self Add ~f:breadcrumbs
             |> transform_trace_information
             |> BackwardState.Tree.create_leaf
           in
@@ -791,7 +791,7 @@ let introduce_taint_in_taint_out
     | Sinks.LocalReturn ->
         let return_taint =
           Domains.local_return_taint
-          |> BackwardTaint.transform BackwardTaint.simple_feature_self Add ~f:breadcrumbs
+          |> BackwardTaint.transform Features.SimpleSet.Self Add ~f:breadcrumbs
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
@@ -802,7 +802,7 @@ let introduce_taint_in_taint_out
     | Sinks.Attach ->
         let update_taint =
           BackwardTaint.singleton taint_sink_kind
-          |> BackwardTaint.transform BackwardTaint.simple_feature_self Add ~f:breadcrumbs
+          |> BackwardTaint.transform Features.SimpleSet.Self Add ~f:breadcrumbs
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
@@ -853,8 +853,8 @@ let introduce_source_taint
       let leaf_taint =
         let leaf_names = Features.LeafNameSet.of_list leaf_names in
         ForwardTaint.singleton taint_source_kind
-        |> ForwardTaint.transform ForwardTaint.leaf_name_set Add ~f:leaf_names
-        |> ForwardTaint.transform ForwardTaint.simple_feature_self Add ~f:breadcrumbs
+        |> ForwardTaint.transform Features.LeafNameSet.Self Add ~f:leaf_names
+        |> ForwardTaint.transform Features.SimpleSet.Self Add ~f:breadcrumbs
         |> transform_trace_information
         |> ForwardState.Tree.create_leaf
       in

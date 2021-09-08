@@ -205,7 +205,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               let breadcrumbs =
                 BackwardTaint.fold
-                  BackwardTaint.simple_feature_self
+                  Features.SimpleSet.Self
                   element
                   ~f:Features.gather_breadcrumbs
                   ~init:Features.SimpleSet.bottom
@@ -239,10 +239,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   read_tree extra_path taint_to_propagate
                   |> BackwardState.Tree.collapse
                        ~transform:(BackwardTaint.add_features Features.tito_broadening)
-                  |> BackwardTaint.transform
-                       BackwardTaint.simple_feature_self
-                       Abstract.Domain.Add
-                       ~f:breadcrumbs
+                  |> BackwardTaint.transform Features.SimpleSet.Self Add ~f:breadcrumbs
                   |> BackwardTaint.transform
                        TraceLength.Self
                        (Context (BackwardTaint.kind, Map))
@@ -257,11 +254,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let add_tito_feature_and_position leaf_taint =
             leaf_taint
-            |> FlowDetails.transform
-                 FlowDetails.tito_position_element
-                 Abstract.Domain.Add
-                 ~f:location
-            |> FlowDetails.transform FlowDetails.simple_feature Abstract.Domain.Add ~f:Features.tito
+            |> FlowDetails.transform Features.TitoPositionSet.Element Add ~f:location
+            |> FlowDetails.transform Features.SimpleSet.Element Add ~f:Features.tito
           in
           BackwardState.read
             ~transform_non_leaves
@@ -295,7 +289,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let taint_in_taint_out =
             BackwardState.Tree.transform
-              FlowDetails.tito_position_element
+              Features.TitoPositionSet.Element
               Add
               ~f:argument.Node.location
               obscure_taint
@@ -324,7 +318,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 let features_to_add =
                   BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
                   |> BackwardTaint.fold
-                       BackwardTaint.simple_feature_self
+                       Features.SimpleSet.Self
                        ~f:Features.gather_breadcrumbs
                        ~init:Features.SimpleSet.bottom
                 in
@@ -333,10 +327,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 else
                   let taint =
                     BackwardState.read state.taint ~root ~path
-                    |> BackwardState.Tree.transform
-                         BackwardTaint.simple_feature_self
-                         Abstract.Domain.Add
-                         ~f:features_to_add
+                    |> BackwardState.Tree.transform Features.SimpleSet.Self Add ~f:features_to_add
                   in
                   { taint = BackwardState.assign ~root ~path taint state.taint }
             | None -> state
@@ -359,10 +350,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             BackwardState.Tree.collapse
               ~transform:(BackwardTaint.add_features Features.tito_broadening)
               call_taint
-            |> BackwardTaint.transform
-                 BackwardTaint.simple_feature_self
-                 Abstract.Domain.Add
-                 ~f:breadcrumbs
+            |> BackwardTaint.transform Features.SimpleSet.Self Add ~f:breadcrumbs
             |> BackwardState.Tree.create_leaf
           else
             BackwardState.Tree.bottom
@@ -390,7 +378,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let analyze_argument ~resolution taint { Call.Argument.value = argument; _ } state =
             let taint =
               BackwardState.Tree.transform
-                FlowDetails.tito_position_element
+                Features.TitoPositionSet.Element
                 Add
                 ~f:argument.Node.location
                 taint
@@ -401,7 +389,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             BackwardState.Tree.collapse
               ~transform:(BackwardTaint.add_features Features.tito_broadening)
               call_taint
-            |> BackwardTaint.transform BackwardTaint.simple_feature Add ~f:Features.obscure
+            |> BackwardTaint.transform Features.SimpleSet.Element Add ~f:Features.obscure
             |> BackwardState.Tree.create_leaf
           in
           let state =
@@ -563,7 +551,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       | _ :: index :: _ ->
                           let label = get_index index.value in
                           BackwardState.Tree.transform
-                            BackwardTaint.first_indices
+                            Features.FirstIndexSet.Self
                             Map
                             ~f:(add_first_index label)
                             taint
@@ -688,7 +676,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             BackwardState.Tree.join
               taint
               (get_taint (Some (AccessPath.create (Root.Variable "$all") [])) state)
-            |> BackwardState.Tree.transform BackwardTaint.simple_feature Add ~f:Features.lambda
+            |> BackwardState.Tree.transform Features.SimpleSet.Element Add ~f:Features.lambda
           in
           let all_assignee =
             Node.create
@@ -729,7 +717,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint =
             BackwardState.Tree.prepend [index] taint
             |> BackwardState.Tree.transform
-                 BackwardTaint.first_indices
+                 Features.FirstIndexSet.Self
                  Map
                  ~f:(add_first_index index)
           in
@@ -950,8 +938,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 (Name.Attribute
                   { base = { Node.value = Expression.String _; _ }; attribute = "format"; _ }) ->
                 BackwardState.Tree.transform
-                  BackwardTaint.simple_feature
-                  Abstract.Domain.Add
+                  Features.SimpleSet.Element
+                  Add
                   ~f:Features.format_string
                   taint
             | _ -> taint
@@ -1017,8 +1005,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let taint =
             BackwardState.Tree.transform
-              BackwardTaint.simple_feature
-              Abstract.Domain.Add
+              Features.SimpleSet.Element
+              Add
               ~f:Features.format_string
               taint
           in
@@ -1047,11 +1035,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | Some override -> analyze_expression ~resolution ~taint ~state ~expression:override
           | None ->
               let taint =
-                BackwardState.Tree.transform
-                  FlowDetails.simple_feature_self
-                  Add
-                  ~f:Features.type_bool
-                  taint
+                BackwardState.Tree.transform Features.SimpleSet.Self Add ~f:Features.type_bool taint
               in
               analyze_expression ~resolution ~taint ~state ~expression:right
               |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left)
@@ -1131,8 +1115,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 in
                 if not (Features.SimpleSet.is_bottom attribute_features) then
                   BackwardState.Tree.transform
-                    BackwardTaint.simple_feature_self
-                    Abstract.Domain.Add
+                    Features.SimpleSet.Self
+                    Add
                     ~f:attribute_features
                     taint
                 else
@@ -1411,10 +1395,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       ~transform:(BackwardTaint.add_features Features.widen_broadening)
       tree
       ~mold:essential
-    |> BackwardState.Tree.transform
-         BackwardTaint.simple_feature_self
-         Abstract.Domain.Add
-         ~f:type_breadcrumbs
+    |> BackwardState.Tree.transform Features.SimpleSet.Self Add ~f:type_breadcrumbs
     |> BackwardState.Tree.limit_to
          ~transform:(BackwardTaint.add_features Features.widen_broadening)
          ~width:maximum_model_width
