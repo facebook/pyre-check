@@ -63,10 +63,10 @@ $ pip install -r requirements.txt
 $ ./scripts/run-python-tests.sh
 ```
 
-When installing and running `pyre` from PyPi, the entry point to the executable is actually `client/pyre.py`. To be able to run this file from anywhere, add the `pyre-check` directory to `PYTHONPATH` and subsequently assign `pyre` and an alias for `client.pyre`. For the `pyre` command to correctly point to the compiled binary, also set the environment variable `PYRE_BINARY` to `source/build/default/main.exe`.
+When installing and running `pyre` from PyPi, the entry point to the executable is actually `client/pyre.py`. To be able to run this file from anywhere, add the directory containing the `pyre-check` directory to the `PYTHONPATH` environment variable and subsequently assign `pyre` as an alias for `pyre-check.client.pyre`. For the `pyre` command to correctly point to the compiled binary, also set the environment variable `PYRE_BINARY` to `source/build/default/main.exe`.
 
 ```bash
-$ echo "alias pyre='PYTHONPATH=\"/path/to/pyre-check:\$PYTHONPATH\" python -m client.pyre'" >> ~/.bashrc
+$ echo "alias pyre='PYTHONPATH=\"/path/to/pyre-check/..:\$PYTHONPATH\" python -m pyre-check.client.pyre'" >> ~/.bashrc
 $ echo "export PYRE_BINARY=/path/to/pyre-check/source/_build/default/main.exe" >> ~/.bashrc
 $ source ~/.bashrc
 ```
@@ -77,7 +77,7 @@ VSCode will not pick up your shell aliases, so the alias step in the previous se
 
 ```bash
 #!/bin/bash
-PYTHONPATH="/path/to/pyre-check:$PYTHONPATH" python -m client.pyre "$@"
+PYTHONPATH="/path/to/pyre-check/..:$PYTHONPATH" python -m pyre-check.client.pyre "$@"
 ```
 Add the `pyre-check/scripts` directory to `PATH` (assuming you placed the above script in that directory) and then use the command `pyre` to launch the client like before
 
