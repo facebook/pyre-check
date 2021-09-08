@@ -81,15 +81,14 @@ class AnnotationCountCollector(StatisticsCollector):
             and not self.in_static_function_definition()
         )
 
-    def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> int:
-        annotated_parameter_count = 0
-        for index, parameter in enumerate(parameters):
-            self.parameter_count += 1
-            annotation = parameter.annotation
-            if annotation is not None or self._is_self_or_cls(index):
-                annotated_parameter_count += 1
-        self.annotated_parameter_count += annotated_parameter_count
-        return annotated_parameter_count
+    def _annotated_parameters(
+        self, parameters: Sequence[cst.Param]
+    ) -> Sequence[cst.Param]:
+        return [
+            parameter
+            for index, parameter in enumerate(parameters)
+            if parameter.annotation is not None or self._is_self_or_cls(index)
+        ]
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         for decorator in node.decorators:
@@ -104,11 +103,16 @@ class AnnotationCountCollector(StatisticsCollector):
         return_is_annotated = node.returns is not None
         if return_is_annotated:
             self.annotated_return_count += 1
-        annotated_parameters = self._check_parameter_annotations(node.params.params)
 
-        if return_is_annotated and (annotated_parameters == len(node.params.params)):
+        annotated_parameter_count = len(self._annotated_parameters(node.params.params))
+        self.annotated_parameter_count += annotated_parameter_count
+        self.parameter_count += len(node.params.params)
+
+        if return_is_annotated and (
+            annotated_parameter_count == len(node.params.params)
+        ):
             self.fully_annotated_function_count += 1
-        elif return_is_annotated or annotated_parameters > 0:
+        elif return_is_annotated or annotated_parameter_count > 0:
             self.partially_annotated_function_count += 1
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
