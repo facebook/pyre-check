@@ -16,6 +16,7 @@ max-complexity = 50
 exclude =
   .git,
   .hg,
+  .tox,
   __pycache__,
   _bin/*,
   _build/*,

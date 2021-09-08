@@ -4,7 +4,7 @@ first_party_detection = false
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py36, py37, py38, py39
+envlist = py36, py37, py38, py39, lint
 skipsdist = True
 
 [testenv]
@@ -17,4 +17,14 @@ allowlist_externals =
     bash
 commands =
     bash scripts/run-python-tests.sh
+
+[testenv:lint]
+deps =
+    black
+    usort
+    flake8
+commands =
+    black --check --diff client scripts tools
+    usort check client scripts tools
+    flake8 client scripts tools
 """
