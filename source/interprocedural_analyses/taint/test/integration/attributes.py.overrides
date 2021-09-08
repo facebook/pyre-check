@@ -1,4 +1,0 @@
-@generated
-Overrides
-attributes.UseViaDict::__init__ (override) -> [attributes.UseViaDict::__init__ (method)]
-object::__init__ (override) -> [attributes.UseViaDict::__init__ (override) object::__init__ (method)]

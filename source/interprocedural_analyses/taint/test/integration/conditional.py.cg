@@ -1,7 +1,0 @@
-@generated
-Call dependencies
-conditional.issue1 (fun) -> [conditional.some_source (fun)]
-conditional.issue2 (fun) -> [conditional.some_source (fun)]
-conditional.no_precondition_for_condition (fun) -> []
-conditional.no_precondition_for_if (fun) -> []
-conditional.some_source (fun) -> []

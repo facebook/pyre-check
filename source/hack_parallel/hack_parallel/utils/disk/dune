@@ -1,5 +1,0 @@
-(library
- (name disk)
- (public_name hack_parallel.disk)
- (wrapped false)
- (libraries hack_parallel.collections hack_parallel.injection))

@@ -1,4 +1,0 @@
-(library
- (name injection)
- (public_name hack_parallel.injection)
- (wrapped false))

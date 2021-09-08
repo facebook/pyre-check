@@ -1,4 +1,0 @@
-(library
- (name hack_core)
- (public_name hack_parallel.hack_core)
- (wrapped false))

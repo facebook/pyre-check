@@ -1,5 +1,0 @@
-@SkipObscure
-def str.__add__(
-  self: TaintInTaintOut[Via[string_concat_lhs]],
-  other: TaintInTaintOut[Via[string_concat_rhs]],
-): ...

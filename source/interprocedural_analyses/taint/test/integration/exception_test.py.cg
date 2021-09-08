@@ -1,5 +1,0 @@
-@generated
-Call dependencies
-exception_test.test_caught_exception (fun) -> [BaseException::__str__ (method) isinstance (fun)]
-exception_test.test_constructed_exception (fun) -> [BaseException::__str__ (method) object::__init__ (method) object::__new__ (method)]
-exception_test.test_parameter_flow (fun) -> [BaseException::__str__ (method)]
