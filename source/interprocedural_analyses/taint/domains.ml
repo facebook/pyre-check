@@ -223,6 +223,14 @@ module FlowDetails = struct
     transform Features.TitoPositionSet.Self Map ~f:(fun _ -> Features.TitoPositionSet.bottom)
 
 
+  let add_tito_position position = transform Features.TitoPositionSet.Element Add ~f:position
+
+  let add_breadcrumb breadcrumb = transform Features.SimpleSet.Element Add ~f:breadcrumb
+
+  let add_breadcrumbs breadcrumbs = transform Features.SimpleSet.Self Add ~f:breadcrumbs
+
+  let features = get Slots.SimpleFeature
+
   let product_pp = pp (* shadow *)
 
   let pp formatter = Format.fprintf formatter "FlowDetails(%a)" product_pp
@@ -252,7 +260,13 @@ module type TAINT_DOMAIN = sig
 
   val trace_info : TraceInfo.t Abstract.Domain.part
 
-  val add_features : Features.SimpleSet.t -> t -> t
+  val add_breadcrumb : Features.Simple.t -> t -> t
+
+  val add_breadcrumbs : Features.SimpleSet.t -> t -> t
+
+  val breadcrumbs : t -> Features.SimpleSet.t
+
+  val features : t -> Features.SimpleSet.t
 
   val transform_on_widening_collapse : t -> t
 
@@ -384,12 +398,11 @@ end = struct
           |> Features.FirstField.to_json
         in
         ( List.concat [first_index_breadcrumbs; first_field_breadcrumbs; breadcrumbs],
-          FlowDetails.(
-            fold
-              Features.ReturnAccessPathSet.Element
-              ~f:gather_return_access_path
-              ~init:leaves
-              features) )
+          FlowDetails.fold
+            Features.ReturnAccessPathSet.Element
+            ~f:gather_return_access_path
+            ~init:leaves
+            features )
       in
       let tito_positions =
         FlowDetails.get FlowDetails.Slots.TitoPosition features
@@ -432,7 +445,27 @@ end = struct
     create_json ~trace_info_to_json:(TraceInfo.to_external_json ~filename_lookup)
 
 
-  let add_features features = transform Features.SimpleSet.Self Add ~f:features
+  let add_breadcrumb breadcrumb = transform Features.SimpleSet.Element Add ~f:breadcrumb
+
+  let add_breadcrumbs breadcrumbs taint =
+    if Features.SimpleSet.is_bottom breadcrumbs || Features.SimpleSet.is_empty breadcrumbs then
+      taint
+    else
+      transform Features.SimpleSet.Self Add ~f:breadcrumbs taint
+
+
+  let features taint =
+    let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
+    fold Features.SimpleSet.Self ~f:gather_features ~init:Features.SimpleSet.bottom taint
+
+
+  let breadcrumbs taint =
+    fold
+      Features.SimpleSet.Self
+      ~f:Features.gather_breadcrumbs
+      ~init:Features.SimpleSet.bottom
+      taint
+
 
   let transform_on_widening_collapse =
     (* using an always-feature here would break the widening invariant: a <= a widen b *)
@@ -444,7 +477,7 @@ end = struct
           { element = Simple.Breadcrumb Breadcrumb.IssueBroadening; in_under = false };
         ]
     in
-    add_features broadening
+    add_breadcrumbs broadening
 
 
   let prune_maximum_length maximum_length =
@@ -571,13 +604,31 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     |> collapse ~transform:Fn.id
 
 
-  let get_all_features taint_tree =
-    let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
-    fold Features.SimpleSet.Self ~f:gather_features ~init:Features.SimpleSet.bottom taint_tree
+  let breadcrumbs taint_tree =
+    fold
+      Features.SimpleSet.Self
+      ~f:Features.gather_breadcrumbs
+      ~init:Features.SimpleSet.bottom
+      taint_tree
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
-  module Tree = MakeTaintTree (Taint) ()
+  module Tree = struct
+    include MakeTaintTree (Taint) ()
+
+    let add_breadcrumb breadcrumb = transform Features.SimpleSet.Element Add ~f:breadcrumb
+
+    let add_breadcrumbs breadcrumbs taint_tree =
+      if Features.SimpleSet.is_bottom breadcrumbs || Features.SimpleSet.is_empty breadcrumbs then
+        taint_tree
+      else
+        transform Features.SimpleSet.Self Add ~f:breadcrumbs taint_tree
+
+
+    let features taint_tree =
+      let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
+      fold Features.SimpleSet.Self ~f:gather_features ~init:Features.SimpleSet.bottom taint_tree
+  end
 
   include
     Abstract.MapDomain.Make
@@ -646,12 +697,20 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let roots environment = fold Key ~f:List.cons ~init:[] environment
 
+  let add_breadcrumb breadcrumb = transform Features.SimpleSet.Element Add ~f:breadcrumb
+
+  let add_breadcrumbs breadcrumbs taint_tree =
+    if Features.SimpleSet.is_bottom breadcrumbs || Features.SimpleSet.is_empty breadcrumbs then
+      taint_tree
+    else
+      transform Features.SimpleSet.Self Add ~f:breadcrumbs taint_tree
+
+
   let extract_features_to_attach ~root ~attach_to_kind taint =
-    let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
     read ~root ~path:[] taint
     |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
     |> Tree.collapse ~transform:Fn.id
-    |> Taint.fold Features.SimpleSet.Self ~f:gather_features ~init:Features.SimpleSet.bottom
+    |> Taint.features
 end
 
 module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
