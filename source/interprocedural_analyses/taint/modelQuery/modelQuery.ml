@@ -321,6 +321,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
               {
                 source = Sources.ParametricSource { source_name = kind; subkind };
                 breadcrumbs = [];
+                via_features = [];
                 path = [];
                 leaf_names = [];
                 leaf_name_provided = false;
@@ -332,6 +333,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
               {
                 sink = Sinks.ParametricSink { sink_name = kind; subkind };
                 breadcrumbs = [];
+                via_features = [];
                 path = [];
                 leaf_names = [];
                 leaf_name_provided = false;

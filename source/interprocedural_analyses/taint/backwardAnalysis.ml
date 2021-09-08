@@ -313,7 +313,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
                   |> BackwardTaint.breadcrumbs
                 in
-                if Features.SimpleSet.is_bottom breadcrumbs_to_add then
+                if Features.BreadcrumbSet.is_bottom breadcrumbs_to_add then
                   state
                 else
                   let taint =
@@ -336,7 +336,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               Features.type_breadcrumbs
                 ~resolution:(Resolution.global_resolution resolution)
                 (Some annotation)
-              |> Features.SimpleSet.add Features.obscure
+              |> Features.BreadcrumbSet.add Features.obscure
             in
             BackwardState.Tree.collapse
               ~transform:(BackwardTaint.add_breadcrumbs Features.tito_broadening)
@@ -1089,10 +1089,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
               let global_model = Model.get_global_model ~resolution ~expression ~location in
               let add_tito_features taint =
-                let attribute_features =
-                  global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.features
+                let attribute_breadcrumbs =
+                  global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
                 in
-                BackwardState.Tree.add_breadcrumbs attribute_features taint
+                BackwardState.Tree.add_breadcrumbs attribute_breadcrumbs taint
               in
 
               let apply_attribute_sanitizers taint =
@@ -1381,7 +1381,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       |> BackwardState.Tree.partition BackwardTaint.kind By ~f:Fn.id
     in
     let taint_in_taint_out =
-      let features_to_attach =
+      let breadcrumbs_to_attach, via_features_to_attach =
         BackwardState.extract_features_to_attach
           ~root:parameter
           ~attach_to_kind:Sinks.Attach
@@ -1398,7 +1398,11 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
             BackwardState.Tree.prune_maximum_length maximum_tito_depth candidate_tree
         | _ -> candidate_tree
       in
-      let candidate_tree = BackwardState.Tree.add_breadcrumbs features_to_attach candidate_tree in
+      let candidate_tree =
+        candidate_tree
+        |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_attach
+        |> BackwardState.Tree.add_via_features via_features_to_attach
+      in
       let number_of_paths =
         BackwardState.Tree.fold
           BackwardState.Tree.Path
@@ -1434,13 +1438,15 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       Map.Poly.fold ~init:BackwardState.Tree.empty ~f:simplify_sink_taint partition
     in
     let sink_taint =
-      let features_to_attach =
+      let breadcrumbs_to_attach, via_features_to_attach =
         BackwardState.extract_features_to_attach
           ~root:parameter
           ~attach_to_kind:Sinks.Attach
           existing_backward.TaintResult.Backward.sink_taint
       in
-      BackwardState.Tree.add_breadcrumbs features_to_attach sink_taint
+      sink_taint
+      |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_attach
+      |> BackwardState.Tree.add_via_features via_features_to_attach
     in
     TaintResult.Backward.
       {

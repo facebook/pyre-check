@@ -38,6 +38,7 @@ module Model = struct
     | Sink of {
         sink: Sinks.t;
         breadcrumbs: breadcrumbs;
+        via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
@@ -45,6 +46,7 @@ module Model = struct
     | Source of {
         source: Sources.t;
         breadcrumbs: breadcrumbs;
+        via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
@@ -52,10 +54,12 @@ module Model = struct
     | Tito of {
         tito: Sinks.t;
         breadcrumbs: breadcrumbs;
+        via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
       }
     | AddFeatureToArgument of {
         breadcrumbs: breadcrumbs;
+        via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
       }
   [@@deriving show, compare]

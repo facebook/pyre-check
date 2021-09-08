@@ -24,7 +24,7 @@ type candidate = {
 }
 
 type features = {
-  simple: Features.SimpleSet.t;
+  breadcrumbs: Features.BreadcrumbSet.t;
   first_indices: Features.FirstIndexSet.t;
   first_fields: Features.FirstFieldSet.t;
 }

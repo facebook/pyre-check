@@ -22,10 +22,10 @@ let test_add_type_breadcrumb context =
     let actual =
       let open Abstract.OverUnderSetDomain in
       type_breadcrumbs ~resolution (Some annotation)
-      |> SimpleSet.to_approximation
+      |> BreadcrumbSet.to_approximation
       |> List.map ~f:(fun { element; _ } -> element)
       |> List.filter_map ~f:(function
-             | Simple.Breadcrumb (Breadcrumb.Type type_name) -> Some type_name
+             | Breadcrumb.Type type_name -> Some type_name
              | _ -> None)
     in
     assert_equal ~printer:(String.concat ~sep:", ") ~cmp:(List.equal String.equal) expected actual

@@ -24,7 +24,7 @@ type candidate = {
 }
 
 type features = {
-  simple: Features.SimpleSet.t;
+  breadcrumbs: Features.BreadcrumbSet.t;
   first_indices: Features.FirstIndexSet.t;
   first_fields: Features.FirstFieldSet.t;
 }
@@ -79,22 +79,22 @@ type flow_state = {
 }
 
 let get_issue_features { source_taint; sink_taint } =
-  let simple =
-    let source_features =
+  let breadcrumbs =
+    let source_breadcrumbs =
       ForwardTaint.fold
-        Features.SimpleSet.Self
-        ~f:Features.SimpleSet.join
-        ~init:Features.SimpleSet.bottom
+        Features.BreadcrumbSet.Self
+        ~f:Features.BreadcrumbSet.join
+        ~init:Features.BreadcrumbSet.bottom
         source_taint
     in
-    let sink_features =
+    let sink_breadcrumbs =
       BackwardTaint.fold
-        Features.SimpleSet.Self
-        ~f:Features.SimpleSet.join
-        ~init:Features.SimpleSet.bottom
+        Features.BreadcrumbSet.Self
+        ~f:Features.BreadcrumbSet.join
+        ~init:Features.BreadcrumbSet.bottom
         sink_taint
     in
-    Features.SimpleSet.sequence_join source_features sink_features
+    Features.BreadcrumbSet.sequence_join source_breadcrumbs sink_breadcrumbs
   in
   let first_indices =
     let source_indices =
@@ -132,7 +132,7 @@ let get_issue_features { source_taint; sink_taint } =
     Features.FirstFieldSet.join source_fields sink_fields
   in
 
-  { simple; first_indices; first_fields }
+  { breadcrumbs; first_indices; first_fields }
 
 
 let generate_issues ~define { location; flows } =
@@ -267,18 +267,14 @@ let to_json ~filename_lookup callable issue =
   let sink_traces = Domains.BackwardTaint.to_external_json ~filename_lookup issue.flow.sink_taint in
   let features =
     let get_feature_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
-      let open Features.Simple in
-      match element with
-      | Breadcrumb breadcrumb ->
-          let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under in
-          breadcrumb_json :: breadcrumbs
-      | _ -> breadcrumbs
+      let breadcrumb_json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
+      breadcrumb_json :: breadcrumbs
     in
-    Features.SimpleSet.fold
-      Features.SimpleSet.ElementAndUnder
+    Features.BreadcrumbSet.fold
+      Features.BreadcrumbSet.ElementAndUnder
       ~f:get_feature_json
       ~init:[]
-      issue.features.simple
+      issue.features.breadcrumbs
   in
   let features =
     List.concat

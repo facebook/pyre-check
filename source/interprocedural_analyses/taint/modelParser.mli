@@ -12,7 +12,9 @@ module ClassDefinitionsCache : sig
 end
 
 module T : sig
-  type breadcrumbs = Features.Simple.t list [@@deriving show, compare]
+  type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, compare]
+
+  type via_features = Features.ViaFeature.t list [@@deriving show, compare]
 
   type leaf_kind =
     | Leaf of {
@@ -20,11 +22,13 @@ module T : sig
         subkind: string option;
       }
     | Breadcrumbs of breadcrumbs
+    | ViaFeatures of via_features
 
   type taint_annotation =
     | Sink of {
         sink: Sinks.t;
         breadcrumbs: breadcrumbs;
+        via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
@@ -32,6 +36,7 @@ module T : sig
     | Source of {
         source: Sources.t;
         breadcrumbs: breadcrumbs;
+        via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
@@ -39,10 +44,12 @@ module T : sig
     | Tito of {
         tito: Sinks.t;
         breadcrumbs: breadcrumbs;
+        via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
       }
     | AddFeatureToArgument of {
         breadcrumbs: breadcrumbs;
+        via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
       }
 

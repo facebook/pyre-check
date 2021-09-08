@@ -2118,7 +2118,7 @@ let test_invalid_models context =
     |}
     ~expect:
       {|Invalid model for `test.foo`: `ModelParser.T.Source {source = A; breadcrumbs = [SimpleVia[featureA]];
-  path = ; leaf_names = []; leaf_name_provided = false}` is not a supported taint annotation for sanitizers.|}
+  via_features = []; path = ; leaf_names = []; leaf_name_provided = false}` is not a supported taint annotation for sanitizers.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2612,6 +2612,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2646,6 +2647,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2684,6 +2686,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2718,6 +2721,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2727,6 +2731,7 @@ let test_query_parsing context =
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2761,6 +2766,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2770,6 +2776,7 @@ let test_query_parsing context =
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2805,6 +2812,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2814,6 +2822,7 @@ let test_query_parsing context =
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2849,6 +2858,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2884,6 +2894,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2929,6 +2940,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -2968,6 +2980,7 @@ let test_query_parsing context =
                            {
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
+                             via_features = [];
                              path = [];
                              leaf_names = [];
                              leaf_name_provided = false;
@@ -3007,6 +3020,7 @@ let test_query_parsing context =
                            {
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
+                             via_features = [];
                              path = [];
                              leaf_names = [];
                              leaf_name_provided = false;
@@ -3046,6 +3060,7 @@ let test_query_parsing context =
                            {
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
+                             via_features = [];
                              path = [];
                              leaf_names = [];
                              leaf_name_provided = false;
@@ -3152,6 +3167,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3161,6 +3177,7 @@ let test_query_parsing context =
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3195,6 +3212,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3204,6 +3222,7 @@ let test_query_parsing context =
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3238,6 +3257,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3272,6 +3292,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3306,6 +3327,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3315,6 +3337,7 @@ let test_query_parsing context =
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3354,6 +3377,7 @@ let test_query_parsing context =
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
+                         via_features = [];
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
@@ -3425,6 +3449,7 @@ let test_query_parsing context =
                            {
                              sink = Sinks.NamedSink "Test";
                              breadcrumbs = [];
+                             via_features = [];
                              path = [];
                              leaf_names = [];
                              leaf_name_provided = false;

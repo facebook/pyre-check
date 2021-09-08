@@ -79,6 +79,8 @@ end
 module LeafNameSet = Abstract.SetDomain.Make (LeafName)
 
 module Breadcrumb = struct
+  let name = "breadcrumbs"
+
   type t =
     | FormatString (* Via f"{something}" *)
     | Obscure
@@ -154,12 +156,12 @@ module Breadcrumb = struct
       Error (Format.sprintf "Unrecognized Via annotation `%s`" name)
 end
 
-(* Simple set of features that are unrelated, thus cheap to maintain *)
-module Simple = struct
-  let name = "simple features"
+module BreadcrumbSet = Abstract.OverUnderSetDomain.Make (Breadcrumb)
+
+module ViaFeature = struct
+  let name = "via features"
 
   type t =
-    | Breadcrumb of Breadcrumb.t
     | ViaValueOf of {
         parameter: AccessPath.Root.t;
         tag: string option;
@@ -178,7 +180,6 @@ module Simple = struct
           Format.fprintf formatter "%s[%a, tag=%s]" header AccessPath.Root.pp parameter tag
     in
     match simple with
-    | Breadcrumb breadcrumb -> Format.fprintf formatter "%a" Breadcrumb.pp breadcrumb
     | ViaValueOf { parameter; tag } -> pp_via_value_or_type "ViaValueOf" parameter tag
     | ViaTypeOf { parameter; tag } -> pp_via_value_or_type "ViaTypeOf" parameter tag
 
@@ -193,7 +194,7 @@ module Simple = struct
           Interprocedural.CallResolution.extract_constant_name argument
           |> Option.value ~default:"<unknown>"
     in
-    Breadcrumb (Breadcrumb.ViaValue { value = feature; tag })
+    Breadcrumb.ViaValue { value = feature; tag }
 
 
   let via_type_of_breadcrumb ?tag ~resolution ~argument =
@@ -205,10 +206,10 @@ module Simple = struct
       |> Option.value ~default:Type.Top
       |> Type.show
     in
-    Breadcrumb (Breadcrumb.ViaType { value = feature; tag })
+    Breadcrumb.ViaType { value = feature; tag }
 end
 
-module SimpleSet = Abstract.OverUnderSetDomain.Make (Simple)
+module ViaFeatureSet = Abstract.SetDomain.Make (ViaFeature)
 
 module ReturnAccessPath = struct
   let name = "return access paths"
@@ -246,43 +247,43 @@ module ReturnAccessPathSet = struct
       set
 end
 
-let obscure = Simple.Breadcrumb Breadcrumb.Obscure
+let obscure = Breadcrumb.Obscure
 
-let lambda = Simple.Breadcrumb Breadcrumb.Lambda
+let lambda = Breadcrumb.Lambda
 
-let tito = Simple.Breadcrumb Breadcrumb.Tito
+let tito = Breadcrumb.Tito
 
-let format_string = Simple.Breadcrumb Breadcrumb.FormatString
+let format_string = Breadcrumb.FormatString
 
 let widen_broadening =
-  SimpleSet.create
+  BreadcrumbSet.create
     [
-      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
-      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.WidenBroadening);
+      Part (BreadcrumbSet.Element, Breadcrumb.Broadening);
+      Part (BreadcrumbSet.Element, Breadcrumb.WidenBroadening);
     ]
 
 
 let tito_broadening =
-  SimpleSet.create
+  BreadcrumbSet.create
     [
-      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
-      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.TitoBroadening);
+      Part (BreadcrumbSet.Element, Breadcrumb.Broadening);
+      Part (BreadcrumbSet.Element, Breadcrumb.TitoBroadening);
     ]
 
 
 let issue_broadening =
-  SimpleSet.create
+  BreadcrumbSet.create
     [
-      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.Broadening);
-      Part (SimpleSet.Element, Simple.Breadcrumb Breadcrumb.IssueBroadening);
+      Part (BreadcrumbSet.Element, Breadcrumb.Broadening);
+      Part (BreadcrumbSet.Element, Breadcrumb.IssueBroadening);
     ]
 
 
 let type_bool =
-  SimpleSet.create
+  BreadcrumbSet.create
     [
-      Part (SimpleSet.Element, Simple.Breadcrumb (Breadcrumb.Type "scalar"));
-      Part (SimpleSet.Element, Simple.Breadcrumb (Breadcrumb.Type "bool"));
+      Part (BreadcrumbSet.Element, Breadcrumb.Type "scalar");
+      Part (BreadcrumbSet.Element, Breadcrumb.Type "bool");
     ]
 
 
@@ -326,38 +327,15 @@ let type_breadcrumbs ~resolution annotation =
   let is_scalar = is_boolean || is_integer || is_float || is_enumeration in
   let add_if cond type_name features =
     if cond then
-      SimpleSet.add (Simple.Breadcrumb (Breadcrumb.Type type_name)) features
+      BreadcrumbSet.add (Breadcrumb.Type type_name) features
     else
       features
   in
-  SimpleSet.bottom
+  BreadcrumbSet.bottom
   |> add_if is_scalar "scalar"
   |> add_if is_boolean "bool"
   |> add_if is_integer "integer"
   |> add_if is_enumeration "enumeration"
-
-
-let simple_via ~allowed name =
-  let open Core.Result in
-  Breadcrumb.simple_via ~allowed name >>| fun breadcrumb -> Simple.Breadcrumb breadcrumb
-
-
-let gather_breadcrumbs features breadcrumbs =
-  let to_add =
-    SimpleSet.transform
-      SimpleSet.Element
-      Abstract.Domain.Filter
-      ~f:(function
-        | Simple.Breadcrumb _ -> true
-        | _ -> false)
-      features
-  in
-  SimpleSet.add_set breadcrumbs ~to_add
-
-
-let is_breadcrumb = function
-  | { Abstract.OverUnderSetDomain.element = Simple.Breadcrumb _; _ } -> true
-  | _ -> false
 
 
 let number_regexp = Str.regexp "[0-9]+"

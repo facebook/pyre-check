@@ -22,11 +22,26 @@ let test_apply_rule context =
       | Some subkind -> Sources.ParametricSource { source_name = name; subkind }
     in
     Model.Source
-      { source; breadcrumbs = []; path = []; leaf_names = []; leaf_name_provided = false }
+      {
+        source;
+        breadcrumbs = [];
+        via_features = [];
+        path = [];
+        leaf_names = [];
+        leaf_name_provided = false;
+      }
   in
   let sink name =
     let sink = Sinks.NamedSink name in
-    Model.Sink { sink; breadcrumbs = []; path = []; leaf_names = []; leaf_name_provided = false }
+    Model.Sink
+      {
+        sink;
+        breadcrumbs = [];
+        via_features = [];
+        path = [];
+        leaf_names = [];
+        leaf_name_provided = false;
+      }
   in
   let assert_applied_rules ~source ~rule ~callable ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -914,6 +929,7 @@ let test_apply_rule context =
             {
               sink = Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" };
               breadcrumbs = [];
+              via_features = [];
               path = [];
               leaf_names = [];
               leaf_name_provided = false;

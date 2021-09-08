@@ -196,7 +196,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let tito =
             let convert_tito_path kind (path, return_taint) accumulated_tito =
               let breadcrumbs =
-                BackwardTaint.breadcrumbs return_taint |> Features.SimpleSet.add Features.tito
+                BackwardTaint.breadcrumbs return_taint |> Features.BreadcrumbSet.add Features.tito
               in
               let add_features_and_position leaf_taint =
                 leaf_taint
@@ -288,7 +288,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_tree
                   |> BackwardTaint.breadcrumbs
                 in
-                if Features.SimpleSet.is_bottom breadcrumbs_to_add then
+                if Features.BreadcrumbSet.is_bottom breadcrumbs_to_add then
                   state
                 else
                   let taint =
@@ -1498,7 +1498,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     Fixpoint.Make (FixpointState)
 end
 
-let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
+let extract_source_model
+    ~define
+    ~resolution
+    ~breadcrumbs_to_attach
+    ~via_features_to_attach
+    exit_taint
+  =
   let {
     Statement.Define.signature =
       { return_annotation; name = { Node.value = name; _ }; parameters; _ };
@@ -1561,7 +1567,8 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   in
 
   ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
-  |> ForwardState.add_breadcrumbs features_to_attach
+  |> ForwardState.add_breadcrumbs breadcrumbs_to_attach
+  |> ForwardState.add_via_features via_features_to_attach
 
 
 let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
@@ -1686,13 +1693,15 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
              ~callees:[]
              ~port:AccessPath.Root.LocalResult
       in
-      let features_to_attach =
+      let breadcrumbs_to_attach, via_features_to_attach =
         BackwardState.extract_features_to_attach
           ~root:AccessPath.Root.LocalResult
           ~attach_to_kind:Sinks.Attach
           existing_model.TaintResult.backward.sink_taint
       in
-      BackwardState.Tree.add_breadcrumbs features_to_attach taint
+      taint
+      |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_attach
+      |> BackwardState.Tree.add_via_features via_features_to_attach
 
 
     let triggered_sinks = Location.Table.create ()
@@ -1732,14 +1741,19 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
   in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let extract_model { FixpointState.taint; _ } =
-    let features_to_attach =
+    let breadcrumbs_to_attach, via_features_to_attach =
       ForwardState.extract_features_to_attach
         ~root:AccessPath.Root.LocalResult
         ~attach_to_kind:Sources.Attach
         existing_model.forward.source_taint
     in
     let source_taint =
-      extract_source_model ~define:define.value ~resolution ~features_to_attach taint
+      extract_source_model
+        ~define:define.value
+        ~resolution
+        ~breadcrumbs_to_attach
+        ~via_features_to_attach
+        taint
     in
     let model = TaintResult.Forward.{ source_taint } in
     let () = log "Forward Model:@,%a" TaintResult.Forward.pp_model model in

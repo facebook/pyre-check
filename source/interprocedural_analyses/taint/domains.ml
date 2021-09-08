@@ -176,7 +176,8 @@ module FlowDetails = struct
     let name = "flow details"
 
     type 'a slot =
-      | SimpleFeature : Features.SimpleSet.t slot
+      | Breadcrumb : Features.BreadcrumbSet.t slot
+      | ViaFeature : Features.ViaFeatureSet.t slot
       | ReturnAccessPath : Features.ReturnAccessPathSet.t slot
       | TraceLength : TraceLength.t slot
       | TitoPosition : Features.TitoPositionSet.t slot
@@ -185,11 +186,12 @@ module FlowDetails = struct
       | FirstField : Features.FirstFieldSet.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 7
+    let slots = 8
 
     let slot_name (type a) (slot : a slot) =
       match slot with
-      | SimpleFeature -> "SimpleFeature"
+      | Breadcrumb -> "Breadcrumb"
+      | ViaFeature -> "ViaFeature"
       | ReturnAccessPath -> "ReturnAccessPath"
       | TraceLength -> "TraceLength"
       | TitoPosition -> "TitoPosition"
@@ -200,7 +202,8 @@ module FlowDetails = struct
 
     let slot_domain (type a) (slot : a slot) =
       match slot with
-      | SimpleFeature -> (module Features.SimpleSet : Abstract.Domain.S with type t = a)
+      | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
+      | ViaFeature -> (module Features.ViaFeatureSet : Abstract.Domain.S with type t = a)
       | ReturnAccessPath ->
           (module Features.ReturnAccessPathSet : Abstract.Domain.S with type t = a)
       | TraceLength -> (module TraceLength : Abstract.Domain.S with type t = a)
@@ -216,7 +219,8 @@ module FlowDetails = struct
   include Abstract.ProductDomain.Make (Slots)
 
   let initial =
-    create [Part (Features.SimpleSet.Self, Features.SimpleSet.empty); Part (TraceLength.Self, 0)]
+    create
+      [Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty); Part (TraceLength.Self, 0)]
 
 
   let strip_tito_positions =
@@ -225,11 +229,9 @@ module FlowDetails = struct
 
   let add_tito_position position = transform Features.TitoPositionSet.Element Add ~f:position
 
-  let add_breadcrumb breadcrumb = transform Features.SimpleSet.Element Add ~f:breadcrumb
+  let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
 
-  let add_breadcrumbs breadcrumbs = transform Features.SimpleSet.Self Add ~f:breadcrumbs
-
-  let features = get Slots.SimpleFeature
+  let add_breadcrumbs breadcrumbs = transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
 
   let product_pp = pp (* shadow *)
 
@@ -260,13 +262,13 @@ module type TAINT_DOMAIN = sig
 
   val trace_info : TraceInfo.t Abstract.Domain.part
 
-  val add_breadcrumb : Features.Simple.t -> t -> t
+  val add_breadcrumb : Features.Breadcrumb.t -> t -> t
 
-  val add_breadcrumbs : Features.SimpleSet.t -> t -> t
+  val add_breadcrumbs : Features.BreadcrumbSet.t -> t -> t
 
-  val breadcrumbs : t -> Features.SimpleSet.t
+  val breadcrumbs : t -> Features.BreadcrumbSet.t
 
-  val features : t -> Features.SimpleSet.t
+  val via_features : t -> Features.ViaFeatureSet.t
 
   val transform_on_widening_collapse : t -> t
 
@@ -364,15 +366,8 @@ end = struct
       let kind_json = `String (Kind.show kind) in
       let breadcrumbs, leaf_json =
         let gather_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
-          match element with
-          | Features.Simple.ViaValueOf _
-          | ViaTypeOf _ ->
-              (* The taint analysis creates breadcrumbs for ViaValueOf and ViaTypeOf features
-                 dynamically.*)
-              breadcrumbs
-          | Breadcrumb breadcrumb ->
-              let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under in
-              breadcrumb_json :: breadcrumbs
+          let breadcrumb_json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
+          breadcrumb_json :: breadcrumbs
         in
         let gather_return_access_path path leaves =
           let path_name = Abstract.TreeDomain.Label.show_path path in
@@ -380,7 +375,7 @@ end = struct
           :: leaves
         in
         let breadcrumbs =
-          FlowDetails.fold Features.SimpleSet.ElementAndUnder ~f:gather_json ~init:[] features
+          FlowDetails.fold Features.BreadcrumbSet.ElementAndUnder ~f:gather_json ~init:[] features
         in
         let leaves =
           FlowDetails.get FlowDetails.Slots.LeafName features
@@ -445,25 +440,28 @@ end = struct
     create_json ~trace_info_to_json:(TraceInfo.to_external_json ~filename_lookup)
 
 
-  let add_breadcrumb breadcrumb = transform Features.SimpleSet.Element Add ~f:breadcrumb
+  let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
 
   let add_breadcrumbs breadcrumbs taint =
-    if Features.SimpleSet.is_bottom breadcrumbs || Features.SimpleSet.is_empty breadcrumbs then
+    if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
+    then
       taint
     else
-      transform Features.SimpleSet.Self Add ~f:breadcrumbs taint
-
-
-  let features taint =
-    let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
-    fold Features.SimpleSet.Self ~f:gather_features ~init:Features.SimpleSet.bottom taint
+      transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs taint
 
 
   let breadcrumbs taint =
+    let gather_breadcrumbs to_add breadcrumbs =
+      Features.BreadcrumbSet.add_set breadcrumbs ~to_add
+    in
+    fold Features.BreadcrumbSet.Self ~f:gather_breadcrumbs ~init:Features.BreadcrumbSet.bottom taint
+
+
+  let via_features taint =
     fold
-      Features.SimpleSet.Self
-      ~f:Features.gather_breadcrumbs
-      ~init:Features.SimpleSet.bottom
+      Features.ViaFeatureSet.Self
+      ~f:Features.ViaFeatureSet.join
+      ~init:Features.ViaFeatureSet.bottom
       taint
 
 
@@ -471,10 +469,10 @@ end = struct
     (* using an always-feature here would break the widening invariant: a <= a widen b *)
     let open Features in
     let broadening =
-      SimpleSet.of_approximation
+      BreadcrumbSet.of_approximation
         [
-          { element = Simple.Breadcrumb Breadcrumb.Broadening; in_under = false };
-          { element = Simple.Breadcrumb Breadcrumb.IssueBroadening; in_under = false };
+          { element = Breadcrumb.Broadening; in_under = false };
+          { element = Breadcrumb.IssueBroadening; in_under = false };
         ]
     in
     add_breadcrumbs broadening
@@ -491,12 +489,15 @@ end = struct
   let apply_call location ~callees ~port ~path ~element:taint =
     let apply (trace_info, kind_taint) =
       let open TraceInfo in
+      let apply_flow_details flow_details =
+        flow_details
+        |> FlowDetails.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
+               Features.TitoPositionSet.bottom)
+        |> FlowDetails.transform Features.ViaFeatureSet.Self Map ~f:(fun _ ->
+               Features.ViaFeatureSet.bottom)
+      in
       let kind_taint =
-        KindTaintDomain.transform
-          Features.TitoPositionSet.Self
-          Map
-          ~f:(fun _ -> Features.TitoPositionSet.bottom)
-          kind_taint
+        KindTaintDomain.transform FlowDetails.Self Map ~f:apply_flow_details kind_taint
       in
       match trace_info with
       | Origin _
@@ -561,12 +562,14 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let essential_trace_info = function
       | _ -> TraceInfo.Declaration { leaf_name_provided = false }
     in
-    let essential_simple_features _ = Features.SimpleSet.bottom in
+    let essential_breadcrumbs _ = Features.BreadcrumbSet.bottom in
+    let essential_via_features _ = Features.ViaFeatureSet.bottom in
     let essential_tito_positions _ = Features.TitoPositionSet.bottom in
     let essential_leaf_names _ = Features.LeafNameSet.bottom in
     transform Taint.trace_info Map ~f:essential_trace_info tree
     |> transform Features.ReturnAccessPathSet.Self Map ~f:essential_return_access_paths
-    |> transform Features.SimpleSet.Self Map ~f:essential_simple_features
+    |> transform Features.BreadcrumbSet.Self Map ~f:essential_breadcrumbs
+    |> transform Features.ViaFeatureSet.Self Map ~f:essential_via_features
     |> transform Features.TitoPositionSet.Self Map ~f:essential_tito_positions
     |> transform Features.LeafNameSet.Self Map ~f:essential_leaf_names
 
@@ -605,10 +608,13 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
 
   let breadcrumbs taint_tree =
+    let gather_breadcrumbs to_add breadcrumbs =
+      Features.BreadcrumbSet.add_set breadcrumbs ~to_add
+    in
     fold
-      Features.SimpleSet.Self
-      ~f:Features.gather_breadcrumbs
-      ~init:Features.SimpleSet.bottom
+      Features.BreadcrumbSet.Self
+      ~f:gather_breadcrumbs
+      ~init:Features.BreadcrumbSet.bottom
       taint_tree
 end
 
@@ -616,18 +622,32 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   module Tree = struct
     include MakeTaintTree (Taint) ()
 
-    let add_breadcrumb breadcrumb = transform Features.SimpleSet.Element Add ~f:breadcrumb
+    let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
 
     let add_breadcrumbs breadcrumbs taint_tree =
-      if Features.SimpleSet.is_bottom breadcrumbs || Features.SimpleSet.is_empty breadcrumbs then
+      if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
+      then
         taint_tree
       else
-        transform Features.SimpleSet.Self Add ~f:breadcrumbs taint_tree
+        transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs taint_tree
 
 
-    let features taint_tree =
-      let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
-      fold Features.SimpleSet.Self ~f:gather_features ~init:Features.SimpleSet.bottom taint_tree
+    let breadcrumbs taint_tree =
+      let gather_breadcrumbs to_add breadcrumbs =
+        Features.BreadcrumbSet.add_set breadcrumbs ~to_add
+      in
+      fold
+        Features.BreadcrumbSet.Self
+        ~f:gather_breadcrumbs
+        ~init:Features.BreadcrumbSet.bottom
+        taint_tree
+
+
+    let add_via_features via_features taint_tree =
+      if Features.ViaFeatureSet.is_bottom via_features then
+        taint_tree
+      else
+        transform Features.ViaFeatureSet.Self Add ~f:via_features taint_tree
   end
 
   include
@@ -697,20 +717,30 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let roots environment = fold Key ~f:List.cons ~init:[] environment
 
-  let add_breadcrumb breadcrumb = transform Features.SimpleSet.Element Add ~f:breadcrumb
+  let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
 
   let add_breadcrumbs breadcrumbs taint_tree =
-    if Features.SimpleSet.is_bottom breadcrumbs || Features.SimpleSet.is_empty breadcrumbs then
+    if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
+    then
       taint_tree
     else
-      transform Features.SimpleSet.Self Add ~f:breadcrumbs taint_tree
+      transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs taint_tree
+
+
+  let add_via_features via_features taint_tree =
+    if Features.ViaFeatureSet.is_bottom via_features then
+      taint_tree
+    else
+      transform Features.ViaFeatureSet.Self Add ~f:via_features taint_tree
 
 
   let extract_features_to_attach ~root ~attach_to_kind taint =
-    read ~root ~path:[] taint
-    |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
-    |> Tree.collapse ~transform:Fn.id
-    |> Taint.features
+    let taint =
+      read ~root ~path:[] taint
+      |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
+      |> Tree.collapse ~transform:Fn.id
+    in
+    Taint.breadcrumbs taint, Taint.via_features taint
 end
 
 module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
@@ -728,7 +758,7 @@ let local_return_taint =
       Part (BackwardTaint.kind, Sinks.LocalReturn);
       Part (TraceLength.Self, 0);
       Part (Features.ReturnAccessPathSet.Element, []);
-      Part (Features.SimpleSet.Self, Features.SimpleSet.empty);
+      Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty);
     ]
 
 

@@ -125,39 +125,38 @@ let get_callsite_model ~resolution ~call_target ~arguments =
             modes;
           }
         =
-        let expand features =
-          let transform feature features =
+        let expand flow_details =
+          let transform via_feature flow_details =
             let match_argument_to_parameter parameter =
               AccessPath.match_actuals_to_formals arguments [parameter]
               |> List.find ~f:(fun (_, matches) -> not (List.is_empty matches))
               >>| fst
             in
-            match feature with
-            | Features.Simple.ViaValueOf { parameter; tag } ->
-                features
-                |> Features.SimpleSet.remove feature
-                |> Features.SimpleSet.add
-                     (Features.Simple.via_value_of_breadcrumb
-                        ?tag
-                        ~argument:(match_argument_to_parameter parameter))
-            | Features.Simple.ViaTypeOf { parameter; tag } ->
-                features
-                |> Features.SimpleSet.remove feature
-                |> Features.SimpleSet.add
-                     (Features.Simple.via_type_of_breadcrumb
-                        ?tag
-                        ~resolution
-                        ~argument:(match_argument_to_parameter parameter))
-            | _ -> features
+            match via_feature with
+            | Features.ViaFeature.ViaValueOf { parameter; tag } ->
+                FlowDetails.add_breadcrumb
+                  (Features.ViaFeature.via_value_of_breadcrumb
+                     ?tag
+                     ~argument:(match_argument_to_parameter parameter))
+                  flow_details
+            | Features.ViaFeature.ViaTypeOf { parameter; tag } ->
+                FlowDetails.add_breadcrumb
+                  (Features.ViaFeature.via_type_of_breadcrumb
+                     ?tag
+                     ~resolution
+                     ~argument:(match_argument_to_parameter parameter))
+                  flow_details
           in
-          Features.SimpleSet.fold Features.SimpleSet.Element features ~f:transform ~init:features
+          FlowDetails.fold
+            Features.ViaFeatureSet.Element
+            ~f:transform
+            ~init:flow_details
+            flow_details
         in
-        let source_taint =
-          ForwardState.transform Features.SimpleSet.Self Map ~f:expand source_taint
-        in
-        let sink_taint = BackwardState.transform Features.SimpleSet.Self Map ~f:expand sink_taint in
+        let source_taint = ForwardState.transform FlowDetails.Self Map ~f:expand source_taint in
+        let sink_taint = BackwardState.transform FlowDetails.Self Map ~f:expand sink_taint in
         let taint_in_taint_out =
-          BackwardState.transform Features.SimpleSet.Self Map ~f:expand taint_in_taint_out
+          BackwardState.transform FlowDetails.Self Map ~f:expand taint_in_taint_out
         in
         {
           forward = { source_taint };
