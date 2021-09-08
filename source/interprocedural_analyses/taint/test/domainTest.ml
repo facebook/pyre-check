@@ -45,9 +45,9 @@ let test_partition_call_map _ =
   in
   let matches, does_not_match =
     ForwardTaint.partition
-      ForwardTaint.leaf
+      ForwardTaint.kind
       By
-      ~f:(fun leaf -> Sources.equal leaf (Sources.NamedSource "UserControlled"))
+      ~f:(fun kind -> Sources.equal kind (Sources.NamedSource "UserControlled"))
       joined
     |> split
   in

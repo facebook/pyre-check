@@ -67,13 +67,13 @@ module LeafName = struct
 
   let show = Format.asprintf "%a" pp
 
-  let to_json ~leaf_kind_json { leaf; port } =
+  let to_json ~kind_json { leaf; port } =
     let port_assoc =
       match port with
       | Some port -> ["port", `String port]
       | None -> []
     in
-    `Assoc (port_assoc @ ["kind", leaf_kind_json; "name", `String leaf])
+    `Assoc (port_assoc @ ["kind", kind_json; "name", `String leaf])
 end
 
 module LeafNameSet = Abstract.SetDomain.Make (LeafName)

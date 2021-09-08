@@ -46,7 +46,7 @@ end
 
 include T
 
-let ignore_leaf_at_call = function
+let ignore_kind_at_call = function
   | Attach -> true
   | _ -> false
 

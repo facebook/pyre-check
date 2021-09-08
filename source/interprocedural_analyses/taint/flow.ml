@@ -147,11 +147,9 @@ let generate_issues ~define { location; flows } =
     let partition { source_taint; sink_taint } =
       {
         source_partition =
-          ForwardTaint.partition ForwardTaint.leaf By source_taint ~f:(fun leaf ->
-              erase_source_subkind leaf);
+          ForwardTaint.partition ForwardTaint.kind By source_taint ~f:erase_source_subkind;
         sink_partition =
-          BackwardTaint.partition BackwardTaint.leaf By sink_taint ~f:(fun leaf ->
-              erase_sink_subkind leaf);
+          BackwardTaint.partition BackwardTaint.kind By sink_taint ~f:erase_sink_subkind;
       }
     in
     List.map flows ~f:partition
@@ -232,12 +230,12 @@ let get_name_and_detailed_message { code; flow; _ } =
   | None -> failwith "issue with code that has no rule"
   | Some { name; message_format; _ } ->
       let sources =
-        Domains.ForwardTaint.leaves flow.source_taint
+        Domains.ForwardTaint.kinds flow.source_taint
         |> List.map ~f:Sources.show
         |> String.concat ~sep:", "
       in
       let sinks =
-        Domains.BackwardTaint.leaves flow.sink_taint
+        Domains.BackwardTaint.kinds flow.sink_taint
         |> List.map ~f:Sinks.show
         |> String.concat ~sep:", "
       in
@@ -331,13 +329,13 @@ let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
     BackwardState.Tree.collapse
       ~transform:(BackwardTaint.add_features Features.issue_broadening)
       sink_tree
-    |> BackwardTaint.partition BackwardTaint.leaf ByFilter ~f:(function
+    |> BackwardTaint.partition BackwardTaint.kind ByFilter ~f:(function
            | Sinks.PartialSink { Sinks.kind; label } -> Some { Sinks.kind; label }
            | _ -> None)
   in
   if not (Map.Poly.is_empty partial_sinks_to_taint) then
     let sources =
-      source_tree |> ForwardState.Tree.partition ForwardTaint.leaf By ~f:Fn.id |> Map.Poly.keys
+      source_tree |> ForwardState.Tree.partition ForwardTaint.kind By ~f:Fn.id |> Map.Poly.keys
     in
     let add_triggered_sinks (triggered, candidates) sink =
       let add_triggered_sinks_for_source source =

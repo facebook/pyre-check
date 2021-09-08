@@ -169,7 +169,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let new_tito_map =
             BackwardState.read ~root ~path:formal_path backward.taint_in_taint_out
             |> BackwardState.Tree.prepend actual_path
-            |> BackwardState.Tree.partition Domains.BackwardTaint.leaf By ~f:Fn.id
+            |> BackwardState.Tree.partition Domains.BackwardTaint.kind By ~f:Fn.id
           in
           Map.Poly.merge tito_map new_tito_map ~f:(merge_tito_effect BackwardState.Tree.join)
         in
@@ -182,7 +182,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             | { tito = Some AllTito; _ } -> ForwardState.Tree.bottom
             | { tito = Some (SpecificTito { sanitized_tito_sources; _ }); _ } ->
                 ForwardState.Tree.partition
-                  ForwardTaint.leaf
+                  ForwardTaint.kind
                   ByFilter
                   ~f:(fun source ->
                     Option.some_if (not (Sources.Set.mem source sanitized_tito_sources)) source)
@@ -301,7 +301,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             match AccessPath.of_expression ~resolution argument with
             | Some { AccessPath.root; path } ->
                 let features_to_add =
-                  BackwardState.Tree.filter_by_leaf ~leaf:Sinks.AddFeatureToArgument sink_tree
+                  BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_tree
                   |> BackwardTaint.fold
                        BackwardTaint.simple_feature_self
                        ~f:Features.gather_breadcrumbs
@@ -347,7 +347,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                      roots_and_sinks
                | _ -> roots_and_sinks
              in
-             BackwardTaint.leaves
+             BackwardTaint.kinds
                (BackwardState.Tree.collapse
                   ~transform:(BackwardTaint.add_features Features.issue_broadening)
                   taint)
@@ -1115,7 +1115,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | { Sanitize.sources = Some AllSources; _ } -> ForwardState.Tree.empty
         | { Sanitize.sources = Some (SpecificSources sanitized_sources); _ } ->
             ForwardState.Tree.partition
-              ForwardTaint.leaf
+              ForwardTaint.kind
               ByFilter
               ~f:(fun source ->
                 Option.some_if (not (Sources.Set.mem source sanitized_sources)) source)
@@ -1743,7 +1743,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
       let features_to_attach =
         BackwardState.extract_features_to_attach
           ~root:AccessPath.Root.LocalResult
-          ~attach_to_leaf:Sinks.Attach
+          ~attach_to_kind:Sinks.Attach
           existing_model.TaintResult.backward.sink_taint
       in
       if not (Features.SimpleSet.is_bottom features_to_attach) then
@@ -1792,7 +1792,7 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
     let features_to_attach =
       ForwardState.extract_features_to_attach
         ~root:AccessPath.Root.LocalResult
-        ~attach_to_leaf:Sources.Attach
+        ~attach_to_kind:Sources.Attach
         existing_model.forward.source_taint
     in
     let source_taint =

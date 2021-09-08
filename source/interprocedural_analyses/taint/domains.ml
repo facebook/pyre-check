@@ -8,16 +8,6 @@
 open Core
 open Ast
 
-module type SET_ARG = sig
-  include Abstract.SetDomain.ELEMENT
-
-  val equal : t -> t -> bool
-
-  val show : t -> string
-
-  val ignore_leaf_at_call : t -> bool
-end
-
 let location_to_json
     {
       Location.start = { line = start_line; column = start_column };
@@ -265,11 +255,11 @@ end
 module type TAINT_DOMAIN = sig
   include Abstract.Domain.S
 
-  type leaf [@@deriving eq]
+  type kind [@@deriving eq]
 
-  val leaf : leaf Abstract.Domain.part
+  val kind : kind Abstract.Domain.part
 
-  val ignore_leaf_at_call : leaf -> bool
+  val ignore_kind_at_call : kind -> bool
 
   val trace_info : TraceInfo.t Abstract.Domain.part
 
@@ -308,9 +298,19 @@ module type TAINT_DOMAIN = sig
   val to_external_json : filename_lookup:(Reference.t -> string option) -> t -> Yojson.Safe.json
 end
 
-module LeafTaint (Leaf : SET_ARG) = struct
+module type KIND_ARG = sig
+  include Abstract.SetDomain.ELEMENT
+
+  val equal : t -> t -> bool
+
+  val show : t -> string
+
+  val ignore_kind_at_call : t -> bool
+end
+
+module KindTaint (Kind : KIND_ARG) = struct
   module Key = struct
-    include Leaf
+    include Kind
 
     let absence_implicitly_maps_to_bottom = false
   end
@@ -318,17 +318,17 @@ module LeafTaint (Leaf : SET_ARG) = struct
   module Map = Abstract.MapDomain.Make (Key) (FlowDetails)
   include Map
 
-  let singleton leaf = Map.set Map.bottom ~key:leaf ~data:FlowDetails.initial
+  let singleton kind = Map.set Map.bottom ~key:kind ~data:FlowDetails.initial
 end
 
-module MakeTaint (Leaf : SET_ARG) : sig
-  include TAINT_DOMAIN with type leaf = Leaf.t
+module MakeTaint (Kind : KIND_ARG) : sig
+  include TAINT_DOMAIN with type kind = Kind.t
 
-  val leaves : t -> leaf list
+  val kinds : t -> kind list
 
-  val singleton : ?location:Location.WithModule.t -> leaf -> t
+  val singleton : ?location:Location.WithModule.t -> kind -> t
 
-  val of_list : ?location:Location.WithModule.t -> leaf list -> t
+  val of_list : ?location:Location.WithModule.t -> kind list -> t
 end = struct
   module Key = struct
     include TraceInfo
@@ -336,33 +336,33 @@ end = struct
     let absence_implicitly_maps_to_bottom = true
   end
 
-  module LeafDomain = LeafTaint (Leaf)
-  module Map = Abstract.MapDomain.Make (Key) (LeafDomain)
+  module KindTaintDomain = KindTaint (Kind)
+  module Map = Abstract.MapDomain.Make (Key) (KindTaintDomain)
   include Map
 
-  type leaf = Leaf.t [@@deriving compare]
+  type kind = Kind.t [@@deriving compare]
 
-  let equal_leaf = Leaf.equal
+  let equal_kind = Kind.equal
 
-  let add ?location map leaf =
+  let add ?location map kind =
     let trace =
       match location with
       | None -> TraceInfo.Declaration { leaf_name_provided = false }
       | Some location -> TraceInfo.Origin location
     in
-    let leaf_taint = LeafDomain.singleton leaf in
+    let kind_taint = KindTaintDomain.singleton kind in
     Map.update map trace ~f:(function
-        | None -> leaf_taint
-        | Some existing -> LeafDomain.join leaf_taint existing)
+        | None -> kind_taint
+        | Some existing -> KindTaintDomain.join kind_taint existing)
 
 
-  let singleton ?location leaf = add ?location Map.bottom leaf
+  let singleton ?location kind = add ?location Map.bottom kind
 
-  let of_list ?location leaves = List.fold leaves ~init:Map.bottom ~f:(add ?location)
+  let of_list ?location kinds = List.fold kinds ~init:Map.bottom ~f:(add ?location)
 
-  let leaf = LeafDomain.Key
+  let kind = KindTaintDomain.Key
 
-  let ignore_leaf_at_call = Leaf.ignore_leaf_at_call
+  let ignore_kind_at_call = Kind.ignore_kind_at_call
 
   let trace_info = Map.Key
 
@@ -380,14 +380,14 @@ end = struct
 
   let first_indices = Features.FirstIndexSet.Self
 
-  let leaves map =
-    Map.fold leaf ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Leaf.compare
+  let kinds map =
+    Map.fold kind ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Kind.compare
 
 
   let create_json ~trace_info_to_json taint =
-    let leaf_to_json trace_info (leaf, features) =
+    let leaf_to_json trace_info (kind, features) =
       let trace_length = FlowDetails.fold TraceLength.Self features ~f:min ~init:55555 in
-      let leaf_kind_json = `String (Leaf.show leaf) in
+      let kind_json = `String (Kind.show kind) in
       let breadcrumbs, leaf_json =
         let gather_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
           match element with
@@ -402,7 +402,7 @@ end = struct
         in
         let gather_return_access_path path leaves =
           let path_name = Abstract.TreeDomain.Label.show_path path in
-          `Assoc ["kind", leaf_kind_json; "name", `String path_name; "depth", `Int trace_length]
+          `Assoc ["kind", kind_json; "name", `String path_name; "depth", `Int trace_length]
           :: leaves
         in
         let breadcrumbs =
@@ -411,7 +411,7 @@ end = struct
         let leaves =
           FlowDetails.get FlowDetails.Slots.LeafName features
           |> Features.LeafNameSet.elements
-          |> List.map ~f:(Features.LeafName.to_json ~leaf_kind_json)
+          |> List.map ~f:(Features.LeafName.to_json ~kind_json)
         in
         let first_index_breadcrumbs =
           FlowDetails.get FlowDetails.Slots.FirstIndex features
@@ -439,7 +439,7 @@ end = struct
       let trace_json = trace_info_to_json ~trace_length trace_info in
       let leaf_json =
         if List.is_empty leaf_json then
-          [`Assoc ["kind", leaf_kind_json]]
+          [`Assoc ["kind", kind_json]]
         else
           leaf_json
       in
@@ -457,8 +457,8 @@ end = struct
       in
       `Assoc (trace_json :: association)
     in
-    let trace_to_json (traceinfo, leaftaint) =
-      LeafDomain.Map.to_alist leaftaint |> List.map ~f:(leaf_to_json traceinfo)
+    let trace_to_json (trace_info, kind_taint) =
+      KindTaintDomain.Map.to_alist kind_taint |> List.map ~f:(leaf_to_json trace_info)
     in
     (* expand now do dedup possibly abstract targets that resolve to the same concrete ones *)
     let taint = Map.transform Key Abstract.Domain.Map ~f:TraceInfo.expand_call_site taint in
@@ -494,29 +494,29 @@ end = struct
       let length = FlowDetails.get FlowDetails.Slots.TraceLength flow_details in
       TraceLength.is_bottom length || TraceLength.less_or_equal ~left:maximum_length ~right:length
     in
-    transform LeafDomain.KeyValue Filter ~f:filter_flow
+    transform KindTaintDomain.KeyValue Filter ~f:filter_flow
 
 
   let apply_call location ~callees ~port ~path ~element:taint =
-    let apply (trace_info, leaf_taint) =
+    let apply (trace_info, kind_taint) =
       let open TraceInfo in
-      let leaf_taint =
-        LeafDomain.transform
+      let kind_taint =
+        KindTaintDomain.transform
           Features.TitoPositionSet.Self
           Abstract.Domain.Map
           ~f:(fun _ -> Features.TitoPositionSet.bottom)
-          leaf_taint
+          kind_taint
       in
       match trace_info with
       | Origin _
       | CallSite _ ->
           let increase_length n = if n < max_int then n + 1 else n in
           let trace_info = CallSite { location; callees; port; path } in
-          let leaf_taint =
-            leaf_taint
-            |> LeafDomain.transform TraceLength.Self Abstract.Domain.Map ~f:increase_length
+          let kind_taint =
+            kind_taint
+            |> KindTaintDomain.transform TraceLength.Self Abstract.Domain.Map ~f:increase_length
           in
-          trace_info, leaf_taint
+          trace_info, kind_taint
       | Declaration { leaf_name_provided } ->
           let trace_info = Origin location in
           let new_leaf_names =
@@ -529,14 +529,14 @@ end = struct
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
           in
-          let leaf_taint =
-            LeafDomain.transform
+          let kind_taint =
+            KindTaintDomain.transform
               Features.LeafNameSet.Self
               Abstract.Domain.Add
               ~f:new_leaf_names
-              leaf_taint
+              kind_taint
           in
-          trace_info, leaf_taint
+          trace_info, kind_taint
     in
     Map.transform Map.KeyValue Abstract.Domain.Map ~f:apply taint
 end
@@ -559,9 +559,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let transform_path (path, tip) =
       let tip =
         Taint.partition
-          Taint.leaf
+          Taint.kind
           ByFilter
-          ~f:(fun leaf -> if Taint.ignore_leaf_at_call leaf then None else Some false)
+          ~f:(fun kind -> if Taint.ignore_kind_at_call kind then None else Some false)
           tip
         |> (fun map -> Map.Poly.find map false)
         |> function
@@ -618,10 +618,10 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     transform Taint.Self Map ~f:(Taint.prune_maximum_length maximum_length)
 
 
-  let filter_by_leaf ~leaf taint_tree =
+  let filter_by_kind ~kind taint_tree =
     collapse ~transform:Fn.id taint_tree
-    |> Taint.partition Taint.leaf ByFilter ~f:(fun candidate ->
-           if Taint.equal_leaf leaf candidate then Some true else None)
+    |> Taint.partition Taint.kind ByFilter ~f:(fun candidate ->
+           if Taint.equal_kind kind candidate then Some true else None)
     |> (fun map -> Map.Poly.find map true)
     |> Option.value ~default:Taint.bottom
 
@@ -705,10 +705,10 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let roots environment = fold Key ~f:List.cons ~init:[] environment
 
-  let extract_features_to_attach ~root ~attach_to_leaf taint =
+  let extract_features_to_attach ~root ~attach_to_kind taint =
     let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
     read ~root ~path:[] taint
-    |> Tree.transform Taint.leaf Filter ~f:(Taint.equal_leaf attach_to_leaf)
+    |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
     |> Tree.collapse ~transform:Fn.id
     |> Taint.fold Taint.simple_feature_self ~f:gather_features ~init:Features.SimpleSet.bottom
 end
@@ -725,7 +725,7 @@ let local_return_taint =
   BackwardTaint.create
     [
       Part (BackwardTaint.trace_info, TraceInfo.Declaration { leaf_name_provided = false });
-      Part (BackwardTaint.leaf, Sinks.LocalReturn);
+      Part (BackwardTaint.kind, Sinks.LocalReturn);
       Part (TraceLength.Self, 0);
       Part (Features.ReturnAccessPathSet.Element, []);
       Part (Features.SimpleSet.Self, Features.SimpleSet.empty);

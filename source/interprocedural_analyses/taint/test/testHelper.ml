@@ -120,7 +120,7 @@ let check_expectation
     | Some name ->
         let sinks =
           Domains.BackwardState.Tree.collapse ~transform:Fn.id sink_tree
-          |> Domains.BackwardTaint.leaves
+          |> Domains.BackwardTaint.kinds
         in
         let sinks =
           String.Map.find sink_map name
@@ -136,7 +136,7 @@ let check_expectation
     | Some name ->
         let sinks =
           Domains.ForwardState.Tree.collapse ~transform:Fn.id source_tree
-          |> Domains.ForwardTaint.leaves
+          |> Domains.ForwardTaint.kinds
         in
         let sinks =
           String.Map.find sink_map name
@@ -176,8 +176,8 @@ let check_expectation
       ~init:String.Map.empty
   in
   let extract_tito_parameter_name (root, taint) positions =
-    let leafs =
-      Domains.BackwardState.Tree.fold Domains.BackwardTaint.leaf taint ~f:List.cons ~init:[]
+    let kinds =
+      Domains.BackwardState.Tree.fold Domains.BackwardTaint.kind taint ~f:List.cons ~init:[]
     in
     let get_tito_name parameter_name = function
       | Sinks.Attach -> parameter_name
@@ -187,8 +187,8 @@ let check_expectation
     in
     match AccessPath.Root.parameter_name root with
     | Some name ->
-        List.fold leafs ~init:positions ~f:(fun positions leaf ->
-            String.Set.add positions (get_tito_name name leaf))
+        List.fold kinds ~init:positions ~f:(fun positions kind ->
+            String.Set.add positions (get_tito_name name kind))
     | _ -> positions
   in
   let taint_in_taint_out_names =
@@ -260,7 +260,7 @@ let check_expectation
   let returned_sources =
     Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
     |> Domains.ForwardState.Tree.collapse ~transform:Fn.id
-    |> Domains.ForwardTaint.leaves
+    |> Domains.ForwardTaint.kinds
     |> List.map ~f:Sources.show
     |> String.Set.of_list
   in

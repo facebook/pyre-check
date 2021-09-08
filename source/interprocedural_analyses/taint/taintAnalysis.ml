@@ -336,7 +336,7 @@ include Taint.Result.Register (struct
         | Some (Sanitize.SpecificSources sanitized_sources) ->
             let { Forward.source_taint } = forward in
             ForwardState.partition
-              ForwardTaint.leaf
+              ForwardTaint.kind
               ByFilter
               ~f:(fun source ->
                 Option.some_if (not (Sources.Set.mem source sanitized_sources)) source)
@@ -358,7 +358,7 @@ include Taint.Result.Register (struct
         | Some (Sanitize.SpecificSinks sanitized_sinks) ->
             let { Backward.sink_taint; _ } = backward in
             BackwardState.partition
-              BackwardTaint.leaf
+              BackwardTaint.kind
               ByFilter
               ~f:(fun source -> Option.some_if (not (Sinks.Set.mem source sanitized_sinks)) source)
               sink_taint

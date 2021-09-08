@@ -228,8 +228,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     | Some argument -> get_argument_taint ~resolution ~argument)
                 | _ -> failwith "unexpected tito sink"
               in
-              let compute_tito_depth leaf depth =
-                match leaf with
+              let compute_tito_depth kind depth =
+                match kind with
                 | Sinks.LocalReturn -> max depth (1 + tito_depth)
                 | _ -> depth
               in
@@ -245,14 +245,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                        ~f:breadcrumbs
                   |> BackwardTaint.transform
                        TraceLength.Self
-                       (Context (BackwardTaint.leaf, Map))
+                       (Context (BackwardTaint.kind, Map))
                        ~f:compute_tito_depth
                   |> BackwardState.Tree.create_leaf
                   |> BackwardState.Tree.prepend tito_path
                   |> BackwardState.Tree.join taint)
                 ~init:argument_taint
             in
-            BackwardTaint.partition BackwardTaint.leaf By ~f:Fn.id element
+            BackwardTaint.partition BackwardTaint.kind By ~f:Fn.id element
             |> Map.Poly.fold ~f:compute_parameter_tito ~init:argument_taint
           in
           let add_tito_feature_and_position leaf_taint =
@@ -306,7 +306,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             | { tito = Some AllTito; _ } -> BackwardState.Tree.bottom
             | { tito = Some (SpecificTito { sanitized_tito_sinks; _ }); _ } ->
                 BackwardState.Tree.partition
-                  BackwardTaint.leaf
+                  BackwardTaint.kind
                   ByFilter
                   ~f:(fun sink ->
                     Option.some_if (not (Sinks.Set.mem sink sanitized_tito_sinks)) sink)
@@ -322,7 +322,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             match AccessPath.of_expression ~resolution argument with
             | Some { AccessPath.root; path } ->
                 let features_to_add =
-                  BackwardState.Tree.filter_by_leaf ~leaf:Sinks.AddFeatureToArgument sink_taint
+                  BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
                   |> BackwardTaint.fold
                        BackwardTaint.simple_feature_self
                        ~f:Features.gather_breadcrumbs
@@ -1144,7 +1144,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 | { Sanitize.sinks = Some AllSinks; _ } -> BackwardState.Tree.empty
                 | { Sanitize.sinks = Some (SpecificSinks sanitized_sinks); _ } ->
                     BackwardState.Tree.partition
-                      BackwardTaint.leaf
+                      BackwardTaint.kind
                       ByFilter
                       ~f:(fun sink ->
                         Option.some_if (not (Sinks.Set.mem sink sanitized_sinks)) sink)
@@ -1425,13 +1425,13 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     let annotation = original.Node.value.Parameter.annotation in
     let partition =
       BackwardState.read ~root:(Root.Variable name) ~path:[] entry_taint
-      |> BackwardState.Tree.partition BackwardTaint.leaf By ~f:Fn.id
+      |> BackwardState.Tree.partition BackwardTaint.kind By ~f:Fn.id
     in
     let taint_in_taint_out =
       let features_to_attach =
         BackwardState.extract_features_to_attach
           ~root:parameter
-          ~attach_to_leaf:Sinks.Attach
+          ~attach_to_kind:Sinks.Attach
           existing_backward.TaintResult.Backward.taint_in_taint_out
       in
       let candidate_tree =
@@ -1493,7 +1493,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       let features_to_attach =
         BackwardState.extract_features_to_attach
           ~root:parameter
-          ~attach_to_leaf:Sinks.Attach
+          ~attach_to_kind:Sinks.Attach
           existing_backward.TaintResult.Backward.sink_taint
       in
       if not (Features.SimpleSet.is_bottom features_to_attach) then

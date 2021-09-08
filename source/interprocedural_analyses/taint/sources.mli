@@ -16,7 +16,7 @@ type t =
 
 val name : string
 
-val ignore_leaf_at_call : t -> bool
+val ignore_kind_at_call : t -> bool
 
 module Set : sig
   include Stdlib.Set.S with type elt = t
