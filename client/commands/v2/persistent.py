@@ -425,6 +425,7 @@ class StartSuccess:
 
 @dataclasses.dataclass(frozen=True)
 class StartFailure:
+    message: str
     detail: str
 
 
@@ -469,10 +470,19 @@ async def _start_pyre_server(
             )
 
         return StartSuccess()
-    except Exception:
+    except server_event.ServerStartException as error:
+        # We know where the exception come from. Let's keep the error details
+        # succinct.
+        message = str(error)
+        LOG.error(message)
+        return StartFailure(message=message, detail=message)
+    except Exception as error:
+        # These exceptions are unexpected. Let's keep verbose stack traces to
+        # help with post-mortem analyses.
+        message = str(error)
         detail = traceback.format_exc()
-        LOG.error(f"Exception occured during server start. {detail}")
-        return StartFailure(detail)
+        LOG.error(f"{detail}")
+        return StartFailure(message=message, detail=detail)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -835,9 +845,8 @@ class PyreServerHandler(connection.BackgroundTask):
                         },
                     )
                     await self.show_status_message_to_client(
-                        f"Cannot start a new Pyre server at `{server_identifier}`."
-                        "To get more detailed error message, run `pyre` from "
-                        f"`{server_identifier} on the command line",
+                        f"Cannot start a new Pyre server at `{server_identifier}`. "
+                        f"{start_status.message}",
                         short_message="Pyre Stopped",
                         level=lsp.MessageType.WARNING,
                     )
