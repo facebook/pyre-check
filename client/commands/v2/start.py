@@ -118,77 +118,33 @@ SavedStateAction = Union[
 class Arguments:
     """
     Data structure for configuration options the backend server can recognize.
-    Need to keep in sync with `pyre/new_server/serverConfiguration.mli`
+    Need to keep in sync with `pyre/command/newServerCommand.ml`
     """
 
-    log_path: str
-    global_root: str
-    source_paths: backend_arguments.SourcePath
+    base_arguments: backend_arguments.BaseArguments
 
-    additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
-    checked_directory_allowlist: Sequence[str] = dataclasses.field(default_factory=list)
-    checked_directory_blocklist: Sequence[str] = dataclasses.field(default_factory=list)
-    critical_files: Sequence[CriticalFile] = dataclasses.field(default_factory=list)
-    debug: bool = False
-    excludes: Sequence[str] = dataclasses.field(default_factory=list)
-    extensions: Sequence[str] = dataclasses.field(default_factory=list)
-    relative_local_root: Optional[str] = None
-    memory_profiling_output: Optional[Path] = None
-    number_of_workers: int = 1
-    parallel: bool = True
-    profiling_output: Optional[Path] = None
-    python_version: configuration_module.PythonVersion = (
-        configuration_module.PythonVersion(major=3)
-    )
-    shared_memory: configuration_module.SharedMemory = (
-        configuration_module.SharedMemory()
-    )
-    remote_logging: Optional[backend_arguments.RemoteLogging] = None
-    saved_state_action: Optional[SavedStateAction] = None
-    search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
-        default_factory=list
-    )
-    show_error_traces: bool = False
-    store_type_check_resolution: bool = False
     strict: bool = False
-    taint_models_path: Sequence[str] = dataclasses.field(default_factory=list)
+    show_error_traces: bool = False
+    additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
     watchman_root: Optional[Path] = None
-
-    @property
-    def local_root(self) -> Optional[str]:
-        if self.relative_local_root is None:
-            return None
-        return os.path.join(self.global_root, self.relative_local_root)
+    taint_models_path: Sequence[str] = dataclasses.field(default_factory=list)
+    store_type_check_resolution: bool = False
+    critical_files: Sequence[CriticalFile] = dataclasses.field(default_factory=list)
+    saved_state_action: Optional[SavedStateAction] = None
 
     def serialize(self) -> Dict[str, Any]:
-        local_root = self.local_root
         return {
-            "source_paths": self.source_paths.serialize(),
-            "search_paths": [
-                element.command_line_argument() for element in self.search_paths
-            ],
-            "excludes": self.excludes,
-            "checked_directory_allowlist": self.checked_directory_allowlist,
-            "checked_directory_blocklist": self.checked_directory_blocklist,
-            "extensions": self.extensions,
-            "log_path": self.log_path,
-            "global_root": self.global_root,
-            **({} if local_root is None else {"local_root": local_root}),
+            **self.base_arguments.serialize(),
+            "strict": self.strict,
+            "show_error_traces": self.show_error_traces,
+            "additional_logging_sections": self.additional_logging_sections,
             **(
                 {}
                 if self.watchman_root is None
                 else {"watchman_root": str(self.watchman_root)}
             ),
             "taint_model_paths": self.taint_models_path,
-            "debug": self.debug,
-            "strict": self.strict,
-            "python_version": {
-                "major": self.python_version.major,
-                "minor": self.python_version.minor,
-                "micro": self.python_version.micro,
-            },
-            "shared_memory": self.shared_memory.to_json(),
-            "show_error_traces": self.show_error_traces,
+            "store_type_check_resolution": self.store_type_check_resolution,
             "critical_files": [
                 critical_file.serialize() for critical_file in self.critical_files
             ],
@@ -196,25 +152,6 @@ class Arguments:
                 {}
                 if self.saved_state_action is None
                 else {"saved_state_action": self.saved_state_action.serialize()}
-            ),
-            "store_type_check_resolution": self.store_type_check_resolution,
-            "parallel": self.parallel,
-            "number_of_workers": self.number_of_workers,
-            "additional_logging_sections": self.additional_logging_sections,
-            **(
-                {}
-                if self.remote_logging is None
-                else {"remote_logging": self.remote_logging.serialize()}
-            ),
-            **(
-                {}
-                if self.profiling_output is None
-                else {"profiling_output": str(self.profiling_output)}
-            ),
-            **(
-                {}
-                if self.memory_profiling_output is None
-                else {"memory_profiling_output": str(self.memory_profiling_output)}
             ),
         }
 
@@ -331,44 +268,46 @@ def create_server_arguments(
     )
 
     return Arguments(
-        log_path=configuration.log_directory,
-        global_root=configuration.project_root,
+        base_arguments=backend_arguments.BaseArguments(
+            log_path=configuration.log_directory,
+            global_root=configuration.project_root,
+            checked_directory_allowlist=(
+                list(source_paths.get_checked_directory_allowlist())
+                + configuration.get_existent_do_not_ignore_errors_in_paths()
+            ),
+            checked_directory_blocklist=(
+                configuration.get_existent_ignore_all_errors_paths()
+            ),
+            debug=start_arguments.debug,
+            excludes=configuration.excludes,
+            extensions=configuration.get_valid_extension_suffixes(),
+            relative_local_root=configuration.relative_local_root,
+            memory_profiling_output=memory_profiling_output,
+            number_of_workers=configuration.get_number_of_workers(),
+            parallel=not start_arguments.sequential,
+            profiling_output=profiling_output,
+            python_version=configuration.get_python_version(),
+            shared_memory=configuration.shared_memory,
+            remote_logging=backend_arguments.RemoteLogging.create(
+                configuration.logger, start_arguments.log_identifier
+            ),
+            search_paths=configuration.expand_and_get_existent_search_paths(),
+            source_paths=source_paths,
+        ),
+        strict=configuration.strict,
+        show_error_traces=start_arguments.show_error_traces,
         additional_logging_sections=additional_logging_sections,
-        checked_directory_allowlist=(
-            list(source_paths.get_checked_directory_allowlist())
-            + configuration.get_existent_do_not_ignore_errors_in_paths()
-        ),
-        checked_directory_blocklist=(
-            configuration.get_existent_ignore_all_errors_paths()
-        ),
+        watchman_root=None
+        if start_arguments.no_watchman
+        else backend_arguments.find_watchman_root(Path(configuration.project_root)),
+        taint_models_path=configuration.taint_models_path,
+        store_type_check_resolution=start_arguments.store_type_check_resolution,
         critical_files=get_critical_files(configuration),
-        debug=start_arguments.debug,
-        excludes=configuration.excludes,
-        extensions=configuration.get_valid_extension_suffixes(),
-        relative_local_root=configuration.relative_local_root,
-        memory_profiling_output=memory_profiling_output,
-        number_of_workers=configuration.get_number_of_workers(),
-        parallel=not start_arguments.sequential,
-        profiling_output=profiling_output,
-        python_version=configuration.get_python_version(),
-        shared_memory=configuration.shared_memory,
-        remote_logging=backend_arguments.RemoteLogging.create(
-            configuration.logger, start_arguments.log_identifier
-        ),
         saved_state_action=None
         if start_arguments.no_saved_state
         else get_saved_state_action(
             start_arguments, relative_local_root=configuration.relative_local_root
         ),
-        search_paths=configuration.expand_and_get_existent_search_paths(),
-        show_error_traces=start_arguments.show_error_traces,
-        source_paths=source_paths,
-        store_type_check_resolution=start_arguments.store_type_check_resolution,
-        strict=configuration.strict,
-        taint_models_path=configuration.taint_models_path,
-        watchman_root=None
-        if start_arguments.no_watchman
-        else backend_arguments.find_watchman_root(Path(configuration.project_root)),
     )
 
 

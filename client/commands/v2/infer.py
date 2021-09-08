@@ -39,84 +39,19 @@ class InferMode(enum.Enum):
 @dataclasses.dataclass(frozen=True)
 class Arguments:
     """
-    Data structure for configuration options the backend check command can recognize.
+    Data structure for configuration options the backend infer command can recognize.
     Need to keep in sync with `pyre/command/newInferCommand.ml`
     """
 
-    log_path: str
-    global_root: str
-    source_paths: backend_arguments.SourcePath
+    base_arguments: backend_arguments.BaseArguments
 
-    checked_directory_allowlist: Sequence[str] = dataclasses.field(default_factory=list)
-    checked_directory_blocklist: Sequence[str] = dataclasses.field(default_factory=list)
-    debug: bool = False
-    excludes: Sequence[str] = dataclasses.field(default_factory=list)
-    extensions: Sequence[str] = dataclasses.field(default_factory=list)
-    memory_profiling_output: Optional[Path] = None
-    number_of_workers: int = 1
-    parallel: bool = True
-    profiling_output: Optional[Path] = None
-    python_version: configuration_module.PythonVersion = (
-        configuration_module.PythonVersion(major=3)
-    )
-    relative_local_root: Optional[str] = None
-    shared_memory: configuration_module.SharedMemory = (
-        configuration_module.SharedMemory()
-    )
-    remote_logging: Optional[backend_arguments.RemoteLogging] = None
-    search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
-        default_factory=list
-    )
-    # infer-specific fields
     infer_mode: InferMode = InferMode.LOCAL
     ignore_infer: Sequence[str] = dataclasses.field(default_factory=list)
     paths_to_modify: Optional[Set[Path]] = None
 
-    @property
-    def local_root(self) -> Optional[str]:
-        if self.relative_local_root is None:
-            return None
-        return os.path.join(self.global_root, self.relative_local_root)
-
     def serialize(self) -> Dict[str, Any]:
-        local_root = self.local_root
         return {
-            # base config fields
-            "source_paths": self.source_paths.serialize(),
-            "search_paths": [
-                element.command_line_argument() for element in self.search_paths
-            ],
-            "excludes": self.excludes,
-            "checked_directory_allowlist": self.checked_directory_allowlist,
-            "checked_directory_blocklist": self.checked_directory_blocklist,
-            "extensions": self.extensions,
-            "log_path": self.log_path,
-            "global_root": self.global_root,
-            **({} if local_root is None else {"local_root": local_root}),
-            "debug": self.debug,
-            "python_version": {
-                "major": self.python_version.major,
-                "minor": self.python_version.minor,
-                "micro": self.python_version.micro,
-            },
-            "shared_memory": self.shared_memory.to_json(),
-            "parallel": self.parallel,
-            "number_of_workers": self.number_of_workers,
-            **(
-                {}
-                if self.remote_logging is None
-                else {"remote_logging": self.remote_logging.serialize()}
-            ),
-            **(
-                {}
-                if self.profiling_output is None
-                else {"profiling_output": str(self.profiling_output)}
-            ),
-            **(
-                {}
-                if self.memory_profiling_output is None
-                else {"memory_profiling_output": str(self.memory_profiling_output)}
-            ),
+            **self.base_arguments.serialize(),
             "ignore_infer": self.ignore_infer,
             "infer_mode": self.infer_mode.serialize(),
             **(
@@ -751,28 +686,30 @@ def create_infer_arguments(
     )
 
     return Arguments(
-        log_path=configuration.log_directory,
-        global_root=configuration.project_root,
-        checked_directory_allowlist=list(
-            source_paths.get_checked_directory_allowlist()
+        base_arguments=backend_arguments.BaseArguments(
+            log_path=configuration.log_directory,
+            global_root=configuration.project_root,
+            checked_directory_allowlist=list(
+                source_paths.get_checked_directory_allowlist()
+            ),
+            checked_directory_blocklist=(
+                configuration.get_existent_ignore_all_errors_paths()
+            ),
+            debug=infer_arguments.debug_infer,
+            excludes=configuration.excludes,
+            extensions=configuration.get_valid_extension_suffixes(),
+            relative_local_root=configuration.relative_local_root,
+            memory_profiling_output=memory_profiling_output,
+            number_of_workers=configuration.get_number_of_workers(),
+            parallel=not infer_arguments.sequential,
+            profiling_output=profiling_output,
+            python_version=configuration.get_python_version(),
+            shared_memory=configuration.shared_memory,
+            remote_logging=remote_logging,
+            search_paths=configuration.expand_and_get_existent_search_paths(),
+            source_paths=source_paths,
         ),
-        checked_directory_blocklist=(
-            configuration.get_existent_ignore_all_errors_paths()
-        ),
-        debug=infer_arguments.debug_infer,
-        excludes=configuration.excludes,
-        extensions=configuration.get_valid_extension_suffixes(),
         ignore_infer=configuration.get_existent_ignore_infer_paths(),
-        relative_local_root=configuration.relative_local_root,
-        memory_profiling_output=memory_profiling_output,
-        number_of_workers=configuration.get_number_of_workers(),
-        parallel=not infer_arguments.sequential,
-        profiling_output=profiling_output,
-        python_version=configuration.get_python_version(),
-        shared_memory=configuration.shared_memory,
-        remote_logging=remote_logging,
-        search_paths=configuration.expand_and_get_existent_search_paths(),
-        source_paths=source_paths,
         infer_mode=infer_mode,
         paths_to_modify=infer_arguments.paths_to_modify,
     )
@@ -789,7 +726,7 @@ def create_infer_arguments_and_cleanup(
     finally:
         # It is safe to clean up source paths after infer command since
         # any created artifact directory won't be reused by other commands.
-        arguments.source_paths.cleanup()
+        arguments.base_arguments.source_paths.cleanup()
 
 
 def _check_working_directory(

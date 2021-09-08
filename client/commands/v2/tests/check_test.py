@@ -36,86 +36,24 @@ class ArgumentTest(testslide.TestCase):
 
         assert_serialized(
             Arguments(
-                log_path="foo",
-                global_root="bar",
-                source_paths=backend_arguments.SimpleSourcePath(
-                    [configuration.SimpleSearchPathElement("source")]
+                base_arguments=backend_arguments.BaseArguments(
+                    log_path="/log",
+                    global_root="/project",
+                    source_paths=backend_arguments.SimpleSourcePath(
+                        [configuration.SimpleSearchPathElement("source")]
+                    ),
                 ),
-            ),
-            [
-                ("log_path", "foo"),
-                ("global_root", "bar"),
-                ("source_paths", {"kind": "simple", "paths": ["source"]}),
-            ],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                excludes=["/excludes"],
-                checked_directory_allowlist=["/allows"],
-                checked_directory_blocklist=["/blocks"],
-                extensions=[".typsy"],
-            ),
-            [
-                ("excludes", ["/excludes"]),
-                ("checked_directory_allowlist", ["/allows"]),
-                ("checked_directory_blocklist", ["/blocks"]),
-                ("extensions", [".typsy"]),
-            ],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                debug=True,
-                strict=True,
-                show_error_traces=True,
-            ),
-            [
-                ("debug", True),
-                ("strict", True),
-                ("show_error_traces", True),
-            ],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                parallel=True,
-                number_of_workers=20,
-            ),
-            [("parallel", True), ("number_of_workers", 20)],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                relative_local_root="local",
-            ),
-            [("local_root", "/project/local")],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
                 additional_logging_sections=["foo", "bar"],
-                remote_logging=backend_arguments.RemoteLogging(
-                    logger="/logger", identifier="baz"
-                ),
-                profiling_output=Path("/derp"),
-                memory_profiling_output=Path("/derp2"),
+                show_error_traces=True,
+                strict=True,
             ),
             [
+                ("log_path", "/log"),
+                ("global_root", "/project"),
+                ("source_paths", {"kind": "simple", "paths": ["source"]}),
                 ("additional_logging_sections", ["foo", "bar"]),
-                ("profiling_output", "/derp"),
-                ("remote_logging", {"logger": "/logger", "identifier": "baz"}),
-                ("memory_profiling_output", "/derp2"),
+                ("show_error_traces", True),
+                ("strict", True),
             ],
         )
 
@@ -161,31 +99,35 @@ class CheckTest(testslide.TestCase):
                     ),
                 ),
                 Arguments(
-                    log_path=str(root_path / ".pyre/local"),
-                    global_root=str(root_path),
-                    checked_directory_allowlist=[
-                        str(root_path / "local/src"),
-                        str(root_path / "allows"),
-                    ],
-                    checked_directory_blocklist=[str(root_path / "blocks")],
-                    debug=True,
-                    excludes=["exclude"],
-                    extensions=[".ext"],
-                    relative_local_root="local",
-                    number_of_workers=42,
-                    parallel=True,
-                    python_version=check_configuration.get_python_version(),
-                    search_paths=[
-                        configuration.SimpleSearchPathElement(str(root_path / "search"))
-                    ],
-                    show_error_traces=True,
-                    source_paths=backend_arguments.SimpleSourcePath(
-                        [
+                    base_arguments=backend_arguments.BaseArguments(
+                        log_path=str(root_path / ".pyre/local"),
+                        global_root=str(root_path),
+                        checked_directory_allowlist=[
+                            str(root_path / "local/src"),
+                            str(root_path / "allows"),
+                        ],
+                        checked_directory_blocklist=[str(root_path / "blocks")],
+                        debug=True,
+                        excludes=["exclude"],
+                        extensions=[".ext"],
+                        relative_local_root="local",
+                        number_of_workers=42,
+                        parallel=True,
+                        python_version=check_configuration.get_python_version(),
+                        search_paths=[
                             configuration.SimpleSearchPathElement(
-                                str(root_path / "local/src")
+                                str(root_path / "search")
                             )
-                        ]
+                        ],
+                        source_paths=backend_arguments.SimpleSourcePath(
+                            [
+                                configuration.SimpleSearchPathElement(
+                                    str(root_path / "local/src")
+                                )
+                            ]
+                        ),
                     ),
+                    show_error_traces=True,
                     strict=True,
                 ),
             )
@@ -213,7 +155,7 @@ class CheckTest(testslide.TestCase):
             )
             # Make sure we are not overwriting the artifact root for server command
             self.assertNotEqual(
-                arguments.source_paths.serialize()["artifact_root"],
+                arguments.base_arguments.source_paths.serialize()["artifact_root"],
                 root_path / ".pyre" / backend_arguments.SERVER_ARTIFACT_ROOT_NAME,
             )
 
@@ -248,15 +190,15 @@ class CheckTest(testslide.TestCase):
                 ["foo", "bar", "-baz", "-progress"],
             )
             self.assertEqual(
-                arguments.profiling_output,
+                arguments.base_arguments.profiling_output,
                 backend_arguments.get_profiling_log_path(log_path),
             )
             self.assertEqual(
-                arguments.memory_profiling_output,
+                arguments.base_arguments.memory_profiling_output,
                 backend_arguments.get_profiling_log_path(log_path),
             )
             self.assertEqual(
-                arguments.remote_logging,
+                arguments.base_arguments.remote_logging,
                 backend_arguments.RemoteLogging(
                     logger=str(logger_path), identifier="derp"
                 ),

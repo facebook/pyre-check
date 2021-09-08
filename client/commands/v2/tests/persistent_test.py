@@ -550,9 +550,11 @@ class PersistentTest(testslide.TestCase):
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
-                    source_paths=backend_arguments.SimpleSourcePath(),
-                    log_path="/log/path",
-                    global_root="/global/root",
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
                 ),
             ),
             client_output_channel=TextWriter(bytes_writer),
@@ -594,9 +596,11 @@ class PersistentTest(testslide.TestCase):
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
-                    source_paths=backend_arguments.SimpleSourcePath(),
-                    log_path="/log/path",
-                    global_root="/global/root",
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
                 ),
             ),
             client_output_channel=TextWriter(bytes_writer),

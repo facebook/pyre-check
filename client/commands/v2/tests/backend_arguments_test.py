@@ -5,6 +5,7 @@
 
 import tempfile
 from pathlib import Path
+from typing import Iterable, Tuple
 
 import testslide
 
@@ -14,6 +15,7 @@ from ..backend_arguments import (
     RemoteLogging,
     SimpleSourcePath,
     BuckSourcePath,
+    BaseArguments,
     find_watchman_root,
     find_buck_root,
     get_source_path,
@@ -88,6 +90,84 @@ class ArgumentsTest(testslide.TestCase):
                 "mode": "opt",
                 "isolation_prefix": ".lsp",
             },
+        )
+
+    def test_serialize_base_arguments(self) -> None:
+        def assert_serialized(
+            arguments: BaseArguments, items: Iterable[Tuple[str, object]]
+        ) -> None:
+            serialized = arguments.serialize()
+            for key, value in items:
+                if key not in serialized:
+                    self.fail(f"Cannot find key `{key}` in serialized arguments")
+                else:
+                    self.assertEqual(value, serialized[key])
+
+        assert_serialized(
+            BaseArguments(
+                log_path="foo",
+                global_root="bar",
+                source_paths=SimpleSourcePath(
+                    [configuration.SimpleSearchPathElement("source")]
+                ),
+            ),
+            [
+                ("log_path", "foo"),
+                ("global_root", "bar"),
+                ("source_paths", {"kind": "simple", "paths": ["source"]}),
+            ],
+        )
+        assert_serialized(
+            BaseArguments(
+                log_path="/log",
+                global_root="/project",
+                source_paths=SimpleSourcePath(),
+                excludes=["/excludes"],
+                checked_directory_allowlist=["/allows"],
+                checked_directory_blocklist=["/blocks"],
+                extensions=[".typsy"],
+            ),
+            [
+                ("excludes", ["/excludes"]),
+                ("checked_directory_allowlist", ["/allows"]),
+                ("checked_directory_blocklist", ["/blocks"]),
+                ("extensions", [".typsy"]),
+            ],
+        )
+        assert_serialized(
+            BaseArguments(
+                log_path="/log",
+                global_root="/project",
+                source_paths=SimpleSourcePath(),
+                debug=True,
+                parallel=True,
+                number_of_workers=20,
+            ),
+            [("debug", True), ("parallel", True), ("number_of_workers", 20)],
+        )
+        assert_serialized(
+            BaseArguments(
+                log_path="/log",
+                global_root="/project",
+                source_paths=SimpleSourcePath(),
+                relative_local_root="local",
+            ),
+            [("local_root", "/project/local")],
+        )
+        assert_serialized(
+            BaseArguments(
+                log_path="/log",
+                global_root="/project",
+                source_paths=SimpleSourcePath(),
+                remote_logging=RemoteLogging(logger="/logger", identifier="baz"),
+                profiling_output=Path("/derp"),
+                memory_profiling_output=Path("/derp2"),
+            ),
+            [
+                ("profiling_output", "/derp"),
+                ("remote_logging", {"logger": "/logger", "identifier": "baz"}),
+                ("memory_profiling_output", "/derp2"),
+            ],
         )
 
     def test_find_watchman_root(self) -> None:

@@ -445,7 +445,7 @@ async def _start_pyre_server(
             }
 
             with start.background_server_log_file(
-                Path(pyre_arguments.log_path)
+                Path(pyre_arguments.base_arguments.log_path)
             ) as server_stderr:
                 server_process = await asyncio.create_subprocess_exec(
                     binary_location,
@@ -747,11 +747,13 @@ class PyreServerHandler(connection.BackgroundTask):
     def _auxiliary_logging_info(
         server_start_options: PyreServerStartOptions,
     ) -> Dict[str, Optional[str]]:
-        relative_local_root = server_start_options.start_arguments.relative_local_root
+        relative_local_root = (
+            server_start_options.start_arguments.base_arguments.relative_local_root
+        )
         return {
             "binary": server_start_options.binary,
-            "log_path": server_start_options.start_arguments.log_path,
-            "global_root": server_start_options.start_arguments.global_root,
+            "log_path": server_start_options.start_arguments.base_arguments.log_path,
+            "global_root": server_start_options.start_arguments.base_arguments.global_root,
             **(
                 {}
                 if relative_local_root is None
@@ -763,7 +765,7 @@ class PyreServerHandler(connection.BackgroundTask):
         server_identifier = server_start_options.server_identifier
         start_arguments = server_start_options.start_arguments
         socket_path = server_connection.get_default_socket_path(
-            log_directory=Path(start_arguments.log_path)
+            log_directory=Path(start_arguments.base_arguments.log_path)
         )
         try:
             async with connection.connect_in_text_mode(socket_path) as (

@@ -52,90 +52,23 @@ class ArgumentTest(testslide.TestCase):
 
         assert_serialized(
             Arguments(
-                log_path="foo",
-                global_root="bar",
-                source_paths=backend_arguments.SimpleSourcePath(
-                    [configuration.SimpleSearchPathElement("source")]
+                base_arguments=backend_arguments.BaseArguments(
+                    log_path="/log",
+                    global_root="/project",
+                    source_paths=backend_arguments.SimpleSourcePath(
+                        [configuration.SimpleSearchPathElement("source")]
+                    ),
                 ),
-            ),
-            [
-                ("log_path", "foo"),
-                ("global_root", "bar"),
-                ("source_paths", {"kind": "simple", "paths": ["source"]}),
-            ],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                excludes=["/excludes"],
-                checked_directory_allowlist=["/allows"],
-                checked_directory_blocklist=["/blocks"],
-                extensions=[".typsy"],
                 ignore_infer=["/ignore"],
-            ),
-            [
-                ("excludes", ["/excludes"]),
-                ("checked_directory_allowlist", ["/allows"]),
-                ("checked_directory_blocklist", ["/blocks"]),
-                ("extensions", [".typsy"]),
-                ("ignore_infer", ["/ignore"]),
-            ],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-            ),
-            [("debug", False), ("infer_mode", ["Local"])],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                debug=True,
                 infer_mode=InferMode.INTERPROCEDURAL,
-            ),
-            [("debug", True), ("infer_mode", ["Interprocedural"])],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                parallel=True,
-                number_of_workers=20,
-            ),
-            [("parallel", True), ("number_of_workers", 20)],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                relative_local_root="local",
-            ),
-            [("local_root", "/project/local")],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                remote_logging=backend_arguments.RemoteLogging(
-                    logger="/logger", identifier="baz"
-                ),
-                profiling_output=Path("/derp"),
-                memory_profiling_output=Path("/derp2"),
                 paths_to_modify={Path("/derp3.py")},
             ),
             [
-                ("profiling_output", "/derp"),
-                ("remote_logging", {"logger": "/logger", "identifier": "baz"}),
-                ("memory_profiling_output", "/derp2"),
+                ("log_path", "/log"),
+                ("global_root", "/project"),
+                ("source_paths", {"kind": "simple", "paths": ["source"]}),
+                ("ignore_infer", ["/ignore"]),
+                ("infer_mode", ["Interprocedural"]),
                 ("paths_to_modify", ["/derp3.py"]),
             ],
         )
@@ -184,31 +117,35 @@ class InferTest(testslide.TestCase):
                     ),
                 ),
                 Arguments(
-                    log_path=str(root_path / ".pyre/local"),
-                    global_root=str(root_path),
-                    checked_directory_allowlist=[
-                        str(root_path / "local/src"),
-                    ],
-                    checked_directory_blocklist=[str(root_path / "blocks")],
-                    debug=True,
-                    excludes=["exclude"],
-                    extensions=[".ext"],
+                    base_arguments=backend_arguments.BaseArguments(
+                        log_path=str(root_path / ".pyre/local"),
+                        global_root=str(root_path),
+                        checked_directory_allowlist=[
+                            str(root_path / "local/src"),
+                        ],
+                        checked_directory_blocklist=[str(root_path / "blocks")],
+                        debug=True,
+                        excludes=["exclude"],
+                        extensions=[".ext"],
+                        relative_local_root="local",
+                        number_of_workers=42,
+                        parallel=True,
+                        python_version=infer_configuration.get_python_version(),
+                        search_paths=[
+                            configuration.SimpleSearchPathElement(
+                                str(root_path / "search")
+                            )
+                        ],
+                        source_paths=backend_arguments.SimpleSourcePath(
+                            [
+                                configuration.SimpleSearchPathElement(
+                                    str(root_path / "local/src")
+                                )
+                            ]
+                        ),
+                    ),
                     ignore_infer=[str(root_path / "ignores")],
                     infer_mode=InferMode.LOCAL,
-                    relative_local_root="local",
-                    number_of_workers=42,
-                    parallel=True,
-                    python_version=infer_configuration.get_python_version(),
-                    search_paths=[
-                        configuration.SimpleSearchPathElement(str(root_path / "search"))
-                    ],
-                    source_paths=backend_arguments.SimpleSourcePath(
-                        [
-                            configuration.SimpleSearchPathElement(
-                                str(root_path / "local/src")
-                            )
-                        ]
-                    ),
                     paths_to_modify={Path("path/to/module.py")},
                 ),
             )

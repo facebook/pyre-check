@@ -87,43 +87,14 @@ class ArgumentTest(testslide.TestCase):
 
         assert_serialized(
             Arguments(
-                log_path="foo",
-                global_root="bar",
-                source_paths=backend_arguments.SimpleSourcePath(
-                    [configuration.SimpleSearchPathElement("source")]
+                base_arguments=backend_arguments.BaseArguments(
+                    log_path="foo",
+                    global_root="bar",
+                    source_paths=backend_arguments.SimpleSourcePath(
+                        [configuration.SimpleSearchPathElement("source")]
+                    ),
                 ),
-            ),
-            [
-                ("log_path", "foo"),
-                ("global_root", "bar"),
-                ("source_paths", {"kind": "simple", "paths": ["source"]}),
-            ],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                excludes=["/excludes"],
-                checked_directory_allowlist=["/allows"],
-                checked_directory_blocklist=["/blocks"],
-                extensions=[".typsy"],
                 taint_models_path=["/taint/model"],
-            ),
-            [
-                ("excludes", ["/excludes"]),
-                ("checked_directory_allowlist", ["/allows"]),
-                ("checked_directory_blocklist", ["/blocks"]),
-                ("extensions", [".typsy"]),
-                ("taint_model_paths", ["/taint/model"]),
-            ],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                debug=True,
                 strict=True,
                 show_error_traces=True,
                 store_type_check_resolution=True,
@@ -132,9 +103,16 @@ class ArgumentTest(testslide.TestCase):
                     CriticalFile(policy=MatchPolicy.EXTENSION, path="txt"),
                     CriticalFile(policy=MatchPolicy.FULL_PATH, path="/home/bar.txt"),
                 ],
+                watchman_root=Path("/project"),
+                saved_state_action=LoadSavedStateFromProject(
+                    project_name="my_project", project_metadata="my_metadata"
+                ),
             ),
             [
-                ("debug", True),
+                ("log_path", "foo"),
+                ("global_root", "bar"),
+                ("source_paths", {"kind": "simple", "paths": ["source"]}),
+                ("taint_model_paths", ["/taint/model"]),
                 ("strict", True),
                 ("show_error_traces", True),
                 ("store_type_check_resolution", True),
@@ -146,38 +124,7 @@ class ArgumentTest(testslide.TestCase):
                         {"full_path": "/home/bar.txt"},
                     ],
                 ),
-            ],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                parallel=True,
-                number_of_workers=20,
-            ),
-            [("parallel", True), ("number_of_workers", 20)],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                relative_local_root="local",
-                watchman_root=Path("/project"),
-            ),
-            [("local_root", "/project/local"), ("watchman_root", "/project")],
-        )
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                saved_state_action=LoadSavedStateFromProject(
-                    project_name="my_project", project_metadata="my_metadata"
-                ),
-            ),
-            [
+                ("watchman_root", "/project"),
                 (
                     "saved_state_action",
                     (
@@ -187,27 +134,7 @@ class ArgumentTest(testslide.TestCase):
                             "project_metadata": "my_metadata",
                         },
                     ),
-                )
-            ],
-        )
-
-        assert_serialized(
-            Arguments(
-                log_path="/log",
-                global_root="/project",
-                source_paths=backend_arguments.SimpleSourcePath(),
-                additional_logging_sections=["foo", "bar"],
-                remote_logging=backend_arguments.RemoteLogging(
-                    logger="/logger", identifier="baz"
                 ),
-                profiling_output=Path("/derp"),
-                memory_profiling_output=Path("/derp2"),
-            ),
-            [
-                ("additional_logging_sections", ["foo", "bar"]),
-                ("profiling_output", "/derp"),
-                ("remote_logging", {"logger": "/logger", "identifier": "baz"}),
-                ("memory_profiling_output", "/derp2"),
             ],
         )
 
@@ -398,14 +325,35 @@ class StartTest(testslide.TestCase):
                     ),
                 ),
                 Arguments(
-                    log_path=str(root_path / ".pyre/local"),
-                    global_root=str(root_path),
+                    base_arguments=backend_arguments.BaseArguments(
+                        log_path=str(root_path / ".pyre/local"),
+                        global_root=str(root_path),
+                        checked_directory_allowlist=[
+                            str(root_path / "local/src"),
+                            str(root_path / "allows"),
+                        ],
+                        checked_directory_blocklist=[str(root_path / "blocks")],
+                        debug=True,
+                        excludes=["exclude"],
+                        extensions=[".ext"],
+                        relative_local_root="local",
+                        number_of_workers=42,
+                        parallel=True,
+                        python_version=server_configuration.get_python_version(),
+                        search_paths=[
+                            configuration.SimpleSearchPathElement(
+                                str(root_path / "search")
+                            )
+                        ],
+                        source_paths=backend_arguments.SimpleSourcePath(
+                            [
+                                configuration.SimpleSearchPathElement(
+                                    str(root_path / "local/src")
+                                )
+                            ]
+                        ),
+                    ),
                     additional_logging_sections=["server"],
-                    checked_directory_allowlist=[
-                        str(root_path / "local/src"),
-                        str(root_path / "allows"),
-                    ],
-                    checked_directory_blocklist=[str(root_path / "blocks")],
                     critical_files=[
                         CriticalFile(
                             MatchPolicy.FULL_PATH,
@@ -419,27 +367,10 @@ class StartTest(testslide.TestCase):
                             MatchPolicy.FULL_PATH, str(root_path / "critical")
                         ),
                     ],
-                    debug=True,
-                    excludes=["exclude"],
-                    extensions=[".ext"],
-                    relative_local_root="local",
-                    number_of_workers=42,
-                    parallel=True,
-                    python_version=server_configuration.get_python_version(),
                     saved_state_action=LoadSavedStateFromProject(
                         project_name="project", project_metadata="local"
                     ),
-                    search_paths=[
-                        configuration.SimpleSearchPathElement(str(root_path / "search"))
-                    ],
                     show_error_traces=True,
-                    source_paths=backend_arguments.SimpleSourcePath(
-                        [
-                            configuration.SimpleSearchPathElement(
-                                str(root_path / "local/src")
-                            )
-                        ]
-                    ),
                     store_type_check_resolution=True,
                     strict=True,
                     taint_models_path=[str(root_path / "taint")],
@@ -520,15 +451,15 @@ class StartTest(testslide.TestCase):
                 ["foo", "bar", "-baz", "-progress", "server"],
             )
             self.assertEqual(
-                arguments.profiling_output,
+                arguments.base_arguments.profiling_output,
                 backend_arguments.get_profiling_log_path(log_path),
             )
             self.assertEqual(
-                arguments.memory_profiling_output,
+                arguments.base_arguments.memory_profiling_output,
                 backend_arguments.get_profiling_log_path(log_path),
             )
             self.assertEqual(
-                arguments.remote_logging,
+                arguments.base_arguments.remote_logging,
                 backend_arguments.RemoteLogging(
                     logger=str(logger_path), identifier="derp"
                 ),
