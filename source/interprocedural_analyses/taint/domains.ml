@@ -558,15 +558,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   let apply_call location ~callees ~port taint_tree =
     let transform_path (path, tip) =
       let tip =
-        Taint.partition
-          Taint.kind
-          ByFilter
-          ~f:(fun kind -> if Taint.ignore_kind_at_call kind then None else Some false)
-          tip
-        |> (fun map -> Map.Poly.find map false)
-        |> function
-        | None -> Taint.bottom
-        | Some taint -> Taint.apply_call location ~callees ~port ~path ~element:taint
+        tip
+        |> Taint.transform Taint.kind Filter ~f:(fun kind -> not (Taint.ignore_kind_at_call kind))
+        |> fun taint -> Taint.apply_call location ~callees ~port ~path ~element:taint
       in
       path, tip
     in
@@ -619,11 +613,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
 
   let filter_by_kind ~kind taint_tree =
-    collapse ~transform:Fn.id taint_tree
-    |> Taint.partition Taint.kind ByFilter ~f:(fun candidate ->
-           if Taint.equal_kind kind candidate then Some true else None)
-    |> (fun map -> Map.Poly.find map true)
-    |> Option.value ~default:Taint.bottom
+    taint_tree
+    |> transform Taint.kind Filter ~f:(Taint.equal_kind kind)
+    |> collapse ~transform:Fn.id
 
 
   let get_all_features taint_tree =
