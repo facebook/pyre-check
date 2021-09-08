@@ -159,7 +159,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (Node.create_with_default_location call_expression)
           Model.pp
           taint_model;
-        let { TaintResult.backward; sanitize; modes; _ } = taint_model.model in
+        let { TaintResult.backward; sanitizers; modes; _ } = taint_model.model in
         let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
         let sink_argument_matches =
           BackwardState.roots sink_taint |> AccessPath.match_actuals_to_formals arguments
@@ -302,7 +302,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.join taint_in_taint_out
           in
           let taint_in_taint_out =
-            match sanitize with
+            match sanitizers.global with
             | { tito = Some AllTito; _ } -> BackwardState.Tree.bottom
             | { tito = Some (SpecificTito { sanitized_tito_sinks; _ }); _ } ->
                 BackwardState.Tree.partition

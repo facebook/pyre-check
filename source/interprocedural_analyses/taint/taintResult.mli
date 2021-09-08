@@ -23,6 +23,16 @@ module Forward : sig
   val empty : model
 end
 
+module Sanitizers : sig
+  type model = {
+    global: Sanitize.t;
+    roots: SanitizeRootMap.t;
+  }
+  [@@deriving show]
+
+  val empty : model
+end
+
 module Mode : sig
   type t =
     | Obscure
@@ -53,7 +63,7 @@ end
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  sanitize: Sanitize.t;
+  sanitizers: Sanitizers.model;
   modes: ModeSet.t;
 }
 

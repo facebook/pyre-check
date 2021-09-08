@@ -129,7 +129,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_sink_tito",
-    "sanitize": { "tito_sources": [], "tito_sinks": [ "TestA" ] },
+    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestA" ] },
     "modes": [ "Obscure" ]
   }
 }
@@ -137,7 +137,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_source_tito",
-    "sanitize": { "tito_sources": [ "TestA" ], "tito_sinks": [] },
+    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] },
     "modes": [ "Obscure" ]
   }
 }
@@ -145,7 +145,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_tito",
-    "sanitize": { "tito_sources": [ "TestA" ], "tito_sinks": [] },
+    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] },
     "modes": [ "Obscure" ]
   }
 }
@@ -153,7 +153,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_all",
-    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" },
+    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" },
     "modes": [ "Obscure" ]
   }
 }
@@ -161,7 +161,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_tito",
-    "sanitize": { "tito": "All" },
+    "global_sanitizer": { "tito": "All" },
     "modes": [ "Obscure" ]
   }
 }

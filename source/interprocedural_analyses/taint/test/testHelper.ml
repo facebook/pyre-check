@@ -39,7 +39,8 @@ type expectation = {
   returns: Taint.Sources.t list;
   errors: error_expectation list;
   obscure: bool option;
-  sanitize: Taint.Domains.Sanitize.t;
+  global_sanitizer: Taint.Domains.Sanitize.t;
+  root_sanitizers: Taint.Domains.SanitizeRootMap.t;
   analysis_modes: Taint.Result.ModeSet.t;
 }
 
@@ -51,7 +52,8 @@ let outcome
     ?(returns = [])
     ?(errors = [])
     ?obscure
-    ?(sanitize = Taint.Domains.Sanitize.empty)
+    ?(global_sanitizer = Taint.Domains.Sanitize.empty)
+    ?(root_sanitizers = Taint.Domains.SanitizeRootMap.bottom)
     ?(analysis_modes = Taint.Result.ModeSet.empty)
     define_name
   =
@@ -64,7 +66,8 @@ let outcome
     returns;
     errors;
     obscure;
-    sanitize;
+    global_sanitizer;
+    root_sanitizers;
     analysis_modes;
   }
 
@@ -105,7 +108,8 @@ let check_expectation
       errors;
       kind;
       obscure;
-      sanitize = expected_sanitize;
+      global_sanitizer;
+      root_sanitizers;
       analysis_modes = expected_analysis_modes;
     }
   =
@@ -143,13 +147,20 @@ let check_expectation
         String.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let { backward; forward; sanitize; modes }, is_obscure = get_model callable in
+  let { backward; forward; sanitizers; modes }, is_obscure = get_model callable in
   assert_equal ~printer:Taint.Result.ModeSet.show modes expected_analysis_modes;
   assert_equal
     ~cmp:Taint.Domains.Sanitize.equal
     ~printer:Taint.Domains.Sanitize.show
-    sanitize
-    expected_sanitize;
+    sanitizers.global
+    global_sanitizer;
+  assert_equal
+    ~cmp:(fun left right ->
+      Taint.Domains.SanitizeRootMap.less_or_equal ~left ~right
+      && Taint.Domains.SanitizeRootMap.less_or_equal ~left:right ~right:left)
+    ~printer:Taint.Domains.SanitizeRootMap.show
+    sanitizers.roots
+    root_sanitizers;
   let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue

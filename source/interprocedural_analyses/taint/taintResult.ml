@@ -109,6 +109,41 @@ module Backward = struct
     && BackwardState.less_or_equal ~left:tito_next ~right:tito_previous
 end
 
+module Sanitizers = struct
+  type model = {
+    (* Sanitizers applying to all parameters and the return value. *)
+    global: Sanitize.t;
+    (* Map from parameter or return value to sanitizers. *)
+    roots: SanitizeRootMap.t;
+  }
+
+  let pp_model formatter { global; roots } =
+    Format.fprintf
+      formatter
+      "  Global Sanitizer: %s\n  Sanitizers: %s"
+      (json_to_string ~indent:"    " (Sanitize.to_json global))
+      (json_to_string ~indent:"    " (SanitizeRootMap.to_json roots))
+
+
+  let show_model = Format.asprintf "%a" pp_model
+
+  let empty = { global = Sanitize.empty; roots = SanitizeRootMap.bottom }
+
+  let is_empty_model { global; roots } = Sanitize.is_empty global && SanitizeRootMap.is_bottom roots
+
+  let join
+      { global = global_left; roots = roots_left }
+      { global = global_right; roots = roots_right }
+    =
+    {
+      global = Sanitize.join global_left global_right;
+      roots = SanitizeRootMap.join roots_left roots_right;
+    }
+
+
+  let widen ~iteration:_ ~previous ~next = join previous next
+end
+
 module Mode = struct
   let name = "modes"
 
@@ -150,19 +185,20 @@ end
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  sanitize: Sanitize.t;
+  sanitizers: Sanitizers.model;
   modes: ModeSet.t;
 }
 
-let pp_call_model formatter { forward; backward; sanitize; modes } =
+let pp_call_model formatter { forward; backward; sanitizers; modes } =
   Format.fprintf
     formatter
-    "%a\n%a\n  Sanitize: %s\n%a"
+    "%a\n%a\n%a\n%a"
     Forward.pp_model
     forward
     Backward.pp_model
     backward
-    (Sanitize.to_json sanitize |> json_to_string ~indent:"    ")
+    Sanitizers.pp_model
+    sanitizers
     ModeSet.pp_model
     modes
 
@@ -175,7 +211,7 @@ let empty_skip_model =
   {
     forward = Forward.empty;
     backward = Backward.empty;
-    sanitize = Sanitize.empty;
+    sanitizers = Sanitizers.empty;
     modes = ModeSet.singleton SkipAnalysis;
   }
 
@@ -195,7 +231,7 @@ module ResultArgument = struct
     {
       forward = Forward.obscure;
       backward = Backward.obscure;
-      sanitize = Sanitize.empty;
+      sanitizers = Sanitizers.empty;
       modes = ModeSet.singleton Obscure;
     }
 
@@ -204,29 +240,29 @@ module ResultArgument = struct
     {
       forward = Forward.empty;
       backward = Backward.empty;
-      sanitize = Sanitize.empty;
+      sanitizers = Sanitizers.empty;
       modes = ModeSet.empty;
     }
 
 
-  let is_empty_model ~with_modes { forward; backward; sanitize; modes } =
+  let is_empty_model ~with_modes { forward; backward; sanitizers; modes } =
     Forward.is_empty_model forward
     && Backward.is_empty_model backward
-    && Sanitize.is_empty sanitize
+    && Sanitizers.is_empty_model sanitizers
     && ModeSet.equal with_modes modes
 
 
-  let should_externalize_model { forward; backward; sanitize; _ } =
+  let should_externalize_model { forward; backward; sanitizers; _ } =
     (not (Forward.is_empty_model forward))
     || (not (Backward.is_empty_model backward))
-    || not (Sanitize.is_empty sanitize)
+    || not (Sanitizers.is_empty_model sanitizers)
 
 
   let join ~iteration:_ left right =
     {
       forward = Forward.join left.forward right.forward;
       backward = Backward.join left.backward right.backward;
-      sanitize = Sanitize.join left.sanitize right.sanitize;
+      sanitizers = Sanitizers.join left.sanitizers right.sanitizers;
       modes = ModeSet.join left.modes right.modes;
     }
 
@@ -235,7 +271,7 @@ module ResultArgument = struct
     {
       forward = Forward.widen ~iteration ~previous:previous.forward ~next:next.forward;
       backward = Backward.widen ~iteration ~previous:previous.backward ~next:next.backward;
-      sanitize = Sanitize.join previous.sanitize next.sanitize;
+      sanitizers = Sanitizers.widen ~iteration ~previous:previous.sanitizers ~next:next.sanitizers;
       modes = ModeSet.widen ~iteration ~prev:previous.modes ~next:next.modes;
     }
 
@@ -246,7 +282,12 @@ module ResultArgument = struct
 
 
   let strip_for_callsite
-      { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
+      {
+        forward = { source_taint };
+        backward = { sink_taint; taint_in_taint_out };
+        sanitizers;
+        modes;
+      }
     =
     (* Remove positions and other info that are not needed at call site *)
     let source_taint =
@@ -279,13 +320,18 @@ module ResultArgument = struct
            Map
            ~f:Domains.TraceInfo.strip_for_callsite
     in
-    { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
+    { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
 
 
   let model_to_json
       ~filename_lookup
       callable
-      { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
+      {
+        forward = { source_taint };
+        backward = { sink_taint; taint_in_taint_out };
+        sanitizers = { global = global_sanitizer; roots = root_sanitizers };
+        modes;
+      }
     =
     let callable_name = Interprocedural.Target.external_target_name callable in
     let model_json = ["callable", `String callable_name] in
@@ -308,8 +354,14 @@ module ResultArgument = struct
         model_json
     in
     let model_json =
-      if not (Sanitize.is_empty sanitize) then
-        model_json @ ["sanitize", Sanitize.to_json sanitize]
+      if not (Sanitize.is_empty global_sanitizer) then
+        model_json @ ["global_sanitizer", Sanitize.to_json global_sanitizer]
+      else
+        model_json
+    in
+    let model_json =
+      if not (SanitizeRootMap.is_bottom root_sanitizers) then
+        model_json @ ["sanitizers", SanitizeRootMap.to_json root_sanitizers]
       else
         model_json
     in

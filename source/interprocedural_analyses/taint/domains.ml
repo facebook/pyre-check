@@ -895,3 +895,26 @@ module Sanitize = struct
     in
     `Assoc (sources_json @ sinks_json @ tito_json)
 end
+
+(** Map from parameters or return value to a sanitizer. *)
+module SanitizeRootMap = struct
+  include
+    Abstract.MapDomain.Make
+      (struct
+        let name = "sanitize"
+
+        include AccessPath.Root
+
+        let absence_implicitly_maps_to_bottom = true
+      end)
+      (Sanitize)
+
+  let to_json map =
+    map
+    |> to_alist
+    |> List.map ~f:(fun (root, sanitize) ->
+           let (`Assoc fields) = Sanitize.to_json sanitize in
+           let port = AccessPath.create root [] |> AccessPath.to_json in
+           `Assoc (("port", port) :: fields))
+    |> fun elements -> `List elements
+end

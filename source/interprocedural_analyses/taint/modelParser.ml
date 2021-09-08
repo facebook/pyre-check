@@ -1967,10 +1967,15 @@ let adjust_sanitize_and_modes_and_skipped_override
       | "SkipObscure" -> Ok (sanitize, ModeSet.remove Obscure modes, Some define_name)
       | _ -> Ok (sanitize, modes, skipped_override)
     in
-    List.fold_result top_level_decorators ~f:adjust ~init:(model.sanitize, model.modes, None)
+    List.fold_result
+      top_level_decorators
+      ~f:adjust
+      ~init:(model.sanitizers.global, model.modes, None)
   in
   sanitize_and_modes_and_skipped_override
-  >>| fun (sanitize, modes, skipped_override) -> { model with sanitize; modes }, skipped_override
+  >>| fun (sanitize, modes, skipped_override) ->
+  let sanitizers = { model.sanitizers with global = sanitize } in
+  { model with sanitizers; modes }, skipped_override
 
 
 let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =

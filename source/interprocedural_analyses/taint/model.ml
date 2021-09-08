@@ -107,7 +107,7 @@ let register_unknown_callee_model callable =
        {
          TaintResult.forward = Forward.empty;
          backward = { sink_taint; taint_in_taint_out };
-         sanitize = Sanitize.empty;
+         sanitizers = Sanitizers.empty;
          modes = ModeSet.singleton Mode.SkipAnalysis;
        })
 
@@ -121,7 +121,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
           {
             forward = { source_taint };
             backward = { sink_taint; taint_in_taint_out };
-            sanitize;
+            sanitizers;
             modes;
           }
         =
@@ -176,7 +176,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
         {
           forward = { source_taint };
           backward = { sink_taint; taint_in_taint_out };
-          sanitize;
+          sanitizers;
           modes;
         }
       in
@@ -312,7 +312,10 @@ module GlobalModel = struct
 
 
   let get_sanitize { models; _ } =
-    let get_sanitize existing { model = { TaintResult.sanitize; _ }; _ } =
+    let get_sanitize
+        existing
+        { model = { TaintResult.sanitizers = { global = sanitize; _ }; _ }; _ }
+      =
       Sanitize.join sanitize existing
     in
     List.fold ~init:Sanitize.empty ~f:get_sanitize models
@@ -324,7 +327,7 @@ module GlobalModel = struct
 
 
   let is_sanitized { models; _ } =
-    let is_sanitized_model { model = { TaintResult.sanitize; _ }; _ } =
+    let is_sanitized_model { model = { TaintResult.sanitizers = { global = sanitize; _ }; _ }; _ } =
       match sanitize with
       | {
        sources = Some Sanitize.AllSources;
@@ -395,7 +398,7 @@ let infer_class_models ~environment =
             List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
           sink_taint = BackwardState.empty;
         };
-      sanitize = Sanitize.empty;
+      sanitizers = Sanitizers.empty;
       modes = ModeSet.empty;
     }
   in
@@ -422,7 +425,7 @@ let infer_class_models ~environment =
               List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
             sink_taint = BackwardState.empty;
           };
-        sanitize = Sanitize.empty;
+        sanitizers = Sanitizers.empty;
         modes = ModeSet.empty;
       }
   in

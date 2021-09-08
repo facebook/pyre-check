@@ -132,7 +132,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
          sinks at the end. *)
       let triggered_sinks = String.Hash_set.create () in
       let apply_call_target state arguments_taint call_target =
-        let ({ Model.model = { TaintResult.forward; backward; sanitize; modes }; _ } as taint_model)
+        let ({ Model.model = { TaintResult.forward; backward; sanitizers; modes }; _ } as
+            taint_model)
           =
           Model.get_callsite_model ~resolution ~call_target ~arguments
         in
@@ -177,7 +178,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             (argument_taint, ((argument, sink_matches), (_dup, tito_matches)))
           =
           let taint_to_propagate =
-            match sanitize with
+            match sanitizers.global with
             | { tito = Some AllTito; _ } -> ForwardState.Tree.bottom
             | { tito = Some (SpecificTito { sanitized_tito_sources; _ }); _ } ->
                 ForwardState.Tree.partition

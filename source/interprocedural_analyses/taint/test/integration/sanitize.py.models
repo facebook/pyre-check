@@ -676,42 +676,42 @@
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_a_sink.attribute}",
-    "sanitize": { "sinks": [ "TestA" ] }
+    "global_sanitizer": { "sinks": [ "TestA" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_a_sink.instance}",
-    "sanitize": { "sinks": [ "TestA" ] }
+    "global_sanitizer": { "sinks": [ "TestA" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_a_source.attribute}",
-    "sanitize": { "sources": [ "TestA" ] }
+    "global_sanitizer": { "sources": [ "TestA" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_a_source.instance}",
-    "sanitize": { "sources": [ "TestA" ] }
+    "global_sanitizer": { "sources": [ "TestA" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_ab_sinks.attribute}",
-    "sanitize": { "sinks": [ "TestA", "TestB" ] }
+    "global_sanitizer": { "sinks": [ "TestA", "TestB" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_ab_sinks.instance}",
-    "sanitize": { "sinks": [ "TestA", "TestB" ] }
+    "global_sanitizer": { "sinks": [ "TestA", "TestB" ] }
   }
 }
 {
@@ -724,7 +724,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sanitize": { "sources": [ "TestA", "TestB" ] }
+    "global_sanitizer": { "sources": [ "TestA", "TestB" ] }
   }
 }
 {
@@ -737,7 +737,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sanitize": { "sources": [ "TestA", "TestB" ] }
+    "global_sanitizer": { "sources": [ "TestA", "TestB" ] }
   }
 }
 {
@@ -750,7 +750,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sanitize": { "sinks": "All" }
+    "global_sanitizer": { "sinks": "All" }
   }
 }
 {
@@ -763,49 +763,49 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sanitize": { "sinks": "All" }
+    "global_sanitizer": { "sinks": "All" }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_all_sources.attribute}",
-    "sanitize": { "sources": "All" }
+    "global_sanitizer": { "sources": "All" }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_all_sources.instance}",
-    "sanitize": { "sources": "All" }
+    "global_sanitizer": { "sources": "All" }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_b_sink.attribute}",
-    "sanitize": { "sinks": [ "TestB" ] }
+    "global_sanitizer": { "sinks": [ "TestB" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_b_sink.instance}",
-    "sanitize": { "sinks": [ "TestB" ] }
+    "global_sanitizer": { "sinks": [ "TestB" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_b_source.attribute}",
-    "sanitize": { "sources": [ "TestB" ] }
+    "global_sanitizer": { "sources": [ "TestB" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "Obj{sanitize.C_sanitized_b_source.instance}",
-    "sanitize": { "sources": [ "TestB" ] }
+    "global_sanitizer": { "sources": [ "TestB" ] }
   }
 }
 {
@@ -1490,21 +1490,21 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.return_taint_sanitize",
-    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
+    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_and_b_sinks",
-    "sanitize": { "sinks": [ "TestA", "TestB" ] }
+    "global_sanitizer": { "sinks": [ "TestA", "TestB" ] }
   }
 }
 {
   "kind": "model",
   "data": {
     "callable": "sanitize.sanitize_a_and_b_source",
-    "sanitize": { "sources": [ "TestA", "TestB" ] }
+    "global_sanitizer": { "sources": [ "TestA", "TestB" ] }
   }
 }
 {
@@ -1527,7 +1527,7 @@
         ]
       }
     ],
-    "sanitize": { "sinks": [ "TestA" ] }
+    "global_sanitizer": { "sinks": [ "TestA" ] }
   }
 }
 {
@@ -1589,7 +1589,7 @@
         ]
       }
     ],
-    "sanitize": { "tito_sources": [], "tito_sinks": [ "TestA" ] }
+    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestA" ] }
   }
 }
 {
@@ -1607,7 +1607,7 @@
         ]
       }
     ],
-    "sanitize": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
+    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
   }
 }
 {
@@ -1641,7 +1641,7 @@
         ]
       }
     ],
-    "sanitize": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
+    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
   }
 }
 {
@@ -1664,7 +1664,7 @@
         ]
       }
     ],
-    "sanitize": { "sinks": [ "TestB" ] }
+    "global_sanitizer": { "sinks": [ "TestB" ] }
   }
 }
 {
@@ -1746,7 +1746,7 @@
         ]
       }
     ],
-    "sanitize": { "sinks": "All" }
+    "global_sanitizer": { "sinks": "All" }
   }
 }
 {
@@ -1783,7 +1783,7 @@
         ]
       }
     ],
-    "sanitize": { "sources": "All" }
+    "global_sanitizer": { "sources": "All" }
   }
 }
 {
@@ -1806,7 +1806,7 @@
         ]
       }
     ],
-    "sanitize": { "sources": [ "TestA" ] }
+    "global_sanitizer": { "sources": [ "TestA" ] }
   }
 }
 {
@@ -1829,7 +1829,7 @@
         ]
       }
     ],
-    "sanitize": { "sources": [ "TestB" ] }
+    "global_sanitizer": { "sources": [ "TestB" ] }
   }
 }
 {
@@ -1871,7 +1871,7 @@
         ]
       }
     ],
-    "sanitize": { "tito": "All" }
+    "global_sanitizer": { "tito": "All" }
   }
 }
 {

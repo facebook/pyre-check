@@ -159,7 +159,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
+    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }
 {
@@ -172,6 +172,6 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
+    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }

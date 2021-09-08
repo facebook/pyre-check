@@ -263,7 +263,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:
+          ~global_sanitizer:
             { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
           "test.taint";
       ]
@@ -277,7 +277,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
+          ~global_sanitizer:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
           "test.taint";
       ]
     ();
@@ -290,7 +290,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
+          ~global_sanitizer:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
           "test.taint";
       ]
     ();
@@ -303,7 +303,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:{ Sanitize.sources = None; sinks = None; tito = Some AllTito }
+          ~global_sanitizer:{ Sanitize.sources = None; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -318,7 +318,8 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
+          ~global_sanitizer:
+            { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -332,7 +333,8 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
+          ~global_sanitizer:
+            { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
           "test.taint";
       ]
     ();
@@ -345,7 +347,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources =
                 Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
@@ -365,7 +367,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources =
                 Some
@@ -388,7 +390,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources = None;
               sinks = None;
@@ -413,7 +415,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources = None;
               sinks = None;
@@ -438,7 +440,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources =
                 Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
@@ -464,7 +466,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources = None;
               sinks = None;
@@ -485,7 +487,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~sanitize:
+          ~global_sanitizer:
             { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
           "django.http.Request.GET";
       ]
@@ -496,7 +498,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~sanitize:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
+          ~global_sanitizer:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
           "django.http.Request.GET";
       ]
     ();
@@ -506,7 +508,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~sanitize:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
+          ~global_sanitizer:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
           "django.http.Request.GET";
       ]
     ();
@@ -516,7 +518,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources =
                 Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
@@ -532,7 +534,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources = None;
               sinks = Some (SpecificSinks (Sinks.Set.singleton (Sinks.NamedSink "Test")));
@@ -547,7 +549,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources =
                 Some
@@ -566,7 +568,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Object
-          ~sanitize:
+          ~global_sanitizer:
             {
               Sanitize.sources = None;
               sinks =
@@ -589,7 +591,7 @@ let test_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~sanitize:
+          ~global_sanitizer:
             { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
           ~analysis_modes:(Taint.Result.ModeSet.singleton SkipDecoratorWhenInlining)
           "test.taint";

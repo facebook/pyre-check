@@ -303,7 +303,7 @@ include Taint.Result.Register (struct
     Interprocedural.AnalysisResult.InitializedModels.create get_taint_models
 
 
-  let analyze ~environment ~callable ~qualifier ~define ~sanitize ~modes existing_model =
+  let analyze ~environment ~callable ~qualifier ~define ~sanitizers ~modes existing_model =
     let call_graph_of_define =
       Interprocedural.CallGraph.SharedMemory.get_or_compute
         ~callable
@@ -331,7 +331,7 @@ include Taint.Result.Register (struct
     let model =
       let open Domains in
       let forward =
-        match sanitize.Sanitize.sources with
+        match sanitizers.Sanitizers.global.sources with
         | Some Sanitize.AllSources -> empty_model.forward
         | Some (Sanitize.SpecificSources sanitized_sources) ->
             let { Forward.source_taint } = forward in
@@ -348,12 +348,12 @@ include Taint.Result.Register (struct
         | None -> forward
       in
       let taint_in_taint_out =
-        match sanitize.Sanitize.tito with
+        match sanitizers.Sanitizers.global.tito with
         | Some AllTito -> empty_model.backward.taint_in_taint_out
         | _ -> backward.taint_in_taint_out
       in
       let sink_taint =
-        match sanitize.Sanitize.sinks with
+        match sanitizers.Sanitizers.global.sinks with
         | Some Sanitize.AllSinks -> empty_model.backward.sink_taint
         | Some (Sanitize.SpecificSinks sanitized_sinks) ->
             let { Backward.sink_taint; _ } = backward in
@@ -367,7 +367,7 @@ include Taint.Result.Register (struct
                  ~f:(fun ~key:_ ~data:source_state state -> BackwardState.join source_state state)
         | None -> backward.sink_taint
       in
-      { forward; backward = { sink_taint; taint_in_taint_out }; sanitize; modes }
+      { forward; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
     in
     result, model
 
@@ -397,15 +397,15 @@ include Taint.Result.Register (struct
     | Some ({ modes; _ } as model) when ModeSet.contains Mode.SkipAnalysis modes ->
         let () = Log.info "Skipping taint analysis of %a" Target.pretty_print callable in
         [], model
-    | Some ({ sanitize; modes; _ } as model) ->
-        analyze ~callable ~environment ~qualifier ~define ~sanitize ~modes model
+    | Some ({ sanitizers; modes; _ } as model) ->
+        analyze ~callable ~environment ~qualifier ~define ~sanitizers ~modes model
     | None ->
         analyze
           ~callable
           ~environment
           ~qualifier
           ~define
-          ~sanitize:Domains.Sanitize.empty
+          ~sanitizers:Sanitizers.empty
           ~modes:ModeSet.empty
           empty_model
 
