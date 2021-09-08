@@ -3,9 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import contextlib
 import dataclasses
 import logging
-from typing import Optional, Sequence, Dict, Any
+from pathlib import Path
+from typing import Optional, Sequence, Dict, Any, Iterator
 
 from ... import commands, command_arguments, configuration as configuration_module
 from . import backend_arguments, remote_logging
@@ -71,6 +73,101 @@ class Arguments:
             "taint_model_paths": self.taint_model_paths,
             "use_cache": self.use_cache,
         }
+
+
+def create_analyze_arguments(
+    configuration: configuration_module.Configuration,
+    analyze_arguments: command_arguments.AnalyzeArguments,
+) -> Arguments:
+    """
+    Translate client configurations to backend analyze configurations.
+
+    This API is not pure since it needs to access filesystem to filter out
+    nonexistent directories. It is idempotent though, since it does not alter
+    any filesystem state.
+    """
+    source_paths = backend_arguments.get_source_path_for_check(configuration)
+
+    profiling_output = (
+        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        if analyze_arguments.enable_profiling
+        else None
+    )
+    memory_profiling_output = (
+        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        if analyze_arguments.enable_memory_profiling
+        else None
+    )
+
+    logger = configuration.logger
+    remote_logging = (
+        backend_arguments.RemoteLogging(
+            logger=logger, identifier=analyze_arguments.log_identifier or ""
+        )
+        if logger is not None
+        else None
+    )
+
+    find_missing_flows = analyze_arguments.find_missing_flows
+    rule = analyze_arguments.rule
+    taint_models_path = analyze_arguments.taint_models_path
+    if len(taint_models_path) == 0:
+        taint_models_path = configuration.taint_models_path
+    return Arguments(
+        base_arguments=backend_arguments.BaseArguments(
+            log_path=configuration.log_directory,
+            global_root=configuration.project_root,
+            checked_directory_allowlist=(
+                list(source_paths.get_checked_directory_allowlist())
+                + configuration.get_existent_do_not_ignore_errors_in_paths()
+            ),
+            checked_directory_blocklist=(
+                configuration.get_existent_ignore_all_errors_paths()
+            ),
+            debug=analyze_arguments.debug,
+            excludes=configuration.excludes,
+            extensions=configuration.get_valid_extension_suffixes(),
+            relative_local_root=configuration.relative_local_root,
+            memory_profiling_output=memory_profiling_output,
+            number_of_workers=configuration.get_number_of_workers(),
+            parallel=not analyze_arguments.sequential,
+            profiling_output=profiling_output,
+            python_version=configuration.get_python_version(),
+            shared_memory=configuration.shared_memory,
+            remote_logging=remote_logging,
+            search_paths=configuration.expand_and_get_existent_search_paths(),
+            source_paths=source_paths,
+        ),
+        dump_call_graph=analyze_arguments.dump_call_graph,
+        dump_model_query_results=analyze_arguments.dump_model_query_results,
+        find_missing_flows=str(find_missing_flows.value)
+        if find_missing_flows is not None
+        else None,
+        inline_decorators=analyze_arguments.inline_decorators,
+        maximum_tito_depth=analyze_arguments.maximum_tito_depth,
+        maximum_trace_length=analyze_arguments.maximum_trace_length,
+        no_verify=analyze_arguments.no_verify,
+        repository_root=analyze_arguments.repository_root,
+        rule_filter=None if len(rule) == 0 else rule,
+        save_results_to=analyze_arguments.save_results_to,
+        strict=configuration.strict,
+        taint_model_paths=taint_models_path,
+        use_cache=analyze_arguments.use_cache,
+    )
+
+
+@contextlib.contextmanager
+def create_analyze_arguments_and_cleanup(
+    configuration: configuration_module.Configuration,
+    analyze_arguments: command_arguments.AnalyzeArguments,
+) -> Iterator[Arguments]:
+    arguments = create_analyze_arguments(configuration, analyze_arguments)
+    try:
+        yield arguments
+    finally:
+        # It is safe to clean up source paths after analyze command since
+        # any created artifact directory won't be reused by other commands.
+        arguments.base_arguments.source_paths.cleanup()
 
 
 def run_analyze(
