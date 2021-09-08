@@ -1543,23 +1543,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     Fixpoint.Make (FixpointState)
 end
 
-let extract_features_to_attach existing_taint =
-  ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] existing_taint
-  |> ForwardState.Tree.collapse ~transform:Fn.id
-  |> ForwardTaint.partition ForwardTaint.leaf ByFilter ~f:(fun source ->
-         if Sources.equal Sources.Attach source then Some true else None)
-  |> (fun map -> Map.Poly.find map true)
-  |> function
-  | Some taint ->
-      let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
-      ForwardTaint.fold
-        ForwardTaint.simple_feature_self
-        ~f:gather_features
-        ~init:Features.SimpleSet.bottom
-        taint
-  | None -> Features.SimpleSet.bottom
-
-
 let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   let {
     Statement.Define.signature =
@@ -1758,8 +1741,9 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
              ~port:AccessPath.Root.LocalResult
       in
       let features_to_attach =
-        BackwardState.compute_features_to_attach
+        BackwardState.extract_features_to_attach
           ~root:AccessPath.Root.LocalResult
+          ~attach_to_leaf:Sinks.Attach
           existing_model.TaintResult.backward.sink_taint
       in
       if not (Features.SimpleSet.is_bottom features_to_attach) then
@@ -1805,7 +1789,12 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
   in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let extract_model { FixpointState.taint; _ } =
-    let features_to_attach = extract_features_to_attach existing_model.forward.source_taint in
+    let features_to_attach =
+      ForwardState.extract_features_to_attach
+        ~root:AccessPath.Root.LocalResult
+        ~attach_to_leaf:Sources.Attach
+        existing_model.forward.source_taint
+    in
     let source_taint =
       extract_source_model ~define:define.value ~resolution ~features_to_attach taint
     in

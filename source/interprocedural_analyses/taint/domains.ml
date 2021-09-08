@@ -705,29 +705,24 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   let is_empty = is_bottom
 
   let roots environment = fold Key ~f:List.cons ~init:[] environment
+
+  let extract_features_to_attach ~root ~attach_to_leaf taint =
+    let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
+    read ~root ~path:[] taint
+    |> Tree.collapse ~transform:Fn.id
+    |> Taint.partition Taint.leaf ByFilter ~f:(fun leaf ->
+           if Taint.equal_leaf attach_to_leaf leaf then Some true else None)
+    |> (fun map -> Map.Poly.find map true)
+    >>| Taint.fold Taint.simple_feature_self ~f:gather_features ~init:Features.SimpleSet.bottom
+    |> Option.value ~default:Features.SimpleSet.bottom
 end
 
 module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
 (** Used to infer which sources reach the exit points of a function. *)
 
+module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 (** Used to infer which sinks are reached from parameters, as well as the taint-in-taint-out (TITO)
     using the special LocalReturn sink. *)
-module BackwardState = struct
-  include MakeTaintEnvironment (BackwardTaint) ()
-
-  let compute_features_to_attach ~root taint =
-    let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
-    read ~root ~path:[] taint
-    |> Tree.collapse ~transform:Fn.id
-    |> BackwardTaint.partition BackwardTaint.leaf ByFilter ~f:(fun sink ->
-           if Sinks.equal Sinks.Attach sink then Some true else None)
-    |> (fun map -> Map.Poly.find map true)
-    >>| BackwardTaint.fold
-          BackwardTaint.simple_feature_self
-          ~f:gather_features
-          ~init:Features.SimpleSet.bottom
-    |> Option.value ~default:Features.SimpleSet.bottom
-end
 
 (* Special sink as it needs the return access path *)
 let local_return_taint =

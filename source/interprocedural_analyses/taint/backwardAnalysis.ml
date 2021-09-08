@@ -1429,8 +1429,9 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     in
     let taint_in_taint_out =
       let features_to_attach =
-        BackwardState.compute_features_to_attach
+        BackwardState.extract_features_to_attach
           ~root:parameter
+          ~attach_to_leaf:Sinks.Attach
           existing_backward.TaintResult.Backward.taint_in_taint_out
       in
       let candidate_tree =
@@ -1490,8 +1491,9 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     in
     let sink_taint =
       let features_to_attach =
-        BackwardState.compute_features_to_attach
+        BackwardState.extract_features_to_attach
           ~root:parameter
+          ~attach_to_leaf:Sinks.Attach
           existing_backward.TaintResult.Backward.sink_taint
       in
       if not (Features.SimpleSet.is_bottom features_to_attach) then
