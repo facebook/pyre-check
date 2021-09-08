@@ -1,9 +1,0 @@
-server {
-    listen 80;
-    server_name <public ip>;
-
-    location / {
-        include uwsgi_params;
-        uwsgi_pass unix:/home/ubuntu/sandbox/sandbox.sock;
-    }
-}
