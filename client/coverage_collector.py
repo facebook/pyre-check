@@ -149,12 +149,11 @@ class CoverageCollector(cst.CSTVisitor):
     def in_static_function_definition(self) -> bool:
         return self.static_function_definition_depth > 0
 
+    def _is_method_or_classmethod(self) -> bool:
+        return self.in_class_definition() and not self.in_static_function_definition()
+
     def _is_self_or_cls(self, index: int) -> bool:
-        return (
-            index == 0
-            and self.in_class_definition()
-            and not self.in_static_function_definition()
-        )
+        return index == 0 and self._is_method_or_classmethod()
 
     def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> int:
         annotated_parameter_count = 0
@@ -192,6 +191,7 @@ class CoverageCollector(cst.CSTVisitor):
         annotation_kind = FunctionAnnotationKind.from_function_data(
             return_is_annotated,
             annotated_parameter_count,
+            self._is_method_or_classmethod(),
             parameters=node.params.params,
         )
         code_range = self._code_range(node.body)

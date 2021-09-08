@@ -22,14 +22,30 @@ class FunctionAnnotationKind(Enum):
     def from_function_data(
         is_return_annotated: bool,
         annotated_parameter_count: int,
+        is_method_or_classmethod: bool,
         parameters: Sequence[cst.Param],
     ) -> "FunctionAnnotationKind":
         if is_return_annotated and annotated_parameter_count == len(parameters):
             return FunctionAnnotationKind.FULLY_ANNOTATED
-        elif is_return_annotated or annotated_parameter_count > 0:
+
+        if is_return_annotated:
             return FunctionAnnotationKind.PARTIALLY_ANNOTATED
-        else:
-            return FunctionAnnotationKind.NOT_ANNOTATED
+
+        has_untyped_self_parameter = is_method_or_classmethod and (
+            len(parameters) > 0 and parameters[0].annotation is None
+        )
+
+        # Note: Untyped self parameters don't count towards making the function
+        # partially-annotated. This is because, if there is no return type, we
+        # will skip typechecking that function. So, even though `self` is
+        # considered an implicitly-annotated parameter, we expect at least one
+        # explicitly-annotated parameter for the function to be typechecked.
+        threshold_for_partial_annotation = 1 if has_untyped_self_parameter else 0
+
+        if annotated_parameter_count > threshold_for_partial_annotation:
+            return FunctionAnnotationKind.PARTIALLY_ANNOTATED
+
+        return FunctionAnnotationKind.NOT_ANNOTATED
 
 
 class StatisticsCollector(cst.CSTVisitor):
@@ -94,12 +110,11 @@ class AnnotationCountCollector(StatisticsCollector):
             "line_count": self.line_count,
         }
 
+    def _is_method_or_classmethod(self) -> bool:
+        return self.in_class_definition() and not self.in_static_function_definition()
+
     def _is_self_or_cls(self, index: int) -> bool:
-        return (
-            index == 0
-            and self.in_class_definition()
-            and not self.in_static_function_definition()
-        )
+        return index == 0 and self._is_method_or_classmethod()
 
     def _annotated_parameters(
         self, parameters: Sequence[cst.Param]
@@ -131,6 +146,7 @@ class AnnotationCountCollector(StatisticsCollector):
         function_annotation_kind = FunctionAnnotationKind.from_function_data(
             return_is_annotated,
             annotated_parameter_count,
+            self._is_method_or_classmethod(),
             parameters=node.params.params,
         )
 

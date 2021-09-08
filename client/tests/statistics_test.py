@@ -6,11 +6,13 @@
 import textwrap
 import unittest
 from typing import Dict
+from unittest.mock import MagicMock
 
 import libcst as cst
 from libcst.metadata import MetadataWrapper
 
 from ..statistics_collectors import (
+    FunctionAnnotationKind,
     AnnotationCountCollector,
     FixmeCountCollector,
     IgnoreCountCollector,
@@ -261,32 +263,6 @@ class AnnotationCountCollectorTest(unittest.TestCase):
 
         self.assert_counts(
             """
-            def foo(x):
-                def bar(x):
-                    return x
-                return bar
-
-            class A:
-                @foo(42)
-                def baz(self): ...
-            """,
-            {
-                "annotated_return_count": 0,
-                "annotated_globals_count": 0,
-                "annotated_parameter_count": 1,
-                "return_count": 3,
-                "globals_count": 0,
-                "parameter_count": 3,
-                "attribute_count": 0,
-                "annotated_attribute_count": 0,
-                "partially_annotated_function_count": 1,
-                "fully_annotated_function_count": 0,
-                "line_count": 10,
-            },
-        )
-
-        self.assert_counts(
-            """
             def foo(x: str) -> str:
                 return x
             """,
@@ -354,6 +330,192 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "fully_annotated_function_count": 0,
                 "line_count": 9,
             },
+        )
+
+    def test_count_annotations__partially_annotated_methods(self) -> None:
+        self.assert_counts(
+            """
+            class A:
+                def bar(self): ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 0,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 1,
+                "annotated_parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
+        )
+        self.assert_counts(
+            """
+            class A:
+                def bar(self) -> None: ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 1,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 1,
+                "annotated_parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 1,
+                "line_count": 4,
+            },
+        )
+        self.assert_counts(
+            """
+            class A:
+                def baz(self, x): ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 0,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 2,
+                "annotated_parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
+        )
+        self.assert_counts(
+            """
+            class A:
+                def baz(self, x) -> None: ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 1,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 2,
+                "annotated_parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
+        )
+        self.assert_counts(
+            """
+            class A:
+                def baz(self: Foo): ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 0,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 1,
+                "annotated_parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 4,
+            },
+        )
+
+
+class FunctionAnnotationKindTest(unittest.TestCase):
+    def test_from_function_data(self) -> None:
+        three_parameters = [
+            cst.Param(name=cst.Name("x1"), annotation=None),
+            cst.Param(name=cst.Name("x2"), annotation=None),
+            cst.Param(name=cst.Name("x3"), annotation=None),
+        ]
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=True,
+                annotated_parameter_count=3,
+                is_method_or_classmethod=False,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.FULLY_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=True,
+                annotated_parameter_count=0,
+                is_method_or_classmethod=False,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=0,
+                is_method_or_classmethod=False,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.NOT_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=1,
+                is_method_or_classmethod=False,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        # An untyped `self` parameter of a method does not count for partial
+        # annotation. As per PEP 484, we need an explicitly annotated parameter.
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=1,
+                is_method_or_classmethod=True,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.NOT_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=2,
+                is_method_or_classmethod=True,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        # An annotated `self` suffices to make Pyre typecheck the method.
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=1,
+                is_method_or_classmethod=True,
+                parameters=[
+                    cst.Param(
+                        name=cst.Name("self"),
+                        annotation=cst.Annotation(cst.Name("Foo")),
+                    )
+                ],
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=0,
+                is_method_or_classmethod=True,
+                parameters=[],
+            ),
+            FunctionAnnotationKind.NOT_ANNOTATED,
         )
 
 
