@@ -1,5 +1,0 @@
-@generated
-Overrides
-callable_classes.CallableProtocol::__call__ (override) -> [callable_classes.CallableProtocol::__call__ (method)]
-callable_classes.P::__call__ (override) -> [callable_classes.P::__call__ (method)]
-type::__call__ (override) -> [callable_classes.CallableProtocol::__call__ (override) callable_classes.P::__call__ (override) type::__call__ (method)]

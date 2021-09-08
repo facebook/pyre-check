@@ -1,8 +1,0 @@
-(tests
- (names targetTest callGraphTest decoratorHelperTest registrationTest
-   DependencyGraphTest fixpointAnalysisTest)
- (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_hash))
- (libraries oUnit sexplib ppxlib ppx_hash ppx_deriving pyrelib.test
-   pyrelib.ast pyrelib.interprocedural))

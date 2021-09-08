@@ -1,5 +1,0 @@
-@generated
-Call dependencies
-rule.alarm (fun) -> [rule.sink (fun) rule.source (fun)]
-rule.sink (fun) -> []
-rule.source (fun) -> []

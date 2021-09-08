@@ -1,5 +1,0 @@
-(library
- (name procs)
- (public_name hack_parallel.procs)
- (wrapped false)
- (libraries hack_parallel.heap hack_parallel.stubs))
