@@ -12,7 +12,7 @@ import testslide
 from ....error import ModelVerificationError
 from ....tests import setup
 from ..query import InvalidQueryResponse
-from ..validate_models import parse_validation_errors
+from ..validate_models import parse_validation_errors_response
 
 
 class ValidateModelsTest(testslide.TestCase):
@@ -20,11 +20,11 @@ class ValidateModelsTest(testslide.TestCase):
         def assert_parsed(
             payload: object, expected: Iterable[ModelVerificationError]
         ) -> None:
-            self.assertEqual(parse_validation_errors(payload), list(expected))
+            self.assertEqual(parse_validation_errors_response(payload), list(expected))
 
         def assert_not_parsed(payload: object) -> None:
             with self.assertRaises(InvalidQueryResponse):
-                parse_validation_errors(payload)
+                parse_validation_errors_response(payload)
 
         assert_not_parsed(42)
         assert_not_parsed("derp")

@@ -5,13 +5,20 @@
 
 import contextlib
 import dataclasses
+import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Optional, Sequence, Dict, Any, Iterator
+from typing import Optional, Sequence, Dict, Any, Iterator, List
 
-from ... import commands, command_arguments, configuration as configuration_module
-from . import backend_arguments, remote_logging, start
+from ... import (
+    commands,
+    command_arguments,
+    configuration as configuration_module,
+    error,
+    log,
+)
+from . import backend_arguments, remote_logging, start, validate_models
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -171,7 +178,14 @@ def create_analyze_arguments_and_cleanup(
         arguments.base_arguments.source_paths.cleanup()
 
 
-def _run_analyze_command(command: Sequence[str], output: str) -> commands.ExitCode:
+def parse_model_validation_errors(response: str) -> List[error.ModelVerificationError]:
+    response_json = json.loads(response)
+    return validate_models.parse_validation_errors(response_json)
+
+
+def _run_analyze_command(
+    command: Sequence[str], output: str, forward_stdout: bool
+) -> commands.ExitCode:
     with backend_arguments.backend_log_file(prefix="pyre_analyze") as log_file:
         with start.background_logging(Path(log_file.name)):
             result = subprocess.run(
@@ -185,7 +199,17 @@ def _run_analyze_command(command: Sequence[str], output: str) -> commands.ExitCo
             # Interpretation of the return code needs to be kept in sync with
             # `command/newAnalyzeCommand.ml`.
             if return_code == 0:
-                LOG.warning("Not implemented yet...")
+                model_validation_errors = parse_model_validation_errors(result.stdout)
+                if len(model_validation_errors) > 0:
+                    error.print_errors(
+                        model_validation_errors,
+                        output=output,
+                        error_kind="model verification",
+                    )
+                    return commands.ExitCode.FOUND_ERRORS
+
+                if forward_stdout:
+                    log.stdout.write(result.stdout)
                 return commands.ExitCode.SUCCESS
             elif return_code == 2:
                 LOG.error("Pyre encountered a failure within buck.")
@@ -216,7 +240,9 @@ def run_analyze(
         with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
             analyze_command = [binary_location, "newanalyze", str(argument_file_path)]
             return _run_analyze_command(
-                command=analyze_command, output=analyze_arguments.output
+                command=analyze_command,
+                output=analyze_arguments.output,
+                forward_stdout=(analyze_arguments.save_results_to is None),
             )
 
 
