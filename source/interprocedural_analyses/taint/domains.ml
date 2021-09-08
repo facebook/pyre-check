@@ -7,7 +7,6 @@
 
 open Core
 open Ast
-open Pyre
 
 module type SET_ARG = sig
   include Abstract.SetDomain.ELEMENT
@@ -709,12 +708,9 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   let extract_features_to_attach ~root ~attach_to_leaf taint =
     let gather_features to_add features = Features.SimpleSet.add_set features ~to_add in
     read ~root ~path:[] taint
+    |> Tree.transform Taint.leaf Filter ~f:(Taint.equal_leaf attach_to_leaf)
     |> Tree.collapse ~transform:Fn.id
-    |> Taint.partition Taint.leaf ByFilter ~f:(fun leaf ->
-           if Taint.equal_leaf attach_to_leaf leaf then Some true else None)
-    |> (fun map -> Map.Poly.find map true)
-    >>| Taint.fold Taint.simple_feature_self ~f:gather_features ~init:Features.SimpleSet.bottom
-    |> Option.value ~default:Features.SimpleSet.bottom
+    |> Taint.fold Taint.simple_feature_self ~f:gather_features ~init:Features.SimpleSet.bottom
 end
 
 module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
