@@ -252,7 +252,7 @@ let test_source_models context =
 
 
 let test_sanitize context =
-  let open Taint.Result in
+  let open Taint.Domains in
   let assert_model = assert_model ~context in
   assert_model
     ~model_source:{|
@@ -347,7 +347,8 @@ let test_sanitize context =
           ~kind:`Function
           ~sanitize:
             {
-              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              Sanitize.sources =
+                Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
               sinks = None;
               tito = None;
             }
@@ -369,7 +370,8 @@ let test_sanitize context =
               Sanitize.sources =
                 Some
                   (SpecificSources
-                     [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]);
+                     (Sources.Set.of_list
+                        [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]));
               sinks = None;
               tito = None;
             }
@@ -394,8 +396,8 @@ let test_sanitize context =
                 Some
                   (SpecificTito
                      {
-                       sanitized_tito_sources = [Sources.NamedSource "Test"];
-                       sanitized_tito_sinks = [];
+                       sanitized_tito_sources = Sources.Set.singleton (Sources.NamedSource "Test");
+                       sanitized_tito_sinks = Sinks.Set.empty;
                      });
             }
           "test.taint";
@@ -419,8 +421,8 @@ let test_sanitize context =
                 Some
                   (SpecificTito
                      {
-                       sanitized_tito_sources = [];
-                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                       sanitized_tito_sources = Sources.Set.empty;
+                       sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
                      });
             }
           "test.taint";
@@ -438,14 +440,15 @@ let test_sanitize context =
           ~kind:`Function
           ~sanitize:
             {
-              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              Sanitize.sources =
+                Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
               sinks = None;
               tito =
                 Some
                   (SpecificTito
                      {
-                       sanitized_tito_sources = [];
-                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                       sanitized_tito_sources = Sources.Set.empty;
+                       sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
                      });
             }
           "test.taint";
@@ -469,8 +472,8 @@ let test_sanitize context =
                 Some
                   (SpecificTito
                      {
-                       sanitized_tito_sources = [Sources.NamedSource "Test"];
-                       sanitized_tito_sinks = [Sinks.NamedSink "Test"];
+                       sanitized_tito_sources = Sources.Set.singleton (Sources.NamedSource "Test");
+                       sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
                      });
             }
           "test.taint";
@@ -515,7 +518,8 @@ let test_sanitize context =
           ~kind:`Object
           ~sanitize:
             {
-              Sanitize.sources = Some (SpecificSources [Sources.NamedSource "Test"]);
+              Sanitize.sources =
+                Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
               sinks = None;
               tito = None;
             }
@@ -531,7 +535,7 @@ let test_sanitize context =
           ~sanitize:
             {
               Sanitize.sources = None;
-              sinks = Some (SpecificSinks [Sinks.NamedSink "Test"]);
+              sinks = Some (SpecificSinks (Sinks.Set.singleton (Sinks.NamedSink "Test")));
               tito = None;
             }
           "django.http.Request.GET";
@@ -546,7 +550,10 @@ let test_sanitize context =
           ~sanitize:
             {
               Sanitize.sources =
-                Some (SpecificSources [Sources.NamedSource "TestTest"; Sources.NamedSource "Test"]);
+                Some
+                  (SpecificSources
+                     (Sources.Set.of_list
+                        [Sources.NamedSource "TestTest"; Sources.NamedSource "Test"]));
               sinks = None;
               tito = None;
             }
@@ -562,7 +569,10 @@ let test_sanitize context =
           ~sanitize:
             {
               Sanitize.sources = None;
-              sinks = Some (SpecificSinks [Sinks.NamedSink "TestSink"; Sinks.NamedSink "Test"]);
+              sinks =
+                Some
+                  (SpecificSinks
+                     (Sinks.Set.of_list [Sinks.NamedSink "TestSink"; Sinks.NamedSink "Test"]));
               tito = None;
             }
           "django.http.Request.GET";

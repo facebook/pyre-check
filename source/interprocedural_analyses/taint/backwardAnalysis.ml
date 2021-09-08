@@ -309,9 +309,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   BackwardTaint.leaf
                   ByFilter
                   ~f:(fun sink ->
-                    Option.some_if
-                      (not (List.mem ~equal:Sinks.equal sanitized_tito_sinks sink))
-                      sink)
+                    Option.some_if (not (Sinks.Set.mem sink sanitized_tito_sinks)) sink)
                   taint_in_taint_out
                 |> Core.Map.Poly.fold
                      ~init:BackwardState.Tree.bottom
@@ -1143,13 +1141,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
               let apply_attribute_sanitizers taint =
                 match Model.GlobalModel.get_sanitize global_model with
-                | { TaintResult.Sanitize.sinks = Some AllSinks; _ } -> BackwardState.Tree.empty
-                | { TaintResult.Sanitize.sinks = Some (SpecificSinks sanitized_sinks); _ } ->
+                | { Sanitize.sinks = Some AllSinks; _ } -> BackwardState.Tree.empty
+                | { Sanitize.sinks = Some (SpecificSinks sanitized_sinks); _ } ->
                     BackwardState.Tree.partition
                       BackwardTaint.leaf
                       ByFilter
                       ~f:(fun sink ->
-                        Option.some_if (not (List.mem ~equal:Sinks.equal sanitized_sinks sink)) sink)
+                        Option.some_if (not (Sinks.Set.mem sink sanitized_sinks)) sink)
                       taint
                     |> Core.Map.Poly.fold
                          ~init:BackwardState.Tree.bottom

@@ -23,37 +23,6 @@ module Forward : sig
   val empty : model
 end
 
-module Sanitize : sig
-  type sanitize_sources =
-    | AllSources
-    | SpecificSources of Sources.t list
-
-  type sanitize_sinks =
-    | AllSinks
-    | SpecificSinks of Sinks.t list
-
-  type sanitize_tito =
-    | AllTito
-    | SpecificTito of {
-        sanitized_tito_sources: Sources.t list;
-        sanitized_tito_sinks: Sinks.t list;
-      }
-  [@@deriving show, compare, eq]
-
-  type t = {
-    sources: sanitize_sources option;
-    sinks: sanitize_sinks option;
-    tito: sanitize_tito option;
-  }
-  [@@deriving show, eq]
-
-  val empty : t
-
-  val is_empty : t -> bool
-
-  val join : t -> t -> t
-end
-
 module Mode : sig
   type t =
     | Obscure

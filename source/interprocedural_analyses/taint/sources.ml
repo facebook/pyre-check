@@ -16,26 +16,34 @@ module T = struct
         subkind: string;
       }
   [@@deriving compare, eq, sexp, hash]
+
+  let pp formatter = function
+    | Attach -> Format.fprintf formatter "Attach"
+    | NamedSource name -> Format.fprintf formatter "%s" name
+    | ParametricSource { source_name; subkind } ->
+        Format.fprintf formatter "%s[%s]" source_name subkind
+
+
+  let show = Format.asprintf "%a" pp
 end
 
 include T
-
-let pp formatter = function
-  | Attach -> Format.fprintf formatter "Attach"
-  | NamedSource name -> Format.fprintf formatter "%s" name
-  | ParametricSource { source_name; subkind } ->
-      Format.fprintf formatter "%s[%s]" source_name subkind
-
-
-let show = Format.asprintf "%a" pp
 
 let ignore_leaf_at_call = function
   | Attach -> true
   | _ -> false
 
 
-module Set = Set.Make (struct
-  include T
-end)
+module Set = struct
+  include Stdlib.Set.Make (struct
+    include T
+  end)
+
+  let show set =
+    set |> elements |> List.map ~f:T.show |> String.concat ~sep:", " |> Format.asprintf "[%s]"
+
+
+  let pp format set = Format.fprintf format "%s" (show set)
+end
 
 let name = "source"

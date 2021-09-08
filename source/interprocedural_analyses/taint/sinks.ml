@@ -28,31 +28,39 @@ module T = struct
     | AddFeatureToArgument
   (* Special marker to designate modifying the state the parameter passed in. *)
   [@@deriving compare, eq, sexp, hash]
+
+  let pp formatter = function
+    | Attach -> Format.fprintf formatter "Attach"
+    | PartialSink { kind; label } -> Format.fprintf formatter "PartialSink[%s[%s]]" kind label
+    | TriggeredPartialSink { kind; label } ->
+        Format.fprintf formatter "TriggeredPartialSink[%s[%s]]" kind label
+    | LocalReturn -> Format.fprintf formatter "LocalReturn"
+    | NamedSink name -> Format.fprintf formatter "%s" name
+    | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind
+    | ParameterUpdate index -> Format.fprintf formatter "ParameterUpdate%d" index
+    | AddFeatureToArgument -> Format.fprintf formatter "AddFeatureToArgument"
+
+
+  let show = Format.asprintf "%a" pp
 end
 
 include T
-
-let pp formatter = function
-  | Attach -> Format.fprintf formatter "Attach"
-  | PartialSink { kind; label } -> Format.fprintf formatter "PartialSink[%s[%s]]" kind label
-  | TriggeredPartialSink { kind; label } ->
-      Format.fprintf formatter "TriggeredPartialSink[%s[%s]]" kind label
-  | LocalReturn -> Format.fprintf formatter "LocalReturn"
-  | NamedSink name -> Format.fprintf formatter "%s" name
-  | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind
-  | ParameterUpdate index -> Format.fprintf formatter "ParameterUpdate%d" index
-  | AddFeatureToArgument -> Format.fprintf formatter "AddFeatureToArgument"
-
-
-let show = Format.asprintf "%a" pp
 
 let ignore_leaf_at_call = function
   | Attach -> true
   | _ -> false
 
 
-module Set = Set.Make (struct
-  include T
-end)
+module Set = struct
+  include Stdlib.Set.Make (struct
+    include T
+  end)
+
+  let show set =
+    set |> elements |> List.map ~f:T.show |> String.concat ~sep:", " |> Format.asprintf "[%s]"
+
+
+  let pp format set = Format.fprintf format "%s" (show set)
+end
 
 let name = "sink"

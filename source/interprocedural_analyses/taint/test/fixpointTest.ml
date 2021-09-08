@@ -341,7 +341,6 @@ let test_skipped_analysis context =
 
 
 let test_sanitized_analysis context =
-  let open Taint.Result in
   assert_fixpoint
     ~context
     ~models:
@@ -366,7 +365,11 @@ let test_sanitized_analysis context =
               ~tito_parameters:["z"]
               ~errors:[{ code = 5001; pattern = ".*" }]
               ~sanitize:
-                { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+                {
+                  Taint.Domains.Sanitize.sources = Some AllSources;
+                  sinks = Some AllSinks;
+                  tito = Some AllTito;
+                }
               "qualifier.sanitized_model";
           ];
         iterations = 1;

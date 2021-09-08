@@ -735,7 +735,7 @@ let introduce_sink_taint
   let should_keep_taint =
     match sinks_to_keep with
     | None -> true
-    | Some sinks_to_keep -> Core.Set.mem sinks_to_keep taint_sink_kind
+    | Some sinks_to_keep -> Sinks.Set.mem taint_sink_kind sinks_to_keep
   in
   if should_keep_taint then
     let backward =
@@ -830,7 +830,7 @@ let introduce_source_taint
   let should_keep_taint =
     match sources_to_keep with
     | None -> true
-    | Some sources_to_keep -> Core.Set.mem sources_to_keep taint_source_kind
+    | Some sources_to_keep -> Sources.Set.mem taint_source_kind sources_to_keep
   in
   if Sources.equal taint_source_kind Sources.Attach && List.is_empty breadcrumbs then
     Error "`Attach` must be accompanied by a list of features to attach."
@@ -1884,8 +1884,12 @@ let adjust_sanitize_and_modes_and_skipped_override
                           ~callable_parameter_names_to_positions:None
                           value
                         >>= List.fold_result ~init:([], []) ~f:add_tito_annotation
-                        >>| fun (sanitized_tito_sources, sanitized_tito_sinks) ->
-                        Sanitize.SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }
+                        >>| fun (sources, sinks) ->
+                        Sanitize.SpecificTito
+                          {
+                            sanitized_tito_sources = Sources.Set.of_list sources;
+                            sanitized_tito_sinks = Sinks.Set.of_list sinks;
+                          }
                       in
                       sanitize_tito
                       >>= fun sanitize_tito ->
@@ -1906,9 +1910,10 @@ let adjust_sanitize_and_modes_and_skipped_override
                             } ->
                             let sources =
                               match sources with
-                              | None -> Some (Sanitize.SpecificSources [source])
+                              | None ->
+                                  Some (Sanitize.SpecificSources (Sources.Set.singleton source))
                               | Some (Sanitize.SpecificSources sources) ->
-                                  Some (Sanitize.SpecificSources (source :: sources))
+                                  Some (Sanitize.SpecificSources (Sources.Set.add source sources))
                               | Some Sanitize.AllSources -> Some Sanitize.AllSources
                             in
                             Ok { Sanitize.sources; sinks; tito }
@@ -1922,9 +1927,9 @@ let adjust_sanitize_and_modes_and_skipped_override
                             } ->
                             let sinks =
                               match sinks with
-                              | None -> Some (Sanitize.SpecificSinks [sink])
+                              | None -> Some (Sanitize.SpecificSinks (Sinks.Set.singleton sink))
                               | Some (Sanitize.SpecificSinks sinks) ->
-                                  Some (Sanitize.SpecificSinks (sink :: sinks))
+                                  Some (Sanitize.SpecificSinks (Sinks.Set.add sink sinks))
                               | Some Sanitize.AllSinks -> Some Sanitize.AllSinks
                             in
                             Ok { Sanitize.sources; sinks; tito }
@@ -1954,8 +1959,7 @@ let adjust_sanitize_and_modes_and_skipped_override
                 List.fold arguments ~f:to_sanitize_kind ~init:(Ok Sanitize.empty)
           in
           sanitize_kind
-          >>| fun sanitize_kind ->
-          TaintResult.Sanitize.join sanitize sanitize_kind, modes, skipped_override
+          >>| fun sanitize_kind -> Sanitize.join sanitize sanitize_kind, modes, skipped_override
       | "SkipAnalysis" -> Ok (sanitize, ModeSet.add SkipAnalysis modes, skipped_override)
       | "SkipDecoratorWhenInlining" ->
           Ok (sanitize, ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
@@ -1996,8 +2000,8 @@ let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
             ( Sources.Set.singleton Sources.Attach,
               Sinks.Set.of_list [Sinks.AddFeatureToArgument; Sinks.Attach] )
           ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
-            ( Core.Set.union sources (Sources.Set.of_list rule_sources),
-              Core.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
+            ( Sources.Set.union sources (Sources.Set.of_list rule_sources),
+              Sinks.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
       in
       Some sources_to_keep, Some sinks_to_keep
 

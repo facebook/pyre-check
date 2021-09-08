@@ -184,9 +184,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   ForwardTaint.leaf
                   ByFilter
                   ~f:(fun source ->
-                    Option.some_if
-                      (not (List.mem ~equal:Sources.equal sanitized_tito_sources source))
-                      source)
+                    Option.some_if (not (Sources.Set.mem source sanitized_tito_sources)) source)
                   argument_taint
                 |> Core.Map.Poly.fold
                      ~init:ForwardState.Tree.bottom
@@ -1113,13 +1111,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let apply_attribute_sanitizers taint =
         match Model.GlobalModel.get_sanitize global_model with
-        | { TaintResult.Sanitize.sources = Some AllSources; _ } -> ForwardState.Tree.empty
-        | { TaintResult.Sanitize.sources = Some (SpecificSources sanitized_sources); _ } ->
+        | { Sanitize.sources = Some AllSources; _ } -> ForwardState.Tree.empty
+        | { Sanitize.sources = Some (SpecificSources sanitized_sources); _ } ->
             ForwardState.Tree.partition
               ForwardTaint.leaf
               ByFilter
               ~f:(fun source ->
-                Option.some_if (not (List.mem ~equal:Sources.equal sanitized_sources source)) source)
+                Option.some_if (not (Sources.Set.mem source sanitized_sources)) source)
               taint
             |> Core.Map.Poly.fold
                  ~init:ForwardState.Tree.bottom

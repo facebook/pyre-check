@@ -339,7 +339,7 @@ include Taint.Result.Register (struct
               ForwardTaint.leaf
               ByFilter
               ~f:(fun source ->
-                Option.some_if (not (List.mem ~equal:Sources.equal sanitized_sources source)) source)
+                Option.some_if (not (Sources.Set.mem source sanitized_sources)) source)
               source_taint
             |> Core.Map.Poly.fold
                  ~init:ForwardState.bottom
@@ -360,8 +360,7 @@ include Taint.Result.Register (struct
             BackwardState.partition
               BackwardTaint.leaf
               ByFilter
-              ~f:(fun source ->
-                Option.some_if (not (List.mem ~equal:Sinks.equal sanitized_sinks source)) source)
+              ~f:(fun source -> Option.some_if (not (Sinks.Set.mem source sanitized_sinks)) source)
               sink_taint
             |> Core.Map.Poly.fold
                  ~init:BackwardState.bottom
@@ -406,7 +405,7 @@ include Taint.Result.Register (struct
           ~environment
           ~qualifier
           ~define
-          ~sanitize:Sanitize.empty
+          ~sanitize:Domains.Sanitize.empty
           ~modes:ModeSet.empty
           empty_model
 

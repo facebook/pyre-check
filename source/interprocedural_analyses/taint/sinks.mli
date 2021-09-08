@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
-
 type partial_sink = {
   kind: string;
   label: string;
@@ -31,4 +29,10 @@ val name : string
 
 val ignore_leaf_at_call : t -> bool
 
-module Set : Set.S with type Elt.t = t
+module Set : sig
+  include Stdlib.Set.S with type elt = t
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+end

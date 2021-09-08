@@ -327,9 +327,9 @@ module GlobalModel = struct
     let is_sanitized_model { model = { TaintResult.sanitize; _ }; _ } =
       match sanitize with
       | {
-       sources = Some TaintResult.Sanitize.AllSources;
-       sinks = Some TaintResult.Sanitize.AllSinks;
-       tito = Some TaintResult.Sanitize.AllTito;
+       sources = Some Sanitize.AllSources;
+       sinks = Some Sanitize.AllSinks;
+       tito = Some Sanitize.AllTito;
       } ->
           true
       | _ -> false

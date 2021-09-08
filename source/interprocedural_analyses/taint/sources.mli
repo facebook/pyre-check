@@ -18,4 +18,10 @@ val name : string
 
 val ignore_leaf_at_call : t -> bool
 
-module Set : Core.Set.S with type Elt.t = t
+module Set : sig
+  include Stdlib.Set.S with type elt = t
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+end

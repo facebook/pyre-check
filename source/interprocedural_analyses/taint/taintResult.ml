@@ -109,134 +109,6 @@ module Backward = struct
     && BackwardState.less_or_equal ~left:tito_next ~right:tito_previous
 end
 
-module Sanitize = struct
-  type sanitize_sources =
-    | AllSources
-    | SpecificSources of Sources.t list
-  [@@deriving show, compare, eq]
-
-  type sanitize_sinks =
-    | AllSinks
-    | SpecificSinks of Sinks.t list
-  [@@deriving show, compare, eq]
-
-  type sanitize_tito =
-    | AllTito
-    | SpecificTito of {
-        sanitized_tito_sources: Sources.t list;
-        sanitized_tito_sinks: Sinks.t list;
-      }
-  [@@deriving show, compare, eq]
-
-  type t = {
-    sources: sanitize_sources option;
-    sinks: sanitize_sinks option;
-    tito: sanitize_tito option;
-  }
-  [@@deriving show, eq]
-
-  let empty = { sources = None; sinks = None; tito = None }
-
-  let is_empty = equal empty
-
-  let join left right =
-    let sources =
-      match left.sources, right.sources with
-      | None, Some _ -> right.sources
-      | Some _, None -> left.sources
-      | Some AllSources, _
-      | _, Some AllSources ->
-          Some AllSources
-      | Some (SpecificSources left_sources), Some (SpecificSources right_sources) ->
-          Some
-            (SpecificSources
-               (List.dedup_and_sort ~compare:Sources.compare (left_sources @ right_sources)))
-      | None, None -> None
-    in
-    let sinks =
-      match left.sinks, right.sinks with
-      | None, Some _ -> right.sinks
-      | Some _, None -> left.sinks
-      | Some AllSinks, _
-      | _, Some AllSinks ->
-          Some AllSinks
-      | Some (SpecificSinks left_sinks), Some (SpecificSinks right_sinks) ->
-          Some
-            (SpecificSinks (List.dedup_and_sort ~compare:Sinks.compare (left_sinks @ right_sinks)))
-      | None, None -> None
-    in
-    let tito =
-      match left.tito, right.tito with
-      | None, Some tito
-      | Some tito, None ->
-          Some tito
-      | Some AllTito, _
-      | _, Some AllTito ->
-          Some AllTito
-      | ( Some
-            (SpecificTito
-              { sanitized_tito_sources = left_sources; sanitized_tito_sinks = left_sinks }),
-          Some
-            (SpecificTito
-              { sanitized_tito_sources = right_sources; sanitized_tito_sinks = right_sinks }) ) ->
-          Some
-            (SpecificTito
-               {
-                 sanitized_tito_sources =
-                   List.dedup_and_sort ~compare:Sources.compare (left_sources @ right_sources);
-                 sanitized_tito_sinks =
-                   List.dedup_and_sort ~compare:Sinks.compare (left_sinks @ right_sinks);
-               })
-      | None, None -> None
-    in
-    { sources; sinks; tito }
-
-
-  let to_json { sources; sinks; tito } =
-    let to_string name = `String name in
-    let sources_to_json sources =
-      `List
-        (sources
-        |> List.dedup_and_sort ~compare:Sources.compare
-        |> List.map ~f:Sources.show
-        |> List.map ~f:to_string)
-    in
-    let sinks_to_json sinks =
-      `List
-        (sinks
-        |> List.dedup_and_sort ~compare:Sinks.compare
-        |> List.map ~f:Sinks.show
-        |> List.map ~f:to_string)
-    in
-    let sources_json =
-      match sources with
-      | Some AllSources -> ["sources", `String "All"]
-      | Some (SpecificSources sources) -> ["sources", sources_to_json sources]
-      | None -> []
-    in
-    let sinks_json =
-      match sinks with
-      | Some AllSinks -> ["sinks", `String "All"]
-      | Some (SpecificSinks sinks) -> ["sinks", sinks_to_json sinks]
-      | None -> []
-    in
-    let tito_json =
-      match tito with
-      | Some AllTito -> ["tito", `String "All"]
-      | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-          [
-            "tito_sources", sources_to_json sanitized_tito_sources;
-            "tito_sinks", sinks_to_json sanitized_tito_sinks;
-          ]
-      | None -> []
-    in
-    `Assoc (sources_json @ sinks_json @ tito_json)
-
-
-  let pp_model formatter sanitize =
-    Format.fprintf formatter "  Sanitize: %s" (json_to_string ~indent:"    " (to_json sanitize))
-end
-
 module Mode = struct
   let name = "modes"
 
@@ -285,13 +157,12 @@ type call_model = {
 let pp_call_model formatter { forward; backward; sanitize; modes } =
   Format.fprintf
     formatter
-    "%a\n%a\n%a\n%a"
+    "%a\n%a\n  Sanitize: %s\n%a"
     Forward.pp_model
     forward
     Backward.pp_model
     backward
-    Sanitize.pp_model
-    sanitize
+    (Sanitize.to_json sanitize |> json_to_string ~indent:"    ")
     ModeSet.pp_model
     modes
 
