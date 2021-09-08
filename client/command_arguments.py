@@ -134,3 +134,24 @@ class StatisticsArguments:
     log_identifier: Optional[str] = None
     log_results: bool = False
     print_aggregates: bool = False
+
+
+@dataclass(frozen=True)
+class AnalyzeArguments:
+    debug: bool = False
+    dump_call_graph: bool = False
+    dump_model_query_results: bool = False
+    enable_memory_profiling: bool = False
+    enable_profiling: bool = False
+    find_missing_flows: Optional[MissingFlowsKind] = None
+    inline_decorators: bool = False
+    log_identifier: Optional[str] = None
+    maximum_tito_depth: Optional[int] = None
+    maximum_trace_length: Optional[int] = None
+    no_verify: bool = False
+    repository_root: Optional[str] = None
+    rule: List[int] = field(default_factory=list)
+    save_results_to: Optional[str] = None
+    sequential: bool = False
+    taint_models_path: List[str] = field(default_factory=list)
+    use_cache: bool = False

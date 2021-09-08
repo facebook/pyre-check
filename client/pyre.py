@@ -659,33 +659,65 @@ def analyze(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    rules = list(rule)
-    return run_pyre_command(
-        commands.Analyze(
-            command_argument,
-            original_directory=os.getcwd(),
-            configuration=configuration,
-            analysis=analysis,
-            taint_models_path=list(taint_models_path),
-            no_verify=no_verify,
-            save_results_to=save_results_to,
-            dump_call_graph=dump_call_graph,
-            repository_root=repository_root,
-            rules=list(rules) if len(rules) > 0 else None,
-            find_missing_flows=(
-                command_arguments.MissingFlowsKind(find_missing_flows)
+
+    # TODO: Change the condition to `configuration.use_command_v2` when ready
+    if False:
+        _check_configuration(configuration)
+        _start_logging_to_directory(configuration.log_directory)
+        return v2.analyze.run(
+            configuration,
+            command_arguments.AnalyzeArguments(
+                debug=command_argument.debug,
+                dump_call_graph=dump_call_graph,
+                dump_model_query_results=dump_model_query_results,
+                enable_memory_profiling=command_argument.enable_memory_profiling,
+                enable_profiling=command_argument.enable_profiling,
+                find_missing_flows=command_arguments.MissingFlowsKind(
+                    find_missing_flows
+                )
                 if find_missing_flows is not None
-                else None
+                else None,
+                inline_decorators=inline_decorators,
+                log_identifier=command_argument.log_identifier,
+                maximum_tito_depth=maximum_tito_depth,
+                maximum_trace_length=maximum_trace_length,
+                no_verify=no_verify,
+                repository_root=repository_root,
+                rule=list(rule),
+                save_results_to=save_results_to,
+                sequential=command_argument.sequential,
+                taint_models_path=list(taint_models_path),
+                use_cache=use_cache,
             ),
-            dump_model_query_results=dump_model_query_results,
-            use_cache=use_cache,
-            inline_decorators=inline_decorators,
-            maximum_trace_length=maximum_trace_length,
-            maximum_tito_depth=maximum_tito_depth,
-        ),
-        configuration,
-        command_argument.noninteractive,
-    )
+        )
+    else:
+        rules = list(rule)
+        return run_pyre_command(
+            commands.Analyze(
+                command_argument,
+                original_directory=os.getcwd(),
+                configuration=configuration,
+                analysis=analysis,
+                taint_models_path=list(taint_models_path),
+                no_verify=no_verify,
+                save_results_to=save_results_to,
+                dump_call_graph=dump_call_graph,
+                repository_root=repository_root,
+                rules=list(rules) if len(rules) > 0 else None,
+                find_missing_flows=(
+                    command_arguments.MissingFlowsKind(find_missing_flows)
+                    if find_missing_flows is not None
+                    else None
+                ),
+                dump_model_query_results=dump_model_query_results,
+                use_cache=use_cache,
+                inline_decorators=inline_decorators,
+                maximum_trace_length=maximum_trace_length,
+                maximum_tito_depth=maximum_tito_depth,
+            ),
+            configuration,
+            command_argument.noninteractive,
+        )
 
 
 @pyre.command()
