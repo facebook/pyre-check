@@ -27,7 +27,6 @@ from . import (
     statistics_logger,
 )
 from .commands import Command, ExitCode, v2
-from .commands.analyze import MissingFlowsKind
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -607,7 +606,7 @@ def pyre(
 )
 @click.option(
     "--find-missing-flows",
-    type=click.Choice([kind.value for kind in MissingFlowsKind]),
+    type=click.Choice([kind.value for kind in command_arguments.MissingFlowsKind]),
     help="Perform a taint analysis to find flows through obscure models.",
 )
 @click.option(
@@ -674,7 +673,7 @@ def analyze(
             repository_root=repository_root,
             rules=list(rules) if len(rules) > 0 else None,
             find_missing_flows=(
-                MissingFlowsKind(find_missing_flows)
+                command_arguments.MissingFlowsKind(find_missing_flows)
                 if find_missing_flows is not None
                 else None
             ),

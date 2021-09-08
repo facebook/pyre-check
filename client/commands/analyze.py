@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import enum
 import json
 from typing import List, Optional
 
@@ -17,11 +16,6 @@ from ..error import print_errors
 from .check import Check
 from .command import ClientException, ExitCode
 from .validate_models import ValidateModels
-
-
-class MissingFlowsKind(str, enum.Enum):
-    OBSCURE: str = "obscure"
-    TYPE: str = "type"
 
 
 class Analyze(Check):
@@ -41,7 +35,7 @@ class Analyze(Check):
         dump_call_graph: bool,
         repository_root: Optional[str],
         rules: Optional[List[int]],
-        find_missing_flows: Optional[MissingFlowsKind] = None,
+        find_missing_flows: Optional[command_arguments.MissingFlowsKind] = None,
         dump_model_query_results: bool = False,
         use_cache: bool,
         inline_decorators: bool,
@@ -63,7 +57,10 @@ class Analyze(Check):
         self._dump_call_graph: bool = dump_call_graph
         self._repository_root: Final[Optional[str]] = repository_root
         self._rules: Final[Optional[List[int]]] = rules
-        self._find_missing_flows: Optional[MissingFlowsKind] = find_missing_flows
+        # pyre-ignore[11]: Annotation `MissingFlowsKind` is not defined as a type.
+        self._find_missing_flows: Optional[
+            command_arguments.MissingFlowsKind
+        ] = find_missing_flows
         self._dump_model_query_results = dump_model_query_results
         self._use_cache: bool = use_cache
         self._inline_decorators: bool = inline_decorators

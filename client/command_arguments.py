@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import enum
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Set
@@ -10,6 +11,11 @@ from typing import List, Optional, Set
 
 TEXT: str = "text"
 JSON: str = "json"
+
+
+class MissingFlowsKind(str, enum.Enum):
+    OBSCURE: str = "obscure"
+    TYPE: str = "type"
 
 
 @dataclass(frozen=True)
