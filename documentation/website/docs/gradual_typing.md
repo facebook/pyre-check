@@ -92,6 +92,10 @@ You can run `pyre-upgrade` with
 ```bash
 (venv) $ pyre --output=json | pyre-upgrade fixme
 ```
+or if you are using a local configuration
+```bash
+(venv) $ pyre --output=json -l <project> | pyre-upgrade fixme
+```
 
 ### Automatic Type Inference
 We have found tools that automatically add type annotations to code useful to get started with a project. There are two general approaches to automatic type inference: static inference and dynamic inference from runtime information. Both approaches come with their own trade-offs and we have found a combination of the two to be useful.
