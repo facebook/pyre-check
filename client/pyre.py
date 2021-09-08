@@ -682,6 +682,7 @@ def analyze(
                 maximum_tito_depth=maximum_tito_depth,
                 maximum_trace_length=maximum_trace_length,
                 no_verify=no_verify,
+                output=command_argument.output,
                 repository_root=repository_root,
                 rule=list(rule),
                 save_results_to=save_results_to,

@@ -6,11 +6,12 @@
 import contextlib
 import dataclasses
 import logging
+import subprocess
 from pathlib import Path
 from typing import Optional, Sequence, Dict, Any, Iterator
 
 from ... import commands, command_arguments, configuration as configuration_module
-from . import backend_arguments, remote_logging
+from . import backend_arguments, remote_logging, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -170,12 +171,53 @@ def create_analyze_arguments_and_cleanup(
         arguments.base_arguments.source_paths.cleanup()
 
 
+def _run_analyze_command(command: Sequence[str], output: str) -> commands.ExitCode:
+    with backend_arguments.backend_log_file(prefix="pyre_analyze") as log_file:
+        with start.background_logging(Path(log_file.name)):
+            result = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=log_file.file,
+                universal_newlines=True,
+            )
+            return_code = result.returncode
+
+            # Interpretation of the return code needs to be kept in sync with
+            # `command/newAnalyzeCommand.ml`.
+            if return_code == 0:
+                LOG.warning("Not implemented yet...")
+                return commands.ExitCode.SUCCESS
+            elif return_code == 2:
+                LOG.error("Pyre encountered a failure within buck.")
+                return commands.ExitCode.BUCK_INTERNAL_ERROR
+            elif return_code == 3:
+                LOG.error("Pyre encountered an error when building the buck targets.")
+                return commands.ExitCode.BUCK_USER_ERROR
+            else:
+                LOG.error(
+                    f"Check command exited with non-zero return code: {return_code}."
+                )
+                return commands.ExitCode.FAILURE
+
+
 def run_analyze(
     configuration: configuration_module.Configuration,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> commands.ExitCode:
-    LOG.warning("Coming soon...")
-    return commands.ExitCode.SUCCESS
+    binary_location = configuration.get_binary_respecting_override()
+    if binary_location is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot locate a Pyre binary to run."
+        )
+
+    with create_analyze_arguments_and_cleanup(
+        configuration, analyze_arguments
+    ) as arguments:
+        with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
+            analyze_command = [binary_location, "newanalyze", str(argument_file_path)]
+            return _run_analyze_command(
+                command=analyze_command, output=analyze_arguments.output
+            )
 
 
 @remote_logging.log_usage(command_name="analyze")

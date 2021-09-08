@@ -149,6 +149,7 @@ class AnalyzeArguments:
     maximum_tito_depth: Optional[int] = None
     maximum_trace_length: Optional[int] = None
     no_verify: bool = False
+    output: str = TEXT
     repository_root: Optional[str] = None
     rule: List[int] = field(default_factory=list)
     save_results_to: Optional[str] = None
