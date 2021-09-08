@@ -5,11 +5,31 @@
 
 
 from collections import defaultdict
+from enum import Enum
 from re import compile
 from typing import Any, Dict, List, Pattern, Sequence
 
 import libcst as cst
 from libcst.metadata import CodeRange, PositionProvider
+
+
+class FunctionAnnotationKind(Enum):
+    NOT_ANNOTATED = 0
+    PARTIALLY_ANNOTATED = 1
+    FULLY_ANNOTATED = 2
+
+    @staticmethod
+    def from_function_data(
+        is_return_annotated: bool,
+        annotated_parameter_count: int,
+        parameters: Sequence[cst.Param],
+    ) -> "FunctionAnnotationKind":
+        if is_return_annotated and annotated_parameter_count == len(parameters):
+            return FunctionAnnotationKind.FULLY_ANNOTATED
+        elif is_return_annotated or annotated_parameter_count > 0:
+            return FunctionAnnotationKind.PARTIALLY_ANNOTATED
+        else:
+            return FunctionAnnotationKind.NOT_ANNOTATED
 
 
 class StatisticsCollector(cst.CSTVisitor):
@@ -108,11 +128,15 @@ class AnnotationCountCollector(StatisticsCollector):
         self.annotated_parameter_count += annotated_parameter_count
         self.parameter_count += len(node.params.params)
 
-        if return_is_annotated and (
-            annotated_parameter_count == len(node.params.params)
-        ):
+        function_annotation_kind = FunctionAnnotationKind.from_function_data(
+            return_is_annotated,
+            annotated_parameter_count,
+            parameters=node.params.params,
+        )
+
+        if function_annotation_kind == FunctionAnnotationKind.FULLY_ANNOTATED:
             self.fully_annotated_function_count += 1
-        elif return_is_annotated or annotated_parameter_count > 0:
+        elif function_annotation_kind == FunctionAnnotationKind.PARTIALLY_ANNOTATED:
             self.partially_annotated_function_count += 1
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:

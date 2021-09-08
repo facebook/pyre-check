@@ -8,11 +8,12 @@ import dataclasses
 import itertools
 import logging
 from dataclasses import dataclass
-from enum import Enum
 from typing import Set, Iterable, Dict, List, Sequence
 
 import libcst as cst
 from libcst.metadata import CodeRange, PositionProvider
+
+from .statistics_collectors import FunctionAnnotationKind
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -26,26 +27,21 @@ class AnnotationInfo:
 
 @dataclasses.dataclass(frozen=True)
 class FunctionAnnotationInfo:
-    class Kind(Enum):
-        NO = 0
-        PARTIALLY = 1
-        FULLY = 2
-
     node: cst.CSTNode
-    annotation_kind: Kind
+    annotation_kind: FunctionAnnotationKind
     code_range: CodeRange
 
     @property
     def is_annotated(self) -> bool:
-        return self.annotation_kind != FunctionAnnotationInfo.Kind.NO
+        return self.annotation_kind != FunctionAnnotationKind.NOT_ANNOTATED
 
     @property
     def is_partially_annotated(self) -> bool:
-        return self.annotation_kind == FunctionAnnotationInfo.Kind.PARTIALLY
+        return self.annotation_kind == FunctionAnnotationKind.PARTIALLY_ANNOTATED
 
     @property
     def is_fully_annotated(self) -> bool:
-        return self.annotation_kind == FunctionAnnotationInfo.Kind.FULLY
+        return self.annotation_kind == FunctionAnnotationKind.FULLY_ANNOTATED
 
 
 @dataclass(frozen=True)
@@ -189,14 +185,15 @@ class CoverageCollector(cst.CSTVisitor):
             code_range = self._code_range(node.returns)
             return_is_annotated = True
         self.returns.append(AnnotationInfo(node, return_is_annotated, code_range))
-        annotated_parameters = self._check_parameter_annotations(node.params.params)
+        annotated_parameter_count = self._check_parameter_annotations(
+            node.params.params
+        )
 
-        if return_is_annotated and (annotated_parameters == len(node.params.params)):
-            annotation_kind = FunctionAnnotationInfo.Kind.FULLY
-        elif return_is_annotated or annotated_parameters > 0:
-            annotation_kind = FunctionAnnotationInfo.Kind.PARTIALLY
-        else:
-            annotation_kind = FunctionAnnotationInfo.Kind.NO
+        annotation_kind = FunctionAnnotationKind.from_function_data(
+            return_is_annotated,
+            annotated_parameter_count,
+            parameters=node.params.params,
+        )
         code_range = self._code_range(node.body)
         self.functions.append(FunctionAnnotationInfo(node, annotation_kind, code_range))
 
