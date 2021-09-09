@@ -1482,7 +1482,7 @@ expression:
 
   | LEFTPARENS; generator = generator; RIGHTPARENS { generator }
 
-  | LEFTPARENS; yield = yield RIGHTPARENS { snd yield }
+  | LEFTPARENS; yield = yield; RIGHTPARENS { snd yield }
   ;
 
 expression_list:
