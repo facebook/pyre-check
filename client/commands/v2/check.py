@@ -7,10 +7,9 @@ import contextlib
 import dataclasses
 import json
 import logging
-import os
 import subprocess
 from pathlib import Path
-from typing import Sequence, Optional, Dict, Any, Iterator, List
+from typing import Sequence, Dict, Any, Iterator, List
 
 from ... import (
     commands,

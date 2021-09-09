@@ -6,7 +6,6 @@
 import textwrap
 import unittest
 from typing import Dict
-from unittest.mock import MagicMock
 
 import libcst as cst
 from libcst.metadata import MetadataWrapper
