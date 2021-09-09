@@ -25,6 +25,11 @@ type parameter_source_taint = {
   sources: Taint.Sources.t list;
 }
 
+type parameter_sanitize = {
+  name: string;
+  sanitize: Taint.Domains.Sanitize.t;
+}
+
 type error_expectation = {
   code: int;
   pattern: string;
@@ -40,7 +45,8 @@ type expectation = {
   errors: error_expectation list;
   obscure: bool option;
   global_sanitizer: Taint.Domains.Sanitize.t;
-  root_sanitizers: Taint.Domains.SanitizeRootMap.t;
+  return_sanitizer: Taint.Domains.Sanitize.t;
+  parameter_sanitizers: parameter_sanitize list;
   analysis_modes: Taint.Result.ModeSet.t;
 }
 
@@ -53,7 +59,8 @@ let outcome
     ?(errors = [])
     ?obscure
     ?(global_sanitizer = Taint.Domains.Sanitize.empty)
-    ?(root_sanitizers = Taint.Domains.SanitizeRootMap.bottom)
+    ?(return_sanitizer = Taint.Domains.Sanitize.empty)
+    ?(parameter_sanitizers = [])
     ?(analysis_modes = Taint.Result.ModeSet.empty)
     define_name
   =
@@ -67,7 +74,8 @@ let outcome
     errors;
     obscure;
     global_sanitizer;
-    root_sanitizers;
+    return_sanitizer;
+    parameter_sanitizers;
     analysis_modes;
   }
 
@@ -109,7 +117,8 @@ let check_expectation
       kind;
       obscure;
       global_sanitizer;
-      root_sanitizers;
+      return_sanitizer;
+      parameter_sanitizers;
       analysis_modes = expected_analysis_modes;
     }
   =
@@ -149,18 +158,6 @@ let check_expectation
   in
   let { backward; forward; sanitizers; modes }, is_obscure = get_model callable in
   assert_equal ~printer:Taint.Result.ModeSet.show modes expected_analysis_modes;
-  assert_equal
-    ~cmp:Taint.Domains.Sanitize.equal
-    ~printer:Taint.Domains.Sanitize.show
-    sanitizers.global
-    global_sanitizer;
-  assert_equal
-    ~cmp:(fun left right ->
-      Taint.Domains.SanitizeRootMap.less_or_equal ~left ~right
-      && Taint.Domains.SanitizeRootMap.less_or_equal ~left:right ~right:left)
-    ~printer:Taint.Domains.SanitizeRootMap.show
-    sanitizers.roots
-    root_sanitizers;
   let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue
@@ -174,6 +171,15 @@ let check_expectation
       forward.source_taint
       ~f:extract_sources_by_parameter_name
       ~init:String.Map.empty
+  in
+  let extract_parameter_sanitize map (root, sanitize) =
+    match AccessPath.Root.parameter_name root with
+    | Some name -> String.Map.set map ~key:name ~data:sanitize
+    | _ -> map
+  in
+  let parameter_sanitize_map =
+    Domains.SanitizeRootMap.to_alist sanitizers.roots
+    |> List.fold ~init:String.Map.empty ~f:extract_parameter_sanitize
   in
   let extract_tito_parameter_name (root, taint) positions =
     let kinds =
@@ -238,11 +244,39 @@ let check_expectation
         (* Okay, we may have outcomes we don't care about *)
         ()
   in
+  let check_each_sanitize ~key:name ~data =
+    match data with
+    | `Both (expected, actual) ->
+        assert_equal
+          ~cmp:Domains.Sanitize.equal
+          ~printer:Domains.Sanitize.show
+          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
+          expected
+          actual
+    | `Left expected ->
+        assert_equal
+          ~cmp:Domains.Sanitize.equal
+          ~printer:Domains.Sanitize.show
+          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
+          expected
+          Domains.Sanitize.empty
+    | `Right actual ->
+        assert_equal
+          ~cmp:Domains.Sanitize.equal
+          ~printer:Domains.Sanitize.show
+          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
+          Domains.Sanitize.empty
+          actual
+  in
   let expected_sinks =
     List.map ~f:(fun { name; sinks } -> name, sinks) sink_parameters |> String.Map.of_alist_exn
   in
   let expected_parameter_sources =
     List.map ~f:(fun { name; sources } -> name, sources) source_parameters
+    |> String.Map.of_alist_exn
+  in
+  let expected_parameter_sanitizers =
+    List.map ~f:(fun { name; sanitize } -> name, sanitize) parameter_sanitizers
     |> String.Map.of_alist_exn
   in
   (* Check obscure *)
@@ -327,6 +361,25 @@ let check_expectation
     ~msg:(Format.sprintf "Define %s Tito positions" define_name)
     expected_tito
     taint_in_taint_out_names;
+
+  (* Check sanitizers *)
+  assert_equal
+    ~cmp:Domains.Sanitize.equal
+    ~printer:Domains.Sanitize.show
+    sanitizers.global
+    global_sanitizer;
+  assert_equal
+    ~cmp:Domains.Sanitize.equal
+    ~printer:Domains.Sanitize.show
+    (Domains.SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots)
+    return_sanitizer;
+
+  assert_equal
+    (Map.length expected_parameter_sanitizers)
+    (Map.length parameter_sanitize_map)
+    ~printer:Int.to_string
+    ~msg:(Format.sprintf "Define %s: List of parameter sanitizers differ in length." define_name);
+  String.Map.iter2 ~f:check_each_sanitize expected_parameter_sanitizers parameter_sanitize_map;
 
   (* Check errors *)
   let actual_errors =

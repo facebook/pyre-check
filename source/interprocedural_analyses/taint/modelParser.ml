@@ -29,6 +29,19 @@ module T = struct
       }
     | Breadcrumbs of breadcrumbs
     | ViaFeatures of via_features
+  [@@deriving show, compare]
+
+  type sanitize_annotation =
+    | AllSources
+    | SpecificSource of Sources.t
+    | AllSinks
+    | SpecificSink of Sinks.t
+    | AllTito
+    | SpecificTito of {
+        sources: Sources.t list;
+        sinks: Sinks.t list;
+      }
+  [@@deriving show, compare]
 
   type taint_annotation =
     | Sink of {
@@ -58,6 +71,7 @@ module T = struct
         via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
       }
+    | Sanitize of sanitize_annotation list
   [@@deriving show, compare]
 
   type annotation_kind =
@@ -201,8 +215,6 @@ let invalid_model_error ~path ~location ~name message =
 
 
 module ClassDefinitionsCache = ModelVerifier.ClassDefinitionsCache
-
-(* Don't propagate inferred model of methods with Sanitize *)
 
 let decorators = String.Set.union Recognized.property_decorators Recognized.classproperty_decorators
 
@@ -497,28 +509,28 @@ let rec parse_annotations
             ];
         }
       when [%compare.equal: string option] (base_name callee) (Some "AppliesTo") ->
-        let extend_path annotation =
-          let field =
-            match index with
-            | Expression.Integer index -> Ok (Abstract.TreeDomain.Label.create_int_index index)
-            | Expression.String { StringLiteral.value = index; _ } ->
-                Ok (Abstract.TreeDomain.Label.create_name_index index)
-            | _ ->
-                Error
-                  (annotation_error
-                     "Expected either integer or string as index in AppliesTo annotation.")
-          in
-          field
-          >>| fun field ->
-          match annotation with
-          | Sink ({ path; _ } as sink) -> Sink { sink with path = field :: path }
-          | Source ({ path; _ } as source) -> Source { source with path = field :: path }
-          | Tito ({ path; _ } as tito) -> Tito { tito with path = field :: path }
-          | AddFeatureToArgument ({ path; _ } as add_feature_to_argument) ->
-              AddFeatureToArgument { add_feature_to_argument with path = field :: path }
+        let field =
+          match index with
+          | Expression.Integer index -> Ok (Abstract.TreeDomain.Label.create_int_index index)
+          | Expression.String { StringLiteral.value = index; _ } ->
+              Ok (Abstract.TreeDomain.Label.create_name_index index)
+          | _ ->
+              Error
+                (annotation_error
+                   "Expected either integer or string as index in AppliesTo annotation.")
         in
+        let extend_path field = function
+          | Sink ({ path; _ } as sink) -> Ok (Sink { sink with path = field :: path })
+          | Source ({ path; _ } as source) -> Ok (Source { source with path = field :: path })
+          | Tito ({ path; _ } as tito) -> Ok (Tito { tito with path = field :: path })
+          | AddFeatureToArgument ({ path; _ } as add_feature_to_argument) ->
+              Ok (AddFeatureToArgument { add_feature_to_argument with path = field :: path })
+          | Sanitize _ -> Error (annotation_error "`AppliesTo[Sanitize[...]]` is not supported.")
+        in
+        field
+        >>= fun field ->
         parse_annotation expression
-        >>= fun annotations -> List.map ~f:extend_path annotations |> all
+        >>= fun annotations -> List.map ~f:(extend_path field) annotations |> all
     | Call { callee; arguments }
       when [%compare.equal: string option] (base_name callee) (Some "CrossRepositoryTaint") -> (
         match arguments with
@@ -630,6 +642,15 @@ let rec parse_annotations
               (annotation_error
                  "Cross repository taint anchor must be of the form \
                   CrossRepositoryTaintAnchor[taint, canonical_name, canonical_port]."))
+    | Name (Name.Identifier "Sanitize") -> Ok [Sanitize [AllSources; AllSinks; AllTito]]
+    | Call { callee; arguments }
+      when [%compare.equal: string option] (base_name callee) (Some "Sanitize") ->
+        let parse_argument { Call.Argument.value = { Node.value = expression; _ }; _ } =
+          parse_sanitize_annotation expression
+        in
+        List.map ~f:parse_argument arguments
+        |> all
+        >>| fun annotations -> [Sanitize (List.concat annotations)]
     | Call
         { callee; arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _ }
       when [%compare.equal: string option] (base_name callee) (Some "Union") ->
@@ -753,8 +774,83 @@ let rec parse_annotations
               ~callable_parameter_names_to_positions
               expression)
         |> all
-        |> map ~f:List.concat
+        >>| List.concat
     | _ -> invalid_annotation_error ()
+  and parse_sanitize_annotation = function
+    | Expression.Tuple expressions ->
+        List.map ~f:(fun expression -> parse_sanitize_annotation expression.Node.value) expressions
+        |> all
+        >>| List.concat
+    | Expression.Name (Name.Identifier "TaintSource") -> Ok [AllSources]
+    | Expression.Name (Name.Identifier "TaintSink") -> Ok [AllSinks]
+    | Expression.Name (Name.Identifier "TaintInTaintOut") -> Ok [AllTito]
+    | Expression.Call
+        { Call.callee; arguments = [{ Call.Argument.value = { Node.value = expression; _ }; _ }] }
+      when [%compare.equal: string option] (base_name callee) (Some "TaintInTaintOut") ->
+        let gather_sources_sinks (sources, sinks) = function
+          | Source
+              {
+                source;
+                breadcrumbs = [];
+                via_features = [];
+                leaf_names = [];
+                leaf_name_provided = false;
+                path = [];
+              } ->
+              Ok (source :: sources, sinks)
+          | Sink
+              {
+                sink;
+                breadcrumbs = [];
+                via_features = [];
+                leaf_names = [];
+                leaf_name_provided = false;
+                path = [];
+              } ->
+              Ok (sources, sink :: sinks)
+          | taint_annotation ->
+              Error
+                (annotation_error
+                   (Format.asprintf
+                      "`%a` is not supported within `Sanitize[TaintInTaintOut[...]]`"
+                      pp_taint_annotation
+                      taint_annotation))
+        in
+        parse_annotation expression
+        >>= List.fold_result ~init:([], []) ~f:gather_sources_sinks
+        >>| fun (sources, sinks) -> [SpecificTito { sources; sinks }]
+    | expression ->
+        let to_sanitize = function
+          | Source
+              {
+                source;
+                breadcrumbs = [];
+                via_features = [];
+                leaf_names = [];
+                leaf_name_provided = false;
+                path = [];
+              } ->
+              Ok (SpecificSource source)
+          | Sink
+              {
+                sink;
+                breadcrumbs = [];
+                via_features = [];
+                leaf_names = [];
+                leaf_name_provided = false;
+                path = [];
+              } ->
+              Ok (SpecificSink sink)
+          | taint_annotation ->
+              Error
+                (annotation_error
+                   (Format.asprintf
+                      "`%a` is not supported within `Sanitize[...]`"
+                      pp_taint_annotation
+                      taint_annotation))
+        in
+        parse_annotation expression
+        >>= fun annotations -> List.map ~f:to_sanitize annotations |> all
   in
   parse_annotation (Node.value annotation)
 
@@ -917,6 +1013,40 @@ let introduce_source_taint
     Ok { taint with forward = { source_taint } }
   else
     Ok taint
+
+
+let sanitize_from_annotations annotations =
+  let open Domains in
+  let to_sanitize = function
+    | AllSources -> { Sanitize.empty with sources = Some AllSources }
+    | SpecificSource source ->
+        { Sanitize.empty with sources = Some (SpecificSources (Sources.Set.singleton source)) }
+    | AllSinks -> { Sanitize.empty with sinks = Some AllSinks }
+    | SpecificSink sink ->
+        { Sanitize.empty with sinks = Some (SpecificSinks (Sinks.Set.singleton sink)) }
+    | AllTito -> { Sanitize.empty with tito = Some AllTito }
+    | SpecificTito { sources; sinks } ->
+        {
+          Sanitize.empty with
+          tito =
+            Some
+              (SpecificTito
+                 {
+                   sanitized_tito_sources = Sources.Set.of_list sources;
+                   sanitized_tito_sinks = Sinks.Set.of_list sinks;
+                 });
+        }
+  in
+  annotations |> List.map ~f:to_sanitize |> List.fold ~init:Sanitize.empty ~f:Sanitize.join
+
+
+let introduce_sanitize ~root model annotations =
+  let roots =
+    Domains.SanitizeRootMap.of_list [root, sanitize_from_annotations annotations]
+    |> Domains.SanitizeRootMap.join model.sanitizers.roots
+  in
+  let sanitizers = { model.sanitizers with roots } in
+  { model with sanitizers }
 
 
 let parse_find_clause ~path ({ Node.value; location } as expression) =
@@ -1735,7 +1865,8 @@ let add_taint_annotation_to_model
           |> map_error ~f:annotation_error
       | Tito _ -> Error (annotation_error "Invalid return annotation: TaintInTaintOut")
       | AddFeatureToArgument _ ->
-          Error (annotation_error "Invalid return annotation: AddFeatureToArgument"))
+          Error (annotation_error "Invalid return annotation: AddFeatureToArgument")
+      | Sanitize annotations -> Ok (introduce_sanitize ~root model annotations))
   | ParameterAnnotation root -> (
       match annotation with
       | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
@@ -1786,7 +1917,8 @@ let add_taint_annotation_to_model
                model
                Sinks.AddFeatureToArgument
                via_features
-          |> map_error ~f:annotation_error)
+          |> map_error ~f:annotation_error
+      | Sanitize annotations -> Ok (introduce_sanitize ~root model annotations))
 
 
 let parse_return_taint
@@ -1881,7 +2013,7 @@ let adjust_sanitize_and_modes_and_skipped_override
   let sanitize_and_modes_and_skipped_override =
     let adjust
         (sanitize, modes, skipped_override)
-        { Decorator.name = { Node.value = name; _ }; arguments }
+        { Decorator.name = { Node.value = name; location = decorator_location }; arguments }
       =
       match Reference.show name with
       | "Sanitize" ->
@@ -1890,136 +2022,25 @@ let adjust_sanitize_and_modes_and_skipped_override
             | None ->
                 Ok
                   { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
-            | Some arguments ->
-                let to_sanitize_kind sanitize { Call.Argument.value; _ } =
-                  match Node.value value with
-                  | Expression.Name (Name.Identifier name) -> (
-                      sanitize
-                      >>| fun sanitize ->
-                      match name with
-                      | "TaintSource" -> { sanitize with Sanitize.sources = Some AllSources }
-                      | "TaintSink" -> { sanitize with Sanitize.sinks = Some AllSinks }
-                      | "TaintInTaintOut" -> { sanitize with Sanitize.tito = Some AllTito }
-                      | _ -> sanitize)
-                  | Expression.Call { Call.callee; arguments = [{ Call.Argument.value; _ }] }
-                    when Option.equal String.equal (base_name callee) (Some "TaintInTaintOut") -> (
-                      let add_tito_annotation (sanitized_tito_sources, sanitized_tito_sinks)
-                        = function
-                        | Source
-                            {
-                              source;
-                              breadcrumbs = [];
-                              via_features = [];
-                              leaf_names = [];
-                              leaf_name_provided = false;
-                              path = [];
-                            } ->
-                            Ok (source :: sanitized_tito_sources, sanitized_tito_sinks)
-                        | Sink
-                            {
-                              sink;
-                              breadcrumbs = [];
-                              via_features = [];
-                              leaf_names = [];
-                              leaf_name_provided = false;
-                              path = [];
-                            } ->
-                            Ok (sanitized_tito_sources, sink :: sanitized_tito_sinks)
-                        | taint_annotation ->
-                            Error
-                              (invalid_model_error
-                                 ~path
-                                 ~location
-                                 ~name:(Reference.show define_name)
-                                 (Format.sprintf
-                                    "`%s` is not a supported TITO sanitizer."
-                                    (show_taint_annotation taint_annotation)))
-                      in
-                      let sanitize_tito =
-                        parse_annotations
-                          ~path
-                          ~location
-                          ~model_name:(Reference.show define_name)
-                          ~configuration
-                          ~parameters:[]
-                          ~callable_parameter_names_to_positions:None
-                          value
-                        >>= List.fold_result ~init:([], []) ~f:add_tito_annotation
-                        >>| fun (sources, sinks) ->
-                        Sanitize.SpecificTito
-                          {
-                            sanitized_tito_sources = Sources.Set.of_list sources;
-                            sanitized_tito_sinks = Sinks.Set.of_list sinks;
-                          }
-                      in
-                      sanitize_tito
-                      >>= fun sanitize_tito ->
-                      sanitize
-                      >>| fun sanitize ->
-                      match sanitize.tito with
-                      | Some AllTito -> sanitize
-                      | _ -> { sanitize with tito = Some sanitize_tito })
-                  | _ ->
-                      let add_annotation { Sanitize.sources; sinks; tito } = function
-                        | Source
-                            {
-                              source;
-                              breadcrumbs = [];
-                              via_features = [];
-                              leaf_names = [];
-                              leaf_name_provided = false;
-                              path = [];
-                            } ->
-                            let sources =
-                              match sources with
-                              | None ->
-                                  Some (Sanitize.SpecificSources (Sources.Set.singleton source))
-                              | Some (Sanitize.SpecificSources sources) ->
-                                  Some (Sanitize.SpecificSources (Sources.Set.add source sources))
-                              | Some Sanitize.AllSources -> Some Sanitize.AllSources
-                            in
-                            Ok { Sanitize.sources; sinks; tito }
-                        | Sink
-                            {
-                              sink;
-                              breadcrumbs = [];
-                              via_features = [];
-                              leaf_names = [];
-                              leaf_name_provided = false;
-                              path = [];
-                            } ->
-                            let sinks =
-                              match sinks with
-                              | None -> Some (Sanitize.SpecificSinks (Sinks.Set.singleton sink))
-                              | Some (Sanitize.SpecificSinks sinks) ->
-                                  Some (Sanitize.SpecificSinks (Sinks.Set.add sink sinks))
-                              | Some Sanitize.AllSinks -> Some Sanitize.AllSinks
-                            in
-                            Ok { Sanitize.sources; sinks; tito }
-                        | taint_annotation ->
-                            Error
-                              (invalid_model_error
-                                 ~path
-                                 ~location
-                                 ~name:(Reference.show define_name)
-                                 (Format.sprintf
-                                    "`%s` is not a supported taint annotation for sanitizers."
-                                    (show_taint_annotation taint_annotation)))
-                      in
-                      parse_annotations
-                        ~path
-                        ~location
-                        ~model_name:(Reference.show define_name)
-                        ~configuration
-                        ~parameters:[]
-                        ~callable_parameter_names_to_positions:None
-                        value
-                      >>= fun annotations ->
-                      sanitize
-                      >>= fun sanitize ->
-                      List.fold_result ~init:sanitize ~f:add_annotation annotations
+            | Some arguments -> (
+                (* Pretend that it is a `Sanitize[...]` expression and use the annotation parser. *)
+                let expression =
+                  List.map ~f:(fun { Call.Argument.value; _ } -> value) arguments
+                  |> Ast.Expression.get_item_call "Sanitize" ~location:decorator_location
+                  |> Node.create ~location:decorator_location
                 in
-                List.fold arguments ~f:to_sanitize_kind ~init:(Ok Sanitize.empty)
+                parse_annotations
+                  ~path
+                  ~location
+                  ~model_name:(Reference.show define_name)
+                  ~configuration
+                  ~parameters:[]
+                  ~callable_parameter_names_to_positions:None
+                  expression
+                >>= function
+                | [Sanitize sanitize_annotations] ->
+                    Ok (sanitize_from_annotations sanitize_annotations)
+                | _ -> failwith "impossible case")
           in
           sanitize_kind
           >>| fun sanitize_kind -> Sanitize.join sanitize sanitize_kind, modes, skipped_override

@@ -251,7 +251,7 @@ let test_source_models context =
     ()
 
 
-let test_sanitize context =
+let test_global_sanitize context =
   let open Taint.Domains in
   let assert_model = assert_model ~context in
   assert_model
@@ -482,6 +482,28 @@ let test_sanitize context =
       ]
     ();
   assert_model
+    ~model_source:
+      {|
+      @Sanitize
+      @SkipDecoratorWhenInlining
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~global_sanitizer:
+            { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipDecoratorWhenInlining)
+          "test.taint";
+      ]
+    ()
+
+
+let test_attribute_sanitize context =
+  let open Taint.Domains in
+  let assert_model = assert_model ~context in
+  assert_model
     ~model_source:"django.http.Request.GET: Sanitize = ..."
     ~expect:
       [
@@ -579,21 +601,501 @@ let test_sanitize context =
             }
           "django.http.Request.GET";
       ]
-    ();
+    ()
+
+
+let test_parameter_sanitize context =
+  let open Taint.Domains in
+  let assert_model = assert_model ~context in
   assert_model
-    ~model_source:
-      {|
-      @Sanitize
-      @SkipDecoratorWhenInlining
-      def test.taint(x): ...
+    ~model_source:{|
+      def test.taint(x: Sanitize): ...
     |}
     ~expect:
       [
         outcome
           ~kind:`Function
-          ~global_sanitizer:
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize =
+                  { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x: Sanitize[TaintSource]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize = { Sanitize.sources = Some AllSources; sinks = None; tito = None };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x: Sanitize[TaintSink]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize = { Sanitize.sources = None; sinks = Some AllSinks; tito = None };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x: Sanitize[TaintInTaintOut]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize = { Sanitize.sources = None; sinks = None; tito = Some AllTito };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x: Sanitize[TaintSource], y: Sanitize[TaintInTaintOut]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize = { Sanitize.sources = Some AllSources; sinks = None; tito = None };
+              };
+              {
+                name = "y";
+                sanitize = { Sanitize.sources = None; sinks = None; tito = Some AllTito };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x: Sanitize[TaintSource, TaintInTaintOut]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize = { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x: Sanitize[TaintSource[Test]]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize =
+                  {
+                    Sanitize.sources =
+                      Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
+                    sinks = None;
+                    tito = None;
+                  };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x: Sanitize[TaintSource[Test, UserControlled]]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize =
+                  {
+                    Sanitize.sources =
+                      Some
+                        (SpecificSources
+                           (Sources.Set.of_list
+                              [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]));
+                    sinks = None;
+                    tito = None;
+                  };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x: Sanitize[TaintInTaintOut[TaintSource[Test]]]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize =
+                  {
+                    Sanitize.sources = None;
+                    sinks = None;
+                    tito =
+                      Some
+                        (SpecificTito
+                           {
+                             sanitized_tito_sources =
+                               Sources.Set.singleton (Sources.NamedSource "Test");
+                             sanitized_tito_sinks = Sinks.Set.empty;
+                           });
+                  };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x: Sanitize[TaintInTaintOut[TaintSink[Test]]]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize =
+                  {
+                    Sanitize.sources = None;
+                    sinks = None;
+                    tito =
+                      Some
+                        (SpecificTito
+                           {
+                             sanitized_tito_sources = Sources.Set.empty;
+                             sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
+                           });
+                  };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x: Sanitize[TaintSource[Test], TaintInTaintOut[TaintSink[Test]]]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize =
+                  {
+                    Sanitize.sources =
+                      Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
+                    sinks = None;
+                    tito =
+                      Some
+                        (SpecificTito
+                           {
+                             sanitized_tito_sources = Sources.Set.empty;
+                             sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
+                           });
+                  };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x: Sanitize[TaintInTaintOut[TaintSource[Test], TaintSink[Test]]]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize =
+                  {
+                    Sanitize.sources = None;
+                    sinks = None;
+                    tito =
+                      Some
+                        (SpecificTito
+                           {
+                             sanitized_tito_sources =
+                               Sources.Set.singleton (Sources.NamedSource "Test");
+                             sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
+                           });
+                  };
+              };
+            ]
+          "test.taint";
+      ]
+    ()
+
+
+let test_return_sanitize context =
+  let open Taint.Domains in
+  let assert_model = assert_model ~context in
+  assert_model
+    ~model_source:{|
+      def test.taint(x) -> Sanitize: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:
             { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
-          ~analysis_modes:(Taint.Result.ModeSet.singleton SkipDecoratorWhenInlining)
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x) -> Sanitize[TaintSource]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x) -> Sanitize[TaintSink]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x) -> Sanitize[TaintInTaintOut]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:{ Sanitize.sources = None; sinks = None; tito = Some AllTito }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x) -> Sanitize[TaintSource, TaintInTaintOut]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:
+            { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      def test.taint(x) -> Sanitize[TaintSource[Test]]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:
+            {
+              Sanitize.sources =
+                Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
+              sinks = None;
+              tito = None;
+            }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x) -> Sanitize[TaintSource[Test, UserControlled]]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:
+            {
+              Sanitize.sources =
+                Some
+                  (SpecificSources
+                     (Sources.Set.of_list
+                        [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]));
+              sinks = None;
+              tito = None;
+            }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x) -> Sanitize[TaintInTaintOut[TaintSource[Test]]]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = Sources.Set.singleton (Sources.NamedSource "Test");
+                       sanitized_tito_sinks = Sinks.Set.empty;
+                     });
+            }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x) -> Sanitize[TaintInTaintOut[TaintSink[Test]]]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = Sources.Set.empty;
+                       sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
+                     });
+            }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x) -> Sanitize[TaintSource[Test], TaintInTaintOut[TaintSink[Test]]]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:
+            {
+              Sanitize.sources =
+                Some (SpecificSources (Sources.Set.singleton (Sources.NamedSource "Test")));
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = Sources.Set.empty;
+                       sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
+                     });
+            }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.taint(x) -> Sanitize[TaintInTaintOut[TaintSource[Test], TaintSink[Test]]]: ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:
+            {
+              Sanitize.sources = None;
+              sinks = None;
+              tito =
+                Some
+                  (SpecificTito
+                     {
+                       sanitized_tito_sources = Sources.Set.singleton (Sources.NamedSource "Test");
+                       sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
+                     });
+            }
           "test.taint";
       ]
     ()
@@ -2070,7 +2572,7 @@ let test_invalid_models context =
       def test.foo(x): ...
     |}
     ~expect:
-      "`LocalReturn` is an invalid taint annotation: Failed to parse the given taint annotation."
+      {|`Sanitize[TaintInTaintOut[LocalReturn]]` is an invalid taint annotation: Failed to parse the given taint annotation.|}
     ();
 
   (* Test source- and sink- specific tito parsing. *)
@@ -2117,8 +2619,8 @@ let test_invalid_models context =
       def test.foo(x): ...
     |}
     ~expect:
-      {|Invalid model for `test.foo`: `ModelParser.T.Source {source = A; breadcrumbs = [SimpleVia[featureA]];
-  via_features = []; path = ; leaf_names = []; leaf_name_provided = false}` is not a supported taint annotation for sanitizers.|}
+      {|`Sanitize[TaintSource[(A, Via[featureA])]]` is an invalid taint annotation: `ModelParser.T.Source {source = A; breadcrumbs = [SimpleVia[featureA]];
+   via_features = []; path = ; leaf_names = []; leaf_name_provided = false}` is not supported within `Sanitize[...]`|}
     ();
   assert_invalid_model
     ~model_source:
@@ -3474,7 +3976,10 @@ let () =
          "invalid_models" >:: test_invalid_models;
          "partial_sinks" >:: test_partial_sinks;
          "query_parsing" >:: test_query_parsing;
-         "sanitize" >:: test_sanitize;
+         "global_sanitize" >:: test_global_sanitize;
+         "attribute_sanitize" >:: test_attribute_sanitize;
+         "parameter_sanitize" >:: test_parameter_sanitize;
+         "return_sanitize" >:: test_return_sanitize;
          "skip_analysis" >:: test_skip_analysis;
          "skip_inlining_decorator" >:: test_skip_inlining_decorator;
          "sink_breadcrumbs" >:: test_sink_breadcrumbs;

@@ -23,6 +23,19 @@ module T : sig
       }
     | Breadcrumbs of breadcrumbs
     | ViaFeatures of via_features
+  [@@deriving show, compare]
+
+  type sanitize_annotation =
+    | AllSources
+    | SpecificSource of Sources.t
+    | AllSinks
+    | SpecificSink of Sinks.t
+    | AllTito
+    | SpecificTito of {
+        sources: Sources.t list;
+        sinks: Sinks.t list;
+      }
+  [@@deriving show, compare]
 
   type taint_annotation =
     | Sink of {
@@ -52,6 +65,8 @@ module T : sig
         via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
       }
+    | Sanitize of sanitize_annotation list
+  [@@deriving show, compare]
 
   type annotation_kind =
     | ParameterAnnotation of AccessPath.Root.t

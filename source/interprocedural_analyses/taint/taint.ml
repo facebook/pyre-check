@@ -62,6 +62,7 @@ module Model = struct
         via_features: via_features;
         path: Abstract.TreeDomain.Label.path;
       }
+    | Sanitize of sanitize_annotation list
   [@@deriving show, compare]
 
   (* Exposed for testing. *)
