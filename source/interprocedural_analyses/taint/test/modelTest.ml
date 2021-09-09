@@ -1787,6 +1787,11 @@ let test_invalid_models context =
     ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."
     ~expect:"`PartialSink[X[b]]` is an invalid taint annotation: Unrecognized partial sink `X`."
     ();
+  assert_invalid_model
+    ~model_source:"def test.sink(parameter: TaintSource.foo(A)): ..."
+    ~expect:
+      {|`TaintSource.foo(A)` is an invalid taint annotation: Failed to parse the given taint annotation.|}
+    ();
 
   (* Test invalid model queries. *)
   assert_invalid_model

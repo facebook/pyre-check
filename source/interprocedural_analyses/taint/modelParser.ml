@@ -224,12 +224,18 @@ let signature_is_property signature =
   String.Set.exists decorators ~f:(Define.Signature.has_decorator signature)
 
 
+(* Return `X` if the expression is of the form `X[Y]`, otherwise `None`. *)
 let base_name expression =
   match expression with
   | {
    Node.value =
      Expression.Name
-       (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ });
+       (Name.Attribute
+         {
+           base = { Node.value = Name (Name.Identifier identifier); _ };
+           attribute = "__getitem__";
+           special = true;
+         });
    _;
   } ->
       Some identifier
