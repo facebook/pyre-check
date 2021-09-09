@@ -1085,8 +1085,8 @@ end = struct
           Format.fprintf formatter "%a := %a" pp_expression_t target pp_expression_t value
       | Yield yield -> (
           match yield with
-          | Some yield -> Format.fprintf formatter "%a" pp_expression_t yield
-          | None -> Format.fprintf formatter "None")
+          | Some yield -> Format.fprintf formatter "(yield %a)" pp_expression_t yield
+          | None -> Format.fprintf formatter "(yield)")
 
 
     let pp = pp_expression_t
