@@ -499,15 +499,6 @@ let rec parse_annotations
             }
             :: _;
         }
-    | Call
-        {
-          callee;
-          arguments =
-            [
-              { Call.Argument.value = { Node.value = index; _ }; _ };
-              { Call.Argument.value = { Node.value = expression; _ }; _ };
-            ];
-        }
       when [%compare.equal: string option] (base_name callee) (Some "AppliesTo") ->
         let field =
           match index with
@@ -651,8 +642,7 @@ let rec parse_annotations
         List.map ~f:parse_argument arguments
         |> all
         >>| fun annotations -> [Sanitize (List.concat annotations)]
-    | Call
-        { callee; arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _ }
+    | Call { callee; arguments = [{ Call.Argument.value = { value = Tuple expressions; _ }; _ }] }
       when [%compare.equal: string option] (base_name callee) (Some "Union") ->
         List.map expressions ~f:(fun expression ->
             parse_annotations
@@ -665,7 +655,7 @@ let rec parse_annotations
               expression)
         |> all
         |> map ~f:List.concat
-    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
+    | Call { callee; arguments = [{ Call.Argument.value = expression; _ }] } -> (
         let open Core.Result in
         match base_name callee with
         | Some "TaintSink" -> get_sink_kinds expression
@@ -725,8 +715,9 @@ let rec parse_annotations
                         _;
                       };
                     arguments =
-                      { Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ }
-                      :: _;
+                      [
+                        { Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ };
+                      ];
                   } ->
                   if not (String.Map.Tree.mem configuration.partial_sink_labels kind) then
                     Error
