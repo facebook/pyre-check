@@ -150,8 +150,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.roots backward.taint_in_taint_out
           |> AccessPath.match_actuals_to_formals arguments
         in
+        let sanitize_argument_matches =
+          SanitizeRootMap.roots sanitizers.roots |> AccessPath.match_actuals_to_formals arguments
+        in
         let combined_matches =
-          List.zip_exn sink_argument_matches tito_argument_matches |> List.zip_exn arguments_taint
+          List.zip_exn tito_argument_matches sanitize_argument_matches
+          |> List.zip_exn sink_argument_matches
+          |> List.zip_exn arguments_taint
         in
         let combine_sink_taint location taint_tree { root; actual_path; formal_path } =
           BackwardState.read ~root ~path:[] backward.sink_taint
@@ -173,26 +178,28 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           Map.Poly.merge tito_map new_tito_map ~f:(merge_tito_effect BackwardState.Tree.join)
         in
+        let apply_tito_sanitizers sanitize_matches taint_to_propagate =
+          let sanitize =
+            List.map
+              ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
+              sanitize_matches
+            |> List.fold ~f:Sanitize.join ~init:sanitizers.global
+          in
+          match sanitize.Sanitize.tito with
+          | Some AllTito -> ForwardState.Tree.bottom
+          | Some (SpecificTito { sanitized_tito_sources; _ }) ->
+              ForwardState.Tree.transform
+                ForwardTaint.kind
+                Filter
+                ~f:(fun source -> not (Sources.Set.mem source sanitized_tito_sources))
+                taint_to_propagate
+          | None -> taint_to_propagate
+        in
         let compute_argument_tito_effect
             (tito_effects, state)
-            (argument_taint, ((argument, sink_matches), (_dup, tito_matches)))
+            (argument_taint, ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches))))
           =
-          let taint_to_propagate =
-            match sanitizers.global with
-            | { tito = Some AllTito; _ } -> ForwardState.Tree.bottom
-            | { tito = Some (SpecificTito { sanitized_tito_sources; _ }); _ } ->
-                ForwardState.Tree.partition
-                  ForwardTaint.kind
-                  ByFilter
-                  ~f:(fun source ->
-                    Option.some_if (not (Sources.Set.mem source sanitized_tito_sources)) source)
-                  argument_taint
-                |> Core.Map.Poly.fold
-                     ~init:ForwardState.Tree.bottom
-                     ~f:(fun ~key:_ ~data:source_state state ->
-                       ForwardState.Tree.join source_state state)
-            | _ -> argument_taint
-          in
+          let taint_to_propagate = apply_tito_sanitizers sanitize_matches argument_taint in
           let tito =
             let convert_tito_path kind (path, return_taint) accumulated_tito =
               let breadcrumbs =
@@ -1075,16 +1082,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         match Model.GlobalModel.get_sanitize global_model with
         | { Sanitize.sources = Some AllSources; _ } -> ForwardState.Tree.empty
         | { Sanitize.sources = Some (SpecificSources sanitized_sources); _ } ->
-            ForwardState.Tree.partition
+            ForwardState.Tree.transform
               ForwardTaint.kind
-              ByFilter
-              ~f:(fun source ->
-                Option.some_if (not (Sources.Set.mem source sanitized_sources)) source)
+              Filter
+              ~f:(fun source -> not (Sources.Set.mem source sanitized_sources))
               taint
-            |> Core.Map.Poly.fold
-                 ~init:ForwardState.Tree.bottom
-                 ~f:(fun ~key:_ ~data:source_state state ->
-                   ForwardState.Tree.join source_state state)
         | _ -> taint
       in
 

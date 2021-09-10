@@ -390,3 +390,105 @@ def sanitize_test_all_sinks_instance():
     sanitize_all_sinks_instance(_test_source())  # should not trigger
     c = C_sanitized_all_sinks({})
     c.instance = _test_source()  # should trigger Test -> Test
+
+
+def sanitize_parameter(x, y):
+    _test_sink(x)
+    _test_sink(y)
+    return source_with_tito(x) + source_with_tito(y)
+
+
+def sanitize_parameter_all_sources(x, y):
+    _test_sink(x)
+    _test_sink(y)
+    return source_with_tito(x) + source_with_tito(y)
+
+
+def sanitize_parameter_all_sinks(x, y):
+    _test_sink(x)
+    _test_sink(y)
+    return source_with_tito(x) + source_with_tito(y)
+
+
+def sanitize_parameter_all_tito(x, y):
+    _test_sink(x)
+    _test_sink(y)
+    return source_with_tito(x) + source_with_tito(y)
+
+
+def sanitize_parameter_a_sink(x):
+    if 1 > 2:
+        a_sink(x)
+    else:
+        b_sink(x)
+
+
+def sanitize_parameter_b_sink(x):
+    if 1 > 2:
+        a_sink(x)
+    else:
+        b_sink(x)
+
+
+def sanitize_parameter_a_source_tito(x):
+    return x
+
+
+def no_propagation_with_sanitize_parameter_a_source_tito():
+    a = a_source()
+    b = sanitize_parameter_a_source_tito(a)
+    return b
+
+
+def propagation_of_b_with_sanitize_parameter_a_source_tito():
+    b = b_source()
+    tito = sanitize_parameter_a_source_tito(b)
+    return tito
+
+
+def sanitize_parameter_a_sink_tito(x):
+    return x
+
+
+def no_propagation_with_sanitize_parameter_a_sink_tito(x):
+    y = sanitize_parameter_a_sink_tito(x)
+    a_sink(y)
+
+
+def propagation_of_b_with_sanitize_parameter_a_sink_tito(x):
+    y = sanitize_a_sink_tito(x)
+    b_sink(y)
+
+
+def sanitize_return(x):
+    _test_sink(x)
+    return source_with_tito(x)
+
+
+def sanitize_return_all_sources(x):
+    _test_sink(x)
+    return source_with_tito(x)
+
+
+def sanitize_return_a_source():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    return x
+
+
+def sanitize_return_b_source():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    return x
+
+
+def sanitize_return_a_and_b_source():
+    if 1 > 2:
+        x = a_source()
+    else:
+        x = b_source()
+    return x

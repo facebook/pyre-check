@@ -328,47 +328,8 @@ include Taint.Result.Register (struct
       else
         forward, backward
     in
-    let model =
-      let open Domains in
-      let forward =
-        match sanitizers.Sanitizers.global.sources with
-        | Some Sanitize.AllSources -> empty_model.forward
-        | Some (Sanitize.SpecificSources sanitized_sources) ->
-            let { Forward.source_taint } = forward in
-            ForwardState.partition
-              ForwardTaint.kind
-              ByFilter
-              ~f:(fun source ->
-                Option.some_if (not (Sources.Set.mem source sanitized_sources)) source)
-              source_taint
-            |> Core.Map.Poly.fold
-                 ~init:ForwardState.bottom
-                 ~f:(fun ~key:_ ~data:source_state state -> ForwardState.join source_state state)
-            |> fun source_taint -> { Forward.source_taint }
-        | None -> forward
-      in
-      let taint_in_taint_out =
-        match sanitizers.Sanitizers.global.tito with
-        | Some AllTito -> empty_model.backward.taint_in_taint_out
-        | _ -> backward.taint_in_taint_out
-      in
-      let sink_taint =
-        match sanitizers.Sanitizers.global.sinks with
-        | Some Sanitize.AllSinks -> empty_model.backward.sink_taint
-        | Some (Sanitize.SpecificSinks sanitized_sinks) ->
-            let { Backward.sink_taint; _ } = backward in
-            BackwardState.partition
-              BackwardTaint.kind
-              ByFilter
-              ~f:(fun source -> Option.some_if (not (Sinks.Set.mem source sanitized_sinks)) source)
-              sink_taint
-            |> Core.Map.Poly.fold
-                 ~init:BackwardState.bottom
-                 ~f:(fun ~key:_ ~data:source_state state -> BackwardState.join source_state state)
-        | None -> backward.sink_taint
-      in
-      { forward; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
-    in
+    let model = { forward; backward; sanitizers; modes } in
+    let model = Model.apply_sanitizers model in
     result, model
 
 

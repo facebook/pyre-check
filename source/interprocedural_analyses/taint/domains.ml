@@ -930,6 +930,8 @@ module SanitizeRootMap = struct
       end)
       (Sanitize)
 
+  let roots map = fold Key ~f:List.cons ~init:[] map
+
   let to_json map =
     map
     |> to_alist

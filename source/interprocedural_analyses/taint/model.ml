@@ -454,3 +454,90 @@ let infer_class_models ~environment =
     ~timer
     ();
   models
+
+
+let apply_sanitizers
+    {
+      forward = { source_taint };
+      backward = { taint_in_taint_out; sink_taint };
+      sanitizers = { global; roots } as sanitizers;
+      modes;
+    }
+  =
+  (* Apply the global sanitizer. *)
+  let source_taint =
+    match global.sources with
+    | Some Sanitize.AllSources -> ForwardState.empty
+    | Some (Sanitize.SpecificSources sanitized_sources) ->
+        ForwardState.transform
+          ForwardTaint.kind
+          Filter
+          ~f:(fun source -> not (Sources.Set.mem source sanitized_sources))
+          source_taint
+    | None -> source_taint
+  in
+  let taint_in_taint_out =
+    match global.tito with
+    | Some AllTito -> BackwardState.empty
+    | _ -> taint_in_taint_out
+  in
+  let sink_taint =
+    match global.sinks with
+    | Some Sanitize.AllSinks -> BackwardState.empty
+    | Some (Sanitize.SpecificSinks sanitized_sinks) ->
+        BackwardState.transform
+          BackwardTaint.kind
+          Filter
+          ~f:(fun sink -> not (Sinks.Set.mem sink sanitized_sinks))
+          sink_taint
+    | None -> sink_taint
+  in
+  (* Apply root specific sanitizers. *)
+  let sanitize_root (root, sanitize) (source_taint, taint_in_taint_out, sink_taint) =
+    let source_taint =
+      match sanitize.Sanitize.sources with
+      | Some Sanitize.AllSources -> ForwardState.remove root source_taint
+      | Some (Sanitize.SpecificSources sanitized_sources) ->
+          let filter_sources = function
+            | None -> ForwardState.Tree.bottom
+            | Some taint_tree ->
+                ForwardState.Tree.transform
+                  ForwardTaint.kind
+                  Filter
+                  ~f:(fun source -> not (Sources.Set.mem source sanitized_sources))
+                  taint_tree
+          in
+          ForwardState.update source_taint root ~f:filter_sources
+      | None -> source_taint
+    in
+    let taint_in_taint_out =
+      match sanitize.Sanitize.tito with
+      | Some AllTito -> BackwardState.remove root taint_in_taint_out
+      | _ -> taint_in_taint_out
+    in
+    let sink_taint =
+      match sanitize.Sanitize.sinks with
+      | Some Sanitize.AllSinks -> BackwardState.remove root sink_taint
+      | Some (Sanitize.SpecificSinks sanitized_sinks) ->
+          let filter_sinks = function
+            | None -> BackwardState.Tree.bottom
+            | Some taint_tree ->
+                BackwardState.Tree.transform
+                  BackwardTaint.kind
+                  Filter
+                  ~f:(fun sink -> not (Sinks.Set.mem sink sanitized_sinks))
+                  taint_tree
+          in
+          BackwardState.update sink_taint root ~f:filter_sinks
+      | None -> sink_taint
+    in
+    source_taint, taint_in_taint_out, sink_taint
+  in
+  let source_taint, taint_in_taint_out, sink_taint =
+    SanitizeRootMap.fold
+      SanitizeRootMap.KeyValue
+      ~f:sanitize_root
+      ~init:(source_taint, taint_in_taint_out, sink_taint)
+      roots
+  in
+  { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
