@@ -71,6 +71,7 @@ module Binding = struct
     | Expression.Starred (Starred.Once expression | Starred.Twice expression)
     | Expression.Yield (Some expression) ->
         of_expression sofar expression
+    | Expression.YieldFrom expression -> of_expression sofar expression
     | Expression.BooleanOperator { BooleanOperator.left; right; _ }
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let sofar = of_expression sofar left in

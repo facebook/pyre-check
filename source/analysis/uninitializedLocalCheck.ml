@@ -82,6 +82,7 @@ module AccessCollector = struct
     | UnaryOperator { UnaryOperator.operand; _ } -> from_expression collected operand
     | WalrusOperator { WalrusOperator.value; _ } -> from_expression collected value
     | Yield yield -> Option.value_map yield ~default:collected ~f:(from_expression collected)
+    | YieldFrom yield -> from_expression collected yield
     | String _
     | Complex _
     | Ellipsis

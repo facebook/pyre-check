@@ -393,6 +393,7 @@ module State (Context : Context) = struct
         forward_expression ~resolution ~state ~expression:value |>> awaitables
     | Yield (Some expression) -> forward_expression ~resolution ~state ~expression
     | Yield None -> [], state
+    | YieldFrom expression -> forward_expression ~resolution ~state ~expression
     | Generator { Comprehension.element; generators }
     | ListComprehension { Comprehension.element; generators }
     | SetComprehension { Comprehension.element; generators } ->

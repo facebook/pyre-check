@@ -1684,6 +1684,7 @@ let is_generator statements =
     | UnaryOperator { UnaryOperator.operand; _ } -> is_expression_generator operand
     | WalrusOperator { WalrusOperator.value; _ } -> is_expression_generator value
     | Yield _ -> true
+    | YieldFrom _ -> true
     | Complex _
     | Ellipsis
     | False

@@ -1157,6 +1157,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:target
       | Yield (Some expression) -> analyze_expression ~resolution ~taint ~state ~expression
       | Yield None -> state
+      | YieldFrom expression -> analyze_expression ~resolution ~taint ~state ~expression
 
 
     (* Returns the taint, and whether to collapse one level (due to star expression) *)

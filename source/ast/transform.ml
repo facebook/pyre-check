@@ -186,6 +186,8 @@ module Make (Transformer : Transformer) = struct
             WalrusOperator
               { target = transform_expression target; value = transform_expression value }
         | Expression.Yield expression -> Expression.Yield (expression >>| transform_expression)
+        | Expression.YieldFrom expression ->
+            Expression.YieldFrom (expression |> transform_expression)
       in
       let initial_state = !state in
       let expression =

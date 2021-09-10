@@ -3821,6 +3821,15 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
+    | Expression.YieldFrom _expression ->
+        (* TODO (T99533358) add real logic here, this is a placeholder *)
+        {
+          resolution;
+          errors = [];
+          resolved = Type.NoneType;
+          resolved_annotation = None;
+          base = None;
+        }
 
 
   and forward_statement ~resolution ~statement:{ Node.location; value } =

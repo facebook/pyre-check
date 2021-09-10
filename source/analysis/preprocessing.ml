@@ -1205,6 +1205,7 @@ let qualify
       | Yield (Some expression) ->
           Yield (Some (qualify_expression ~qualify_strings ~scope expression))
       | Yield None -> Yield None
+      | YieldFrom expression -> YieldFrom (qualify_expression ~qualify_strings ~scope expression)
       | Complex _
       | Ellipsis
       | False
@@ -2899,7 +2900,9 @@ module AccessCollector = struct
         from_expression collected alternative
     | UnaryOperator { UnaryOperator.operand; _ } -> from_expression collected operand
     | WalrusOperator { WalrusOperator.value; _ } -> from_expression collected value
-    | Yield yield -> Option.value_map yield ~default:collected ~f:(from_expression collected)
+    | Yield expression ->
+        Option.value_map expression ~default:collected ~f:(from_expression collected)
+    | YieldFrom expression -> from_expression collected expression
     | String _
     | Complex _
     | Ellipsis

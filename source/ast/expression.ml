@@ -757,6 +757,7 @@ and Expression : sig
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
     | Yield of t option
+    | YieldFrom of t
 
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -795,6 +796,7 @@ end = struct
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
     | Yield of t option
+    | YieldFrom of t
 
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -839,6 +841,7 @@ end = struct
     | WalrusOperator left, WalrusOperator right ->
         WalrusOperator.location_insensitive_compare left right
     | Yield left, Yield right -> Option.compare location_insensitive_compare left right
+    | YieldFrom left, YieldFrom right -> location_insensitive_compare left right
     | Await _, _ -> -1
     | BooleanOperator _, _ -> -1
     | Call _, _ -> -1
@@ -865,6 +868,7 @@ end = struct
     | UnaryOperator _, _ -> -1
     | WalrusOperator _, _ -> -1
     | Yield _, _ -> 1
+    | YieldFrom _, _ -> 1
 
 
   and location_insensitive_compare left right =
@@ -1087,6 +1091,7 @@ end = struct
           match yield with
           | Some yield -> Format.fprintf formatter "(yield %a)" pp_expression_t yield
           | None -> Format.fprintf formatter "(yield)")
+      | YieldFrom yield -> Format.fprintf formatter "(yield from %a)" pp_expression_t yield
 
 
     let pp = pp_expression_t

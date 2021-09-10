@@ -293,7 +293,13 @@ let test_pp _ =
             [{ Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 }];
           keywords = [];
         })
-    "{ 1:2 }"
+    "{ 1:2 }";
+  assert_pp_equal (+Expression.Yield None) "(yield)";
+  assert_pp_equal (+Expression.Yield (Some (+Expression.Integer 5))) "(yield 5)";
+  assert_pp_equal
+    (+Expression.YieldFrom (+Expression.List [+Expression.Integer 5]))
+    "(yield from [5])";
+  ()
 
 
 let test_equality _ =

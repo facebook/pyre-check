@@ -116,6 +116,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression target;
           visit_expression value
       | Expression.Yield expression -> Option.iter ~f:visit_expression expression
+      | Expression.YieldFrom expression -> visit_expression expression
       | Complex _
       | Ellipsis
       | String _

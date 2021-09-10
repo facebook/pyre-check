@@ -1262,6 +1262,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ForwardState.Tree.join target_taint value_taint, state
         | Yield (Some expression) -> analyze_expression ~resolution ~state ~expression
         | Yield None -> ForwardState.Tree.empty, state
+        | YieldFrom expression -> analyze_expression ~resolution ~state ~expression
       in
       log "Forward taint of expression `%a`: %a" Expression.pp expression ForwardState.Tree.pp taint;
       taint, state

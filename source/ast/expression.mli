@@ -297,6 +297,7 @@ and Expression : sig
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
     | Yield of t option
+    | YieldFrom of t
 
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
