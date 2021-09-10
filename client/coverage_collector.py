@@ -59,46 +59,11 @@ def collect_coverage_for_module(relative_path: str, module: cst.Module) -> FileC
 
 
 class CoverageCollector(AnnotationCollector):
-    def annotated_returns(self) -> List[AnnotationInfo]:
-        return [r for r in self.returns if r.is_annotated]
-
-    def annotated_globals(self) -> List[AnnotationInfo]:
-        return [g for g in self.globals if g.is_annotated]
-
-    def annotated_parameters(self) -> List[AnnotationInfo]:
-        return [p for p in self.parameters if p.is_annotated]
-
-    def annotated_attributes(self) -> List[AnnotationInfo]:
-        return [a for a in self.attributes if a.is_annotated]
-
-    def partially_annotated_functions(self) -> List[FunctionAnnotationInfo]:
-        return [f for f in self.functions if f.is_partially_annotated]
-
-    def fully_annotated_functions(self) -> List[FunctionAnnotationInfo]:
-        return [f for f in self.functions if f.is_fully_annotated]
-
     def covered_functions(self) -> List[FunctionAnnotationInfo]:
         return [f for f in self.functions if f.is_annotated]
 
     def uncovered_functions(self) -> List[FunctionAnnotationInfo]:
         return [f for f in self.functions if not f.is_annotated]
-
-    def build_json(self) -> Dict[str, int]:
-        return {
-            "return_count": len(self.returns),
-            "annotated_return_count": len(self.annotated_returns()),
-            "globals_count": len(self.globals),
-            "annotated_globals_count": len(self.annotated_globals()),
-            "parameter_count": len(self.parameters),
-            "annotated_parameter_count": len(self.annotated_parameters()),
-            "attribute_count": len(self.attributes),
-            "annotated_attribute_count": len(self.annotated_attributes()),
-            "partially_annotated_function_count": (
-                len(self.partially_annotated_functions())
-            ),
-            "fully_annotated_function_count": len(self.fully_annotated_functions()),
-            "line_count": self.line_count,
-        }
 
     def covered_and_uncovered_ranges(self) -> CoveredAndUncoveredRanges:
         covered_ranges = []

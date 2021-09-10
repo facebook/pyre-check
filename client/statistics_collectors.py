@@ -206,159 +206,41 @@ class StatisticsCollector(cst.CSTVisitor):
         return {}
 
 
-class AnnotationCountCollector(StatisticsCollector):
-    METADATA_DEPENDENCIES = (PositionProvider,)
+class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
+    def annotated_returns(self) -> List[AnnotationInfo]:
+        return [r for r in self.returns if r.is_annotated]
 
-    def __init__(
-        self,
-        return_count: int = 0,
-        annotated_return_count: int = 0,
-        globals_count: int = 0,
-        annotated_globals_count: int = 0,
-        parameter_count: int = 0,
-        annotated_parameter_count: int = 0,
-        attribute_count: int = 0,
-        annotated_attribute_count: int = 0,
-        partially_annotated_function_count: int = 0,
-        fully_annotated_function_count: int = 0,
-    ) -> None:
-        self.return_count = return_count
-        self.annotated_return_count = annotated_return_count
-        self.globals_count = globals_count
-        self.annotated_globals_count = annotated_globals_count
-        self.parameter_count = parameter_count
-        self.annotated_parameter_count = annotated_parameter_count
-        self.attribute_count = attribute_count
-        self.annotated_attribute_count = annotated_attribute_count
-        self.partially_annotated_function_count = partially_annotated_function_count
-        self.fully_annotated_function_count = fully_annotated_function_count
-        self.class_definition_depth = 0
-        self.function_definition_depth = 0
-        self.static_function_definition_depth = 0
-        self.line_count = 0
+    def annotated_globals(self) -> List[AnnotationInfo]:
+        return [g for g in self.globals if g.is_annotated]
 
-    def in_class_definition(self) -> bool:
-        return self.class_definition_depth > 0
+    def annotated_parameters(self) -> List[AnnotationInfo]:
+        return [p for p in self.parameters if p.is_annotated]
 
-    def in_function_definition(self) -> bool:
-        return self.function_definition_depth > 0
+    def annotated_attributes(self) -> List[AnnotationInfo]:
+        return [a for a in self.attributes if a.is_annotated]
 
-    def in_static_function_definition(self) -> bool:
-        return self.static_function_definition_depth > 0
+    def partially_annotated_functions(self) -> List[FunctionAnnotationInfo]:
+        return [f for f in self.functions if f.is_partially_annotated]
+
+    def fully_annotated_functions(self) -> List[FunctionAnnotationInfo]:
+        return [f for f in self.functions if f.is_fully_annotated]
 
     def build_json(self) -> Dict[str, int]:
         return {
-            "return_count": self.return_count,
-            "annotated_return_count": self.annotated_return_count,
-            "globals_count": self.globals_count,
-            "annotated_globals_count": self.annotated_globals_count,
-            "parameter_count": self.parameter_count,
-            "annotated_parameter_count": self.annotated_parameter_count,
-            "attribute_count": self.attribute_count,
-            "annotated_attribute_count": self.annotated_attribute_count,
+            "return_count": len(self.returns),
+            "annotated_return_count": len(self.annotated_returns()),
+            "globals_count": len(self.globals),
+            "annotated_globals_count": len(self.annotated_globals()),
+            "parameter_count": len(self.parameters),
+            "annotated_parameter_count": len(self.annotated_parameters()),
+            "attribute_count": len(self.attributes),
+            "annotated_attribute_count": len(self.annotated_attributes()),
             "partially_annotated_function_count": (
-                self.partially_annotated_function_count
+                len(self.partially_annotated_functions())
             ),
-            "fully_annotated_function_count": self.fully_annotated_function_count,
+            "fully_annotated_function_count": len(self.fully_annotated_functions()),
             "line_count": self.line_count,
         }
-
-    def _is_method_or_classmethod(self) -> bool:
-        return self.in_class_definition() and not self.in_static_function_definition()
-
-    def _is_self_or_cls(self, index: int) -> bool:
-        return index == 0 and self._is_method_or_classmethod()
-
-    def _annotated_parameters(
-        self, parameters: Sequence[cst.Param]
-    ) -> Sequence[cst.Param]:
-        return [
-            parameter
-            for index, parameter in enumerate(parameters)
-            if parameter.annotation is not None or self._is_self_or_cls(index)
-        ]
-
-    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
-        for decorator in node.decorators:
-            decorator_node = decorator.decorator
-            if isinstance(decorator_node, cst.Name):
-                if decorator_node.value == "staticmethod":
-                    self.static_function_definition_depth += 1
-                    break
-        self.function_definition_depth += 1
-
-        self.return_count += 1
-        return_is_annotated = node.returns is not None
-        if return_is_annotated:
-            self.annotated_return_count += 1
-
-        annotated_parameter_count = len(self._annotated_parameters(node.params.params))
-        self.annotated_parameter_count += annotated_parameter_count
-        self.parameter_count += len(node.params.params)
-
-        function_annotation_kind = FunctionAnnotationKind.from_function_data(
-            return_is_annotated,
-            annotated_parameter_count,
-            self._is_method_or_classmethod(),
-            parameters=node.params.params,
-        )
-
-        if function_annotation_kind == FunctionAnnotationKind.FULLY_ANNOTATED:
-            self.fully_annotated_function_count += 1
-        elif function_annotation_kind == FunctionAnnotationKind.PARTIALLY_ANNOTATED:
-            self.partially_annotated_function_count += 1
-
-    def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
-        self.function_definition_depth -= 1
-        for decorator in original_node.decorators:
-            decorator_node = decorator.decorator
-            if isinstance(decorator_node, cst.Name):
-                if decorator_node.value == "staticmethod":
-                    self.static_function_definition_depth -= 1
-                    break
-
-    def visit_Assign(self, node: cst.Assign) -> None:
-        if self.in_function_definition():
-            return
-        implicitly_annotated_literal = False
-        if isinstance(node.value, cst.BaseNumber) or isinstance(
-            node.value, cst.BaseString
-        ):
-            implicitly_annotated_literal = True
-        implicitly_annotated_value = False
-        if isinstance(node.value, cst.Name) or isinstance(node.value, cst.Call):
-            # An over-approximation of global values that do not need an explicit
-            # annotation. Erring on the side of reporting these as annotated to
-            # avoid showing false positives to users.
-            implicitly_annotated_value = True
-        if self.in_class_definition():
-            self.attribute_count += 1
-            if implicitly_annotated_literal or implicitly_annotated_value:
-                self.annotated_attribute_count += 1
-        else:
-            self.globals_count += 1
-            if implicitly_annotated_literal or implicitly_annotated_value:
-                self.annotated_globals_count += 1
-
-    def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
-        if self.in_function_definition():
-            return
-        if self.in_class_definition():
-            self.attribute_count += 1
-            self.annotated_attribute_count += 1
-        else:
-            self.globals_count += 1
-            self.annotated_globals_count += 1
-
-    def visit_ClassDef(self, node: cst.ClassDef) -> None:
-        self.class_definition_depth += 1
-
-    def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
-        self.class_definition_depth -= 1
-
-    def leave_Module(self, original_node: cst.Module) -> None:
-        file_range = self.get_metadata(PositionProvider, original_node)
-        self.line_count = file_range.end.line
 
 
 class CountCollector(StatisticsCollector):
