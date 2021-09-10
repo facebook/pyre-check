@@ -5633,17 +5633,68 @@ module State (Context : Context) = struct
         { Node.value = Call { callee; arguments = { Call.Argument.value = test; _ } :: _ }; _ }
       when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->
         forward_statement ~resolution ~statement:(Statement.assume test)
-    | Expression expression ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution ~expression
-        in
-        if Type.is_noreturn resolved then
-          None, errors
-        else
-          Some resolution, errors
-    | Statement.Yield { Node.value = Expression.Yield return; _ } ->
+    | Expression expression -> (
+        match expression with
+        | { Node.value = Expression.Yield yielded; _ } ->
+            let { Resolved.resolution; resolved = actual; errors; _ } =
+              match yielded with
+              | Some expression ->
+                  let { Resolved.resolution; resolved; errors; _ } =
+                    forward_expression ~resolution ~expression
+                  in
+                  {
+                    resolution;
+                    errors;
+                    resolved = Type.generator ~async resolved;
+                    resolved_annotation = None;
+                    base = None;
+                  }
+              | None ->
+                  {
+                    resolution;
+                    errors = [];
+                    resolved = Type.generator ~async Type.none;
+                    resolved_annotation = None;
+                    base = None;
+                  }
+            in
+            ( Some resolution,
+              validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
+        | { Node.value = Expression.YieldFrom yielded_from; location } ->
+            let call =
+              let callee =
+                Expression.Name
+                  (Name.Attribute { base = yielded_from; attribute = "__iter__"; special = true })
+                |> Node.create ~location
+              in
+              Expression.Call { callee; arguments = [] } |> Node.create ~location
+            in
+            let { Resolved.resolution; resolved; errors; _ } =
+              forward_expression ~resolution ~expression:call
+            in
+            let actual =
+              match
+                GlobalResolution.extract_type_parameters
+                  global_resolution
+                  ~target:"typing.Iterator"
+                  ~source:resolved
+              with
+              | Some [parameter] -> Type.generator parameter
+              | _ -> Type.generator Type.Any
+            in
+            ( Some resolution,
+              validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
+        | expression ->
+            let { Resolved.resolution; resolved; errors; _ } =
+              forward_expression ~resolution ~expression
+            in
+            if Type.is_noreturn resolved then
+              None, errors
+            else
+              Some resolution, errors)
+    | Statement.Yield { Node.value = Expression.Yield yielded; _ } ->
         let { Resolved.resolution; resolved = actual; errors; _ } =
-          match return with
+          match yielded with
           | Some expression ->
               let { Resolved.resolution; resolved; errors; _ } =
                 forward_expression ~resolution ~expression
@@ -5667,9 +5718,9 @@ module State (Context : Context) = struct
         ( Some resolution,
           validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
     | Statement.Yield _ -> Some resolution, []
-    | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
+    | YieldFrom { Node.value = Expression.Yield (Some callee); _ } ->
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution ~expression:return
+          forward_expression ~resolution ~expression:callee
         in
         let actual =
           match
