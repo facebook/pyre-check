@@ -1155,9 +1155,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | WalrusOperator { target; value } ->
           analyze_expression ~resolution ~taint ~state ~expression:value
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:target
-      | Yield (Some expression) -> analyze_expression ~resolution ~taint ~state ~expression
       | Yield None -> state
-      | YieldFrom expression -> analyze_expression ~resolution ~taint ~state ~expression
+      | Yield (Some expression)
+      | YieldFrom expression ->
+          let access_path = { root = Root.LocalResult; path = [] } in
+          let return_taint = get_taint (Some access_path) state in
+          analyze_expression ~resolution ~taint:return_taint ~state ~expression
 
 
     (* Returns the taint, and whether to collapse one level (due to star expression) *)
@@ -1282,6 +1285,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           state
       | Define define -> analyze_definition ~define state
       | Delete _ -> state
+      | Yield expression
+      | YieldFrom expression
       | Expression expression ->
           analyze_expression ~resolution ~taint:BackwardState.Tree.empty ~state ~expression
       | For _
@@ -1301,11 +1306,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | With _
       | While _ ->
           state
-      | Yield expression
-      | YieldFrom expression ->
-          let access_path = { root = Root.LocalResult; path = [] } in
-          let return_taint = get_taint (Some access_path) state in
-          analyze_expression ~resolution ~taint:return_taint ~state ~expression
 
 
     let backward ~key state ~statement =

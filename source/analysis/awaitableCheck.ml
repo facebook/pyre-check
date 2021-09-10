@@ -391,9 +391,12 @@ module State (Context : Context) = struct
     | WalrusOperator { target; value; _ } ->
         let awaitables, state = forward_expression ~resolution ~state ~expression:target in
         forward_expression ~resolution ~state ~expression:value |>> awaitables
-    | Yield (Some expression) -> forward_expression ~resolution ~state ~expression
+    | Yield (Some expression)
+    | YieldFrom expression ->
+        let expressions, state = forward_expression ~resolution ~state ~expression in
+        let state = await_all_subexpressions ~state ~expression in
+        expressions, state
     | Yield None -> [], state
-    | YieldFrom expression -> forward_expression ~resolution ~state ~expression
     | Generator { Comprehension.element; generators }
     | ListComprehension { Comprehension.element; generators }
     | SetComprehension { Comprehension.element; generators } ->
@@ -567,6 +570,8 @@ module State (Context : Context) = struct
           ~awaitables
           ~target
     | Delete expression
+    | Yield expression
+    | YieldFrom expression
     | Expression expression ->
         forward_expression ~resolution ~state ~expression |> snd
     | Raise { Raise.expression = None; _ } -> state
@@ -580,13 +585,6 @@ module State (Context : Context) = struct
         let state = { state with need_to_await } in
         await_all_subexpressions ~state ~expression
     | Return { expression = None; _ } -> state
-    | Yield { Node.value = Yield (Some expression); _ } ->
-        let _, state = forward_expression ~resolution ~state ~expression in
-        await_all_subexpressions ~state ~expression
-    | Yield _ -> state
-    | YieldFrom { Node.value = Yield (Some expression); _ } ->
-        forward_expression ~resolution ~state ~expression |> snd
-    | YieldFrom _ -> state
     (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
     | If _
     | Class _

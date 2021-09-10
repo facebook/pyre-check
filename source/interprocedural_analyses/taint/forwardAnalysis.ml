@@ -1260,9 +1260,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             let target_taint, state = analyze_expression ~resolution ~state ~expression:target in
             let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
             ForwardState.Tree.join target_taint value_taint, state
-        | Yield (Some expression) -> analyze_expression ~resolution ~state ~expression
         | Yield None -> ForwardState.Tree.empty, state
-        | YieldFrom expression -> analyze_expression ~resolution ~state ~expression
+        | Yield (Some expression)
+        | YieldFrom expression ->
+            let taint, state = analyze_expression ~resolution ~state ~expression in
+            taint, store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
       in
       log "Forward taint of expression `%a`: %a" Expression.pp expression ForwardState.Tree.pp taint;
       taint, state
@@ -1401,6 +1403,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           state
       | Define define -> analyze_definition ~define state
       | Delete _ -> state
+      | Yield expression
+      | YieldFrom expression
       | Expression expression ->
           let _, state = analyze_expression ~resolution ~state ~expression in
           state
@@ -1425,10 +1429,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | With _
       | While _ ->
           state
-      | Yield expression
-      | YieldFrom expression ->
-          let taint, state = analyze_expression ~resolution ~state ~expression in
-          store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
 
 
     let create ~existing_model parameters =
