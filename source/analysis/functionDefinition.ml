@@ -83,9 +83,7 @@ let collect_typecheck_units { Source.statements; _ } =
     | Nonlocal _
     | Pass
     | Raise _
-    | Return _
-    | Yield _
-    | YieldFrom _ ->
+    | Return _ ->
         sofar
   in
   let drop_nested_body { Node.value = { Define.body; _ } as define; location } =

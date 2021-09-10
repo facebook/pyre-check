@@ -1285,8 +1285,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           state
       | Define define -> analyze_definition ~define state
       | Delete _ -> state
-      | Yield expression
-      | YieldFrom expression
       | Expression expression ->
           analyze_expression ~resolution ~taint:BackwardState.Tree.empty ~state ~expression
       | For _

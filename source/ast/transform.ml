@@ -358,8 +358,6 @@ module Make (Transformer : Transformer) = struct
                 body = transform_list body ~f:transform_statement |> List.concat;
                 orelse = transform_list orelse ~f:transform_statement |> List.concat;
               }
-        | Statement.Yield expression -> Statement.Yield (transform_expression expression)
-        | Statement.YieldFrom expression -> Statement.YieldFrom (transform_expression expression)
       in
       let statement =
         let parent_state, should_transform_children =
@@ -406,9 +404,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
         | Pass
         | Raise _
         | Return _
-        | Nonlocal _
-        | Yield _
-        | YieldFrom _ ->
+        | Nonlocal _ ->
             value
         | Class ({ Class.body; _ } as value) ->
             Class { value with Class.body = List.concat_map ~f:transform_statement body }

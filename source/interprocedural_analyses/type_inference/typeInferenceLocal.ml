@@ -427,6 +427,41 @@ module State (Context : Context) = struct
               ~annotation:(Annotation.create (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
           in
           { state with resolution }
+      | Expression expression -> (
+          let { Node.value = { Define.signature = { async; _ }; _ }; _ } = Context.define in
+          match expression with
+          | { Node.value = Expression.Yield yielded; _ } ->
+              let actual =
+                match yielded with
+                | Some expression ->
+                    let resolved = Resolution.resolve_expression_to_type resolution expression in
+                    Type.generator ~async resolved
+                | None -> Type.generator ~async Type.none
+              in
+              validate_return ~expression:None ~actual
+          | { Node.value = Expression.YieldFrom yielded_from; location } ->
+              let actual =
+                let call =
+                  let callee =
+                    Expression.Name
+                      (Name.Attribute
+                         { base = yielded_from; attribute = "__iter__"; special = true })
+                    |> Node.create ~location
+                  in
+                  Expression.Call { callee; arguments = [] } |> Node.create ~location
+                in
+                let resolved = Resolution.resolve_expression_to_type resolution call in
+                match
+                  GlobalResolution.extract_type_parameters
+                    global_resolution
+                    ~target:"typing.Iterator"
+                    ~source:resolved
+                with
+                | Some [parameter] -> Type.generator parameter
+                | _ -> Type.generator Type.Any
+              in
+              validate_return ~expression:None ~actual
+          | _ -> { state with resolution })
       | Statement.Assign
           { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
         when is_simple_name name ->
@@ -442,24 +477,6 @@ module State (Context : Context) = struct
               ~default:Type.none
           in
           validate_return ~expression ~actual
-      | Statement.Yield { Node.value = Expression.Yield return; _ } ->
-          let { Node.value = { Define.signature = { async; _ }; _ }; _ } = Context.define in
-          let actual =
-            match return with
-            | Some expression ->
-                Resolution.resolve_expression_to_type resolution expression |> Type.generator ~async
-            | None -> Type.generator ~async Type.none
-          in
-          validate_return ~expression:None ~actual
-      | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
-          let resolved = Resolution.resolve_expression_to_type resolution return in
-          let actual =
-            match GlobalResolution.join global_resolution resolved (Type.iterator Type.Bottom) with
-            | Type.Parametric { name = "typing.Iterator"; parameters = [Single parameter] } ->
-                Type.generator parameter
-            | annotation -> Type.generator annotation
-          in
-          validate_return ~expression:None ~actual
       | _ -> (
           match Resolution.resolve_statement resolution statement with
           | Resolution.Unreachable -> { state with bottom = true }

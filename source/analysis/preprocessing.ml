@@ -958,13 +958,6 @@ let qualify
                 body;
                 orelse;
               } )
-      | Statement.Yield expression ->
-          ( scope,
-            Statement.Yield (qualify_expression ~qualify_strings:DoNotQualify ~scope expression) )
-      | Statement.YieldFrom expression ->
-          ( scope,
-            Statement.YieldFrom (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
-          )
       | Break
       | Continue
       | Import _
@@ -2986,9 +2979,7 @@ module AccessCollector = struct
         in
         from_optional_expression collected return_annotation
     | Delete expression
-    | Expression expression
-    | Yield expression
-    | YieldFrom expression ->
+    | Expression expression ->
         from_expression collected expression
     | For { For.target; iterator; body; orelse; _ } ->
         let collected = from_expression collected target in

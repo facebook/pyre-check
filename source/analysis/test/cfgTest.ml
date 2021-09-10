@@ -866,20 +866,6 @@ let test_while _ =
     ]
 
 
-let test_yield _ =
-  let yield = +Statement.Yield (+Expression.True) in
-  assert_cfg
-    [yield]
-    [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [5] [3];
-      node 2 Node.Error [] [3];
-      node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [5] [];
-      node 5 (Node.Block [yield]) [0] [1; 4];
-    ]
-
-
 let () =
   "cfg"
   >::: [
@@ -892,6 +878,5 @@ let () =
          "try" >:: test_try;
          "with" >:: test_with;
          "while" >:: test_while;
-         "yield" >:: test_yield;
        ]
   |> Test.run

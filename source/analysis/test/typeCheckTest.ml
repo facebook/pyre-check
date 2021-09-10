@@ -487,7 +487,6 @@ let test_forward_expression context =
       expression
       |> function
       | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression
-      | { Source.statements = [{ Node.value = Yield expression; _ }]; _ } -> expression
       | _ -> failwith "Unable to extract expression"
     in
     let global_resolution =
@@ -885,7 +884,6 @@ let test_forward_expression context =
       expression
       |> function
       | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression
-      | { Source.statements = [{ Node.value = Yield expression; _ }]; _ } -> expression
       | _ -> failwith "Unable to extract expression"
     in
     let resolution =

@@ -209,9 +209,6 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression test;
           List.iter body ~f:visit_statement;
           List.iter orelse ~f:visit_statement
-      | Statement.Yield expression
-      | Statement.YieldFrom expression ->
-          visit_expression expression
       | Nonlocal _
       | Global _
       | Pass
@@ -281,9 +278,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | Pass
         | Raise _
         | Return _
-        | Nonlocal _
-        | Yield _
-        | YieldFrom _ ->
+        | Nonlocal _ ->
             ()
         | Class { Class.body; _ }
         | Define { Define.body; _ }

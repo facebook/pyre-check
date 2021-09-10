@@ -344,9 +344,6 @@ let create define =
         create statements jumps join
     | statement :: statements -> (
         (* -> [statement] ->
-         *       |      \        ^
-         *       |       ?       |
-         *       |    [yield] -- |
          *       |
          *       ?
          * [break | continue | error | normal ] *)
@@ -373,9 +370,6 @@ let create define =
         | { Ast.Node.value = Return _; _ } ->
             Node.connect node jumps.normal;
             None
-        | { Ast.Node.value = Yield _; _ } ->
-            Node.connect node jumps.yield;
-            create statements jumps node
         | _ -> create statements jumps node)
     | [] -> Some predecessor
   in

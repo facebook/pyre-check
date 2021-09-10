@@ -5692,9 +5692,6 @@ module State (Context : Context) = struct
               None, errors
             else
               Some resolution, errors)
-    (* TODO (T99533358) remove these statement variants *)
-    | Statement.Yield _ -> Some resolution, []
-    | YieldFrom _ -> Some resolution, []
     | Raise { Raise.expression = Some expression; _ } ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_expression ~resolution ~expression

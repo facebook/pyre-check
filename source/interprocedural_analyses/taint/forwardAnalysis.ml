@@ -1403,8 +1403,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           state
       | Define define -> analyze_definition ~define state
       | Delete _ -> state
-      | Yield expression
-      | YieldFrom expression
       | Expression expression ->
           let _, state = analyze_expression ~resolution ~state ~expression in
           state

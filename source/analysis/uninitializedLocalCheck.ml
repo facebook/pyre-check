@@ -142,8 +142,6 @@ let extract_reads_statement { Node.value; _ } =
     | Statement.Assign { Assign.value = expression; _ }
     | Delete expression
     | Expression expression
-    | Yield expression
-    | YieldFrom expression
     | If { If.test = expression; _ }
     | While { While.test = expression; _ } ->
         [expression]

@@ -180,10 +180,7 @@ module Binding = struct
               of_optional_expression sofar value)
         in
         { kind = Kind.DefineName signature; name = Reference.show name; location } :: sofar
-    | Statement.Expression expression
-    | Statement.Yield expression
-    | Statement.YieldFrom expression ->
-        of_expression sofar expression
+    | Statement.Expression expression -> of_expression sofar expression
     | Statement.For { For.target; iterator; body; orelse; _ } ->
         let sofar = of_unannotated_target ~kind:Kind.ForTarget sofar target in
         let sofar = of_expression sofar iterator in
@@ -310,9 +307,7 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | Nonlocal _
   | Pass
   | Raise _
-  | Return _
-  | Yield _
-  | YieldFrom _ ->
+  | Return _ ->
       sofar
 
 
@@ -350,9 +345,7 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | Import _
   | Pass
   | Raise _
-  | Return _
-  | Yield _
-  | YieldFrom _ ->
+  | Return _ ->
       sofar
 
 

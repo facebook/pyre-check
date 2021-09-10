@@ -1197,8 +1197,6 @@ and Statement : sig
     | Try of Try.t
     | With of With.t
     | While of While.t
-    | Yield of Expression.t
-    | YieldFrom of Expression.t
   [@@deriving compare, eq, sexp, hash, to_yojson]
 
   type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -1229,8 +1227,6 @@ end = struct
     | Try of Try.t
     | With of With.t
     | While of While.t
-    | Yield of Expression.t
-    | YieldFrom of Expression.t
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -1256,8 +1252,6 @@ end = struct
     | Try left, Try right -> Try.location_insensitive_compare left right
     | With left, With right -> With.location_insensitive_compare left right
     | While left, While right -> While.location_insensitive_compare left right
-    | Yield left, Yield right -> Expression.location_insensitive_compare left right
-    | YieldFrom left, YieldFrom right -> Expression.location_insensitive_compare left right
     | Assign _, _ -> -1
     | Assert _, _ -> -1
     | Break, _ -> -1
@@ -1277,8 +1271,6 @@ end = struct
     | Try _, _ -> -1
     | With _, _ -> -1
     | While _, _ -> -1
-    | Yield _, _ -> -1
-    | YieldFrom _, _ -> 1
 
 
   and location_insensitive_compare left right =
@@ -1630,8 +1622,6 @@ module PrettyPrinter = struct
           body
           pp_statement_list
           orelse
-    | Yield expression -> Format.fprintf formatter "yield %a" Expression.pp expression
-    | YieldFrom expression -> Format.fprintf formatter "yield from %a" Expression.pp expression
 
 
   let pp = pp_statement_t
@@ -1649,7 +1639,10 @@ let is_generator statements =
   let open Expression in
   let rec is_expression_generator { Node.value; _ } =
     match value with
-    | Expression.Await await -> is_expression_generator await
+    | Expression.Yield _
+    | Expression.YieldFrom _ ->
+        true
+    | Await await -> is_expression_generator await
     | BooleanOperator { BooleanOperator.left; right; _ }
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         is_expression_generator left || is_expression_generator right
@@ -1683,8 +1676,6 @@ let is_generator statements =
         || is_expression_generator alternative
     | UnaryOperator { UnaryOperator.operand; _ } -> is_expression_generator operand
     | WalrusOperator { WalrusOperator.value; _ } -> is_expression_generator value
-    | Yield _ -> true
-    | YieldFrom _ -> true
     | Complex _
     | Ellipsis
     | False
@@ -1734,9 +1725,6 @@ let is_generator statements =
     | With { With.items; body; _ } ->
         List.exists items ~f:(fun (expression, _) -> is_expression_generator expression)
         || is_statements_generator body
-    | Yield _
-    | YieldFrom _ ->
-        true
     | Break
     | Continue
     | Class _

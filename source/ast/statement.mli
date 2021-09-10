@@ -370,8 +370,6 @@ and Statement : sig
     | Try of Try.t
     | With of With.t
     | While of While.t
-    | Yield of Expression.t
-    | YieldFrom of Expression.t
   [@@deriving compare, eq, sexp, hash, to_yojson]
 
   type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]

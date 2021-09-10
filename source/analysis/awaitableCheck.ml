@@ -570,8 +570,6 @@ module State (Context : Context) = struct
           ~awaitables
           ~target
     | Delete expression
-    | Yield expression
-    | YieldFrom expression
     | Expression expression ->
         forward_expression ~resolution ~state ~expression |> snd
     | Raise { Raise.expression = None; _ } -> state
