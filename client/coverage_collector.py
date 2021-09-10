@@ -7,7 +7,7 @@
 import itertools
 import logging
 from dataclasses import dataclass
-from typing import Set, Iterable, Dict, List
+from typing import Set, Iterable, List
 
 import libcst as cst
 from libcst.metadata import CodeRange
@@ -15,7 +15,6 @@ from libcst.metadata import CodeRange
 from .statistics_collectors import (
     AnnotationCollector,
     FunctionAnnotationInfo,
-    AnnotationInfo,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)

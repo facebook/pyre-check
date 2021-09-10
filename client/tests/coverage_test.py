@@ -5,14 +5,11 @@
 
 import textwrap
 import unittest
-from typing import Dict, List
+from typing import List
 
 import libcst as cst
-from libcst.metadata import MetadataWrapper
 
 from ..commands.coverage import _collect_coverage
-from ..coverage_collector import CoverageCollector
-from .statistics_test import AnnotationCountCollectorTest
 
 
 class CoverageTest(unittest.TestCase):
