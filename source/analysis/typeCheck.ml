@@ -5622,43 +5622,6 @@ module State (Context : Context) = struct
           None, errors
         else
           Some resolution, errors
-    | Raise { Raise.expression = Some expression; _ } ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution ~expression
-        in
-        let expected = Type.Primitive "BaseException" in
-        let actual =
-          if Type.is_meta resolved then
-            Type.single_parameter resolved
-          else
-            resolved
-        in
-        let errors =
-          if GlobalResolution.less_or_equal global_resolution ~left:actual ~right:expected then
-            errors
-          else
-            emit_error
-              ~errors
-              ~location
-              ~kind:(Error.InvalidException { expression; annotation = resolved })
-        in
-        Some resolution, errors
-    | Raise _ -> Some resolution, []
-    | Return { Return.expression; is_implicit } ->
-        let { Resolved.resolution; resolved = actual; errors; _ } =
-          Option.value_map
-            expression
-            ~default:
-              {
-                Resolved.resolution;
-                errors = [];
-                resolved = Type.none;
-                resolved_annotation = None;
-                base = None;
-              }
-            ~f:(fun expression -> forward_expression ~resolution ~expression)
-        in
-        Some resolution, validate_return ~expression ~resolution ~errors ~actual ~is_implicit
     | Statement.Yield { Node.value = Expression.Yield return; _ } ->
         let { Resolved.resolution; resolved = actual; errors; _ } =
           match return with
@@ -5702,6 +5665,43 @@ module State (Context : Context) = struct
         ( Some resolution,
           validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
     | YieldFrom _ -> Some resolution, []
+    | Raise { Raise.expression = Some expression; _ } ->
+        let { Resolved.resolution; resolved; errors; _ } =
+          forward_expression ~resolution ~expression
+        in
+        let expected = Type.Primitive "BaseException" in
+        let actual =
+          if Type.is_meta resolved then
+            Type.single_parameter resolved
+          else
+            resolved
+        in
+        let errors =
+          if GlobalResolution.less_or_equal global_resolution ~left:actual ~right:expected then
+            errors
+          else
+            emit_error
+              ~errors
+              ~location
+              ~kind:(Error.InvalidException { expression; annotation = resolved })
+        in
+        Some resolution, errors
+    | Raise _ -> Some resolution, []
+    | Return { Return.expression; is_implicit } ->
+        let { Resolved.resolution; resolved = actual; errors; _ } =
+          Option.value_map
+            expression
+            ~default:
+              {
+                Resolved.resolution;
+                errors = [];
+                resolved = Type.none;
+                resolved_annotation = None;
+                base = None;
+              }
+            ~f:(fun expression -> forward_expression ~resolution ~expression)
+        in
+        Some resolution, validate_return ~expression ~resolution ~errors ~actual ~is_implicit
     | Define { signature = { Define.Signature.name = { Node.value = name; _ }; _ } as signature; _ }
       ->
         let resolution =
