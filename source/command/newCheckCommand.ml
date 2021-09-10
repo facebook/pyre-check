@@ -100,7 +100,7 @@ module CheckConfiguration = struct
       ~show_error_traces
       ~excludes
       ~extensions
-      ~incremental_style:Configuration.Analysis.FineGrained
+      ~incremental_style:Configuration.Analysis.Shallow
       ~include_hints:false
       ~perform_autocompletion:false
       ~log_directory:(Path.absolute log_path)
