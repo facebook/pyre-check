@@ -3802,9 +3802,9 @@ module State (Context : Context) = struct
         in
         let resolved = forward_expression ~resolution ~expression:value in
         { resolved with errors = List.append errors resolved.errors }
-    | Expression.Yield (Some expression) ->
+    | Expression.Yield (Some yielded) ->
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution ~expression
+          forward_expression ~resolution ~expression:yielded
         in
         {
           resolution;
@@ -3821,12 +3821,22 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
-    | Expression.YieldFrom _expression ->
-        (* TODO (T99533358) add real logic here, this is a placeholder *)
+    | Expression.YieldFrom yielded_from ->
+        let call =
+          let callee =
+            Expression.Name
+              (Name.Attribute { base = yielded_from; attribute = "__iter__"; special = true })
+            |> Node.create ~location
+          in
+          Expression.Call { callee; arguments = [] } |> Node.create ~location
+        in
+        let { Resolved.resolution; resolved; errors; _ } =
+          forward_expression ~resolution ~expression:call
+        in
         {
           resolution;
-          errors = [];
-          resolved = Type.NoneType;
+          errors;
+          resolved = Type.generator resolved;
           resolved_annotation = None;
           base = None;
         }
