@@ -1960,7 +1960,7 @@ let test_define _ =
            unbound_names = [];
            body =
              [
-               +Statement.Yield
+               +Statement.Expression
                   (+Expression.Yield (Some (+Expression.String (StringLiteral.create "A"))));
              ];
          };
@@ -2929,28 +2929,17 @@ let test_generator _ =
 
 
 let test_yield _ =
-  assert_parsed_equal "yield" [+Statement.Yield (+Expression.Yield None)];
+  assert_parsed_equal "yield" [+Statement.Expression (+Expression.Yield None)];
   assert_parsed_equal
     "yield 1"
-    [+Statement.Yield (+Expression.Yield (Some (+Expression.Integer 1)))];
+    [+Statement.Expression (+Expression.Yield (Some (+Expression.Integer 1)))];
   assert_parsed_equal
     "yield from a"
-    [
-      +Statement.YieldFrom
-         (+Expression.Yield
-             (Some
-                (+Expression.Call
-                    {
-                      callee =
-                        +Expression.Name
-                           (Name.Attribute { base = !"a"; attribute = "__iter__"; special = true });
-                      arguments = [];
-                    })));
-    ];
+    [+Statement.Expression (+Expression.YieldFrom (+Expression.Name (Name.Identifier "a")))];
   assert_parsed_equal
     "yield 1, 2"
     [
-      +Statement.Yield
+      +Statement.Expression
          (+Expression.Yield
              (Some (+Expression.Tuple [+Expression.Integer 1; +Expression.Integer 2])));
     ];
@@ -2961,6 +2950,17 @@ let test_yield _ =
          {
            Assign.target = !"x";
            annotation = None;
+           value = +Expression.Yield (Some (+Expression.Integer 1));
+           parent = None;
+         };
+    ];
+  assert_parsed_equal
+    "x: str = yield 1"
+    [
+      +Statement.Assign
+         {
+           Assign.target = !"x";
+           annotation = Some !"str";
            value = +Expression.Yield (Some (+Expression.Integer 1));
            parent = None;
          };
@@ -3934,7 +3934,7 @@ let test_assign _ =
          {
            Assign.target = !"a";
            annotation = None;
-           value = +Expression.Yield (Some !"b");
+           value = +Expression.YieldFrom !"b";
            parent = None;
          };
     ];
@@ -4382,7 +4382,7 @@ let test_with _ =
     [
       +Statement.With
          {
-           With.items = [+Expression.Yield (Some !"a"), None];
+           With.items = [+Expression.YieldFrom !"a", None];
            body = [+Statement.Expression !"b"];
            async = false;
          };

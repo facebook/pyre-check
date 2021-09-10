@@ -5692,48 +5692,8 @@ module State (Context : Context) = struct
               None, errors
             else
               Some resolution, errors)
-    | Statement.Yield { Node.value = Expression.Yield yielded; _ } ->
-        let { Resolved.resolution; resolved = actual; errors; _ } =
-          match yielded with
-          | Some expression ->
-              let { Resolved.resolution; resolved; errors; _ } =
-                forward_expression ~resolution ~expression
-              in
-              {
-                resolution;
-                errors;
-                resolved = Type.generator ~async resolved;
-                resolved_annotation = None;
-                base = None;
-              }
-          | None ->
-              {
-                resolution;
-                errors = [];
-                resolved = Type.generator ~async Type.none;
-                resolved_annotation = None;
-                base = None;
-              }
-        in
-        ( Some resolution,
-          validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
+    (* TODO (T99533358) remove these statement variants *)
     | Statement.Yield _ -> Some resolution, []
-    | YieldFrom { Node.value = Expression.Yield (Some callee); _ } ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution ~expression:callee
-        in
-        let actual =
-          match
-            GlobalResolution.extract_type_parameters
-              global_resolution
-              ~target:"typing.Iterator"
-              ~source:resolved
-          with
-          | Some [parameter] -> Type.generator parameter
-          | _ -> Type.generator Type.Any
-        in
-        ( Some resolution,
-          validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
     | YieldFrom _ -> Some resolution, []
     | Raise { Raise.expression = Some expression; _ } ->
         let { Resolved.resolution; resolved; errors; _ } =

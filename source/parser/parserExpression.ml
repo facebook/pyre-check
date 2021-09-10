@@ -311,6 +311,7 @@ and Expression : sig
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
     | Yield of t option
+    | YieldFrom of t
 
   and t = expression Node.t
 end = struct
@@ -342,6 +343,7 @@ end = struct
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
     | Yield of t option
+    | YieldFrom of t
 
   and t = expression Node.t
 end
@@ -443,6 +445,8 @@ let rec convert { Node.location; value } =
       |> Node.create ~location
   | Yield expression ->
       AstExpression.Expression.Yield (expression >>| convert) |> Node.create ~location
+  | YieldFrom expression ->
+      AstExpression.Expression.YieldFrom (expression |> convert) |> Node.create ~location
 
 
 and convert_argument { Call.Argument.name; value } =

@@ -222,9 +222,8 @@ let test_assign_locations _ =
                node
                  ~start:(1, 4)
                  ~stop:(1, 16)
-                 (Expression.Yield
-                    (Some
-                       (node ~start:(1, 15) ~stop:(1, 16) (Expression.Name (Name.Identifier "b")))));
+                 (Expression.YieldFrom
+                    (node ~start:(1, 15) ~stop:(1, 16) (Expression.Name (Name.Identifier "b"))));
              parent = None;
            });
     ];
@@ -3152,12 +3151,8 @@ let test_with_locations _ =
                  ( node
                      ~start:(1, 6)
                      ~stop:(1, 18)
-                     (Expression.Yield
-                        (Some
-                           (node
-                              ~start:(1, 17)
-                              ~stop:(1, 18)
-                              (Expression.Name (Name.Identifier "a"))))),
+                     (Expression.YieldFrom
+                        (node ~start:(1, 17) ~stop:(1, 18) (Expression.Name (Name.Identifier "a")))),
                    None );
                ];
              body =
@@ -3246,7 +3241,7 @@ let test_yield_locations _ =
       node
         ~start:(1, 0)
         ~stop:(1, 5)
-        (Statement.Yield (node ~start:(1, 0) ~stop:(1, 5) (Expression.Yield None)));
+        (Statement.Expression (node ~start:(1, 0) ~stop:(1, 5) (Expression.Yield None)));
     ];
   assert_source_locations
     "yield 1"
@@ -3254,7 +3249,7 @@ let test_yield_locations _ =
       node
         ~start:(1, 0)
         ~stop:(1, 7)
-        (Statement.Yield
+        (Statement.Expression
            (node
               ~start:(1, 0)
               ~stop:(1, 7)
@@ -3266,34 +3261,12 @@ let test_yield_locations _ =
       node
         ~start:(1, 0)
         ~stop:(1, 12)
-        (Statement.YieldFrom
+        (Statement.Expression
            (node
               ~start:(1, 0)
               ~stop:(1, 12)
-              (Expression.Yield
-                 (Some
-                    (node
-                       ~start:(1, 0)
-                       ~stop:(1, 12)
-                       (Expression.Call
-                          {
-                            callee =
-                              node
-                                ~start:(1, 0)
-                                ~stop:(1, 12)
-                                (Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        base =
-                                          node
-                                            ~start:(1, 11)
-                                            ~stop:(1, 12)
-                                            (Expression.Name (Name.Identifier "a"));
-                                        attribute = "__iter__";
-                                        special = true;
-                                      }));
-                            arguments = [];
-                          }))))));
+              (Expression.YieldFrom
+                 (node ~start:(1, 11) ~stop:(1, 12) (Expression.Name (Name.Identifier "a"))))));
     ]
 
 

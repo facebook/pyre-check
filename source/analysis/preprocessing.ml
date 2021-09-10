@@ -1679,11 +1679,13 @@ let expand_implicit_returns source =
               let module Visit = Visit.Make (struct
                 type t = bool
 
-                let expression sofar _ = sofar
+                let expression sofar = function
+                  | { Node.value = Expression.Yield _; _ } -> true
+                  | { Node.value = Expression.YieldFrom _; _ } -> true
+                  | _ -> sofar
+
 
                 let statement sofar = function
-                  | { Node.value = Statement.Yield _; _ } -> true
-                  | { Node.value = Statement.YieldFrom _; _ } -> true
                   | _ -> sofar
               end)
               in

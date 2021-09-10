@@ -594,7 +594,7 @@ let test_is_generator context =
   in
 
   assert_is_generator "yield" ~expected:true;
-  assert_is_generator "yield from" ~expected:true;
+  assert_is_generator "yield from []" ~expected:true;
   assert_is_generator "x = 2" ~expected:false;
   assert_is_generator "x = yield 2" ~expected:true;
   assert_is_generator "assert (yield True)" ~expected:true;

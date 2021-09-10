@@ -469,6 +469,23 @@ small_statement:
         };
       }]
     }
+  | target = test_list;
+    annotation = annotation;
+    EQUALS;
+    value = value {
+      [{
+        Node.location = {
+          target.Node.location with Location.stop =
+            value.Node.location.Location.stop;
+        };
+        value = Assign {
+          Assign.target = convert target;
+          annotation = Some annotation >>| convert;
+          value = convert value;
+          parent = None;
+        };
+      }]
+    }
   | targets = targets; value = value; annotation = comment_annotation? {
       List.map ~f:(fun target -> target ~value ~annotation) targets
   }
@@ -525,6 +542,10 @@ small_statement:
 
   | test = test_list {
       [{ Node.location = test.Node.location; value = Expression (convert test) }]
+    }
+
+  | value = value {
+      [{ Node.location = value.Node.location; value = Expression (convert value) }]
     }
 
   | start = GLOBAL; globals = parser_generator_separated_nonempty_list(COMMA, identifier) {
@@ -601,37 +622,6 @@ small_statement:
         Node.location = location_create_with_stop ~start:delete ~stop;
         value = Delete (convert expression);
       }]
-    }
-
-  | yield = yield {
-      let has_from, yield = yield in
-      let location = Node.location yield in
-      if has_from then
-        let yield =
-          match yield with
-          | { Node.value = Yield (Some yield); _ } ->
-              let callee =
-                Expression.Name (
-                  Name.Attribute {
-                    base = yield;
-                    attribute = "__iter__";
-                    special = true
-                  }
-                ) |> Node.create ~location
-              in
-              Expression.Call { callee; arguments = [] }
-              |> Node.create ~location
-          | _ ->
-              yield
-        in
-        [
-          {
-            Node.location;
-            value = YieldFrom { Node.location; value = Yield (Some (convert yield)) }
-          };
-        ]
-      else
-        [{ Node.location; value = Yield (convert yield) }]
     }
   ;
 
@@ -1266,7 +1256,7 @@ targets:
 
 value:
   | test = test_list { test }
-  | yield = yield { snd yield }
+  | yield_form = yield_form { yield_form }
   ;
 
 (* Expressions. *)
@@ -1482,7 +1472,7 @@ expression:
 
   | LEFTPARENS; generator = generator; RIGHTPARENS { generator }
 
-  | LEFTPARENS; yield = yield; RIGHTPARENS { snd yield }
+  | LEFTPARENS; yield_form = yield_form; RIGHTPARENS { yield_form }
   ;
 
 expression_list:
@@ -1649,19 +1639,27 @@ test_list:
     }
   ;
 
-yield:
-  | position = YIELD; has_from = FROM?; test = test_list?; {
-      let start, stop = position in
+yield_form:
+  | yield_token = YIELD; test = test_list?; {
+      let start, stop = yield_token in
       let location =
         Option.map
          ~f:(fun test -> location_create_with_stop ~start ~stop:(Node.stop test))
          test
         |> Option.value ~default:(Location.create ~start ~stop)
       in
-      Option.is_some has_from,
       {
         Node.location;
         value = Expression.Yield test;
+      }
+    }
+
+  | yield_token = YIELD; FROM; test = test_list; {
+      let start, _ = yield_token in
+      let location = location_create_with_stop ~start ~stop:(Node.stop test) in
+      {
+        Node.location;
+        value = Expression.YieldFrom test;
       }
     }
   ;
