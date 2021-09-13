@@ -2983,6 +2983,48 @@ let test_invalid_models context =
     ();
 
   (* ViaTypeOf on attributes *)
+  assert_invalid_model
+    ~source:{|
+      def foo(x: int) -> int: ...
+      |}
+    ~model_source:{|
+      def test.foo(x: ViaTypeOf): ...
+    |}
+    ~expect:
+      {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models.|}
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x: int) -> int: ...
+      |}
+    ~model_source:{|
+      def test.foo(x) -> ViaTypeOf: ...
+    |}
+    ~expect:
+      {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models.|}
+    ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        def foo(x: int) -> int: ...
+      |}
+    ~model_source:{|
+      def test.C.foo(x: ViaTypeOf): ...
+    |}
+    ~expect:
+      {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models.|}
+    ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        def foo(x: int) -> int: ...
+      |}
+    ~model_source:{|
+      def test.C.foo() -> ViaTypeOf: ...
+    |}
+    ~expect:
+      {|`ViaTypeOf` is an invalid taint annotation: A standalone `ViaTypeOf` without arguments can only be used in attribute or global models.|}
+    ();
   assert_valid_model
     ~source:{|
       class C:

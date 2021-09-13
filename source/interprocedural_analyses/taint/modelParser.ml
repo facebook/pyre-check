@@ -253,6 +253,7 @@ let rec parse_annotations
     ~configuration
     ~parameters
     ~callable_parameter_names_to_positions
+    ~is_object_target
     annotation
   =
   let open Core.Result in
@@ -356,24 +357,29 @@ let rec parse_annotations
   let rec extract_kinds expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier "ViaTypeOf") ->
-        (* ViaTypeOf is treated as ViaTypeOf[$global] *)
-        Ok
-          [
-            ViaFeatures
-              [
-                Features.ViaFeature.ViaTypeOf
-                  {
-                    parameter =
-                      AccessPath.Root.PositionalParameter
-                        {
-                          name = attribute_symbolic_parameter;
-                          position = 0;
-                          positional_only = false;
-                        };
-                    tag = None;
-                  };
-              ];
-          ]
+        if is_object_target then (* ViaTypeOf is treated as ViaTypeOf[$global] *)
+          Ok
+            [
+              ViaFeatures
+                [
+                  Features.ViaFeature.ViaTypeOf
+                    {
+                      parameter =
+                        AccessPath.Root.PositionalParameter
+                          {
+                            name = attribute_symbolic_parameter;
+                            position = 0;
+                            positional_only = false;
+                          };
+                      tag = None;
+                    };
+                ];
+            ]
+        else
+          Error
+            (annotation_error
+               "A standalone `ViaTypeOf` without arguments can only be used in attribute or global \
+                models.")
     | Expression.Name (Name.Identifier taint_kind) ->
         Ok [Leaf { name = taint_kind; subkind = None }]
     | Name (Name.Attribute { base; _ }) -> extract_kinds base
@@ -681,6 +687,7 @@ let rec parse_annotations
               ~configuration
               ~parameters
               ~callable_parameter_names_to_positions
+              ~is_object_target
               expression)
         |> all
         |> map ~f:List.concat
@@ -784,20 +791,26 @@ let rec parse_annotations
     | Name (Name.Identifier "TaintInTaintOut") ->
         Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features = []; path = [] }]
     | Name (Name.Identifier "ViaTypeOf") ->
-        (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
-           TaintInTaintOut[ViaTypeOf[$global]] = ...` *)
-        let via_features =
-          [
-            Features.ViaFeature.ViaTypeOf
-              {
-                parameter =
-                  AccessPath.Root.PositionalParameter
-                    { name = attribute_symbolic_parameter; position = 0; positional_only = false };
-                tag = None;
-              };
-          ]
-        in
-        Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features; path = [] }]
+        if is_object_target then
+          (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
+             TaintInTaintOut[ViaTypeOf[$global]] = ...` *)
+          let via_features =
+            [
+              Features.ViaFeature.ViaTypeOf
+                {
+                  parameter =
+                    AccessPath.Root.PositionalParameter
+                      { name = attribute_symbolic_parameter; position = 0; positional_only = false };
+                  tag = None;
+                };
+            ]
+          in
+          Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features; path = [] }]
+        else
+          Error
+            (annotation_error
+               "A standalone `ViaTypeOf` without arguments can only be used in attribute or global \
+                models.")
     | Expression.Tuple expressions ->
         List.map expressions ~f:(fun expression ->
             parse_annotations
@@ -807,6 +820,7 @@ let rec parse_annotations
               ~configuration
               ~parameters
               ~callable_parameter_names_to_positions
+              ~is_object_target
               expression)
         |> all
         >>| List.concat
@@ -1599,7 +1613,13 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
   | _ -> parse_constraint expression >>| List.return
 
 
-let parse_model_clause ~path ~configuration ~find_clause ({ Node.value; location } as expression) =
+let parse_model_clause
+    ~path
+    ~configuration
+    ~find_clause
+    ~is_object_target
+    ({ Node.value; location } as expression)
+  =
   let open Core.Result in
   let invalid_model_query_model_clause ~path ~location callee =
     model_verification_error
@@ -1655,6 +1675,7 @@ let parse_model_clause ~path ~configuration ~find_clause ({ Node.value; location
               ~configuration
               ~parameters:[]
               ~callable_parameter_names_to_positions:None
+              ~is_object_target
               expression
             >>| List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
       in
@@ -1840,6 +1861,7 @@ let parse_parameter_taint
     ~configuration
     ~parameters
     ~callable_parameter_names_to_positions
+    ~is_object_target
     (root, _name, parameter)
   =
   parameter.Node.value.Parameter.annotation
@@ -1850,6 +1872,7 @@ let parse_parameter_taint
         ~configuration
         ~parameters
         ~callable_parameter_names_to_positions
+        ~is_object_target
   |> Option.value ~default:(Ok [])
   |> Core.Result.map ~f:(List.map ~f:(fun annotation -> annotation, ParameterAnnotation root))
 
@@ -1963,6 +1986,7 @@ let parse_return_taint
     ~configuration
     ~parameters
     ~callable_parameter_names_to_positions
+    ~is_object_target
     expression
   =
   let open Core.Result in
@@ -1973,6 +1997,7 @@ let parse_return_taint
     ~configuration
     ~parameters
     ~callable_parameter_names_to_positions
+    ~is_object_target
     expression
   |> map ~f:(List.map ~f:(fun annotation -> annotation, ReturnAnnotation))
 
@@ -2041,6 +2066,7 @@ let adjust_sanitize_and_modes_and_skipped_override
     ~define_name
     ~configuration
     ~top_level_decorators
+    ~is_object_target
     model
   =
   (* Adjust analysis modes and whether we skip overrides by applying top-level decorators. *)
@@ -2071,6 +2097,7 @@ let adjust_sanitize_and_modes_and_skipped_override
                   ~configuration
                   ~parameters:[]
                   ~callable_parameter_names_to_positions:None
+                  ~is_object_target
                   expression
                 >>= function
                 | [Sanitize sanitize_annotations] ->
@@ -2418,12 +2445,17 @@ let parse_statement ~resolution ~path ~configuration statement =
          { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
         ] ->
             let parsed_find_clause = parse_find_clause ~path find_clause in
+            let is_object_target = not (is_callable_clause_kind parsed_find_clause) in
             Ok
               ( None,
                 parsed_find_clause,
                 parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
-                parse_model_clause ~path ~configuration ~find_clause:parsed_find_clause model_clause
-              )
+                parse_model_clause
+                  ~path
+                  ~configuration
+                  ~find_clause:parsed_find_clause
+                  ~is_object_target
+                  model_clause )
         | [
          {
            Call.Argument.name = Some { Node.value = "name"; _ };
@@ -2434,12 +2466,17 @@ let parse_statement ~resolution ~path ~configuration statement =
          { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
         ] ->
             let parsed_find_clause = parse_find_clause ~path find_clause in
+            let is_object_target = not (is_callable_clause_kind parsed_find_clause) in
             Ok
               ( Some name,
                 parsed_find_clause,
                 parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
-                parse_model_clause ~path ~configuration ~find_clause:parsed_find_clause model_clause
-              )
+                parse_model_clause
+                  ~path
+                  ~configuration
+                  ~find_clause:parsed_find_clause
+                  ~is_object_target
+                  model_clause )
         | _ -> Error (model_verification_error ~path ~location (InvalidModelQueryClauses arguments))
       in
 
@@ -2478,6 +2515,7 @@ let create_model_from_signature
   let open Core.Result in
   let open ModelVerifier in
   let call_target = (call_target :> Target.t) in
+  let is_object_target = false in
   (* Strip off the decorators only used for taint annotations. *)
   let top_level_decorators, define =
     let is_taint_decorator decorator =
@@ -2593,7 +2631,8 @@ let create_model_from_signature
            ~model_name:(Reference.show callable_name)
            ~configuration
            ~parameters
-           ~callable_parameter_names_to_positions)
+           ~callable_parameter_names_to_positions
+           ~is_object_target)
     |> all
     >>| List.concat
     >>= fun parameter_taint ->
@@ -2606,7 +2645,8 @@ let create_model_from_signature
               ~model_name:(Reference.show callable_name)
               ~configuration
               ~parameters
-              ~callable_parameter_names_to_positions)
+              ~callable_parameter_names_to_positions
+              ~is_object_target)
     |> Option.value ~default:(Ok [])
     >>| fun return_taint -> List.rev_append parameter_taint return_taint
   in
@@ -2648,6 +2688,7 @@ let create_model_from_signature
         ~configuration
         ~top_level_decorators
         ~define_name:callable_name
+        ~is_object_target
   >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
 
 
@@ -2661,6 +2702,7 @@ let create_model_from_attribute
   =
   let open Core.Result in
   let call_target = (call_target :> Target.t) in
+  let is_object_target = true in
   ModelVerifier.verify_global ~path ~location ~resolution ~name
   >>= fun () ->
   source_annotation
@@ -2672,7 +2714,8 @@ let create_model_from_attribute
             ~model_name:(Reference.show name)
             ~configuration
             ~parameters:[]
-            ~callable_parameter_names_to_positions:None)
+            ~callable_parameter_names_to_positions:None
+            ~is_object_target)
   |> Option.value ~default:(Ok [])
   >>= fun source_taint ->
   let parse_sink_taint annotation =
@@ -2690,6 +2733,7 @@ let create_model_from_attribute
       ~configuration
       ~parameters:[]
       ~callable_parameter_names_to_positions:None
+      ~is_object_target
       (root, attribute_symbolic_parameter, parameter)
   in
   sink_annotation
@@ -2719,6 +2763,7 @@ let create_model_from_attribute
         ~configuration
         ~top_level_decorators:decorators
         ~define_name:name
+        ~is_object_target
   >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
 
 
