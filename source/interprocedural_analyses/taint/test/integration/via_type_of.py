@@ -5,6 +5,135 @@
 
 import enum
 from builtins import _test_sink, _test_source
+from typing import Annotated, Any, Dict, List
+
+
+class Test1_C:
+    x: int = 0
+    y: str = "y"
+    z: Annotated[str, "test1"] = "z"
+
+
+def test1_alarm1():
+    # always-via-type:int
+    c = Test1_C(_test_source())
+    _test_sink(c.x)
+
+
+def test1_alarm2():
+    # always-via-type:str
+    c = Test1_C(_test_source())
+    _test_sink(c.y)
+
+
+def test1_alarm3():
+    # always-via-type:typing.Annotated[str]
+    c = Test1_C(_test_source())
+    _test_sink(c.z)
+
+
+def test1_alarm4(foo):
+    # via-type:int, via-type:str, via-type:typing.Annotated[str]
+    c = Test1_C(_test_source())
+    foo = c.x
+    if 1:
+        foo = c.y
+    elif 2:
+        foo = c.z
+    _test_sink(foo)
+
+
+class Test2_C:
+    x: Dict[str, int] = {}
+    y: List[str] = []
+    z: Annotated[float, "test2"] = 0.0
+
+
+def test2_alarm1():
+    # always-via-type:Dict[str, int]
+    c = Test2_C(_test_source())
+    _test_sink(c.x)
+
+
+def test2_alarm2():
+    # always-via-type:List[str]
+    c = Test2_C(_test_source())
+    _test_sink(c.y)
+
+
+def test2_alarm3():
+    # always-via-type:float
+    c = Test2_C(_test_source())
+    _test_sink(c.z)
+
+
+def test2_alarm4(foo):
+    # via-type:Dict[str, int], via-type:List[str], via-type:float
+    c = Test2_C(_test_source())
+    foo = c.x
+    if 1:
+        foo = c.y
+    elif 2:
+        foo = c.z
+    _test_sink(foo)
+
+
+class Test3_Foo:
+    ...
+
+
+class Test3_C:
+    x: Dict[str, List[int]] = {}
+    y: Test3_Foo = Test3_Foo()
+    z: Annotated[List[List[str]], "test3"] = []
+
+
+def test3_alarm1(c: Test3_C):
+    # always-via-type:Dict[str, List[int]]
+    _test_sink(c.x)
+
+
+def test3_alarm2(c: Test3_C):
+    # always-via-type:Test3_Foo
+    _test_sink(c.y)
+
+
+def test3_alarm3(c: Test3_C):
+    # always-via-type:typing.Annotated[List[List[str]]
+    _test_sink(c.z)
+
+
+def test3_alarm4(c: Test3_C, foo):
+    # via-type:Dict[str, List[int]],
+    # via-type:Test3_Foo,
+    # via-type:typing.Annotated[List[List[str]]
+    foo = c.x
+    if 1:
+        foo = c.y
+    elif 2:
+        foo = c.z
+    _test_sink(foo)
+
+
+class Test4_C:
+    x = ...
+    y: Any = 0
+    z: object = []
+
+
+def test4_alarm1(c: Test4_C):
+    # always-via-type:unknown
+    c.x = _test_source()
+
+
+def test4_alarm2(c: Test4_C):
+    # always-via-type:Any
+    c.y = _test_source()
+
+
+def test4_alarm3(c: Test4_C):
+    # always-via-type:object
+    c.z = _test_source()
 
 
 def return_via_parameter_type(parameter):

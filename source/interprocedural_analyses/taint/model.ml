@@ -140,12 +140,20 @@ let get_callsite_model ~resolution ~call_target ~arguments =
                      ~argument:(match_argument_to_parameter parameter))
                   flow_details
             | Features.ViaFeature.ViaTypeOf { parameter; tag } ->
-                FlowDetails.add_breadcrumb
-                  (Features.ViaFeature.via_type_of_breadcrumb
-                     ?tag
-                     ~resolution
-                     ~argument:(match_argument_to_parameter parameter))
-                  flow_details
+                let breadcrumb =
+                  match call_target with
+                  | `Object object_target ->
+                      Features.ViaFeature.via_type_of_breadcrumb_for_object
+                        ?tag
+                        ~resolution
+                        ~object_target
+                  | _ ->
+                      Features.ViaFeature.via_type_of_breadcrumb
+                        ?tag
+                        ~resolution
+                        ~argument:(match_argument_to_parameter parameter)
+                in
+                FlowDetails.add_breadcrumb breadcrumb flow_details
           in
           FlowDetails.fold
             Features.ViaFeatureSet.Element

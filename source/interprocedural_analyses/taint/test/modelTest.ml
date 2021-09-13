@@ -2981,6 +2981,44 @@ let test_invalid_models context =
       "`Sanitize[TaintInTaintOut[TaintSink[Test]]]` is an invalid taint annotation: \
        TaintInTaintOut sanitizers cannot be modelled on attributes"
     ();
+
+  (* ViaTypeOf on attributes *)
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: ViaTypeOf = ...
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: TaintInTaintOut[ViaTypeOf] = ...
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: TaintSource[A, ViaTypeOf] = ...
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: TaintSink[X, ViaTypeOf] = ...
+    |}
+    ();
   ()
 
 

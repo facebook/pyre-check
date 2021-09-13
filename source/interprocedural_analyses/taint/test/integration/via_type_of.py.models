@@ -1,5 +1,828 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test1_alarm1",
+    "callable_line": 17,
+    "code": 5002,
+    "line": 20,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 19,
+              "start": 16,
+              "end": 30
+            },
+            "tito": [ { "line": 19, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "always-via-type": "int" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 20,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "always-via-type": "int" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test1_alarm2",
+    "callable_line": 23,
+    "code": 5002,
+    "line": 26,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 25,
+              "start": 16,
+              "end": 30
+            },
+            "tito": [ { "line": 25, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "y" },
+              { "always-via-type": "str" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 26,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "y" },
+      { "always-via-type": "str" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test1_alarm3",
+    "callable_line": 29,
+    "code": 5002,
+    "line": 32,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 31,
+              "start": 16,
+              "end": 30
+            },
+            "tito": [ { "line": 31, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "z" },
+              { "always-via-type": "typing.Annotated[str]" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 32,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "z" },
+      { "always-via-type": "typing.Annotated[str]" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test1_alarm4",
+    "callable_line": 35,
+    "code": 5002,
+    "line": 43,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 37,
+              "start": 16,
+              "end": 30
+            },
+            "tito": [ { "line": 37, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "first-field": "y" },
+              { "first-field": "z" },
+              { "via-type": "typing.Annotated[str]" },
+              { "via-type": "str" },
+              { "via-type": "int" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 43,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "first-field": "y" },
+      { "first-field": "z" },
+      { "via-type": "typing.Annotated[str]" },
+      { "via-type": "str" },
+      { "via-type": "int" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm1",
+    "callable_line": 52,
+    "code": 5002,
+    "line": 55,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 54,
+              "start": 16,
+              "end": 30
+            },
+            "tito": [ { "line": 54, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "always-via-type": "typing.Dict[str, int]" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 55,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "always-via-type": "typing.Dict[str, int]" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm2",
+    "callable_line": 58,
+    "code": 5002,
+    "line": 61,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 60,
+              "start": 16,
+              "end": 30
+            },
+            "tito": [ { "line": 60, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "y" },
+              { "always-via-type": "typing.List[str]" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 61,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "y" },
+      { "always-via-type": "typing.List[str]" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm3",
+    "callable_line": 64,
+    "code": 5002,
+    "line": 67,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 66,
+              "start": 16,
+              "end": 30
+            },
+            "tito": [ { "line": 66, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "z" },
+              { "always-via-type": "typing.Annotated[float]" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 67,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "z" },
+      { "always-via-type": "typing.Annotated[float]" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm4",
+    "callable_line": 70,
+    "code": 5002,
+    "line": 78,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 72,
+              "start": 16,
+              "end": 30
+            },
+            "tito": [ { "line": 72, "start": 16, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "first-field": "y" },
+              { "first-field": "z" },
+              { "via-type": "typing.List[str]" },
+              { "via-type": "typing.Dict[str, int]" },
+              { "via-type": "typing.Annotated[float]" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 78,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "first-field": "y" },
+      { "first-field": "z" },
+      { "via-type": "typing.List[str]" },
+      { "via-type": "typing.Dict[str, int]" },
+      { "via-type": "typing.Annotated[float]" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test4_alarm1",
+    "callable_line": 124,
+    "code": 5002,
+    "line": 126,
+    "start": 4,
+    "end": 7,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 126,
+              "start": 10,
+              "end": 24
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 126,
+              "start": 4,
+              "end": 7
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test4_C.x}" }
+            ],
+            "features": [ { "always-via-type": "unknown" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "unknown" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test4_alarm2",
+    "callable_line": 129,
+    "code": 5002,
+    "line": 131,
+    "start": 4,
+    "end": 7,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 131,
+              "start": 10,
+              "end": 24
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 131,
+              "start": 4,
+              "end": 7
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test4_C.y}" }
+            ],
+            "features": [ { "always-via-type": "typing.Any" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Any" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test4_alarm3",
+    "callable_line": 134,
+    "code": 5002,
+    "line": 136,
+    "start": 4,
+    "end": 7,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 136,
+              "start": 10,
+              "end": 24
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 136,
+              "start": 4,
+              "end": 7
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test4_C.z}" }
+            ],
+            "features": [ { "always-via-type": "object" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "object" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test1_C.x}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test1_C.y}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test1_C.z}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test2_C.x}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test2_C.y}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test2_C.z}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test3_C.x}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test3_C.y}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test3_C.z}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test4_C.x}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test4_C.y}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_type_of.Test4_C.z}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "via_type_of.meta",
@@ -10,7 +833,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 27,
+              "line": 156,
               "start": 11,
               "end": 47
             },
@@ -54,6 +877,374 @@
 {
   "kind": "model",
   "data": {
+    "callable": "via_type_of.test3_alarm1",
+    "sinks": [
+      {
+        "port": "formal(c)[x]",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 93,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test3_alarm1",
+    "callable_line": 91,
+    "code": 5002,
+    "line": 93,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 93,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test3_C.x}" }
+            ],
+            "features": [
+              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 93,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Dict[str, typing.List[int]]" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test3_alarm2",
+    "sinks": [
+      {
+        "port": "formal(c)[y]",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 98,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test3_alarm2",
+    "callable_line": 96,
+    "code": 5002,
+    "line": 98,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 98,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test3_C.y}" }
+            ],
+            "features": [ { "always-via-type": "via_type_of.Test3_Foo" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 98,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "via_type_of.Test3_Foo" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test3_alarm3",
+    "sinks": [
+      {
+        "port": "formal(c)[z]",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 103,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test3_alarm3",
+    "callable_line": 101,
+    "code": 5002,
+    "line": 103,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 103,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test3_C.z}" }
+            ],
+            "features": [
+              {
+                "always-via-type":
+                  "typing.Annotated[typing.List[typing.List[str]]]"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 103,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      {
+        "always-via-type": "typing.Annotated[typing.List[typing.List[str]]]"
+      },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.test3_alarm4",
+    "sinks": [
+      {
+        "port": "formal(c)[x]",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 115,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(c)[y]",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 115,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(c)[z]",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 115,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test3_alarm4",
+    "callable_line": 106,
+    "code": 5002,
+    "line": 115,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 110,
+              "start": 10,
+              "end": 13
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test3_C.x}" }
+            ],
+            "features": [
+              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
+            ]
+          },
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 112,
+              "start": 14,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test3_C.y}" }
+            ],
+            "features": [ { "always-via-type": "via_type_of.Test3_Foo" } ]
+          },
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 114,
+              "start": 14,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "Obj{via_type_of.Test3_C.z}" }
+            ],
+            "features": [
+              {
+                "always-via-type":
+                  "typing.Annotated[typing.List[typing.List[str]]]"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "via_type_of.py",
+              "line": 115,
+              "start": 15,
+              "end": 18
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via-type": "via_type_of.Test3_Foo" },
+      { "via-type": "typing.Dict[str, typing.List[int]]" },
+      { "via-type": "typing.Annotated[typing.List[typing.List[str]]]" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "via_type_of.test_backwards_tito",
     "tito": [
       {
@@ -61,7 +1252,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 52, "start": 16, "end": 25 } ],
+            "tito": [ { "line": 181, "start": 16, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-via": "tito" },
@@ -84,7 +1275,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 23,
+              "line": 152,
               "start": 11,
               "end": 48
             },
@@ -112,7 +1303,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 19,
+              "line": 148,
               "start": 11,
               "end": 39
             },
@@ -140,7 +1331,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 48,
+              "line": 177,
               "start": 28,
               "end": 35
             },
@@ -165,7 +1356,7 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 15,
+              "line": 144,
               "start": 11,
               "end": 41
             },
@@ -193,11 +1384,11 @@
           {
             "root": {
               "filename": "via_type_of.py",
-              "line": 39,
+              "line": 168,
               "start": 13,
               "end": 27
             },
-            "tito": [ { "line": 39, "start": 13, "end": 27 } ],
+            "tito": [ { "line": 168, "start": 13, "end": 27 } ],
             "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
@@ -222,7 +1413,7 @@
             "call": {
               "position": {
                 "filename": "via_type_of.py",
-                "line": 31,
+                "line": 160,
                 "start": 11,
                 "end": 23
               },

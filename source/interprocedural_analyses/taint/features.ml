@@ -207,6 +207,17 @@ module ViaFeature = struct
       |> Type.show
     in
     Breadcrumb.ViaType { value = feature; tag }
+
+
+  let via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target =
+    let feature =
+      object_target
+      |> Reference.create
+      |> Resolution.resolve_reference resolution
+      |> Type.weaken_literals
+      |> Type.show
+    in
+    Breadcrumb.ViaType { value = feature; tag }
 end
 
 module ViaFeatureSet = Abstract.SetDomain.Make (ViaFeature)

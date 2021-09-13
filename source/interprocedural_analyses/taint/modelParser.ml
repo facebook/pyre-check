@@ -216,6 +216,10 @@ let invalid_model_error ~path ~location ~name message =
 
 module ClassDefinitionsCache = ModelVerifier.ClassDefinitionsCache
 
+(* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
+   $global which acts as the taint sink whenever attributes are marked as sinks. *)
+let attribute_symbolic_parameter = "$global"
+
 let decorators = String.Set.union Recognized.property_decorators Recognized.classproperty_decorators
 
 let is_property define = String.Set.exists decorators ~f:(Define.has_decorator define)
@@ -351,6 +355,25 @@ let rec parse_annotations
   in
   let rec extract_kinds expression =
     match expression.Node.value with
+    | Expression.Name (Name.Identifier "ViaTypeOf") ->
+        (* ViaTypeOf is treated as ViaTypeOf[$global] *)
+        Ok
+          [
+            ViaFeatures
+              [
+                Features.ViaFeature.ViaTypeOf
+                  {
+                    parameter =
+                      AccessPath.Root.PositionalParameter
+                        {
+                          name = attribute_symbolic_parameter;
+                          position = 0;
+                          positional_only = false;
+                        };
+                    tag = None;
+                  };
+              ];
+          ]
     | Expression.Name (Name.Identifier taint_kind) ->
         Ok [Leaf { name = taint_kind; subkind = None }]
     | Name (Name.Attribute { base; _ }) -> extract_kinds base
@@ -760,6 +783,21 @@ let rec parse_annotations
         | _ -> invalid_annotation_error ())
     | Name (Name.Identifier "TaintInTaintOut") ->
         Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features = []; path = [] }]
+    | Name (Name.Identifier "ViaTypeOf") ->
+        (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
+           TaintInTaintOut[ViaTypeOf[$global]] = ...` *)
+        let via_features =
+          [
+            Features.ViaFeature.ViaTypeOf
+              {
+                parameter =
+                  AccessPath.Root.PositionalParameter
+                    { name = attribute_symbolic_parameter; position = 0; positional_only = false };
+                tag = None;
+              };
+          ]
+        in
+        Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features; path = [] }]
     | Expression.Tuple expressions ->
         List.map expressions ~f:(fun expression ->
             parse_annotations
@@ -2337,6 +2375,20 @@ let parse_statement ~resolution ~path ~configuration statement =
                 call_target = Target.create_object name;
               };
           ]
+      else if Expression.show annotation |> String.equal "ViaTypeOf" then
+        let name = name_to_reference_exn name in
+        Ok
+          [
+            ParsedAttribute
+              {
+                name;
+                source_annotation = None;
+                sink_annotation = Some annotation;
+                decorators = [];
+                location;
+                call_target = Target.create_object name;
+              };
+          ]
       else
         Error
           (model_verification_error
@@ -2598,10 +2650,6 @@ let create_model_from_signature
         ~define_name:callable_name
   >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
 
-
-(* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
-   $global which acts as the taint sink whenever attributes are marked as sinks. *)
-let attribute_symbolic_parameter = "$global"
 
 let create_model_from_attribute
     ~resolution
