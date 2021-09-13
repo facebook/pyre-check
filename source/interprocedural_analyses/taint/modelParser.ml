@@ -2110,7 +2110,7 @@ let adjust_sanitize_and_modes_and_skipped_override
       | "SkipDecoratorWhenInlining" ->
           Ok (sanitize, ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
       | "SkipOverrides" -> Ok (sanitize, ModeSet.add SkipOverrides modes, Some define_name)
-      | "SkipObscure" -> Ok (sanitize, ModeSet.remove Obscure modes, Some define_name)
+      | "SkipObscure" -> Ok (sanitize, ModeSet.remove Obscure modes, skipped_override)
       | _ -> Ok (sanitize, modes, skipped_override)
     in
     List.fold_result
