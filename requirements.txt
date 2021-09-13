@@ -1,4 +1,4 @@
-dataclasses==0.6; python_version < "3.7"
+dataclasses; python_version < "3.7"
 async-generator
 click
 dataclasses-json
@@ -7,5 +7,5 @@ psutil
 pyre-extensions
 pywatchman
 tabulate
-testslide
+testslide>=2.7.0
 typing_extensions
