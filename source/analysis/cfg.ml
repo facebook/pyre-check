@@ -341,7 +341,10 @@ let create define =
           create orelse_statements jumps split
         in
         Node.connect_option orelse join;
-        create statements jumps join
+        if Set.is_empty join.predecessors then
+          Some split
+        else
+          create statements jumps join
     | statement :: statements -> (
         (* -> [statement] ->
          *       |
@@ -361,6 +364,9 @@ let create define =
         | { Ast.Node.value = Assert { Assert.test; origin = Assert.Origin.Assertion; _ }; _ }
           when Expression.is_false test ->
             Node.connect node jumps.error;
+            None
+        | { Ast.Node.value = Assert { Assert.test; origin = Assert.Origin.While _; _ }; _ }
+          when Expression.is_false test ->
             None
         | { Ast.Node.value = Break; _ } ->
             Node.connect node jumps.break;

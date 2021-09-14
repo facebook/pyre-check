@@ -849,6 +849,108 @@ let test_while _ =
     ]
 
 
+let test_while_true _ =
+  let loop = { While.test = +Expression.True; body = [!!"body"]; orelse = [!!"orelse"] } in
+  assert_cfg
+    [+Statement.While loop; !!"rest"]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [5] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.While loop) [0; 7] [1; 7; 8];
+      node 6 Node.Join [] [];
+      node
+        7
+        (Node.Block
+           [
+             Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) (+Expression.True);
+             !!"body";
+           ])
+        [5]
+        [5];
+      node
+        8
+        (Node.Block
+           [
+             Statement.assume
+               ~origin:(Assert.Origin.While { true_branch = false })
+               (+Expression.False);
+           ])
+        [5]
+        [];
+    ];
+  let loop = { While.test = +Expression.True; body = [+Statement.Break]; orelse = [!!"orelse"] } in
+  assert_cfg
+    [+Statement.While loop; !!"rest"]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [9] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.While loop) [0] [7; 8];
+      node 6 Node.Join [7] [9];
+      node
+        7
+        (Node.Block
+           [
+             Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) (+Expression.True);
+             +Statement.Break;
+           ])
+        [5]
+        [6];
+      node
+        8
+        (Node.Block
+           [
+             Statement.assume
+               ~origin:(Assert.Origin.While { true_branch = false })
+               (+Expression.False);
+           ])
+        [5]
+        [];
+      node 9 (Node.Block [!!"rest"]) [6] [1];
+    ]
+
+
+let test_while_false _ =
+  let loop = { While.test = +Expression.False; body = [!!"body"]; orelse = [!!"orelse"] } in
+  assert_cfg
+    [+Statement.While loop]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.While loop) [0] [7; 8];
+      node 6 Node.Join [8] [1];
+      node
+        7
+        (Node.Block
+           [
+             Statement.assume
+               ~origin:(Assert.Origin.While { true_branch = true })
+               (+Expression.False);
+           ])
+        [5]
+        [];
+      node
+        8
+        (Node.Block
+           [
+             Statement.assume
+               ~origin:(Assert.Origin.While { true_branch = false })
+               (+Expression.True);
+             !!"orelse";
+           ])
+        [5]
+        [6];
+    ]
+
+
 let () =
   "cfg"
   >::: [
@@ -862,5 +964,7 @@ let () =
          "try" >:: test_try;
          "with" >:: test_with;
          "while" >:: test_while;
+         "while_true" >:: test_while_true;
+         "while_false" >:: test_while_false;
        ]
   |> Test.run

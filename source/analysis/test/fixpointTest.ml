@@ -141,8 +141,6 @@ let test_widening _ =
          (* Final *)
          5, Int.max_value;
          (* Split *)
-         6, Int.max_value;
-         (* Join *)
          7, Int.max_value;
          (* Pass *)
          8, Int.max_value;
