@@ -358,6 +358,10 @@ let create define =
               node
         in
         match statement with
+        | { Ast.Node.value = Assert { Assert.test; origin = Assert.Origin.Assertion; _ }; _ }
+          when Expression.is_false test ->
+            Node.connect node jumps.error;
+            None
         | { Ast.Node.value = Break; _ } ->
             Node.connect node jumps.break;
             None

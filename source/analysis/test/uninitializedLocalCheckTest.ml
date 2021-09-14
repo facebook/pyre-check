@@ -168,16 +168,6 @@ let test_simple context =
         y = None
     |}
     ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
-
-  ()
-
-
-(* Tests documenting behavior, arguably, outside the scope of the check itself. Changes to the CFG
-   would automatically handle these cases. *)
-let test_cfg_weakness context =
-  let assert_uninitialized_errors = assert_uninitialized_errors ~context in
-
-  (* TODO (T93984519): Inconsistent handling of "assert False" and raising AssertionError. *)
   assert_uninitialized_errors
     {|
       def f():
@@ -201,10 +191,16 @@ let test_cfg_weakness context =
           assert True, "error"
         return z
     |}
-    [
-      "Uninitialized local [61]: Local variable `z` may not be initialized here.";
-      "Uninitialized local [61]: Local variable `y` may not be initialized here.";
-    ];
+    ["Uninitialized local [61]: Local variable `z` may not be initialized here."];
+
+  ()
+
+
+(* TODO(T93984519): Tests documenting behavior, arguably, outside the scope of the check itself.
+   Changes to the CFG would automatically handle these cases. *)
+let test_cfg_weakness context =
+  let assert_uninitialized_errors = assert_uninitialized_errors ~context in
+
   assert_uninitialized_errors
     {|
       def baz() -> int:

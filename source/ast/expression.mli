@@ -314,6 +314,8 @@ val negate : t -> t
 
 val normalize : t -> t
 
+val is_false : t -> bool
+
 val create_name_from_identifiers : Identifier.t Node.t list -> Name.t
 
 val create_name : location:Location.t -> string -> Name.t

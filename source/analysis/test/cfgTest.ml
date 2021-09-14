@@ -348,6 +348,33 @@ let test_raise _ =
     ]
 
 
+let test_assert_false _ =
+  let error =
+    +Statement.Assert
+       { Assert.test = +Expression.False; message = None; origin = Assert.Origin.Assertion }
+  in
+  assert_cfg
+    [error]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [] [3];
+      node 2 Node.Error [5] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [error]) [0] [2];
+    ];
+  assert_cfg
+    [!!"reached"; error; !!"unreached"]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [] [3];
+      node 2 Node.Error [5] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Block [!!"reached"; error]) [0] [2];
+    ]
+
+
 let test_return _ =
   let return = +Statement.Return { Return.expression = None; is_implicit = false } in
   assert_cfg
@@ -874,6 +901,7 @@ let () =
          "for" >:: test_for;
          "if" >:: test_if;
          "raise" >:: test_raise;
+         "assert_false" >:: test_assert_false;
          "return" >:: test_return;
          "try" >:: test_try;
          "with" >:: test_with;
