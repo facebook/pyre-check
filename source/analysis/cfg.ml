@@ -334,11 +334,11 @@ let create define =
         in
         Node.connect_option body split;
         let orelse =
-          let orelse =
+          let orelse_statements =
             let test = Expression.negate test |> Expression.normalize in
             Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) test :: orelse
           in
-          create orelse jumps split
+          create orelse_statements jumps split
         in
         Node.connect_option orelse join;
         create statements jumps join
@@ -349,8 +349,8 @@ let create define =
          * [break | continue | error | normal ] *)
         let node =
           match predecessor.Node.kind with
-          | Node.Block statements ->
-              predecessor.Node.kind <- Node.Block (statements @ [statement]);
+          | Node.Block preceding_statements ->
+              predecessor.Node.kind <- Node.Block (preceding_statements @ [statement]);
               predecessor
           | _ ->
               let node = Node.empty graph (Node.Block [statement]) in
