@@ -6942,7 +6942,7 @@ let run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder de
         (Scheduler.Policy.fixed_chunk_size
            ~minimum_chunk_size:10
            ~minimum_chunks_per_worker:2
-           ~preferred_chunk_size:500
+           ~preferred_chunk_size:1000
            ())
       ~initial:0
       ~map
