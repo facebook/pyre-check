@@ -21,6 +21,7 @@ module.exports = {
     'errors',
     ...fbInternalOnly(['fb/open-source-setup']),
     'querying-pyre',
+    'features',
   ],
   pysa: [
     ...fbContent({

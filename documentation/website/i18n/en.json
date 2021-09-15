@@ -17,6 +17,10 @@
         "title": "Pyre Errors",
         "sidebar_label": "Error Types"
       },
+      "features": {
+        "title": "Features",
+        "sidebar_label": "Features"
+      },
       "gradual-typing": {
         "title": "Gradual Typing",
         "sidebar_label": "Gradual Typing"
