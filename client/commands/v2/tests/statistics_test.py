@@ -80,6 +80,9 @@ class StatisticsTest(testslide.TestCase):
                 )
 
     def test_find_paths_to_parse(self) -> None:
+        pyre_configuration = configuration.Configuration(
+            project_root="/root", dot_pyre_directory=Path("/irrelevant")
+        )
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             setup.ensure_files_exist(
@@ -89,11 +92,12 @@ class StatisticsTest(testslide.TestCase):
             setup.ensure_directories_exists(root_path, ["b/d"])
             self.assertCountEqual(
                 find_paths_to_parse(
+                    pyre_configuration,
                     [
                         root_path / "a/s1.py",
                         root_path / "b/s2.py",
                         root_path / "b/s4.txt",
-                    ]
+                    ],
                 ),
                 [
                     root_path / "a/s1.py",
@@ -101,11 +105,45 @@ class StatisticsTest(testslide.TestCase):
                 ],
             )
             self.assertCountEqual(
-                find_paths_to_parse([root_path]),
+                find_paths_to_parse(pyre_configuration, [root_path]),
                 [
                     root_path / "s0.py",
                     root_path / "a/s1.py",
                     root_path / "b/s2.py",
+                    root_path / "b/c/s3.py",
+                ],
+            )
+
+        pyre_configuration = configuration.Configuration(
+            project_root="/root",
+            dot_pyre_directory=Path("/irrelevant"),
+            excludes=[r".*2\.py"],
+        )
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(
+                root_path,
+                ["s0.py", "a/s1.py", "b/s2.py", "b/c/s3.py", "b/s4.txt", "b/__s5.py"],
+            )
+            setup.ensure_directories_exists(root_path, ["b/d"])
+            self.assertCountEqual(
+                find_paths_to_parse(
+                    pyre_configuration,
+                    [
+                        root_path / "a/s1.py",
+                        root_path / "b/s2.py",
+                        root_path / "b/s4.txt",
+                    ],
+                ),
+                [
+                    root_path / "a/s1.py",
+                ],
+            )
+            self.assertCountEqual(
+                find_paths_to_parse(pyre_configuration, [root_path]),
+                [
+                    root_path / "s0.py",
+                    root_path / "a/s1.py",
                     root_path / "b/c/s3.py",
                 ],
             )

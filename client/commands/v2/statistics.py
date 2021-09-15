@@ -7,6 +7,7 @@ import dataclasses
 import itertools
 import json
 import logging
+import re
 import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Iterable, Optional, Union
@@ -47,9 +48,27 @@ def find_roots(
     return [Path.cwd()]
 
 
-def find_paths_to_parse(paths: Iterable[Path]) -> Iterable[Path]:
+def find_paths_to_parse(
+    configuration: configuration_module.Configuration, paths: Iterable[Path]
+) -> Iterable[Path]:
+    def _is_excluded(path: Path) -> bool:
+        try:
+            return any(
+                [
+                    re.match(exclude_pattern, str(path))
+                    for exclude_pattern in configuration.excludes
+                ]
+            )
+        except re.error:
+            LOG.warning("Could not parse `excludes`: %s", configuration.excludes)
+            return False
+
     def _should_ignore(path: Path) -> bool:
-        return path.name.startswith("__") or path.name.startswith(".")
+        return (
+            path.name.startswith("__")
+            or path.name.startswith(".")
+            or _is_excluded(path)
+        )
 
     def _get_paths_for_file(target_file: Path) -> Iterable[Path]:
         return (
@@ -233,7 +252,9 @@ def run_statistics(
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> commands.ExitCode:
     data = collect_statistics(
-        find_paths_to_parse(find_roots(configuration, statistics_arguments)),
+        find_paths_to_parse(
+            configuration, find_roots(configuration, statistics_arguments)
+        ),
         strict_default=configuration.strict,
     )
 

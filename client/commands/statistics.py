@@ -6,6 +6,7 @@
 
 import json
 import logging
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Set, Type, Union
@@ -197,7 +198,20 @@ class Statistics(Command):
             )
 
     def _find_paths(self) -> List[Path]:
-        return _find_paths(self._configuration.local_root, self._filter_paths)
+        paths = _find_paths(self._configuration.local_root, self._filter_paths)
+        return self._filter_excluded_paths(paths)
+
+    def _filter_excluded_paths(self, paths: List[Path]) -> List[Path]:
+        # Remove files completely excluded from the type checking
+        excludes = self.configuration.excludes
+        return list(
+            filter(
+                lambda path: not any(
+                    [re.match(exclude_pattern, path) for exclude_pattern in excludes]
+                ),
+                paths,
+            )
+        )
 
     def _aggregate_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         aggregate_annotations = {

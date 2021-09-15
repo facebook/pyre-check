@@ -59,7 +59,7 @@ def run_coverage(
 ) -> commands.ExitCode:
     data = collect_coverage_for_paths(
         statistics.find_paths_to_parse(
-            [find_root(configuration, Path(working_directory))]
+            configuration, [find_root(configuration, Path(working_directory))]
         ),
         working_directory,
     )
