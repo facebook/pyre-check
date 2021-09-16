@@ -1050,6 +1050,24 @@ let test_creation context =
       source_paths_original
       source_paths_copy
   in
+  let test_hidden_files () =
+    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    List.iter ~f:Sys_utils.mkdir_no_fail [Path.absolute local_root ^ "/b"];
+    List.iter ~f:(touch local_root) [".a.py"; ".b/c.py"];
+    let module_tracker =
+      Configuration.Analysis.create
+        ~local_root
+        ~source_path:[SearchPath.Root local_root]
+        ~filter_directories:[local_root]
+        ()
+      |> ModuleTracker.create
+    in
+    assert_equal
+      ~cmp:Int.equal
+      ~printer:Int.to_string
+      0
+      (ModuleTracker.explicit_module_count module_tracker)
+  in
   test_basic ();
   test_submodules ();
   test_search_path_subdirectory ();
@@ -1061,7 +1079,8 @@ let test_creation context =
   test_priority_multi_source_paths ();
   test_overlapping ();
   test_overlapping2 ();
-  test_root_independence ()
+  test_root_independence ();
+  test_hidden_files ()
 
 
 module IncrementalTest = struct
