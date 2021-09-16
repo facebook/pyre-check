@@ -464,7 +464,7 @@ def no_propagation_with_sanitize_parameter_a_sink_tito(x):
 
 
 def propagation_of_b_with_sanitize_parameter_a_sink_tito(x):
-    y = sanitize_a_sink_tito(x)
+    y = sanitize_parameter_a_sink_tito(x)
     b_sink(y)
 
 
@@ -508,3 +508,101 @@ def sanitize_return_a_and_b_source():
 
 def sanitize_return_with_user_declared_source(x):
     return 0
+
+
+def sanitize_all_parameters(x, y):
+    _test_sink(x)
+    _test_sink(y)
+    return source_with_tito(x) + source_with_tito(y)
+
+
+def sanitize_all_parameters_all_sources(x, y):
+    _test_sink(x)
+    _test_sink(y)
+    return source_with_tito(x) + source_with_tito(y)
+
+
+def sanitize_all_parameters_all_sinks(x, y):
+    _test_sink(x)
+    _test_sink(y)
+    return source_with_tito(x) + source_with_tito(y)
+
+
+def sanitize_all_parameters_all_tito(x, y):
+    _test_sink(x)
+    _test_sink(y)
+    return source_with_tito(x) + source_with_tito(y)
+
+
+def sanitize_all_parameters_a_sink(x):
+    if 1 > 2:
+        a_sink(x)
+    else:
+        b_sink(x)
+
+
+def sanitize_all_parameters_b_sink(x):
+    if 1 > 2:
+        a_sink(x)
+    else:
+        b_sink(x)
+
+
+def sanitize_all_parameters_a_source_tito(x):
+    return x
+
+
+def no_propagation_with_sanitize_all_parameters_a_source_tito():
+    a = a_source()
+    b = sanitize_all_parameters_a_source_tito(a)
+    return b
+
+
+def propagation_of_b_with_sanitize_all_parameters_a_source_tito():
+    b = b_source()
+    tito = sanitize_all_parameters_a_source_tito(b)
+    return tito
+
+
+def sanitize_all_parameters_a_sink_tito(x):
+    return x
+
+
+def no_propagation_with_sanitize_all_parameters_a_sink_tito(x):
+    y = sanitize_all_parameters_a_sink_tito(x)
+    a_sink(y)
+
+
+def propagation_of_b_with_sanitize_all_parameters_a_sink_tito(x):
+    y = sanitize_all_parameters_a_sink_tito(x)
+    b_sink(y)
+
+
+def sanitize_all_parameters_a_source_sink_tito(x):
+    return x
+
+
+def no_propagation_of_a_source_with_sanitize_all_parameters_a_source_sink_tito():
+    a = a_source()
+    b = sanitize_all_parameters_a_source_sink_tito(a)
+    return b
+
+
+def propagation_of_b_source_with_sanitize_all_parameters_a_source_sink_tito():
+    b = b_source()
+    tito = sanitize_all_parameters_a_source_sink_tito(b)
+    return tito
+
+
+def no_propagation_of_a_sink_with_sanitize_all_parameters_a_source_sink_tito(x):
+    y = sanitize_all_parameters_a_source_sink_tito(x)
+    a_sink(y)
+
+
+def propagation_of_b_sink_with_sanitize_all_parameters_a_source_sink_tito(x):
+    y = sanitize_all_parameters_a_sink_tito(x)
+    b_sink(y)
+
+
+def sanitize_all_parameters_with_user_declared_sink(x):
+    return x

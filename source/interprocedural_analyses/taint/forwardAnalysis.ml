@@ -183,7 +183,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             List.map
               ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
               sanitize_matches
-            |> List.fold ~f:Sanitize.join ~init:sanitizers.global
+            |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
+            |> Sanitize.join sanitizers.global
+            |> Sanitize.join sanitizers.parameters
           in
           match sanitize.Sanitize.tito with
           | Some AllTito -> ForwardState.Tree.bottom

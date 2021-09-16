@@ -281,7 +281,7 @@ def django.utils.html.escape(text: TaintInTaintOut): ...
 def module.sanitize_for_logging_and_sql(): ...
 ```
 
-Parameters can be marked as sanitized to remove all taint passing through them:
+Specific parameters can be marked as sanitized to remove all taint passing through them:
 
 ```python
 def module.safe_function(
@@ -300,6 +300,19 @@ Similarly, the return value can be marked as sanitized:
 def modules.safe_return() -> Sanitize: ...
 def modules.safe_return_source() -> Sanitize[TaintSource]: ...
 def modules.return_not_user_controlled() -> Sanitize[TaintSource[UserControlled]]: ...
+```
+
+All parameters can be marked as sanitized as well:
+
+```python
+@Sanitize(Parameters)
+def module.sanitize_all_parameters(): ...
+
+@Sanitize(Parameters[TaintSource[UserControlled]))
+def module.parameters_not_user_controlled(): ...
+
+@Sanitize(Parameters[TaintInTaintOut[TaintSource[UserControlled], TaintSink[SQL]]]))
+def module.parameters_not_taint_in_taint_out(): ...
 ```
 
 Attributes can also be marked as sanitizers to remove all taint passing through

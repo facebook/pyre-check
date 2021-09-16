@@ -468,7 +468,7 @@ let apply_sanitizers
     {
       forward = { source_taint };
       backward = { taint_in_taint_out; sink_taint };
-      sanitizers = { global; roots; _ } as sanitizers;
+      sanitizers = { global; parameters; roots } as sanitizers;
       modes;
     }
   =
@@ -487,10 +487,39 @@ let apply_sanitizers
   let taint_in_taint_out =
     match global.tito with
     | Some AllTito -> BackwardState.empty
-    | _ -> taint_in_taint_out
+    | _ ->
+        (* We cannot apply source or sink specific taint-in-taint-out sanitizers
+         * here because the tito model does not know about source or sink kinds.
+         *
+         * For instance, in `def f(x): return x`, we infer that `f` propagates
+         * the taint from `x` to its return value, regardless of the source or
+         * sink kind.
+         *
+         * Therefore, we apply those in `apply_call_target` in the forward and
+         * backward analysis, where we actually see source and sink kinds of the
+         * arguments.
+         *)
+        taint_in_taint_out
   in
   let sink_taint =
     match global.sinks with
+    | Some Sanitize.AllSinks -> BackwardState.empty
+    | Some (Sanitize.SpecificSinks sanitized_sinks) ->
+        BackwardState.transform
+          BackwardTaint.kind
+          Filter
+          ~f:(fun sink -> not (Sinks.Set.mem sink sanitized_sinks))
+          sink_taint
+    | None -> sink_taint
+  in
+  (* Apply the parameters sanitizer. *)
+  let taint_in_taint_out =
+    match parameters.tito with
+    | Some AllTito -> BackwardState.empty
+    | _ -> taint_in_taint_out
+  in
+  let sink_taint =
+    match parameters.sinks with
     | Some Sanitize.AllSinks -> BackwardState.empty
     | Some (Sanitize.SpecificSinks sanitized_sinks) ->
         BackwardState.transform
