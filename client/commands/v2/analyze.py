@@ -32,8 +32,8 @@ class Arguments:
 
     base_arguments: backend_arguments.BaseArguments
 
-    dump_call_graph: bool = False
-    dump_model_query_results: bool = False
+    dump_call_graph: Optional[str] = None
+    dump_model_query_results: Optional[str] = None
     find_missing_flows: Optional[str] = None
     inline_decorators: bool = False
     maximum_tito_depth: Optional[int] = None
@@ -47,6 +47,8 @@ class Arguments:
     use_cache: bool = False
 
     def serialize(self) -> Dict[str, Any]:
+        dump_call_graph = self.dump_call_graph
+        dump_model_query_results = self.dump_model_query_results
         find_missing_flows = self.find_missing_flows
         maximum_tito_depth = self.maximum_tito_depth
         maximum_trace_length = self.maximum_trace_length
@@ -55,8 +57,12 @@ class Arguments:
         save_results_to = self.save_results_to
         return {
             **self.base_arguments.serialize(),
-            "dump_call_graph": self.dump_call_graph,
-            "dump_model_query_results": self.dump_model_query_results,
+            **({} if dump_call_graph is None else {"dump_call_graph": dump_call_graph}),
+            **(
+                {}
+                if dump_model_query_results is None
+                else {"dump_model_query_results": dump_model_query_results}
+            ),
             **(
                 {}
                 if find_missing_flows is None

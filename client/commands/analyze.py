@@ -32,11 +32,11 @@ class Analyze(Check):
         taint_models_path: List[str],
         no_verify: bool,
         save_results_to: Optional[str],
-        dump_call_graph: bool,
+        dump_call_graph: Optional[str],
         repository_root: Optional[str],
         rules: Optional[List[int]],
         find_missing_flows: Optional[command_arguments.MissingFlowsKind] = None,
-        dump_model_query_results: bool = False,
+        dump_model_query_results: Optional[str] = None,
         use_cache: bool,
         inline_decorators: bool,
         maximum_trace_length: Optional[int],
@@ -54,14 +54,14 @@ class Analyze(Check):
         )
         self._no_verify: bool = no_verify
         self._save_results_to: Final[Optional[str]] = save_results_to
-        self._dump_call_graph: bool = dump_call_graph
+        self._dump_call_graph: Final[Optional[str]] = dump_call_graph
         self._repository_root: Final[Optional[str]] = repository_root
         self._rules: Final[Optional[List[int]]] = rules
         # pyre-ignore[11]: Annotation `MissingFlowsKind` is not defined as a type.
         self._find_missing_flows: Optional[
             command_arguments.MissingFlowsKind
         ] = find_missing_flows
-        self._dump_model_query_results = dump_model_query_results
+        self._dump_model_query_results: Final[Optional[str]] = dump_model_query_results
         self._use_cache: bool = use_cache
         self._inline_decorators: bool = inline_decorators
         self._maximum_trace_length: Optional[int] = maximum_trace_length
@@ -86,8 +86,9 @@ class Analyze(Check):
         save_results_to = self._save_results_to
         if save_results_to:
             flags.extend(["-save-results-to", save_results_to])
-        if self._dump_call_graph:
-            flags.append("-dump-call-graph")
+        dump_call_graph = self._dump_call_graph
+        if dump_call_graph:
+            flags.extend(["-dump-call-graph", dump_call_graph])
         if self._no_verify:
             flags.append("-no-verify")
         repository_root = self._repository_root
@@ -99,8 +100,9 @@ class Analyze(Check):
         find_missing_flows = self._find_missing_flows
         if find_missing_flows:
             flags.extend(["-find-missing-flows", find_missing_flows.value])
-        if self._dump_model_query_results:
-            flags.append("-dump-model-query-results")
+        dump_model_query_results = self._dump_model_query_results
+        if dump_model_query_results:
+            flags.extend(["-dump-model-query-results", dump_model_query_results])
         if self._use_cache:
             flags.append("-use-cache")
         if self._inline_decorators:

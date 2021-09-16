@@ -110,6 +110,8 @@ let run_analysis
     in
     let static_analysis_configuration =
       let result_json_path = result_json_path >>| Path.create_absolute in
+      let dump_call_graph = dump_call_graph >>| Path.create_absolute in
+      let dump_model_query_results = dump_model_query_results >>| Path.create_absolute in
       let () =
         match result_json_path with
         | Some path when not (Path.is_directory path) ->
@@ -266,12 +268,12 @@ let command =
       +> flag
            "-save-results-to"
            (optional string)
-           ~doc:"file A JSON file that Pyre Analyze will save its' results to."
+           ~doc:"Directory where pyre analyze will save its results"
       +> flag
            "-no-verify"
            no_arg
            ~doc:"Do not verify that all models passed into the analysis are valid."
-      +> flag "-dump-call-graph" no_arg ~doc:"Store call graph in .pyre/call_graph.json"
+      +> flag "-dump-call-graph" (optional string) ~doc:"Dump the call graph in the given file."
       +> flag
            "-repository-root"
            (optional string)
@@ -284,7 +286,10 @@ let command =
            "-find-missing-flows"
            (optional string)
            ~doc:"Perform a taint analysis to find missing flows."
-      +> flag "-dump-model-query-results" no_arg ~doc:"Provide debugging output for model queries."
+      +> flag
+           "-dump-model-query-results"
+           (optional string)
+           ~doc:"Dump model query results in the given file."
       +> flag "-use-cache" no_arg ~doc:"Store information in .pyre/pysa.cache for faster runs."
       +> flag
            "-inline-decorators"

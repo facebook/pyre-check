@@ -432,21 +432,15 @@ end
 module StaticAnalysis = struct
   type t = {
     result_json_path: Path.t option;
-    dump_call_graph: bool;
+    dump_call_graph: Path.t option;
     verify_models: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
     find_missing_flows: string option;
-    dump_model_query_results: bool;
+    dump_model_query_results: Path.t option;
     use_cache: bool;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
   }
-
-  let dump_model_query_results_path
-      { configuration = { log_directory; _ }; dump_model_query_results; _ }
-    =
-    Path.create_relative ~root:log_directory ~relative:"model_query_results.pysa"
-    |> Option.some_if dump_model_query_results
 end

@@ -28,8 +28,8 @@ let test_json_parsing context =
   let dummy_analyze_configuration =
     {
       AnalyzeConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
-      dump_call_graph = false;
-      dump_model_query_results = false;
+      dump_call_graph = None;
+      dump_model_query_results = None;
       find_missing_flows = None;
       inline_decorators = false;
       maximum_tito_depth = None;
@@ -45,11 +45,20 @@ let test_json_parsing context =
   in
 
   assert_parsed
-    (`Assoc (("dump_call_graph", `Bool true) :: BaseConfigurationTest.dummy_base_json))
-    ~expected:{ dummy_analyze_configuration with dump_call_graph = true };
+    (`Assoc (("dump_call_graph", `String "/call-graph") :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      {
+        dummy_analyze_configuration with
+        dump_call_graph = Some (Path.create_absolute "/call-graph");
+      };
   assert_parsed
-    (`Assoc (("dump_model_query_results", `Bool true) :: BaseConfigurationTest.dummy_base_json))
-    ~expected:{ dummy_analyze_configuration with dump_model_query_results = true };
+    (`Assoc
+      (("dump_model_query_results", `String "/model-query") :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      {
+        dummy_analyze_configuration with
+        dump_model_query_results = Some (Path.create_absolute "/model-query");
+      };
   assert_parsed
     (`Assoc (("find_missing_flows", `String "obscure") :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with find_missing_flows = Some "obscure" };

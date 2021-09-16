@@ -10,8 +10,8 @@ open Core
 module AnalyzeConfiguration : sig
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
-    dump_call_graph: bool;
-    dump_model_query_results: bool;
+    dump_call_graph: PyrePath.t option;
+    dump_model_query_results: PyrePath.t option;
     find_missing_flows: string option;
     inline_decorators: bool;
     maximum_tito_depth: int option;

@@ -14,8 +14,8 @@ module ExitStatus = NewCheckCommand.ExitStatus
 module AnalyzeConfiguration = struct
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
-    dump_call_graph: bool;
-    dump_model_query_results: bool;
+    dump_call_graph: Path.t option;
+    dump_model_query_results: Path.t option;
     find_missing_flows: string option;
     inline_decorators: bool;
     maximum_tito_depth: int option;
@@ -38,10 +38,8 @@ module AnalyzeConfiguration = struct
       match NewCommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error
       | Result.Ok base ->
-          let dump_call_graph = bool_member "dump_call_graph" ~default:false json in
-          let dump_model_query_results =
-            bool_member "dump_model_query_results" ~default:false json
-          in
+          let dump_call_graph = optional_path_member "dump_call_graph" json in
+          let dump_model_query_results = optional_path_member "dump_model_query_results" json in
           let find_missing_flows = optional_string_member "find_missing_flows" json in
           let inline_decorators = bool_member "inline_decorators" ~default:false json in
           let maximum_tito_depth = optional_int_member "maximum_tito_depth" json in

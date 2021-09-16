@@ -578,8 +578,11 @@ let build_call_graph
       in
       if use_cache then
         Cache.save_call_graph ~configuration ~callgraph:new_call_graph;
-      if static_analysis_configuration.dump_call_graph then
-        DependencyGraph.from_callgraph new_call_graph |> DependencyGraph.dump ~configuration;
+      let () =
+        match static_analysis_configuration.dump_call_graph with
+        | Some path -> DependencyGraph.from_callgraph new_call_graph |> DependencyGraph.dump ~path
+        | None -> ()
+      in
       new_call_graph
 
 

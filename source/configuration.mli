@@ -216,17 +216,15 @@ module StaticAnalysis : sig
   type t = {
     (* A directory to write files in. *)
     result_json_path: Path.t option;
-    dump_call_graph: bool;
+    dump_call_graph: Path.t option;
     verify_models: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
     find_missing_flows: string option;
-    dump_model_query_results: bool;
+    dump_model_query_results: Path.t option;
     use_cache: bool;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
   }
-
-  val dump_model_query_results_path : t -> Path.t option
 end

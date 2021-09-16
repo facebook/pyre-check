@@ -139,8 +139,8 @@ class StatisticsArguments:
 @dataclass(frozen=True)
 class AnalyzeArguments:
     debug: bool = False
-    dump_call_graph: bool = False
-    dump_model_query_results: bool = False
+    dump_call_graph: Optional[str] = None
+    dump_model_query_results: Optional[str] = None
     enable_memory_profiling: bool = False
     enable_profiling: bool = False
     find_missing_flows: Optional[MissingFlowsKind] = None

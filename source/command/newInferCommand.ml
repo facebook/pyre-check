@@ -160,11 +160,11 @@ let run_infer_interprocedural ~configuration ~build_system () =
     {
       Configuration.StaticAnalysis.configuration;
       result_json_path = None;
-      dump_call_graph = false;
+      dump_call_graph = None;
       verify_models = false;
       rule_filter = None;
       find_missing_flows = None;
-      dump_model_query_results = false;
+      dump_model_query_results = None;
       use_cache = false;
       maximum_trace_length = None;
       maximum_tito_depth = None;

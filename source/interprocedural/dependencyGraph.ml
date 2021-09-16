@@ -135,7 +135,7 @@ let pp formatter edges =
   Target.Map.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge
 
 
-let dump call_graph ~configuration =
+let dump call_graph ~path =
   let module Buffer = Caml.Buffer in
   let buffer = Buffer.create 1024 in
   Buffer.add_string buffer "{\n";
@@ -159,11 +159,6 @@ let dump call_graph ~configuration =
   Buffer.add_string buffer "}";
 
   (* Write to file. *)
-  let path =
-    Path.create_relative
-      ~root:(Configuration.Analysis.log_directory configuration)
-      ~relative:"call_graph.json"
-  in
   Log.warning "Emitting the contents of the call graph to `%s`" (Path.absolute path);
   path |> File.create ~content:(Buffer.contents buffer) |> File.write
 

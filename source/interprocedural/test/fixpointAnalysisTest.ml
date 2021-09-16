@@ -25,12 +25,12 @@ let setup_environment scratch_project =
 let static_analysis_configuration { ScratchProject.configuration; _ } =
   {
     Configuration.StaticAnalysis.result_json_path = None;
-    dump_call_graph = false;
+    dump_call_graph = None;
     verify_models = false;
     configuration;
     rule_filter = None;
     find_missing_flows = None;
-    dump_model_query_results = false;
+    dump_model_query_results = None;
     use_cache = false;
     maximum_trace_length = None;
     maximum_tito_depth = None;

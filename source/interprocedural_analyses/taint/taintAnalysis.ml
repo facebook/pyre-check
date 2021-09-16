@@ -126,15 +126,16 @@ include Taint.Result.Register (struct
   let parse_models_and_queries_from_sources
       ~scheduler
       ~static_analysis_configuration:
-        ({
-           Configuration.StaticAnalysis.verify_models;
-           configuration = { taint_model_paths; _ };
-           rule_filter;
-           find_missing_flows;
-           maximum_trace_length;
-           maximum_tito_depth;
-           _;
-         } as static_analysis_configuration)
+        {
+          Configuration.StaticAnalysis.verify_models;
+          configuration = { taint_model_paths; _ };
+          rule_filter;
+          find_missing_flows;
+          dump_model_query_results;
+          maximum_trace_length;
+          maximum_tito_depth;
+          _;
+        }
       ~environment
       ~callables
       ~stubs
@@ -199,9 +200,6 @@ include Taint.Result.Register (struct
     in
     let add_models_and_queries_from_sources initial_models =
       try
-        let dump_model_query_results_path =
-          Configuration.StaticAnalysis.dump_model_query_results_path static_analysis_configuration
-        in
         let find_missing_flows =
           find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
         in
@@ -209,7 +207,7 @@ include Taint.Result.Register (struct
           TaintConfiguration.create
             ~rule_filter
             ~find_missing_flows
-            ~dump_model_query_results_path
+            ~dump_model_query_results_path:dump_model_query_results
             ~maximum_trace_length
             ~maximum_tito_depth
             ~taint_model_paths
