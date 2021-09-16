@@ -214,6 +214,14 @@ def sanitize_a_tito_with_sink(x):
     return x
 
 
+def sanitize_with_user_declared_source():
+    return 0
+
+
+def sanitize_with_user_declared_sink(x):
+    return
+
+
 def test4():
     x = a_source()
     y = sanitize_a_tito_with_sink(x)  # flow here
@@ -460,6 +468,10 @@ def propagation_of_b_with_sanitize_parameter_a_sink_tito(x):
     b_sink(y)
 
 
+def sanitize_parameter_with_user_declared_sink(x):
+    return
+
+
 def sanitize_return(x):
     _test_sink(x)
     return source_with_tito(x)
@@ -492,3 +504,7 @@ def sanitize_return_a_and_b_source():
     else:
         x = b_source()
     return x
+
+
+def sanitize_return_with_user_declared_source(x):
+    return 0

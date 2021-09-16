@@ -45,6 +45,7 @@ type expectation = {
   errors: error_expectation list;
   obscure: bool option;
   global_sanitizer: Taint.Domains.Sanitize.t;
+  parameters_sanitizer: Taint.Domains.Sanitize.t;
   return_sanitizer: Taint.Domains.Sanitize.t;
   parameter_sanitizers: parameter_sanitize list;
   analysis_modes: Taint.Result.ModeSet.t;
@@ -59,6 +60,7 @@ let outcome
     ?(errors = [])
     ?obscure
     ?(global_sanitizer = Taint.Domains.Sanitize.empty)
+    ?(parameters_sanitizer = Taint.Domains.Sanitize.empty)
     ?(return_sanitizer = Taint.Domains.Sanitize.empty)
     ?(parameter_sanitizers = [])
     ?(analysis_modes = Taint.Result.ModeSet.empty)
@@ -74,6 +76,7 @@ let outcome
     errors;
     obscure;
     global_sanitizer;
+    parameters_sanitizer;
     return_sanitizer;
     parameter_sanitizers;
     analysis_modes;
@@ -117,6 +120,7 @@ let check_expectation
       kind;
       obscure;
       global_sanitizer;
+      parameters_sanitizer;
       return_sanitizer;
       parameter_sanitizers;
       analysis_modes = expected_analysis_modes;
@@ -368,6 +372,11 @@ let check_expectation
     ~printer:Domains.Sanitize.show
     sanitizers.global
     global_sanitizer;
+  assert_equal
+    ~cmp:Domains.Sanitize.equal
+    ~printer:Domains.Sanitize.show
+    sanitizers.parameters
+    parameters_sanitizer;
   assert_equal
     ~cmp:Domains.Sanitize.equal
     ~printer:Domains.Sanitize.show

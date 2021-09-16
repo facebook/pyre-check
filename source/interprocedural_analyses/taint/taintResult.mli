@@ -26,6 +26,7 @@ end
 module Sanitizers : sig
   type model = {
     global: Sanitize.t;
+    parameters: Sanitize.t;
     roots: SanitizeRootMap.t;
   }
   [@@deriving show]

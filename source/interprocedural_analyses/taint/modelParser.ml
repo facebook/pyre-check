@@ -2069,58 +2069,78 @@ let adjust_sanitize_and_modes_and_skipped_override
     ~is_object_target
     model
   =
-  (* Adjust analysis modes and whether we skip overrides by applying top-level decorators. *)
   let open Core.Result in
-  let sanitize_and_modes_and_skipped_override =
-    let adjust
-        (sanitize, modes, skipped_override)
-        { Decorator.name = { Node.value = name; location = decorator_location }; arguments }
-      =
-      match Reference.show name with
-      | "Sanitize" ->
-          let sanitize_kind =
-            match arguments with
-            | None ->
-                Ok
-                  { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
-            | Some arguments -> (
-                (* Pretend that it is a `Sanitize[...]` expression and use the annotation parser. *)
-                let expression =
-                  List.map ~f:(fun { Call.Argument.value; _ } -> value) arguments
-                  |> Ast.Expression.get_item_call "Sanitize" ~location:decorator_location
-                  |> Node.create ~location:decorator_location
-                in
-                parse_annotations
-                  ~path
-                  ~location
-                  ~model_name:(Reference.show define_name)
-                  ~configuration
-                  ~parameters:[]
-                  ~callable_parameter_names_to_positions:None
-                  ~is_object_target
-                  expression
-                >>= function
-                | [Sanitize sanitize_annotations] ->
-                    Ok (sanitize_from_annotations sanitize_annotations)
-                | _ -> failwith "impossible case")
-          in
-          sanitize_kind
-          >>| fun sanitize_kind -> Sanitize.join sanitize sanitize_kind, modes, skipped_override
-      | "SkipAnalysis" -> Ok (sanitize, ModeSet.add SkipAnalysis modes, skipped_override)
-      | "SkipDecoratorWhenInlining" ->
-          Ok (sanitize, ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
-      | "SkipOverrides" -> Ok (sanitize, ModeSet.add SkipOverrides modes, Some define_name)
-      | "SkipObscure" -> Ok (sanitize, ModeSet.remove Obscure modes, skipped_override)
-      | _ -> Ok (sanitize, modes, skipped_override)
+  let join_with_sanitize_decorator ~sanitizers ~decorator_location arguments =
+    let parse_sanitize arguments =
+      (* Pretend that it is a `Sanitize[...]` expression and use the annotation parser. *)
+      let expression =
+        List.map ~f:(fun { Call.Argument.value; _ } -> value) arguments
+        |> Ast.Expression.get_item_call "Sanitize" ~location:decorator_location
+        |> Node.create ~location:decorator_location
+      in
+      parse_annotations
+        ~path
+        ~location
+        ~model_name:(Reference.show define_name)
+        ~configuration
+        ~parameters:[]
+        ~callable_parameter_names_to_positions:None
+        ~is_object_target
+        expression
+      >>= function
+      | [Sanitize sanitize_annotations] -> Ok (sanitize_from_annotations sanitize_annotations)
+      | _ -> failwith "impossible case"
     in
-    List.fold_result
-      top_level_decorators
-      ~f:adjust
-      ~init:(model.sanitizers.global, model.modes, None)
+    match arguments with
+    | None ->
+        let global =
+          { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+        in
+        Ok { sanitizers with Sanitizers.global }
+    | Some
+        [
+          {
+            Call.Argument.value = { Node.value = Expression.Name (Name.Identifier "Parameters"); _ };
+            _;
+          };
+        ] ->
+        let parameters =
+          { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+        in
+        Ok { sanitizers with Sanitizers.parameters }
+    | Some
+        [
+          { Call.Argument.value = { Node.value = Expression.Call { Call.callee; arguments }; _ }; _ };
+        ]
+      when [%compare.equal: string option] (base_name callee) (Some "Parameters") ->
+        parse_sanitize arguments
+        >>| fun parameters_sanitize ->
+        { sanitizers with parameters = Sanitize.join sanitizers.parameters parameters_sanitize }
+    | Some arguments ->
+        parse_sanitize arguments
+        >>| fun global_sanitize ->
+        { sanitizers with global = Sanitize.join sanitizers.global global_sanitize }
   in
-  sanitize_and_modes_and_skipped_override
-  >>| fun (sanitize, modes, skipped_override) ->
-  let sanitizers = { model.sanitizers with global = sanitize } in
+  let join_with_decorator
+      (sanitizers, modes, skipped_override)
+      { Decorator.name = { Node.value = name; location = decorator_location }; arguments }
+    =
+    match Reference.show name with
+    | "Sanitize" ->
+        join_with_sanitize_decorator ~sanitizers ~decorator_location arguments
+        >>| fun sanitizers -> sanitizers, modes, skipped_override
+    | "SkipAnalysis" -> Ok (sanitizers, ModeSet.add SkipAnalysis modes, skipped_override)
+    | "SkipDecoratorWhenInlining" ->
+        Ok (sanitizers, ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
+    | "SkipOverrides" -> Ok (sanitizers, ModeSet.add SkipOverrides modes, Some define_name)
+    | "SkipObscure" -> Ok (sanitizers, ModeSet.remove Obscure modes, skipped_override)
+    | _ -> Ok (sanitizers, modes, skipped_override)
+  in
+  List.fold_result
+    top_level_decorators
+    ~f:join_with_decorator
+    ~init:(model.sanitizers, model.modes, None)
+  >>| fun (sanitizers, modes, skipped_override) ->
   { model with sanitizers; modes }, skipped_override
 
 

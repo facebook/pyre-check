@@ -468,7 +468,7 @@ let apply_sanitizers
     {
       forward = { source_taint };
       backward = { taint_in_taint_out; sink_taint };
-      sanitizers = { global; roots } as sanitizers;
+      sanitizers = { global; roots; _ } as sanitizers;
       modes;
     }
   =

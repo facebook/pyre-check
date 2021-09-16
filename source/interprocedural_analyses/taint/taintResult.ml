@@ -113,30 +113,38 @@ module Sanitizers = struct
   type model = {
     (* Sanitizers applying to all parameters and the return value. *)
     global: Sanitize.t;
+    (* Sanitizers applying to all parameters. *)
+    parameters: Sanitize.t;
     (* Map from parameter or return value to sanitizers. *)
     roots: SanitizeRootMap.t;
   }
 
-  let pp_model formatter { global; roots } =
+  let pp_model formatter { global; parameters; roots } =
     Format.fprintf
       formatter
-      "  Global Sanitizer: %s\n  Sanitizers: %s"
+      "  Global Sanitizer: %s\n  Parameters Sanitizer: %s\n  Sanitizers: %s"
       (json_to_string ~indent:"    " (Sanitize.to_json global))
+      (json_to_string ~indent:"    " (Sanitize.to_json parameters))
       (json_to_string ~indent:"    " (SanitizeRootMap.to_json roots))
 
 
   let show_model = Format.asprintf "%a" pp_model
 
-  let empty = { global = Sanitize.empty; roots = SanitizeRootMap.bottom }
+  let empty =
+    { global = Sanitize.empty; parameters = Sanitize.empty; roots = SanitizeRootMap.bottom }
 
-  let is_empty_model { global; roots } = Sanitize.is_empty global && SanitizeRootMap.is_bottom roots
+
+  let is_empty_model { global; parameters; roots } =
+    Sanitize.is_empty global && Sanitize.is_empty parameters && SanitizeRootMap.is_bottom roots
+
 
   let join
-      { global = global_left; roots = roots_left }
-      { global = global_right; roots = roots_right }
+      { global = global_left; parameters = parameters_left; roots = roots_left }
+      { global = global_right; parameters = parameters_right; roots = roots_right }
     =
     {
       global = Sanitize.join global_left global_right;
+      parameters = Sanitize.join parameters_left parameters_right;
       roots = SanitizeRootMap.join roots_left roots_right;
     }
 
@@ -320,7 +328,8 @@ module ResultArgument = struct
       {
         forward = { source_taint };
         backward = { sink_taint; taint_in_taint_out };
-        sanitizers = { global = global_sanitizer; roots = root_sanitizers };
+        sanitizers =
+          { global = global_sanitizer; parameters = parameters_sanitizer; roots = root_sanitizers };
         modes;
       }
     =
@@ -347,6 +356,12 @@ module ResultArgument = struct
     let model_json =
       if not (Sanitize.is_empty global_sanitizer) then
         model_json @ ["global_sanitizer", Sanitize.to_json global_sanitizer]
+      else
+        model_json
+    in
+    let model_json =
+      if not (Sanitize.is_empty parameters_sanitizer) then
+        model_json @ ["parameters_sanitizer", Sanitize.to_json parameters_sanitizer]
       else
         model_json
     in
