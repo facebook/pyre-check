@@ -6,6 +6,11 @@
     "vscode": "^1.15.0"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/pyre-check.git",
+    "directory": "tools/ide_plugins/pysa-vscode"
+  },
   "displayName": "pysa-vscode",
   "description": "VSCode extension for Pysa",
   "keywords": [
