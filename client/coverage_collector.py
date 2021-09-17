@@ -68,7 +68,7 @@ class CoverageCollector(AnnotationCollector):
         covered_ranges = []
         uncovered_ranges = []
         for info in itertools.chain(
-            self.globals, self.attributes, self.parameters, self.returns()
+            self.globals, self.attributes, self.parameters(), self.returns()
         ):
             if info.is_annotated:
                 covered_ranges.append(info.code_range)

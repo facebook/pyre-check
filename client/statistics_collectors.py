@@ -63,6 +63,7 @@ class FunctionAnnotationInfo:
     code_range: CodeRange
 
     return_info: AnnotationInfo
+    parameter_infos: List[AnnotationInfo]
 
     @property
     def is_annotated(self) -> bool:
@@ -83,7 +84,6 @@ class AnnotationCollector(cst.CSTVisitor):
 
     def __init__(self) -> None:
         self.globals: List[AnnotationInfo] = []
-        self.parameters: List[AnnotationInfo] = []
         self.attributes: List[AnnotationInfo] = []
         self.functions: List[FunctionAnnotationInfo] = []
         self.class_definition_depth = 0
@@ -94,6 +94,11 @@ class AnnotationCollector(cst.CSTVisitor):
     def returns(self) -> Iterable[AnnotationInfo]:
         for function in self.functions:
             yield function.return_info
+
+    def parameters(self) -> Iterable[AnnotationInfo]:
+        for function in self.functions:
+            for parameter in function.parameter_infos:
+                yield parameter
 
     def in_class_definition(self) -> bool:
         return self.class_definition_depth > 0
@@ -113,18 +118,14 @@ class AnnotationCollector(cst.CSTVisitor):
     def _code_range(self, node: cst.CSTNode) -> CodeRange:
         return self.get_metadata(PositionProvider, node)
 
-    def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> int:
-        annotated_parameter_count = 0
+    def _parameter_annotations(
+        self, parameters: Sequence[cst.Param]
+    ) -> Iterable[AnnotationInfo]:
         for index, parameter in enumerate(parameters):
             is_annotated = parameter.annotation is not None or self._is_self_or_cls(
                 index
             )
-            self.parameters.append(
-                AnnotationInfo(parameter, is_annotated, self._code_range(parameter))
-            )
-            if is_annotated:
-                annotated_parameter_count += 1
-        return annotated_parameter_count
+            yield AnnotationInfo(parameter, is_annotated, self._code_range(parameter))
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         for decorator in node.decorators:
@@ -142,9 +143,13 @@ class AnnotationCollector(cst.CSTVisitor):
             code_range = self._code_range(node.returns)
             return_is_annotated = True
         return_info = AnnotationInfo(node, return_is_annotated, code_range)
-        annotated_parameter_count = self._check_parameter_annotations(
-            node.params.params
-        )
+
+        parameter_infos = []
+        annotated_parameter_count = 0
+        for parameter_info in self._parameter_annotations(node.params.params):
+            if parameter_info.is_annotated:
+                annotated_parameter_count += 1
+            parameter_infos.append(parameter_info)
 
         annotation_kind = FunctionAnnotationKind.from_function_data(
             return_is_annotated,
@@ -154,7 +159,9 @@ class AnnotationCollector(cst.CSTVisitor):
         )
         code_range = self._code_range(node.body)
         self.functions.append(
-            FunctionAnnotationInfo(node, annotation_kind, code_range, return_info)
+            FunctionAnnotationInfo(
+                node, annotation_kind, code_range, return_info, parameter_infos
+            )
         )
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
@@ -227,10 +234,10 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
         return len([g for g in self.globals if g.is_annotated])
 
     def parameters_count(self) -> int:
-        return len(self.parameters)
+        return len(list(self.parameters()))
 
     def annotated_parameters_count(self) -> int:
-        return len([p for p in self.parameters if p.is_annotated])
+        return len([p for p in self.parameters() if p.is_annotated])
 
     def attributes_count(self) -> int:
         return len(self.attributes)
