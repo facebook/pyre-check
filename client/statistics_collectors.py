@@ -207,38 +207,50 @@ class StatisticsCollector(cst.CSTVisitor):
 
 
 class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
-    def annotated_returns(self) -> List[AnnotationInfo]:
-        return [r for r in self.returns if r.is_annotated]
+    def return_count(self) -> int:
+        return len(self.returns)
 
-    def annotated_globals(self) -> List[AnnotationInfo]:
-        return [g for g in self.globals if g.is_annotated]
+    def annotated_return_count(self) -> int:
+        return len([r for r in self.returns if r.is_annotated])
 
-    def annotated_parameters(self) -> List[AnnotationInfo]:
-        return [p for p in self.parameters if p.is_annotated]
+    def globals_count(self) -> int:
+        return len(self.globals)
 
-    def annotated_attributes(self) -> List[AnnotationInfo]:
-        return [a for a in self.attributes if a.is_annotated]
+    def annotated_globals_count(self) -> int:
+        return len([g for g in self.globals if g.is_annotated])
 
-    def partially_annotated_functions(self) -> List[FunctionAnnotationInfo]:
-        return [f for f in self.functions if f.is_partially_annotated]
+    def parameters_count(self) -> int:
+        return len(self.parameters)
 
-    def fully_annotated_functions(self) -> List[FunctionAnnotationInfo]:
-        return [f for f in self.functions if f.is_fully_annotated]
+    def annotated_parameters_count(self) -> int:
+        return len([p for p in self.parameters if p.is_annotated])
+
+    def attributes_count(self) -> int:
+        return len(self.attributes)
+
+    def annotated_attributes_count(self) -> int:
+        return len([a for a in self.attributes if a.is_annotated])
+
+    def partially_annotated_functions_count(self) -> int:
+        return len([f for f in self.functions if f.is_partially_annotated])
+
+    def fully_annotated_functions_count(self) -> int:
+        return len([f for f in self.functions if f.is_fully_annotated])
 
     def build_json(self) -> Dict[str, int]:
         return {
-            "return_count": len(self.returns),
-            "annotated_return_count": len(self.annotated_returns()),
-            "globals_count": len(self.globals),
-            "annotated_globals_count": len(self.annotated_globals()),
-            "parameter_count": len(self.parameters),
-            "annotated_parameter_count": len(self.annotated_parameters()),
-            "attribute_count": len(self.attributes),
-            "annotated_attribute_count": len(self.annotated_attributes()),
+            "return_count": self.return_count(),
+            "annotated_return_count": self.annotated_return_count(),
+            "globals_count": self.globals_count(),
+            "annotated_globals_count": self.annotated_globals_count(),
+            "parameter_count": self.parameters_count(),
+            "annotated_parameter_count": self.annotated_parameters_count(),
+            "attribute_count": self.attributes_count(),
+            "annotated_attribute_count": self.annotated_attributes_count(),
             "partially_annotated_function_count": (
-                len(self.partially_annotated_functions())
+                self.partially_annotated_functions_count()
             ),
-            "fully_annotated_function_count": len(self.fully_annotated_functions()),
+            "fully_annotated_function_count": self.fully_annotated_functions_count(),
             "line_count": self.line_count,
         }
 
