@@ -277,25 +277,90 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       Element.join w1 w2
 
 
+  type 'a path_kind =
+    | NoPath : unit path_kind
+    | FullPath : Label.path path_kind
+    | Depth : int path_kind
+
+  let initial_path (type a) (kind : a path_kind) : a =
+    match kind with
+    | NoPath -> ()
+    | FullPath -> []
+    | Depth -> 0
+
+
+  let cons_path (type a) (kind : a path_kind) label (path : a) : a =
+    match kind with
+    | NoPath -> ()
+    | FullPath -> label :: path
+    | Depth -> path + 1
+
+
+  let final_path (type a) (kind : a path_kind) (path : a) : a =
+    match kind with
+    | NoPath -> ()
+    | FullPath -> List.rev path
+    | Depth -> path
+
+
   (** Fold over tree, where each non-bottom element node is visited. The function ~f is passed the
       path to the node, the non-bottom element at the node and the accumulator. *)
-  let fold_tree_paths ~init ~f tree =
+  let fold_tree_paths kind ~init ~f tree =
     let rec walk_children path { element; children } first_accumulator =
       let second_accumulator =
         if Element.is_bottom element then
           first_accumulator
         else
-          f ~path ~element first_accumulator
+          f ~path:(final_path kind path) ~element first_accumulator
       in
       if LabelMap.is_empty children then
         second_accumulator
       else
         let walk ~key:label_element ~data:subtree =
-          walk_children (path @ [label_element]) subtree
+          let path = cons_path kind label_element path in
+          walk_children path subtree
         in
         LabelMap.fold children ~init:second_accumulator ~f:walk
     in
-    walk_children [] tree init
+    walk_children (initial_path kind) tree init
+
+
+  type filtered_element_t = {
+    new_element: Element.t;
+    ancestors: Element.t;
+  }
+
+  let filter_by_ancestors ~ancestors ~element =
+    let difference = Element.subtract ancestors ~from:element in
+    if Element.less_or_equal ~left:difference ~right:ancestors then
+      { new_element = Element.bottom; ancestors }
+    else
+      { new_element = difference; ancestors = Element.join ancestors element }
+
+
+  let transform_tree kind ~f tree =
+    let rec walk_children ~ancestors path { element; children } =
+      let element =
+        if Element.is_bottom element then
+          element
+        else
+          f ~path:(final_path kind path) ~element
+      in
+      let { new_element; ancestors } = filter_by_ancestors ~ancestors ~element in
+      if LabelMap.is_empty children then
+        { element = new_element; children }
+      else
+        let walk label_element subtree =
+          let path = cons_path kind label_element path in
+          walk_children ~ancestors path subtree
+        in
+        let children =
+          LabelMap.mapi walk children
+          |> LabelMap.filter (fun _ { element; children } -> not (is_empty_info children element))
+        in
+        { element; children }
+    in
+    walk_children ~ancestors:Element.bottom (initial_path kind) tree
 
 
   let pp formatter ({ element; children } as tree) =
@@ -307,7 +372,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
         | [] -> Format.fprintf formatter "@,%a" Element.pp element
         | _ -> Format.fprintf formatter "@,%a -> %a" Label.pp_path path Element.pp element
       in
-      let pp _ = fold_tree_paths ~init:() ~f:pp_node in
+      let pp _ = fold_tree_paths FullPath ~init:() ~f:pp_node in
       Format.fprintf formatter "{@[<v 2>%a@]@,}" pp tree
 
 
@@ -401,19 +466,6 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     | Some tree ->
         Checks.check (fun () -> check_minimal_non_empty ~message tree);
         tree
-
-
-  type filtered_element_t = {
-    new_element: Element.t;
-    ancestors: Element.t;
-  }
-
-  let filter_by_ancestors ~ancestors ~element =
-    let difference = Element.subtract ancestors ~from:element in
-    if Element.less_or_equal ~left:difference ~right:ancestors then
-      { new_element = Element.bottom; ancestors }
-    else
-      { new_element = difference; ancestors = Element.join ancestors element }
 
 
   let rec prune_tree ancestors { element; children } =
@@ -984,8 +1036,15 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       else
         assign_tree_path ~tree:access_path_tree new_path ~subtree:(create_leaf element)
     in
-    let result = fold_tree_paths ~init:empty_tree ~f:build tree in
+    let result = fold_tree_paths FullPath ~init:empty_tree ~f:build tree in
     let message () = "filter_map_tree_paths" in
+    Checks.check (fun () -> check_minimal ~message result);
+    result
+
+
+  let transform_tree (type a) (kind : a path_kind) ~f tree =
+    let result = transform_tree kind ~f tree in
+    let message () = "transform_tree" in
     Checks.check (fun () -> check_minimal ~message result);
     result
 
@@ -994,12 +1053,12 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       in particular for scaling. *)
   let cut_tree_after ~depth tree =
     let filter ~path ~element =
-      if List.length path > depth then
-        path, Element.bottom
+      if path > depth then
+        Element.bottom
       else
-        path, element
+        element
     in
-    filter_map_tree_paths ~f:filter tree
+    transform_tree Depth ~f:filter tree
 
 
   let create_tree path element =
@@ -1063,22 +1122,17 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
           let path, element = f in
           join tree (create_tree path (create_leaf element))
       | Path, Filter ->
-          filter_map_tree_paths
-            ~f:(fun ~path ~element ->
-              if f (path, element) then
-                path, element
-              else
-                path, Element.bottom)
-            tree
+          let filter_node ~path ~element = if f (path, element) then element else Element.bottom in
+          transform_tree FullPath ~f:filter_node tree
       | _, Context (Path, op) ->
           let transform_node ~path ~element =
-            path, Element.transform part op ~f:(f (path, element)) element
+            Element.transform part op ~f:(f (path, element)) element
           in
-          filter_map_tree_paths ~f:transform_node tree
+          transform_tree FullPath ~f:transform_node tree
       | (Path | Self), _ -> Base.transform part op ~f tree
       | _ ->
-          let transform_node ~path ~element = path, Element.transform part op ~f element in
-          filter_map_tree_paths ~f:transform_node tree
+          let transform_node ~path:_ ~element = Element.transform part op ~f element in
+          transform_tree NoPath ~f:transform_node tree
 
 
     let reduce
@@ -1088,21 +1142,21 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       match part, op with
       | Path, Acc ->
           let fold_tree_node ~path ~element accumulator = f (path, element) accumulator in
-          fold_tree_paths ~init ~f:fold_tree_node tree
+          fold_tree_paths FullPath ~init ~f:fold_tree_node tree
       | Path, Exists ->
           let fold_tree_node ~path ~element accumulator = accumulator || f (path, element) in
-          init || fold_tree_paths ~init ~f:fold_tree_node tree
+          init || fold_tree_paths FullPath ~init ~f:fold_tree_node tree
       | _, Context (Path, op) ->
           let fold_tree_node ~path ~element accumulator =
             Element.reduce part ~using:op ~f:(f (path, element)) ~init:accumulator element
           in
-          fold_tree_paths ~init ~f:fold_tree_node tree
+          fold_tree_paths FullPath ~init ~f:fold_tree_node tree
       | (Path | Self), _ -> Base.reduce part ~using:op ~f ~init tree
       | _ ->
           let fold_tree_node ~path:_ ~element accumulator =
             Element.reduce part ~using:op ~init:accumulator ~f element
           in
-          fold_tree_paths ~init ~f:fold_tree_node tree
+          fold_tree_paths NoPath ~init ~f:fold_tree_node tree
 
 
     let partition
@@ -1121,21 +1175,21 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
             let partition_key = f (path, element) in
             MapPoly.update result partition_key ~f:(update path element)
           in
-          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+          fold_tree_paths FullPath ~init:MapPoly.empty ~f:partition tree
       | Path, ByFilter ->
           let partition ~path ~element result =
             match f (path, element) with
             | None -> result
             | Some partition_key -> MapPoly.update result partition_key ~f:(update path element)
           in
-          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+          fold_tree_paths FullPath ~init:MapPoly.empty ~f:partition tree
       | _, Context (Path, op) ->
           let partition ~path ~element result =
             let element_partition = Element.partition part op ~f:(f (path, element)) element in
             let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
             MapPoly.fold ~init:result ~f:distribute element_partition
           in
-          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+          fold_tree_paths FullPath ~init:MapPoly.empty ~f:partition tree
       | (Path | Self), _ -> Base.partition part op ~f tree
       | _ ->
           let partition ~path ~element result =
@@ -1143,7 +1197,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
             let distribute ~key ~data result = MapPoly.update result key ~f:(update path data) in
             MapPoly.fold ~init:result ~f:distribute element_partition
           in
-          fold_tree_paths ~init:MapPoly.empty ~f:partition tree
+          fold_tree_paths FullPath ~init:MapPoly.empty ~f:partition tree
 
 
     let introspect (type a) (op : a introspect) : a =
