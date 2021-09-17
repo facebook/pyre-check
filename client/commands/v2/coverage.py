@@ -21,7 +21,12 @@ from . import remote_logging, statistics
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def find_root(
+def to_absolute_path(given: str, working_directory: Path) -> Path:
+    path = Path(given)
+    return path if path.is_absolute() else working_directory / path
+
+
+def find_root_path(
     configuration: configuration_module.Configuration, working_directory: Path
 ) -> Path:
     local_root = configuration.local_root
@@ -55,24 +60,29 @@ def collect_coverage_for_paths(
 
 
 def run_coverage(
-    configuration: configuration_module.Configuration, working_directory: str
+    configuration: configuration_module.Configuration,
+    working_directory: str,
+    roots: List[str],
 ) -> commands.ExitCode:
-    data = collect_coverage_for_paths(
-        statistics.find_paths_to_parse(
-            configuration, [find_root(configuration, Path(working_directory))]
-        ),
-        working_directory,
-    )
+    working_directory_path = Path(working_directory)
+    if roots:
+        root_paths = [to_absolute_path(root, working_directory_path) for root in roots]
+    else:
+        root_paths = [find_root_path(configuration, working_directory_path)]
+    module_paths = statistics.find_paths_to_parse(configuration, root_paths)
+    data = collect_coverage_for_paths(module_paths, working_directory)
     log.stdout.write(json.dumps([dataclasses.asdict(entry) for entry in data]))
     return commands.ExitCode.SUCCESS
 
 
 @remote_logging.log_usage(command_name="coverage")
 def run(
-    configuration: configuration_module.Configuration, working_directory: str
+    configuration: configuration_module.Configuration,
+    working_directory: str,
+    roots: List[str],
 ) -> commands.ExitCode:
     try:
-        return run_coverage(configuration, working_directory)
+        return run_coverage(configuration, working_directory, roots)
     except Exception as error:
         raise commands.ClientException(
             f"Exception occured during pyre coverage: {error}"

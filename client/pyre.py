@@ -1457,6 +1457,11 @@ def statistics(
 
 
 @pyre.command()
+@click.argument(
+    "roots",
+    type=str,
+    nargs=-1,
+)
 @click.option(
     "--working-directory",
     metavar="DIR",
@@ -1468,6 +1473,7 @@ def statistics(
 @click.pass_context
 def coverage(
     context: click.Context,
+    roots: Iterable[str],
     working_directory: str,
 ) -> int:
     """
@@ -1476,7 +1482,7 @@ def coverage(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     if configuration.use_command_v2:
-        return v2.coverage.run(configuration, working_directory)
+        return v2.coverage.run(configuration, working_directory, list(roots))
     else:
         return run_pyre_command(
             commands.Coverage(
