@@ -67,7 +67,10 @@ class SourceDatabaseBuckBuilderTest(unittest.TestCase):
 
         self.assertEqual(
             source_database_buck_builder._query_targets(
-                ["//foo/bar/...", "//bar:baz"], isolation_prefix=None, mode=None
+                ["//foo/bar/...", "//bar:baz"],
+                isolation_prefix=None,
+                mode=None,
+                buck_root=Path(""),
             ),
             ["//foo/bar:baz", "//foo/bar:tests-library", "//bar:baz"],
         )

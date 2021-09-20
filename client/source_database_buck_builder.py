@@ -27,7 +27,11 @@ class SourceDatabase(TypedDict):
     dependencies: Dict[str, str]
 
 
-def _buck(arguments: List[str], isolation_prefix: Optional[str]) -> str:
+def _buck(
+    arguments: List[str],
+    isolation_prefix: Optional[str],
+    buck_root: Path,
+) -> str:
     isolation_prefix_arguments = (
         ["--isolation_prefix", isolation_prefix]
         if isolation_prefix is not None and len(isolation_prefix) > 0
@@ -41,8 +45,7 @@ def _buck(arguments: List[str], isolation_prefix: Optional[str]) -> str:
     )
     LOG.debug("Running `%s`", " ".join(command))
     return subprocess.check_output(
-        command,
-        stderr=subprocess.PIPE,
+        command, stderr=subprocess.PIPE, cwd=str(buck_root)
     ).decode("utf-8")
 
 
@@ -97,6 +100,7 @@ def _query_targets(
     target_specifications: List[str],
     mode: Optional[str],
     isolation_prefix: Optional[str],
+    buck_root: Path,
 ) -> List[str]:
     normalized_target_specifications = [
         _normalize_specification(specification)
@@ -105,7 +109,7 @@ def _query_targets(
     query_arguments = _get_buck_query_arguments(normalized_target_specifications, mode)
     LOG.info("Running `buck query`...")
     specification_targets_dictionary = _load_json_ignoring_extra_data(
-        _buck(query_arguments, isolation_prefix)
+        _buck(query_arguments, isolation_prefix, buck_root)
     )
     targets = list(chain(*specification_targets_dictionary.values()))
     return [target for target in targets if not _ignore_target(target)]
@@ -125,16 +129,22 @@ def _get_buck_build_arguments(mode: Optional[str], targets: List[str]) -> List[s
 
 
 def _build_targets(
-    targets: List[str], mode: Optional[str], isolation_prefix: Optional[str]
+    targets: List[str],
+    mode: Optional[str],
+    isolation_prefix: Optional[str],
+    buck_root: Path,
 ) -> Dict[str, str]:
     build_arguments = _get_buck_build_arguments(mode, targets)
     LOG.info("Running `buck build`...")
     with tempfile.NamedTemporaryFile(
         "w+", prefix="pyre_buck_build_arguments"
     ) as arguments_file:
-        Path(arguments_file.name).write_text("\n".join(build_arguments))
-
-        output = _buck(["build", f"@{arguments_file.name}"], isolation_prefix)
+        build_args_contents = "\n".join(build_arguments)
+        arguments_file.write(build_args_contents)
+        arguments_file.flush()  # Ensure the contents get to file
+        output = _buck(
+            ["build", f"@{arguments_file.name}"], isolation_prefix, buck_root
+        )
         return _load_json_ignoring_extra_data(output)
 
 
@@ -196,12 +206,8 @@ def build(
     mode: Optional[str],
     isolation_prefix: Optional[str],
 ) -> None:
-    targets = _query_targets(
-        target_specifications,
-        mode,
-        isolation_prefix,
-    )
-    target_path_dictionary = _build_targets(targets, mode, isolation_prefix)
+    targets = _query_targets(target_specifications, mode, isolation_prefix, buck_root)
+    target_path_dictionary = _build_targets(targets, mode, isolation_prefix, buck_root)
     source_databases = _load_source_databases(target_path_dictionary)
     link_map = _merge_source_databases(source_databases)
     _build_link_tree(link_map, output_directory, buck_root)
