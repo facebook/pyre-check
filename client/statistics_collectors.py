@@ -62,15 +62,15 @@ class FunctionAnnotationInfo:
     annotation_kind: FunctionAnnotationKind
     code_range: CodeRange
 
-    return_info: AnnotationInfo
-    parameter_infos: List[AnnotationInfo]
+    returns: AnnotationInfo
+    parameters: List[AnnotationInfo]
     is_method_or_classmethod: bool
 
     def non_self_cls_parameters(self) -> Iterable[AnnotationInfo]:
         if self.is_method_or_classmethod:
-            yield from self.parameter_infos[1:]
+            yield from self.parameters[1:]
         else:
-            yield from self.parameter_infos
+            yield from self.parameters
 
     @property
     def is_annotated(self) -> bool:
@@ -100,7 +100,7 @@ class AnnotationCollector(cst.CSTVisitor):
 
     def returns(self) -> Iterable[AnnotationInfo]:
         for function in self.functions:
-            yield function.return_info
+            yield function.returns
 
     def parameters(self) -> Iterable[AnnotationInfo]:
         for function in self.functions:
@@ -148,14 +148,14 @@ class AnnotationCollector(cst.CSTVisitor):
         else:
             code_range = self._code_range(node.returns)
             return_is_annotated = True
-        return_info = AnnotationInfo(node, return_is_annotated, code_range)
+        returns = AnnotationInfo(node, return_is_annotated, code_range)
 
-        parameter_infos = []
+        parameters = []
         annotated_parameter_count = 0
         for parameter_info in self._parameter_annotations(node.params.params):
             if parameter_info.is_annotated:
                 annotated_parameter_count += 1
-            parameter_infos.append(parameter_info)
+            parameters.append(parameter_info)
 
         annotation_kind = FunctionAnnotationKind.from_function_data(
             return_is_annotated,
@@ -169,8 +169,8 @@ class AnnotationCollector(cst.CSTVisitor):
                 node,
                 annotation_kind,
                 code_range,
-                return_info,
-                parameter_infos,
+                returns,
+                parameters,
                 self._is_method_or_classmethod(),
             )
         )
