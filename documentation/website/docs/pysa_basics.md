@@ -283,15 +283,7 @@ def module.sanitize_for_logging_and_sql(): ...
 
 Specific parameters can be marked as sanitized to remove all taint passing through them:
 
-```python
-def module.safe_function(
-  foo: Sanitize,
-  foo: Sanitize[TaintSink],
-  foo: Sanitize[TaintSink[SQL]],
-  foo: Sanitize[TaintInTaintOut],
-  foo: Sanitize[TaintInTaintOut[TaintSink[SQL]]],
-  foo: Sanitize[TaintInTaintOut[TaintSource[UserControlled]]],
-): ...
+```python file=../../../source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_START end=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_END
 ```
 
 Similarly, the return value can be marked as sanitized:

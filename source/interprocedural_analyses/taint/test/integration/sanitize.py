@@ -424,48 +424,48 @@ def sanitize_parameter_all_tito(x, y):
     return source_with_tito(x) + source_with_tito(y)
 
 
-def sanitize_parameter_a_sink(x):
+def sanitize_parameter_no_sql(x):
     if 1 > 2:
-        a_sink(x)
+        _sql(x)
     else:
-        b_sink(x)
+        _rce(x)
 
 
-def sanitize_parameter_b_sink(x):
+def sanitize_parameter_no_rce(x):
     if 1 > 2:
-        a_sink(x)
+        _sql(x)
     else:
-        b_sink(x)
+        _rce(x)
 
 
-def sanitize_parameter_a_source_tito(x):
+def sanitize_parameter_no_user_controlled_tito(x):
     return x
 
 
-def no_propagation_with_sanitize_parameter_a_source_tito():
-    a = a_source()
-    b = sanitize_parameter_a_source_tito(a)
+def no_propagation_with_sanitize_parameter_no_user_controlled_tito():
+    a = _user_controlled()
+    b = sanitize_parameter_no_user_controlled_tito(a)
     return b
 
 
-def propagation_of_b_with_sanitize_parameter_a_source_tito():
-    b = b_source()
-    tito = sanitize_parameter_a_source_tito(b)
+def propagation_of_cookies_with_sanitize_parameter_no_user_controlled_tito():
+    b = _cookies()
+    tito = sanitize_parameter_no_user_controlled_tito(b)
     return tito
 
 
-def sanitize_parameter_a_sink_tito(x):
+def sanitize_parameter_no_sql_tito(x):
     return x
 
 
-def no_propagation_with_sanitize_parameter_a_sink_tito(x):
-    y = sanitize_parameter_a_sink_tito(x)
-    a_sink(y)
+def no_propagation_with_sanitize_parameter_no_sql_tito(x):
+    y = sanitize_parameter_no_sql_tito(x)
+    _sql(y)
 
 
-def propagation_of_b_with_sanitize_parameter_a_sink_tito(x):
-    y = sanitize_parameter_a_sink_tito(x)
-    b_sink(y)
+def propagation_of_rce_with_sanitize_parameter_no_sql_tito(x):
+    y = sanitize_parameter_no_sql_tito(x)
+    _rce(y)
 
 
 def sanitize_parameter_with_user_declared_sink(x):
