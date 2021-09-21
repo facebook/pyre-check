@@ -89,6 +89,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 dot_pyre_directory=Path(".pyre"),
                 python_version="3.6.7",
                 shared_memory_heap_size=42,
+                number_of_workers=43,
             )
         )
         self.assertEqual(configuration.binary, "binary")
@@ -113,6 +114,7 @@ class PartialConfigurationTest(unittest.TestCase):
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=42))
+        self.assertEqual(configuration.number_of_workers, 43)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(

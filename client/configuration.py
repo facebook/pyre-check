@@ -451,7 +451,7 @@ class PartialConfiguration:
             ignore_infer=[],
             isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
-            number_of_workers=None,
+            number_of_workers=arguments.number_of_workers,
             oncall=None,
             other_critical_files=[],
             python_version=(

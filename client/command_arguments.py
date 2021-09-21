@@ -58,6 +58,7 @@ class CommandArguments:
     shared_memory_heap_size: Optional[int] = None
     shared_memory_dependency_table_power: Optional[int] = None
     shared_memory_hash_table_power: Optional[int] = None
+    number_of_workers: Optional[int] = None
 
 
 @dataclass(frozen=True)

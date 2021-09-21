@@ -478,6 +478,7 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     help="Power of the hash table in shared memory.",
     hidden=True,
 )
+@click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
     local_configuration: Optional[str],
@@ -518,6 +519,7 @@ def pyre(
     shared_memory_heap_size: Optional[int],
     shared_memory_dependency_table_power: Optional[int],
     shared_memory_hash_table_power: Optional[int],
+    number_of_workers: Optional[int],
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -560,6 +562,7 @@ def pyre(
         shared_memory_heap_size=shared_memory_heap_size,
         shared_memory_dependency_table_power=shared_memory_dependency_table_power,
         shared_memory_hash_table_power=shared_memory_hash_table_power,
+        number_of_workers=number_of_workers,
     )
     if arguments.version:
         _show_pyre_version(arguments)
