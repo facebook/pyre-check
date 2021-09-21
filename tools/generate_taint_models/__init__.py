@@ -66,6 +66,7 @@ class GenerationArguments:
     # Pyre arguments.
     no_saved_state: bool = False
     isolation_prefix: Optional[str] = None
+    stop_pyre_server: bool = False
 
 
 def _file_exists(path: str) -> str:
@@ -87,6 +88,9 @@ def _parse_arguments(
         "--isolation-prefix", type=str, help="Buck isolation prefix when running pyre"
     )
     parser.add_argument(
+        "--stop-pyre-server", action="store_true", help="Stop the pyre server once done"
+    )
+    parser.add_argument(
         "--output-directory", type=_file_exists, help="Directory to write models to"
     )
     arguments: argparse.Namespace = parser.parse_args()
@@ -96,6 +100,7 @@ def _parse_arguments(
         output_directory=arguments.output_directory,
         no_saved_state=arguments.no_saved_state,
         isolation_prefix=arguments.isolation_prefix,
+        stop_pyre_server=arguments.stop_pyre_server,
     )
 
 
@@ -171,7 +176,12 @@ def run_from_parsed_arguments(
                 },
                 logger=logger_executable,
             )
+
     _report_results(generated_models, arguments.output_directory)
+
+    if pyre_connection is not None and arguments.stop_pyre_server:
+        LOG.info("Stopping the pyre server.")
+        pyre_connection.stop_server(ignore_errors=True)
 
 
 def run_generators(

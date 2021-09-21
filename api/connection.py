@@ -88,10 +88,10 @@ class PyreConnection:
         self.server_initialized = True
         return result
 
-    def stop_server(self) -> None:
+    def stop_server(self, ignore_errors: bool = False) -> None:
         subprocess.run(
             ["pyre", "--noninteractive", *self.pyre_arguments, "stop"],
-            check=True,
+            check=not ignore_errors,
             cwd=str(self.pyre_directory),
         )
 
