@@ -296,10 +296,7 @@ def module.safe_function(
 
 Similarly, the return value can be marked as sanitized:
 
-```python
-def modules.safe_return() -> Sanitize: ...
-def modules.safe_return_source() -> Sanitize[TaintSource]: ...
-def modules.return_not_user_controlled() -> Sanitize[TaintSource[UserControlled]]: ...
+```python file=../../../source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_RETURN_SANITIZERS_START end=DOCUMENTATION_RETURN_SANITIZERS_END
 ```
 
 All parameters can be marked as sanitized as well:

@@ -482,27 +482,27 @@ def sanitize_return_all_sources(x):
     return source_with_tito(x)
 
 
-def sanitize_return_a_source():
+def sanitize_return_no_user_controlled():
     if 1 > 2:
-        x = a_source()
+        x = _user_controlled()
     else:
-        x = b_source()
+        x = _cookies()
     return x
 
 
-def sanitize_return_b_source():
+def sanitize_return_no_cookies():
     if 1 > 2:
-        x = a_source()
+        x = _user_controlled()
     else:
-        x = b_source()
+        x = _cookies()
     return x
 
 
-def sanitize_return_a_and_b_source():
+def sanitize_return_no_user_controlled_cookies():
     if 1 > 2:
-        x = a_source()
+        x = _user_controlled()
     else:
-        x = b_source()
+        x = _cookies()
     return x
 
 
