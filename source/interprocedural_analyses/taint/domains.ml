@@ -543,15 +543,15 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       ()
 
   let apply_call location ~callees ~port taint_tree =
-    let transform_path (path, _) tip =
+    let transform_path (path, tip) =
       let tip =
         tip
         |> Taint.transform Taint.kind Filter ~f:(fun kind -> not (Taint.ignore_kind_at_call kind))
         |> fun taint -> Taint.apply_call location ~callees ~port ~path ~element:taint
       in
-      tip
+      path, tip
     in
-    transform Taint.Self (Context (Path, Map)) ~f:transform_path taint_tree
+    transform Path Map ~f:transform_path taint_tree
 
 
   let empty = bottom
