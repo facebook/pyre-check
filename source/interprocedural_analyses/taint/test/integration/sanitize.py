@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
-from builtins import _test_sink, _test_source
+from builtins import _test_sink, _test_source, _user_controlled, _cookies, _rce, _sql
 from typing import Sequence, TypeVar
 
 
@@ -534,74 +534,74 @@ def sanitize_all_parameters_all_tito(x, y):
     return source_with_tito(x) + source_with_tito(y)
 
 
-def sanitize_all_parameters_a_sink(x):
+def sanitize_all_parameters_no_sql(x):
     if 1 > 2:
-        a_sink(x)
+        _sql(x)
     else:
-        b_sink(x)
+        _rce(x)
 
 
-def sanitize_all_parameters_b_sink(x):
+def sanitize_all_parameters_no_rce(x):
     if 1 > 2:
-        a_sink(x)
+        _sql(x)
     else:
-        b_sink(x)
+        _rce(x)
 
 
-def sanitize_all_parameters_a_source_tito(x):
+def sanitize_all_parameters_no_user_controlled_tito(x):
     return x
 
 
-def no_propagation_with_sanitize_all_parameters_a_source_tito():
-    a = a_source()
-    b = sanitize_all_parameters_a_source_tito(a)
+def no_propagation_with_sanitize_all_parameters_no_user_controlled_tito():
+    a = _user_controlled()
+    b = sanitize_all_parameters_no_user_controlled_tito(a)
     return b
 
 
-def propagation_of_b_with_sanitize_all_parameters_a_source_tito():
-    b = b_source()
-    tito = sanitize_all_parameters_a_source_tito(b)
+def propagation_of_cookies_with_sanitize_all_parameters_no_user_controlled_tito():
+    b = _cookies()
+    tito = sanitize_all_parameters_no_user_controlled_tito(b)
     return tito
 
 
-def sanitize_all_parameters_a_sink_tito(x):
+def sanitize_all_parameters_no_sql_tito(x):
     return x
 
 
-def no_propagation_with_sanitize_all_parameters_a_sink_tito(x):
-    y = sanitize_all_parameters_a_sink_tito(x)
-    a_sink(y)
+def no_propagation_with_sanitize_all_parameters_no_sql_tito(x):
+    y = sanitize_all_parameters_no_sql_tito(x)
+    _sql(y)
 
 
-def propagation_of_b_with_sanitize_all_parameters_a_sink_tito(x):
-    y = sanitize_all_parameters_a_sink_tito(x)
-    b_sink(y)
+def propagation_of_rce_with_sanitize_all_parameters_no_sql_tito(x):
+    y = sanitize_all_parameters_no_sql_tito(x)
+    _rce(y)
 
 
-def sanitize_all_parameters_a_source_sink_tito(x):
+def sanitize_all_parameters_no_cookies_sql_tito(x):
     return x
 
 
-def no_propagation_of_a_source_with_sanitize_all_parameters_a_source_sink_tito():
-    a = a_source()
-    b = sanitize_all_parameters_a_source_sink_tito(a)
+def no_propagation_of_cookies_with_sanitize_all_parameters_no_cookies_sql_tito():
+    a = _cookies()
+    b = sanitize_all_parameters_no_cookies_sql_tito(a)
     return b
 
 
-def propagation_of_b_source_with_sanitize_all_parameters_a_source_sink_tito():
-    b = b_source()
-    tito = sanitize_all_parameters_a_source_sink_tito(b)
+def propagation_of_user_controlled_with_sanitize_all_parameters_no_cookies_sql_tito():
+    b = _user_controlled()
+    tito = sanitize_all_parameters_no_cookies_sql_tito(b)
     return tito
 
 
-def no_propagation_of_a_sink_with_sanitize_all_parameters_a_source_sink_tito(x):
-    y = sanitize_all_parameters_a_source_sink_tito(x)
-    a_sink(y)
+def no_propagation_of_sql_with_sanitize_all_parameters_no_cookies_sql_tito(x):
+    y = sanitize_all_parameters_no_cookies_sql_tito(x)
+    _sql(y)
 
 
-def propagation_of_b_sink_with_sanitize_all_parameters_a_source_sink_tito(x):
-    y = sanitize_all_parameters_a_sink_tito(x)
-    b_sink(y)
+def propagation_of_rce_with_sanitize_all_parameters_no_cookies_sql_tito(x):
+    y = sanitize_all_parameters_no_cookies_sql_tito(x)
+    _rce(y)
 
 
 def sanitize_all_parameters_with_user_declared_sink(x):

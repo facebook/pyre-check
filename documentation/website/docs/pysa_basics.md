@@ -304,15 +304,7 @@ def modules.return_not_user_controlled() -> Sanitize[TaintSource[UserControlled]
 
 All parameters can be marked as sanitized as well:
 
-```python
-@Sanitize(Parameters)
-def module.sanitize_all_parameters(): ...
-
-@Sanitize(Parameters[TaintSource[UserControlled]))
-def module.parameters_not_user_controlled(): ...
-
-@Sanitize(Parameters[TaintInTaintOut[TaintSource[UserControlled], TaintSink[SQL]]]))
-def module.parameters_not_taint_in_taint_out(): ...
+```python file=../../../source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETERS_SANITIZERS_START end=DOCUMENTATION_PARAMETERS_SANITIZERS_END
 ```
 
 Attributes can also be marked as sanitizers to remove all taint passing through
