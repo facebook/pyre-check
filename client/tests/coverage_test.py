@@ -152,7 +152,7 @@ class CoverageTest(unittest.TestCase):
 
             class A:
                 @foo(42)
-                def baz(self): ...   # Covered
+                def baz(self): ...   # Not covered
             """
         )
         self.assert_coverage_matches_comments(

@@ -64,6 +64,13 @@ class FunctionAnnotationInfo:
 
     return_info: AnnotationInfo
     parameter_infos: List[AnnotationInfo]
+    is_method_or_classmethod: bool
+
+    def non_self_cls_parameters(self) -> Iterable[AnnotationInfo]:
+        if self.is_method_or_classmethod:
+            yield from self.parameter_infos[1:]
+        else:
+            yield from self.parameter_infos
 
     @property
     def is_annotated(self) -> bool:
@@ -97,8 +104,7 @@ class AnnotationCollector(cst.CSTVisitor):
 
     def parameters(self) -> Iterable[AnnotationInfo]:
         for function in self.functions:
-            for parameter in function.parameter_infos:
-                yield parameter
+            yield from function.non_self_cls_parameters()
 
     def in_class_definition(self) -> bool:
         return self.class_definition_depth > 0
@@ -160,7 +166,12 @@ class AnnotationCollector(cst.CSTVisitor):
         code_range = self._code_range(node.body)
         self.functions.append(
             FunctionAnnotationInfo(
-                node, annotation_kind, code_range, return_info, parameter_infos
+                node,
+                annotation_kind,
+                code_range,
+                return_info,
+                parameter_infos,
+                self._is_method_or_classmethod(),
             )
         )
 
