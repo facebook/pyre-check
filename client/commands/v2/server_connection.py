@@ -9,7 +9,7 @@ import io
 import socket
 import tempfile
 from pathlib import Path
-from typing import BinaryIO, Generator, TextIO, Tuple
+from typing import BinaryIO, Generator, Optional, TextIO, Tuple
 
 
 class ConnectionFailure(Exception):
@@ -27,6 +27,26 @@ def get_socket_path(root: Path, log_directory: Path) -> Path:
     """
     log_path_digest = hashlib.md5(str(log_directory).encode("utf-8")).hexdigest()
     return root / f"pyre_server_{log_path_digest}.sock"
+
+
+def get_user_independent_socket_path(
+    root: Path, global_root: Path, relative_local_root: Optional[Path]
+) -> Path:
+    """
+    Determine where the server socket file is located. We can't directly use
+    `log_directory` because of the ~100 character length limit on Unix socket
+    file paths.
+
+    Implementation needs to be kept in sync with the `user_independent_socket_path_of`
+    function in `pyre/new_server/start.ml`.
+    """
+    project_identifier = str(global_root)
+    if relative_local_root is not None:
+        project_identifier = project_identifier + "//" + str(relative_local_root)
+    project_identifier = project_identifier.encode("utf-8")
+
+    project_hash = hashlib.md5(project_identifier).hexdigest()
+    return root / f"pyre_server_{project_hash}.sock"
 
 
 def get_default_socket_root() -> Path:
