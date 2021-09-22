@@ -258,8 +258,6 @@ module type TAINT_DOMAIN = sig
 
   val kind : kind Abstract.Domain.part
 
-  val ignore_kind_at_call : kind -> bool
-
   val trace_info : TraceInfo.t Abstract.Domain.part
 
   val add_breadcrumb : Features.Breadcrumb.t -> t -> t
@@ -351,8 +349,6 @@ end = struct
   let of_list ?location kinds = List.fold kinds ~init:Map.bottom ~f:(add ?location)
 
   let kind = KindTaintDomain.Key
-
-  let ignore_kind_at_call = Kind.ignore_kind_at_call
 
   let trace_info = Map.Key
 
@@ -497,7 +493,10 @@ end = struct
                Features.ViaFeatureSet.bottom)
       in
       let kind_taint =
-        KindTaintDomain.transform FlowDetails.Self Map ~f:apply_flow_details kind_taint
+        kind_taint
+        |> KindTaintDomain.transform KindTaintDomain.Key Filter ~f:(fun kind ->
+               not (Kind.ignore_kind_at_call kind))
+        |> KindTaintDomain.transform FlowDetails.Self Map ~f:apply_flow_details
       in
       match trace_info with
       | Origin _
@@ -544,12 +543,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let apply_call location ~callees ~port taint_tree =
     let transform_path (path, tip) =
-      let tip =
-        tip
-        |> Taint.transform Taint.kind Filter ~f:(fun kind -> not (Taint.ignore_kind_at_call kind))
-        |> fun taint -> Taint.apply_call location ~callees ~port ~path ~element:taint
-      in
-      path, tip
+      path, Taint.apply_call location ~callees ~port ~path ~element:tip
     in
     transform Path Map ~f:transform_path taint_tree
 
