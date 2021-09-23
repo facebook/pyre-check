@@ -222,20 +222,16 @@ module Visit = struct
           |> List.iter ~f:postcondition_visit;
           Option.iter ~f:postcondition_visit return_annotation
       | Import { Import.from; imports } ->
-          let visit_import { Import.name = { Node.value = name; location = name_location }; alias } =
+          let visit_import { Node.value = { Import.name; _ }; location = import_location } =
             let qualifier =
               match from with
-              | Some { Node.value = from; _ } -> from
+              | Some from -> from
               | None -> Reference.empty
             in
             let create_qualified_expression ~location =
               Reference.combine qualifier name |> Ast.Expression.from_reference ~location
             in
-            precondition_visit (create_qualified_expression ~location:name_location);
-            Option.iter
-              ~f:(fun { Node.location; _ } ->
-                precondition_visit (create_qualified_expression ~location))
-              alias
+            precondition_visit (create_qualified_expression ~location:import_location)
           in
           List.iter imports ~f:visit_import
       | _ -> visit_statement ~state statement

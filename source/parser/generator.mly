@@ -1140,46 +1140,32 @@ handler:
 
 from:
   | from = from_string {
-      { Node.location = fst from; value = Reference.create (snd from) }
-      |> Option.some
+      Some (Reference.create from)
     }
   ;
 
 from_string:
   | identifier = identifier {
-      identifier
+      snd identifier
   }
   | identifier = identifier; from_string = from_string {
-      let location =
-        { (fst identifier) with Location.stop = (fst from_string).Location.stop }
-      in
-      location, (snd identifier) ^ (snd from_string)
+      (snd identifier) ^ from_string
     }
   | relative = nonempty_list(ellipsis_or_dot) {
-      let location =
-        Location.create
-          ~start:(fst (fst (List.hd_exn relative)))
-          ~stop:(snd (fst (List.last_exn relative)))
-      in
-      location, String.concat (List.map ~f:snd relative)
+      String.concat relative
     }
   | relative = nonempty_list(ellipsis_or_dot);
     from_string = from_string {
-      let location =
-        location_create_with_stop
-          ~start:(fst (fst (List.hd_exn relative)))
-          ~stop:((fst from_string).Location.stop)
-      in
-      location, (String.concat (List.map ~f:snd relative)) ^ (snd from_string)
+      (String.concat relative) ^ from_string
     }
   ;
 
 ellipsis_or_dot:
-  | position = DOT {
-      position, "."
+  | DOT {
+      "."
     }
-  | position = ELLIPSES {
-      position, "..."
+  | ELLIPSES {
+      "..."
     }
   ;
 
@@ -1190,13 +1176,13 @@ imports:
         let (stop, _) = List.last_exn imports in
         { start with Location.stop = stop.Location.stop }
       in
-      location, List.map ~f:snd imports
+      location, List.map imports ~f:(fun (location, value) -> { Node.value; location })
     }
   | start = LEFTPARENS;
     imports = parser_generator_separated_nonempty_list(COMMA, import);
     stop = RIGHTPARENS {
       (Location.create ~start ~stop),
-      List.map ~f:snd imports
+      List.map imports ~f:(fun (location, value) -> { Node.value; location })
     }
   ;
 
@@ -1208,14 +1194,14 @@ import:
       in
       location,
       {
-        Import.name = { Node.location; value = Reference.create "*" };
+        Import.name = Reference.create "*";
         alias = None;
       }
     }
   | name = reference {
       fst name,
       {
-        Import.name = { Node.location = fst name; value = snd name };
+        Import.name = snd name;
         alias = None;
       }
     }
@@ -1223,8 +1209,8 @@ import:
     AS; alias = identifier {
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
-        Import.name = { Node.location = fst name; value = snd name };
-        alias = Some { Node.location = fst alias; value = snd alias };
+        Import.name = snd name;
+        alias = Some (snd alias);
       }
     }
   ;

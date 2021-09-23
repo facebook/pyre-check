@@ -27,8 +27,8 @@ let expand_relative_imports
       let value =
         match value with
         | Statement.Import { Import.from = Some from; imports }
-          when (not (String.equal (Reference.show (Node.value from)) "builtins"))
-               && not (String.equal (Reference.show (Node.value from)) "future.builtins") ->
+          when (not (String.equal (Reference.show from) "builtins"))
+               && not (String.equal (Reference.show from) "future.builtins") ->
             Statement.Import
               { Import.from = Some (SourcePath.expand_relative_import source_path ~from); imports }
         | _ -> value
@@ -859,11 +859,11 @@ let qualify
                 body;
                 orelse;
               } )
-      | Import { Import.from = Some { Node.value = from; _ }; imports }
+      | Import { Import.from = Some from; imports }
         when not (String.equal (Reference.show from) "builtins") ->
-          let import aliases { Import.name = { Node.value = name; _ }; alias } =
+          let import aliases { Node.value = { Import.name; alias }; _ } =
             match alias with
-            | Some { Node.value = alias; _ } ->
+            | Some alias ->
                 (* Add `alias -> from.name`. *)
                 Map.set
                   aliases
@@ -878,9 +878,9 @@ let qualify
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
       | Import { Import.from = None; imports } ->
-          let import aliases { Import.name = { Node.value = name; _ }; alias } =
+          let import aliases { Node.value = { Import.name; alias }; _ } =
             match alias with
-            | Some { Node.value = alias; _ } ->
+            | Some alias ->
                 (* Add `alias -> from.name`. *)
                 Map.set aliases ~key:(Reference.create alias) ~data:(local_alias ~qualifier ~name)
             | None -> aliases
@@ -1833,18 +1833,18 @@ let dequalify_map ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as so
     let statement map ({ Node.value; _ } as statement) =
       match value with
       | Statement.Import { Import.from = None; imports } ->
-          let add_import map { Import.name = { Node.value = name; _ }; alias } =
+          let add_import map { Node.value = { Import.name; alias }; _ } =
             match alias with
-            | Some { Node.value = alias; _ } ->
+            | Some alias ->
                 (* Add `name -> alias`. *)
                 Map.set map ~key:name ~data:(Reference.create alias)
             | None -> map
           in
           List.fold_left imports ~f:add_import ~init:map, [statement]
-      | Import { Import.from = Some { Node.value = from; _ }; imports } ->
-          let add_import map { Import.name = { Node.value = name; _ }; alias } =
+      | Import { Import.from = Some from; imports } ->
+          let add_import map { Node.value = { Import.name; alias }; _ } =
             match alias with
-            | Some { Node.value = alias; _ } ->
+            | Some alias ->
                 (* Add `from.name -> alias`. *)
                 Map.set map ~key:(Reference.combine from name) ~data:(Reference.create alias)
             | None ->
@@ -1878,11 +1878,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
       match value with
       | Statement.Assign
           {
-            Assign.target =
-              {
-                Node.value = Expression.Name (Name.Identifier identifier);
-                location = identifier_location;
-              };
+            Assign.target = { Node.value = Expression.Name (Name.Identifier identifier); _ };
             value =
               {
                 Node.value =
@@ -1896,7 +1892,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                               {
                                 Node.value =
                                   Expression.String { StringLiteral.kind = String; value = literal };
-                                location = literal_location;
+                                _;
                               };
                             _;
                           };
@@ -1915,12 +1911,12 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                   imports =
                     [
                       {
-                        Import.name =
-                          Reference.create literal |> Node.create ~location:literal_location;
-                        alias =
-                          Some
-                            (Identifier.sanitized identifier
-                            |> Node.create ~location:identifier_location);
+                        Node.value =
+                          {
+                            Import.name = Reference.create literal;
+                            alias = Some (Identifier.sanitized identifier);
+                          };
+                        location;
                       };
                     ];
                 }
@@ -1928,11 +1924,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
             ] )
       | Statement.Assign
           {
-            Assign.target =
-              {
-                Node.value = Expression.Name (Name.Identifier identifier);
-                location = identifier_location;
-              };
+            Assign.target = { Node.value = Expression.Name (Name.Identifier identifier); _ };
             value =
               {
                 Node.value =
@@ -1947,7 +1939,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                                 Node.value =
                                   Expression.String
                                     { StringLiteral.kind = String; value = from_literal };
-                                location = from_literal_location;
+                                _;
                               };
                             _;
                           };
@@ -1957,7 +1949,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                                 Node.value =
                                   Expression.String
                                     { StringLiteral.kind = String; value = import_literal };
-                                location = import_literal_location;
+                                _;
                               };
                             _;
                           };
@@ -1972,19 +1964,16 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
             [
               Statement.Import
                 {
-                  from =
-                    Some
-                      (Reference.create from_literal |> Node.create ~location:from_literal_location);
+                  from = Some (Reference.create from_literal);
                   imports =
                     [
                       {
-                        Import.name =
-                          Reference.create import_literal
-                          |> Node.create ~location:import_literal_location;
-                        alias =
-                          Some
-                            (Identifier.sanitized identifier
-                            |> Node.create ~location:identifier_location);
+                        Node.value =
+                          {
+                            Import.name = Reference.create import_literal;
+                            alias = Some (Identifier.sanitized identifier);
+                          };
+                        location;
                       };
                     ];
                 }
@@ -3906,14 +3895,14 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                 imports =
                   [
                     {
-                      Import.alias = None;
-                      name =
+                      Node.value =
                         {
-                          Node.value =
+                          Import.alias = None;
+                          name =
                             Reference.create
                               (String.substr_replace_all ~pattern:"/" ~with_:"." from_name);
-                          location;
                         };
+                      location;
                     };
                   ];
               }
@@ -3932,7 +3921,7 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                       }
                       :: imports;
                   };
-              location;
+              _;
             } ->
             let create_import from_name =
               let imports =
@@ -3941,19 +3930,15 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                     | Expression.String { value = name; _ } ->
                         Some
                           {
-                            Import.alias = None;
-                            name =
-                              { Node.value = Reference.create name; location = Node.location value };
+                            Node.value = { Import.alias = None; name = Reference.create name };
+                            location = Node.location value;
                           }
                     | _ -> None)
               in
               let formatted_from_name =
                 String.substr_replace_all ~pattern:"/" ~with_:"." from_name
               in
-              {
-                Import.from = Some { Node.value = Reference.create formatted_from_name; location };
-                imports;
-              }
+              { Import.from = Some (Reference.create formatted_from_name); imports }
             in
             Statement.Import (create_import from_name)
         | _ -> value

@@ -205,9 +205,9 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
         let statement _ collected_imports { Node.value; _ } =
           match value with
           | Statement.Import { Import.from = Some from; imports }
-            when List.exists imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+            when List.exists imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
                      String.equal (Reference.show name) "*") ->
-              Node.value from :: collected_imports
+              from :: collected_imports
           | _ -> collected_imports
       end)
       in
@@ -240,19 +240,19 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
       match value with
       | Statement.Import { Import.from = Some from; imports } -> (
           let starred_import =
-            List.find imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+            List.find imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
                 String.equal (Reference.show name) "*")
           in
           match starred_import with
           | Some _ ->
               let expanded_import =
-                match get_transitive_exports (Node.value from) ~ast_environment ?dependency with
+                match get_transitive_exports from ~ast_environment ?dependency with
                 | [] -> []
                 | exports ->
                     List.map exports ~f:(fun name ->
                         {
-                          Import.name = Node.create ~location:Location.any (Reference.create name);
-                          alias = Some (Node.create ~location:Location.any name);
+                          Node.value = { Import.name = Reference.create name; alias = Some name };
+                          location = Location.any;
                         })
                     |> (fun expanded ->
                          Statement.Import { Import.from = Some from; imports = expanded })

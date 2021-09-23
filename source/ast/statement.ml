@@ -35,36 +35,30 @@ end
 
 module Import = struct
   type import = {
-    name: Reference.t Node.t;
-    alias: Identifier.t Node.t option;
+    name: Reference.t;
+    alias: Identifier.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = {
-    from: Reference.t Node.t option;
-    imports: import list;
+    from: Reference.t option;
+    imports: import Node.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     let location_insensitive_compare_import left right =
-      match
-        Option.compare
-          (Node.location_insensitive_compare [%compare: Identifier.t])
-          left.alias
-          right.alias
-      with
+      match Option.compare [%compare: Identifier.t] left.alias right.alias with
       | x when not (Int.equal x 0) -> x
-      | _ -> Node.location_insensitive_compare [%compare: Reference.t] left.name right.name
+      | _ -> [%compare: Reference.t] left.name right.name
     in
-    match
-      Option.compare
-        (Node.location_insensitive_compare [%compare: Reference.t])
-        left.from
-        right.from
-    with
+    match Option.compare [%compare: Reference.t] left.from right.from with
     | x when not (Int.equal x 0) -> x
-    | _ -> List.compare location_insensitive_compare_import left.imports right.imports
+    | _ ->
+        List.compare
+          (Node.location_insensitive_compare location_insensitive_compare_import)
+          left.imports
+          right.imports
 end
 
 module Raise = struct
@@ -1527,16 +1521,15 @@ module PrettyPrinter = struct
             pp_statement_list
             orelse
     | Import { Import.from; imports } -> (
-        let pp_import formatter { Import.name; alias } =
+        let pp_import formatter { Node.value = { Import.name; alias }; _ } =
           match alias with
-          | None -> Format.fprintf formatter "%a" Reference.pp (Node.value name)
-          | Some { Node.value = alias; _ } ->
-              Format.fprintf formatter "%a as %a" Reference.pp (Node.value name) Identifier.pp alias
+          | None -> Format.fprintf formatter "%a" Reference.pp name
+          | Some alias -> Format.fprintf formatter "%a as %a" Reference.pp name Identifier.pp alias
         in
         let pp_imports formatter import_list = pp_list formatter pp_import ", " import_list in
         match from with
         | None -> Format.fprintf formatter "@[<v>import %a@]" pp_imports imports
-        | Some { Node.value = from; _ } ->
+        | Some from ->
             Format.fprintf formatter "@[<v>from %a import %a@]" Reference.pp from pp_imports imports
         )
     | Nonlocal nonlocal_list -> pp_list formatter String.pp "," nonlocal_list

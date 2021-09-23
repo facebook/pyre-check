@@ -1760,8 +1760,8 @@ let test_import_locations _ =
         ~stop:(1, 15)
         (Statement.Import
            {
-             Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
-             imports = [{ Import.name = node ~start:(1, 14) ~stop:(1, 15) !&"*"; alias = None }];
+             Import.from = Some !&"a";
+             imports = [node ~start:(1, 14) ~stop:(1, 15) { Import.name = !&"*"; alias = None }];
            });
     ];
   assert_source_locations
@@ -1772,8 +1772,8 @@ let test_import_locations _ =
         ~stop:(1, 22)
         (Statement.Import
            {
-             Import.from = Some (node ~start:(1, 5) ~stop:(1, 13) !&".....foo");
-             imports = [{ Import.name = node ~start:(1, 21) ~stop:(1, 22) !&"b"; alias = None }];
+             Import.from = Some !&".....foo";
+             imports = [node ~start:(1, 21) ~stop:(1, 22) { Import.name = !&"b"; alias = None }];
            });
     ];
   assert_source_locations
@@ -1784,11 +1784,11 @@ let test_import_locations _ =
         ~stop:(1, 20)
         (Statement.Import
            {
-             Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
+             Import.from = Some !&"a";
              imports =
                [
-                 { Import.name = node ~start:(1, 15) ~stop:(1, 16) !&"b"; alias = None };
-                 { Import.name = node ~start:(1, 18) ~stop:(1, 19) !&"c"; alias = None };
+                 node ~start:(1, 15) ~stop:(1, 16) { Import.name = !&"b"; alias = None };
+                 node ~start:(1, 18) ~stop:(1, 19) { Import.name = !&"c"; alias = None };
                ];
            });
     ];
@@ -1800,18 +1800,12 @@ let test_import_locations _ =
         ~stop:(1, 31)
         (Statement.Import
            {
-             Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"f");
+             Import.from = Some !&"f";
              imports =
                [
-                 {
-                   Import.name = node ~start:(1, 14) ~stop:(1, 15) !&"a";
-                   alias = Some (node ~start:(1, 19) ~stop:(1, 20) "b");
-                 };
-                 { Import.name = node ~start:(1, 22) ~stop:(1, 23) !&"c"; alias = None };
-                 {
-                   Import.name = node ~start:(1, 25) ~stop:(1, 26) !&"d";
-                   alias = Some (node ~start:(1, 30) ~stop:(1, 31) "e");
-                 };
+                 node ~start:(1, 14) ~stop:(1, 20) { Import.name = !&"a"; alias = Some "b" };
+                 node ~start:(1, 22) ~stop:(1, 23) { Import.name = !&"c"; alias = None };
+                 node ~start:(1, 25) ~stop:(1, 31) { Import.name = !&"d"; alias = Some "e" };
                ];
            });
     ];
@@ -1826,15 +1820,9 @@ let test_import_locations _ =
              Import.from = None;
              imports =
                [
-                 {
-                   Import.name = node ~start:(1, 7) ~stop:(1, 8) !&"a";
-                   alias = Some (node ~start:(1, 12) ~stop:(1, 13) "b");
-                 };
-                 { Import.name = node ~start:(1, 15) ~stop:(1, 16) !&"c"; alias = None };
-                 {
-                   Import.name = node ~start:(1, 18) ~stop:(1, 19) !&"d";
-                   alias = Some (node ~start:(1, 23) ~stop:(1, 24) "e");
-                 };
+                 node ~start:(1, 7) ~stop:(1, 13) { Import.name = !&"a"; alias = Some "b" };
+                 node ~start:(1, 15) ~stop:(1, 16) { Import.name = !&"c"; alias = None };
+                 node ~start:(1, 18) ~stop:(1, 24) { Import.name = !&"d"; alias = Some "e" };
                ];
            });
     ]

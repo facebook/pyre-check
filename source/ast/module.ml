@@ -186,27 +186,27 @@ let create
       match value with
       | Statement.Import { Import.from = Some from; imports } ->
           let from = SourcePath.expand_relative_import source_path ~from in
-          let export aliases { Import.name = { Node.value = name; _ }; alias } =
+          let export aliases { Node.value = { Import.name; alias }; _ } =
             let alias =
               match alias with
               | None -> name
-              | Some { Node.value = alias; _ } -> Reference.create alias
+              | Some alias -> Reference.create alias
             in
             let name =
               if String.equal (Reference.show alias) "*" then
-                Node.value from
+                from
               else
-                Reference.combine (Node.value from) name
+                Reference.combine from name
             in
             Map.set aliases ~key:alias ~data:name
           in
           List.fold imports ~f:export ~init:aliases
       | Import { Import.from = None; imports } ->
-          let export aliases { Import.name = { Node.value = name; _ }; alias } =
+          let export aliases { Node.value = { Import.name; alias }; _ } =
             let alias =
               match alias with
               | None -> name
-              | Some { Node.value = alias; _ } -> Reference.create alias
+              | Some alias -> Reference.create alias
             in
             let source, target =
               if Reference.is_strict_prefix ~prefix:(Reference.combine qualifier alias) name then

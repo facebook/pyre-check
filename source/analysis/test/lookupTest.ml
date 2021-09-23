@@ -682,9 +682,7 @@ let test_lookup_imports context =
   let source = {|
       from typing import List as l
     |} in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
-    ["2:19-2:23/typing.Type[list]"; "2:27-2:28/typing.Type[list]"];
+  assert_annotation_list ~lookup:(generate_lookup ~context source) ["2:19-2:28/typing.Type[list]"];
 
   let source =
     {|
@@ -696,9 +694,7 @@ let test_lookup_imports context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:26-2:30/typing.Type[unittest.mock.Mock]";
-      "3:23-3:27/typing.Callable(subprocess.call)[[Named(command, unknown), Named(shell, \
-       unknown)], typing.Any]";
-      "3:31-3:38/typing.Callable(subprocess.call)[[Named(command, unknown), Named(shell, \
+      "3:23-3:38/typing.Callable(subprocess.call)[[Named(command, unknown), Named(shell, \
        unknown)], typing.Any]";
     ];
 

@@ -21,14 +21,14 @@ end
 
 module Import : sig
   type import = {
-    name: Reference.t Node.t;
-    alias: Identifier.t Node.t option;
+    name: Reference.t;
+    alias: Identifier.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = {
-    from: Reference.t Node.t option;
-    imports: import list;
+    from: Reference.t option;
+    imports: import Node.t list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 

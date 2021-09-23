@@ -5746,14 +5746,14 @@ module State (Context : Context) = struct
         let undefined_imports =
           match from with
           | None ->
-              List.filter_map imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+              List.filter_map imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
                   match GlobalResolution.module_exists global_resolution name with
                   | true -> None
                   | false -> (
                       match GlobalResolution.is_suppressed_module global_resolution name with
                       | true -> None
                       | false -> Some (Error.UndefinedModule name)))
-          | Some { Node.value = from; _ } -> (
+          | Some from -> (
               match GlobalResolution.get_module_metadata global_resolution from with
               | None ->
                   if GlobalResolution.is_suppressed_module global_resolution from then
@@ -5764,7 +5764,7 @@ module State (Context : Context) = struct
                   let ast_environment = GlobalResolution.ast_environment global_resolution in
                   List.filter_map
                     imports
-                    ~f:(fun { Import.name = { Node.value = name_reference; _ }; _ } ->
+                    ~f:(fun { Node.value = { Import.name = name_reference; _ }; _ } ->
                       let name = Reference.show name_reference in
                       match Module.get_export module_metadata name with
                       | Some _ ->

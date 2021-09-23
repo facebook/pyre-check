@@ -191,10 +191,9 @@ module Binding = struct
         let sofar = of_statements sofar body in
         of_statements sofar orelse
     | Statement.Import { Import.imports; from } ->
-        let binding_of_import sofar { Import.alias; name = { Node.value = name; location } } =
+        let binding_of_import sofar { Node.value = { Import.alias; name }; location } =
           match alias with
-          | Some { Node.value = alias; location } ->
-              { kind = Kind.ImportName; name = alias; location } :: sofar
+          | Some alias -> { kind = Kind.ImportName; name = alias; location } :: sofar
           | None -> (
               match from with
               | Some _ ->

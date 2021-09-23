@@ -236,7 +236,7 @@ let test_expand_relative_import _ =
       ~cmp:Reference.equal
       ~printer:Reference.show
       (Reference.create expected)
-      (Node.value (SourcePath.expand_relative_import source_path ~from))
+      (SourcePath.expand_relative_import source_path ~from)
   in
   assert_export ~relative:"module/qualifier.py" ~from:"." ~expected:"module";
   assert_export

@@ -4655,29 +4655,27 @@ let test_assert _ =
 let test_import _ =
   assert_parsed_equal
     "import a"
-    [+Statement.Import { Import.from = None; imports = [{ Import.name = + !&"a"; alias = None }] }];
+    [+Statement.Import { Import.from = None; imports = [+{ Import.name = !&"a"; alias = None }] }];
   assert_parsed_equal
     "import async"
     [
       +Statement.Import
-         { Import.from = None; imports = [{ Import.name = + !&"async"; alias = None }] };
+         { Import.from = None; imports = [+{ Import.name = !&"async"; alias = None }] };
     ];
   assert_parsed_equal
     "import a.async"
     [
       +Statement.Import
-         { Import.from = None; imports = [{ Import.name = + !&"a.async"; alias = None }] };
+         { Import.from = None; imports = [+{ Import.name = !&"a.async"; alias = None }] };
     ];
   assert_parsed_equal
     "import a.b"
-    [
-      +Statement.Import { Import.from = None; imports = [{ Import.name = + !&"a.b"; alias = None }] };
-    ];
+    [+Statement.Import { Import.from = None; imports = [+{ Import.name = !&"a.b"; alias = None }] }];
   assert_parsed_equal
     "import a as b"
     [
       +Statement.Import
-         { Import.from = None; imports = [{ Import.name = + !&"a"; alias = Some (+"b") }] };
+         { Import.from = None; imports = [+{ Import.name = !&"a"; alias = Some "b" }] };
     ];
   assert_parsed_equal
     "import a as b, c, d as e"
@@ -4687,9 +4685,9 @@ let test_import _ =
            Import.from = None;
            imports =
              [
-               { Import.name = + !&"a"; alias = Some (+"b") };
-               { Import.name = + !&"c"; alias = None };
-               { Import.name = + !&"d"; alias = Some (+"e") };
+               +{ Import.name = !&"a"; alias = Some "b" };
+               +{ Import.name = !&"c"; alias = None };
+               +{ Import.name = !&"d"; alias = Some "e" };
              ];
          };
     ];
@@ -4697,74 +4695,71 @@ let test_import _ =
     "from a import b"
     [
       +Statement.Import
-         { Import.from = Some (+ !&"a"); imports = [{ Import.name = + !&"b"; alias = None }] };
+         { Import.from = Some !&"a"; imports = [+{ Import.name = !&"b"; alias = None }] };
     ];
   assert_parsed_equal
     "from a import *"
     [
       +Statement.Import
-         { Import.from = Some (+ !&"a"); imports = [{ Import.name = + !&"*"; alias = None }] };
+         { Import.from = Some !&"a"; imports = [+{ Import.name = !&"*"; alias = None }] };
     ];
   assert_parsed_equal
     "from . import b"
     [
       +Statement.Import
-         { Import.from = Some (+ !&"."); imports = [{ Import.name = + !&"b"; alias = None }] };
+         { Import.from = Some !&"."; imports = [+{ Import.name = !&"b"; alias = None }] };
     ];
   assert_parsed_equal
     "from ...foo import b"
     [
       +Statement.Import
-         { Import.from = Some (+ !&"...foo"); imports = [{ Import.name = + !&"b"; alias = None }] };
+         { Import.from = Some !&"...foo"; imports = [+{ Import.name = !&"b"; alias = None }] };
     ];
   assert_parsed_equal
     "from .....foo import b"
     [
       +Statement.Import
-         {
-           Import.from = Some (+ !&".....foo");
-           imports = [{ Import.name = + !&"b"; alias = None }];
-         };
+         { Import.from = Some !&".....foo"; imports = [+{ Import.name = !&"b"; alias = None }] };
     ];
   assert_parsed_equal
     "from .a import b"
     [
       +Statement.Import
-         { Import.from = Some (+ !&".a"); imports = [{ Import.name = + !&"b"; alias = None }] };
+         { Import.from = Some !&".a"; imports = [+{ Import.name = !&"b"; alias = None }] };
     ];
   assert_parsed_equal
     "from ..a import b"
     [
       +Statement.Import
-         { Import.from = Some (+ !&"..a"); imports = [{ Import.name = + !&"b"; alias = None }] };
+         { Import.from = Some !&"..a"; imports = [+{ Import.name = !&"b"; alias = None }] };
     ];
   assert_parsed_equal
     "from a import (b, c)"
     [
       +Statement.Import
          {
-           Import.from = Some (+ !&"a");
+           Import.from = Some !&"a";
            imports =
-             [{ Import.name = + !&"b"; alias = None }; { Import.name = + !&"c"; alias = None }];
+             [+{ Import.name = !&"b"; alias = None }; +{ Import.name = !&"c"; alias = None }];
          };
     ];
   assert_parsed_equal
     "from a.b import c"
     [
       +Statement.Import
-         { Import.from = Some (+ !&"a.b"); imports = [{ Import.name = + !&"c"; alias = None }] };
+         { Import.from = Some !&"a.b"; imports = [+{ Import.name = !&"c"; alias = None }] };
     ];
   assert_parsed_equal
     "from f import a as b, c, d as e"
     [
       +Statement.Import
          {
-           Import.from = Some (+ !&"f");
+           Import.from = Some !&"f";
            imports =
              [
-               { Import.name = + !&"a"; alias = Some (+"b") };
-               { Import.name = + !&"c"; alias = None };
-               { Import.name = + !&"d"; alias = Some (+"e") };
+               +{ Import.name = !&"a"; alias = Some "b" };
+               +{ Import.name = !&"c"; alias = None };
+               +{ Import.name = !&"d"; alias = Some "e" };
              ];
          };
     ];

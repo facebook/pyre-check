@@ -197,9 +197,9 @@ let same_module_compare
 
 let is_stub { is_stub; _ } = is_stub
 
-let expand_relative_import ~from:{ Node.value = from; location } { is_init; qualifier; _ } =
+let expand_relative_import ~from { is_init; qualifier; _ } =
   match Reference.show from with
-  | "builtins" -> Node.create ~location Reference.empty
+  | "builtins" -> Reference.empty
   | serialized ->
       (* Expand relative imports according to PEP 328 *)
       let dots = String.take_while ~f:(fun dot -> Char.equal dot '.') serialized in
@@ -227,4 +227,4 @@ let expand_relative_import ~from:{ Node.value = from; location } { is_init; qual
         else
           Reference.empty
       in
-      Node.create ~location (Reference.combine prefix postfix)
+      Reference.combine prefix postfix
