@@ -17,9 +17,20 @@ let module_of_path ~configuration ~module_tracker path =
 
 
 let instantiate_path ~build_system ~configuration ~ast_environment qualifier =
-  AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier
-  |> Option.bind ~f:(BuildSystem.lookup_source build_system)
-  |> Option.map ~f:Path.absolute
+  match AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier with
+  | None -> None
+  | Some artifact_path ->
+      let path =
+        match BuildSystem.lookup_source build_system artifact_path with
+        | Some source_path -> source_path
+        | None ->
+            (* NOTE (grievejia): This means the path is under the search roots but is not tracked by
+               Buck. Showing the original path here is a compromise: ideally we should instead look
+               into configuring Buck-built project in such a way that all source files are tracked
+               by Buck. *)
+            artifact_path
+      in
+      Some (Path.absolute path)
 
 
 let instantiate_error

@@ -104,7 +104,7 @@ let test_type_errors context =
       project_root
     in
     test_source_path := Path.create_relative ~root:global_root ~relative:"test.py";
-    let expected_error =
+    let test_error =
       Analysis.AnalysisError.Instantiated.of_yojson
         (`Assoc
           [
@@ -128,22 +128,49 @@ let test_type_errors context =
           ])
       |> Result.ok_or_failwith
     in
+    let test2_error =
+      (* `test2.py` is intentionally not tracked by the build system. The expected behavior here is
+         to show its original path. *)
+      let test2_artifact_path = Path.create_relative ~root:global_root ~relative:"test2.py" in
+      Analysis.AnalysisError.Instantiated.of_yojson
+        (`Assoc
+          [
+            "line", `Int 1;
+            "column", `Int 0;
+            "stop_line", `Int 1;
+            "stop_column", `Int 11;
+            "path", `String (Path.absolute test2_artifact_path);
+            "code", `Int (-1);
+            "name", `String "Revealed type";
+            ( "description",
+              `String
+                "Revealed type [-1]: Revealed type for `43` is `typing_extensions.Literal[43]`." );
+            ( "long_description",
+              `String
+                "Revealed type [-1]: Revealed type for `43` is `typing_extensions.Literal[43]`." );
+            ( "concise_description",
+              `String
+                "Revealed type [-1]: Revealed type for `43` is `typing_extensions.Literal[43]`." );
+            "define", `String "test2.$toplevel";
+          ])
+      |> Result.ok_or_failwith
+    in
     Client.assert_response
       client
       ~request:(Request.DisplayTypeError [])
-      ~expected:(Response.TypeErrors [expected_error])
+      ~expected:(Response.TypeErrors [test_error; test2_error])
     >>= fun () ->
     Client.assert_response
       client
       ~request:(Request.DisplayTypeError ["/foo/test.py"])
-      ~expected:(Response.TypeErrors [expected_error])
+      ~expected:(Response.TypeErrors [test_error])
   in
   ScratchProject.setup
     ~context
     ~include_typeshed_stubs:false
     ~include_helper_builtins:false
     ~build_system_initializer
-    ["test.py", "reveal_type(42)"]
+    ["test.py", "reveal_type(42)"; "test2.py", "reveal_type(43)"]
   |> ScratchProject.test_server_with ~f:test_type_errors
 
 
