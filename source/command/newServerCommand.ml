@@ -12,6 +12,7 @@ module Path = PyrePath
 module ServerConfiguration = struct
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
+    socket_path: Path.t option;
     strict: bool;
     show_error_traces: bool;
     additional_logging_sections: string list;
@@ -35,6 +36,7 @@ module ServerConfiguration = struct
             list_member ~f:to_critical_file
           in
 
+          let socket_path = json |> optional_path_member "socket_path" in
           let watchman_root = json |> optional_path_member "watchman_root" in
           let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
           let strict = json |> bool_member "strict" ~default:false in
@@ -56,6 +58,7 @@ module ServerConfiguration = struct
           Result.Ok
             {
               base;
+              socket_path;
               watchman_root;
               taint_model_paths;
               strict;
@@ -75,13 +78,14 @@ module ServerConfiguration = struct
   let start_options_of
       {
         base = { NewCommandStartup.BaseConfiguration.source_paths; _ };
+        socket_path;
         watchman_root;
         critical_files;
         saved_state_action;
         _;
       }
     =
-    { StartOptions.source_paths; watchman_root; critical_files; saved_state_action }
+    { StartOptions.source_paths; socket_path; watchman_root; critical_files; saved_state_action }
 
 
   let analysis_configuration_of
@@ -108,6 +112,7 @@ module ServerConfiguration = struct
             memory_profiling_output = _;
           };
         strict;
+        socket_path = _;
         taint_model_paths;
         show_error_traces;
         store_type_check_resolution;

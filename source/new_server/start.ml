@@ -205,7 +205,7 @@ let initialize_server_state
     ?watchman_subscriber
     ?build_system_initializer
     ~configuration:({ Configuration.Analysis.log_directory; _ } as configuration)
-    { StartOptions.source_paths; saved_state_action; critical_files; _ }
+    { StartOptions.socket_path; source_paths; saved_state_action; critical_files; _ }
   =
   (* This is needed to initialize shared memory. *)
   let _ = Memory.get_heap_handle configuration in
@@ -227,8 +227,9 @@ let initialize_server_state
       List.iter errors ~f:add_error;
       table
     in
+    let socket_path = Option.value socket_path ~default:(socket_path_of log_directory) in
     ServerState.create
-      ~socket_path:(socket_path_of log_directory)
+      ~socket_path
       ~critical_files
       ~configuration
       ~build_system
@@ -409,8 +410,11 @@ let initialize_server_state
                   in
                   Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
                   let error_table = Server.SavedState.ServerErrors.load () in
+                  let socket_path =
+                    Option.value socket_path ~default:(socket_path_of log_directory)
+                  in
                   ServerState.create
-                    ~socket_path:(socket_path_of log_directory)
+                    ~socket_path
                     ~critical_files
                     ~configuration
                     ~build_system
@@ -525,10 +529,10 @@ let with_server
     ?build_system_initializer
     ~configuration:({ Configuration.Analysis.log_directory; extensions; _ } as configuration)
     ~f
-    ({ StartOptions.source_paths; watchman_root; critical_files; _ } as start_options)
+    ({ StartOptions.socket_path; source_paths; watchman_root; critical_files; _ } as start_options)
   =
   let open Lwt in
-  let socket_path = socket_path_of log_directory in
+  let socket_path = Option.value socket_path ~default:(socket_path_of log_directory) in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
   get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions ~source_paths ()

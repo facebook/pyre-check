@@ -134,6 +134,7 @@ module ScratchProject = struct
     let start_options =
       {
         StartOptions.source_paths = Configuration.SourcePaths.Simple [SearchPath.Root source_root];
+        socket_path = None;
         watchman_root;
         critical_files = [];
         saved_state_action = None;

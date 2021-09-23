@@ -31,6 +31,7 @@ let test_json_parsing context =
       strict = false;
       show_error_traces = false;
       additional_logging_sections = [];
+      socket_path = None;
       watchman_root = None;
       critical_files = [];
       taint_model_paths = [];
