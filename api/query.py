@@ -197,6 +197,7 @@ def _annotations_per_file(data: PyreQueryResult) -> Dict[str, List[Annotation]]:
             for locations_and_annotations in response["response"][0]["types"]
         ]
         for response in data["response"]
+        if "response" in response
     }
 
 

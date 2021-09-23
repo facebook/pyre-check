@@ -196,6 +196,41 @@ class QueryAPITest(unittest.TestCase):
             },
         )
 
+    def test_annotations_per_file__file_not_found(self) -> None:
+        test_data: connection.PyreQueryResult = {
+            "response": [
+                {
+                    "response": [
+                        {
+                            "path": "tensor.py",
+                            "types": [
+                                {
+                                    "location": {
+                                        "start": {"line": 1, "column": 0},
+                                        "stop": {"line": 1, "column": 5},
+                                    },
+                                    "annotation": "int",
+                                },
+                            ],
+                        }
+                    ]
+                },
+                {"error": "Some error"},
+            ]
+        }
+        self.assertEqual(
+            query._annotations_per_file(test_data),
+            {
+                "tensor.py": [
+                    query.Annotation(
+                        type_name="int",
+                        start=query.Position(line=1, column=0),
+                        stop=query.Position(line=1, column=5),
+                    ),
+                ],
+            },
+        )
+
     def test_get_superclasses(self) -> None:
         pyre_connection = MagicMock()
         pyre_connection.query_server.return_value = {
