@@ -1,0 +1,559 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test1_alarm1",
+    "callable_line": 14,
+    "code": 5002,
+    "line": 16,
+    "start": 13,
+    "end": 14,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 15,
+              "start": 13,
+              "end": 27
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 16,
+              "start": 13,
+              "end": 14
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.test1_f1"
+              }
+            ],
+            "features": [ { "always-via-type": "str" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "str" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test1_alarm2",
+    "callable_line": 19,
+    "code": 5002,
+    "line": 21,
+    "start": 18,
+    "end": 19,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 20,
+              "start": 31,
+              "end": 45
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 21,
+              "start": 18,
+              "end": 19
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.test1_f1"
+              }
+            ],
+            "features": [ { "always-via-type": "typing.Annotated[str]" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Annotated[str]" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test1_alarm3",
+    "callable_line": 24,
+    "code": 5002,
+    "line": 26,
+    "start": 23,
+    "end": 24,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 25,
+              "start": 13,
+              "end": 27
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 26,
+              "start": 23,
+              "end": 24
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.test1_f1"
+              }
+            ],
+            "features": [ { "always-via-type": "int" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "int" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test2_alarm1",
+    "callable_line": 45,
+    "code": 5002,
+    "line": 47,
+    "start": 9,
+    "end": 10,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 46,
+              "start": 13,
+              "end": 27
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 47,
+              "start": 9,
+              "end": 10
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.Test2_C.f1"
+              }
+            ],
+            "features": [ { "always-via-type": "str" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "str" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test2_alarm2",
+    "callable_line": 50,
+    "code": 5002,
+    "line": 52,
+    "start": 14,
+    "end": 15,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 51,
+              "start": 24,
+              "end": 38
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 52,
+              "start": 14,
+              "end": 15
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.Test2_C.f1"
+              }
+            ],
+            "features": [ { "always-via-type": "typing.Dict[str, int]" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Dict[str, int]" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test2_alarm3",
+    "callable_line": 55,
+    "code": 5002,
+    "line": 57,
+    "start": 19,
+    "end": 20,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 56,
+              "start": 17,
+              "end": 31
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 57,
+              "start": 19,
+              "end": 20
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.Test2_C.f1"
+              }
+            ],
+            "features": [
+              {
+                "always-via-type": "model_query_parameters_viatypeof.Test2_T"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "model_query_parameters_viatypeof.Test2_T" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test2_alarm4",
+    "callable_line": 60,
+    "code": 5002,
+    "line": 62,
+    "start": 9,
+    "end": 10,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 61,
+              "start": 13,
+              "end": 27
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 62,
+              "start": 9,
+              "end": 10
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.Test2_C.f2"
+              }
+            ],
+            "features": [ { "always-via-type": "int" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "int" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test2_alarm5",
+    "callable_line": 65,
+    "code": 5002,
+    "line": 67,
+    "start": 14,
+    "end": 15,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 66,
+              "start": 29,
+              "end": 43
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 67,
+              "start": 14,
+              "end": 15
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.Test2_C.f2"
+              }
+            ],
+            "features": [
+              {
+                "always-via-type":
+                  "typing.List[typing.List[model_query_parameters_viatypeof.Test2_T]]"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      {
+        "always-via-type":
+          "typing.List[typing.List[model_query_parameters_viatypeof.Test2_T]]"
+      },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test2_alarm6",
+    "callable_line": 70,
+    "code": 5002,
+    "line": 72,
+    "start": 19,
+    "end": 20,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 71,
+              "start": 15,
+              "end": 29
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 72,
+              "start": 19,
+              "end": 20
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "model_query_parameters_viatypeof.Test2_C.f2"
+              }
+            ],
+            "features": [ { "always-via-type": "float" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "float" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.Test2_C.f1",
+    "sinks": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(b)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.Test2_C.f2",
+    "sinks": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(b)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test1_f1",
+    "sinks": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(b)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ]
+  }
+}

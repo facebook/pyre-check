@@ -263,7 +263,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             };
           _;
         } ) ->
-      let production_to_taint ~annotation ~production =
+      let production_to_taint ?(parameter = None) ~production annotation =
         let open Expression in
         let get_subkind_from_annotation ~pattern annotation =
           let get_annotation_of_type annotation =
@@ -312,8 +312,58 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 None
           | _ -> None
         in
+        let update_placeholder_via_feature ~actual_parameter =
+          (* If we see a via_feature on the $global attribute symbolic parameter in the taint for an
+             actual parameter, we replace it with the actual parameter. *)
+          let open Features in
+          function
+          | ViaFeature.ViaTypeOf
+              {
+                parameter =
+                  AccessPath.Root.PositionalParameter
+                    { position = 0; name = "$global"; positional_only = false };
+                tag;
+              } ->
+              ViaFeature.ViaTypeOf { parameter = actual_parameter; tag }
+          | ViaFeature.ViaValueOf
+              {
+                parameter =
+                  AccessPath.Root.PositionalParameter
+                    { position = 0; name = "$global"; positional_only = false };
+                tag;
+              } ->
+              ViaFeature.ViaValueOf { parameter = actual_parameter; tag }
+          | feature -> feature
+        in
+        let update_placeholder_via_features taint_annotation =
+          match parameter, taint_annotation with
+          | Some actual_parameter, Source source ->
+              let via_features =
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) source.via_features
+              in
+              Source { source with via_features }
+          | Some actual_parameter, Sink sink ->
+              let via_features =
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) sink.via_features
+              in
+              Sink { sink with via_features }
+          | Some actual_parameter, Tito tito ->
+              let via_features =
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) tito.via_features
+              in
+              Tito { tito with via_features }
+          | Some actual_parameter, AddFeatureToArgument annotation ->
+              let via_features =
+                List.map
+                  ~f:(update_placeholder_via_feature ~actual_parameter)
+                  annotation.via_features
+              in
+              AddFeatureToArgument { annotation with via_features }
+          | _ -> taint_annotation
+        in
         match production with
-        | ModelQuery.TaintAnnotation taint_annotation -> Some taint_annotation
+        | ModelQuery.TaintAnnotation taint_annotation ->
+            Some (update_placeholder_via_features taint_annotation)
         | ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind } ->
             get_subkind_from_annotation ~pattern:source_pattern annotation
             >>| fun subkind ->
@@ -343,7 +393,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
       let apply_production = function
         | ModelQuery.ReturnTaint productions ->
             List.filter_map productions ~f:(fun production ->
-                production_to_taint ~annotation:return_annotation ~production
+                production_to_taint return_annotation ~production
                 >>| fun taint -> ReturnAnnotation, taint)
         | ModelQuery.NamedParameterTaint { name; taint = productions } -> (
             let parameter =
@@ -362,7 +412,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             match parameter with
             | Some (parameter, annotation) ->
                 List.filter_map productions ~f:(fun production ->
-                    production_to_taint ~annotation ~production
+                    production_to_taint annotation ~production
                     >>| fun taint -> ParameterAnnotation parameter, taint)
             | None -> [])
         | ModelQuery.PositionalParameterTaint { index; taint = productions } -> (
@@ -378,7 +428,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             match parameter with
             | Some (parameter, annotation) ->
                 List.filter_map productions ~f:(fun production ->
-                    production_to_taint ~annotation ~production
+                    production_to_taint annotation ~production
                     >>| fun taint -> ParameterAnnotation parameter, taint)
             | None -> [])
         | ModelQuery.AllParametersTaint { excludes; taint } ->
@@ -392,7 +442,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
               then
                 None
               else
-                production_to_taint ~annotation ~production
+                production_to_taint annotation ~production
                 >>| fun taint -> ParameterAnnotation root, taint
             in
             List.cartesian_product normalized_parameters taint
@@ -408,7 +458,8 @@ let apply_callable_productions ~resolution ~productions ~callable =
                   where
                   ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
               then
-                production_to_taint ~annotation ~production
+                let parameter, _, _ = parameter in
+                production_to_taint annotation ~production ~parameter:(Some parameter)
                 >>| fun taint -> ParameterAnnotation root, taint
               else
                 None

@@ -253,7 +253,8 @@ let rec parse_annotations
     ~configuration
     ~parameters
     ~callable_parameter_names_to_positions
-    ~is_object_target
+    ?(is_object_target = false)
+    ?(is_model_query = false)
     annotation
   =
   let open Core.Result in
@@ -357,7 +358,7 @@ let rec parse_annotations
   let rec extract_kinds expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier "ViaTypeOf") ->
-        if is_object_target then (* ViaTypeOf is treated as ViaTypeOf[$global] *)
+        if is_object_target or is_model_query then (* ViaTypeOf is treated as ViaTypeOf[$global] *)
           Ok
             [
               ViaFeatures
@@ -1676,6 +1677,7 @@ let parse_model_clause
               ~parameters:[]
               ~callable_parameter_names_to_positions:None
               ~is_object_target
+              ~is_model_query:true
               expression
             >>| List.map ~f:(fun taint -> ModelQuery.TaintAnnotation taint)
       in
