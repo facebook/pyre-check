@@ -1,0 +1,3 @@
+#!/bin/bash
+yarn --proxy="http://fwdproxy:8080" $@
+
