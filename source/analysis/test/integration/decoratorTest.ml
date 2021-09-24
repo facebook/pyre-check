@@ -1096,6 +1096,16 @@ let test_decorator_factories context =
       "Revealed type [-1]: Revealed type for `test.test_foo` is `typing.Callable[[int], str]`.";
       "Revealed type [-1]: Revealed type for `test.test_bar` is `typing.Callable[[int], str]`.";
     ];
+  assert_type_errors
+    {|
+     from typing import Callable, Tuple, Optional
+
+     def factory(x: Tuple[int, Optional[str]]) -> Callable[[Callable[[], None]], int]: ...
+
+     @factory((1, None))
+     def bar() -> None: ...
+    |}
+    [];
   ()
 
 

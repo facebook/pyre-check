@@ -2744,6 +2744,11 @@ class base class_metadata_environment dependency =
                     in
                     let error = AnnotatedAttribute.CouldNotResolveArgument { argument_index } in
                     match expression with
+                    | {
+                     Node.value = Expression.Expression.Name (Expression.Name.Identifier "None");
+                     _;
+                    } ->
+                        Ok (make_argument Type.NoneType)
                     | { Node.value = Expression.Expression.Name name; _ } ->
                         Expression.name_to_reference name
                         >>| Reference.delocalize
