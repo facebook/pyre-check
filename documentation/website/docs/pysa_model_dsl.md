@@ -566,6 +566,40 @@ ModelQuery(
 )
 ```
 
+#### Using `ViaTypeOf` with the `Parameters` clause
+
+Usually when specifying a `ViaTypeOf` the argument that you want to capture the value or type of should be specified. However, when writing model queries and trying to find all parameters that match certain conditions, we may not know the exact name of the parameters that will be modelled. For example:
+```python
+def f1(bad_1, good_1, good_2):
+  pass
+
+def f2(good_3, bad_2, good_4):
+  pass
+```
+
+Suppose we wanted to model all parameters with the prefix `bad_` here and attach a `ViaTypeOf` to them. In this case it is still possible to attach these features to the parameter model, by using a standalone `ViaTypeOf` as follows:
+```python
+ModelQuery(
+  find = "functions",
+  where = name.matches("f"),
+  model = [
+    Parameters(
+      TaintSink[Test, ViaTypeOf],
+      where=[
+        name.matches("bad_")
+      ]
+    )
+  ]
+)
+```
+
+This would produce models equivalent to the following:
+```python
+def f1(bad_1: TaintSink[Test, ViaTypeOf[bad_1]]): ...
+def f2(bad_2: TaintSink[Test, ViaTypeOf[bad_2]]): ...
+```
+
+
 ### Models for attributes
 
 Taint for attribute models requires a `AttributeModel` model clause, which can only be used when the find clause specifies attributes.

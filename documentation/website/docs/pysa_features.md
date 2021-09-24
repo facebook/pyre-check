@@ -133,7 +133,7 @@ such as `"via-type": "str"`, `"via-type": "typing.List[str]"`, or `"via-type":
 
 `ViaTypeOf` is useful for sinks such as `subprocess.run`, which accepts
 `Union[bytes, str, Sequence]` for it's `arg` parameter. The `via-type` feature
-can help identify which type the argument to `arg` actaully had. Knowing the
+can help identify which type the argument to `arg` actually had. Knowing the
 type of the argument can help assess the severity of a given issue (user
 controlled input in a `str` passed to `arg` is much easier to exploit for RCE
 than user controlled input in one element of a `Sequence` passed to `arg`).
@@ -156,6 +156,17 @@ feature:
 def subprocess.run(
     args: TaintSink[RemoteCodeExecution, ViaTypeOf[args, WithTag["subprocess-arg"]]]
 ): ...
+```
+
+`ViaTypeOf` can also be used on attribute or global models, although tags are not supported. For example:
+```python
+my_module.MyClass.source: TaintSource[Test, ViaTypeOf] = ...
+my_module.MyClass.sink: TaintSource[Test, ViaTypeOf] = ...
+```
+
+A standalone `ViaTypeOf` is also supported in this case, and is shorthand for `TaintInTaintOut[ViaTypeOf]`:
+```python
+my_module.MyClass.my_attribute: ViaTypeOf = ...
 ```
 
 ### Supporting Features Dynamically Using `ViaDynamicFeature[]`
