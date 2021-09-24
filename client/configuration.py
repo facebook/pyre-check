@@ -1200,7 +1200,7 @@ class Configuration:
                     f"`{extension.suffix}`"
                 )
             else:
-                vaild_extensions.append(extension.suffix)
+                vaild_extensions.append(extension.command_line_argument())
         return vaild_extensions
 
     def get_isolation_prefix_respecting_override(self) -> Optional[str]:
