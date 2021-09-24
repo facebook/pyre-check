@@ -747,6 +747,7 @@ and Expression : sig
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
+    | NoneLiteral
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
@@ -786,6 +787,7 @@ end = struct
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
+    | NoneLiteral
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
@@ -828,6 +830,7 @@ end = struct
     | ListComprehension left, ListComprehension right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
     | Name left, Name right -> Name.location_insensitive_compare left right
+    | NoneLiteral, NoneLiteral -> 0
     | Set left, Set right -> List.compare location_insensitive_compare left right
     | SetComprehension left, SetComprehension right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
@@ -858,6 +861,7 @@ end = struct
     | List _, _ -> -1
     | ListComprehension _, _ -> -1
     | Name _, _ -> -1
+    | NoneLiteral, _ -> -1
     | Set _, _ -> -1
     | SetComprehension _, _ -> -1
     | Starred _, _ -> -1
@@ -1070,6 +1074,7 @@ end = struct
       | Name (Name.Identifier name) -> Format.fprintf formatter "%s" name
       | Name (Name.Attribute { base; attribute; _ }) ->
           Format.fprintf formatter "%a.%s" pp_expression (Node.value base) attribute
+      | NoneLiteral -> Format.fprintf formatter "None"
       | Set set -> Format.fprintf formatter "set(%a)" pp_expression_list set
       | SetComprehension set_comprehension ->
           Format.fprintf formatter "set(%a)" pp_basic_comprehension set_comprehension

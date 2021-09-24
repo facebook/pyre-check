@@ -89,6 +89,7 @@ module AccessCollector = struct
     | False
     | Float _
     | Integer _
+    | NoneLiteral
     | True ->
         collected
 

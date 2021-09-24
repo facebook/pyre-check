@@ -123,7 +123,8 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Integer _
       | True
       | False
-      | Float _ ->
+      | Float _
+      | NoneLiteral ->
           ()
     in
     visit_children (Node.value expression);

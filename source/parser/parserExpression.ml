@@ -300,6 +300,7 @@ and Expression : sig
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
+    | NoneLiteral
     | Parenthesis of t
     | Set of t list
     | SetComprehension of t Comprehension.t
@@ -332,6 +333,7 @@ end = struct
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
+    | NoneLiteral
     | Parenthesis of t
     | Set of t list
     | SetComprehension of t Comprehension.t
@@ -408,6 +410,7 @@ let rec convert { Node.location; value } =
       |> Node.create ~location
   | Name (Name.Identifier name) ->
       AstExpression.Expression.Name (AstExpression.Name.Identifier name) |> Node.create ~location
+  | NoneLiteral -> AstExpression.Expression.NoneLiteral |> Node.create ~location
   | Parenthesis expression -> convert expression
   | Set expression_list ->
       AstExpression.Expression.Set (List.map ~f:convert expression_list) |> Node.create ~location

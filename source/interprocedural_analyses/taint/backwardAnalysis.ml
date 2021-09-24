@@ -1121,6 +1121,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 |> apply_attribute_sanitizers
               in
               analyze_expression ~resolution ~taint ~state ~expression:base)
+      | NoneLiteral -> state
       | Set set ->
           let element_taint = read_tree [Abstract.TreeDomain.Label.AnyIndex] taint in
           List.fold

@@ -1676,6 +1676,7 @@ let is_generator statements =
     | Integer _
     | Lambda _
     | Name _
+    | NoneLiteral
     | String _
     | True ->
         false

@@ -287,6 +287,7 @@ and Expression : sig
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
+    | NoneLiteral
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t

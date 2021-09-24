@@ -1203,6 +1203,7 @@ let qualify
       | Ellipsis
       | False
       | Float _
+      | NoneLiteral
       | Integer _
       | True ->
           value
@@ -2893,6 +2894,7 @@ module AccessCollector = struct
     | False
     | Float _
     | Integer _
+    | NoneLiteral
     | True ->
         collected
 

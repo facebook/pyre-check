@@ -1234,6 +1234,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 let arguments = [{ Call.Argument.name = None; value = base }] in
                 apply_call_targets ~resolution ~callee:expression location arguments state targets
             | _ -> analyze_attribute_access ~resolution ~state ~location base attribute)
+        | NoneLiteral -> ForwardState.Tree.empty, state
         | Set set ->
             List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
         | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state

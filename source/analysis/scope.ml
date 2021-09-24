@@ -107,6 +107,7 @@ module Binding = struct
     | Integer _
     | Lambda _
     | Name (Name.Identifier _)
+    | NoneLiteral
     | String _
     | True
     | Yield None ->

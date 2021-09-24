@@ -155,6 +155,7 @@ module Make (Transformer : Transformer) = struct
         | Name (Name.Identifier _) -> value
         | Name (Name.Attribute ({ base; _ } as name)) ->
             Name (Name.Attribute { name with base = transform_expression base })
+        | NoneLiteral -> value
         | Set elements -> Set (transform_list elements ~f:transform_expression)
         | SetComprehension { Comprehension.element; generators } ->
             SetComprehension

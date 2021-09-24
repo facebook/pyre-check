@@ -434,6 +434,7 @@ module State (Context : Context) = struct
     | Integer _
     | String _
     | Name _
+    | NoneLiteral
     | True
     | Ellipsis ->
         [], state

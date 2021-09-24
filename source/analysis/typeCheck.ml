@@ -3607,6 +3607,14 @@ module State (Context : Context) = struct
           ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
           ~special
           attribute
+    | NoneLiteral ->
+        {
+          resolution;
+          errors = [];
+          resolved = Type.NoneType;
+          resolved_annotation = None;
+          base = None;
+        }
     | Set elements ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_elements ~resolution ~errors:[] ~elements
