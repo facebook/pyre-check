@@ -2476,7 +2476,7 @@ class base class_metadata_environment dependency =
               (* Constructor on concrete class or fully specified generic,
                * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
               Option.value (fully_specified_type callee) ~default:Type.Any)
-      | Name (Identifier "None") -> Type.Any
+      | NoneLiteral -> Type.Any
       | Name name when is_simple_name name -> (
           let reference = name_to_reference_exn name in
           let unannotated_global_environment =
@@ -2744,10 +2744,7 @@ class base class_metadata_environment dependency =
                     in
                     let error = AnnotatedAttribute.CouldNotResolveArgument { argument_index } in
                     match expression with
-                    | {
-                     Node.value = Expression.Expression.Name (Expression.Name.Identifier "None");
-                     _;
-                    } ->
+                    | { Node.value = Expression.Expression.NoneLiteral; _ } ->
                         Ok (make_argument Type.NoneType)
                     | { Node.value = Expression.Expression.Name name; _ } ->
                         Expression.name_to_reference name

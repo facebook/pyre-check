@@ -385,9 +385,9 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = !"None" };
-                                { Call.Argument.name = None; value = !"None" };
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                               ];
                           };
                    };
@@ -414,8 +414,8 @@ let test_name _ =
                             arguments =
                               [
                                 { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                { Call.Argument.name = None; value = !"None" };
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                               ];
                           };
                    };
@@ -441,8 +441,8 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = !"None" };
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                                 { Call.Argument.name = None; value = +Expression.Integer 2 };
                               ];
                           };
@@ -469,9 +469,9 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                                 { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                               ];
                           };
                    };
@@ -497,7 +497,7 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                                 {
                                   Call.Argument.name = None;
                                   value =
@@ -508,7 +508,7 @@ let test_name _ =
                                          alternative = +Expression.Integer 2;
                                        };
                                 };
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                               ];
                           };
                    };
@@ -536,7 +536,7 @@ let test_name _ =
                               [
                                 { Call.Argument.name = None; value = +Expression.Integer 1 };
                                 { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                               ];
                           };
                    };
@@ -582,9 +582,9 @@ let test_name _ =
                                  callee = !"slice";
                                  arguments =
                                    [
-                                     { Call.Argument.name = None; value = !"None" };
+                                     { Call.Argument.name = None; value = +Expression.NoneLiteral };
                                      { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                     { Call.Argument.name = None; value = !"None" };
+                                     { Call.Argument.name = None; value = +Expression.NoneLiteral };
                                    ];
                                };
                             +Expression.Integer 2;
@@ -4644,7 +4644,7 @@ let test_assert _ =
                 {
                   ComparisonOperator.left = !"a";
                   operator = ComparisonOperator.IsNot;
-                  right = !"None";
+                  right = +Expression.NoneLiteral;
                 };
            message = Some (+Expression.String (StringLiteral.create "b or c"));
            origin = Assert.Origin.Assertion;
@@ -5220,7 +5220,7 @@ let test_setitem _ =
                             arguments =
                               [
                                 { Call.Argument.name = None; value = !"j" };
-                                { Call.Argument.name = None; value = !"None" };
+                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
                                 { Call.Argument.name = None; value = +Expression.Integer 1 };
                               ];
                           };
@@ -5244,9 +5244,15 @@ let test_setitem _ =
                                          callee = !"slice";
                                          arguments =
                                            [
-                                             { Call.Argument.name = None; value = !"None" };
+                                             {
+                                               Call.Argument.name = None;
+                                               value = +Expression.NoneLiteral;
+                                             };
                                              { Call.Argument.name = None; value = !"j" };
-                                             { Call.Argument.name = None; value = !"None" };
+                                             {
+                                               Call.Argument.name = None;
+                                               value = +Expression.NoneLiteral;
+                                             };
                                            ];
                                        };
                                 };

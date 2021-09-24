@@ -149,8 +149,7 @@
     let arguments =
       let argument argument location =
         let none =
-          Expression.Name (Name.Identifier "None")
-          |> Node.create ~location
+          Node.create ~location Expression.NoneLiteral
         in
         Option.value argument ~default:none
       in
@@ -311,6 +310,7 @@
 %token <(Lexing.position * Lexing.position)> ELLIPSES
 %token <(Lexing.position * Lexing.position)> FALSE
 %token <(Lexing.position * Lexing.position)> TRUE
+%token <(Lexing.position * Lexing.position)> NONE
 
 (* Control. *)
 %token <Lexing.position> ASSERT
@@ -1333,6 +1333,14 @@ atom:
       {
         Node.location = Location.create ~start ~stop;
         value = Expression.Integer (snd number);
+      }
+    }
+
+  | position = NONE {
+      let start, stop = position in
+      {
+        Node.location = Location.create ~start ~stop;
+        value = Expression.NoneLiteral;
       }
     }
 

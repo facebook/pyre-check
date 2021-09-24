@@ -598,9 +598,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
               (Expression.Name
                  (Ast.Expression.create_name ~location:Location.any "typing.Callable.__call__"));
           annotation = Some (Type.expression Type.object_primitive);
-          value =
-            Node.create_with_default_location
-              (Expression.Name (Ast.Expression.create_name ~location:Location.any "None"));
+          value = Node.create_with_default_location Expression.NoneLiteral;
           parent = Some (Reference.create "typing.Callable");
         };
     ]
@@ -628,11 +626,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
                 Node.create_with_default_location
                   {
                     Ast.Expression.Parameter.name = "host_type";
-                    value =
-                      Some
-                        (Node.create_with_default_location
-                           (Expression.Name
-                              (Ast.Expression.create_name ~location:Location.any "None")));
+                    value = Some (Node.create_with_default_location Expression.NoneLiteral);
                     annotation = Some (Type.expression host_type);
                   };
               ];
@@ -828,7 +822,7 @@ let missing_builtin_globals =
           };
     }
   in
-  [assign "None" Type.none; assign "..." Type.Any; assign "__debug__" Type.bool]
+  [assign "..." Type.Any; assign "__debug__" Type.bool]
 
 
 let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =

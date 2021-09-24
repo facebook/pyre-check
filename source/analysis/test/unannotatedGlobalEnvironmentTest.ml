@@ -980,11 +980,7 @@ let test_updates context =
                      ~start:(2, 0)
                      ~stop:(3, 17)
                      (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
-                     (Some
-                        (node
-                           ~start:(2, 13)
-                           ~stop:(2, 17)
-                           (Expression.Name (Name.Identifier "None"))));
+                     (Some (node ~start:(2, 13) ~stop:(2, 17) Expression.NoneLiteral));
                  ]) );
       ]
     ~expected_triggers:[]
@@ -1000,11 +996,7 @@ let test_updates context =
                      ~start:(2, 0)
                      ~stop:(3, 17)
                      (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
-                     (Some
-                        (node
-                           ~start:(2, 13)
-                           ~stop:(2, 17)
-                           (Expression.Name (Name.Identifier "None"))));
+                     (Some (node ~start:(2, 13) ~stop:(2, 17) Expression.NoneLiteral));
                  ]) );
       ]
     ();
@@ -1606,11 +1598,7 @@ let test_updates context =
                               };
                             ];
                           return_annotation =
-                            Some
-                              (node
-                                 ~start:(6, 31)
-                                 ~stop:(6, 35)
-                                 (Expression.Name (Name.Identifier "None")));
+                            Some (node ~start:(6, 31) ~stop:(6, 35) Expression.NoneLiteral);
                           async = false;
                           generator = false;
                           parent = Some !&"test.A";
@@ -2072,12 +2060,6 @@ let test_resolve_exports context =
     ~from:!&"qualifier.a"
     ~reference:!&"foo"
     ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.Name.GlobalVariable));
-
-  assert_resolved
-    ~include_typeshed:true
-    ~expected:(Some (resolved_attribute !&"" "None" ~export:GlobalVariable))
-    ~reference:!&"None"
-    [];
 
   (* Special attribute tests. *)
   assert_resolved

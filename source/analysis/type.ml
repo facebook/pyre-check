@@ -2263,7 +2263,7 @@ let rec expression annotation =
                    { base = expression enumeration_type; attribute = member_name; special = false })
         in
         get_item_call "typing_extensions.Literal" [Node.create ~location literal]
-    | NoneType -> create_name "None"
+    | NoneType -> Expression.NoneLiteral
     | Parametric { name; parameters } ->
         let parameters =
           let expression_of_parameter = function
@@ -2924,7 +2924,6 @@ let primitive_substitution_map =
   [
     "$bottom", Bottom;
     "$unknown", Top;
-    "None", none;
     "function", Callable.create ~annotation:Any ();
     "typing.Any", Any;
     "typing.ChainMap", Primitive "collections.ChainMap";
@@ -2973,7 +2972,7 @@ let create_literal = function
                     member_name = attribute;
                   }))
       | _ -> None)
-  | Expression.Name (Identifier "None") -> Some none
+  | Expression.NoneLiteral -> Some none
   | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
   | _ -> None
 
@@ -3858,12 +3857,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             (* TODO(T84854853): Add back support for `Length` and `Product`. *)
             create_parametric ~base ~argument
         | _ -> Top)
+    | NoneLiteral -> none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
-        if String.equal sanitized "None" then
-          none
-        else
-          Primitive sanitized |> resolve_aliases
+        Primitive sanitized |> resolve_aliases
     | Name (Name.Attribute { base; attribute; _ }) -> (
         let attribute = Identifier.sanitized attribute in
         match create_logic base with

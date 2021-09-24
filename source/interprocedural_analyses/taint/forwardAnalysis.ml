@@ -581,7 +581,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               | _ ->
                   (* Default to a benign self if we don't understand/retain information of what self
                      is. *)
-                  Node.create_with_default_location (Expression.Name (Name.Identifier "None"))
+                  Node.create_with_default_location Expression.NoneLiteral
             in
             { Call.Argument.name = None; value = receiver } :: arguments
           else
@@ -1347,8 +1347,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     let analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
       | Statement.Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
-      | Assign { value = { Node.value = Expression.Name (Name.Identifier "None"); _ }; target; _ }
-        -> (
+      | Assign { value = { Node.value = Expression.NoneLiteral; _ }; target; _ } -> (
           match AccessPath.of_expression ~resolution target with
           | Some { AccessPath.root; path } ->
               (* We need to take some care to ensure we clear existing taint, without adding new

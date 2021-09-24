@@ -87,8 +87,7 @@ let test_assert_locations _ =
                       ComparisonOperator.left =
                         node ~start:(1, 7) ~stop:(1, 8) (Expression.Name (Name.Identifier "a"));
                       operator = ComparisonOperator.IsNot;
-                      right =
-                        node ~start:(1, 16) ~stop:(1, 20) (Expression.Name (Name.Identifier "None"));
+                      right = node ~start:(1, 16) ~stop:(1, 20) Expression.NoneLiteral;
                     });
              message =
                Some
@@ -751,10 +750,7 @@ let test_call_locations _ =
                                       {
                                         Call.Argument.name = None;
                                         value =
-                                          node
-                                            ~start:(1, 2)
-                                            ~stop:(1, 2)
-                                            (Expression.Name (Name.Identifier "None"));
+                                          node ~start:(1, 2) ~stop:(1, 2) Expression.NoneLiteral;
                                       };
                                       {
                                         Call.Argument.name = None;
@@ -764,10 +760,7 @@ let test_call_locations _ =
                                       {
                                         Call.Argument.name = None;
                                         value =
-                                          node
-                                            ~start:(1, 4)
-                                            ~stop:(1, 4)
-                                            (Expression.Name (Name.Identifier "None"));
+                                          node ~start:(1, 4) ~stop:(1, 4) Expression.NoneLiteral;
                                       };
                                     ];
                                 });
@@ -822,18 +815,12 @@ let test_call_locations _ =
                                       {
                                         Call.Argument.name = None;
                                         value =
-                                          node
-                                            ~start:(1, 2)
-                                            ~stop:(1, 2)
-                                            (Expression.Name (Name.Identifier "None"));
+                                          node ~start:(1, 2) ~stop:(1, 2) Expression.NoneLiteral;
                                       };
                                       {
                                         Call.Argument.name = None;
                                         value =
-                                          node
-                                            ~start:(1, 3)
-                                            ~stop:(1, 3)
-                                            (Expression.Name (Name.Identifier "None"));
+                                          node ~start:(1, 3) ~stop:(1, 3) Expression.NoneLiteral;
                                       };
                                       {
                                         Call.Argument.name = None;
@@ -893,26 +880,17 @@ let test_call_locations _ =
                                       {
                                         Call.Argument.name = None;
                                         value =
-                                          node
-                                            ~start:(1, 2)
-                                            ~stop:(1, 2)
-                                            (Expression.Name (Name.Identifier "None"));
+                                          node ~start:(1, 2) ~stop:(1, 2) Expression.NoneLiteral;
                                       };
                                       {
                                         Call.Argument.name = None;
                                         value =
-                                          node
-                                            ~start:(1, 3)
-                                            ~stop:(1, 3)
-                                            (Expression.Name (Name.Identifier "None"));
+                                          node ~start:(1, 3) ~stop:(1, 3) Expression.NoneLiteral;
                                       };
                                       {
                                         Call.Argument.name = None;
                                         value =
-                                          node
-                                            ~start:(1, 3)
-                                            ~stop:(1, 3)
-                                            (Expression.Name (Name.Identifier "None"));
+                                          node ~start:(1, 3) ~stop:(1, 3) Expression.NoneLiteral;
                                       };
                                     ];
                                 });

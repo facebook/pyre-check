@@ -2444,7 +2444,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               Parameter.create ~location ~name:"$parameter$cls" () )
           else
             ( "__init__",
-              Node.create ~location (Expression.Name (Name.Identifier "None")),
+              Node.create ~location Expression.NoneLiteral,
               Parameter.create ~location ~name:"$parameter$self" () )
         in
         let assignments =
@@ -2688,8 +2688,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                         Parameter.create ~location ~annotation:base ~name:"input" ();
                       ];
                     decorators = [];
-                    return_annotation =
-                      Some (Node.create ~location (Expression.Name (Name.Identifier "None")));
+                    return_annotation = Some (Node.create ~location Expression.NoneLiteral);
                     async = false;
                     generator = false;
                     parent = Some name;
@@ -3981,7 +3980,7 @@ let expand_pytorch_register_buffer source =
           let annotation =
             Reference.create "torch.Tensor"
             |> from_reference ~location
-            |> Option.some_if (not (name_is ~name:"None" initial_value))
+            |> Option.some_if (not (is_none initial_value))
           in
           ( (),
             [

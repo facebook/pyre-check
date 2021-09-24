@@ -264,6 +264,7 @@ and read_without_indent state = parse
       | "in" -> IN
       | "is" -> IS
       | "lambda" -> LAMBDA lexbuf.lex_start_p
+      | "None" -> NONE (lexbuf.lex_start_p, lexbuf.lex_curr_p)
       | "nonlocal" -> NONLOCAL lexbuf.lex_start_p
       | "not" -> NOT lexbuf.lex_start_p
       | "or" -> OR

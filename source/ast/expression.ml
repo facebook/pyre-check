@@ -1178,6 +1178,12 @@ let is_false { Node.value; _ } =
   | _ -> false
 
 
+let is_none { Node.value; _ } =
+  match value with
+  | NoneLiteral -> true
+  | _ -> false
+
+
 let create_name_from_identifiers identifiers =
   let rec create = function
     | [] -> failwith "Name must have non-zero identifiers."

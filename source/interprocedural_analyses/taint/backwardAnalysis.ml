@@ -534,7 +534,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   | _ ->
                       (* Default to a benign self if we don't understand/retain information of what
                          self is. *)
-                      Node.create_with_default_location (Expression.Name (Name.Identifier "None"))
+                      Node.create_with_default_location Expression.NoneLiteral
                 in
                 { Call.Argument.name = None; value = receiver } :: arguments
               else

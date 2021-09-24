@@ -5490,7 +5490,7 @@ module State (Context : Context) = struct
               {
                 ComparisonOperator.left;
                 operator = ComparisonOperator.IsNot;
-                right = { Node.value = Name (Name.Identifier "None"); _ };
+                right = { Node.value = NoneLiteral; _ };
               } ->
               forward_statement ~resolution ~statement:(Statement.assume left)
           | ComparisonOperator
@@ -5565,7 +5565,7 @@ module State (Context : Context) = struct
               | _ -> Some resolution, errors)
           | ComparisonOperator
               {
-                ComparisonOperator.left = { Node.value = Name (Name.Identifier "None"); _ };
+                ComparisonOperator.left = { Node.value = NoneLiteral; _ };
                 operator = ComparisonOperator.NotIn;
                 right = { Node.value = Name name; _ };
               }
