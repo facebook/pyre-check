@@ -50,7 +50,10 @@ module.exports = {
       ],
       external: ['pysa-running'],
     }),
-    ...fbInternalOnly(['fb/pysa-shipping-rules-models-internal']),
+    ...fbContent({
+      internal: ['fb/pysa-shipping-rules-models-internal'],
+      external: ['pysa-shipping-rules-models'],
+    }),
     {
       'Scaling Beyond Individual Models': [
         'pysa-model-generators',
