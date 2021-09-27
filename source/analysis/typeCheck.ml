@@ -562,7 +562,7 @@ module State (Context : Context) = struct
     Resolution.with_annotation_store left_resolution ~annotation_store
 
 
-  let widening_threshold = 20
+  let widening_threshold = 10
 
   let add_fixpoint_threshold_reached_error error_map =
     let define = Context.define |> Node.value |> StatementDefine.name |> Node.value in

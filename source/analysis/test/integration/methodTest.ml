@@ -3041,11 +3041,13 @@ let test_fixpoint_threshold context =
           reveal_type(final_type)
     |}
     [
+      "Analysis failure [30]: Pyre gave up inferring types for some variables because function \
+       `test.bar` was too complex.";
       "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
       "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
       "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
       "Incompatible awaitable type [12]: Expected an awaitable but got `bool`.";
-      "Revealed type [-1]: Revealed type for `final_type` is `typing_extensions.Literal[42]`.";
+      "Revealed type [-1]: Revealed type for `final_type` is `unknown`.";
     ];
   ()
 
