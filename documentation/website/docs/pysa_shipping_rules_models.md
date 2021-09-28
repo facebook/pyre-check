@@ -167,7 +167,7 @@ help us expand our open source integration tests! Note this will require you to 
 [`full_result.json`](https://github.com/facebook/pyre-check/blob/main/documentation/deliberately_vulnerable_flask_app/full_result.json) file in the same folder. When you run the integration test script, a
 `full_result.actual` file will be produced when the output does not match
 the existing expected output. Simply copy the contents of that file to
-`full_result.json`, e.g. in the example above, we would add the following lines:
+`full_result.json`, e.g. in the example above, we would add the following lines to `full_result.json`:
 ```json
     ...
     {
@@ -183,5 +183,3 @@ the existing expected output. Simply copy the contents of that file to
     }
 ]
 ```
-
-to `full_result.json`.
