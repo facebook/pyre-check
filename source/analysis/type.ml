@@ -416,9 +416,12 @@ module Record = struct
 
         gets split into:
 
-        * prefix_pairs: 1-1 pairs between left_prefix and right_prefix from the start of the list.
+        * prefix_pairs: 1-1 pairs between left_prefix and right_prefix. If the middle element is an
+        unbounded tuple Tuple[X, ...], then pad the prefix with X in order to match the other
+        prefix.
 
-        * suffix_pairs: 1-1 pairs between left_suffix and right_suffix from the end of the list.
+        * suffix_pairs: 1-1 pairs between left_suffix and right_suffix. Pad unbounded elements if
+        needed, as above.
 
         [left_prefix_unpaired] <middle> [left_suffix_unpaired]
 
@@ -492,6 +495,68 @@ module Record = struct
             (* There are no unpaired elements because we can always match two unbounded tuple
                concatenations by padding. *)
             left_prefix, [], [], left_suffix, right_prefix, [], [], right_suffix
+        | UnboundedElements left_unbounded, _ ->
+            let left_prefix, right_prefix, right_prefix_unpaired =
+              match left_prefix_unpaired with
+              | [] ->
+                  ( pad_suffix
+                      ~element:left_unbounded
+                      ~length:(List.length right_prefix + List.length right_prefix_unpaired)
+                      left_prefix,
+                    right_prefix @ right_prefix_unpaired,
+                    [] )
+              | _ -> left_prefix, right_prefix, right_prefix_unpaired
+            in
+            let left_suffix, right_suffix, right_suffix_unpaired =
+              match left_suffix_unpaired with
+              | [] ->
+                  ( pad_prefix
+                      ~element:left_unbounded
+                      ~length:(List.length right_suffix + List.length right_suffix_unpaired)
+                      left_suffix,
+                    right_suffix_unpaired @ right_suffix,
+                    [] )
+              | _ -> left_suffix, right_suffix, right_suffix_unpaired
+            in
+            ( left_prefix,
+              left_prefix_unpaired,
+              left_suffix_unpaired,
+              left_suffix,
+              right_prefix,
+              right_prefix_unpaired,
+              right_suffix_unpaired,
+              right_suffix )
+        | _, UnboundedElements right_unbounded ->
+            let right_prefix, left_prefix, left_prefix_unpaired =
+              match right_prefix_unpaired with
+              | [] ->
+                  ( pad_suffix
+                      ~element:right_unbounded
+                      ~length:(List.length left_prefix + List.length left_prefix_unpaired)
+                      right_prefix,
+                    left_prefix @ left_prefix_unpaired,
+                    [] )
+              | _ -> right_prefix, left_prefix, left_prefix_unpaired
+            in
+            let right_suffix, left_suffix, left_suffix_unpaired =
+              match right_suffix_unpaired with
+              | [] ->
+                  ( pad_prefix
+                      ~element:right_unbounded
+                      ~length:(List.length left_suffix + List.length left_suffix_unpaired)
+                      right_suffix,
+                    left_suffix_unpaired @ left_suffix,
+                    [] )
+              | _ -> right_suffix, left_suffix, left_suffix_unpaired
+            in
+            ( left_prefix,
+              left_prefix_unpaired,
+              left_suffix_unpaired,
+              left_suffix,
+              right_prefix,
+              right_prefix_unpaired,
+              right_suffix_unpaired,
+              right_suffix )
         | _, _ ->
             ( left_prefix,
               left_prefix_unpaired,

@@ -2946,6 +2946,55 @@ let test_variadic_tuples context =
       "Incompatible parameter type [6]: Expected `typing.Tuple[Variable[T], *Tuple[str, ...]]` for \
        1st positional only parameter to call `foo` but got `Tuple[int, str, int]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N", bound=int)
+
+      def foo(x: Tuple[N, *Ts]) -> Tuple[*Ts, N]: ...
+
+      def bar() -> None:
+        x: Tuple[Any, ...]
+        y = foo(x)
+        reveal_type(y)
+
+        x2: Tuple[int, ...]
+        y2 = foo(x2)
+        reveal_type(y2)
+    |}
+    [
+      "Prohibited any [33]: Explicit annotation for `x` cannot contain `Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[*Tuple[typing.Any, ...], \
+       typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `typing.Tuple[*Tuple[int, ...], int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple
+
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N", bound=int)
+
+      def foo(x: Tuple[N, *Ts]) -> Tuple[*Ts, N]: ...
+
+      def bar() -> None:
+        x_error: Tuple[str, ...]
+        y_error = foo(x_error)
+        reveal_type(y_error)
+    |}
+    [
+      "Incomplete type [37]: Type `typing.Tuple[*test.Ts, Variable[N (bound to int)]]` inferred \
+       for `y_error` is incomplete, add an explicit annotation.";
+      "Incompatible parameter type [6]: Expected `typing.Tuple[Variable[N (bound to int)], \
+       *test.Ts]` for 1st positional only parameter to call `foo` but got `typing.Tuple[str, \
+       ...]`.";
+      "Revealed type [-1]: Revealed type for `y_error` is `typing.Tuple[*Tuple[typing.Any, ...], \
+       typing.Any]`.";
+    ];
   ()
 
 
@@ -3343,11 +3392,13 @@ let test_variadic_callables context =
         unbounded_tuple: Tuple[int, ...]
         make_tuple(1, *unbounded_tuple, "foo")
 
-        # Not ok because the unbounded tuple may be empty.
         make_tuple( *unbounded_tuple, "foo")
+
+        unbounded_str_tuple: Tuple[str, ...]
+        make_tuple( *unbounded_str_tuple, "foo")
      |}
     [
-      "Invalid argument [32]: Argument types `*Tuple[int, ...], typing_extensions.Literal['foo']` \
+      "Invalid argument [32]: Argument types `*Tuple[str, ...], typing_extensions.Literal['foo']` \
        are not compatible with expected variadic elements `int, *test.Ts, str`.";
     ];
   assert_type_errors

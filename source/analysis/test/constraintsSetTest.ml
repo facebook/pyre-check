@@ -957,14 +957,18 @@ let test_add_constraint_type_variable_tuple context =
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[T, ...]], bool]"
     [["T", "str"]];
 
-  (* TODO(T96315440): Stretch the unbounded tuple to meet the expected length. *)
+  (* Stretch the unbounded tuple to meet the expected length. *)
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
-    [];
+    [["Ts", "typing.Tuple[int, ...]"]];
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], int]"
+    [["Ts", "typing.Tuple[int, ...]"]];
+  assert_add
+    ~left:"typing.Tuple[int, ...]"
+    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], str]"
     [];
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"

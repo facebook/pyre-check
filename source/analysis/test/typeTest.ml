@@ -5030,6 +5030,70 @@ let test_split_ordered_types _ =
          middle_pair = Concrete [Type.string], Concrete [Type.string];
          suffix_pairs = [Type.string, Type.string; Type.bool, Type.bool];
        });
+  assert_split
+    "[pyre_extensions.Unpack[typing.Tuple[str, ...]], int]"
+    "[int, pyre_extensions.Unpack[Ts], int]"
+    (Some
+       {
+         prefix_pairs = [Type.string, Type.integer];
+         middle_pair =
+           ( Concatenation
+               (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.string),
+             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+         suffix_pairs = [Type.integer, Type.integer];
+       });
+  assert_split
+    "[int, int, pyre_extensions.Unpack[typing.Tuple[str, ...]], int]"
+    "[int, pyre_extensions.Unpack[Ts], int]"
+    (Some
+       {
+         prefix_pairs = [Type.integer, Type.integer];
+         middle_pair =
+           ( Concatenation
+               (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+                  ~prefix:[Type.integer]
+                  Type.string),
+             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+         suffix_pairs = [Type.integer, Type.integer];
+       });
+  assert_split
+    "[pyre_extensions.Unpack[typing.Tuple[str, ...]]]"
+    "[pyre_extensions.Unpack[Ts], str]"
+    (Some
+       {
+         prefix_pairs = [];
+         middle_pair =
+           ( Concatenation
+               (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.string),
+             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+         suffix_pairs = [Type.string, Type.string];
+       });
+  assert_split
+    "[pyre_extensions.Unpack[typing.Tuple[str, ...]], int]"
+    "[int, pyre_extensions.Unpack[Ts], str, int]"
+    (Some
+       {
+         prefix_pairs = [Type.string, Type.integer];
+         middle_pair =
+           ( Concatenation
+               (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.string),
+             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+         suffix_pairs = [Type.string, Type.string; Type.integer, Type.integer];
+       });
+  assert_split
+    "[str, pyre_extensions.Unpack[typing.Tuple[str, ...]], int]"
+    "[pyre_extensions.Unpack[Ts], str, int]"
+    (Some
+       {
+         prefix_pairs = [];
+         middle_pair =
+           ( Concatenation
+               (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+                  ~prefix:[Type.string]
+                  Type.string),
+             Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
+         suffix_pairs = [Type.string, Type.string; Type.integer, Type.integer];
+       });
   ()
 
 
