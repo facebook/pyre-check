@@ -408,6 +408,47 @@ module Record = struct
           None
 
 
+    (** Pair matching elements of the prefixes and suffixes.
+
+        [left_prefix] <middle> [left_suffix]
+
+        [right_prefix] <middle> [right_suffix]
+
+        gets split into:
+
+        * prefix_pairs: 1-1 pairs between left_prefix and right_prefix from the start of the list.
+
+        * suffix_pairs: 1-1 pairs between left_suffix and right_suffix from the end of the list.
+
+        [left_prefix_unpaired] <middle> [left_suffix_unpaired]
+
+        [right_prefix_unpaired] <middle> [right_suffix_unpaired] *)
+    let pair_matching_elements
+        { Concatenation.prefix = left_prefix; suffix = left_suffix; _ }
+        { Concatenation.prefix = right_prefix; suffix = right_suffix; _ }
+      =
+      let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
+      let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
+      let left_prefix, left_prefix_unpaired = List.split_n left_prefix prefix_length in
+      let right_prefix, right_prefix_unpaired = List.split_n right_prefix prefix_length in
+      let left_suffix_unpaired, left_suffix =
+        List.split_n left_suffix (List.length left_suffix - suffix_length)
+      in
+      let right_suffix_unpaired, right_suffix =
+        List.split_n right_suffix (List.length right_suffix - suffix_length)
+      in
+      match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
+      | Ok prefix_pairs, Ok suffix_pairs ->
+          Some
+            ( prefix_pairs,
+              left_prefix_unpaired,
+              right_prefix_unpaired,
+              suffix_pairs,
+              left_suffix_unpaired,
+              right_suffix_unpaired )
+      | _ -> None
+
+
     let split_matching_elements_by_length left right =
       let split_concrete_against_concatenation
           ~is_left_concrete
@@ -446,50 +487,43 @@ module Record = struct
             ~is_left_concrete:false
             ~concrete:right
             ~concatenation
-      | ( Concatenation { prefix = left_prefix; middle = left_middle; suffix = left_suffix },
-          Concatenation { prefix = right_prefix; middle = right_middle; suffix = right_suffix } )
-        -> (
-          let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
-          let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
-          let left_prefix, left_prefix_rest = List.split_n left_prefix prefix_length in
-          let right_prefix, right_prefix_rest = List.split_n right_prefix prefix_length in
-          let left_suffix_rest, left_suffix =
-            List.split_n left_suffix (List.length left_suffix - suffix_length)
-          in
-          let right_suffix_rest, right_suffix =
-            List.split_n right_suffix (List.length right_suffix - suffix_length)
-          in
-          match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
-          | Ok prefix_pairs, Ok suffix_pairs -> (
-              match left_middle, right_middle, right_prefix_rest, right_suffix_rest with
-              | UnboundedElements left_unbounded, UnboundedElements right_unbounded, [], [] ->
-                  Some
+      | ( Concatenation ({ middle = left_middle; _ } as left_record),
+          Concatenation ({ middle = right_middle; _ } as right_record) ) -> (
+          pair_matching_elements left_record right_record
+          >>= fun ( prefix_pairs,
+                    left_prefix_unpaired,
+                    right_prefix_unpaired,
+                    suffix_pairs,
+                    left_suffix_unpaired,
+                    right_suffix_unpaired ) ->
+          match left_middle, right_middle, right_prefix_unpaired, right_suffix_unpaired with
+          | UnboundedElements left_unbounded, UnboundedElements right_unbounded, [], [] ->
+              Some
+                {
+                  prefix_pairs =
+                    prefix_pairs
+                    @ List.map left_prefix_unpaired ~f:(fun concrete -> concrete, right_unbounded);
+                  middle_pair = Concrete [left_unbounded], Concrete [right_unbounded];
+                  suffix_pairs =
+                    List.map left_suffix_unpaired ~f:(fun concrete -> concrete, right_unbounded)
+                    @ suffix_pairs;
+                }
+          | _ ->
+              let middle_pair =
+                ( Concatenation
                     {
-                      prefix_pairs =
-                        prefix_pairs
-                        @ List.map left_prefix_rest ~f:(fun concrete -> concrete, right_unbounded);
-                      middle_pair = Concrete [left_unbounded], Concrete [right_unbounded];
-                      suffix_pairs =
-                        List.map left_suffix_rest ~f:(fun concrete -> concrete, right_unbounded)
-                        @ suffix_pairs;
-                    }
-              | _ ->
-                  let middle_pair =
-                    ( Concatenation
-                        {
-                          prefix = left_prefix_rest;
-                          middle = left_middle;
-                          suffix = left_suffix_rest;
-                        },
-                      Concatenation
-                        {
-                          prefix = right_prefix_rest;
-                          middle = right_middle;
-                          suffix = right_suffix_rest;
-                        } )
-                  in
-                  Some { prefix_pairs; middle_pair; suffix_pairs })
-          | _ -> None)
+                      prefix = left_prefix_unpaired;
+                      middle = left_middle;
+                      suffix = left_suffix_unpaired;
+                    },
+                  Concatenation
+                    {
+                      prefix = right_prefix_unpaired;
+                      middle = right_middle;
+                      suffix = right_suffix_unpaired;
+                    } )
+              in
+              Some { prefix_pairs; middle_pair; suffix_pairs })
   end
 
   module Callable = struct
