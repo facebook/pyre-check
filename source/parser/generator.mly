@@ -231,6 +231,26 @@
       value = { AstExpression.Substring.kind; value };
     }
 
+  let create_mixed_string = function
+    | [] -> { StringLiteral.value = ""; kind = String }
+    | [{ Node.value = { AstExpression.Substring.kind = Literal; value }; _ }] ->
+        { StringLiteral.value; kind = String }
+    | _ as pieces ->
+        let value =
+          pieces
+          |> List.map ~f:(fun { Node.value = { AstExpression.Substring.value; _ }; _ } -> value)
+          |> String.concat ~sep:""
+        in
+        let is_all_literal = List.for_all ~f:(fun { Node.value = { AstExpression.Substring.kind; _ }; _} ->
+          match kind with
+          | AstExpression.Substring.Literal -> true
+          | AstExpression.Substring.Format -> false
+        )
+        in
+        if is_all_literal pieces then
+          { StringLiteral.value; kind = String }
+        else
+          { StringLiteral.value; kind = Mixed pieces }
 %}
 
 (* The syntactic junkyard. *)
@@ -1286,7 +1306,7 @@ atom:
       let (_, stop) = last in
       {
         Node.location = Location.create ~start ~stop;
-        value = String (StringLiteral.create_mixed all_pieces);
+        value = String (create_mixed_string all_pieces);
       }
     }
 
@@ -1397,7 +1417,7 @@ atom:
       let (_, stop) = last in
       {
         Node.location = Location.create ~start ~stop;
-        value = String (StringLiteral.create_mixed all_pieces);
+        value = String (create_mixed_string all_pieces);
       }
     }
 

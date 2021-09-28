@@ -200,8 +200,6 @@ and StringLiteral : sig
   }
 
   val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
-
-  val create_mixed : AstExpression.Substring.t Node.t list -> t
 end = struct
   type kind =
     | String
@@ -224,24 +222,6 @@ end = struct
         | _ -> String
     in
     { value; kind }
-
-
-  let create_mixed pieces =
-    (* Default to literal string so subsequent pre-processing logic can be simplier. *)
-    match pieces with
-    | [] -> { value = ""; kind = String }
-    | [{ Node.value = { AstExpression.Substring.kind = Literal; value }; _ }] ->
-        { value; kind = String }
-    | _ ->
-        let value =
-          pieces
-          |> List.map ~f:(fun { Node.value = { AstExpression.Substring.value; _ }; _ } -> value)
-          |> String.concat ~sep:""
-        in
-        if AstExpression.Substring.is_all_literal pieces then
-          { value; kind = String }
-        else
-          { value; kind = Mixed pieces }
 end
 
 and Ternary : sig

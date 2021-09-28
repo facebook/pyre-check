@@ -16,8 +16,6 @@ module Substring : sig
     kind: kind;
   }
   [@@deriving compare, eq, sexp, show, hash]
-
-  val is_all_literal : t Node.t list -> bool
 end
 
 module rec BooleanOperator : sig
@@ -223,8 +221,6 @@ and StringLiteral : sig
   val location_insensitive_compare : t -> t -> int
 
   val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
-
-  val create_mixed : Substring.t Node.t list -> t
 end
 
 and Ternary : sig

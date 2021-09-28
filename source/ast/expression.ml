@@ -20,9 +20,6 @@ module Substring = struct
     kind: kind;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let is_all_literal =
-    List.for_all ~f:(fun { Node.value = { kind; _ }; _ } -> equal_kind kind Literal)
 end
 
 module rec BooleanOperator : sig
@@ -547,8 +544,6 @@ and StringLiteral : sig
 
   val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
 
-  val create_mixed : Substring.t Node.t list -> t
-
   val location_insensitive_compare : t -> t -> int
 end = struct
   type kind =
@@ -574,23 +569,6 @@ end = struct
         | _ -> String
     in
     { value; kind }
-
-
-  let create_mixed pieces =
-    (* Default to literal string so subsequent pre-processing logic can be simplier. *)
-    match pieces with
-    | [] -> { value = ""; kind = String }
-    | [{ Node.value = { Substring.kind = Literal; value }; _ }] -> { value; kind = String }
-    | _ ->
-        let value =
-          pieces
-          |> List.map ~f:(fun { Node.value = { Substring.value; _ }; _ } -> value)
-          |> String.concat ~sep:""
-        in
-        if Substring.is_all_literal pieces then
-          { value; kind = String }
-        else
-          { value; kind = Mixed pieces }
 
 
   let location_insensitive_compare_kind left right =

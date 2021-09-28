@@ -2477,8 +2477,12 @@ let test_string_locations _ =
               ~start:(1, 0)
               ~stop:(1, 6)
               (Expression.String
-                 (StringLiteral.create_mixed
-                    [node ~start:(1, 2) ~stop:(1, 5) { Substring.kind = Format; value = "foo" }]))));
+                 {
+                   StringLiteral.kind =
+                     Mixed
+                       [node ~start:(1, 2) ~stop:(1, 5) { Substring.kind = Format; value = "foo" }];
+                   value = "foo";
+                 })));
     ];
   assert_source_locations
     (* Format string expressions are further parsed in preprocessing. *)
@@ -2492,8 +2496,17 @@ let test_string_locations _ =
               ~start:(1, 0)
               ~stop:(1, 10)
               (Expression.String
-                 (StringLiteral.create_mixed
-                    [node ~start:(1, 2) ~stop:(1, 9) { Substring.kind = Format; value = "foo {x}" }]))));
+                 {
+                   StringLiteral.kind =
+                     Mixed
+                       [
+                         node
+                           ~start:(1, 2)
+                           ~stop:(1, 9)
+                           { Substring.kind = Format; value = "foo {x}" };
+                       ];
+                   value = "foo {x}";
+                 })));
     ];
   assert_source_locations
     "f'foo' f'bar'"
@@ -2506,11 +2519,15 @@ let test_string_locations _ =
               ~start:(1, 0)
               ~stop:(1, 13)
               (Expression.String
-                 (StringLiteral.create_mixed
-                    [
-                      node ~start:(1, 2) ~stop:(1, 5) { Substring.kind = Format; value = "foo" };
-                      node ~start:(1, 9) ~stop:(1, 12) { Substring.kind = Format; value = "bar" };
-                    ]))));
+                 {
+                   StringLiteral.kind =
+                     Mixed
+                       [
+                         node ~start:(1, 2) ~stop:(1, 5) { Substring.kind = Format; value = "foo" };
+                         node ~start:(1, 9) ~stop:(1, 12) { Substring.kind = Format; value = "bar" };
+                       ];
+                   value = "foobar";
+                 })));
     ];
   assert_source_locations
     "'''a''' + '''b'''"
