@@ -5004,7 +5004,6 @@ let test_split_ordered_types _ =
          suffix_pairs = [];
        });
   assert_split
-    ~split_both_ways:false
     "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
     "[int, pyre_extensions.Unpack[typing.Tuple[int, ...]], bool]"
     (Some
@@ -5014,38 +5013,22 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.string, Type.integer; Type.bool, Type.bool];
        });
   assert_split
-    ~split_both_ways:false
     "[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
     (Some
        {
-         prefix_pairs = [Type.integer, Type.integer];
-         middle_pair =
-           ( Concatenation
-               (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.string),
-             Concatenation
-               (Type.OrderedTypes.Concatenation.create_from_unbounded_element
-                  ~prefix:[Type.string]
-                  ~suffix:[Type.string]
-                  Type.string) );
-         suffix_pairs = [Type.bool, Type.bool];
+         prefix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
+         middle_pair = Concrete [Type.string], Concrete [Type.string];
+         suffix_pairs = [Type.string, Type.string; Type.bool, Type.bool];
        });
   assert_split
     "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     "[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
     (Some
        {
-         prefix_pairs = [Type.integer, Type.integer];
-         middle_pair =
-           ( Concatenation
-               (Type.OrderedTypes.Concatenation.create_from_unbounded_element
-                  ~prefix:[Type.string]
-                  Type.string),
-             Concatenation
-               (Type.OrderedTypes.Concatenation.create_from_unbounded_element
-                  ~suffix:[Type.string]
-                  Type.string) );
-         suffix_pairs = [Type.bool, Type.bool];
+         prefix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
+         middle_pair = Concrete [Type.string], Concrete [Type.string];
+         suffix_pairs = [Type.string, Type.string; Type.bool, Type.bool];
        });
   ()
 

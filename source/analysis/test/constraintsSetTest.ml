@@ -957,7 +957,7 @@ let test_add_constraint_type_variable_tuple context =
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[T, ...]], bool]"
     [["T", "str"]];
 
-  (* Not valid because the unbounded tuple may be empty. *)
+  (* TODO(T96315440): Stretch the unbounded tuple to meet the expected length. *)
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
@@ -969,6 +969,14 @@ let test_add_constraint_type_variable_tuple context =
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    [[]];
+  assert_add
+    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], T, bool]"
+    [["T", "str"]];
+  assert_add
+    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], int, bool]"
     [];
   ()
 

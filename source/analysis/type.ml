@@ -424,18 +424,83 @@ module Record = struct
 
         [right_prefix_unpaired] <middle> [right_suffix_unpaired] *)
     let pair_matching_elements
-        { Concatenation.prefix = left_prefix; suffix = left_suffix; _ }
-        { Concatenation.prefix = right_prefix; suffix = right_suffix; _ }
+        { Concatenation.prefix = left_prefix; middle = left_middle; suffix = left_suffix }
+        { Concatenation.prefix = right_prefix; middle = right_middle; suffix = right_suffix }
       =
-      let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
-      let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
-      let left_prefix, left_prefix_unpaired = List.split_n left_prefix prefix_length in
-      let right_prefix, right_prefix_unpaired = List.split_n right_prefix prefix_length in
-      let left_suffix_unpaired, left_suffix =
-        List.split_n left_suffix (List.length left_suffix - suffix_length)
-      in
-      let right_suffix_unpaired, right_suffix =
-        List.split_n right_suffix (List.length right_suffix - suffix_length)
+      let ( left_prefix,
+            left_prefix_unpaired,
+            left_suffix_unpaired,
+            left_suffix,
+            right_prefix,
+            right_prefix_unpaired,
+            right_suffix_unpaired,
+            right_suffix )
+        =
+        let pad ~to_the_left ~element ~length list =
+          let padding = List.init (length - List.length list) ~f:(fun _ -> element) in
+          if to_the_left then
+            padding @ list
+          else
+            list @ padding
+        in
+        let pad_prefix = pad ~to_the_left:true in
+        let pad_suffix = pad ~to_the_left:false in
+        let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
+        let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
+        let left_prefix, left_prefix_unpaired = List.split_n left_prefix prefix_length in
+        let right_prefix, right_prefix_unpaired = List.split_n right_prefix prefix_length in
+        let left_suffix_unpaired, left_suffix =
+          List.split_n left_suffix (List.length left_suffix - suffix_length)
+        in
+        let right_suffix_unpaired, right_suffix =
+          List.split_n right_suffix (List.length right_suffix - suffix_length)
+        in
+        match left_middle, right_middle with
+        | UnboundedElements left_unbounded, UnboundedElements right_unbounded ->
+            let left_prefix, right_prefix =
+              match left_prefix_unpaired, right_prefix_unpaired with
+              | [], _ ->
+                  ( pad_suffix
+                      ~element:left_unbounded
+                      ~length:(List.length right_prefix + List.length right_prefix_unpaired)
+                      left_prefix,
+                    right_prefix @ right_prefix_unpaired )
+              | _, [] ->
+                  ( left_prefix @ left_prefix_unpaired,
+                    pad_suffix
+                      ~element:right_unbounded
+                      ~length:(List.length left_prefix + List.length left_prefix_unpaired)
+                      right_prefix )
+              | _, _ -> left_prefix, right_prefix
+            in
+            let left_suffix, right_suffix =
+              match left_suffix_unpaired, right_suffix_unpaired with
+              | [], _ ->
+                  ( pad_prefix
+                      ~element:left_unbounded
+                      ~length:(List.length right_suffix + List.length right_suffix_unpaired)
+                      left_suffix,
+                    right_suffix_unpaired @ right_suffix )
+              | _, [] ->
+                  ( left_suffix_unpaired @ left_suffix,
+                    pad_prefix
+                      ~element:right_unbounded
+                      ~length:(List.length left_suffix + List.length left_suffix_unpaired)
+                      right_suffix )
+              | _, _ -> left_suffix, right_suffix
+            in
+            (* There are no unpaired elements because we can always match two unbounded tuple
+               concatenations by padding. *)
+            left_prefix, [], [], left_suffix, right_prefix, [], [], right_suffix
+        | _, _ ->
+            ( left_prefix,
+              left_prefix_unpaired,
+              left_suffix_unpaired,
+              left_suffix,
+              right_prefix,
+              right_prefix_unpaired,
+              right_suffix_unpaired,
+              right_suffix )
       in
       match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
       | Ok prefix_pairs, Ok suffix_pairs ->
@@ -500,13 +565,9 @@ module Record = struct
           | UnboundedElements left_unbounded, UnboundedElements right_unbounded, [], [] ->
               Some
                 {
-                  prefix_pairs =
-                    prefix_pairs
-                    @ List.map left_prefix_unpaired ~f:(fun concrete -> concrete, right_unbounded);
+                  prefix_pairs;
                   middle_pair = Concrete [left_unbounded], Concrete [right_unbounded];
-                  suffix_pairs =
-                    List.map left_suffix_unpaired ~f:(fun concrete -> concrete, right_unbounded)
-                    @ suffix_pairs;
+                  suffix_pairs;
                 }
           | _ ->
               let middle_pair =
