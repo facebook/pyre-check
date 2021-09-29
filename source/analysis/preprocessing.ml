@@ -230,74 +230,74 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
       } ->
           let gather_fstring_expressions substrings =
             let gather_expressions_in_substring
-                expressions
+                sofar
                 {
                   Node.value = { Substring.kind; value };
                   location = { Location.start = { Location.line; column; _ }; _ };
                 }
               =
+              let parse ~sofar ((start_line, start_column), input_string) =
+                let string = "(" ^ input_string ^ ")" ^ "\n" in
+                let start_column = start_column - 1 in
+                match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
+                | Ok [{ Node.value = Expression expression; _ }] -> expression :: sofar
+                | Ok _
+                | Error _ ->
+                    Log.debug
+                      "Pyre could not parse format string `%s` at %s:%a"
+                      input_string
+                      relative
+                      Location.pp
+                      location;
+                    sofar
+              in
               let value_length = String.length value in
-              let rec expand_fstring input_string ~line_offset ~column_offset ~index state : 'a list
-                =
+              let rec expand_fstring input_string ~sofar ~line_offset ~column_offset ~index state =
                 if index = value_length then
-                  []
+                  sofar
                 else
                   let token = input_string.[index] in
-                  let expressions, next_state =
+                  let sofar, next_state =
                     match token, state with
-                    | '{', Literal -> [], Expression (line_offset, column_offset + 1, "")
-                    | '{', Expression (_, _, "") -> [], Literal
-                    | '}', Literal -> [], Literal
+                    | '{', Literal -> sofar, Expression (line_offset, column_offset + 1, "")
+                    | '{', Expression (_, _, "") -> sofar, Literal
+                    | '}', Literal -> sofar, Literal
                     (* NOTE: this does not account for nested expressions in e.g. format specifiers. *)
                     | '}', Expression (fstring_start_line, fstring_start_column, string) ->
-                        [(fstring_start_line, fstring_start_column), string], Literal
+                        parse ~sofar ((fstring_start_line, fstring_start_column), string), Literal
                     (* Ignore leading whitespace in expressions. *)
-                    | (' ' | '\t'), (Expression (_, _, "") as expression) -> [], expression
-                    | _, Literal -> [], Literal
+                    | (' ' | '\t'), (Expression (_, _, "") as expression) -> sofar, expression
+                    | _, Literal -> sofar, Literal
                     | _, Expression (line, column, string) ->
-                        [], Expression (line, column, string ^ Char.to_string token)
+                        sofar, Expression (line, column, string ^ Char.to_string token)
                   in
                   let line_offset, column_offset =
                     match token with
                     | '\n' -> line_offset + 1, 0
                     | _ -> line_offset, column_offset + 1
                   in
-                  let next_expressions =
-                    expand_fstring
-                      input_string
-                      ~line_offset
-                      ~column_offset
-                      ~index:(index + 1)
-                      next_state
-                  in
-                  expressions @ next_expressions
+                  expand_fstring
+                    input_string
+                    ~sofar
+                    ~line_offset
+                    ~column_offset
+                    ~index:(index + 1)
+                    next_state
               in
               match kind with
-              | Substring.Literal -> expressions
+              | Substring.Literal -> sofar
               | Substring.Format ->
-                  let fstring_expressions =
-                    expand_fstring value ~line_offset:line ~column_offset:column ~index:0 Literal
-                  in
-                  List.rev fstring_expressions @ expressions
+                  expand_fstring
+                    value
+                    ~sofar
+                    ~line_offset:line
+                    ~column_offset:column
+                    ~index:0
+                    Literal
             in
             List.fold substrings ~init:[] ~f:gather_expressions_in_substring |> List.rev
           in
-          let parse ((start_line, start_column), input_string) =
-            let string = "(" ^ input_string ^ ")" ^ "\n" in
-            let start_column = start_column - 1 in
-            match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
-            | Ok [{ Node.value = Expression expression; _ }] -> [expression]
-            | Ok _
-            | Error _ ->
-                Log.debug
-                  "Pyre could not parse format string `%s` at %s:%a"
-                  input_string
-                  relative
-                  Location.pp
-                  location;
-                []
-          in
-          let expressions = substrings |> gather_fstring_expressions |> List.concat_map ~f:parse in
+          let expressions = gather_fstring_expressions substrings in
           {
             Node.location;
             value = Expression.String { StringLiteral.kind = Format expressions; value };
