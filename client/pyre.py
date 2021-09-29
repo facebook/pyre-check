@@ -666,8 +666,7 @@ def analyze(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
 
-    # TODO: Change the condition to `configuration.use_command_v2` when ready
-    if False:
+    if configuration.use_command_v2:
         _check_configuration(configuration)
         _start_logging_to_directory(configuration.log_directory)
         return v2.analyze.run(

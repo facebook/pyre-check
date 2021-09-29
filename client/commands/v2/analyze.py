@@ -127,6 +127,9 @@ def create_analyze_arguments(
     taint_models_path = analyze_arguments.taint_models_path
     if len(taint_models_path) == 0:
         taint_models_path = configuration.taint_models_path
+    repository_root = analyze_arguments.repository_root
+    if repository_root is not None:
+        repository_root = str(Path(repository_root).resolve(strict=False))
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
             log_path=configuration.log_directory,
@@ -161,7 +164,7 @@ def create_analyze_arguments(
         maximum_tito_depth=analyze_arguments.maximum_tito_depth,
         maximum_trace_length=analyze_arguments.maximum_trace_length,
         no_verify=analyze_arguments.no_verify,
-        repository_root=analyze_arguments.repository_root,
+        repository_root=repository_root,
         rule_filter=None if len(rule) == 0 else rule,
         save_results_to=analyze_arguments.save_results_to,
         strict=configuration.strict,
