@@ -513,8 +513,26 @@ def sanitize_parameter_all_tito(x, y):
 def sanitize_parameter_no_user_controlled(x, y):
     if 1 > 2:
         return x
-    else:
+    elif 2 > 3:
         return y
+    elif 3 > 4:
+        _sql(x)
+    else:
+        _rce(y)
+
+
+def propagation_of_sanitize_parameter_no_user_controlled(a, b):
+    sanitize_parameter_no_user_controlled(b, a)
+
+
+def no_issue_propagation_of_sanitize_parameter_no_user_controlled():
+    x = _user_controlled()
+    propagation_of_sanitize_parameter_no_user_controlled(0, x)
+
+
+def issue_propagation_of_sanitize_parameter_no_user_controlled():
+    x = _cookies()
+    propagation_of_sanitize_parameter_no_user_controlled(0, x)
 
 
 def sanitize_parameter_no_sql(x):
@@ -672,6 +690,24 @@ def sanitize_return_no_user_controlled_cookies():
     return x
 
 
+def sanitize_return_no_rce():
+    return _user_controlled()
+
+
+def propagation_of_sanitize_return_no_rce():
+    return sanitize_return_no_rce()
+
+
+def no_issue_propagation_of_sanitize_return_no_rce():
+    x = propagation_of_sanitize_return_no_rce()
+    _rce(x)
+
+
+def issue_propagation_of_sanitize_return_no_rce():
+    x = propagation_of_sanitize_return_no_rce()
+    _sql(x)
+
+
 def sanitize_return_with_user_declared_source(x):
     return 0
 
@@ -701,7 +737,22 @@ def sanitize_all_parameters_all_tito(x, y):
 
 
 def sanitize_all_parameters_no_user_controlled(x):
+    _test_sink(x)
     return x
+
+
+def propagation_of_sanitize_all_parameters_no_user_controlled(x):
+    sanitize_all_parameters_no_user_controlled(x)
+
+
+def no_issue_propagation_of_sanitize_all_parameters_no_user_controlled():
+    x = _user_controlled()
+    propagation_of_sanitize_all_parameters_no_user_controlled(x)
+
+
+def issue_propagation_of_sanitize_all_parameters_no_user_controlled():
+    x = _cookies()
+    propagation_of_sanitize_all_parameters_no_user_controlled(x)
 
 
 def sanitize_all_parameters_no_sql(x):

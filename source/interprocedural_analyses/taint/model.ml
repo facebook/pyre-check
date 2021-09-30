@@ -528,14 +528,20 @@ let apply_sanitizers
   (* Here, we apply sanitizers both in the forward and backward trace. *)
   (* Note that by design, sanitizing a specific source or sink also sanitizes
    * taint-in-taint-out for that source/sink. *)
-  let taint_in_taint_out =
+  let sink_taint, taint_in_taint_out =
     (* Sanitize(Parameters[TaintSource[...]]) *)
     match parameters.sources with
-    | Some Sanitize.AllSources -> taint_in_taint_out
+    | Some Sanitize.AllSources -> sink_taint, taint_in_taint_out
     | Some (Sanitize.SpecificSources sanitized_sources) ->
-        sanitize_tito ~sources:sanitized_sources taint_in_taint_out
-        (* TODO(T91641396): sanitize sources in the sink trace. *)
-    | None -> taint_in_taint_out
+        let sanitized_sources_transforms =
+          Sources.Set.to_sanitize_taint_transforms_exn sanitized_sources
+        in
+        let sink_taint =
+          BackwardState.apply_taint_transforms sanitized_sources_transforms sink_taint
+        in
+        let taint_in_taint_out = sanitize_tito ~sources:sanitized_sources taint_in_taint_out in
+        sink_taint, taint_in_taint_out
+    | None -> sink_taint, taint_in_taint_out
   in
   let taint_in_taint_out =
     (* Sanitize(Parameters[TaintInTaintOut[...]]) *)
@@ -588,28 +594,45 @@ let apply_sanitizers
             taint_in_taint_out
       | _ -> taint_in_taint_out
     in
-    let taint_in_taint_out =
+    let source_taint, taint_in_taint_out =
       (* def foo() -> Sanitize[TaintSink[...]] *)
       match sanitize.Sanitize.sinks with
-      | Some Sanitize.AllSinks -> taint_in_taint_out
+      | Some Sanitize.AllSinks -> source_taint, taint_in_taint_out
       | Some (Sanitize.SpecificSinks sanitized_sinks) ->
-          sanitize_tito ~sinks:sanitized_sinks taint_in_taint_out
-          (* TODO(T91641396): sanitize sinks in the source trace. *)
-      | None -> taint_in_taint_out
+          let sanitized_sinks_transforms =
+            Sinks.Set.to_sanitize_taint_transforms_exn sanitized_sinks
+          in
+          let source_taint =
+            ForwardState.apply_taint_transforms sanitized_sinks_transforms source_taint
+          in
+          let taint_in_taint_out = sanitize_tito ~sinks:sanitized_sinks taint_in_taint_out in
+          source_taint, taint_in_taint_out
+      | None -> source_taint, taint_in_taint_out
     in
     source_taint, taint_in_taint_out, sink_taint
   in
 
   (* Apply the parameter-specific sanitizers. *)
   let sanitize_parameter (parameter, sanitize) (source_taint, taint_in_taint_out, sink_taint) =
-    let taint_in_taint_out =
+    let sink_taint, taint_in_taint_out =
       (* def foo(x: Sanitize[TaintSource[...]]): ... *)
       match sanitize.Sanitize.sources with
-      | Some Sanitize.AllSources -> taint_in_taint_out
+      | Some Sanitize.AllSources -> sink_taint, taint_in_taint_out
       | Some (Sanitize.SpecificSources sanitized_sources) ->
-          sanitize_tito_parameter parameter ~sources:sanitized_sources taint_in_taint_out
-          (* TODO(T91641396): sanitize sources in the sink trace. *)
-      | None -> taint_in_taint_out
+          let apply_taint_transforms = function
+            | None -> BackwardState.Tree.bottom
+            | Some taint_tree ->
+                let sanitized_sources_transforms =
+                  Sources.Set.to_sanitize_taint_transforms_exn sanitized_sources
+                in
+                BackwardState.Tree.apply_taint_transforms sanitized_sources_transforms taint_tree
+          in
+          let sink_taint = BackwardState.update sink_taint parameter ~f:apply_taint_transforms in
+          let taint_in_taint_out =
+            sanitize_tito_parameter parameter ~sources:sanitized_sources taint_in_taint_out
+          in
+          sink_taint, taint_in_taint_out
+      | None -> sink_taint, taint_in_taint_out
     in
     let taint_in_taint_out =
       (* def foo(x: Sanitize[TaintInTaintOut[...]]): ... *)
