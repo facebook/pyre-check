@@ -656,6 +656,16 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     |> collapse ~transform:Fn.id
 
 
+  let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
+
+  let add_breadcrumbs breadcrumbs taint_tree =
+    if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
+    then
+      taint_tree
+    else
+      transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs taint_tree
+
+
   let breadcrumbs taint_tree =
     let gather_breadcrumbs to_add breadcrumbs =
       Features.BreadcrumbSet.add_set breadcrumbs ~to_add
@@ -665,6 +675,13 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       ~f:gather_breadcrumbs
       ~init:Features.BreadcrumbSet.bottom
       taint_tree
+
+
+  let add_via_features via_features taint_tree =
+    if Features.ViaFeatureSet.is_bottom via_features then
+      taint_tree
+    else
+      transform Features.ViaFeatureSet.Self Add ~f:via_features taint_tree
 
 
   let sanitize sanitized_kinds taint =
@@ -689,36 +706,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
-  module Tree = struct
-    include MakeTaintTree (Taint) ()
-
-    let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
-
-    let add_breadcrumbs breadcrumbs taint_tree =
-      if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
-      then
-        taint_tree
-      else
-        transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs taint_tree
-
-
-    let breadcrumbs taint_tree =
-      let gather_breadcrumbs to_add breadcrumbs =
-        Features.BreadcrumbSet.add_set breadcrumbs ~to_add
-      in
-      fold
-        Features.BreadcrumbSet.Self
-        ~f:gather_breadcrumbs
-        ~init:Features.BreadcrumbSet.bottom
-        taint_tree
-
-
-    let add_via_features via_features taint_tree =
-      if Features.ViaFeatureSet.is_bottom via_features then
-        taint_tree
-      else
-        transform Features.ViaFeatureSet.Self Add ~f:via_features taint_tree
-  end
+  module Tree = MakeTaintTree (Taint) ()
 
   include
     Abstract.MapDomain.Make
