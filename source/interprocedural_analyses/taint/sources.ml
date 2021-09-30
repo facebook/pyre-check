@@ -81,6 +81,11 @@ let discard_transforms = function
   | source -> source
 
 
+let discard_sanitize_transforms =
+  (* For now, we only have sanitize taint transforms. *)
+  discard_transforms
+
+
 let extract_sanitized_sources_from_transforms =
   let extract sources = function
     | TaintTransform.SanitizeNamedSource name -> Set.add (NamedSource name) sources

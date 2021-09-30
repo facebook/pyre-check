@@ -275,11 +275,15 @@ let get_name_and_detailed_message { code; flow; _ } =
   | Some { name; message_format; _ } ->
       let sources =
         Domains.ForwardTaint.kinds flow.source_taint
+        |> List.map ~f:Sources.discard_sanitize_transforms
+        |> List.dedup_and_sort ~compare:Sources.compare
         |> List.map ~f:Sources.show
         |> String.concat ~sep:", "
       in
       let sinks =
         Domains.BackwardTaint.kinds flow.sink_taint
+        |> List.map ~f:Sinks.discard_sanitize_transforms
+        |> List.dedup_and_sort ~compare:Sinks.compare
         |> List.map ~f:Sinks.show
         |> String.concat ~sep:", "
       in

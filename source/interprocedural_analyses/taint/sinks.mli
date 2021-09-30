@@ -54,6 +54,8 @@ val discard_subkind : t -> t
 
 val discard_transforms : t -> t
 
+val discard_sanitize_transforms : t -> t
+
 val extract_sanitized_sinks_from_transforms : TaintTransform.t list -> Set.t
 
 val extract_transforms : t -> TaintTransform.t list

@@ -98,6 +98,11 @@ let discard_transforms = function
   | sink -> sink
 
 
+let discard_sanitize_transforms =
+  (* For now, we only have sanitize taint transforms. *)
+  discard_transforms
+
+
 let extract_sanitized_sinks_from_transforms =
   let extract sinks = function
     | TaintTransform.SanitizeNamedSink name -> Set.add (NamedSink name) sinks

@@ -10,7 +10,7 @@
     "start": 62,
     "end": 63,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Cookies] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -68,7 +68,7 @@
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[UserControlled] to [RemoteCodeExecution]",
     "traces": [
       {
         "name": "forward",
@@ -126,7 +126,7 @@
     "start": 60,
     "end": 61,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Cookies] to [SQL]",
     "traces": [
       {
         "name": "forward",
@@ -180,7 +180,7 @@
     "start": 76,
     "end": 77,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Cookies] to [SQL]",
     "traces": [
       {
         "name": "forward",
@@ -235,7 +235,7 @@
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[UserControlled] to [RemoteCodeExecution]",
     "traces": [
       {
         "name": "forward",
@@ -293,7 +293,7 @@
     "start": 51,
     "end": 52,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[TestB] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -353,7 +353,7 @@
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[UserControlled] to [SQL]",
     "traces": [
       {
         "name": "forward",
@@ -409,7 +409,7 @@
     "start": 11,
     "end": 12,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[TestA] to [TestB]",
     "traces": [
       {
         "name": "forward",
@@ -471,7 +471,7 @@
     "start": 30,
     "end": 44,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Test] to [TestB]",
     "traces": [
       {
         "name": "forward",
@@ -521,7 +521,7 @@
     "start": 29,
     "end": 43,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Test] to [TestB]",
     "traces": [
       {
         "name": "forward",
@@ -571,7 +571,7 @@
     "start": 15,
     "end": 26,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[TestB] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -627,7 +627,7 @@
     "start": 15,
     "end": 25,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[TestB] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -683,7 +683,7 @@
     "start": 15,
     "end": 26,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Test] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -733,7 +733,7 @@
     "start": 15,
     "end": 25,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Test] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -783,7 +783,7 @@
     "start": 4,
     "end": 15,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Test] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -833,7 +833,7 @@
     "start": 4,
     "end": 14,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Test] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -883,7 +883,7 @@
     "start": 30,
     "end": 44,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Test] to [TestA]",
     "traces": [
       {
         "name": "forward",
@@ -933,7 +933,7 @@
     "start": 29,
     "end": 43,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[Test] to [TestA]",
     "traces": [
       {
         "name": "forward",
@@ -983,7 +983,7 @@
     "start": 15,
     "end": 26,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[TestA] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -1039,7 +1039,7 @@
     "start": 15,
     "end": 25,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[TestA] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -1095,7 +1095,7 @@
     "start": 41,
     "end": 42,
     "filename": "sanitize.py",
-    "message": "Any source to any sink",
+    "message": "[TestA] to [TestA]",
     "traces": [
       {
         "name": "forward",
