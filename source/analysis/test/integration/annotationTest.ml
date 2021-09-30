@@ -2896,6 +2896,34 @@ let test_check_broadcast context =
        typing_extensions.Literal[3]], Tuple[typing_extensions.Literal[3], \
        typing_extensions.Literal[3]]]`.";
     ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast
+      from typing import Tuple, TypeVar
+
+      N1 = TypeVar("N1", bound=int)
+      N2 = TypeVar("N2", bound=int)
+      N3 = TypeVar("N3", bound=int)
+      N4 = TypeVar("N4", bound=int)
+
+      def foo(x: Tuple[N1, N2], y: Tuple[N3, N4]) -> Tuple[*Broadcast[Tuple[N1, N2], Tuple[N3, N4]]]: ...
+
+      def main() -> None:
+        y1 = foo((1, 3), (4, 1))
+        reveal_type(y1)
+
+        y2 = foo((1, 3), (4, 99))
+        reveal_type(y2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y1` is `Tuple[typing_extensions.Literal[4], \
+       typing_extensions.Literal[3]]`.";
+      "Broadcast error [2001]: Broadcast error at expression `test.foo((1, 3), (4, 99))`; types \
+       `Tuple[typing_extensions.Literal[1], typing_extensions.Literal[3]]` and \
+       `Tuple[typing_extensions.Literal[4], typing_extensions.Literal[99]]` cannot be broadcasted \
+       together.";
+      "Revealed type [-1]: Revealed type for `y2` is `typing.Any`.";
+    ];
   ()
 
 

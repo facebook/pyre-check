@@ -3466,6 +3466,105 @@ let test_replace_all _ =
                   1 );
               ] );
           ]));
+
+  (* Broadcast tuple with unaries. *)
+  let unary1 = Type.Variable.Unary.create ~constraints:(Bound Type.integer) "T1" in
+  let unary2 = Type.Variable.Unary.create ~constraints:(Bound Type.integer) "T2" in
+  let unary3 = Type.Variable.Unary.create ~constraints:(Bound Type.integer) "T3" in
+  let unary4 = Type.Variable.Unary.create ~constraints:(Bound Type.integer) "T4_not_replaced" in
+  let assert_replaced ~replace annotation expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "T1" -> Some (Type.TypeAlias (Type.Variable unary1))
+      | "T2" -> Some (Type.TypeAlias (Type.Variable unary2))
+      | "T3" -> Some (Type.TypeAlias (Type.Variable unary3))
+      | "T4_not_replaced" -> Some (Type.TypeAlias (Type.Variable unary4))
+      | _ -> None
+    in
+    let parse annotation = parse_single_expression ~preprocess:true annotation in
+    assert_equal
+      (Type.Variable.GlobalTransforms.Unary.replace_all
+         replace
+         (Type.create ~aliases (parse annotation)))
+      (Type.create ~aliases (parse expected))
+  in
+  let replace_with_literals = function
+    | variable when Type.Variable.Unary.equal variable unary1 -> Some (Type.literal_integer 5)
+    | variable when Type.Variable.Unary.equal variable unary2 -> Some (Type.literal_integer 5)
+    | variable when Type.Variable.Unary.equal variable unary3 -> Some (Type.literal_integer 42)
+    | _ -> None
+  in
+  assert_replaced
+    ~replace:replace_with_literals
+    {|
+        pyre_extensions.Broadcast[
+          typing.Tuple[T1, T2],
+          typing.Tuple[T2, T1],
+        ]
+    |}
+    "typing.Tuple[typing_extensions.Literal[5], typing_extensions.Literal[5]]";
+  assert_replaced
+    ~replace:replace_with_literals
+    {|
+        pyre_extensions.Broadcast[
+          typing.Tuple[T1, T2],
+          typing.Tuple[T2, T3],
+        ]
+    |}
+    "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[5], \
+     typing_extensions.Literal[5]], typing.Tuple[typing_extensions.Literal[5], \
+     typing_extensions.Literal[42]]]";
+  assert_replaced
+    ~replace:replace_with_literals
+    {|
+        typing.Tuple[
+            typing_extensions.Literal[99],
+            pyre_extensions.Unpack[
+                pyre_extensions.Broadcast[
+                    typing.Tuple[T1, T2],
+                    typing.Tuple[T2, T1],
+                ]
+            ],
+            typing_extensions.Literal[99],
+        ]
+    |}
+    "typing.Tuple[typing_extensions.Literal[99], typing_extensions.Literal[5], \
+     typing_extensions.Literal[5], typing_extensions.Literal[99]]";
+  assert_replaced
+    ~replace:replace_with_literals
+    {|
+        typing.Tuple[
+            typing_extensions.Literal[99],
+            pyre_extensions.Unpack[
+                pyre_extensions.Broadcast[
+                    typing.Tuple[T1, T2],
+                    typing.Tuple[T2, typing_extensions.Literal[99]],
+                ]
+            ],
+            typing_extensions.Literal[99],
+        ]
+    |}
+    "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[5], \
+     typing_extensions.Literal[5]], typing.Tuple[typing_extensions.Literal[5], \
+     typing_extensions.Literal[99]]]";
+  assert_replaced
+    ~replace:replace_with_literals
+    {|
+        typing.Tuple[
+            typing_extensions.Literal[99],
+            pyre_extensions.Unpack[
+                pyre_extensions.Broadcast[
+                    typing.Tuple[T1, T2],
+                    typing.Tuple[T2, T4_not_replaced],
+                ]
+            ],
+            typing_extensions.Literal[99],
+        ]
+    |}
+    "typing.Tuple[typing_extensions.Literal[99], \
+     pyre_extensions.Unpack[pyre_extensions.Broadcast[typing.Tuple[typing_extensions.Literal[5], \
+     typing_extensions.Literal[5]], typing.Tuple[typing_extensions.Literal[5], T4_not_replaced]]], \
+     typing_extensions.Literal[99]]";
+
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create

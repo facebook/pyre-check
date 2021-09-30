@@ -4855,6 +4855,19 @@ end = struct
             polynomial
             ~replace_variable
             ~replace_recursive:(local_replace replacement)
+      | Tuple
+          (Concatenation
+            {
+              prefix;
+              middle =
+                OrderedTypes.Concatenation.Broadcast (ConcreteAgainstConcrete { left; right });
+              suffix;
+            }) -> (
+          match OrderedTypes.broadcast (Tuple (Concrete left)) (Tuple (Concrete right)) with
+          | Tuple (Concrete concrete) -> Some (Tuple (Concrete (prefix @ concrete @ suffix)))
+          | Parametric { name = "pyre_extensions.BroadcastError"; _ } as parametric ->
+              Some parametric
+          | _ -> None)
       | _ -> None
 
 
