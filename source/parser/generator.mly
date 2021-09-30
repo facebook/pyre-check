@@ -224,27 +224,37 @@
     in
     { parameter with Node.value }
 
-  let create_substring kind (string_position, (start, stop), value) =
+  let create_literal_substring (string_position, (start, stop), value) =
     string_position,
-    {
+    AstExpression.Substring.Literal {
       Node.location = Location.create ~start ~stop;
-      value = { AstExpression.Substring.kind; value };
+      value;
+    }
+
+  let create_raw_format_substring (string_position, (start, stop), value) =
+    string_position,
+    AstExpression.Substring.RawFormat {
+      Node.location = Location.create ~start ~stop;
+      value;
     }
 
   let create_mixed_string = function
     | [] -> { StringLiteral.value = ""; kind = String }
-    | [{ Node.value = { AstExpression.Substring.kind = Literal; value }; _ }] ->
+    | [ AstExpression.Substring.Literal { Node.value; _ } ] ->
         { StringLiteral.value; kind = String }
     | _ as pieces ->
+       let extract_value = function
+         | AstExpression.Substring.Literal { Node.value; _ } -> Some value
+         | AstExpression.Substring.RawFormat { Node.value; _ } -> Some value
+         | AstExpression.Substring.Format _ -> None
+       in
         let value =
-          pieces
-          |> List.map ~f:(fun { Node.value = { AstExpression.Substring.value; _ }; _ } -> value)
+          List.filter_map ~f:extract_value pieces
           |> String.concat ~sep:""
         in
-        let is_all_literal = List.for_all ~f:(fun { Node.value = { AstExpression.Substring.kind; _ }; _} ->
-          match kind with
-          | AstExpression.Substring.Literal -> true
-          | AstExpression.Substring.Format -> false
+        let is_all_literal = List.for_all ~f:(function
+          | AstExpression.Substring.Literal _ -> true
+          | _ -> false
         )
         in
         if is_all_literal pieces then
@@ -1299,7 +1309,7 @@ atom:
     }
 
   | format = FORMAT; mixed_string = mixed_string {
-      let all_strings = create_substring AstExpression.Substring.Format format :: mixed_string in
+      let all_strings = create_raw_format_substring format :: mixed_string in
       let all_pieces = List.map all_strings ~f:snd in
       let (head, _), (last, _) = List.hd_exn all_strings, List.last_exn all_strings in
       let (start, _) = head in
@@ -1410,7 +1420,7 @@ atom:
     }
 
   | string = STRING; mixed_string = mixed_string {
-      let all_strings = create_substring AstExpression.Substring.Literal string :: mixed_string in
+      let all_strings = create_literal_substring string :: mixed_string in
       let all_pieces = List.map all_strings ~f:snd in
       let (head, _), (last, _) = List.hd_exn all_strings, List.last_exn all_strings in
       let (start, _) = head in
@@ -1512,10 +1522,10 @@ expression_list:
 mixed_string:
   | { [] }
   | first_string = FORMAT; rest = mixed_string {
-      create_substring AstExpression.Substring.Format first_string :: rest
+      create_raw_format_substring first_string :: rest
     }
   | first_string = STRING; rest = mixed_string {
-      create_substring AstExpression.Substring.Literal first_string :: rest
+      create_literal_substring first_string :: rest
     }
   ;
 

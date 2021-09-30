@@ -222,7 +222,14 @@ let collect_nodes_as_strings source =
       | Visit.Parameter { Node.value = { Expression.Parameter.name; _ }; location } ->
           Some (Identifier.sanitized name, location)
       | Visit.Reference { Node.value; location } -> Some (Reference.show value, location)
-      | Visit.Substring { Node.value; location } -> Some (Expression.Substring.show value, location)
+      | Visit.Substring substring ->
+          let location =
+            match substring with
+            | Expression.Substring.Literal { Node.location; _ } -> location
+            | Expression.Substring.RawFormat { Node.location; _ } -> location
+            | Expression.Substring.Format expression -> Node.location expression
+          in
+          Some (Expression.Substring.show substring, location)
       | Visit.Generator _ -> None
   end)
   in

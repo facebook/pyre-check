@@ -16,7 +16,7 @@ type node =
   | Identifier of Identifier.t Node.t
   | Parameter of Parameter.t
   | Reference of Reference.t Node.t
-  | Substring of Substring.t Node.t
+  | Substring of Substring.t
   | Generator of Comprehension.Generator.t
 
 module type NodeVisitor = sig
@@ -100,8 +100,6 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           | Starred.Once expression
           | Starred.Twice expression ->
               visit_expression expression)
-      | String { StringLiteral.kind = Format expressions; _ } ->
-          List.iter expressions ~f:visit_expression
       | String { kind = Mixed substrings; _ } ->
           List.iter
             ~f:(fun substring -> visit_node ~state ~visitor (Substring substring))
@@ -413,8 +411,10 @@ let collect_locations source =
           | Identifier node -> Some (Node.location node)
           | Parameter node -> Some (Node.location node)
           | Reference node -> Some (Node.location node)
-          | Substring node -> Some (Node.location node)
-          | Generator _ -> None
+          | Substring (Substring.Format node) -> Some (Node.location node)
+          | Substring _
+          | Generator _ ->
+              None
       end)
   in
   let { Collector.nodes; _ } = Collector.collect source in
@@ -501,8 +501,7 @@ let collect_format_strings_with_ignores ~ignore_line_map source =
     type t = Expression.t * Ignore.t list
 
     let predicate = function
-      | { Node.value = Expression.String { kind = Mixed _ | Format _; _ }; location } as expression
-        ->
+      | { Node.value = Expression.String { kind = Mixed _; _ }; location } as expression ->
           Map.find ignore_line_map (Location.line location) >>| fun ignores -> expression, ignores
       | _ -> None
   end)

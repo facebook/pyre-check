@@ -191,35 +191,31 @@ and StringLiteral : sig
   type kind =
     | String
     | Bytes
-    | Format of Expression.t list
-    | Mixed of AstExpression.Substring.t Node.t list
+    | Mixed of AstExpression.Substring.t list
 
   type t = {
     value: string;
     kind: kind;
   }
 
-  val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
+  val create : ?bytes:bool -> string -> t
 end = struct
   type kind =
     | String
     | Bytes
-    | Format of Expression.t list
-    | Mixed of AstExpression.Substring.t Node.t list
+    | Mixed of AstExpression.Substring.t list
 
   type t = {
     value: string;
     kind: kind;
   }
 
-  let create ?(bytes = false) ?expressions value =
+  let create ?(bytes = false) value =
     let kind =
       if bytes then
         Bytes
       else
-        match expressions with
-        | Some expressions -> Format expressions
-        | _ -> String
+        String
     in
     { value; kind }
 end
@@ -405,9 +401,6 @@ let rec convert { Node.location; value } =
   | String { value; kind } ->
       let value =
         match kind with
-        | Format expression_list ->
-            AstExpression.Expression.String
-              { value; kind = Format (List.map ~f:convert expression_list) }
         | Mixed mixed -> AstExpression.Expression.String { value; kind = Mixed mixed }
         | String -> AstExpression.Expression.String { value; kind = String }
         | Bytes -> AstExpression.Expression.String { value; kind = Bytes }

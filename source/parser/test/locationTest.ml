@@ -2479,8 +2479,7 @@ let test_string_locations _ =
               (Expression.String
                  {
                    StringLiteral.kind =
-                     Mixed
-                       [node ~start:(1, 2) ~stop:(1, 5) { Substring.kind = Format; value = "foo" }];
+                     Mixed [Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 5) "foo")];
                    value = "foo";
                  })));
     ];
@@ -2498,13 +2497,7 @@ let test_string_locations _ =
               (Expression.String
                  {
                    StringLiteral.kind =
-                     Mixed
-                       [
-                         node
-                           ~start:(1, 2)
-                           ~stop:(1, 9)
-                           { Substring.kind = Format; value = "foo {x}" };
-                       ];
+                     Mixed [Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 9) "foo {x}")];
                    value = "foo {x}";
                  })));
     ];
@@ -2523,8 +2516,8 @@ let test_string_locations _ =
                    StringLiteral.kind =
                      Mixed
                        [
-                         node ~start:(1, 2) ~stop:(1, 5) { Substring.kind = Format; value = "foo" };
-                         node ~start:(1, 9) ~stop:(1, 12) { Substring.kind = Format; value = "bar" };
+                         Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 5) "foo");
+                         Substring.RawFormat (node ~start:(1, 9) ~stop:(1, 12) "bar");
                        ];
                    value = "foobar";
                  })));

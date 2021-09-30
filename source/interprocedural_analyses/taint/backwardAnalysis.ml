@@ -1020,7 +1020,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_string_literal ~resolution ~taint ~state ~location { StringLiteral.value; kind } =
       match kind with
-      | StringLiteral.Format expressions ->
+      | StringLiteral.Mixed substrings ->
           let taint =
             let literal_string_sinks = TaintConfiguration.literal_string_sinks () in
             if List.is_empty literal_string_sinks then
@@ -1039,8 +1039,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let taint = BackwardState.Tree.add_breadcrumb Features.format_string taint in
           List.fold
-            expressions
-            ~f:(fun state expression -> analyze_expression ~resolution ~taint ~state ~expression)
+            substrings
+            ~f:(fun state substring ->
+              match substring with
+              | Substring.Format expression ->
+                  analyze_expression ~resolution ~taint ~state ~expression
+              | Substring.Literal _
+              | Substring.RawFormat _ ->
+                  state)
             ~init:state
       | _ -> state
 

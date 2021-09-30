@@ -3263,8 +3263,8 @@ let test_call _ =
 
 
 let test_string _ =
-  let create_literal value = +{ Substring.kind = Literal; value } in
-  let create_format value = +{ Substring.kind = Format; value } in
+  let create_literal value = Substring.Literal (+value) in
+  let create_format value = Substring.RawFormat (+value) in
   assert_parsed_equal
     "'foo'"
     [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];

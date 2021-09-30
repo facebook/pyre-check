@@ -1160,12 +1160,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~f:add_matching_source_kind
       in
       match kind with
-      | StringLiteral.Format expressions ->
+      | StringLiteral.Mixed substrings ->
           let taint, state =
             List.fold
-              expressions
-              ~f:(fun (taint, state) expression ->
-                analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
+              substrings
+              ~f:(fun (taint, state) substring ->
+                match substring with
+                | Substring.Format expression ->
+                    analyze_expression ~resolution ~state ~expression
+                    |>> ForwardState.Tree.join taint
+                | Substring.Literal _
+                | Substring.RawFormat _ ->
+                    taint, state)
               ~init:(ForwardState.Tree.empty, state)
             |>> ForwardState.Tree.add_breadcrumb Features.format_string
             |>> ForwardState.Tree.join value_taint

@@ -9,19 +9,6 @@ open Core
 open Sexplib.Std
 open Pyre
 
-module Substring = struct
-  type kind =
-    | Literal
-    | Format
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
-
 module rec BooleanOperator : sig
   type operator =
     | And
@@ -532,8 +519,7 @@ and StringLiteral : sig
   type kind =
     | String
     | Bytes
-    | Format of Expression.t list
-    | Mixed of Substring.t Node.t list
+    | Mixed of Substring.t list
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = {
@@ -542,15 +528,14 @@ and StringLiteral : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
+  val create : ?bytes:bool -> string -> t
 
   val location_insensitive_compare : t -> t -> int
 end = struct
   type kind =
     | String
     | Bytes
-    | Format of Expression.t list
-    | Mixed of Substring.t Node.t list
+    | Mixed of Substring.t list
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = {
@@ -559,14 +544,12 @@ end = struct
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  let create ?(bytes = false) ?expressions value =
+  let create ?(bytes = false) value =
     let kind =
       if bytes then
         Bytes
       else
-        match expressions with
-        | Some expressions -> Format expressions
-        | _ -> String
+        String
     in
     { value; kind }
 
@@ -576,12 +559,9 @@ end = struct
     | String, String
     | Bytes, Bytes ->
         0
-    | Format left, Format right -> List.compare Expression.location_insensitive_compare left right
-    | Mixed left, Mixed right ->
-        List.compare (Node.location_insensitive_compare Substring.compare) left right
+    | Mixed left, Mixed right -> List.compare Substring.location_insensitive_compare left right
     | String, _ -> -1
     | Bytes, _ -> -1
-    | Format _, _ -> -1
     | Mixed _, _ -> 1
 
 
@@ -589,6 +569,31 @@ end = struct
     match String.compare left.value right.value with
     | x when not (Int.equal x 0) -> x
     | _ -> location_insensitive_compare_kind left.kind right.kind
+end
+
+and Substring : sig
+  type t =
+    | Literal of string Node.t
+    | RawFormat of string Node.t
+    | Format of Expression.t
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end = struct
+  type t =
+    | Literal of string Node.t
+    | RawFormat of string Node.t
+    | Format of Expression.t
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match left, right with
+    | Literal left, Literal right -> Node.location_insensitive_compare String.compare left right
+    | RawFormat left, RawFormat right -> Node.location_insensitive_compare String.compare left right
+    | Format left, Format right -> Expression.location_insensitive_compare left right
+    | Literal _, _ -> -1
+    | RawFormat _, _ -> -1
+    | Format _, _ -> 1
 end
 
 and Ternary : sig
@@ -1014,8 +1019,15 @@ end = struct
             | _ -> ""
           in
           match kind with
-          | StringLiteral.Format expressions ->
-              Format.fprintf formatter "f\"%s\"(%a)" value pp_expression_list expressions
+          | StringLiteral.Mixed substrings ->
+              let pp_substring formatter = function
+                | Substring.Literal { Node.value; _ } -> Format.fprintf formatter "\"%s\"" value
+                | Substring.RawFormat { Node.value; _ } ->
+                    Format.fprintf formatter "f\"{%s}\"" value
+                | Substring.Format expression ->
+                    Format.fprintf formatter "f\"{%a}\"" pp_expression_t expression
+              in
+              List.iter substrings ~f:(pp_substring formatter)
           | _ -> Format.fprintf formatter "%s\"%s\"" bytes value)
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           Format.fprintf

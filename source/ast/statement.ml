@@ -1661,8 +1661,12 @@ let is_generator statements =
     | Tuple expressions ->
         List.exists expressions ~f:is_expression_generator
     | Starred Starred.(Once expression | Twice expression) -> is_expression_generator expression
-    | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-        List.exists expressions ~f:is_expression_generator
+    | String { StringLiteral.kind = StringLiteral.Mixed substrings; _ } ->
+        let is_substring_generator = function
+          | Substring.(Literal _ | RawFormat _) -> false
+          | Substring.Format expression -> is_expression_generator expression
+        in
+        List.exists substrings ~f:is_substring_generator
     | Ternary { Ternary.target; test; alternative } ->
         is_expression_generator target
         || is_expression_generator test

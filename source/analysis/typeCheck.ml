@@ -3645,16 +3645,17 @@ module State (Context : Context) = struct
               forward_expression ~resolution ~expression
         in
         { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
-    | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-        let resolution, errors =
-          List.fold
-            expressions
-            ~f:(fun (resolution, errors) expression ->
+    | String { StringLiteral.kind = StringLiteral.Mixed substrings; _ } ->
+        let forward_substring ((resolution, errors) as sofar) = function
+          | Substring.Literal _
+          | Substring.RawFormat _ ->
+              sofar
+          | Substring.Format expression ->
               forward_expression ~resolution ~expression
               |> fun { resolution; errors = new_errors; _ } ->
-              resolution, List.append new_errors errors)
-            ~init:(resolution, [])
+              resolution, List.append new_errors errors
         in
+        let resolution, errors = List.fold substrings ~f:forward_substring ~init:(resolution, []) in
         { resolution; errors; resolved = Type.string; resolved_annotation = None; base = None }
     | String { StringLiteral.kind = StringLiteral.Bytes; value } ->
         {
@@ -3672,10 +3673,6 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
-    | String { StringLiteral.kind = StringLiteral.Mixed _; _ } ->
-        (* NOTE: We may run into this case with nested f-strings. Treat them as literal strings
-           until the parser gets full support of them. *)
-        { resolution; errors = []; resolved = Type.string; resolved_annotation = None; base = None }
     | Ternary { Ternary.target; test; alternative } ->
         let target_resolved, target_errors =
           forward_statement ~resolution ~statement:(Statement.assume test)

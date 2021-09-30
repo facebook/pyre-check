@@ -324,67 +324,189 @@ let test_expand_type_alias_body _ =
 
 
 let test_expand_format_string _ =
-  let assert_format_string source value expressions =
+  let assert_format_string source value =
     let handle = "test.py" in
     assert_source_equal
       ~location_insensitive:true
-      (Source.create
-         ~relative:handle
-         [+Statement.Expression (+Expression.String (StringLiteral.create ~expressions value))])
+      (Source.create ~relative:handle [+Statement.Expression (+Expression.String value)])
       (Preprocessing.expand_format_string (parse_untrimmed ~handle source))
   in
-  assert_format_string "f'foo'" "foo" [];
-  assert_format_string "f'{1}'" "{1}" [+Expression.Integer 1];
-  assert_format_string "f'foo{1}'" "foo{1}" [+Expression.Integer 1];
-  assert_format_string "f'foo{1}' 'foo{2}'" "foo{1}foo{2}" [+Expression.Integer 1];
-  assert_format_string "'foo{1}' f'foo{2}'" "foo{1}foo{2}" [+Expression.Integer 2];
+  assert_format_string
+    "f'foo'"
+    { StringLiteral.value = "foo"; kind = StringLiteral.Mixed [Substring.Literal (+"foo")] };
+  assert_format_string
+    "f'{1}'"
+    {
+      StringLiteral.value = "{1}";
+      kind = StringLiteral.Mixed [Substring.Format (+Expression.Integer 1)];
+    };
+  assert_format_string
+    "f'foo{1}'"
+    {
+      StringLiteral.value = "foo{1}";
+      kind =
+        StringLiteral.Mixed [Substring.Literal (+"foo"); Substring.Format (+Expression.Integer 1)];
+    };
+  assert_format_string
+    "f'foo{1}' 'foo{2}'"
+    {
+      StringLiteral.value = "foo{1}foo{2}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo");
+            Substring.Format (+Expression.Integer 1);
+            Substring.Literal (+"foo{2}");
+          ];
+    };
+  assert_format_string
+    "'foo{1}' f'foo{2}'"
+    {
+      StringLiteral.value = "foo{1}foo{2}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo{1}");
+            Substring.Literal (+"foo");
+            Substring.Format (+Expression.Integer 2);
+          ];
+    };
   assert_format_string
     "f'foo{1}' f'foo{2}'"
-    "foo{1}foo{2}"
-    [+Expression.Integer 1; +Expression.Integer 2];
+    {
+      StringLiteral.value = "foo{1}foo{2}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo");
+            Substring.Format (+Expression.Integer 1);
+            Substring.Literal (+"foo");
+            Substring.Format (+Expression.Integer 2);
+          ];
+    };
   assert_format_string
     "f'foo{1}{2}foo'"
-    "foo{1}{2}foo"
-    [+Expression.Integer 1; +Expression.Integer 2];
-  assert_format_string "f'foo{{1}}'" "foo{{1}}" [];
-  assert_format_string "f'foo{{ {1} }}'" "foo{{ {1} }}" [+Expression.Integer 1];
-  assert_format_string "f'foo{{{1} }}'" "foo{{{1} }}" [+Expression.Integer 1];
-  assert_format_string "f'foo{{ {1}}}'" "foo{{ {1}}}" [+Expression.Integer 1];
-  assert_format_string "f'foo{{{1}}}'" "foo{{{1}}}" [+Expression.Integer 1];
-  assert_format_string "f'foo{{'" "foo{{" [];
-  assert_format_string "f'foo}}'" "foo}}" [];
+    {
+      StringLiteral.value = "foo{1}{2}foo";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo");
+            Substring.Format (+Expression.Integer 1);
+            Substring.Format (+Expression.Integer 2);
+            Substring.Literal (+"foo");
+          ];
+    };
+  assert_format_string
+    "f'foo{{1}}'"
+    {
+      StringLiteral.value = "foo{{1}}";
+      kind = StringLiteral.Mixed [Substring.Literal (+"foo"); Substring.Literal (+"{{1}}")];
+    };
+  assert_format_string
+    "f'foo{{ {1} }}'"
+    {
+      StringLiteral.value = "foo{{ {1} }}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo");
+            Substring.Literal (+"{{ ");
+            Substring.Format (+Expression.Integer 1);
+            Substring.Literal (+" }}");
+          ];
+    };
+  assert_format_string
+    "f'foo{{{1} }}'"
+    {
+      StringLiteral.value = "foo{{{1} }}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo");
+            Substring.Literal (+"{{");
+            Substring.Format (+Expression.Integer 1);
+            Substring.Literal (+" }}");
+          ];
+    };
+  assert_format_string
+    "f'foo{{ {1}}}'"
+    {
+      StringLiteral.value = "foo{{ {1}}}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo");
+            Substring.Literal (+"{{ ");
+            Substring.Format (+Expression.Integer 1);
+            Substring.Literal (+"}}");
+          ];
+    };
+  assert_format_string
+    "f'foo{{{1}}}'"
+    {
+      StringLiteral.value = "foo{{{1}}}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo");
+            Substring.Literal (+"{{");
+            Substring.Format (+Expression.Integer 1);
+            Substring.Literal (+"}}");
+          ];
+    };
+  assert_format_string
+    "f'foo{{'"
+    {
+      StringLiteral.value = "foo{{";
+      kind = StringLiteral.Mixed [Substring.Literal (+"foo"); Substring.Literal (+"{{")];
+    };
+  assert_format_string
+    "f'foo}}'"
+    { StringLiteral.value = "foo}}"; kind = StringLiteral.Mixed [Substring.Literal (+"foo}}")] };
   assert_format_string
     "f'foo{1+2}'"
-    "foo{1+2}"
-    [
-      +Expression.Call
-         {
-           callee =
-             +Expression.Name
-                (Name.Attribute
-                   { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-           arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
-         };
-    ];
+    {
+      StringLiteral.value = "foo{1+2}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Literal (+"foo");
+            Substring.Format
+              (+Expression.Call
+                  {
+                    callee =
+                      +Expression.Name
+                         (Name.Attribute
+                            { base = +Expression.Integer 1; attribute = "__add__"; special = true });
+                    arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                  });
+          ];
+    };
 
   assert_format_string
     "f'{x for x in []}'"
-    "{x for x in []}"
-    [
-      +Expression.Generator
-         {
-           Comprehension.element = +Expression.Name (Name.Identifier "x");
-           generators =
-             [
-               {
-                 Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
-                 iterator = +Expression.List [];
-                 conditions = [];
-                 async = false;
-               };
-             ];
-         };
-    ];
+    {
+      StringLiteral.value = "{x for x in []}";
+      kind =
+        StringLiteral.Mixed
+          [
+            Substring.Format
+              (+Expression.Generator
+                  {
+                    Comprehension.element = +Expression.Name (Name.Identifier "x");
+                    generators =
+                      [
+                        {
+                          Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
+                          iterator = +Expression.List [];
+                          conditions = [];
+                          async = false;
+                        };
+                      ];
+                  });
+          ];
+    };
 
   (* Ensure we fix up locations. *)
   let assert_locations source statements =
@@ -405,7 +527,11 @@ let test_expand_format_string _ =
               (Expression.String
                  {
                    StringLiteral.kind =
-                     StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Expression.Integer 1)];
+                     StringLiteral.Mixed
+                       [
+                         Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
+                         Substring.Format (node ~start:(1, 6) ~stop:(1, 7) (Expression.Integer 1));
+                       ];
                    value = "foo{1}";
                  })));
     ];
@@ -422,10 +548,13 @@ let test_expand_format_string _ =
               (Expression.String
                  {
                    StringLiteral.kind =
-                     StringLiteral.Format
+                     StringLiteral.Mixed
                        [
-                         node ~start:(1, 6) ~stop:(1, 9) (Expression.Integer 123);
-                         node ~start:(1, 12) ~stop:(1, 15) (Expression.Integer 456);
+                         Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
+                         Substring.Format (node ~start:(1, 6) ~stop:(1, 9) (Expression.Integer 123));
+                         Substring.Literal (node ~start:(1, 10) ~stop:(1, 11) "a");
+                         Substring.Format
+                           (node ~start:(1, 12) ~stop:(1, 15) (Expression.Integer 456));
                        ];
                    value = "foo{123}a{456}";
                  })));
@@ -447,10 +576,14 @@ let test_expand_format_string _ =
                     (Expression.String
                        {
                          StringLiteral.kind =
-                           StringLiteral.Format
+                           StringLiteral.Mixed
                              [
-                               node ~start:(1, 13) ~stop:(1, 16) (Expression.Integer 123);
-                               node ~start:(1, 19) ~stop:(1, 22) (Expression.Integer 456);
+                               Substring.Literal (node ~start:(1, 9) ~stop:(1, 12) "foo");
+                               Substring.Format
+                                 (node ~start:(1, 13) ~stop:(1, 16) (Expression.Integer 123));
+                               Substring.Literal (node ~start:(1, 17) ~stop:(1, 18) "a");
+                               Substring.Format
+                                 (node ~start:(1, 19) ~stop:(1, 22) (Expression.Integer 456));
                              ];
                          value = "foo{123}a{456}";
                        }));
@@ -474,11 +607,16 @@ let test_expand_format_string _ =
               (Expression.String
                  {
                    StringLiteral.kind =
-                     StringLiteral.Format
+                     StringLiteral.Mixed
                        [
-                         node ~start:(3, 4) ~stop:(3, 7) (Expression.Integer 123);
-                         node ~start:(3, 10) ~stop:(3, 13) (Expression.Integer 456);
-                         node ~start:(4, 2) ~stop:(4, 5) (Expression.Integer 789);
+                         Substring.Literal (node ~start:(2, 4) ~stop:(3, 3) "\nfoo");
+                         Substring.Format (node ~start:(3, 4) ~stop:(3, 7) (Expression.Integer 123));
+                         Substring.Literal (node ~start:(3, 8) ~stop:(3, 9) "a");
+                         Substring.Format
+                           (node ~start:(3, 10) ~stop:(3, 13) (Expression.Integer 456));
+                         Substring.Literal (node ~start:(3, 14) ~stop:(4, 1) "\nb");
+                         Substring.Format (node ~start:(4, 2) ~stop:(4, 5) (Expression.Integer 789));
+                         Substring.Literal (node ~start:(4, 6) ~stop:(5, 1) "\n");
                        ];
                    value = "\nfoo{123}a{456}\nb{789}\n";
                  })));

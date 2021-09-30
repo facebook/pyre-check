@@ -93,13 +93,18 @@ module Binding = struct
         of_comprehension sofar comprehension ~of_element:of_expression
     | Expression.List elements
     | Expression.Set elements
-    | Expression.String { StringLiteral.kind = StringLiteral.Format elements; _ }
     | Expression.Tuple elements ->
         List.fold elements ~init:sofar ~f:of_expression
     | Expression.Ternary { Ternary.target; test; alternative } ->
         let sofar = of_expression sofar target in
         let sofar = of_expression sofar test in
         of_expression sofar alternative
+    | Expression.String { StringLiteral.kind = StringLiteral.Mixed substrings; _ } ->
+        let of_substring sofar = function
+          | Substring.(Literal _ | RawFormat _) -> sofar
+          | Substring.Format expression -> of_expression sofar expression
+        in
+        List.fold substrings ~init:sofar ~f:of_substring
     | Complex _
     | Ellipsis
     | False

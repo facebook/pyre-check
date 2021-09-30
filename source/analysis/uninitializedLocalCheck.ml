@@ -69,9 +69,16 @@ module AccessCollector = struct
         from_comprehension from_expression collected comprehension
     | List expressions
     | Set expressions
-    | Tuple expressions
-    | String { kind = StringLiteral.Format expressions; _ } ->
+    | Tuple expressions ->
         List.fold expressions ~init:collected ~f:from_expression
+    | String { kind = StringLiteral.Mixed substrings; _ } ->
+        let from_substring sofar = function
+          | Substring.Literal _
+          | Substring.RawFormat _ ->
+              sofar
+          | Substring.Format expression -> from_expression sofar expression
+        in
+        List.fold substrings ~init:collected ~f:from_substring
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
         from_expression collected expression

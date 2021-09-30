@@ -247,145 +247,140 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
        Node.location;
        value = Expression.String { StringLiteral.value; kind = StringLiteral.Mixed substrings; _ };
       } ->
-          let gather_fstring_expressions substrings =
-            let gather_expressions_in_substring
-                sofar
-                {
-                  Node.value = { Substring.kind; value };
-                  location = { Location.start = { Location.line; column; _ }; _ };
-                }
-              =
-              let parse ~sofar = function
-                | Split.Literal _ -> sofar
-                | Split.Expression { start_line; start_column; content } -> (
-                    let string = "(" ^ content ^ ")" ^ "\n" in
-                    let start_column = start_column - 1 in
-                    match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
-                    | Ok [{ Node.value = Expression expression; _ }] -> expression :: sofar
-                    | Ok _
-                    | Error _ ->
-                        Log.debug
-                          "Pyre could not parse format string `%s` at %s:%a"
-                          content
-                          relative
-                          Location.pp
-                          location;
-                        sofar)
-              in
-              let value_length = String.length value in
-              let rec expand_fstring input_string ~sofar ~line_offset ~column_offset ~index state =
-                if index = value_length then
-                  match state with
-                  | { State.kind = Literal; content = ""; _ } ->
-                      (* This means the expansion ends cleanly. *)
-                      sofar
-                  | { State.kind = Expression; _ } ->
-                      (* The fstring contatins unclosed an curly brace, which is malformed. *)
-                      sofar
-                  | { State.kind = Literal; start_line = line; start_column = column; content } ->
-                      (* This means the fstring ends with some literal characters as opposed to an
-                         expression. *)
-                      let split =
-                        let location =
-                          {
-                            Location.start = { Location.line; column };
-                            stop = { Location.line = line_offset; column = column_offset + 1 };
-                          }
-                        in
-                        Split.Literal (Node.create content ~location)
-                      in
-                      parse ~sofar split
-                else
-                  let token = input_string.[index] in
-                  let sofar, next_state =
-                    match token, state with
-                    | '{', { State.kind = Literal; content = ""; _ } ->
-                        ( sofar,
-                          {
-                            State.kind = Expression;
-                            start_line = line_offset;
-                            start_column = column_offset + 1;
-                            content = "";
-                          } )
-                    | '{', { State.kind = Literal; start_line; start_column; content } ->
+          let expand_substring sofar = function
+            | (Substring.Literal _ | Substring.Format _) as substring -> substring :: sofar
+            | Substring.RawFormat
+                { Node.value; location = { Location.start = { Location.line; column; _ }; _ } } ->
+                let parse ~sofar = function
+                  | Split.Literal literal -> Substring.Literal literal :: sofar
+                  | Split.Expression { start_line; start_column; content } -> (
+                      let string = "(" ^ content ^ ")" ^ "\n" in
+                      let start_column = start_column - 1 in
+                      match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
+                      | Ok [{ Node.value = Expression expression; _ }] ->
+                          Substring.Format expression :: sofar
+                      | Ok _
+                      | Error _ ->
+                          Log.debug
+                            "Pyre could not parse format string `%s` at %s:%a"
+                            content
+                            relative
+                            Location.pp
+                            location;
+                          sofar)
+                in
+                let value_length = String.length value in
+                let rec expand_fstring input_string ~sofar ~line_offset ~column_offset ~index state =
+                  if index = value_length then
+                    match state with
+                    | { State.kind = Literal; content = ""; _ } ->
+                        (* This means the expansion ends cleanly. *)
+                        sofar
+                    | { State.kind = Expression; _ } ->
+                        (* The fstring contatins unclosed an curly brace, which is malformed. *)
+                        sofar
+                    | { State.kind = Literal; start_line = line; start_column = column; content } ->
+                        (* This means the fstring ends with some literal characters as opposed to an
+                           expression. *)
                         let split =
                           let location =
                             {
-                              Location.start = { Location.line = start_line; column = start_column };
-                              stop = { Location.line = line_offset; column = column_offset };
+                              Location.start = { Location.line; column };
+                              stop = { Location.line = line_offset; column = column_offset + 1 };
                             }
                           in
                           Split.Literal (Node.create content ~location)
                         in
-                        ( parse ~sofar split,
-                          {
-                            State.kind = Expression;
-                            start_line = line_offset;
-                            start_column = column_offset + 1;
-                            content = "";
-                          } )
-                    | '{', { State.kind = Expression; start_line; start_column; content = "" } ->
-                        sofar, { State.kind = Literal; start_line; start_column; content = "{{" }
-                    (* NOTE: this does not account for nested expressions in e.g. format specifiers. *)
-                    | '}', { State.kind = Expression; start_line; start_column; content } ->
-                        let split = Split.Expression { start_line; start_column; content } in
-                        ( parse ~sofar split,
-                          {
-                            State.kind = Literal;
-                            start_line = line_offset;
-                            start_column = column_offset + 1;
-                            content = "";
-                          } )
-                    (* Ignore leading whitespace in expressions. *)
-                    | (' ' | '\t'), ({ State.kind = Expression; content = ""; _ } as expression) ->
-                        sofar, expression
-                    | _, { State.kind = Literal; start_line; start_column; content } ->
-                        ( sofar,
-                          {
-                            State.kind = Literal;
-                            start_line;
-                            start_column;
-                            content = content ^ Char.to_string token;
-                          } )
-                    | _, { State.kind = Expression; start_line; start_column; content } ->
-                        ( sofar,
-                          {
-                            State.kind = Expression;
-                            start_line;
-                            start_column;
-                            content = content ^ Char.to_string token;
-                          } )
-                  in
-                  let line_offset, column_offset =
-                    match token with
-                    | '\n' -> line_offset + 1, 0
-                    | _ -> line_offset, column_offset + 1
-                  in
-                  expand_fstring
-                    input_string
-                    ~sofar
-                    ~line_offset
-                    ~column_offset
-                    ~index:(index + 1)
-                    next_state
-              in
-              match kind with
-              | Substring.Literal -> sofar
-              | Substring.Format ->
-                  expand_fstring
-                    value
-                    ~sofar
-                    ~line_offset:line
-                    ~column_offset:column
-                    ~index:0
-                    { State.kind = Literal; start_line = line; start_column = column; content = "" }
-            in
-            List.fold substrings ~init:[] ~f:gather_expressions_in_substring |> List.rev
+                        parse ~sofar split
+                  else
+                    let token = input_string.[index] in
+                    let sofar, next_state =
+                      match token, state with
+                      | '{', { State.kind = Literal; content = ""; _ } ->
+                          ( sofar,
+                            {
+                              State.kind = Expression;
+                              start_line = line_offset;
+                              start_column = column_offset + 1;
+                              content = "";
+                            } )
+                      | '{', { State.kind = Literal; start_line; start_column; content } ->
+                          let split =
+                            let location =
+                              {
+                                Location.start =
+                                  { Location.line = start_line; column = start_column };
+                                stop = { Location.line = line_offset; column = column_offset };
+                              }
+                            in
+                            Split.Literal (Node.create content ~location)
+                          in
+                          ( parse ~sofar split,
+                            {
+                              State.kind = Expression;
+                              start_line = line_offset;
+                              start_column = column_offset + 1;
+                              content = "";
+                            } )
+                      | '{', { State.kind = Expression; start_line; start_column; content = "" } ->
+                          sofar, { State.kind = Literal; start_line; start_column; content = "{{" }
+                      (* NOTE: this does not account for nested expressions in e.g. format
+                         specifiers. *)
+                      | '}', { State.kind = Expression; start_line; start_column; content } ->
+                          let split = Split.Expression { start_line; start_column; content } in
+                          ( parse ~sofar split,
+                            {
+                              State.kind = Literal;
+                              start_line = line_offset;
+                              start_column = column_offset + 1;
+                              content = "";
+                            } )
+                      (* Ignore leading whitespace in expressions. *)
+                      | (' ' | '\t'), ({ State.kind = Expression; content = ""; _ } as expression)
+                        ->
+                          sofar, expression
+                      | _, { State.kind = Literal; start_line; start_column; content } ->
+                          ( sofar,
+                            {
+                              State.kind = Literal;
+                              start_line;
+                              start_column;
+                              content = content ^ Char.to_string token;
+                            } )
+                      | _, { State.kind = Expression; start_line; start_column; content } ->
+                          ( sofar,
+                            {
+                              State.kind = Expression;
+                              start_line;
+                              start_column;
+                              content = content ^ Char.to_string token;
+                            } )
+                    in
+                    let line_offset, column_offset =
+                      match token with
+                      | '\n' -> line_offset + 1, 0
+                      | _ -> line_offset, column_offset + 1
+                    in
+                    expand_fstring
+                      input_string
+                      ~sofar
+                      ~line_offset
+                      ~column_offset
+                      ~index:(index + 1)
+                      next_state
+                in
+                expand_fstring
+                  value
+                  ~sofar
+                  ~line_offset:line
+                  ~column_offset:column
+                  ~index:0
+                  { State.kind = Literal; start_line = line; start_column = column; content = "" }
           in
-          let expressions = gather_fstring_expressions substrings in
+          let expanded_substrings = List.fold substrings ~init:[] ~f:expand_substring |> List.rev in
           {
             Node.location;
-            value = Expression.String { StringLiteral.kind = Format expressions; value };
+            value = Expression.String { StringLiteral.kind = Mixed expanded_substrings; value };
           }
       | _ -> expression
   end)
@@ -1233,9 +1228,13 @@ let qualify
       | String { StringLiteral.value; kind } -> (
           let kind =
             match kind with
-            | StringLiteral.Format expressions ->
-                StringLiteral.Format
-                  (List.map expressions ~f:(qualify_expression ~qualify_strings ~scope))
+            | StringLiteral.Mixed substrings ->
+                let qualify_substring = function
+                  | (Substring.Literal _ | Substring.RawFormat _) as substring -> substring
+                  | Substring.Format expression ->
+                      Substring.Format (qualify_expression ~qualify_strings ~scope expression)
+                in
+                StringLiteral.Mixed (List.map substrings ~f:qualify_substring)
             | _ -> kind
           in
           let error_on_qualification_failure =
@@ -2957,9 +2956,16 @@ module AccessCollector = struct
         from_comprehension from_expression collected comprehension
     | List expressions
     | Set expressions
-    | Tuple expressions
-    | String { kind = StringLiteral.Format expressions; _ } ->
+    | Tuple expressions ->
         List.fold expressions ~init:collected ~f:from_expression
+    | String { kind = StringLiteral.Mixed substrings; _ } ->
+        let from_substring sofar = function
+          | Substring.Literal _
+          | Substring.RawFormat _ ->
+              sofar
+          | Substring.Format expression -> from_expression sofar expression
+        in
+        List.fold substrings ~init:collected ~f:from_substring
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
         from_expression collected expression

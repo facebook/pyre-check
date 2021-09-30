@@ -5,19 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module Substring : sig
-  type kind =
-    | Literal
-    | Format
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
 module rec BooleanOperator : sig
   type operator =
     | And
@@ -208,8 +195,7 @@ and StringLiteral : sig
   type kind =
     | String
     | Bytes
-    | Format of Expression.t list
-    | Mixed of Substring.t Node.t list
+    | Mixed of Substring.t list
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = {
@@ -220,7 +206,17 @@ and StringLiteral : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
+  val create : ?bytes:bool -> string -> t
+end
+
+and Substring : sig
+  type t =
+    | Literal of string Node.t
+    | RawFormat of string Node.t
+    | Format of Expression.t
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
 end
 
 and Ternary : sig
