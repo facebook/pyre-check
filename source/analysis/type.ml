@@ -585,19 +585,39 @@ module Record = struct
           ~concrete
           ~concatenation:{ Concatenation.prefix; middle; suffix }
         =
-        let concrete_prefix, concrete_rest = List.split_n concrete (List.length prefix) in
+        let prefix_length = List.length prefix in
+        let suffix_length = List.length suffix in
+        let concrete_prefix, concrete_rest = List.split_n concrete prefix_length in
         let concrete_middle, concrete_suffix =
-          List.split_n concrete_rest (List.length concrete_rest - List.length suffix)
+          List.split_n concrete_rest (List.length concrete_rest - suffix_length)
         in
         let prefix_pairs, middle_pair, suffix_pairs =
-          if is_left_concrete then
-            ( List.zip concrete_prefix prefix,
-              (Concrete concrete_middle, Concatenation { prefix = []; middle; suffix = [] }),
-              List.zip concrete_suffix suffix )
-          else
-            ( List.zip prefix concrete_prefix,
-              (Concatenation { prefix = []; middle; suffix = [] }, Concrete concrete_middle),
-              List.zip suffix concrete_suffix )
+          match middle, is_left_concrete with
+          | UnboundedElements unbounded, _ ->
+              let concrete_length = List.length concrete in
+              let middle =
+                if concrete_length > prefix_length + suffix_length then
+                  List.init
+                    (List.length concrete - List.length prefix - List.length suffix)
+                    ~f:(fun _ -> unbounded)
+                else
+                  []
+              in
+              let pairs =
+                if is_left_concrete then
+                  List.zip concrete (prefix @ middle @ suffix)
+                else
+                  List.zip (prefix @ middle @ suffix) concrete
+              in
+              pairs, (Concrete [], Concrete []), List.Or_unequal_lengths.Ok []
+          | _, true ->
+              ( List.zip concrete_prefix prefix,
+                (Concrete concrete_middle, Concatenation { prefix = []; middle; suffix = [] }),
+                List.zip concrete_suffix suffix )
+          | _, false ->
+              ( List.zip prefix concrete_prefix,
+                (Concatenation { prefix = []; middle; suffix = [] }, Concrete concrete_middle),
+                List.zip suffix concrete_suffix )
         in
         match prefix_pairs, middle_pair, suffix_pairs with
         | Ok prefix_pairs, middle_pair, Ok suffix_pairs ->

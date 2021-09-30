@@ -468,11 +468,11 @@ let test_add_constraint context =
   assert_add
     ~left:"typing.Tuple[D, ...]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    [];
+    [["T_Unconstrained", "D"]];
   assert_add
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    [["T_Unconstrained", "typing.Union[C, D, Q]"]];
+    [["T_Unconstrained", "typing.Union[C, Q]"]];
   assert_add
     ~left:"G_covariant[C]"
     ~right:"typing.Union[G_covariant[T_Unconstrained], int]"
@@ -942,7 +942,7 @@ let test_add_constraint_type_variable_tuple context =
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts]]"
     [["Ts", "typing.Tuple[pyre_extensions.Unpack[typing.Tuple[int, ...]]]"]];
-  assert_add ~left:"typing.Tuple[int, ...]" ~right:"typing.Tuple[T]" [];
+  assert_add ~left:"typing.Tuple[int, ...]" ~right:"typing.Tuple[T]" [["T", "int"]];
   assert_add
     ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
@@ -956,6 +956,12 @@ let test_add_constraint_type_variable_tuple context =
     ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[T, ...]], bool]"
     [["T", "str"]];
+  assert_add
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], str]"
+    ~right:"typing.Tuple[T1, T2, T3, T4]"
+    [["T4", "str"; "T3", "str"; "T2", "str"; "T1", "int"]];
+  assert_add ~left:"typing.Tuple[int, int]" ~right:"typing.Tuple[int, ...]" [[]];
+  assert_add ~left:"typing.Tuple[str, ...]" ~right:"typing.Tuple[int]" [];
 
   (* Stretch the unbounded tuple to meet the expected length. *)
   assert_add

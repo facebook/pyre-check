@@ -5094,6 +5094,43 @@ let test_split_ordered_types _ =
              Concatenation (Type.OrderedTypes.Concatenation.create variadic) );
          suffix_pairs = [Type.string, Type.string; Type.integer, Type.integer];
        });
+  assert_split
+    "[pyre_extensions.Unpack[typing.Tuple[str, ...]]]"
+    "[str, str]"
+    (Some
+       {
+         prefix_pairs = [Type.string, Type.string; Type.string, Type.string];
+         middle_pair = Concrete [], Concrete [];
+         suffix_pairs = [];
+       });
+  assert_split
+    "[str, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    "[str, str]"
+    (Some
+       {
+         prefix_pairs = [Type.string, Type.string; Type.string, Type.string];
+         middle_pair = Concrete [], Concrete [];
+         suffix_pairs = [];
+       });
+  assert_split
+    "[str, pyre_extensions.Unpack[typing.Tuple[int, ...]], str]"
+    "[str, bool]"
+    (Some
+       {
+         prefix_pairs = [Type.string, Type.string; Type.string, Type.bool];
+         middle_pair = Concrete [], Concrete [];
+         suffix_pairs = [];
+       });
+  assert_split "[str, str, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]" "[str, str]" None;
+  assert_split
+    "[str, ...]"
+    "[int]"
+    (Some
+       {
+         prefix_pairs = [Type.string, Type.integer];
+         middle_pair = Concrete [], Concrete [];
+         suffix_pairs = [];
+       });
   ()
 
 

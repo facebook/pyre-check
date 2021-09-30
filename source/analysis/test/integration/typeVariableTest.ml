@@ -2995,6 +2995,27 @@ let test_variadic_tuples context =
       "Revealed type [-1]: Revealed type for `y_error` is `typing.Tuple[*Tuple[typing.Any, ...], \
        typing.Any]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, TypeVar
+
+      N = TypeVar("N", bound=int)
+
+      def foo(x: Tuple[N]) -> Tuple[N]: ...
+
+      def bar() -> None:
+        x: Tuple[int, ...]
+        y = foo(x)
+        reveal_type(y)
+
+        x_error: Tuple[str, ...]
+        foo(x_error)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int]`.";
+      "Incompatible parameter type [6]: Expected `Tuple[Variable[N (bound to int)]]` for 1st \
+       positional only parameter to call `foo` but got `typing.Tuple[str, ...]`.";
+    ];
   ()
 
 
