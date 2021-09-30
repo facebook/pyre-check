@@ -1619,6 +1619,24 @@ let test_expression _ =
   assert_expression
     (Type.Tuple
        (Type.OrderedTypes.Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concrete_against_concrete
+             ~prefix:[]
+             ~suffix:[]
+             ~left:[Type.variable "T1"]
+             ~right:[Type.variable "T2"])))
+    {|
+      typing.Tuple[
+        pyre_extensions.Unpack[
+          pyre_extensions.Broadcast[(
+            typing.Tuple[T1],
+            typing.Tuple[T2]
+          )]
+        ]
+      ]
+    |};
+  assert_expression
+    (Type.Tuple
+       (Type.OrderedTypes.Concatenation
           (Type.OrderedTypes.Concatenation.create
              ~prefix:[Type.integer]
              ~suffix:[Type.string]
@@ -2468,6 +2486,17 @@ let test_visit _ =
                   ~concatenation:mixed_t))))
   in
 
+  assert_equal ~printer:string_of_int 3 end_state;
+  let broadcast_unaries =
+    Type.OrderedTypes.Concatenation.create_from_concrete_against_concrete
+      ~prefix:[]
+      ~suffix:[]
+      ~left:[Type.variable "T1"]
+      ~right:[Type.variable "T2"]
+  in
+  let end_state, _ =
+    CountTransform.visit 0 (Tuple (Type.OrderedTypes.Concatenation broadcast_unaries))
+  in
   assert_equal ~printer:string_of_int 3 end_state;
 
   let callable1 =

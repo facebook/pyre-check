@@ -118,6 +118,13 @@ module Record : sig
         'annotation t ->
         'annotation record_unpackable
 
+      val create_from_concrete_against_concrete
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        left:'annotation list ->
+        right:'annotation list ->
+        'annotation t
+
       val create_from_concrete_against_concatenation
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->

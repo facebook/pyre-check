@@ -157,10 +157,11 @@ module Record = struct
         | Broadcast of 'annotation record_broadcast
       [@@deriving compare, eq, sexp, show, hash]
 
-      (* No need for concrete against concrete case, since that should be normalized to Bottom or an
-         answer. Only need one concrete against concatenation case because `Broadcast` is a
-         commutative operator. *)
       and 'annotation record_broadcast =
+        | ConcreteAgainstConcrete of {
+            left: 'annotation list;
+            right: 'annotation list;
+          }
         | ConcreteAgainstConcatenation of {
             concrete: 'annotation list;
             concatenation: 'annotation t;
@@ -199,6 +200,10 @@ module Record = struct
         create_from_unpackable ?prefix ?suffix (UnboundedElements annotation)
 
 
+      let create_unpackable_from_concrete_against_concrete ~left ~right =
+        Broadcast (ConcreteAgainstConcrete { left; right })
+
+
       let create_unpackable_from_concrete_against_concatenation ~concrete ~concatenation =
         Broadcast (ConcreteAgainstConcatenation { concrete; concatenation })
 
@@ -217,6 +222,13 @@ module Record = struct
                  left_concatenation = right_concatenation;
                  right_concatenation = left_concatenation;
                })
+
+
+      let create_from_concrete_against_concrete ?prefix ?suffix ~left ~right =
+        create_from_unpackable
+          ?prefix
+          ?suffix
+          (create_unpackable_from_concrete_against_concrete ~left ~right)
 
 
       let create_from_concrete_against_concatenation ?prefix ?suffix ~concrete ~concatenation =
@@ -263,6 +275,12 @@ module Record = struct
 
 
       and pp_broadcast ~pp_type format = function
+        | ConcreteAgainstConcrete { left; right } ->
+            Format.fprintf
+              format
+              "typing.Tuple[%s], typing.Tuple[%s]"
+              (show_type_list left ~pp_type)
+              (show_type_list right ~pp_type)
         | ConcreteAgainstConcatenation { concrete; concatenation } ->
             Format.fprintf
               format
@@ -315,6 +333,16 @@ module Record = struct
                 |> get_item_call ~location "typing.Tuple"
               in
               let broadcast_to_expression = function
+                | ConcreteAgainstConcrete { left; right } ->
+                    get_item_call
+                      ~location
+                      "pyre_extensions.Broadcast"
+                      [
+                        get_item_call ~location "typing.Tuple" (List.map ~f:expression left)
+                        |> Node.create ~location;
+                        get_item_call ~location "typing.Tuple" (List.map ~f:expression right)
+                        |> Node.create ~location;
+                      ]
                 | ConcreteAgainstConcatenation { concrete; concatenation } ->
                     get_item_call
                       ~location
@@ -2593,6 +2621,8 @@ module Transform = struct
               Record.OrderedTypes.Concrete (visit_all concretes)
           | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
         and visit_broadcast = function
+          | ConcreteAgainstConcrete { left; right } ->
+              ConcreteAgainstConcrete { left = visit_all left; right = visit_all right }
           | ConcreteAgainstConcatenation { concrete; concatenation } ->
               ConcreteAgainstConcatenation
                 { concrete = visit_all concrete; concatenation = visit_concatenation concatenation }
