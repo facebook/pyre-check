@@ -2368,11 +2368,6 @@ let create ~location ~kind ~define =
 
 let path { location = { Location.WithModule.path; _ }; _ } = path
 
-let key { location = { Location.WithModule.start = { Location.line; _ }; path; _ }; _ } =
-  let start = { Location.line; column = -1 } in
-  { Location.WithModule.start; stop = start; path }
-
-
 let code { kind; _ } = code_of_kind kind
 
 let _ = show (* shadowed below *)

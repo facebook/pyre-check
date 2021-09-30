@@ -442,8 +442,6 @@ val create : location:Location.WithModule.t -> kind:kind -> define:Statement.Def
 
 val path : t -> Reference.t
 
-val key : t -> Location.WithModule.t
-
 val code : t -> int
 
 val instantiate

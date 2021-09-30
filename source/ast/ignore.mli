@@ -30,5 +30,3 @@ val location : t -> Location.t
 val kind : t -> kind
 
 val increment : t -> t
-
-val key : t -> Location.t
