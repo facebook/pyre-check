@@ -565,14 +565,20 @@ module State (Context : Context) = struct
   let widening_threshold = 10
 
   let add_fixpoint_threshold_reached_error error_map =
-    let define = Context.define |> Node.value |> StatementDefine.name |> Node.value in
-    let kind = AnalysisError.AnalysisFailure (FixpointThresholdReached { define }) in
-    let location =
-      Location.with_module ~qualifier:Context.qualifier (Node.location Context.define)
-    in
-    let key = [%hash: int * int] (Cfg.entry_index, 0) in
-    AnalysisError.create ~location ~kind ~define:Context.define
-    |> LocalErrorMap.append ~key error_map
+    let define = Context.define in
+    let { Node.value = define_value; location = define_location } = define in
+    match StatementDefine.is_toplevel define_value with
+    | true ->
+        (* Avoid emitting errors on top-level defines, which are generally unsuppressable. *)
+        ()
+    | false ->
+        let kind =
+          let { Node.value = define; _ } = StatementDefine.name define_value in
+          AnalysisError.AnalysisFailure (FixpointThresholdReached { define })
+        in
+        let location = Location.with_module ~qualifier:Context.qualifier define_location in
+        let key = [%hash: int * int] (Cfg.entry_index, 0) in
+        AnalysisError.create ~location ~kind ~define |> LocalErrorMap.append ~key error_map
 
 
   let widen ~previous ~next ~iteration =
