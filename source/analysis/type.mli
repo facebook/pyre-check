@@ -121,6 +121,7 @@ module Record : sig
       val create_from_concrete_against_concrete
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
+        compare_t:('annotation -> 'annotation -> int) ->
         left:'annotation list ->
         right:'annotation list ->
         'annotation t

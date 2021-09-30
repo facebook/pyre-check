@@ -1295,13 +1295,62 @@ let test_create_variadic_tuple _ =
         typing.Tuple[T2, typing_extensions.Literal[5]],
       ]
     |}
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concrete_against_concrete
+             ~prefix:[]
+             ~suffix:[]
+             ~compare_t:Type.compare
+             ~left:[Type.Variable variable_t1; Type.literal_integer 5]
+             ~right:[Type.Variable variable_t2; Type.literal_integer 5])));
+  assert_create
+    ~aliases
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[T1, T2],
+        typing.Tuple[T2, T1],
+      ]
+    |}
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concrete_against_concrete
+             ~prefix:[]
+             ~suffix:[]
+             ~compare_t:Type.compare
+             ~left:[Type.Variable variable_t1; Type.Variable variable_t2]
+             ~right:[Type.Variable variable_t2; Type.Variable variable_t1])));
+  assert_create
+    ~aliases
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[typing_extensions.Literal[2]],
+        typing.Tuple[typing_extensions.Literal[3]],
+      ]
+    |}
     (Type.Parametric
        {
          name = "pyre_extensions.BroadcastError";
          parameters =
            [
-             Type.Parameter.Single (Type.tuple [Type.Variable variable_t1; Type.literal_integer 5]);
-             Type.Parameter.Single (Type.tuple [Type.Variable variable_t2; Type.literal_integer 5]);
+             Type.Parameter.Single (Type.tuple [Type.literal_integer 2]);
+             Type.Parameter.Single (Type.tuple [Type.literal_integer 3]);
+           ];
+       });
+  assert_create
+    ~aliases
+    {|
+      pyre_extensions.Broadcast[
+        typing.Tuple[T1, typing_extensions.Literal[2]],
+        typing.Tuple[T2, typing_extensions.Literal[3]],
+      ]
+    |}
+    (Type.Parametric
+       {
+         name = "pyre_extensions.BroadcastError";
+         parameters =
+           [
+             Type.Parameter.Single (Type.tuple [Type.Variable variable_t1; Type.literal_integer 2]);
+             Type.Parameter.Single (Type.tuple [Type.Variable variable_t2; Type.literal_integer 3]);
            ];
        });
   assert_create {|
@@ -1622,14 +1671,15 @@ let test_expression _ =
           (Type.OrderedTypes.Concatenation.create_from_concrete_against_concrete
              ~prefix:[]
              ~suffix:[]
+             ~compare_t:Type.compare
              ~left:[Type.variable "T1"]
              ~right:[Type.variable "T2"])))
     {|
       typing.Tuple[
         pyre_extensions.Unpack[
           pyre_extensions.Broadcast[(
-            typing.Tuple[T1],
-            typing.Tuple[T2]
+            typing.Tuple[T2],
+            typing.Tuple[T1]
           )]
         ]
       ]
@@ -2491,6 +2541,7 @@ let test_visit _ =
     Type.OrderedTypes.Concatenation.create_from_concrete_against_concrete
       ~prefix:[]
       ~suffix:[]
+      ~compare_t:Type.compare
       ~left:[Type.variable "T1"]
       ~right:[Type.variable "T2"]
   in
@@ -4434,6 +4485,31 @@ let test_collect_all _ =
     (Type.Variable.GlobalTransforms.Unary.collect_all
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
     [Type.Variable.Unary.create "T"];
+  let unary1 = Type.Variable.Unary.create "T1" in
+  let unary2 = Type.Variable.Unary.create "T2" in
+  let assert_collected annotation expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "T1" -> Some (Type.TypeAlias (Type.Variable unary1))
+      | "T2" -> Some (Type.TypeAlias (Type.Variable unary2))
+      | _ -> None
+    in
+    assert_equal
+      ~printer:[%show: Type.Variable.Unary.t list]
+      expected
+      (Type.Variable.GlobalTransforms.Unary.collect_all
+         (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
+  in
+  assert_collected
+    {|
+      typing.Tuple[
+        pyre_extensions.Broadcast[
+          typing.Tuple[T1, int],
+          typing.Tuple[T2, int],
+        ],
+      ]
+    |}
+    [unary1; unary2];
+
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
@@ -4764,7 +4840,7 @@ let test_broadcast _ =
          ~constraints:(Type.Record.Variable.Bound (Type.Primitive "int"))
          "y")
   in
-  let z = Type.Variable (Type.Variable.Unary.create "z") in
+  let not_bound_to_int = Type.Variable (Type.Variable.Unary.create "not_bound_to_int") in
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   let variadic2 = Type.Variable.Variadic.Tuple.create "Ts2" in
   let variadic_t = Type.OrderedTypes.Concatenation.create variadic in
@@ -4897,14 +4973,34 @@ let test_broadcast _ =
   (* Variables *)
   assert_broadcast (Type.tuple [x]) (literal_tuple [1]) (Type.tuple [x]);
   assert_broadcast (Type.tuple [x]) (Type.tuple [x]) (Type.tuple [x]);
+
+  (* Broadcast sorts the tuples so that it is commutative. *)
+  assert_broadcast
+    (Type.tuple [x; y])
+    (Type.tuple [y; x])
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concrete_against_concrete
+             ~prefix:[]
+             ~suffix:[]
+             ~compare_t:Type.compare
+             ~left:[y; x]
+             ~right:[x; y])));
   assert_broadcast
     (Type.tuple [x])
-    (Type.tuple [y])
-    (broadcast_error (Type.tuple [x]) (Type.tuple [y]));
+    (Type.tuple [Type.literal_integer 5])
+    (Type.Tuple
+       (Concatenation
+          (Type.OrderedTypes.Concatenation.create_from_concrete_against_concrete
+             ~prefix:[]
+             ~suffix:[]
+             ~compare_t:Type.compare
+             ~left:[x]
+             ~right:[Type.literal_integer 5])));
   assert_broadcast
-    (Type.tuple [z])
-    (Type.tuple [z])
-    (broadcast_error (Type.tuple [z]) (Type.tuple [z]));
+    (Type.tuple [not_bound_to_int])
+    (Type.tuple [not_bound_to_int])
+    (broadcast_error (Type.tuple [not_bound_to_int]) (Type.tuple [not_bound_to_int]));
 
   (* Literals *)
   let left, right = literal_tuple [1; 3; 5], literal_tuple [1; 3] in

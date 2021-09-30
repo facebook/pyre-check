@@ -200,8 +200,11 @@ module Record = struct
         create_from_unpackable ?prefix ?suffix (UnboundedElements annotation)
 
 
-      let create_unpackable_from_concrete_against_concrete ~left ~right =
-        Broadcast (ConcreteAgainstConcrete { left; right })
+      let create_unpackable_from_concrete_against_concrete ~compare_t ~left ~right =
+        if List.compare compare_t left right < 0 then
+          Broadcast (ConcreteAgainstConcrete { left = right; right = left })
+        else
+          Broadcast (ConcreteAgainstConcrete { left; right })
 
 
       let create_unpackable_from_concrete_against_concatenation ~concrete ~concatenation =
@@ -224,11 +227,11 @@ module Record = struct
                })
 
 
-      let create_from_concrete_against_concrete ?prefix ?suffix ~left ~right =
+      let create_from_concrete_against_concrete ?prefix ?suffix ~compare_t ~left ~right =
         create_from_unpackable
           ?prefix
           ?suffix
-          (create_unpackable_from_concrete_against_concrete ~left ~right)
+          (create_unpackable_from_concrete_against_concrete ~compare_t ~left ~right)
 
 
       let create_from_concrete_against_concatenation ?prefix ?suffix ~concrete ~concatenation =
@@ -1920,6 +1923,11 @@ let is_union = function
   | _ -> false
 
 
+let is_variable = function
+  | Variable _ -> true
+  | _ -> false
+
+
 let is_falsy = function
   | NoneType
   | Literal (Boolean false)
@@ -3368,8 +3376,13 @@ module OrderedTypes = struct
     | _ -> None
 
 
+  type 'annotation broadcasted_dimension =
+    | Ok of 'annotation
+    | VariableDimension
+    | BroadcastMismatch
+
   let broadcast left_type right_type =
-    let match_broadcasted_dimensions left_dimensions right_dimensions =
+    let broadcast_concrete_dimensions left_dimensions right_dimensions =
       let pad_with_ones ~length list =
         List.init (max 0 (length - List.length list)) ~f:(fun _ -> Literal (Integer 1)) @ list
       in
@@ -3386,30 +3399,65 @@ module OrderedTypes = struct
         match simplify_type left_dimension, simplify_type right_dimension with
         | Bottom, _
         | _, Bottom ->
-            None
+            BroadcastMismatch
         | Any, _
         | _, Any ->
-            Some Any
+            Ok Any
         | Primitive "int", _
         | _, Primitive "int" ->
-            Some (Primitive "int")
-        | Literal (Integer 1), _ -> Some right_dimension
-        | _, Literal (Integer 1) -> Some left_dimension
-        | Literal (Integer i), Literal (Integer j) when i = j -> Some left_dimension
+            Ok (Primitive "int")
+        | Literal (Integer 1), _ -> Ok right_dimension
+        | _, Literal (Integer 1) -> Ok left_dimension
+        | Literal (Integer i), Literal (Integer j) when i = j -> Ok left_dimension
         | Variable left_variable, Variable right_variable
           when [%equal: type_t Record.Variable.RecordUnary.record] left_variable right_variable ->
-            Some (Variable left_variable)
-        | _ -> None
+            Ok (Variable left_variable)
+        | Variable _, _
+        | _, Variable _ ->
+            VariableDimension
+        | _ -> BroadcastMismatch
       in
       let length = max (List.length left_dimensions) (List.length right_dimensions) in
+      let broadcast_error () =
+        Parametric
+          {
+            name = "pyre_extensions.BroadcastError";
+            parameters =
+              (if [%compare: type_t] left_type right_type < 0 then
+                 [Parameter.Single left_type; Parameter.Single right_type]
+              else
+                [Parameter.Single right_type; Parameter.Single left_type]);
+          }
+      in
       match
         List.map2
           (pad_with_ones ~length left_dimensions)
           (pad_with_ones ~length right_dimensions)
           ~f:broadcast_concrete_dimensions
       with
-      | Ok result -> Option.all result
-      | Unequal_lengths -> None
+      | Ok result -> (
+          let partitioned =
+            List.partition3_map result ~f:(function
+                | Ok annotation -> `Fst annotation
+                | VariableDimension -> `Snd ()
+                | BroadcastMismatch -> `Trd ())
+          in
+          match partitioned with
+          | broadcasted, [], [] -> Tuple (Concrete broadcasted)
+          | _, _ :: _, [] ->
+              (* There is at least one dimension that contains a variable. Preserve the dimensions
+                 as they are. We will broadcast when instantiating the variable with concrete
+                 literals. *)
+              Tuple
+                (Concatenation
+                   (Concatenation.create_from_concrete_against_concrete
+                      ~prefix:[]
+                      ~suffix:[]
+                      ~compare_t:compare_type_t
+                      ~left:left_dimensions
+                      ~right:right_dimensions))
+          | _ -> broadcast_error ())
+      | Unequal_lengths -> broadcast_error ()
     in
     match left_type, right_type with
     | Any, _
@@ -3418,19 +3466,7 @@ module OrderedTypes = struct
     | Parametric { name = "pyre_extensions.BroadcastError"; _ }, _ -> left_type
     | _, Parametric { name = "pyre_extensions.BroadcastError"; _ } -> right_type
     | Tuple (Concrete left_dimensions), Tuple (Concrete right_dimensions) ->
-        match_broadcasted_dimensions left_dimensions right_dimensions
-        >>| (fun new_dimensions -> Tuple (Concrete new_dimensions))
-        |> Option.value
-             ~default:
-               (Parametric
-                  {
-                    name = "pyre_extensions.BroadcastError";
-                    parameters =
-                      (if [%compare: type_t] left_type right_type < 0 then
-                         [Parameter.Single left_type; Parameter.Single right_type]
-                      else
-                        [Parameter.Single right_type; Parameter.Single left_type]);
-                  })
+        broadcast_concrete_dimensions left_dimensions right_dimensions
     | ( Tuple (Concrete concrete),
         Tuple
           (Concatenation { prefix = []; middle = UnboundedElements (Primitive "int"); suffix = [] })
@@ -4289,11 +4325,6 @@ let is_untyped = function
 
 
 let is_partially_typed annotation = exists annotation ~predicate:is_untyped
-
-let is_variable = function
-  | Variable _ -> true
-  | _ -> false
-
 
 let contains_variable = exists ~predicate:is_variable
 
