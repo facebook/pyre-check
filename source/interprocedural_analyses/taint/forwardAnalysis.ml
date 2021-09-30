@@ -281,7 +281,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 |> Sanitize.join sanitizers.parameters
               in
               let obscure_tito =
-                match obscure_sanitize.Sanitize.tito with
+                match obscure_sanitize.tito with
                 | Some AllTito -> ForwardState.Tree.bottom
                 | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
                     let sanitized_tito_sinks =
@@ -1109,15 +1109,24 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         ForwardState.Tree.add_breadcrumbs attribute_breadcrumbs taint
       in
       let apply_attribute_sanitizers taint =
-        match Model.GlobalModel.get_sanitize global_model with
-        | { Sanitize.sources = Some AllSources; _ } -> ForwardState.Tree.empty
-        | { Sanitize.sources = Some (SpecificSources sanitized_sources); _ } ->
-            ForwardState.Tree.transform
-              ForwardTaint.kind
-              Filter
-              ~f:(fun source -> not (Sources.Set.mem source sanitized_sources))
-              taint
-        | _ -> taint
+        let sanitizer = Model.GlobalModel.get_sanitize global_model in
+        let taint =
+          match sanitizer.sources with
+          | Some AllSources -> ForwardState.Tree.empty
+          | Some (SpecificSources sanitized_sources) ->
+              ForwardState.Tree.sanitize sanitized_sources taint
+          | None -> taint
+        in
+        let taint =
+          match sanitizer.sinks with
+          | Some (SpecificSinks sanitized_sinks) ->
+              let sanitized_sinks_transforms =
+                Sinks.Set.to_sanitize_taint_transforms_exn sanitized_sinks
+              in
+              ForwardState.Tree.apply_taint_transforms sanitized_sinks_transforms taint
+          | _ -> taint
+        in
+        taint
       in
 
       let field = Abstract.TreeDomain.Label.Index attribute in

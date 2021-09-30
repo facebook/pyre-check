@@ -329,6 +329,26 @@ def sanitize_test_a_source_attribute():
     _test_sink(c.attribute)
 
 
+def sanitize_test_a_source_attribute_in_sink_trace(x):
+    c = C_sanitized_a_source(x)
+    _test_sink(c.attribute)
+
+
+def no_issue_sanitize_test_a_source_attribute_in_sink_trace():
+    x = a_source()
+    sanitize_test_a_source_attribute_in_sink_trace(x)
+
+
+def issue_sanitize_test_a_source_attribute_in_sink_trace():
+    x = b_source()
+    sanitize_test_a_source_attribute_in_sink_trace(x)
+
+
+def sanitize_test_a_source_attribute_in_tito(x):
+    c = C_sanitized_a_source(x)
+    return c.attribute
+
+
 def sanitize_test_b_source_attribute():
     if 1 > 2:
         x = a_source()
@@ -401,6 +421,22 @@ def sanitize_a_sink_attribute(c: C_sanitized_a_sink):
         a_sink(c.attribute)
     else:
         b_sink(c.attribute)
+
+
+def sanitize_a_sink_attribute_in_source_trace():
+    x = a_source()
+    y = C_sanitized_a_sink(x)
+    return y.attribute
+
+
+def no_issue_sanitize_a_sink_attribute_in_source_trace():
+    x = sanitize_a_sink_attribute_in_source_trace()
+    a_sink(x)
+
+
+def issue_sanitize_a_sink_attribute_in_source_trace():
+    x = sanitize_a_sink_attribute_in_source_trace()
+    b_sink(x)
 
 
 def sanitize_b_sink_attribute(c: C_sanitized_b_sink):

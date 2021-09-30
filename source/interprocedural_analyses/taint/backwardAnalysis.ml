@@ -325,7 +325,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               (* Apply source- and sink- specific tito sanitizers for obscure models,
                * since the tito is not materialized in `backward.taint_in_taint_out`. *)
               let obscure_taint =
-                match obscure_sanitize.Sanitize.tito with
+                match obscure_sanitize.tito with
                 | Some AllTito -> BackwardState.Tree.bottom
                 | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
                     let sanitized_tito_sources =
@@ -1143,15 +1143,30 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
 
               let apply_attribute_sanitizers taint =
-                match Model.GlobalModel.get_sanitize global_model with
-                | { Sanitize.sinks = Some AllSinks; _ } -> BackwardState.Tree.empty
-                | { Sanitize.sinks = Some (SpecificSinks sanitized_sinks); _ } ->
-                    BackwardState.Tree.transform
-                      BackwardTaint.kind
-                      Filter
-                      ~f:(fun sink -> not (Sinks.Set.mem sink sanitized_sinks))
+                let sanitizer = Model.GlobalModel.get_sanitize global_model in
+                let taint =
+                  match sanitizer.sinks with
+                  | Some AllSinks -> BackwardState.Tree.empty
+                  | Some (SpecificSinks sanitized_sinks) ->
+                      let sanitized_sinks_transforms =
+                        Sinks.Set.to_sanitize_taint_transforms_exn sanitized_sinks
+                      in
                       taint
-                | _ -> taint
+                      |> BackwardState.Tree.sanitize sanitized_sinks
+                      |> BackwardState.Tree.apply_sanitize_sink_transforms
+                           sanitized_sinks_transforms
+                  | _ -> taint
+                in
+                let taint =
+                  match sanitizer.sources with
+                  | Some (SpecificSources sanitized_sources) ->
+                      let sanitized_sources_transforms =
+                        Sources.Set.to_sanitize_taint_transforms_exn sanitized_sources
+                      in
+                      BackwardState.Tree.apply_taint_transforms sanitized_sources_transforms taint
+                  | _ -> taint
+                in
+                taint
               in
               let taint =
                 BackwardState.Tree.prepend [field] (add_tito_features taint)
