@@ -136,42 +136,85 @@ let get_issue_features { source_taint; sink_taint } =
 
 
 let generate_issues ~define { location; flows } =
-  let erase_source_subkind = function
-    | Sources.ParametricSource { source_name; _ } -> Sources.NamedSource source_name
-    | source -> source
-  in
-  let erase_sink_subkind = function
-    | Sinks.ParametricSink { sink_name; _ } -> Sinks.NamedSink sink_name
-    | sink -> sink
-  in
   let partitions =
     let partition { source_taint; sink_taint } =
       {
         source_partition =
-          ForwardTaint.partition ForwardTaint.kind By source_taint ~f:erase_source_subkind;
+          ForwardTaint.partition ForwardTaint.kind By source_taint ~f:(fun kind ->
+              kind |> Sources.discard_transforms |> Sources.discard_subkind);
         sink_partition =
-          BackwardTaint.partition BackwardTaint.kind By sink_taint ~f:erase_sink_subkind;
+          BackwardTaint.partition BackwardTaint.kind By sink_taint ~f:(fun kind ->
+              kind |> Sinks.discard_transforms |> Sinks.discard_subkind);
       }
     in
     List.map flows ~f:partition
   in
   let apply_rule_on_flow { Rule.sources; sinks; _ } { source_partition; sink_partition } =
     let add_source_taint source_taint source =
-      match Map.Poly.find source_partition (erase_source_subkind source) with
+      match Map.Poly.find source_partition (Sources.discard_subkind source) with
       | Some taint -> ForwardTaint.join source_taint taint
       | None -> source_taint
     in
     let add_sink_taint sink_taint sink =
-      match Map.Poly.find sink_partition (erase_sink_subkind sink) with
+      match Map.Poly.find sink_partition (Sinks.discard_subkind sink) with
       | Some taint -> BackwardTaint.join sink_taint taint
       | None -> sink_taint
     in
-    let partition_flow =
-      {
-        source_taint = List.fold sources ~f:add_source_taint ~init:ForwardTaint.bottom;
-        sink_taint = List.fold sinks ~f:add_sink_taint ~init:BackwardTaint.bottom;
-      }
+    let source_taint = List.fold sources ~f:add_source_taint ~init:ForwardTaint.bottom in
+    let sink_taint = List.fold sinks ~f:add_sink_taint ~init:BackwardTaint.bottom in
+
+    let rec apply_sanitizers
+        ?(previous_sanitized_sources = Sources.Set.empty)
+        ?(previous_sanitized_sinks = Sinks.Set.empty)
+        { source_taint; sink_taint }
+      =
+      (* This needs a fixpoint since refining sinks might sanitize more sources etc.
+       * For instance:
+       * Sources: {Not[X]@A, Not[X]:Not[Y]@C}
+       * Sinks: {X, Not[A]@Y}
+       * After one iteration, we still have {Not[X]:Not[Y]@C} and {Not[A]@Y},
+       * which can be refined further to an invalid flow.
+       *)
+      let gather_sanitized_sinks kind sofar =
+        let sanitized =
+          kind |> Sources.extract_transforms |> Sinks.extract_sanitized_sinks_from_transforms
+        in
+        match sofar with
+        | None -> Some sanitized
+        | Some sofar -> Some (Sinks.Set.inter sofar sanitized)
+      in
+      let sanitized_sinks =
+        ForwardTaint.fold ForwardTaint.kind ~init:None ~f:gather_sanitized_sinks source_taint
+        |> Option.value ~default:Sinks.Set.empty
+      in
+      let sink_taint = BackwardTaint.sanitize sanitized_sinks sink_taint in
+
+      let gather_sanitized_sources kind sofar =
+        let sanitized =
+          kind |> Sinks.extract_transforms |> Sources.extract_sanitized_sources_from_transforms
+        in
+        match sofar with
+        | None -> Some sanitized
+        | Some sofar -> Some (Sources.Set.inter sofar sanitized)
+      in
+      let sanitized_sources =
+        BackwardTaint.fold BackwardTaint.kind ~init:None ~f:gather_sanitized_sources sink_taint
+        |> Option.value ~default:Sources.Set.empty
+      in
+      let source_taint = ForwardTaint.sanitize sanitized_sources source_taint in
+
+      if
+        Sources.Set.equal sanitized_sources previous_sanitized_sources
+        && Sinks.Set.equal sanitized_sinks previous_sanitized_sinks
+      then
+        { source_taint; sink_taint }
+      else
+        apply_sanitizers
+          ~previous_sanitized_sources:sanitized_sources
+          ~previous_sanitized_sinks:sanitized_sinks
+          { source_taint; sink_taint }
     in
+    let partition_flow = apply_sanitizers { source_taint; sink_taint } in
     if
       ForwardTaint.is_bottom partition_flow.source_taint
       || BackwardTaint.is_bottom partition_flow.sink_taint
@@ -326,13 +369,12 @@ let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
     BackwardState.Tree.collapse
       ~transform:(BackwardTaint.add_breadcrumbs Features.issue_broadening)
       sink_tree
-    |> BackwardTaint.partition BackwardTaint.kind ByFilter ~f:(function
-           | Sinks.PartialSink { Sinks.kind; label } -> Some { Sinks.kind; label }
-           | _ -> None)
+    |> BackwardTaint.partition BackwardTaint.kind ByFilter ~f:Sinks.extract_partial_sink
   in
   if not (Map.Poly.is_empty partial_sinks_to_taint) then
     let sources =
-      source_tree |> ForwardState.Tree.partition ForwardTaint.kind By ~f:Fn.id |> Map.Poly.keys
+      ForwardState.Tree.fold ForwardTaint.kind ~f:List.cons ~init:[] source_tree
+      |> List.map ~f:Sources.discard_transforms
     in
     let add_triggered_sinks (triggered, candidates) sink =
       let add_triggered_sinks_for_source source =

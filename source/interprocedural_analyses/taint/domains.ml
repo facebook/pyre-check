@@ -272,6 +272,19 @@ module type TAINT_DOMAIN = sig
 
   val prune_maximum_length : TraceLength.t -> t -> t
 
+  type kind_set
+
+  val is_empty_kind_set : kind_set -> bool
+
+  val sanitize : kind_set -> t -> t
+
+  (* Transforms must be provided in the temporal order in which they are applied. *)
+  val apply_taint_transforms : TaintTransform.t list -> t -> t
+
+  (* Apply taint transforms only to the special `LocalReturn` sink. *)
+  (* Transforms must be provided in the temporal order in which they are applied. *)
+  val apply_sanitize_sink_transforms : TaintTransform.t list -> t -> t
+
   (* Add trace info at call-site *)
   val apply_call
     :  Location.WithModule.t ->
@@ -294,6 +307,18 @@ module type KIND_ARG = sig
   val show : t -> string
 
   val ignore_kind_at_call : t -> bool
+
+  val apply_call : t -> t
+
+  val discard_subkind : t -> t
+
+  val discard_transforms : t -> t
+
+  val apply_taint_transforms : TaintTransform.t list -> t -> t
+
+  val apply_sanitize_sink_transforms : TaintTransform.t list -> t -> t
+
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 module KindTaint (Kind : KIND_ARG) = struct
@@ -310,7 +335,7 @@ module KindTaint (Kind : KIND_ARG) = struct
 end
 
 module MakeTaint (Kind : KIND_ARG) : sig
-  include TAINT_DOMAIN with type kind = Kind.t
+  include TAINT_DOMAIN with type kind = Kind.t and type kind_set = Kind.Set.t
 
   val kinds : t -> kind list
 
@@ -318,6 +343,8 @@ module MakeTaint (Kind : KIND_ARG) : sig
 
   val of_list : ?location:Location.WithModule.t -> kind list -> t
 end = struct
+  type kind = Kind.t [@@deriving compare, eq]
+
   module Key = struct
     include TraceInfo
 
@@ -327,10 +354,6 @@ end = struct
   module KindTaintDomain = KindTaint (Kind)
   module Map = Abstract.MapDomain.Make (Key) (KindTaintDomain)
   include Map
-
-  type kind = Kind.t [@@deriving compare]
-
-  let equal_kind = Kind.equal
 
   let add ?location map kind =
     let trace =
@@ -482,6 +505,37 @@ end = struct
     transform KindTaintDomain.KeyValue Filter ~f:filter_flow
 
 
+  type kind_set = Kind.Set.t
+
+  let is_empty_kind_set = Kind.Set.is_empty
+
+  let sanitize sanitized_kinds taint =
+    if Kind.Set.is_empty sanitized_kinds then
+      taint
+    else
+      transform
+        KindTaintDomain.Key
+        Filter
+        ~f:(fun kind ->
+          let kind = kind |> Kind.discard_transforms |> Kind.discard_subkind in
+          not (Kind.Set.mem kind sanitized_kinds))
+        taint
+
+
+  let apply_taint_transforms transforms taint =
+    if List.is_empty transforms then
+      taint
+    else
+      transform KindTaintDomain.Key Map ~f:(Kind.apply_taint_transforms transforms) taint
+
+
+  let apply_sanitize_sink_transforms transforms taint =
+    if List.is_empty transforms then
+      taint
+    else
+      transform KindTaintDomain.Key Map ~f:(Kind.apply_sanitize_sink_transforms transforms) taint
+
+
   let apply_call location ~callees ~port ~path ~element:taint =
     let apply (trace_info, kind_taint) =
       let open TraceInfo in
@@ -496,6 +550,7 @@ end = struct
         kind_taint
         |> KindTaintDomain.transform KindTaintDomain.Key Filter ~f:(fun kind ->
                not (Kind.ignore_kind_at_call kind))
+        |> KindTaintDomain.transform KindTaintDomain.Key Map ~f:Kind.apply_call
         |> KindTaintDomain.transform FlowDetails.Self Map ~f:apply_flow_details
       in
       match trace_info with
@@ -610,6 +665,27 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       ~f:gather_breadcrumbs
       ~init:Features.BreadcrumbSet.bottom
       taint_tree
+
+
+  let sanitize sanitized_kinds taint =
+    if Taint.is_empty_kind_set sanitized_kinds then
+      taint
+    else
+      transform Taint.Self Map ~f:(Taint.sanitize sanitized_kinds) taint
+
+
+  let apply_taint_transforms transforms taint =
+    if List.is_empty transforms then
+      taint
+    else
+      transform Taint.Self Map ~f:(Taint.apply_taint_transforms transforms) taint
+
+
+  let apply_sanitize_sink_transforms transforms taint =
+    if List.is_empty transforms then
+      taint
+    else
+      transform Taint.Self Map ~f:(Taint.apply_sanitize_sink_transforms transforms) taint
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
@@ -735,6 +811,20 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       |> Tree.collapse ~transform:Fn.id
     in
     Taint.breadcrumbs taint, Taint.via_features taint
+
+
+  let sanitize sanitized_kinds taint =
+    if Taint.is_empty_kind_set sanitized_kinds then
+      taint
+    else
+      transform Taint.Self Map ~f:(Taint.sanitize sanitized_kinds) taint
+
+
+  let apply_taint_transforms transforms taint =
+    if List.is_empty transforms then
+      taint
+    else
+      transform Taint.Self Map ~f:(Taint.apply_taint_transforms transforms) taint
 end
 
 module ForwardState = MakeTaintEnvironment (ForwardTaint) ()

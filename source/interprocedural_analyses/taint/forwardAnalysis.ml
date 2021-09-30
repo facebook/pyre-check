@@ -178,30 +178,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           Map.Poly.merge tito_map new_tito_map ~f:(merge_tito_effect BackwardState.Tree.join)
         in
-        let apply_tito_sanitizers sanitize_matches taint_to_propagate =
-          let sanitize =
-            List.map
-              ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
-              sanitize_matches
-            |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
-            |> Sanitize.join sanitizers.global
-            |> Sanitize.join sanitizers.parameters
-          in
-          match sanitize.Sanitize.tito with
-          | Some AllTito -> ForwardState.Tree.bottom
-          | Some (SpecificTito { sanitized_tito_sources; _ }) ->
-              ForwardState.Tree.transform
-                ForwardTaint.kind
-                Filter
-                ~f:(fun source -> not (Sources.Set.mem source sanitized_tito_sources))
-                taint_to_propagate
-          | None -> taint_to_propagate
-        in
         let compute_argument_tito_effect
             (tito_effects, state)
             (argument_taint, ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches))))
           =
-          let taint_to_propagate = apply_tito_sanitizers sanitize_matches argument_taint in
           let tito =
             let convert_tito_path kind (path, return_taint) accumulated_tito =
               let breadcrumbs =
@@ -214,17 +194,36 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               let taint_to_propagate =
                 if collapse_tito then
-                  ForwardState.Tree.read path taint_to_propagate
+                  ForwardState.Tree.read path argument_taint
                   |> ForwardState.Tree.collapse
                        ~transform:(ForwardTaint.add_breadcrumbs Features.tito_broadening)
                   |> ForwardTaint.transform FlowDetails.Self Map ~f:add_features_and_position
                   |> ForwardState.Tree.create_leaf
                 else
-                  ForwardState.Tree.read path taint_to_propagate
+                  ForwardState.Tree.read path argument_taint
                   |> ForwardState.Tree.transform FlowDetails.Self Map ~f:add_features_and_position
               in
-              let return_paths =
+              let taint_to_propagate =
                 match kind with
+                | Sinks.Transform { local; global; _ } ->
+                    (* Apply source- and sink- specific tito sanitizers. *)
+                    let transforms = local @ global in
+                    let sanitized_tito_sources =
+                      Sources.extract_sanitized_sources_from_transforms transforms
+                    in
+                    let sanitized_tito_sinks =
+                      TaintTransform.filter_sanitized_sinks transforms
+                      (* Sort sanitized sinks to make the analysis deterministic
+                       * and prevent combinatory explosion. *)
+                      |> List.sort ~compare:TaintTransform.compare
+                    in
+                    taint_to_propagate
+                    |> ForwardState.Tree.sanitize sanitized_tito_sources
+                    |> ForwardState.Tree.apply_taint_transforms sanitized_tito_sinks
+                | _ -> taint_to_propagate
+              in
+              let return_paths =
+                match Sinks.discard_transforms kind with
                 | Sinks.LocalReturn ->
                     BackwardTaint.fold
                       Features.ReturnAccessPathSet.Element
@@ -241,15 +240,21 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               List.fold return_paths ~f:create_tito_return_paths ~init:accumulated_tito
             in
-            let convert_tito ~key:kind ~data:tito_tree =
-              BackwardState.Tree.fold
-                BackwardState.Tree.Path
-                tito_tree
-                ~init:ForwardState.Tree.empty
-                ~f:(convert_tito_path kind)
+            let convert_tito ~key:kind ~data:tito_tree tito_map =
+              let tito_tree =
+                BackwardState.Tree.fold
+                  BackwardState.Tree.Path
+                  tito_tree
+                  ~init:ForwardState.Tree.empty
+                  ~f:(convert_tito_path kind)
+              in
+              let kind = Sinks.discard_transforms kind in
+              Map.Poly.update tito_map kind ~f:(function
+                  | None -> tito_tree
+                  | Some previous -> ForwardState.Tree.join previous tito_tree)
             in
             List.fold tito_matches ~f:combine_tito ~init:Map.Poly.empty
-            |> Map.Poly.mapi ~f:convert_tito
+            |> Map.Poly.fold ~init:Map.Poly.empty ~f:convert_tito
             |> Map.Poly.merge tito_effects ~f:(merge_tito_effect ForwardState.Tree.join)
           in
           let tito =
@@ -257,13 +262,35 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let obscure_tito =
                 ForwardState.Tree.collapse
                   ~transform:(ForwardTaint.add_breadcrumbs Features.tito_broadening)
-                  taint_to_propagate
+                  argument_taint
                 |> ForwardTaint.transform
                      Features.TitoPositionSet.Element
                      Add
                      ~f:argument.Node.location
                 |> ForwardTaint.add_breadcrumb Features.obscure
                 |> ForwardState.Tree.create_leaf
+              in
+              (* Apply source- and sink- specific tito sanitizers for obscure models,
+               * since the tito is not materialized in `backward.taint_in_taint_out`. *)
+              let obscure_sanitize =
+                List.map
+                  ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
+                  sanitize_matches
+                |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
+                |> Sanitize.join sanitizers.global
+                |> Sanitize.join sanitizers.parameters
+              in
+              let obscure_tito =
+                match obscure_sanitize.Sanitize.tito with
+                | Some AllTito -> ForwardState.Tree.bottom
+                | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
+                    let sanitized_tito_sinks =
+                      Sinks.Set.to_sanitize_taint_transforms_exn sanitized_tito_sinks
+                    in
+                    obscure_tito
+                    |> ForwardState.Tree.sanitize sanitized_tito_sources
+                    |> ForwardState.Tree.apply_taint_transforms sanitized_tito_sinks
+                | None -> obscure_tito
               in
               let returned_tito =
                 match Map.Poly.find tito_effects Sinks.LocalReturn with
@@ -326,13 +353,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         (if not (Hash_set.is_empty triggered_sinks) then
            let add_sink (key, taint) roots_and_sinks =
-             let add roots_and_sinks = function
-               | Sinks.PartialSink sink ->
+             let add roots_and_sinks sink =
+               match Sinks.extract_partial_sink sink with
+               | Some sink ->
                    if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
                      (key, Sinks.TriggeredPartialSink sink) :: roots_and_sinks
                    else
                      roots_and_sinks
-               | _ -> roots_and_sinks
+               | None -> roots_and_sinks
              in
              BackwardTaint.kinds
                (BackwardState.Tree.collapse
@@ -379,7 +407,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 | None -> state
                 | Some argument -> apply_argument_effect ~argument ~source_tree:taint state)
             | Attach -> state (* These synthetic nodes should be ignored for analysis.*)
-            | _ -> failwith "unexpected sink in tito"
+            | _ -> Format.asprintf "unexpected sink `%a` in tito" Sinks.pp target |> failwith
           in
           Map.Poly.fold tito_effects ~f:for_each_target ~init:state
         in

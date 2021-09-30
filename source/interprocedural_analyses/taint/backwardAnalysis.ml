@@ -198,7 +198,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let translate_tito (tito_path, element) argument_taint =
             let compute_parameter_tito ~key:kind ~data:element argument_taint =
               let extra_paths =
-                match kind with
+                match Sinks.discard_transforms kind with
                 | Sinks.LocalReturn ->
                     BackwardTaint.fold
                       Features.ReturnAccessPathSet.Element
@@ -218,7 +218,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~init:TraceLength.bottom
               in
               let taint_to_propagate =
-                match kind with
+                match Sinks.discard_transforms kind with
                 | Sinks.LocalReturn -> call_taint
                 (* Attach nodes shouldn't affect analysis. *)
                 | Sinks.Attach -> BackwardState.Tree.empty
@@ -228,8 +228,33 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     | Some argument -> get_argument_taint ~resolution ~argument)
                 | _ -> failwith "unexpected tito sink"
               in
-              let compute_tito_depth kind depth =
+              let taint_to_propagate =
                 match kind with
+                | Sinks.Transform { local; global; _ } ->
+                    (* Apply source- and sink-specific tito sanitizers. *)
+                    let transforms = local @ global in
+                    let sanitized_tito_sinks =
+                      Sinks.extract_sanitized_sinks_from_transforms transforms
+                    in
+                    (* Sort sanitized kinds to make the analysis deterministic
+                     * and prevent combinatory explosion. *)
+                    let sanitized_tito_sources =
+                      TaintTransform.filter_sanitized_sources transforms
+                      |> List.sort ~compare:TaintTransform.compare
+                    in
+                    let sanitized_tito_sinks_transforms =
+                      TaintTransform.filter_sanitized_sinks transforms
+                      |> List.sort ~compare:TaintTransform.compare
+                    in
+                    taint_to_propagate
+                    |> BackwardState.Tree.sanitize sanitized_tito_sinks
+                    |> BackwardState.Tree.apply_taint_transforms sanitized_tito_sources
+                    |> BackwardState.Tree.apply_sanitize_sink_transforms
+                         sanitized_tito_sinks_transforms
+                | _ -> taint_to_propagate
+              in
+              let compute_tito_depth kind depth =
+                match Sinks.discard_transforms kind with
                 | Sinks.LocalReturn -> max depth (1 + tito_depth)
                 | _ -> depth
               in
@@ -270,25 +295,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> BackwardState.Tree.prepend actual_path
           |> BackwardState.Tree.join taint_tree
         in
-        let apply_tito_sanitizers sanitize_matches taint_to_propagate =
-          let sanitize =
-            List.map
-              ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
-              sanitize_matches
-            |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
-            |> Sanitize.join sanitizers.global
-            |> Sanitize.join sanitizers.parameters
-          in
-          match sanitize.Sanitize.tito with
-          | Some AllTito -> BackwardState.Tree.bottom
-          | Some (SpecificTito { sanitized_tito_sinks; _ }) ->
-              BackwardState.Tree.transform
-                BackwardTaint.kind
-                Filter
-                ~f:(fun sink -> not (Sinks.Set.mem sink sanitized_tito_sinks))
-                taint_to_propagate
-          | None -> taint_to_propagate
-        in
         let analyze_argument
             ~obscure_taint
             (arguments_taint, state)
@@ -307,14 +313,45 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               ~init:BackwardState.Tree.empty
           in
           let taint_in_taint_out =
-            BackwardState.Tree.transform
-              Features.TitoPositionSet.Element
-              Add
-              ~f:argument.Node.location
-              obscure_taint
-            |> BackwardState.Tree.join taint_in_taint_out
+            if not (BackwardState.Tree.is_bottom obscure_taint) then
+              let obscure_sanitize =
+                List.map
+                  ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
+                  sanitize_matches
+                |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
+                |> Sanitize.join sanitizers.global
+                |> Sanitize.join sanitizers.parameters
+              in
+              (* Apply source- and sink- specific tito sanitizers for obscure models,
+               * since the tito is not materialized in `backward.taint_in_taint_out`. *)
+              let obscure_taint =
+                match obscure_sanitize.Sanitize.tito with
+                | Some AllTito -> BackwardState.Tree.bottom
+                | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
+                    let sanitized_tito_sources =
+                      Sources.Set.to_sanitize_taint_transforms_exn sanitized_tito_sources
+                    in
+                    let sanitized_tito_sinks_transforms =
+                      Sinks.Set.to_sanitize_taint_transforms_exn sanitized_tito_sinks
+                    in
+                    obscure_taint
+                    |> BackwardState.Tree.sanitize sanitized_tito_sinks
+                    |> BackwardState.Tree.apply_taint_transforms sanitized_tito_sources
+                    |> BackwardState.Tree.apply_sanitize_sink_transforms
+                         sanitized_tito_sinks_transforms
+                | None -> obscure_taint
+              in
+              let obscure_taint =
+                BackwardState.Tree.transform
+                  Features.TitoPositionSet.Element
+                  Add
+                  ~f:argument.Node.location
+                  obscure_taint
+              in
+              BackwardState.Tree.join taint_in_taint_out obscure_taint
+            else
+              taint_in_taint_out
           in
-          let taint_in_taint_out = apply_tito_sanitizers sanitize_matches taint_in_taint_out in
           let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
           let state =
             match AccessPath.of_expression ~resolution argument with
@@ -1383,7 +1420,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     let annotation = original.Node.value.Parameter.annotation in
     let partition =
       BackwardState.read ~root:(Root.Variable name) ~path:[] entry_taint
-      |> BackwardState.Tree.partition BackwardTaint.kind By ~f:Fn.id
+      |> BackwardState.Tree.partition BackwardTaint.kind By ~f:Sinks.discard_transforms
     in
     let taint_in_taint_out =
       let breadcrumbs_to_attach, via_features_to_attach =
