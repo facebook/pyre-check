@@ -4,9 +4,9 @@
   "data": {
     "callable":
       "sanitize.issue_propagation_of_sanitize_all_parameters_no_user_controlled",
-    "callable_line": 789,
+    "callable_line": 766,
     "code": 1000,
-    "line": 791,
+    "line": 768,
     "start": 62,
     "end": 63,
     "filename": "sanitize.py",
@@ -18,7 +18,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 790,
+              "line": 767,
               "start": 8,
               "end": 18
             },
@@ -33,7 +33,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 791,
+                "line": 768,
                 "start": 62,
                 "end": 63
               },
@@ -62,9 +62,9 @@
   "data": {
     "callable":
       "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
-    "callable_line": 661,
+    "callable_line": 655,
     "code": 1000,
-    "line": 663,
+    "line": 657,
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
@@ -77,7 +77,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 662,
+                "line": 656,
                 "start": 8,
                 "end": 71
               },
@@ -103,7 +103,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 663,
+              "line": 657,
               "start": 9,
               "end": 10
             },
@@ -120,9 +120,9 @@
   "data": {
     "callable":
       "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled",
-    "callable_line": 569,
+    "callable_line": 563,
     "code": 1000,
-    "line": 571,
+    "line": 565,
     "start": 60,
     "end": 61,
     "filename": "sanitize.py",
@@ -134,7 +134,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 570,
+              "line": 564,
               "start": 8,
               "end": 18
             },
@@ -149,7 +149,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 571,
+                "line": 565,
                 "start": 60,
                 "end": 61
               },
@@ -174,9 +174,9 @@
   "data": {
     "callable":
       "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
-    "callable_line": 625,
+    "callable_line": 619,
     "code": 1000,
-    "line": 627,
+    "line": 621,
     "start": 76,
     "end": 77,
     "filename": "sanitize.py",
@@ -188,7 +188,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 626,
+              "line": 620,
               "start": 8,
               "end": 18
             },
@@ -203,7 +203,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 627,
+                "line": 621,
                 "start": 76,
                 "end": 77
               },
@@ -229,9 +229,9 @@
   "data": {
     "callable":
       "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace",
-    "callable_line": 708,
+    "callable_line": 697,
     "code": 1000,
-    "line": 710,
+    "line": 699,
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
@@ -244,7 +244,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 709,
+                "line": 698,
                 "start": 8,
                 "end": 63
               },
@@ -270,7 +270,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 710,
+              "line": 699,
               "start": 9,
               "end": 10
             },
@@ -347,9 +347,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_propagation_of_sanitize_return_no_rce",
-    "callable_line": 742,
+    "callable_line": 731,
     "code": 1000,
-    "line": 744,
+    "line": 733,
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
@@ -362,7 +362,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 743,
+                "line": 732,
                 "start": 8,
                 "end": 47
               },
@@ -387,7 +387,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 744,
+              "line": 733,
               "start": 9,
               "end": 10
             },
@@ -1146,11 +1146,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 823,
+              "line": 800,
               "start": 8,
               "end": 18
             },
-            "tito": [ { "line": 824, "start": 59, "end": 60 } ],
+            "tito": [ { "line": 801, "start": 59, "end": 60 } ],
             "leaves": [ { "kind": "Cookies", "name": "_cookies" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -1171,11 +1171,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 606,
+              "line": 600,
               "start": 8,
               "end": 18
             },
-            "tito": [ { "line": 607, "start": 54, "end": 55 } ],
+            "tito": [ { "line": 601, "start": 54, "end": 55 } ],
             "leaves": [ { "kind": "Cookies", "name": "_cookies" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -1196,11 +1196,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 881,
+              "line": 858,
               "start": 9,
               "end": 10
             },
-            "tito": [ { "line": 880, "start": 52, "end": 53 } ],
+            "tito": [ { "line": 857, "start": 52, "end": 53 } ],
             "leaves": [
               {
                 "kind": "NotSource[Cookies]@RemoteCodeExecution",
@@ -1226,11 +1226,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 844,
+              "line": 821,
               "start": 9,
               "end": 10
             },
-            "tito": [ { "line": 843, "start": 44, "end": 45 } ],
+            "tito": [ { "line": 820, "start": 44, "end": 45 } ],
             "leaves": [ { "kind": "RemoteCodeExecution", "name": "_rce" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -1251,11 +1251,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 644,
+              "line": 638,
               "start": 9,
               "end": 10
             },
-            "tito": [ { "line": 643, "start": 39, "end": 40 } ],
+            "tito": [ { "line": 637, "start": 39, "end": 40 } ],
             "leaves": [ { "kind": "RemoteCodeExecution", "name": "_rce" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -1277,7 +1277,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 781,
+                "line": 758,
                 "start": 47,
                 "end": 48
               },
@@ -1312,11 +1312,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 652,
+              "line": 646,
               "start": 8,
               "end": 26
             },
-            "tito": [ { "line": 653, "start": 60, "end": 61 } ],
+            "tito": [ { "line": 647, "start": 60, "end": 61 } ],
             "leaves": [
               {
                 "kind": "NotSink[SQL]@UserControlled",
@@ -1343,7 +1343,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 561,
+                "line": 555,
                 "start": 42,
                 "end": 43
               },
@@ -1366,7 +1366,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 561,
+                "line": 555,
                 "start": 45,
                 "end": 46
               },
@@ -1394,7 +1394,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 612, "start": 54, "end": 55 } ],
+            "tito": [ { "line": 606, "start": 54, "end": 55 } ],
             "leaves": [
               {
                 "kind": "NotSource[UserControlled]@LocalReturn",
@@ -1411,7 +1411,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 612, "start": 57, "end": 58 } ],
+            "tito": [ { "line": 606, "start": 57, "end": 58 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -1432,11 +1432,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 617,
+              "line": 611,
               "start": 9,
               "end": 10
             },
-            "tito": [ { "line": 616, "start": 69, "end": 70 } ],
+            "tito": [ { "line": 610, "start": 69, "end": 70 } ],
             "leaves": [
               { "kind": "NotSource[UserControlled]@SQL", "name": "_sql" }
             ],
@@ -1459,11 +1459,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 698,
+              "line": 687,
               "start": 8,
               "end": 26
             },
-            "tito": [ { "line": 699, "start": 46, "end": 47 } ],
+            "tito": [ { "line": 688, "start": 46, "end": 47 } ],
             "leaves": [
               {
                 "kind": "NotSink[SQL]@UserControlled",
@@ -1489,11 +1489,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 830,
+              "line": 807,
               "start": 9,
               "end": 10
             },
-            "tito": [ { "line": 829, "start": 56, "end": 57 } ],
+            "tito": [ { "line": 806, "start": 56, "end": 57 } ],
             "leaves": [
               { "kind": "NotSource[UserControlled]@SQL", "name": "_sql" }
             ],
@@ -1516,11 +1516,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 869,
+              "line": 846,
               "start": 8,
               "end": 26
             },
-            "tito": [ { "line": 870, "start": 55, "end": 56 } ],
+            "tito": [ { "line": 847, "start": 55, "end": 56 } ],
             "leaves": [
               {
                 "kind": "NotSink[SQL]@UserControlled",
@@ -2618,7 +2618,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 648, "start": 42, "end": 43 } ],
+            "tito": [ { "line": 642, "start": 42, "end": 43 } ],
             "leaves": [
               { "kind": "NotSink[SQL]@LocalReturn", "name": "", "depth": 1 }
             ],
@@ -2631,7 +2631,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 648, "start": 45, "end": 46 } ],
+            "tito": [ { "line": 642, "start": 45, "end": 46 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -2652,7 +2652,7 @@
             "call": {
               "position": {
                 "filename": "sanitize.py",
-                "line": 734,
+                "line": 723,
                 "start": 11,
                 "end": 35
               },
@@ -2682,7 +2682,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 694, "start": 34, "end": 35 } ],
+            "tito": [ { "line": 683, "start": 34, "end": 35 } ],
             "leaves": [
               { "kind": "NotSink[SQL]@LocalReturn", "name": "", "depth": 1 }
             ],
@@ -2704,11 +2704,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 848,
+              "line": 825,
               "start": 8,
               "end": 26
             },
-            "tito": [ { "line": 849, "start": 44, "end": 45 } ],
+            "tito": [ { "line": 826, "start": 44, "end": 45 } ],
             "leaves": [
               {
                 "kind": "NotSink[SQL]@UserControlled",
@@ -2939,11 +2939,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 754,
+              "line": 743,
               "start": 11,
               "end": 30
             },
-            "tito": [ { "line": 754, "start": 11, "end": 30 } ],
+            "tito": [ { "line": 743, "start": 11, "end": 30 } ],
             "leaves": [
               { "kind": "Test", "name": "sanitize.source_with_tito" }
             ],
@@ -2952,11 +2952,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 754,
+              "line": 743,
               "start": 33,
               "end": 52
             },
-            "tito": [ { "line": 754, "start": 33, "end": 52 } ],
+            "tito": [ { "line": 743, "start": 33, "end": 52 } ],
             "leaves": [
               { "kind": "Test", "name": "sanitize.source_with_tito" }
             ],
@@ -2975,190 +2975,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "sanitize.sanitize_all_parameters_all_sinks",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 766,
-              "start": 11,
-              "end": 30
-            },
-            "tito": [ { "line": 766, "start": 11, "end": 30 } ],
-            "leaves": [
-              { "kind": "Test", "name": "sanitize.source_with_tito" }
-            ],
-            "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
-          },
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 766,
-              "start": 33,
-              "end": 52
-            },
-            "tito": [ { "line": 766, "start": 33, "end": 52 } ],
-            "leaves": [
-              { "kind": "Test", "name": "sanitize.source_with_tito" }
-            ],
-            "features": [ { "always-via": "obscure" } ]
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(y)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [
-              { "line": 766, "start": 33, "end": 52 },
-              { "line": 766, "start": 50, "end": 51 }
-            ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure" }
-            ]
-          }
-        ]
-      },
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [
-              { "line": 766, "start": 11, "end": 30 },
-              { "line": 766, "start": 28, "end": 29 }
-            ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure" }
-            ]
-          }
-        ]
-      }
-    ],
-    "parameters_sanitizer": { "sinks": "All" }
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize.sanitize_all_parameters_all_sources",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 760,
-              "start": 11,
-              "end": 30
-            },
-            "tito": [ { "line": 760, "start": 11, "end": 30 } ],
-            "leaves": [
-              { "kind": "Test", "name": "sanitize.source_with_tito" }
-            ],
-            "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
-          },
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 760,
-              "start": 33,
-              "end": 52
-            },
-            "tito": [ { "line": 760, "start": 33, "end": 52 } ],
-            "leaves": [
-              { "kind": "Test", "name": "sanitize.source_with_tito" }
-            ],
-            "features": [ { "always-via": "obscure" } ]
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "formal(y)",
-        "taint": [
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 759,
-              "start": 15,
-              "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 758,
-              "start": 15,
-              "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(y)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [
-              { "line": 760, "start": 33, "end": 52 },
-              { "line": 760, "start": 50, "end": 51 }
-            ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure" }
-            ]
-          }
-        ]
-      },
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [
-              { "line": 760, "start": 11, "end": 30 },
-              { "line": 760, "start": 28, "end": 29 }
-            ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure" }
-            ]
-          }
-        ]
-      }
-    ],
-    "parameters_sanitizer": { "sources": "All" }
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "sanitize.sanitize_all_parameters_all_tito",
     "sources": [
       {
@@ -3167,11 +2983,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 772,
+              "line": 749,
               "start": 11,
               "end": 30
             },
-            "tito": [ { "line": 772, "start": 11, "end": 30 } ],
+            "tito": [ { "line": 749, "start": 11, "end": 30 } ],
             "leaves": [
               { "kind": "Test", "name": "sanitize.source_with_tito" }
             ],
@@ -3180,11 +2996,11 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 772,
+              "line": 749,
               "start": 33,
               "end": 52
             },
-            "tito": [ { "line": 772, "start": 33, "end": 52 } ],
+            "tito": [ { "line": 749, "start": 33, "end": 52 } ],
             "leaves": [
               { "kind": "Test", "name": "sanitize.source_with_tito" }
             ],
@@ -3200,7 +3016,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 771,
+              "line": 748,
               "start": 15,
               "end": 16
             },
@@ -3215,7 +3031,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 770,
+              "line": 747,
               "start": 15,
               "end": 16
             },
@@ -3266,7 +3082,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 805,
+              "line": 782,
               "start": 13,
               "end": 14
             },
@@ -3306,7 +3122,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 798,
+              "line": 775,
               "start": 13,
               "end": 14
             },
@@ -3362,7 +3178,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 776,
+              "line": 753,
               "start": 15,
               "end": 16
             },
@@ -3440,12 +3256,14 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "leaves": [
+              { "kind": "NotSink[Test]@LocalReturn", "name": "", "depth": 0 }
+            ]
           }
         ]
       }
     ],
-    "parameters_sanitizer": { "sinks": "All" }
+    "parameters_sanitizer": { "sinks": [ "Test" ] }
   }
 }
 {
@@ -3649,7 +3467,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "sanitize.sanitize_parameter_all_sinks",
+    "callable": "sanitize.sanitize_parameter_all_tito",
     "sources": [
       {
         "port": "result",
@@ -3685,6 +3503,21 @@
     ],
     "sinks": [
       {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "root": {
+              "filename": "sanitize.py",
+              "line": 539,
+              "start": 15,
+              "end": 16
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(x)",
         "taint": [
           {
@@ -3717,114 +3550,6 @@
             ]
           }
         ]
-      },
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [
-              { "line": 540, "start": 11, "end": 30 },
-              { "line": 540, "start": 28, "end": 29 }
-            ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure" }
-            ]
-          }
-        ]
-      }
-    ],
-    "sanitizers": [ { "port": "formal(y)", "sinks": "All" } ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize.sanitize_parameter_all_tito",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 546,
-              "start": 11,
-              "end": 30
-            },
-            "tito": [ { "line": 546, "start": 11, "end": 30 } ],
-            "leaves": [
-              { "kind": "Test", "name": "sanitize.source_with_tito" }
-            ],
-            "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
-          },
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 546,
-              "start": 33,
-              "end": 52
-            },
-            "tito": [ { "line": 546, "start": 33, "end": 52 } ],
-            "leaves": [
-              { "kind": "Test", "name": "sanitize.source_with_tito" }
-            ],
-            "features": [ { "always-via": "obscure" } ]
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "formal(y)",
-        "taint": [
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 545,
-              "start": 15,
-              "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 544,
-              "start": 15,
-              "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(y)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [
-              { "line": 546, "start": 33, "end": 52 },
-              { "line": 546, "start": 50, "end": 51 }
-            ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure" }
-            ]
-          }
-        ]
       }
     ],
     "sanitizers": [ { "port": "formal(x)", "tito": "All" } ]
@@ -3841,7 +3566,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 585,
+              "line": 579,
               "start": 13,
               "end": 14
             },
@@ -3883,7 +3608,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 578,
+              "line": 572,
               "start": 13,
               "end": 14
             },
@@ -3950,7 +3675,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 557,
+              "line": 551,
               "start": 13,
               "end": 14
             },
@@ -3964,7 +3689,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 555,
+              "line": 549,
               "start": 13,
               "end": 14
             },
@@ -4055,7 +3780,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sanitizers": [ { "port": "formal(x)", "sinks": "All" } ]
+    "sanitizers": [ { "port": "formal(x)", "sinks": [ "Test" ] } ]
   }
 }
 {
@@ -4069,7 +3794,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 671,
+              "line": 665,
               "start": 15,
               "end": 16
             },
@@ -4085,7 +3810,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 672, "start": 28, "end": 29 } ],
+            "tito": [ { "line": 666, "start": 28, "end": 29 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -4100,43 +3825,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "sanitize.sanitize_return_all_sources",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "root": {
-              "filename": "sanitize.py",
-              "line": 676,
-              "start": 15,
-              "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [ { "line": 677, "start": 28, "end": 29 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [ { "always-via": "tito" } ]
-          }
-        ]
-      }
-    ],
-    "sanitizers": [ { "port": "result", "sources": "All" } ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "sanitize.sanitize_return_no_cookies",
     "sources": [
       {
@@ -4145,7 +3833,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 715,
+              "line": 704,
               "start": 12,
               "end": 30
             },
@@ -4170,7 +3858,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 730,
+              "line": 719,
               "start": 11,
               "end": 29
             },
@@ -4220,7 +3908,7 @@
           {
             "root": {
               "filename": "sanitize.py",
-              "line": 684,
+              "line": 673,
               "start": 15,
               "end": 25
             },
@@ -4268,7 +3956,7 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sanitizers": [ { "port": "result", "sources": "All" } ]
+    "sanitizers": [ { "port": "result", "sources": [ "Test" ] } ]
   }
 }
 {

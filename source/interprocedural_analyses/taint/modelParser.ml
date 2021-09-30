@@ -831,9 +831,6 @@ let rec parse_annotations
         List.map ~f:(fun expression -> parse_sanitize_annotation expression.Node.value) expressions
         |> all
         >>| List.concat
-    | Expression.Name (Name.Identifier "TaintSource") -> Ok [AllSources]
-    | Expression.Name (Name.Identifier "TaintSink") -> Ok [AllSinks]
-    | Expression.Name (Name.Identifier "TaintInTaintOut") -> Ok [AllTito]
     | Expression.Call
         { Call.callee; arguments = [{ Call.Argument.value = { Node.value = expression; _ }; _ }] }
       when [%compare.equal: string option] (base_name callee) (Some "TaintInTaintOut") ->
@@ -869,6 +866,14 @@ let rec parse_annotations
         parse_annotation expression
         >>= List.fold_result ~init:([], []) ~f:gather_sources_sinks
         >>| fun (sources, sinks) -> [SpecificTito { sources; sinks }]
+    | Expression.Name (Name.Identifier ("TaintSource" as identifier))
+    | Expression.Name (Name.Identifier ("TaintSink" as identifier)) ->
+        Error
+          (annotation_error
+             (Format.asprintf
+                "`Sanitize[%s]` is ambiguous here. Did you mean `Sanitize`?"
+                identifier))
+    | Expression.Name (Name.Identifier "TaintInTaintOut") -> Ok [AllTito]
     | expression ->
         let to_sanitize = function
           | Source
@@ -2094,22 +2099,34 @@ let adjust_sanitize_and_modes_and_skipped_override
       | _ -> failwith "impossible case"
     in
     match arguments with
-    | None ->
-        let global =
-          { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
-        in
-        Ok { sanitizers with Sanitizers.global }
+    | None -> Ok { sanitizers with Sanitizers.global = Sanitize.all }
     | Some
         [
           {
-            Call.Argument.value = { Node.value = Expression.Name (Name.Identifier "Parameters"); _ };
+            Call.Argument.value =
+              {
+                Node.value =
+                  Expression.Name
+                    (Name.Identifier
+                      (("TaintSource" | "TaintSink" | "TaintInTaintOut" | "Parameters") as
+                      identifier));
+                _;
+              };
             _;
           };
-        ] ->
-        let parameters =
-          { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
-        in
-        Ok { sanitizers with Sanitizers.parameters }
+        ] -> (
+        match identifier with
+        | "TaintSource" ->
+            let global = { sanitizers.global with sources = Some AllSources } in
+            Ok { sanitizers with global }
+        | "TaintSink" ->
+            let global = { sanitizers.global with sinks = Some AllSinks } in
+            Ok { sanitizers with global }
+        | "TaintInTaintOut" ->
+            let global = { sanitizers.global with tito = Some AllTito } in
+            Ok { sanitizers with global }
+        | "Parameters" -> Ok { sanitizers with parameters = Sanitize.all }
+        | _ -> failwith "impossible")
     | Some
         [
           { Call.Argument.value = { Node.value = Expression.Call { Call.callee; arguments }; _ }; _ };

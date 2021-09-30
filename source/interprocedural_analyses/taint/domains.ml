@@ -950,6 +950,8 @@ module Sanitize = struct
     let show = show_sanitize
   end)
 
+  let all = { sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+
   let empty = bottom
 
   let is_empty = is_bottom

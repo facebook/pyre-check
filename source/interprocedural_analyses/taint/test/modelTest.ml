@@ -110,6 +110,55 @@ let assert_model ?source ?rules ?expected_skipped_overrides ~context ~model_sour
   List.iter ~f:(check_expectation ~environment ~get_model) expect
 
 
+let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~expect () =
+  let source =
+    match source with
+    | Some source -> source
+    | None ->
+        {|
+              unannotated_global = source()
+              def test.sink(parameter) -> None: pass
+              def test.sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
+              def test.source() -> None: pass
+              def test.taint(x, y) -> None: pass
+              def test.partial_sink(x, y) -> None: pass
+              def function_with_args(normal_arg, __anonymous_arg, *args) -> None: pass
+              def function_with_kwargs(normal_arg, **kwargs) -> None: pass
+              def anonymous_only(__arg1, __arg2, __arg3) -> None: pass
+              def anonymous_with_optional(__arg1, __arg2, __arg3=2) -> None: pass
+              class C:
+                unannotated_class_variable = source()
+            |}
+  in
+  let sources = ("test.py", source) :: sources in
+  let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in
+  let configuration =
+    TaintConfiguration.
+      {
+        empty with
+        sources = List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["A"; "B"];
+        sinks = List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["X"; "Y"; "Test"];
+        features = ["featureA"; "featureB"];
+        rules = [];
+        partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
+      }
+  in
+  let error_message =
+    let path = path >>| Path.create_absolute in
+    Model.parse
+      ~resolution
+      ~configuration
+      ?path
+      ~source:(Test.trim_extra_indentation model_source)
+      ~callables:None
+      ~stubs:(Target.HashSet.create ())
+      Target.Map.empty
+    |> fun { Taint.Model.errors; _ } ->
+    List.hd errors >>| Taint.Model.display_verification_error |> Option.value ~default:"no failure"
+  in
+  assert_equal ~printer:ident expect error_message
+
+
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
   let { Taint.Model.queries; _ }, _, _ =
     set_up_environment ?source ?rules ~context ~model_source ()
@@ -254,6 +303,7 @@ let test_source_models context =
 let test_global_sanitize context =
   let open Taint.Domains in
   let assert_model = assert_model ~context in
+  let assert_invalid_model = assert_invalid_model ~context in
   assert_model
     ~model_source:{|
       @Sanitize
@@ -323,20 +373,15 @@ let test_global_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:
       {|
       @Sanitize(TaintSource, TaintInTaintOut)
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~global_sanitizer:
-            { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
-          "test.taint";
-      ]
+      "`Sanitize[(TaintSource, TaintInTaintOut)]` is an invalid taint annotation: \
+       `Sanitize[TaintSource]` is ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_model
     ~model_source:{|
@@ -607,6 +652,7 @@ let test_attribute_sanitize context =
 let test_parameter_sanitize context =
   let open Taint.Domains in
   let assert_model = assert_model ~context in
+  let assert_invalid_model = assert_invalid_model ~context in
   assert_model
     ~model_source:{|
       def test.taint(x: Sanitize): ...
@@ -626,41 +672,21 @@ let test_parameter_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       def test.taint(x: Sanitize[TaintSource]): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~parameter_sanitizers:
-            [
-              {
-                name = "x";
-                sanitize = { Sanitize.sources = Some AllSources; sinks = None; tito = None };
-              };
-            ]
-          "test.taint";
-      ]
+      "`Sanitize[TaintSource]` is an invalid taint annotation: `Sanitize[TaintSource]` is \
+       ambiguous here. Did you mean `Sanitize`?"
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       def test.taint(x: Sanitize[TaintSink]): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~parameter_sanitizers:
-            [
-              {
-                name = "x";
-                sanitize = { Sanitize.sources = None; sinks = Some AllSinks; tito = None };
-              };
-            ]
-          "test.taint";
-      ]
+      "`Sanitize[TaintSink]` is an invalid taint annotation: `Sanitize[TaintSink]` is ambiguous \
+       here. Did you mean `Sanitize`?"
     ();
   assert_model
     ~model_source:{|
@@ -680,46 +706,22 @@ let test_parameter_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:
       {|
       def test.taint(x: Sanitize[TaintSource], y: Sanitize[TaintInTaintOut]): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~parameter_sanitizers:
-            [
-              {
-                name = "x";
-                sanitize = { Sanitize.sources = Some AllSources; sinks = None; tito = None };
-              };
-              {
-                name = "y";
-                sanitize = { Sanitize.sources = None; sinks = None; tito = Some AllTito };
-              };
-            ]
-          "test.taint";
-      ]
+      "`Sanitize[TaintSource]` is an invalid taint annotation: `Sanitize[TaintSource]` is \
+       ambiguous here. Did you mean `Sanitize`?"
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       def test.taint(x: Sanitize[TaintSource, TaintInTaintOut]): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~parameter_sanitizers:
-            [
-              {
-                name = "x";
-                sanitize = { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito };
-              };
-            ]
-          "test.taint";
-      ]
+      "`Sanitize[(TaintSource, TaintInTaintOut)]` is an invalid taint annotation: \
+       `Sanitize[TaintSource]` is ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_model
     ~model_source:{|
@@ -900,6 +902,7 @@ let test_parameter_sanitize context =
 let test_return_sanitize context =
   let open Taint.Domains in
   let assert_model = assert_model ~context in
+  let assert_invalid_model = assert_invalid_model ~context in
   assert_model
     ~model_source:{|
       def test.taint(x) -> Sanitize: ...
@@ -913,29 +916,21 @@ let test_return_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       def test.taint(x) -> Sanitize[TaintSource]: ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~return_sanitizer:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
-          "test.taint";
-      ]
+      "`Sanitize[TaintSource]` is an invalid taint annotation: `Sanitize[TaintSource]` is \
+       ambiguous here. Did you mean `Sanitize`?"
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       def test.taint(x) -> Sanitize[TaintSink]: ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~return_sanitizer:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
-          "test.taint";
-      ]
+      "`Sanitize[TaintSink]` is an invalid taint annotation: `Sanitize[TaintSink]` is ambiguous \
+       here. Did you mean `Sanitize`?"
     ();
   assert_model
     ~model_source:{|
@@ -949,18 +944,13 @@ let test_return_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       def test.taint(x) -> Sanitize[TaintSource, TaintInTaintOut]: ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~return_sanitizer:
-            { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
-          "test.taint";
-      ]
+      "`Sanitize[(TaintSource, TaintInTaintOut)]` is an invalid taint annotation: \
+       `Sanitize[TaintSource]` is ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_model
     ~model_source:{|
@@ -1104,6 +1094,7 @@ let test_return_sanitize context =
 let test_parameters_sanitize context =
   let open Taint.Domains in
   let assert_model = assert_model ~context in
+  let assert_invalid_model = assert_invalid_model ~context in
   assert_model
     ~model_source:{|
       @Sanitize(Parameters)
@@ -1118,31 +1109,23 @@ let test_parameters_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       @Sanitize(Parameters[TaintSource])
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~parameters_sanitizer:{ Sanitize.sources = Some AllSources; sinks = None; tito = None }
-          "test.taint";
-      ]
+      "`Sanitize[TaintSource]` is an invalid taint annotation: `Sanitize[TaintSource]` is \
+       ambiguous here. Did you mean `Sanitize`?"
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       @Sanitize(Parameters[TaintSink])
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~parameters_sanitizer:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
-          "test.taint";
-      ]
+      "`Sanitize[TaintSink]` is an invalid taint annotation: `Sanitize[TaintSink]` is ambiguous \
+       here. Did you mean `Sanitize`?"
     ();
   assert_model
     ~model_source:
@@ -1158,7 +1141,7 @@ let test_parameters_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:
       {|
       @Sanitize(Parameters[TaintSource])
@@ -1166,28 +1149,18 @@ let test_parameters_sanitize context =
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~parameters_sanitizer:
-            { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
-          "test.taint";
-      ]
+      "`Sanitize[TaintSource]` is an invalid taint annotation: `Sanitize[TaintSource]` is \
+       ambiguous here. Did you mean `Sanitize`?"
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:
       {|
       @Sanitize(Parameters[TaintSource, TaintInTaintOut])
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~parameters_sanitizer:
-            { Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito }
-          "test.taint";
-      ]
+      "`Sanitize[(TaintSource, TaintInTaintOut)]` is an invalid taint annotation: \
+       `Sanitize[TaintSource]` is ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_model
     ~model_source:
@@ -1909,58 +1882,11 @@ let test_partial_sinks context =
 
 
 let test_invalid_models context =
-  let assert_invalid_model ?path ?source ?(sources = []) ~model_source ~expect () =
-    let source =
-      match source with
-      | Some source -> source
-      | None ->
-          {|
-              unannotated_global = source()
-              def test.sink(parameter) -> None: pass
-              def test.sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
-              def test.source() -> None: pass
-              def test.partial_sink(x, y) -> None: pass
-              def function_with_args(normal_arg, __anonymous_arg, *args) -> None: pass
-              def function_with_kwargs(normal_arg, **kwargs) -> None: pass
-              def anonymous_only(__arg1, __arg2, __arg3) -> None: pass
-              def anonymous_with_optional(__arg1, __arg2, __arg3=2) -> None: pass
-              class C:
-                unannotated_class_variable = source()
-            |}
-    in
-    let sources = ("test.py", source) :: sources in
-    let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in
-    let configuration =
-      TaintConfiguration.
-        {
-          empty with
-          sources = List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["A"; "B"];
-          sinks =
-            List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["X"; "Y"; "Test"];
-          features = ["featureA"; "featureB"];
-          rules = [];
-          partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
-        }
-    in
-    let error_message =
-      let path = path >>| Path.create_absolute in
-      Model.parse
-        ~resolution
-        ~configuration
-        ?path
-        ~source:(Test.trim_extra_indentation model_source)
-        ~callables:None
-        ~stubs:(Target.HashSet.create ())
-        Target.Map.empty
-      |> fun { Taint.Model.errors; _ } ->
-      List.hd errors
-      >>| Taint.Model.display_verification_error
-      |> Option.value ~default:"no failure"
-    in
-    assert_equal ~printer:ident expect error_message
+  let assert_invalid_model ?path ?source ?sources ~model_source ~expect () =
+    assert_invalid_model ?path ?source ?sources ~context ~model_source ~expect ()
   in
-  let assert_valid_model ?source ?sources ~model_source () =
-    assert_invalid_model ?source ?sources ~model_source ~expect:"no failure" ()
+  let assert_valid_model ?path ?source ?sources ~model_source () =
+    assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure" ()
   in
   assert_invalid_model ~model_source:"1 + import" ~expect:"Syntax error." ();
   assert_invalid_model ~model_source:"import foo" ~expect:"Unexpected statement." ();

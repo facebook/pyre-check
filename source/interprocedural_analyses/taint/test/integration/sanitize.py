@@ -534,12 +534,6 @@ def sanitize_parameter(x, y):
     return source_with_tito(x) + source_with_tito(y)
 
 
-def sanitize_parameter_all_sinks(x, y):
-    _test_sink(x)
-    _test_sink(y)
-    return source_with_tito(x) + source_with_tito(y)
-
-
 def sanitize_parameter_all_tito(x, y):
     _test_sink(x)
     _test_sink(y)
@@ -672,11 +666,6 @@ def sanitize_return(x):
     return source_with_tito(x)
 
 
-def sanitize_return_all_sources(x):
-    _test_sink(x)
-    return source_with_tito(x)
-
-
 def sanitize_return_no_user_controlled(x):
     if 1 > 2:
         return _user_controlled()
@@ -749,18 +738,6 @@ def sanitize_return_with_user_declared_source(x):
 
 
 def sanitize_all_parameters(x, y):
-    _test_sink(x)
-    _test_sink(y)
-    return source_with_tito(x) + source_with_tito(y)
-
-
-def sanitize_all_parameters_all_sources(x, y):
-    _test_sink(x)
-    _test_sink(y)
-    return source_with_tito(x) + source_with_tito(y)
-
-
-def sanitize_all_parameters_all_sinks(x, y):
     _test_sink(x)
     _test_sink(y)
     return source_with_tito(x) + source_with_tito(y)
