@@ -9,7 +9,7 @@ Python's type system was specified in [PEP 484](https://www.python.org/dev/peps/
 ## Gradual Typing
 Most Python code does not (yet) start out typed. PEP 484 specifies a [gradual type system](https://en.wikipedia.org/wiki/Gradual_typing), which is built to allow you to *gradually* add annotations over time. It does so by
 
-- only reporting errors on functions that have an explicit return type annotation,
+- only reporting errors on functions that have an explicit return or parameter type annotation,
 - introducing an escape hatch: a special type `Any` that has all possible attributes and is both sub- and super-type of any other type,
 - and assuming that all untyped fuctions implicitly return `Any`.
 
