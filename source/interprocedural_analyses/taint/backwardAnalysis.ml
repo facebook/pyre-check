@@ -1018,7 +1018,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | None -> analyze_regular_targets ~state ~callee ~arguments ~taint None)
 
 
-    and analyze_string_literal ~resolution ~taint ~state ~location { StringLiteral.value; kind } =
+    and analyze_string_literal ~resolution ~taint ~state ~location { StringLiteral.kind; _ } =
       match kind with
       | StringLiteral.Mixed substrings ->
           let taint =
@@ -1026,6 +1026,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             if List.is_empty literal_string_sinks then
               taint
             else
+              let value =
+                List.map substrings ~f:(function
+                    | Substring.Format _ -> "{}"
+                    | Substring.Literal { Node.value; _ }
+                    | Substring.RawFormat { Node.value; _ } ->
+                        value)
+                |> String.concat ~sep:""
+              in
               List.fold
                 literal_string_sinks
                 ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->

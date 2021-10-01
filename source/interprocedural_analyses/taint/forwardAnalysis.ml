@@ -1140,7 +1140,33 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardState.Tree.join attribute_taint
 
 
-    and analyze_string_literal ~resolution ~state ~location { StringLiteral.value; kind } =
+    and analyze_string_literal
+        ~resolution
+        ~state
+        ~location
+        { StringLiteral.value = literal_value; kind }
+      =
+      let value, nested_expressions =
+        match kind with
+        | StringLiteral.String
+        | StringLiteral.Bytes ->
+            literal_value, []
+        | StringLiteral.Mixed substrings ->
+            let concatenated_value =
+              List.map substrings ~f:(function
+                  | Substring.Format _ -> "{}"
+                  | Substring.Literal { Node.value; _ }
+                  | Substring.RawFormat { Node.value; _ } ->
+                      value)
+              |> String.concat ~sep:""
+            in
+            let expressions =
+              List.filter_map substrings ~f:(function
+                  | Substring.Format expression -> Some expression
+                  | _ -> None)
+            in
+            concatenated_value, expressions
+      in
       let value_taint =
         let literal_string_regular_expressions = TaintConfiguration.literal_string_sources () in
         if List.is_empty literal_string_regular_expressions then
@@ -1159,19 +1185,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~init:ForwardState.Tree.empty
             ~f:add_matching_source_kind
       in
-      match kind with
-      | StringLiteral.Mixed substrings ->
+      match nested_expressions with
+      | [] -> value_taint, state
+      | _ ->
           let taint, state =
             List.fold
-              substrings
-              ~f:(fun (taint, state) substring ->
-                match substring with
-                | Substring.Format expression ->
-                    analyze_expression ~resolution ~state ~expression
-                    |>> ForwardState.Tree.join taint
-                | Substring.Literal _
-                | Substring.RawFormat _ ->
-                    taint, state)
+              nested_expressions
+              ~f:(fun (taint, state) expression ->
+                analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
               ~init:(ForwardState.Tree.empty, state)
             |>> ForwardState.Tree.add_breadcrumb Features.format_string
             |>> ForwardState.Tree.join value_taint
@@ -1198,7 +1219,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               FunctionContext.check_flow ~location ~source_tree:taint ~sink_tree:backwards_taint
           in
           taint, state
-      | _ -> value_taint, state
 
 
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
