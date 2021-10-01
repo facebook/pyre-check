@@ -2343,10 +2343,20 @@ let test_join context =
   assert_type_equal
     (join order (Type.literal_string "A") (Type.literal_string "A"))
     (Type.literal_string "A");
-  assert_type_equal (join order (Type.literal_string "A") (Type.literal_string "B")) Type.string;
+  assert_type_equal
+    (join order (Type.literal_string "A") (Type.literal_string "B"))
+    (Type.Literal (String AnyLiteral));
+  assert_type_equal (join order (Type.literal_string "A") Type.string) Type.string;
   assert_type_equal
     (join order (Type.literal_string "A") Type.integer)
     (Type.union [Type.string; Type.integer]);
+  assert_type_equal
+    (join order (Type.Literal (String AnyLiteral)) (Type.Literal (String AnyLiteral)))
+    (Type.Literal (String AnyLiteral));
+  assert_type_equal
+    (join order (Type.Literal (String AnyLiteral)) (Type.literal_string "hello"))
+    (Type.Literal (String AnyLiteral));
+  assert_type_equal (join order (Type.Literal (String AnyLiteral)) Type.string) Type.string;
   let assert_join ?(source = "") ~left ~right expected_result =
     let resolution = resolution ~source context in
     let parse_annotation annotation =

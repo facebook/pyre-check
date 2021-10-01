@@ -769,6 +769,8 @@ val instantiate
 
 val weaken_literals : t -> t
 
+val weaken_to_arbitrary_literal_if_possible : t -> t
+
 module OrderedTypes : sig
   include module type of struct
     include Record.OrderedTypes

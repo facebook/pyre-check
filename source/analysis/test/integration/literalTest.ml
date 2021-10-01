@@ -424,8 +424,8 @@ let test_string_literal context =
         reveal_type(x)
     |}
     [
-      (* TODO(T48477564): We don't join literals in general. *)
-      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      (* TODO(T48477564): We don't join literals to be their unions because it is too expensive. *)
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[str]`.";
     ];
   assert_type_errors
     {|
@@ -438,6 +438,18 @@ let test_string_literal context =
         reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[str]`."];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def bar(some_bool: bool) -> Literal[str]:
+        x = "foo"
+        if some_bool:
+          x = "bar"
+
+        return x
+    |}
+    [];
   ()
 
 
