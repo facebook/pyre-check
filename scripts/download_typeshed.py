@@ -206,7 +206,7 @@ def _patch_entry(
     new_filepath = temporary_path / "tempfile"
     new_filepath.write_bytes(entry.data)
 
-    result = subprocess.run(["patch", "-R", "-u", new_filepath, "-i", patch_path])
+    result = subprocess.run(["patch", "-u", new_filepath, "-i", patch_path])
     if result.returncode != 0:
         return PatchResult(entry, True)
 
