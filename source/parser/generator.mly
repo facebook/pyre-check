@@ -239,28 +239,28 @@
     }
 
   let create_mixed_string = function
-    | [] -> { StringLiteral.value = ""; kind = String }
+    | [] -> Expression.String { StringLiteral.value = ""; kind = String }
     | [ AstExpression.Substring.Literal { Node.value; _ } ] ->
-        { StringLiteral.value; kind = String }
+        Expression.String { StringLiteral.value; kind = String }
     | _ as pieces ->
-       let extract_value = function
-         | AstExpression.Substring.Literal { Node.value; _ } -> Some value
-         | AstExpression.Substring.RawFormat { Node.value; _ } -> Some value
-         | AstExpression.Substring.Format _ -> None
-       in
-        let value =
-          List.filter_map ~f:extract_value pieces
-          |> String.concat ~sep:""
-        in
         let is_all_literal = List.for_all ~f:(function
           | AstExpression.Substring.Literal _ -> true
           | _ -> false
         )
         in
         if is_all_literal pieces then
-          { StringLiteral.value; kind = String }
+          let value =
+            let extract_value = function
+              | AstExpression.Substring.Literal { Node.value; _ } -> Some value
+              | AstExpression.Substring.RawFormat { Node.value; _ } -> Some value
+              | AstExpression.Substring.Format _ -> None
+            in
+            List.filter_map ~f:extract_value pieces
+            |> String.concat ~sep:""
+          in
+          Expression.String { StringLiteral.value; kind = String }
         else
-          { StringLiteral.value; kind = Mixed pieces }
+          Expression.FormatString pieces
 %}
 
 (* The syntactic junkyard. *)
@@ -1316,7 +1316,7 @@ atom:
       let (_, stop) = last in
       {
         Node.location = Location.create ~start ~stop;
-        value = String (create_mixed_string all_pieces);
+        value = create_mixed_string all_pieces;
       }
     }
 
@@ -1427,7 +1427,7 @@ atom:
       let (_, stop) = last in
       {
         Node.location = Location.create ~start ~stop;
-        value = String (create_mixed_string all_pieces);
+        value = create_mixed_string all_pieces;
       }
     }
 

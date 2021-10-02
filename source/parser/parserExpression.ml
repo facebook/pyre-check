@@ -191,7 +191,6 @@ and StringLiteral : sig
   type kind =
     | String
     | Bytes
-    | Mixed of AstExpression.Substring.t list
 
   type t = {
     value: string;
@@ -203,7 +202,6 @@ end = struct
   type kind =
     | String
     | Bytes
-    | Mixed of AstExpression.Substring.t list
 
   type t = {
     value: string;
@@ -272,6 +270,7 @@ and Expression : sig
     | Float of float
     | Generator of t Comprehension.t
     | Integer of int
+    | FormatString of AstExpression.Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
@@ -305,6 +304,7 @@ end = struct
     | Float of float
     | Generator of t Comprehension.t
     | Integer of int
+    | FormatString of AstExpression.Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
@@ -370,6 +370,8 @@ let rec convert { Node.location; value } =
         { element = convert element; generators = List.map ~f:convert_generator generators }
       |> Node.create ~location
   | Integer value -> AstExpression.Expression.Integer value |> Node.create ~location
+  | FormatString substrings ->
+      AstExpression.Expression.FormatString substrings |> Node.create ~location
   | Lambda { Lambda.parameters; body } ->
       AstExpression.Expression.Lambda
         { parameters = List.map ~f:convert_parameter parameters; body = convert body }
@@ -401,7 +403,6 @@ let rec convert { Node.location; value } =
   | String { value; kind } ->
       let value =
         match kind with
-        | Mixed mixed -> AstExpression.Expression.String { value; kind = Mixed mixed }
         | String -> AstExpression.Expression.String { value; kind = String }
         | Bytes -> AstExpression.Expression.String { value; kind = Bytes }
       in

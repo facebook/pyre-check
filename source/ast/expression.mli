@@ -5,6 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module StringLiteral : sig
+  type kind =
+    | String
+    | Bytes
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = {
+    value: string;
+    kind: kind;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+
+  val create : ?bytes:bool -> string -> t
+end
+
 module rec BooleanOperator : sig
   type operator =
     | And
@@ -191,24 +208,6 @@ and Starred : sig
   val location_insensitive_compare : t -> t -> int
 end
 
-and StringLiteral : sig
-  type kind =
-    | String
-    | Bytes
-    | Mixed of Substring.t list
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val location_insensitive_compare : t -> t -> int
-
-  val create : ?bytes:bool -> string -> t
-end
-
 and Substring : sig
   type t =
     | Literal of string Node.t
@@ -275,6 +274,7 @@ and Expression : sig
     | Float of float
     | Generator of t Comprehension.t
     | Integer of int
+    | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t

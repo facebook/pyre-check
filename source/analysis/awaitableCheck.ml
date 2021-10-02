@@ -427,6 +427,13 @@ module State (Context : Context) = struct
           | None -> []
         in
         awaitables, state
+    | FormatString substrings ->
+        List.fold substrings ~init:([], state) ~f:(fun (awaitables, state) substring ->
+            match substring with
+            | Substring.Format expression -> forward_expression ~resolution ~state ~expression
+            | Substring.Literal _
+            | Substring.RawFormat _ ->
+                awaitables, state)
     (* Base cases. *)
     | Complex _
     | False

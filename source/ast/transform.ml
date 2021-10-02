@@ -137,6 +137,7 @@ module Make (Transformer : Transformer) = struct
                   transform_list generators ~f:(transform_generator ~transform_expression);
               }
         | Integer _ -> value
+        | FormatString _ -> value
         | Lambda { Lambda.parameters; body } ->
             Lambda
               {

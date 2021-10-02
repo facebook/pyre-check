@@ -9,6 +9,43 @@ open Core
 open Sexplib.Std
 open Pyre
 
+module StringLiteral = struct
+  type kind =
+    | String
+    | Bytes
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = {
+    value: string;
+    kind: kind;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let create ?(bytes = false) value =
+    let kind =
+      if bytes then
+        Bytes
+      else
+        String
+    in
+    { value; kind }
+
+
+  let location_insensitive_compare_kind left right =
+    match left, right with
+    | String, String
+    | Bytes, Bytes ->
+        0
+    | String, _ -> -1
+    | Bytes, _ -> 1
+
+
+  let location_insensitive_compare left right =
+    match String.compare left.value right.value with
+    | x when not (Int.equal x 0) -> x
+    | _ -> location_insensitive_compare_kind left.kind right.kind
+end
+
 module rec BooleanOperator : sig
   type operator =
     | And
@@ -515,62 +552,6 @@ end = struct
     | Twice _, Once _ -> 1
 end
 
-and StringLiteral : sig
-  type kind =
-    | String
-    | Bytes
-    | Mixed of Substring.t list
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val create : ?bytes:bool -> string -> t
-
-  val location_insensitive_compare : t -> t -> int
-end = struct
-  type kind =
-    | String
-    | Bytes
-    | Mixed of Substring.t list
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let create ?(bytes = false) value =
-    let kind =
-      if bytes then
-        Bytes
-      else
-        String
-    in
-    { value; kind }
-
-
-  let location_insensitive_compare_kind left right =
-    match left, right with
-    | String, String
-    | Bytes, Bytes ->
-        0
-    | Mixed left, Mixed right -> List.compare Substring.location_insensitive_compare left right
-    | String, _ -> -1
-    | Bytes, _ -> -1
-    | Mixed _, _ -> 1
-
-
-  let location_insensitive_compare left right =
-    match String.compare left.value right.value with
-    | x when not (Int.equal x 0) -> x
-    | _ -> location_insensitive_compare_kind left.kind right.kind
-end
-
 and Substring : sig
   type t =
     | Literal of string Node.t
@@ -726,6 +707,7 @@ and Expression : sig
     | Float of float
     | Generator of t Comprehension.t
     | Integer of int
+    | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
@@ -766,6 +748,7 @@ end = struct
     | Float of float
     | Generator of t Comprehension.t
     | Integer of int
+    | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
@@ -808,6 +791,8 @@ end = struct
     | Generator left, Generator right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
     | Integer left, Integer right -> Int.compare left right
+    | FormatString left, FormatString right ->
+        List.compare Substring.location_insensitive_compare left right
     | Lambda left, Lambda right -> Lambda.location_insensitive_compare left right
     | List left, List right -> List.compare location_insensitive_compare left right
     | ListComprehension left, ListComprehension right ->
@@ -840,6 +825,7 @@ end = struct
     | Float _, _ -> -1
     | Generator _, _ -> -1
     | Integer _, _ -> -1
+    | FormatString _, _ -> -1
     | Lambda _, _ -> -1
     | List _, _ -> -1
     | ListComprehension _, _ -> -1
@@ -1012,23 +998,21 @@ end = struct
               Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
           | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
           )
-      | String { StringLiteral.value; kind } -> (
+      | String { StringLiteral.value; kind } ->
           let bytes =
             match kind with
             | StringLiteral.Bytes -> "b"
             | _ -> ""
           in
-          match kind with
-          | StringLiteral.Mixed substrings ->
-              let pp_substring formatter = function
-                | Substring.Literal { Node.value; _ } -> Format.fprintf formatter "\"%s\"" value
-                | Substring.RawFormat { Node.value; _ } ->
-                    Format.fprintf formatter "f\"{%s}\"" value
-                | Substring.Format expression ->
-                    Format.fprintf formatter "f\"{%a}\"" pp_expression_t expression
-              in
-              List.iter substrings ~f:(pp_substring formatter)
-          | _ -> Format.fprintf formatter "%s\"%s\"" bytes value)
+          Format.fprintf formatter "%s\"%s\"" bytes value
+      | FormatString substrings ->
+          let pp_substring formatter = function
+            | Substring.Literal { Node.value; _ } -> Format.fprintf formatter "\"%s\"" value
+            | Substring.RawFormat { Node.value; _ } -> Format.fprintf formatter "f\"{%s}\"" value
+            | Substring.Format expression ->
+                Format.fprintf formatter "f\"{%a}\"" pp_expression_t expression
+          in
+          List.iter substrings ~f:(pp_substring formatter)
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           Format.fprintf
             formatter

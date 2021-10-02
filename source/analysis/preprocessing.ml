@@ -243,10 +243,7 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
 
     let expression _ expression =
       match expression with
-      | {
-       Node.location;
-       value = Expression.String { StringLiteral.value; kind = StringLiteral.Mixed substrings; _ };
-      } ->
+      | { Node.location; value = Expression.FormatString substrings } ->
           let expand_substring sofar = function
             | (Substring.Literal _ | Substring.Format _) as substring -> substring :: sofar
             | Substring.RawFormat
@@ -378,10 +375,7 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
                   { State.kind = Literal; start_line = line; start_column = column; content = "" }
           in
           let expanded_substrings = List.fold substrings ~init:[] ~f:expand_substring |> List.rev in
-          {
-            Node.location;
-            value = Expression.String { StringLiteral.kind = Mixed expanded_substrings; value };
-          }
+          { Node.location; value = Expression.FormatString expanded_substrings }
       | _ -> expression
   end)
   in
@@ -1225,18 +1219,14 @@ let qualify
           Starred (Starred.Once (qualify_expression ~qualify_strings ~scope expression))
       | Starred (Starred.Twice expression) ->
           Starred (Starred.Twice (qualify_expression ~qualify_strings ~scope expression))
-      | String { StringLiteral.value; kind } -> (
-          let kind =
-            match kind with
-            | StringLiteral.Mixed substrings ->
-                let qualify_substring = function
-                  | (Substring.Literal _ | Substring.RawFormat _) as substring -> substring
-                  | Substring.Format expression ->
-                      Substring.Format (qualify_expression ~qualify_strings ~scope expression)
-                in
-                StringLiteral.Mixed (List.map substrings ~f:qualify_substring)
-            | _ -> kind
+      | FormatString substrings ->
+          let qualify_substring = function
+            | (Substring.Literal _ | Substring.RawFormat _) as substring -> substring
+            | Substring.Format expression ->
+                Substring.Format (qualify_expression ~qualify_strings ~scope expression)
           in
+          FormatString (List.map substrings ~f:qualify_substring)
+      | String { StringLiteral.value; kind } -> (
           let error_on_qualification_failure =
             match qualify_strings with
             | Qualify -> true
@@ -2958,7 +2948,7 @@ module AccessCollector = struct
     | Set expressions
     | Tuple expressions ->
         List.fold expressions ~init:collected ~f:from_expression
-    | String { kind = StringLiteral.Mixed substrings; _ } ->
+    | FormatString substrings ->
         let from_substring sofar = function
           | Substring.Literal _
           | Substring.RawFormat _ ->

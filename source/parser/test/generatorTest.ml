@@ -3312,46 +3312,19 @@ let test_string _ =
     [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
   assert_parsed_equal
     "f'foo'"
-    [
-      +Statement.Expression
-         (+Expression.String { StringLiteral.kind = Mixed [create_format "foo"]; value = "foo" });
-    ];
+    [+Statement.Expression (+Expression.FormatString [create_format "foo"])];
   assert_parsed_equal
     "F'foo'"
-    [
-      +Statement.Expression
-         (+Expression.String { StringLiteral.kind = Mixed [create_format "foo"]; value = "foo" });
-    ];
+    [+Statement.Expression (+Expression.FormatString [create_format "foo"])];
   assert_parsed_equal
     "f'foo' f'bar'"
-    [
-      +Statement.Expression
-         (+Expression.String
-             {
-               StringLiteral.kind = Mixed [create_format "foo"; create_format "bar"];
-               value = "foobar";
-             });
-    ];
+    [+Statement.Expression (+Expression.FormatString [create_format "foo"; create_format "bar"])];
   assert_parsed_equal
     "f'foo' 'bar'"
-    [
-      +Statement.Expression
-         (+Expression.String
-             {
-               StringLiteral.kind = Mixed [create_format "foo"; create_literal "bar"];
-               value = "foobar";
-             });
-    ];
+    [+Statement.Expression (+Expression.FormatString [create_format "foo"; create_literal "bar"])];
   assert_parsed_equal
     "'foo' f'bar'"
-    [
-      +Statement.Expression
-         (+Expression.String
-             {
-               StringLiteral.kind = Mixed [create_literal "foo"; create_format "bar"];
-               value = "foobar";
-             });
-    ];
+    [+Statement.Expression (+Expression.FormatString [create_literal "foo"; create_format "bar"])];
   assert_parsed_equal
     "\"'\""
     [+Statement.Expression (+Expression.String (StringLiteral.create "'"))];

@@ -2476,12 +2476,7 @@ let test_string_locations _ =
            (node
               ~start:(1, 0)
               ~stop:(1, 6)
-              (Expression.String
-                 {
-                   StringLiteral.kind =
-                     Mixed [Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 5) "foo")];
-                   value = "foo";
-                 })));
+              (Expression.FormatString [Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 5) "foo")])));
     ];
   assert_source_locations
     (* Format string expressions are further parsed in preprocessing. *)
@@ -2494,12 +2489,8 @@ let test_string_locations _ =
            (node
               ~start:(1, 0)
               ~stop:(1, 10)
-              (Expression.String
-                 {
-                   StringLiteral.kind =
-                     Mixed [Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 9) "foo {x}")];
-                   value = "foo {x}";
-                 })));
+              (Expression.FormatString
+                 [Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 9) "foo {x}")])));
     ];
   assert_source_locations
     "f'foo' f'bar'"
@@ -2511,16 +2502,11 @@ let test_string_locations _ =
            (node
               ~start:(1, 0)
               ~stop:(1, 13)
-              (Expression.String
-                 {
-                   StringLiteral.kind =
-                     Mixed
-                       [
-                         Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 5) "foo");
-                         Substring.RawFormat (node ~start:(1, 9) ~stop:(1, 12) "bar");
-                       ];
-                   value = "foobar";
-                 })));
+              (Expression.FormatString
+                 [
+                   Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 5) "foo");
+                   Substring.RawFormat (node ~start:(1, 9) ~stop:(1, 12) "bar");
+                 ])));
     ];
   assert_source_locations
     "'''a''' + '''b'''"

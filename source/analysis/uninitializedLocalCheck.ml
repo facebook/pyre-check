@@ -71,7 +71,7 @@ module AccessCollector = struct
     | Set expressions
     | Tuple expressions ->
         List.fold expressions ~init:collected ~f:from_expression
-    | String { kind = StringLiteral.Mixed substrings; _ } ->
+    | FormatString substrings ->
         let from_substring sofar = function
           | Substring.Literal _
           | Substring.RawFormat _ ->

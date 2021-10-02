@@ -1018,45 +1018,41 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | None -> analyze_regular_targets ~state ~callee ~arguments ~taint None)
 
 
-    and analyze_string_literal ~resolution ~taint ~state ~location { StringLiteral.kind; _ } =
-      match kind with
-      | StringLiteral.Mixed substrings ->
-          let taint =
-            let literal_string_sinks = TaintConfiguration.literal_string_sinks () in
-            if List.is_empty literal_string_sinks then
-              taint
-            else
-              let value =
-                List.map substrings ~f:(function
-                    | Substring.Format _ -> "{}"
-                    | Substring.Literal { Node.value; _ }
-                    | Substring.RawFormat { Node.value; _ } ->
-                        value)
-                |> String.concat ~sep:""
-              in
-              List.fold
-                literal_string_sinks
-                ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
-                  if Re2.matches pattern value then
-                    BackwardState.Tree.join
-                      taint
-                      (BackwardState.Tree.create_leaf (BackwardTaint.singleton ~location sink_kind))
-                  else
-                    taint)
-                ~init:taint
+    and analyze_joined_string ~resolution ~taint ~state ~location substrings =
+      let taint =
+        let literal_string_sinks = TaintConfiguration.literal_string_sinks () in
+        if List.is_empty literal_string_sinks then
+          taint
+        else
+          let value =
+            List.map substrings ~f:(function
+                | Substring.Format _ -> "{}"
+                | Substring.Literal { Node.value; _ }
+                | Substring.RawFormat { Node.value; _ } ->
+                    value)
+            |> String.concat ~sep:""
           in
-          let taint = BackwardState.Tree.add_breadcrumb Features.format_string taint in
           List.fold
-            substrings
-            ~f:(fun state substring ->
-              match substring with
-              | Substring.Format expression ->
-                  analyze_expression ~resolution ~taint ~state ~expression
-              | Substring.Literal _
-              | Substring.RawFormat _ ->
-                  state)
-            ~init:state
-      | _ -> state
+            literal_string_sinks
+            ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
+              if Re2.matches pattern value then
+                BackwardState.Tree.join
+                  taint
+                  (BackwardState.Tree.create_leaf (BackwardTaint.singleton ~location sink_kind))
+              else
+                taint)
+            ~init:taint
+      in
+      let taint = BackwardState.Tree.add_breadcrumb Features.format_string taint in
+      List.fold
+        substrings
+        ~f:(fun state substring ->
+          match substring with
+          | Substring.Format expression -> analyze_expression ~resolution ~taint ~state ~expression
+          | Substring.Literal _
+          | Substring.RawFormat _ ->
+              state)
+        ~init:state
 
 
     and analyze_expression ~resolution ~taint ~state ~expression =
@@ -1201,13 +1197,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Starred (Starred.Twice expression) ->
           let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] taint in
           analyze_expression ~resolution ~taint ~state ~expression
-      | String string_literal ->
-          analyze_string_literal
+      | FormatString substrings ->
+          analyze_joined_string
             ~resolution
             ~taint
             ~state
             ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
-            string_literal
+            substrings
+      | String _ -> state
       | Ternary { target; test; alternative } ->
           let state_then = analyze_expression ~resolution ~taint ~state ~expression:target in
           let state_else = analyze_expression ~resolution ~taint ~state ~expression:alternative in

@@ -1140,33 +1140,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardState.Tree.join attribute_taint
 
 
-    and analyze_string_literal
-        ~resolution
-        ~state
-        ~location
-        { StringLiteral.value = literal_value; kind }
-      =
-      let value, nested_expressions =
-        match kind with
-        | StringLiteral.String
-        | StringLiteral.Bytes ->
-            literal_value, []
-        | StringLiteral.Mixed substrings ->
-            let concatenated_value =
-              List.map substrings ~f:(function
-                  | Substring.Format _ -> "{}"
-                  | Substring.Literal { Node.value; _ }
-                  | Substring.RawFormat { Node.value; _ } ->
-                      value)
-              |> String.concat ~sep:""
-            in
-            let expressions =
-              List.filter_map substrings ~f:(function
-                  | Substring.Format expression -> Some expression
-                  | _ -> None)
-            in
-            concatenated_value, expressions
-      in
+    and analyze_string_literal ~resolution ~state ~location ~nested_expressions value =
       let value_taint =
         let literal_string_regular_expressions = TaintConfiguration.literal_string_sources () in
         if List.is_empty literal_string_regular_expressions then
@@ -1305,8 +1279,23 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | Starred (Starred.Twice expression) ->
             analyze_expression ~resolution ~state ~expression
             |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
-        | String string_literal ->
-            analyze_string_literal ~resolution ~state ~location string_literal
+        | String { StringLiteral.value; _ } ->
+            analyze_string_literal ~resolution ~state ~location ~nested_expressions:[] value
+        | FormatString substrings ->
+            let value =
+              List.map substrings ~f:(function
+                  | Substring.Format _ -> "{}"
+                  | Substring.Literal { Node.value; _ }
+                  | Substring.RawFormat { Node.value; _ } ->
+                      value)
+              |> String.concat ~sep:""
+            in
+            let nested_expressions =
+              List.filter_map substrings ~f:(function
+                  | Substring.Format expression -> Some expression
+                  | _ -> None)
+            in
+            analyze_string_literal ~resolution ~state ~location ~nested_expressions value
         | Ternary { target; test; alternative } ->
             let state = analyze_condition ~resolution test state in
             let taint_then, state_then = analyze_expression ~resolution ~state ~expression:target in

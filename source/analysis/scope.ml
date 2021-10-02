@@ -99,7 +99,7 @@ module Binding = struct
         let sofar = of_expression sofar target in
         let sofar = of_expression sofar test in
         of_expression sofar alternative
-    | Expression.String { StringLiteral.kind = StringLiteral.Mixed substrings; _ } ->
+    | Expression.FormatString substrings ->
         let of_substring sofar = function
           | Substring.(Literal _ | RawFormat _) -> sofar
           | Substring.Format expression -> of_expression sofar expression

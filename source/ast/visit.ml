@@ -100,7 +100,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           | Starred.Once expression
           | Starred.Twice expression ->
               visit_expression expression)
-      | String { kind = Mixed substrings; _ } ->
+      | FormatString substrings ->
           List.iter
             ~f:(fun substring -> visit_node ~state ~visitor (Substring substring))
             substrings
@@ -501,7 +501,7 @@ let collect_format_strings_with_ignores ~ignore_line_map source =
     type t = Expression.t * Ignore.t list
 
     let predicate = function
-      | { Node.value = Expression.String { kind = Mixed _; _ }; location } as expression ->
+      | { Node.value = Expression.FormatString _; location } as expression ->
           Map.find ignore_line_map (Location.line location) >>| fun ignores -> expression, ignores
       | _ -> None
   end)

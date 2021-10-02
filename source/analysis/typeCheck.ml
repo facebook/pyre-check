@@ -3651,7 +3651,7 @@ module State (Context : Context) = struct
               forward_expression ~resolution ~expression
         in
         { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
-    | String { StringLiteral.kind = StringLiteral.Mixed substrings; _ } ->
+    | FormatString substrings ->
         let forward_substring ((resolution, errors) as sofar) = function
           | Substring.Literal _
           | Substring.RawFormat _ ->
