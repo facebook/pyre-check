@@ -332,15 +332,15 @@ let test_expand_format_string _ =
       (Preprocessing.expand_format_string (parse_untrimmed ~handle source))
   in
   assert_format_string "f'foo'" [Substring.Literal (+"foo")];
-  assert_format_string "f'{1}'" [Substring.Format (+Expression.Integer 1)];
+  assert_format_string "f'{1}'" [Substring.Format (+Expression.Constant (Constant.Integer 1))];
   assert_format_string
     "f'foo{1}'"
-    [Substring.Literal (+"foo"); Substring.Format (+Expression.Integer 1)];
+    [Substring.Literal (+"foo"); Substring.Format (+Expression.Constant (Constant.Integer 1))];
   assert_format_string
     "f'foo{1}' 'foo{2}'"
     [
       Substring.Literal (+"foo");
-      Substring.Format (+Expression.Integer 1);
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
       Substring.Literal (+"foo{2}");
     ];
 
@@ -349,22 +349,22 @@ let test_expand_format_string _ =
     [
       Substring.Literal (+"foo{1}");
       Substring.Literal (+"foo");
-      Substring.Format (+Expression.Integer 2);
+      Substring.Format (+Expression.Constant (Constant.Integer 2));
     ];
   assert_format_string
     "f'foo{1}' f'foo{2}'"
     [
       Substring.Literal (+"foo");
-      Substring.Format (+Expression.Integer 1);
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
       Substring.Literal (+"foo");
-      Substring.Format (+Expression.Integer 2);
+      Substring.Format (+Expression.Constant (Constant.Integer 2));
     ];
   assert_format_string
     "f'foo{1}{2}foo'"
     [
       Substring.Literal (+"foo");
-      Substring.Format (+Expression.Integer 1);
-      Substring.Format (+Expression.Integer 2);
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
+      Substring.Format (+Expression.Constant (Constant.Integer 2));
       Substring.Literal (+"foo");
     ];
   assert_format_string "f'foo{{1}}'" [Substring.Literal (+"foo"); Substring.Literal (+"{{1}}")];
@@ -373,7 +373,7 @@ let test_expand_format_string _ =
     [
       Substring.Literal (+"foo");
       Substring.Literal (+"{{ ");
-      Substring.Format (+Expression.Integer 1);
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
       Substring.Literal (+" }}");
     ];
   assert_format_string
@@ -381,7 +381,7 @@ let test_expand_format_string _ =
     [
       Substring.Literal (+"foo");
       Substring.Literal (+"{{");
-      Substring.Format (+Expression.Integer 1);
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
       Substring.Literal (+" }}");
     ];
   assert_format_string
@@ -389,7 +389,7 @@ let test_expand_format_string _ =
     [
       Substring.Literal (+"foo");
       Substring.Literal (+"{{ ");
-      Substring.Format (+Expression.Integer 1);
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
       Substring.Literal (+"}}");
     ];
   assert_format_string
@@ -397,7 +397,7 @@ let test_expand_format_string _ =
     [
       Substring.Literal (+"foo");
       Substring.Literal (+"{{");
-      Substring.Format (+Expression.Integer 1);
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
       Substring.Literal (+"}}");
     ];
   assert_format_string "f'foo{{'" [Substring.Literal (+"foo"); Substring.Literal (+"{{")];
@@ -412,8 +412,13 @@ let test_expand_format_string _ =
               callee =
                 +Expression.Name
                    (Name.Attribute
-                      { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-              arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                      {
+                        base = +Expression.Constant (Constant.Integer 1);
+                        attribute = "__add__";
+                        special = true;
+                      });
+              arguments =
+                [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
             });
     ];
 
@@ -455,7 +460,8 @@ let test_expand_format_string _ =
               (Expression.FormatString
                  [
                    Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
-                   Substring.Format (node ~start:(1, 6) ~stop:(1, 7) (Expression.Integer 1));
+                   Substring.Format
+                     (node ~start:(1, 6) ~stop:(1, 7) (Expression.Constant (Constant.Integer 1)));
                  ])));
     ];
   assert_locations
@@ -471,9 +477,14 @@ let test_expand_format_string _ =
               (Expression.FormatString
                  [
                    Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
-                   Substring.Format (node ~start:(1, 6) ~stop:(1, 9) (Expression.Integer 123));
+                   Substring.Format
+                     (node ~start:(1, 6) ~stop:(1, 9) (Expression.Constant (Constant.Integer 123)));
                    Substring.Literal (node ~start:(1, 10) ~stop:(1, 11) "a");
-                   Substring.Format (node ~start:(1, 12) ~stop:(1, 15) (Expression.Integer 456));
+                   Substring.Format
+                     (node
+                        ~start:(1, 12)
+                        ~stop:(1, 15)
+                        (Expression.Constant (Constant.Integer 456)));
                  ])));
     ];
   assert_locations
@@ -494,10 +505,16 @@ let test_expand_format_string _ =
                        [
                          Substring.Literal (node ~start:(1, 9) ~stop:(1, 12) "foo");
                          Substring.Format
-                           (node ~start:(1, 13) ~stop:(1, 16) (Expression.Integer 123));
+                           (node
+                              ~start:(1, 13)
+                              ~stop:(1, 16)
+                              (Expression.Constant (Constant.Integer 123)));
                          Substring.Literal (node ~start:(1, 17) ~stop:(1, 18) "a");
                          Substring.Format
-                           (node ~start:(1, 19) ~stop:(1, 22) (Expression.Integer 456));
+                           (node
+                              ~start:(1, 19)
+                              ~stop:(1, 22)
+                              (Expression.Constant (Constant.Integer 456)));
                        ]));
            });
     ];
@@ -519,11 +536,17 @@ let test_expand_format_string _ =
               (Expression.FormatString
                  [
                    Substring.Literal (node ~start:(2, 4) ~stop:(3, 3) "\nfoo");
-                   Substring.Format (node ~start:(3, 4) ~stop:(3, 7) (Expression.Integer 123));
+                   Substring.Format
+                     (node ~start:(3, 4) ~stop:(3, 7) (Expression.Constant (Constant.Integer 123)));
                    Substring.Literal (node ~start:(3, 8) ~stop:(3, 9) "a");
-                   Substring.Format (node ~start:(3, 10) ~stop:(3, 13) (Expression.Integer 456));
+                   Substring.Format
+                     (node
+                        ~start:(3, 10)
+                        ~stop:(3, 13)
+                        (Expression.Constant (Constant.Integer 456)));
                    Substring.Literal (node ~start:(3, 14) ~stop:(4, 1) "\nb");
-                   Substring.Format (node ~start:(4, 2) ~stop:(4, 5) (Expression.Integer 789));
+                   Substring.Format
+                     (node ~start:(4, 2) ~stop:(4, 5) (Expression.Constant (Constant.Integer 789)));
                    Substring.Literal (node ~start:(4, 6) ~stop:(5, 1) "\n");
                  ])));
     ]
@@ -2857,7 +2880,7 @@ let test_defines _ =
         };
       captures = [];
       unbound_names = [];
-      body = [+Statement.Expression (+Expression.Float 1.0)];
+      body = [+Statement.Expression (+Expression.Constant (Constant.Float 1.0))];
     }
   in
   let create_toplevel body =
@@ -2913,7 +2936,7 @@ let test_defines _ =
         };
       captures = [];
       unbound_names = [];
-      body = [+Statement.Expression (+Expression.Float 1.0)];
+      body = [+Statement.Expression (+Expression.Constant (Constant.Float 1.0))];
     }
   in
   let define =
@@ -2931,12 +2954,17 @@ let test_defines _ =
         };
       captures = [];
       unbound_names = [];
-      body = [+Statement.Expression (+Expression.Float 1.0); +Statement.Define inner];
+      body =
+        [+Statement.Expression (+Expression.Constant (Constant.Float 1.0)); +Statement.Define inner];
     }
   in
   assert_defines [+Statement.Define define] [create_toplevel [+Statement.Define define]; define];
   let if_define =
-    { If.test = +Expression.Ellipsis; body = [+Statement.Define define]; orelse = [] }
+    {
+      If.test = +Expression.Constant Constant.Ellipsis;
+      body = [+Statement.Define define];
+      orelse = [];
+    }
   in
   assert_defines [+Statement.If if_define] [create_toplevel [+Statement.If if_define]];
 
@@ -3702,13 +3730,13 @@ let test_populate_nesting_define _ =
                     unbound_names = [];
                     body =
                       [
-                        +Statement.Expression (+Expression.Integer 1);
-                        +Statement.Expression (+Expression.Integer 2);
+                        +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                        +Statement.Expression (+Expression.Constant (Constant.Integer 2));
                       ];
                   };
              ];
          };
-      +Statement.Expression (+Expression.Integer 3);
+      +Statement.Expression (+Expression.Constant (Constant.Integer 3));
     ];
 
   assert_populated
@@ -3868,7 +3896,7 @@ let test_populate_nesting_define _ =
              [
                +Statement.If
                   {
-                    If.test = +Expression.True;
+                    If.test = +Expression.Constant Constant.True;
                     body =
                       [
                         +Statement.Define
@@ -3943,7 +3971,7 @@ let test_populate_nesting_define _ =
              [
                +Statement.While
                   {
-                    While.test = +Expression.True;
+                    While.test = +Expression.Constant Constant.True;
                     body =
                       [
                         +Statement.Define
@@ -4015,7 +4043,7 @@ let test_populate_nesting_define _ =
              [
                +Statement.With
                   {
-                    With.items = [+Expression.True, None];
+                    With.items = [+Expression.Constant Constant.True, None];
                     async = false;
                     body =
                       [
@@ -4348,7 +4376,9 @@ let test_populate_captures _ =
                      (Expression.Tuple
                         [
                           value_annotation;
-                          Node.create ~location:(location start stop) Expression.Ellipsis;
+                          Node.create
+                            ~location:(location start stop)
+                            (Expression.Constant Constant.Ellipsis);
                         ]);
                };
              ];

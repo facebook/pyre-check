@@ -54,7 +54,8 @@ let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } a
           SimpleAssign { value = { Node.value = Expression.(List names | Tuple names); _ }; _ };
       } ->
         let to_identifier = function
-          | { Node.value = Expression.String { value = name; _ }; _ } -> Some name
+          | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
+              Some name
           | _ -> None
         in
         Some (List.filter_map ~f:to_identifier names)

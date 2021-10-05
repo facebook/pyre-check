@@ -92,7 +92,7 @@ let transform_string_annotation_expression ~relative =
               arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
             }
       | List elements -> List (List.map elements ~f:transform_expression)
-      | String { StringLiteral.value = string_value; _ } -> (
+      | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
           (* Start at column + 1 since parsing begins after the opening quote of the string literal. *)
           match
             Parser.parse
@@ -178,8 +178,10 @@ let transform_annotations ~transform_annotation_expression source =
     let expression _ expression =
       let transform_arguments = function
         | [
-            ({ Call.Argument.name = None; value = { Node.value = String _; _ } as value } as
-            type_argument);
+            ({
+               Call.Argument.name = None;
+               value = { Node.value = Constant (Constant.String _); _ } as value;
+             } as type_argument);
             value_argument;
           ] ->
             let annotation = transform_annotation_expression value in
@@ -596,7 +598,7 @@ let qualify
       let local_alias ~qualifier ~name = { name; qualifier; is_forward_reference = false } in
       let qualify_assign { Assign.target; annotation; value; parent } =
         let qualify_value ~qualify_potential_alias_strings ~scope = function
-          | { Node.value = Expression.String _; _ } ->
+          | { Node.value = Expression.Constant (Constant.String _); _ } ->
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:qualify_potential_alias_strings value ~scope
           | {
@@ -1226,7 +1228,7 @@ let qualify
                 Substring.Format (qualify_expression ~qualify_strings ~scope expression)
           in
           FormatString (List.map substrings ~f:qualify_substring)
-      | String { StringLiteral.value; kind } -> (
+      | Constant (Constant.String { StringLiteral.value; kind }) -> (
           let error_on_qualification_failure =
             match qualify_strings with
             | Qualify -> true
@@ -1239,7 +1241,8 @@ let qualify
               | Ok [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~qualify_strings ~scope expression
                   |> Expression.show
-                  |> fun value -> Expression.String { StringLiteral.value; kind }
+                  |> fun value ->
+                  Expression.Constant (Constant.String { StringLiteral.value; kind })
               | Ok _
               | Error _
                 when error_on_qualification_failure ->
@@ -1249,9 +1252,9 @@ let qualify
                     relative
                     Location.pp
                     location;
-                  String { StringLiteral.value; kind }
-              | _ -> String { StringLiteral.value; kind })
-          | DoNotQualify -> String { StringLiteral.value; kind })
+                  Constant (Constant.String { StringLiteral.value; kind })
+              | _ -> Constant (Constant.String { StringLiteral.value; kind }))
+          | DoNotQualify -> Constant (Constant.String { StringLiteral.value; kind }))
       | Ternary { Ternary.target; test; alternative } ->
           Ternary
             {
@@ -1273,14 +1276,7 @@ let qualify
           Yield (Some (qualify_expression ~qualify_strings ~scope expression))
       | Yield None -> Yield None
       | YieldFrom expression -> YieldFrom (qualify_expression ~qualify_strings ~scope expression)
-      | Complex _
-      | Ellipsis
-      | False
-      | Float _
-      | NoneLiteral
-      | Integer _
-      | True ->
-          value
+      | Constant _ -> value
     in
     { expression with Node.value }
   and qualify_decorator ~qualify_strings ~scope { Decorator.name; arguments } =
@@ -1479,8 +1475,11 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 match index, argument with
                 | None, _ -> true
                 | ( Some expected_index,
-                    { Call.Argument.value = { Node.value = Expression.Integer actual_index; _ }; _ }
-                  )
+                    {
+                      Call.Argument.value =
+                        { Node.value = Expression.Constant (Constant.Integer actual_index); _ };
+                      _;
+                    } )
                   when Int.equal expected_index actual_index ->
                     true
                 | _ -> false)
@@ -1494,9 +1493,20 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ }
-                      :: { Node.value = Expression.Integer given_minor_version; _ }
-                         :: { Node.value = Expression.Integer given_micro_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_minor_version);
+                           _;
+                         }
+                         :: {
+                              Node.value =
+                                Expression.Constant (Constant.Integer given_micro_version);
+                              _;
+                            }
+                            :: _);
                   _;
                 } )
             when is_system_version_expression left ->
@@ -1511,8 +1521,15 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ }
-                      :: { Node.value = Expression.Integer given_minor_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_minor_version);
+                           _;
+                         }
+                         :: _);
                   _;
                 } )
             when is_system_version_expression left ->
@@ -1527,27 +1544,49 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: _);
                   _;
                 } )
             when is_system_version_expression left ->
               evaluate_one_version ~operator major_version given_major_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_major_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_major_version); _ } )
             when is_system_version_tuple_access_expression ~index:0 left ->
               evaluate_one_version ~operator major_version given_major_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_minor_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ } )
             when is_system_version_tuple_access_expression ~index:1 left ->
               evaluate_one_version ~operator minor_version given_minor_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_micro_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ } )
             when is_system_version_tuple_access_expression ~index:2 left ->
               evaluate_one_version ~operator micro_version given_micro_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_major_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_major_version); _ } )
             when is_system_version_attribute_access_expression ~attribute:"major" left ->
               evaluate_one_version ~operator major_version given_major_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_minor_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ } )
             when is_system_version_attribute_access_expression ~attribute:"minor" left ->
               evaluate_one_version ~operator minor_version given_minor_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_micro_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ } )
             when is_system_version_attribute_access_expression ~attribute:"micro" left ->
               evaluate_one_version ~operator micro_version given_micro_version |> do_replace
           | Some
@@ -1555,9 +1594,20 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ }
-                      :: { Node.value = Expression.Integer given_minor_version; _ }
-                         :: { Node.value = Expression.Integer given_micro_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_minor_version);
+                           _;
+                         }
+                         :: {
+                              Node.value =
+                                Expression.Constant (Constant.Integer given_micro_version);
+                              _;
+                            }
+                            :: _);
                   _;
                 },
                 right )
@@ -1572,8 +1622,15 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ }
-                      :: { Node.value = Expression.Integer given_minor_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_minor_version);
+                           _;
+                         }
+                         :: _);
                   _;
                 },
                 right )
@@ -1588,7 +1645,11 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: _);
                   _;
                 },
                 right )
@@ -1598,42 +1659,60 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 major_version
                 given_major_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_major_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_major_version); _ },
+                right )
             when is_system_version_tuple_access_expression ~index:0 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 major_version
                 given_major_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_minor_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ },
+                right )
             when is_system_version_tuple_access_expression ~index:1 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 minor_version
                 given_minor_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_micro_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ },
+                right )
             when is_system_version_tuple_access_expression ~index:2 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 micro_version
                 given_micro_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_major_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_major_version); _ },
+                right )
             when is_system_version_attribute_access_expression ~attribute:"major" right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 major_version
                 given_major_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_minor_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ },
+                right )
             when is_system_version_attribute_access_expression ~attribute:"minor" right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 minor_version
                 given_minor_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_micro_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ },
+                right )
             when is_system_version_attribute_access_expression ~attribute:"micro" right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
@@ -1665,7 +1744,7 @@ let replace_platform_specific_code source =
                 in
                 let is_win32 { Node.value; _ } =
                   match value with
-                  | String { StringLiteral.value = "win32"; _ } -> true
+                  | Constant (Constant.String { StringLiteral.value = "win32"; _ }) -> true
                   | _ -> false
                 in
                 (is_platform left && is_win32 right) or (is_platform right && is_win32 left)
@@ -1769,7 +1848,13 @@ let expand_implicit_returns source =
             in
             let loops_forever =
               match List.last define.Define.body with
-              | Some { Node.value = While { While.test = { Node.value = True; _ }; _ }; _ } -> true
+              | Some
+                  {
+                    Node.value =
+                      While { While.test = { Node.value = Constant Constant.True; _ }; _ };
+                    _;
+                  } ->
+                  true
               | _ -> false
             in
             if has_yield || has_return_in_finally || loops_forever then
@@ -1966,7 +2051,9 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                             Call.Argument.value =
                               {
                                 Node.value =
-                                  Expression.String { StringLiteral.kind = String; value = literal };
+                                  Expression.Constant
+                                    (Constant.String
+                                      { StringLiteral.kind = String; value = literal });
                                 _;
                               };
                             _;
@@ -2012,8 +2099,9 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                             Call.Argument.value =
                               {
                                 Node.value =
-                                  Expression.String
-                                    { StringLiteral.kind = String; value = from_literal };
+                                  Expression.Constant
+                                    (Constant.String
+                                      { StringLiteral.kind = String; value = from_literal });
                                 _;
                               };
                             _;
@@ -2022,8 +2110,9 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                             Call.Argument.value =
                               {
                                 Node.value =
-                                  Expression.String
-                                    { StringLiteral.kind = String; value = import_literal };
+                                  Expression.Constant
+                                    (Constant.String
+                                      { StringLiteral.kind = String; value = import_literal });
                                 _;
                               };
                             _;
@@ -2079,7 +2168,7 @@ let replace_mypy_extensions_stub
                          attribute = "_SpecialForm";
                          special = false;
                        })));
-          value = node Expression.Ellipsis;
+          value = node (Expression.Constant Constant.Ellipsis);
           parent = None;
         }
       |> node
@@ -2101,24 +2190,30 @@ let expand_typed_dictionary_declarations
   let expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
       let string_literal identifier =
-        Expression.String { value = identifier; kind = StringLiteral.String }
+        Expression.Constant (Constant.String { value = identifier; kind = StringLiteral.String })
         |> Node.create ~location
       in
       let extract_string_literal literal_expression =
         match Node.value literal_expression with
-        | Expression.String { StringLiteral.value; kind = StringLiteral.String } -> Some value
+        | Expression.Constant (Constant.String { StringLiteral.value; kind = StringLiteral.String })
+          ->
+            Some value
         | _ -> None
       in
       let typed_dictionary_class_declaration ~name ~fields ~total =
         match name with
-        | { Node.value = Expression.String { value = class_name; kind = StringLiteral.String }; _ }
-          ->
+        | {
+         Node.value =
+           Expression.Constant (Constant.String { value = class_name; kind = StringLiteral.String });
+         _;
+        } ->
             let class_reference = Reference.create class_name in
             let assignments =
               let assignment (key, value) =
                 match Node.value key with
-                | Expression.String
-                    { StringLiteral.value = attribute_name; kind = StringLiteral.String } ->
+                | Expression.Constant
+                    (Constant.String
+                      { StringLiteral.value = attribute_name; kind = StringLiteral.String }) ->
                     Some
                       (Statement.Assign
                          {
@@ -2132,7 +2227,7 @@ let expand_typed_dictionary_declarations
                                   })
                              |> Node.create ~location;
                            annotation = Some value;
-                           value = Node.create ~location Expression.Ellipsis;
+                           value = Node.create ~location (Expression.Constant Constant.Ellipsis);
                            parent = Some class_reference;
                          }
                       |> Node.create ~location)
@@ -2190,13 +2285,13 @@ let expand_typed_dictionary_declarations
         match base with
         | {
          Call.Argument.name = Some { value = total; _ };
-         value = { Node.value = Expression.True; _ };
+         value = { Node.value = Expression.Constant Constant.True; _ };
         }
           when is_total ~total ->
             Some true
         | {
          Call.Argument.name = Some { value = total; _ };
-         value = { Node.value = Expression.False; _ };
+         value = { Node.value = Expression.Constant Constant.False; _ };
         }
           when is_total ~total ->
             Some false
@@ -2387,7 +2482,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             | [
              _;
              {
-               Call.Argument.value = { value = String { StringLiteral.value = serialized; _ }; _ };
+               Call.Argument.value =
+                 { value = Constant (Constant.String { StringLiteral.value = serialized; _ }); _ };
                _;
              };
             ] ->
@@ -2397,10 +2493,16 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             | [_; { Call.Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
                 let get_name ({ Node.value; _ } as expression) =
                   match value with
-                  | Expression.String { StringLiteral.value = name; _ } ->
+                  | Expression.Constant (Constant.String { StringLiteral.value = name; _ }) ->
                       name, any_annotation, None
-                  | Tuple [{ Node.value = String { StringLiteral.value = name; _ }; _ }; annotation]
-                    ->
+                  | Tuple
+                      [
+                        {
+                          Node.value = Constant (Constant.String { StringLiteral.value = name; _ });
+                          _;
+                        };
+                        annotation;
+                      ] ->
                       name, annotation, None
                   | _ -> Expression.show expression, any_annotation, None
                 in
@@ -2420,7 +2522,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       let node = Node.create ~location in
       let value =
         attributes
-        |> List.map ~f:(fun (name, _, _) -> Expression.String (StringLiteral.create name) |> node)
+        |> List.map ~f:(fun (name, _, _) ->
+               Expression.Constant (Constant.String (StringLiteral.create name)) |> node)
         |> (fun parameters -> Expression.Tuple parameters)
         |> node
       in
@@ -2478,7 +2581,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             {
               Assign.target;
               annotation = Some annotation;
-              value = Node.create Expression.Ellipsis ~location;
+              value = Node.create (Expression.Constant Constant.Ellipsis) ~location;
               parent = Some parent;
             }
           |> Node.create ~location
@@ -2495,7 +2598,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
         let to_parameter (name, annotation, value) =
           let value =
             match value with
-            | Some { Node.value = Expression.Ellipsis; _ } -> None
+            | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } -> None
             | _ -> value
           in
           Parameter.create ?value ~location ~annotation ~name:("$parameter$" ^ name) ()
@@ -2518,7 +2621,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               Parameter.create ~location ~name:"$parameter$cls" () )
           else
             ( "__init__",
-              Node.create ~location Expression.NoneLiteral,
+              Node.create ~location (Expression.Constant Constant.NoneLiteral),
               Parameter.create ~location ~name:"$parameter$self" () )
         in
         let assignments =
@@ -2526,7 +2629,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             [
               Node.create
                 ~location
-                (Statement.Expression (Node.create ~location Expression.Ellipsis));
+                (Statement.Expression
+                   (Node.create ~location (Expression.Constant Constant.Ellipsis)));
             ]
           else
             let to_assignment { Node.value = { Parameter.name; _ }; _ } =
@@ -2733,7 +2837,8 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                           {
                             Call.Argument.value =
                               {
-                                Node.value = String { StringLiteral.value = name; _ };
+                                Node.value =
+                                  Constant (Constant.String { StringLiteral.value = name; _ });
                                 location = name_location;
                               };
                             _;
@@ -2762,7 +2867,8 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                         Parameter.create ~location ~annotation:base ~name:"input" ();
                       ];
                     decorators = [];
-                    return_annotation = Some (Node.create ~location Expression.NoneLiteral);
+                    return_annotation =
+                      Some (Node.create ~location (Expression.Constant Constant.NoneLiteral));
                     async = false;
                     generator = false;
                     parent = Some name;
@@ -2968,15 +3074,7 @@ module AccessCollector = struct
     | Yield expression ->
         Option.value_map expression ~default:collected ~f:(from_expression collected)
     | YieldFrom expression -> from_expression collected expression
-    | String _
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
-    | NoneLiteral
-    | True ->
-        collected
+    | Constant _ -> collected
 
 
   (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
@@ -3265,7 +3363,10 @@ let populate_captures ({ Source.statements; _ } as source) =
                                           Expression.Tuple
                                             [
                                               value_annotation;
-                                              { Node.location; value = Expression.Ellipsis };
+                                              {
+                                                Node.location;
+                                                value = Expression.Constant Constant.Ellipsis;
+                                              };
                                             ];
                                       };
                                   };
@@ -3964,7 +4065,11 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                       [
                         {
                           Call.Argument.value =
-                            { Node.value = Expression.String { value = from_name; _ }; _ };
+                            {
+                              Node.value =
+                                Expression.Constant (Constant.String { value = from_name; _ });
+                              _;
+                            };
                           _;
                         };
                       ];
@@ -3998,7 +4103,11 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                     arguments =
                       {
                         Call.Argument.value =
-                          { Node.value = Expression.String { value = from_name; _ }; _ };
+                          {
+                            Node.value =
+                              Expression.Constant (Constant.String { value = from_name; _ });
+                            _;
+                          };
                         _;
                       }
                       :: imports;
@@ -4009,7 +4118,7 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
               let imports =
                 List.filter_map imports ~f:(fun { Call.Argument.value; _ } ->
                     match Node.value value with
-                    | Expression.String { value = name; _ } ->
+                    | Expression.Constant (Constant.String { value = name; _ }) ->
                         Some
                           {
                             Node.value = { Import.alias = None; name = Reference.create name };
@@ -4050,7 +4159,12 @@ let expand_pytorch_register_buffer source =
                   arguments =
                     {
                       name = None;
-                      value = { Node.value = String { value = attribute_name; kind = String }; _ };
+                      value =
+                        {
+                          Node.value =
+                            Constant (Constant.String { value = attribute_name; kind = String });
+                          _;
+                        };
                     }
                     :: { value = initial_value; _ }
                        :: ([] | [{ name = Some { Node.value = "$parameter$persistent"; _ }; _ }]);

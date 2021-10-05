@@ -28,8 +28,12 @@ let assert_parsed_equal source statements =
 
 
 let test_lexer _ =
-  assert_parsed_equal "1 # comment" [+Statement.Expression (+Expression.Integer 1)];
-  assert_parsed_equal "# comment\n1" [+Statement.Expression (+Expression.Integer 1)];
+  assert_parsed_equal
+    "1 # comment"
+    [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+  assert_parsed_equal
+    "# comment\n1"
+    [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
   assert_parsed_equal
     "if a:\n\tb # comment\n"
     [+Statement.If { If.test = !"a"; body = [+Statement.Expression !"b"]; orelse = [] }];
@@ -76,7 +80,7 @@ let test_lexer _ =
                  +Expression.Name
                     (Name.Attribute { base = !"a"; attribute = "print"; special = false });
                operator = ComparisonOperator.Equals;
-               right = +Expression.Integer 1;
+               right = +Expression.Constant (Constant.Integer 1);
              });
     ];
   assert_parsed_equal
@@ -124,8 +128,13 @@ let test_lexer _ =
                callee =
                  +Expression.Name
                     (Name.Attribute
-                       { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                       {
+                         base = +Expression.Constant (Constant.Integer 1);
+                         attribute = "__add__";
+                         special = true;
+                       });
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
              });
     ];
   assert_parsed_equal
@@ -137,8 +146,13 @@ let test_lexer _ =
                callee =
                  +Expression.Name
                     (Name.Attribute
-                       { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                       {
+                         base = +Expression.Constant (Constant.Integer 1);
+                         attribute = "__add__";
+                         special = true;
+                       });
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
              });
     ];
   assert_parsed_equal
@@ -150,8 +164,13 @@ let test_lexer _ =
                callee =
                  +Expression.Name
                     (Name.Attribute
-                       { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                       {
+                         base = +Expression.Constant (Constant.Integer 1);
+                         attribute = "__add__";
+                         special = true;
+                       });
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
              });
     ];
   assert_parsed_equal
@@ -163,40 +182,53 @@ let test_lexer _ =
                callee =
                  +Expression.Name
                     (Name.Attribute
-                       { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                       {
+                         base = +Expression.Constant (Constant.Integer 1);
+                         attribute = "__add__";
+                         special = true;
+                       });
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
              });
-      +Statement.Expression (+Expression.Integer 3);
+      +Statement.Expression (+Expression.Constant (Constant.Integer 3));
     ]
 
 
 let test_number _ =
-  assert_parsed_equal "1" [+Statement.Expression (+Expression.Integer 1)];
-  assert_parsed_equal "0" [+Statement.Expression (+Expression.Integer 0)];
-  assert_parsed_equal "00" [+Statement.Expression (+Expression.Integer 0)];
-  assert_parsed_equal "00_0" [+Statement.Expression (+Expression.Integer 0)];
-  assert_parsed_equal "01" [+Statement.Expression (+Expression.Integer 1)];
-  assert_parsed_equal "1_01" [+Statement.Expression (+Expression.Integer 101)];
-  assert_parsed_equal "(1)" [+Statement.Expression (+Expression.Integer 1)];
-  assert_parsed_equal "((1))" [+Statement.Expression (+Expression.Integer 1)];
-  assert_parsed_equal "1;" [+Statement.Expression (+Expression.Integer 1)];
-  assert_parsed_equal "1.0" [+Statement.Expression (+Expression.Float 1.0)];
-  assert_parsed_equal "1_0.1_01" [+Statement.Expression (+Expression.Float 10.101)];
-  assert_parsed_equal ".1" [+Statement.Expression (+Expression.Float 0.1)];
-  assert_parsed_equal "1." [+Statement.Expression (+Expression.Float 1.0)];
-  assert_parsed_equal "1e10" [+Statement.Expression (+Expression.Float 1e10)];
-  assert_parsed_equal "0x1" [+Statement.Expression (+Expression.Integer 0x1)];
-  assert_parsed_equal "0XaBc" [+Statement.Expression (+Expression.Integer 0xABC)];
-  assert_parsed_equal "0o13" [+Statement.Expression (+Expression.Integer 0o13)];
-  assert_parsed_equal "0b01" [+Statement.Expression (+Expression.Integer 0b01)];
-  assert_parsed_equal "0b0_1" [+Statement.Expression (+Expression.Integer 0b01)];
-  assert_parsed_equal "0b_0_1" [+Statement.Expression (+Expression.Integer 0b01)];
-  assert_parsed_equal "0.1j" [+Statement.Expression (+Expression.Complex 0.1)];
-  assert_parsed_equal "1e10j" [+Statement.Expression (+Expression.Complex 1e10)];
-  assert_parsed_equal "1e1_0j" [+Statement.Expression (+Expression.Complex 1e10)];
-  assert_parsed_equal "2j" [+Statement.Expression (+Expression.Complex 2.0)];
-  assert_parsed_equal "2J" [+Statement.Expression (+Expression.Complex 2.0)];
-  assert_parsed_equal "1L" [+Statement.Expression (+Expression.Integer 1)];
+  assert_parsed_equal "1" [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+  assert_parsed_equal "0" [+Statement.Expression (+Expression.Constant (Constant.Integer 0))];
+  assert_parsed_equal "00" [+Statement.Expression (+Expression.Constant (Constant.Integer 0))];
+  assert_parsed_equal "00_0" [+Statement.Expression (+Expression.Constant (Constant.Integer 0))];
+  assert_parsed_equal "01" [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+  assert_parsed_equal "1_01" [+Statement.Expression (+Expression.Constant (Constant.Integer 101))];
+  assert_parsed_equal "(1)" [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+  assert_parsed_equal "((1))" [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+  assert_parsed_equal "1;" [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+  assert_parsed_equal "1.0" [+Statement.Expression (+Expression.Constant (Constant.Float 1.0))];
+  assert_parsed_equal
+    "1_0.1_01"
+    [+Statement.Expression (+Expression.Constant (Constant.Float 10.101))];
+  assert_parsed_equal ".1" [+Statement.Expression (+Expression.Constant (Constant.Float 0.1))];
+  assert_parsed_equal "1." [+Statement.Expression (+Expression.Constant (Constant.Float 1.0))];
+  assert_parsed_equal "1e10" [+Statement.Expression (+Expression.Constant (Constant.Float 1e10))];
+  assert_parsed_equal "0x1" [+Statement.Expression (+Expression.Constant (Constant.Integer 0x1))];
+  assert_parsed_equal
+    "0XaBc"
+    [+Statement.Expression (+Expression.Constant (Constant.Integer 0xABC))];
+  assert_parsed_equal "0o13" [+Statement.Expression (+Expression.Constant (Constant.Integer 0o13))];
+  assert_parsed_equal "0b01" [+Statement.Expression (+Expression.Constant (Constant.Integer 0b01))];
+  assert_parsed_equal "0b0_1" [+Statement.Expression (+Expression.Constant (Constant.Integer 0b01))];
+  assert_parsed_equal
+    "0b_0_1"
+    [+Statement.Expression (+Expression.Constant (Constant.Integer 0b01))];
+  assert_parsed_equal "0.1j" [+Statement.Expression (+Expression.Constant (Constant.Complex 0.1))];
+  assert_parsed_equal "1e10j" [+Statement.Expression (+Expression.Constant (Constant.Complex 1e10))];
+  assert_parsed_equal
+    "1e1_0j"
+    [+Statement.Expression (+Expression.Constant (Constant.Complex 1e10))];
+  assert_parsed_equal "2j" [+Statement.Expression (+Expression.(Constant (Constant.Complex 2.0)))];
+  assert_parsed_equal "2J" [+Statement.Expression (+Expression.(Constant (Constant.Complex 2.0)))];
+  assert_parsed_equal "1L" [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
   assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "0xZ");
   assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "0_1");
   assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "0o9");
@@ -205,11 +237,13 @@ let test_number _ =
   (* Overflow. *)
   assert_parsed_equal
     "0xffffffffff0000000000000000000000"
-    [+Statement.Expression (+Expression.Integer Int.max_value)]
+    [+Statement.Expression (+Expression.Constant (Constant.Integer Int.max_value))]
 
 
 let test_await _ =
-  assert_parsed_equal "await 1" [+Statement.Expression (+Expression.Await (+Expression.Integer 1))];
+  assert_parsed_equal
+    "await 1"
+    [+Statement.Expression (+Expression.Await (+Expression.Constant (Constant.Integer 1)))];
   assert_parsed_equal
     "await foo() + 1"
     [
@@ -225,7 +259,8 @@ let test_await _ =
                          attribute = "__add__";
                          special = true;
                        });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) }];
              });
     ];
   assert_parsed_equal
@@ -243,7 +278,8 @@ let test_await _ =
                          attribute = "__mul__";
                          special = true;
                        });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
              });
     ]
 
@@ -270,7 +306,12 @@ let test_name _ =
     [
       +Statement.Expression
          (+Expression.Name
-             (Name.Attribute { base = +Expression.Float 1.0; attribute = "b"; special = false }));
+             (Name.Attribute
+                {
+                  base = +Expression.Constant (Constant.Float 1.0);
+                  attribute = "b";
+                  special = false;
+                }));
     ];
   assert_parsed_equal
     "a.b.c"
@@ -295,7 +336,8 @@ let test_name _ =
                callee =
                  +Expression.Name
                     (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) }];
              });
     ];
   assert_parsed_equal
@@ -307,7 +349,8 @@ let test_name _ =
                callee =
                  +Expression.Name
                     (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = false });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) }];
              });
     ];
   assert_parsed_equal
@@ -326,9 +369,9 @@ let test_name _ =
                      value =
                        +Expression.ComparisonOperator
                           {
-                            ComparisonOperator.left = +Expression.Integer 1;
+                            ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                             operator = ComparisonOperator.LessThan;
-                            right = +Expression.Integer 2;
+                            right = +Expression.Constant (Constant.Integer 2);
                           };
                    };
                  ];
@@ -348,7 +391,13 @@ let test_name _ =
                            +Expression.Name
                               (Name.Attribute
                                  { base = !"a"; attribute = "__getitem__"; special = true });
-                         arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                           ];
                        };
                   attribute = "b";
                   special = false;
@@ -385,9 +434,18 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
                               ];
                           };
                    };
@@ -413,9 +471,18 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant (Constant.Integer 1);
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
                               ];
                           };
                    };
@@ -441,9 +508,18 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
-                                { Call.Argument.name = None; value = +Expression.Integer 2 };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant (Constant.Integer 2);
+                                };
                               ];
                           };
                    };
@@ -469,9 +545,18 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
-                                { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant (Constant.Integer 1);
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
                               ];
                           };
                    };
@@ -497,18 +582,24 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
                                 {
                                   Call.Argument.name = None;
                                   value =
                                     +Expression.Ternary
                                        {
-                                         Ternary.target = +Expression.Integer 1;
-                                         test = +Expression.True;
-                                         alternative = +Expression.Integer 2;
+                                         Ternary.target = +Expression.Constant (Constant.Integer 1);
+                                         test = +Expression.Constant Constant.True;
+                                         alternative = +Expression.Constant (Constant.Integer 2);
                                        };
                                 };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
                               ];
                           };
                    };
@@ -534,9 +625,18 @@ let test_name _ =
                             callee = !"slice";
                             arguments =
                               [
-                                { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant (Constant.Integer 1);
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant (Constant.Integer 1);
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
                               ];
                           };
                    };
@@ -556,7 +656,12 @@ let test_name _ =
                  [
                    {
                      Call.Argument.name = None;
-                     value = +Expression.Tuple [+Expression.Integer 1; +Expression.Integer 2];
+                     value =
+                       +Expression.Tuple
+                          [
+                            +Expression.Constant (Constant.Integer 1);
+                            +Expression.Constant (Constant.Integer 2);
+                          ];
                    };
                  ];
              });
@@ -582,12 +687,21 @@ let test_name _ =
                                  callee = !"slice";
                                  arguments =
                                    [
-                                     { Call.Argument.name = None; value = +Expression.NoneLiteral };
-                                     { Call.Argument.name = None; value = +Expression.Integer 1 };
-                                     { Call.Argument.name = None; value = +Expression.NoneLiteral };
+                                     {
+                                       Call.Argument.name = None;
+                                       value = +Expression.Constant Constant.NoneLiteral;
+                                     };
+                                     {
+                                       Call.Argument.name = None;
+                                       value = +Expression.Constant (Constant.Integer 1);
+                                     };
+                                     {
+                                       Call.Argument.name = None;
+                                       value = +Expression.Constant Constant.NoneLiteral;
+                                     };
                                    ];
                                };
-                            +Expression.Integer 2;
+                            +Expression.Constant (Constant.Integer 2);
                           ];
                    };
                  ];
@@ -606,16 +720,22 @@ let test_starred _ =
 let test_compound _ =
   assert_parsed_equal
     "1.0\n2"
-    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Integer 2)];
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+    ];
   assert_parsed_equal
     "1.0;2"
-    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Integer 2)];
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+    ];
   assert_parsed_equal
     "\n1.0\n2\n3"
     [
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Integer 2);
-      +Statement.Expression (+Expression.Integer 3);
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+      +Statement.Expression (+Expression.Constant (Constant.Integer 3));
     ]
 
 
@@ -642,7 +762,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -667,7 +787,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -693,7 +813,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -714,7 +834,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -735,7 +855,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -756,7 +876,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Ellipsis)];
+           body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
          };
     ];
   assert_parsed_equal
@@ -777,7 +897,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -798,7 +918,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -828,7 +948,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -849,7 +969,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -874,7 +994,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -887,7 +1007,11 @@ let test_define _ =
                name = + !&"foo";
                parameters =
                  [
-                   +{ Parameter.name = "a"; value = Some (+Expression.Integer 1); annotation = None };
+                   +{
+                      Parameter.name = "a";
+                      value = Some (+Expression.Constant (Constant.Integer 1));
+                      annotation = None;
+                    };
                    +{ Parameter.name = "b"; value = None; annotation = None };
                  ];
                decorators = [];
@@ -899,7 +1023,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -921,7 +1045,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -944,8 +1068,8 @@ let test_define _ =
            unbound_names = [];
            body =
              [
-               +Statement.Expression (+Expression.Integer 1);
-               +Statement.Expression (+Expression.Integer 2);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 2));
              ];
          };
     ];
@@ -969,11 +1093,11 @@ let test_define _ =
            unbound_names = [];
            body =
              [
-               +Statement.Expression (+Expression.Integer 1);
-               +Statement.Expression (+Expression.Integer 2);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 2));
              ];
          };
-      +Statement.Expression (+Expression.Integer 3);
+      +Statement.Expression (+Expression.Constant (Constant.Integer 3));
     ];
   assert_parsed_equal
     "def foo():\n  def bar():\n    1\n    2\n3"
@@ -1012,13 +1136,13 @@ let test_define _ =
                     unbound_names = [];
                     body =
                       [
-                        +Statement.Expression (+Expression.Integer 1);
-                        +Statement.Expression (+Expression.Integer 2);
+                        +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                        +Statement.Expression (+Expression.Constant (Constant.Integer 2));
                       ];
                   };
              ];
          };
-      +Statement.Expression (+Expression.Integer 3);
+      +Statement.Expression (+Expression.Constant (Constant.Integer 3));
     ];
   assert_parsed_equal
     "def foo(a: int):  1"
@@ -1038,7 +1162,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -1053,7 +1177,7 @@ let test_define _ =
                  [
                    +{
                       Parameter.name = "a";
-                      value = Some (+Expression.Integer 1);
+                      value = Some (+Expression.Constant (Constant.Integer 1));
                       annotation = Some !"int";
                     };
                  ];
@@ -1066,7 +1190,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -1091,7 +1215,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -1138,7 +1262,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -1163,7 +1287,7 @@ let test_define _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
          };
     ];
   assert_parsed_equal
@@ -1186,8 +1310,8 @@ let test_define _ =
            unbound_names = [];
            body =
              [
-               +Statement.Expression (+Expression.Integer 1);
-               +Statement.Expression (+Expression.Integer 2);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 2));
              ];
          };
     ];
@@ -1206,7 +1330,8 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "int"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                async = false;
                generator = false;
                parent = None;
@@ -1217,7 +1342,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1236,7 +1364,8 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "int"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                async = false;
                generator = false;
                parent = None;
@@ -1247,7 +1376,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1266,7 +1398,8 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "int"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                async = false;
                generator = false;
                parent = None;
@@ -1277,7 +1410,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1295,7 +1431,8 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1306,7 +1443,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1323,7 +1463,8 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1334,7 +1475,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1351,7 +1495,8 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1362,7 +1507,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1383,11 +1531,13 @@ let test_define _ =
                    +{
                       Parameter.name = "*args";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "str"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1398,7 +1548,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1419,11 +1572,13 @@ let test_define _ =
                    +{
                       Parameter.name = "**kwargs";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "str"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1434,7 +1589,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1455,16 +1613,19 @@ let test_define _ =
                    +{
                       Parameter.name = "*args";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "str"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                     };
                    +{
                       Parameter.name = "**kwargs";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "str"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1475,7 +1636,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1497,11 +1661,13 @@ let test_define _ =
                    +{
                       Parameter.name = "a";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "str"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1512,7 +1678,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1532,11 +1701,13 @@ let test_define _ =
                    +{
                       Parameter.name = "a";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "str"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1547,7 +1718,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1566,7 +1740,8 @@ let test_define _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1577,7 +1752,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1600,17 +1778,20 @@ let test_define _ =
                       value = None;
                       annotation =
                         Some
-                          (+Expression.String
-                              (StringLiteral.create "typing.Union[typing.List[int], str]"));
+                          (+Expression.Constant
+                              (Constant.String
+                                 (StringLiteral.create "typing.Union[typing.List[int], str]")));
                     };
                    +{
                       Parameter.name = "b";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "str"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1621,7 +1802,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1644,18 +1828,22 @@ let test_define _ =
                       value = None;
                       annotation =
                         Some
-                          (+Expression.String
-                              (StringLiteral.create "typing.Union[typing.List[int], str]"));
+                          (+Expression.Constant
+                              (Constant.String
+                                 (StringLiteral.create "typing.Union[typing.List[int], str]")));
                     };
                    +{
                       Parameter.name = "b";
                       value = None;
                       annotation =
-                        Some (+Expression.String (StringLiteral.create "typing.List[str]"));
+                        Some
+                          (+Expression.Constant
+                              (Constant.String (StringLiteral.create "typing.List[str]")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1666,7 +1854,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1690,18 +1881,22 @@ let test_define _ =
                       value = None;
                       annotation =
                         Some
-                          (+Expression.String
-                              (StringLiteral.create "typing.Union[typing.List[int], str]"));
+                          (+Expression.Constant
+                              (Constant.String
+                                 (StringLiteral.create "typing.Union[typing.List[int], str]")));
                     };
                    +{
                       Parameter.name = "b";
                       value = None;
                       annotation =
-                        Some (+Expression.String (StringLiteral.create "typing.List[str]"));
+                        Some
+                          (+Expression.Constant
+                              (Constant.String (StringLiteral.create "typing.List[str]")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1712,7 +1907,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1735,7 +1933,8 @@ let test_define _ =
                    +{ Parameter.name = "b"; value = None; annotation = None };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1746,7 +1945,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1765,7 +1967,8 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "List[str]"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "List[str]")));
                async = false;
                generator = false;
                parent = None;
@@ -1776,7 +1979,10 @@ let test_define _ =
            body =
              [
                +Statement.Return
-                  { Return.expression = Some (+Expression.Integer 4); is_implicit = false };
+                  {
+                    Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+                    is_implicit = false;
+                  };
              ];
          };
     ];
@@ -1802,16 +2008,19 @@ let test_define _ =
                    +{
                       Parameter.name = "a";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "bool"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "bool")));
                     };
                    +{
                       Parameter.name = "b";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "bool"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "bool")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "int"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                async = false;
                generator = false;
                parent = None;
@@ -1842,12 +2051,14 @@ let test_define _ =
                    +{
                       Parameter.name = "a";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "bool"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "bool")));
                     };
                    +{
                       Parameter.name = "b";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "bool"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "bool")));
                     };
                  ];
                decorators = [];
@@ -1882,7 +2093,8 @@ let test_define _ =
                    +{
                       Parameter.name = "a";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "bool"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "bool")));
                     };
                    +{ Parameter.name = "**kwargs"; value = None; annotation = None };
                  ];
@@ -1915,11 +2127,13 @@ let test_define _ =
                    +{
                       Parameter.name = "a";
                       value = None;
-                      annotation = Some (+Expression.String (StringLiteral.create "A_b.C"));
+                      annotation =
+                        Some (+Expression.Constant (Constant.String (StringLiteral.create "A_b.C")));
                     };
                  ];
                decorators = [];
-               return_annotation = Some (+Expression.String (StringLiteral.create "str"));
+               return_annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
                async = false;
                generator = false;
                parent = None;
@@ -1931,7 +2145,8 @@ let test_define _ =
              [
                +Statement.Return
                   {
-                    Return.expression = Some (+Expression.String (StringLiteral.create "hi"));
+                    Return.expression =
+                      Some (+Expression.Constant (Constant.String (StringLiteral.create "hi")));
                     is_implicit = false;
                   };
              ];
@@ -1961,7 +2176,8 @@ let test_define _ =
            body =
              [
                +Statement.Expression
-                  (+Expression.Yield (Some (+Expression.String (StringLiteral.create "A"))));
+                  (+Expression.Yield
+                      (Some (+Expression.Constant (Constant.String (StringLiteral.create "A")))));
              ];
          };
     ];
@@ -1969,17 +2185,17 @@ let test_define _ =
 
 
 let test_boolean_operator _ =
-  assert_parsed_equal "True" [+Statement.Expression (+Expression.True)];
-  assert_parsed_equal "False" [+Statement.Expression (+Expression.False)];
+  assert_parsed_equal "True" [+Statement.Expression (+Expression.Constant Constant.True)];
+  assert_parsed_equal "False" [+Statement.Expression (+Expression.Constant Constant.False)];
   assert_parsed_equal
     "True and False"
     [
       +Statement.Expression
          (+Expression.BooleanOperator
              {
-               BooleanOperator.left = +Expression.True;
+               BooleanOperator.left = +Expression.Constant Constant.True;
                operator = BooleanOperator.And;
-               right = +Expression.False;
+               right = +Expression.Constant Constant.False;
              });
     ];
   assert_parsed_equal
@@ -1988,9 +2204,9 @@ let test_boolean_operator _ =
       +Statement.Expression
          (+Expression.BooleanOperator
              {
-               BooleanOperator.left = +Expression.Integer 1;
+               BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
                operator = BooleanOperator.And;
-               right = +Expression.False;
+               right = +Expression.Constant Constant.False;
              });
     ];
   assert_parsed_equal
@@ -1999,9 +2215,9 @@ let test_boolean_operator _ =
       +Statement.Expression
          (+Expression.BooleanOperator
              {
-               BooleanOperator.left = +Expression.True;
+               BooleanOperator.left = +Expression.Constant Constant.True;
                operator = BooleanOperator.Or;
-               right = +Expression.Integer 1;
+               right = +Expression.Constant (Constant.Integer 1);
              });
     ];
   assert_parsed_equal
@@ -2013,12 +2229,12 @@ let test_boolean_operator _ =
                BooleanOperator.left =
                  +Expression.BooleanOperator
                     {
-                      BooleanOperator.left = +Expression.Integer 1;
+                      BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = BooleanOperator.And;
-                      right = +Expression.Integer 2;
+                      right = +Expression.Constant (Constant.Integer 2);
                     };
                operator = BooleanOperator.Or;
-               right = +Expression.Integer 3;
+               right = +Expression.Constant (Constant.Integer 3);
              });
     ]
 
@@ -2033,8 +2249,13 @@ let test_binary_operator _ =
                callee =
                  +Expression.Name
                     (Name.Attribute
-                       { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                       {
+                         base = +Expression.Constant (Constant.Integer 1);
+                         attribute = "__add__";
+                         special = true;
+                       });
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
              });
     ];
   assert_parsed_equal
@@ -2046,8 +2267,13 @@ let test_binary_operator _ =
                callee =
                  +Expression.Name
                     (Name.Attribute
-                       { base = +Expression.Integer 1; attribute = "__xor__"; special = true });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                       {
+                         base = +Expression.Constant (Constant.Integer 1);
+                         attribute = "__xor__";
+                         special = true;
+                       });
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
              });
     ];
   assert_parsed_equal
@@ -2059,8 +2285,13 @@ let test_binary_operator _ =
                callee =
                  +Expression.Name
                     (Name.Attribute
-                       { base = +Expression.Integer 1; attribute = "__floordiv__"; special = true });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                       {
+                         base = +Expression.Constant (Constant.Integer 1);
+                         attribute = "__floordiv__";
+                         special = true;
+                       });
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
              });
     ];
   assert_parsed_equal
@@ -2080,17 +2311,23 @@ let test_binary_operator _ =
                                   +Expression.Name
                                      (Name.Attribute
                                         {
-                                          base = +Expression.Integer 1;
+                                          base = +Expression.Constant (Constant.Integer 1);
                                           attribute = "__rshift__";
                                           special = true;
                                         });
                                 arguments =
-                                  [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                                  [
+                                    {
+                                      Call.Argument.name = None;
+                                      value = +Expression.Constant (Constant.Integer 2);
+                                    };
+                                  ];
                               };
                          attribute = "__rshift__";
                          special = true;
                        });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 3 }];
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 3) }];
              });
     ];
   assert_parsed_equal
@@ -2102,7 +2339,11 @@ let test_binary_operator _ =
                callee =
                  +Expression.Name
                     (Name.Attribute
-                       { base = +Expression.Integer 1; attribute = "__rshift__"; special = true });
+                       {
+                         base = +Expression.Constant (Constant.Integer 1);
+                         attribute = "__rshift__";
+                         special = true;
+                       });
                arguments =
                  [
                    {
@@ -2131,17 +2372,23 @@ let test_binary_operator _ =
                                   +Expression.Name
                                      (Name.Attribute
                                         {
-                                          base = +Expression.Integer 1;
+                                          base = +Expression.Constant (Constant.Integer 1);
                                           attribute = "__sub__";
                                           special = true;
                                         });
                                 arguments =
-                                  [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                                  [
+                                    {
+                                      Call.Argument.name = None;
+                                      value = +Expression.Constant (Constant.Integer 2);
+                                    };
+                                  ];
                               };
                          attribute = "__add__";
                          special = true;
                        });
-               arguments = [{ Call.Argument.name = None; value = +Expression.Integer 3 }];
+               arguments =
+                 [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 3) }];
              });
     ];
   assert_parsed_equal
@@ -2172,21 +2419,30 @@ let test_unary_operator _ =
     [
       +Statement.Expression
          (+Expression.UnaryOperator
-             { UnaryOperator.operator = UnaryOperator.Not; operand = +Expression.Integer 1 });
+             {
+               UnaryOperator.operator = UnaryOperator.Not;
+               operand = +Expression.Constant (Constant.Integer 1);
+             });
     ];
   assert_parsed_equal
     "~1"
     [
       +Statement.Expression
          (+Expression.UnaryOperator
-             { UnaryOperator.operator = UnaryOperator.Invert; operand = +Expression.Integer 1 });
+             {
+               UnaryOperator.operator = UnaryOperator.Invert;
+               operand = +Expression.Constant (Constant.Integer 1);
+             });
     ];
   assert_parsed_equal
     "+1"
     [
       +Statement.Expression
          (+Expression.UnaryOperator
-             { UnaryOperator.operator = UnaryOperator.Positive; operand = +Expression.Integer 1 });
+             {
+               UnaryOperator.operator = UnaryOperator.Positive;
+               operand = +Expression.Constant (Constant.Integer 1);
+             });
     ]
 
 
@@ -2195,7 +2451,8 @@ let test_lambda _ =
     "lambda: 1"
     [
       +Statement.Expression
-         (+Expression.Lambda { Lambda.parameters = []; body = +Expression.Integer 1 });
+         (+Expression.Lambda
+             { Lambda.parameters = []; body = +Expression.Constant (Constant.Integer 1) });
     ];
   assert_parsed_equal
     "lambda x,: x"
@@ -2241,7 +2498,11 @@ let test_lambda _ =
              {
                Lambda.parameters =
                  [
-                   +{ Parameter.name = "x"; value = Some (+Expression.Integer 1); annotation = None };
+                   +{
+                      Parameter.name = "x";
+                      value = Some (+Expression.Constant (Constant.Integer 1));
+                      annotation = None;
+                    };
                    +{ Parameter.name = "y"; value = None; annotation = None };
                  ];
                body =
@@ -2255,7 +2516,13 @@ let test_lambda _ =
                                 attribute = "__add__";
                                 special = true;
                               });
-                      arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+                      arguments =
+                        [
+                          {
+                            Call.Argument.name = None;
+                            value = +Expression.Constant (Constant.Integer 1);
+                          };
+                        ];
                     };
              });
     ];
@@ -2282,9 +2549,9 @@ let test_ternary _ =
       +Statement.Expression
          (+Expression.Ternary
              {
-               Ternary.target = +Expression.Integer 5;
-               test = +Expression.Integer 1;
-               alternative = +Expression.Integer 1;
+               Ternary.target = +Expression.Constant (Constant.Integer 5);
+               test = +Expression.Constant (Constant.Integer 1);
+               alternative = +Expression.Constant (Constant.Integer 1);
              });
     ];
   assert_parsed_equal
@@ -2300,8 +2567,8 @@ let test_ternary _ =
                       operator = ComparisonOperator.In;
                       right = !"b";
                     };
-               test = +Expression.Integer 1;
-               alternative = +Expression.Integer 1;
+               test = +Expression.Constant (Constant.Integer 1);
+               alternative = +Expression.Constant (Constant.Integer 1);
              });
     ];
   assert_parsed_equal
@@ -2310,14 +2577,14 @@ let test_ternary _ =
       +Statement.Expression
          (+Expression.Ternary
              {
-               Ternary.target = +Expression.Integer 1;
-               test = +Expression.Integer 2;
+               Ternary.target = +Expression.Constant (Constant.Integer 1);
+               test = +Expression.Constant (Constant.Integer 2);
                alternative =
                  +Expression.Ternary
                     {
-                      Ternary.target = +Expression.Integer 3;
-                      test = +Expression.Integer 4;
-                      alternative = +Expression.Integer 5;
+                      Ternary.target = +Expression.Constant (Constant.Integer 3);
+                      test = +Expression.Constant (Constant.Integer 4);
+                      alternative = +Expression.Constant (Constant.Integer 5);
                     };
              });
     ]
@@ -2334,7 +2601,12 @@ let test_dictionary _ =
          (+Expression.Dictionary
              {
                Dictionary.entries =
-                 [{ Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 }];
+                 [
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
+                 ];
                keywords = [];
              });
     ];
@@ -2345,7 +2617,12 @@ let test_dictionary _ =
          (+Expression.Dictionary
              {
                Dictionary.entries =
-                 [{ Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 }];
+                 [
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
+                 ];
                keywords = [];
              });
     ];
@@ -2356,7 +2633,12 @@ let test_dictionary _ =
          (+Expression.Dictionary
              {
                Dictionary.entries =
-                 [{ Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 }];
+                 [
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
+                 ];
                keywords = [!"durp"];
              });
     ];
@@ -2367,7 +2649,12 @@ let test_dictionary _ =
          (+Expression.Dictionary
              {
                Dictionary.entries =
-                 [{ Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 }];
+                 [
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
+                 ];
                keywords = [!"durp"; !"hurp"];
              });
     ];
@@ -2376,7 +2663,10 @@ let test_dictionary _ =
     [
       +Statement.Expression
          (+Expression.Dictionary
-             { Dictionary.entries = []; keywords = [+Expression.List [+Expression.Integer 1]] });
+             {
+               Dictionary.entries = [];
+               keywords = [+Expression.List [+Expression.Constant (Constant.Integer 1)]];
+             });
     ];
   assert_parsed_equal
     "{**durp, 1: 2}"
@@ -2385,7 +2675,12 @@ let test_dictionary _ =
          (+Expression.Dictionary
              {
                Dictionary.entries =
-                 [{ Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 }];
+                 [
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
+                 ];
                keywords = [!"durp"];
              });
     ];
@@ -2398,13 +2693,13 @@ let test_dictionary _ =
                Dictionary.entries =
                  [
                    {
-                     Dictionary.Entry.key = +Expression.Integer 1;
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
                      value =
                        +Expression.ComparisonOperator
                           {
-                            ComparisonOperator.left = +Expression.Integer 1;
+                            ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                             operator = ComparisonOperator.LessThan;
-                            right = +Expression.Integer 2;
+                            right = +Expression.Constant (Constant.Integer 2);
                           };
                    };
                  ];
@@ -2419,8 +2714,14 @@ let test_dictionary _ =
              {
                Dictionary.entries =
                  [
-                   { Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 };
-                   { Dictionary.Entry.key = +Expression.Integer 2; value = +Expression.Integer 3 };
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 2);
+                     value = +Expression.Constant (Constant.Integer 3);
+                   };
                  ];
                keywords = [];
              });
@@ -2433,8 +2734,14 @@ let test_dictionary _ =
              {
                Dictionary.entries =
                  [
-                   { Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 };
-                   { Dictionary.Entry.key = +Expression.Integer 2; value = +Expression.Integer 3 };
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
+                   {
+                     Dictionary.Entry.key = +Expression.Constant (Constant.Integer 2);
+                     value = +Expression.Constant (Constant.Integer 3);
+                   };
                  ];
                keywords = [];
              });
@@ -2568,7 +2875,7 @@ let test_dictionary _ =
                             operator = BooleanOperator.Or;
                             right = !"b";
                           };
-                     value = +Expression.Integer 2;
+                     value = +Expression.Constant (Constant.Integer 2);
                    };
                  ];
                keywords = [];
@@ -2590,7 +2897,7 @@ let test_dictionary _ =
                             operator = BooleanOperator.And;
                             right = !"b";
                           };
-                     value = +Expression.Integer 2;
+                     value = +Expression.Constant (Constant.Integer 2);
                    };
                  ];
                keywords = [];
@@ -2603,10 +2910,16 @@ let test_dictionary _ =
 let test_list _ =
   assert_parsed_equal "[]" [+Statement.Expression (+Expression.List [])];
   assert_parsed_equal "[[]]" [+Statement.Expression (+Expression.List [+Expression.List []])];
-  assert_parsed_equal "[1,]" [+Statement.Expression (+Expression.List [+Expression.Integer 1])];
+  assert_parsed_equal
+    "[1,]"
+    [+Statement.Expression (+Expression.List [+Expression.Constant (Constant.Integer 1)])];
   assert_parsed_equal
     "[1, 2]"
-    [+Statement.Expression (+Expression.List [+Expression.Integer 1; +Expression.Integer 2])];
+    [
+      +Statement.Expression
+         (+Expression.List
+             [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    ];
   assert_parsed_equal
     "[1 if 2 else 3]"
     [
@@ -2615,15 +2928,19 @@ let test_list _ =
              [
                +Expression.Ternary
                   {
-                    Ternary.target = +Expression.Integer 1;
-                    test = +Expression.Integer 2;
-                    alternative = +Expression.Integer 3;
+                    Ternary.target = +Expression.Constant (Constant.Integer 1);
+                    test = +Expression.Constant (Constant.Integer 2);
+                    alternative = +Expression.Constant (Constant.Integer 3);
                   };
              ]);
     ];
   assert_parsed_equal
     "[\n\t1,\n\t2\n]"
-    [+Statement.Expression (+Expression.List [+Expression.Integer 1; +Expression.Integer 2])];
+    [
+      +Statement.Expression
+         (+Expression.List
+             [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    ];
   assert_parsed_equal
     "[a for a in []]"
     [
@@ -2755,9 +3072,9 @@ let test_list _ =
                        [
                          +Expression.ComparisonOperator
                             {
-                              ComparisonOperator.left = +Expression.Integer 1;
+                              ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                               operator = ComparisonOperator.LessThan;
-                              right = +Expression.Integer 2;
+                              right = +Expression.Constant (Constant.Integer 2);
                             };
                        ];
                      async = false;
@@ -2786,10 +3103,10 @@ let test_list _ =
                                    {
                                      ComparisonOperator.left = !"a";
                                      operator = ComparisonOperator.Is;
-                                     right = +Expression.Integer 1;
+                                     right = +Expression.Constant (Constant.Integer 1);
                                    };
                               operator = BooleanOperator.Or;
-                              right = +Expression.True;
+                              right = +Expression.Constant Constant.True;
                             };
                        ];
                      async = false;
@@ -2818,30 +3135,41 @@ let test_list _ =
 
 
 let test_set _ =
-  assert_parsed_equal "{1}" [+Statement.Expression (+Expression.Set [+Expression.Integer 1])];
+  assert_parsed_equal
+    "{1}"
+    [+Statement.Expression (+Expression.Set [+Expression.Constant (Constant.Integer 1)])];
   assert_parsed_equal
     "{*[1]}"
     [
       +Statement.Expression
          (+Expression.Set
-             [+Expression.Starred (Starred.Once (+Expression.List [+Expression.Integer 1]))]);
+             [
+               +Expression.Starred
+                  (Starred.Once (+Expression.List [+Expression.Constant (Constant.Integer 1)]));
+             ]);
     ];
-  assert_parsed_equal "{1,}" [+Statement.Expression (+Expression.Set [+Expression.Integer 1])];
+  assert_parsed_equal
+    "{1,}"
+    [+Statement.Expression (+Expression.Set [+Expression.Constant (Constant.Integer 1)])];
   assert_parsed_equal
     "{1, 2}"
-    [+Statement.Expression (+Expression.Set [+Expression.Integer 1; +Expression.Integer 2])];
+    [
+      +Statement.Expression
+         (+Expression.Set
+             [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    ];
   assert_parsed_equal
     "{1, 1 if 2 else 3}"
     [
       +Statement.Expression
          (+Expression.Set
              [
-               +Expression.Integer 1;
+               +Expression.Constant (Constant.Integer 1);
                +Expression.Ternary
                   {
-                    Ternary.target = +Expression.Integer 1;
-                    test = +Expression.Integer 2;
-                    alternative = +Expression.Integer 3;
+                    Ternary.target = +Expression.Constant (Constant.Integer 1);
+                    test = +Expression.Constant (Constant.Integer 2);
+                    alternative = +Expression.Constant (Constant.Integer 3);
                   };
              ]);
     ];
@@ -2932,7 +3260,7 @@ let test_yield _ =
   assert_parsed_equal "yield" [+Statement.Expression (+Expression.Yield None)];
   assert_parsed_equal
     "yield 1"
-    [+Statement.Expression (+Expression.Yield (Some (+Expression.Integer 1)))];
+    [+Statement.Expression (+Expression.Yield (Some (+Expression.Constant (Constant.Integer 1))))];
   assert_parsed_equal
     "yield from a"
     [+Statement.Expression (+Expression.YieldFrom (+Expression.Name (Name.Identifier "a")))];
@@ -2941,7 +3269,12 @@ let test_yield _ =
     [
       +Statement.Expression
          (+Expression.Yield
-             (Some (+Expression.Tuple [+Expression.Integer 1; +Expression.Integer 2])));
+             (Some
+                (+Expression.Tuple
+                    [
+                      +Expression.Constant (Constant.Integer 1);
+                      +Expression.Constant (Constant.Integer 2);
+                    ])));
     ];
   assert_parsed_equal
     "x = yield 1"
@@ -2950,7 +3283,7 @@ let test_yield _ =
          {
            Assign.target = !"x";
            annotation = None;
-           value = +Expression.Yield (Some (+Expression.Integer 1));
+           value = +Expression.Yield (Some (+Expression.Constant (Constant.Integer 1)));
            parent = None;
          };
     ];
@@ -2961,7 +3294,7 @@ let test_yield _ =
          {
            Assign.target = !"x";
            annotation = Some !"str";
-           value = +Expression.Yield (Some (+Expression.Integer 1));
+           value = +Expression.Yield (Some (+Expression.Constant (Constant.Integer 1)));
            parent = None;
          };
     ];
@@ -2982,7 +3315,7 @@ let test_yield _ =
                     [
                       {
                         Call.Argument.name = None;
-                        value = +Expression.Yield (Some (+Expression.Integer 1));
+                        value = +Expression.Yield (Some (+Expression.Constant (Constant.Integer 1)));
                       };
                     ];
                 };
@@ -3001,7 +3334,7 @@ let test_comparison _ =
                ComparisonOperator.left =
                  +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
                operator = ComparisonOperator.LessThan;
-               right = +Expression.Integer 2;
+               right = +Expression.Constant (Constant.Integer 2);
              });
     ];
   assert_parsed_equal
@@ -3010,7 +3343,7 @@ let test_comparison _ =
       +Statement.Expression
          (+Expression.ComparisonOperator
              {
-               ComparisonOperator.left = +Expression.Integer 1;
+               ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                operator = ComparisonOperator.In;
                right = +Expression.List [];
              });
@@ -3021,9 +3354,9 @@ let test_comparison _ =
       +Statement.Expression
          (+Expression.ComparisonOperator
              {
-               ComparisonOperator.left = +Expression.Integer 1;
+               ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                operator = ComparisonOperator.Is;
-               right = +Expression.Integer 1;
+               right = +Expression.Constant (Constant.Integer 1);
              });
     ];
   assert_parsed_equal
@@ -3032,9 +3365,9 @@ let test_comparison _ =
       +Statement.Expression
          (+Expression.ComparisonOperator
              {
-               ComparisonOperator.left = +Expression.Integer 1;
+               ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                operator = ComparisonOperator.IsNot;
-               right = +Expression.Integer 1;
+               right = +Expression.Constant (Constant.Integer 1);
              });
     ];
   assert_parsed_equal
@@ -3054,9 +3387,9 @@ let test_comparison _ =
       +Statement.Expression
          (+Expression.ComparisonOperator
              {
-               ComparisonOperator.left = +Expression.Integer 1;
+               ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                operator = ComparisonOperator.Equals;
-               right = +Expression.Integer 1;
+               right = +Expression.Constant (Constant.Integer 1);
              });
     ];
   assert_parsed_equal
@@ -3068,17 +3401,17 @@ let test_comparison _ =
                BooleanOperator.left =
                  +Expression.ComparisonOperator
                     {
-                      ComparisonOperator.left = +Expression.Integer 1;
+                      ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = ComparisonOperator.LessThan;
-                      right = +Expression.Integer 1;
+                      right = +Expression.Constant (Constant.Integer 1);
                     };
                operator = BooleanOperator.And;
                right =
                  +Expression.ComparisonOperator
                     {
-                      ComparisonOperator.left = +Expression.Integer 1;
+                      ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = ComparisonOperator.LessThan;
-                      right = +Expression.Integer 2;
+                      right = +Expression.Constant (Constant.Integer 2);
                     };
              });
     ];
@@ -3091,17 +3424,17 @@ let test_comparison _ =
                BooleanOperator.left =
                  +Expression.ComparisonOperator
                     {
-                      ComparisonOperator.left = +Expression.Integer 1;
+                      ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = ComparisonOperator.LessThan;
-                      right = +Expression.Integer 1;
+                      right = +Expression.Constant (Constant.Integer 1);
                     };
                operator = BooleanOperator.And;
                right =
                  +Expression.ComparisonOperator
                     {
-                      ComparisonOperator.left = +Expression.Integer 1;
+                      ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = ComparisonOperator.Is;
-                      right = +Expression.Integer 2;
+                      right = +Expression.Constant (Constant.Integer 2);
                     };
              });
     ]
@@ -3178,8 +3511,8 @@ let test_call _ =
                callee = !"foo";
                arguments =
                  [
-                   { Call.Argument.name = None; value = +Expression.Integer 1 };
-                   { Call.Argument.name = None; value = +Expression.Integer 2 };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) };
                  ];
              });
     ];
@@ -3194,7 +3527,12 @@ let test_call _ =
                  [
                    {
                      Call.Argument.name = None;
-                     value = +Expression.Tuple [+Expression.Integer 1; +Expression.Integer 2];
+                     value =
+                       +Expression.Tuple
+                          [
+                            +Expression.Constant (Constant.Integer 1);
+                            +Expression.Constant (Constant.Integer 2);
+                          ];
                    };
                  ];
              });
@@ -3209,7 +3547,7 @@ let test_call _ =
                arguments =
                  [
                    { Call.Argument.name = None; value = !"x" };
-                   { Call.Argument.name = None; value = +Expression.Integer 1 };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
                    { Call.Argument.name = None; value = +Expression.Tuple [!"a"; !"b"] };
                  ];
              });
@@ -3235,9 +3573,15 @@ let test_call _ =
                callee = !"foo";
                arguments =
                  [
-                   { Call.Argument.name = None; value = +Expression.Integer 1 };
-                   { Call.Argument.name = Some ~+"a"; value = +Expression.Integer 1 };
-                   { Call.Argument.name = Some ~+"b"; value = +Expression.Integer 2 };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
+                   {
+                     Call.Argument.name = Some ~+"a";
+                     value = +Expression.Constant (Constant.Integer 1);
+                   };
+                   {
+                     Call.Argument.name = Some ~+"b";
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
                  ];
              });
     ];
@@ -3250,8 +3594,11 @@ let test_call _ =
                callee = !"foo";
                arguments =
                  [
-                   { Call.Argument.name = None; value = +Expression.Integer 1 };
-                   { Call.Argument.name = Some ~+"a"; value = +Expression.Integer 2 };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
+                   {
+                     Call.Argument.name = Some ~+"a";
+                     value = +Expression.Constant (Constant.Integer 2);
+                   };
                    { Call.Argument.name = None; value = +Expression.Starred (Starred.Once !"args") };
                    {
                      Call.Argument.name = None;
@@ -3267,49 +3614,58 @@ let test_string _ =
   let create_format value = Substring.RawFormat (+value) in
   assert_parsed_equal
     "'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "\"foo\""
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "'''foo'''"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "\"\"\"foo\"\"\""
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "r'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "R'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "b'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create ~bytes:true "foo"))];
+    [
+      +Statement.Expression
+         (+Expression.Constant (Constant.String (StringLiteral.create ~bytes:true "foo")));
+    ];
   assert_parsed_equal
     "u'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "ub'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create ~bytes:true "foo"))];
+    [
+      +Statement.Expression
+         (+Expression.Constant (Constant.String (StringLiteral.create ~bytes:true "foo")));
+    ];
   assert_parsed_equal
     "bR'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create ~bytes:true "foo"))];
+    [
+      +Statement.Expression
+         (+Expression.Constant (Constant.String (StringLiteral.create ~bytes:true "foo")));
+    ];
   assert_parsed_equal
     "'foo' 'bar'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foobar"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foobar")))];
   assert_parsed_equal
     "ur'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "uR'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "Ur'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "UR'foo'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "foo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "f'foo'"
     [+Statement.Expression (+Expression.FormatString [create_format "foo"])];
@@ -3327,22 +3683,24 @@ let test_string _ =
     [+Statement.Expression (+Expression.FormatString [create_literal "foo"; create_format "bar"])];
   assert_parsed_equal
     "\"'\""
-    [+Statement.Expression (+Expression.String (StringLiteral.create "'"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "'")))];
   assert_parsed_equal
     "'\"'"
-    [+Statement.Expression (+Expression.String (StringLiteral.create "\""))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "\"")))];
   assert_parsed_equal
     "\"\\\"\""
-    [+Statement.Expression (+Expression.String (StringLiteral.create "\\\""))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "\\\"")))];
   assert_parsed_equal
     "\"\\'\""
-    [+Statement.Expression (+Expression.String (StringLiteral.create "\\\'"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "\\\'")))];
   assert_parsed_equal
     "\"\"\"\nfoo\"\"\""
-    [+Statement.Expression (+Expression.String (StringLiteral.create "\nfoo"))];
+    [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "\nfoo")))];
   assert_parsed_equal
     "\"f.o\\no\""
-    [+Statement.Expression (+Expression.String (StringLiteral.create "f.o\\no"))];
+    [
+      +Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "f.o\\no")));
+    ];
   assert_parsed_equal
     "'a' + 'b'"
     [
@@ -3353,7 +3711,7 @@ let test_string _ =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.String (StringLiteral.create "a");
+                         base = +Expression.Constant (Constant.String (StringLiteral.create "a"));
                          attribute = "__add__";
                          special = true;
                        });
@@ -3361,7 +3719,7 @@ let test_string _ =
                  [
                    {
                      Call.Argument.name = None;
-                     value = +Expression.String (StringLiteral.create "b");
+                     value = +Expression.Constant (Constant.String (StringLiteral.create "b"));
                    };
                  ];
              });
@@ -3376,7 +3734,7 @@ let test_string _ =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.String (StringLiteral.create "a");
+                         base = +Expression.Constant (Constant.String (StringLiteral.create "a"));
                          attribute = "__add__";
                          special = true;
                        });
@@ -3384,7 +3742,7 @@ let test_string _ =
                  [
                    {
                      Call.Argument.name = None;
-                     value = +Expression.String (StringLiteral.create "b");
+                     value = +Expression.Constant (Constant.String (StringLiteral.create "b"));
                    };
                  ];
              });
@@ -3399,7 +3757,7 @@ let test_string _ =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.String (StringLiteral.create "a");
+                         base = +Expression.Constant (Constant.String (StringLiteral.create "a"));
                          attribute = "__add__";
                          special = true;
                        });
@@ -3407,7 +3765,7 @@ let test_string _ =
                  [
                    {
                      Call.Argument.name = None;
-                     value = +Expression.String (StringLiteral.create "b");
+                     value = +Expression.Constant (Constant.String (StringLiteral.create "b"));
                    };
                  ];
              });
@@ -3422,7 +3780,7 @@ let test_string _ =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.String (StringLiteral.create "a");
+                         base = +Expression.Constant (Constant.String (StringLiteral.create "a"));
                          attribute = "__add__";
                          special = true;
                        });
@@ -3430,7 +3788,7 @@ let test_string _ =
                  [
                    {
                      Call.Argument.name = None;
-                     value = +Expression.String (StringLiteral.create "b");
+                     value = +Expression.Constant (Constant.String (StringLiteral.create "b"));
                    };
                  ];
              });
@@ -3563,10 +3921,10 @@ let test_class _ =
            Class.name = + !&"foo";
            base_arguments =
              [
-               { Call.Argument.name = None; value = +Expression.Integer 1 };
-               { Call.Argument.name = None; value = +Expression.Integer 2 };
+               { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
+               { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) };
              ];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
            decorators = [];
            top_level_unbound_names = [];
          };
@@ -3581,10 +3939,11 @@ let test_class _ =
              [
                {
                  Call.Argument.name = Some ~+"init_subclass_arg";
-                 value = +Expression.String (StringLiteral.create "literal_string");
+                 value =
+                   +Expression.Constant (Constant.String (StringLiteral.create "literal_string"));
                };
              ];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
            decorators = [];
            top_level_unbound_names = [];
          };
@@ -3597,10 +3956,10 @@ let test_class _ =
            Class.name = + !&"foo";
            base_arguments =
              [
-               { Call.Argument.name = None; value = +Expression.Integer 1 };
+               { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
                { Call.Argument.name = None; value = +Expression.Starred (Starred.Twice !"kwargs") };
              ];
-           body = [+Statement.Expression (+Expression.Integer 1)];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
            decorators = [];
            top_level_unbound_names = [];
          };
@@ -3618,7 +3977,7 @@ let test_class _ =
                   {
                     Assign.target = !"attribute";
                     annotation = Some !"int";
-                    value = +Expression.Integer 1;
+                    value = +Expression.Constant (Constant.Integer 1);
                     parent = Some !&"foo";
                   };
              ];
@@ -3638,8 +3997,9 @@ let test_class _ =
                +Statement.Assign
                   {
                     Assign.target = !"attribute";
-                    annotation = Some (+Expression.String (StringLiteral.create "int"));
-                    value = +Expression.Integer 1;
+                    annotation =
+                      Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
+                    value = +Expression.Constant (Constant.Integer 1);
                     parent = Some !&"foo";
                   };
              ];
@@ -3660,7 +4020,7 @@ let test_class _ =
                   {
                     Assign.target = !"attribute";
                     annotation = Some !"int";
-                    value = +Expression.Ellipsis;
+                    value = +Expression.Constant Constant.Ellipsis;
                     parent = Some !&"foo";
                   };
              ];
@@ -3732,7 +4092,7 @@ let test_class _ =
                                   (Name.Attribute
                                      { base = !"self"; attribute = "bar"; special = false });
                              annotation = None;
-                             value = +Expression.Integer 0;
+                             value = +Expression.Constant (Constant.Integer 0);
                              parent = None;
                            };
                       ];
@@ -3761,7 +4121,7 @@ let test_class _ =
              [
                +Statement.If
                   {
-                    If.test = +Expression.True;
+                    If.test = +Expression.Constant Constant.True;
                     body =
                       [
                         +Statement.Define
@@ -3795,7 +4155,13 @@ let test_return _ =
   assert_parsed_equal "return" [+Statement.Return { Return.expression = None; is_implicit = false }];
   assert_parsed_equal
     "return 1"
-    [+Statement.Return { Return.expression = Some (+Expression.Integer 1); is_implicit = false }]
+    [
+      +Statement.Return
+         {
+           Return.expression = Some (+Expression.Constant (Constant.Integer 1));
+           is_implicit = false;
+         };
+    ]
 
 
 let test_delete _ =
@@ -3811,7 +4177,12 @@ let test_assign _ =
     "a = 1"
     [
       +Statement.Assign
-         { Assign.target = !"a"; annotation = None; value = +Expression.Integer 1; parent = None };
+         {
+           Assign.target = !"a";
+           annotation = None;
+           value = +Expression.Constant (Constant.Integer 1);
+           parent = None;
+         };
     ];
   assert_parsed_equal
     "a: int = 1"
@@ -3820,7 +4191,7 @@ let test_assign _ =
          {
            Assign.target = !"a";
            annotation = Some !"int";
-           value = +Expression.Integer 1;
+           value = +Expression.Constant (Constant.Integer 1);
            parent = None;
          };
     ];
@@ -3830,8 +4201,8 @@ let test_assign _ =
       +Statement.Assign
          {
            Assign.target = !"a";
-           annotation = Some (+Expression.String (StringLiteral.create "int"));
-           value = +Expression.Integer 1;
+           annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
+           value = +Expression.Constant (Constant.Integer 1);
            parent = None;
          };
     ];
@@ -3841,8 +4212,8 @@ let test_assign _ =
       +Statement.Assign
          {
            Assign.target = !"a";
-           annotation = Some (+Expression.String (StringLiteral.create "int"));
-           value = +Expression.Integer 1;
+           annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
+           value = +Expression.Constant (Constant.Integer 1);
            parent = None;
          };
     ];
@@ -3853,7 +4224,7 @@ let test_assign _ =
          {
            Assign.target = !"a";
            annotation = Some !"int";
-           value = +Expression.Ellipsis;
+           value = +Expression.Constant Constant.Ellipsis;
            parent = None;
          };
     ];
@@ -3863,8 +4234,8 @@ let test_assign _ =
       +Statement.Assign
          {
            Assign.target = !"a";
-           annotation = Some (+Expression.String (StringLiteral.create "int"));
-           value = +Expression.Ellipsis;
+           annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
+           value = +Expression.Constant Constant.Ellipsis;
            parent = None;
          };
     ];
@@ -3872,7 +4243,12 @@ let test_assign _ =
     "a = 1  # type: ignore"
     [
       +Statement.Assign
-         { Assign.target = !"a"; annotation = None; value = +Expression.Integer 1; parent = None };
+         {
+           Assign.target = !"a";
+           annotation = None;
+           value = +Expression.Constant (Constant.Integer 1);
+           parent = None;
+         };
     ];
   assert_parsed_equal
     "a, b = 1"
@@ -3881,7 +4257,7 @@ let test_assign _ =
          {
            Assign.target = +Expression.Tuple [!"a"; !"b"];
            annotation = None;
-           value = +Expression.Integer 1;
+           value = +Expression.Constant (Constant.Integer 1);
            parent = None;
          };
     ];
@@ -3912,9 +4288,19 @@ let test_assign _ =
     "a = b = 1"
     [
       +Statement.Assign
-         { Assign.target = !"a"; annotation = None; value = +Expression.Integer 1; parent = None };
+         {
+           Assign.target = !"a";
+           annotation = None;
+           value = +Expression.Constant (Constant.Integer 1);
+           parent = None;
+         };
       +Statement.Assign
-         { Assign.target = !"b"; annotation = None; value = +Expression.Integer 1; parent = None };
+         {
+           Assign.target = !"b";
+           annotation = None;
+           value = +Expression.Constant (Constant.Integer 1);
+           parent = None;
+         };
     ];
   assert_parsed_equal
     "a = yield from b"
@@ -3940,7 +4326,13 @@ let test_assign _ =
                   callee =
                     +Expression.Name
                        (Name.Attribute { base = !"a"; attribute = "__iadd__"; special = true });
-                  arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+                  arguments =
+                    [
+                      {
+                        Call.Argument.name = None;
+                        value = +Expression.Constant (Constant.Integer 1);
+                      };
+                    ];
                 };
            parent = None;
          };
@@ -3966,7 +4358,13 @@ let test_assign _ =
                             attribute = "__iadd__";
                             special = true;
                           });
-                  arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+                  arguments =
+                    [
+                      {
+                        Call.Argument.name = None;
+                        value = +Expression.Constant (Constant.Integer 1);
+                      };
+                    ];
                 };
            parent = None;
          };
@@ -4205,7 +4603,7 @@ let test_if _ =
                        {
                          ComparisonOperator.left = !"x";
                          operator = ComparisonOperator.GreaterThan;
-                         right = +Expression.Integer 0;
+                         right = +Expression.Constant (Constant.Integer 0);
                        };
                 };
            body = [+Statement.Expression !"b"];
@@ -4232,7 +4630,7 @@ let test_if _ =
                                 arguments = [{ Call.Argument.name = None; value = !"x" }];
                               };
                          operator = ComparisonOperator.GreaterThan;
-                         right = +Expression.Integer 0;
+                         right = +Expression.Constant (Constant.Integer 0);
                        };
                 };
            body = [+Statement.Expression !"b"];
@@ -4252,10 +4650,10 @@ let test_if _ =
                        {
                          ComparisonOperator.left = !"a";
                          operator = ComparisonOperator.Is;
-                         right = +Expression.Integer 1;
+                         right = +Expression.Constant (Constant.Integer 1);
                        };
                   operator = BooleanOperator.Or;
-                  right = +Expression.True;
+                  right = +Expression.Constant Constant.True;
                 };
            body = [+Statement.Expression !"b"];
            orelse = [];
@@ -4274,7 +4672,7 @@ let test_if _ =
                        {
                          ComparisonOperator.left = !"a";
                          operator = ComparisonOperator.Is;
-                         right = +Expression.Integer 1;
+                         right = +Expression.Constant (Constant.Integer 1);
                        };
                   operator = BooleanOperator.Or;
                   right =
@@ -4282,7 +4680,7 @@ let test_if _ =
                        {
                          ComparisonOperator.left = !"b";
                          operator = ComparisonOperator.Is;
-                         right = +Expression.Integer 1;
+                         right = +Expression.Constant (Constant.Integer 1);
                        };
                 };
            body = [+Statement.Expression !"c"];
@@ -4302,7 +4700,7 @@ let test_if _ =
                        {
                          ComparisonOperator.left = !"a";
                          operator = ComparisonOperator.Is;
-                         right = +Expression.Integer 1;
+                         right = +Expression.Constant (Constant.Integer 1);
                        };
                   operator = BooleanOperator.Or;
                   right =
@@ -4310,7 +4708,7 @@ let test_if _ =
                        {
                          ComparisonOperator.left = !"b";
                          operator = ComparisonOperator.Equals;
-                         right = +Expression.Integer 1;
+                         right = +Expression.Constant (Constant.Integer 1);
                        };
                 };
            body = [+Statement.Expression !"c"];
@@ -4330,7 +4728,7 @@ let test_if _ =
                        {
                          ComparisonOperator.left = !"a";
                          operator = ComparisonOperator.Is;
-                         right = +Expression.Integer 1;
+                         right = +Expression.Constant (Constant.Integer 1);
                        };
                   operator = BooleanOperator.Or;
                   right =
@@ -4341,7 +4739,7 @@ let test_if _ =
                               {
                                 ComparisonOperator.left = !"b";
                                 operator = ComparisonOperator.Is;
-                                right = +Expression.Integer 1;
+                                right = +Expression.Constant (Constant.Integer 1);
                               };
                          operator = BooleanOperator.Or;
                          right =
@@ -4349,7 +4747,7 @@ let test_if _ =
                               {
                                 ComparisonOperator.left = !"c";
                                 operator = ComparisonOperator.Is;
-                                right = +Expression.Integer 1;
+                                right = +Expression.Constant (Constant.Integer 1);
                               };
                        };
                 };
@@ -4633,9 +5031,9 @@ let test_assert _ =
                 {
                   ComparisonOperator.left = !"a";
                   operator = ComparisonOperator.IsNot;
-                  right = +Expression.NoneLiteral;
+                  right = +Expression.Constant Constant.NoneLiteral;
                 };
-           message = Some (+Expression.String (StringLiteral.create "b or c"));
+           message = Some (+Expression.Constant (Constant.String (StringLiteral.create "b or c")));
            origin = Assert.Origin.Assertion;
          };
     ]
@@ -4762,26 +5160,42 @@ let test_global _ =
 
 
 let test_tuple _ =
-  assert_parsed_equal "1" [+Statement.Expression (+Expression.Integer 1)];
+  assert_parsed_equal "1" [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
   assert_parsed_equal "()" [+Statement.Expression (+Expression.Tuple [])];
-  assert_parsed_equal "(1,)" [+Statement.Expression (+Expression.Tuple [+Expression.Integer 1])];
+  assert_parsed_equal
+    "(1,)"
+    [+Statement.Expression (+Expression.Tuple [+Expression.Constant (Constant.Integer 1)])];
   assert_parsed_equal
     "1, 2"
-    [+Statement.Expression (+Expression.Tuple [+Expression.Integer 1; +Expression.Integer 2])];
+    [
+      +Statement.Expression
+         (+Expression.Tuple
+             [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    ];
   assert_parsed_equal
     "1, 1 + 1"
     [
       +Statement.Expression
          (+Expression.Tuple
              [
-               +Expression.Integer 1;
+               +Expression.Constant (Constant.Integer 1);
                +Expression.Call
                   {
                     callee =
                       +Expression.Name
                          (Name.Attribute
-                            { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-                    arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+                            {
+                              base = +Expression.Constant (Constant.Integer 1);
+                              attribute = "__add__";
+                              special = true;
+                            });
+                    arguments =
+                      [
+                        {
+                          Call.Argument.name = None;
+                          value = +Expression.Constant (Constant.Integer 1);
+                        };
+                      ];
                   };
              ]);
     ];
@@ -4791,12 +5205,12 @@ let test_tuple _ =
       +Statement.Expression
          (+Expression.Tuple
              [
-               +Expression.Integer 1;
+               +Expression.Constant (Constant.Integer 1);
                +Expression.Ternary
                   {
-                    Ternary.target = +Expression.Integer 2;
-                    test = +Expression.Integer 3;
-                    alternative = +Expression.Integer 4;
+                    Ternary.target = +Expression.Constant (Constant.Integer 2);
+                    test = +Expression.Constant (Constant.Integer 3);
+                    alternative = +Expression.Constant (Constant.Integer 4);
                   };
              ]);
     ];
@@ -4811,17 +5225,32 @@ let test_tuple _ =
                     callee =
                       +Expression.Name
                          (Name.Attribute
-                            { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-                    arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
+                            {
+                              base = +Expression.Constant (Constant.Integer 1);
+                              attribute = "__add__";
+                              special = true;
+                            });
+                    arguments =
+                      [
+                        {
+                          Call.Argument.name = None;
+                          value = +Expression.Constant (Constant.Integer 1);
+                        };
+                      ];
                   };
-               +Expression.Integer 1;
+               +Expression.Constant (Constant.Integer 1);
              ]);
     ];
   assert_parsed_equal
     "(1, 2, 3)"
     [
       +Statement.Expression
-         (+Expression.Tuple [+Expression.Integer 1; +Expression.Integer 2; +Expression.Integer 3]);
+         (+Expression.Tuple
+             [
+               +Expression.Constant (Constant.Integer 1);
+               +Expression.Constant (Constant.Integer 2);
+               +Expression.Constant (Constant.Integer 3);
+             ]);
     ]
 
 
@@ -4830,7 +5259,12 @@ let test_stubs _ =
     "a = ..."
     [
       +Statement.Assign
-         { Assign.target = !"a"; annotation = None; value = +Expression.Ellipsis; parent = None };
+         {
+           Assign.target = !"a";
+           annotation = None;
+           value = +Expression.Constant Constant.Ellipsis;
+           parent = None;
+         };
     ];
   assert_parsed_equal
     "a: int = ..."
@@ -4839,7 +5273,7 @@ let test_stubs _ =
          {
            Assign.target = !"a";
            annotation = Some !"int";
-           value = +Expression.Ellipsis;
+           value = +Expression.Constant Constant.Ellipsis;
            parent = None;
          };
     ];
@@ -4849,8 +5283,8 @@ let test_stubs _ =
       +Statement.Assign
          {
            Assign.target = !"a";
-           annotation = Some (+Expression.String (StringLiteral.create "int"));
-           value = +Expression.Ellipsis;
+           annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
+           value = +Expression.Constant Constant.Ellipsis;
            parent = None;
          };
     ];
@@ -4860,8 +5294,9 @@ let test_stubs _ =
       +Statement.Assign
          {
            Assign.target = !"a";
-           annotation = Some (+Expression.String (StringLiteral.create "Tuple[str]"));
-           value = +Expression.Ellipsis;
+           annotation =
+             Some (+Expression.Constant (Constant.String (StringLiteral.create "Tuple[str]")));
+           value = +Expression.Constant Constant.Ellipsis;
            parent = None;
          };
     ];
@@ -4871,8 +5306,9 @@ let test_stubs _ =
       +Statement.Assign
          {
            Assign.target = !"a";
-           annotation = Some (+Expression.String (StringLiteral.create "Tuple[str, ...]"));
-           value = +Expression.Ellipsis;
+           annotation =
+             Some (+Expression.Constant (Constant.String (StringLiteral.create "Tuple[str, ...]")));
+           value = +Expression.Constant Constant.Ellipsis;
            parent = None;
          };
     ];
@@ -4892,7 +5328,7 @@ let test_stubs _ =
                              { base = !"Optional"; attribute = "__getitem__"; special = true });
                      arguments = [{ Call.Argument.name = None; value = !"int" }];
                    });
-           value = +Expression.Ellipsis;
+           value = +Expression.Constant Constant.Ellipsis;
            parent = None;
          };
     ];
@@ -4908,8 +5344,9 @@ let test_stubs _ =
                +Statement.Assign
                   {
                     Assign.target = !"a";
-                    annotation = Some (+Expression.String (StringLiteral.create "int"));
-                    value = +Expression.Ellipsis;
+                    annotation =
+                      Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
+                    value = +Expression.Constant Constant.Ellipsis;
                     parent = Some !&"A";
                   };
              ];
@@ -4935,7 +5372,7 @@ let test_stubs _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Ellipsis)];
+           body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
          };
     ];
   assert_parsed_equal
@@ -4956,7 +5393,7 @@ let test_stubs _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Ellipsis)];
+           body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
          };
     ];
   assert_parsed_equal
@@ -4977,7 +5414,7 @@ let test_stubs _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Ellipsis)];
+           body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
          };
     ];
   assert_parsed_equal
@@ -4992,7 +5429,7 @@ let test_stubs _ =
                  [
                    +{
                       Parameter.name = "a";
-                      value = Some (+Expression.Ellipsis);
+                      value = Some (+Expression.Constant Constant.Ellipsis);
                       annotation = Some !"int";
                     };
                  ];
@@ -5005,7 +5442,7 @@ let test_stubs _ =
              };
            captures = [];
            unbound_names = [];
-           body = [+Statement.Expression (+Expression.Ellipsis)];
+           body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
          };
     ];
   assert_parsed_equal
@@ -5015,7 +5452,7 @@ let test_stubs _ =
          {
            Class.name = + !&"foo";
            base_arguments = [];
-           body = [+Statement.Expression (+Expression.Ellipsis)];
+           body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];
          };
@@ -5027,7 +5464,7 @@ let test_stubs _ =
          {
            Class.name = + !&"foo";
            base_arguments = [];
-           body = [+Statement.Expression (+Expression.Ellipsis)];
+           body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];
          };
@@ -5039,7 +5476,7 @@ let test_stubs _ =
          {
            Class.name = + !&"foo";
            base_arguments = [];
-           body = [+Statement.Expression (+Expression.Ellipsis)];
+           body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
            decorators = [];
            top_level_unbound_names = [];
          };
@@ -5064,7 +5501,7 @@ let test_ellipsis _ =
                  [
                    +{
                       Parameter.name = "debug";
-                      value = Some (+Expression.Ellipsis);
+                      value = Some (+Expression.Constant Constant.Ellipsis);
                       annotation = None;
                     };
                  ];
@@ -5090,7 +5527,7 @@ let test_ellipsis _ =
                 {
                   ComparisonOperator.left = !"x";
                   operator = ComparisonOperator.Is;
-                  right = +Expression.Ellipsis;
+                  right = +Expression.Constant Constant.Ellipsis;
                 };
            body = [+Statement.Pass];
            orelse = [];
@@ -5111,7 +5548,7 @@ let test_setitem _ =
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
-                   { Call.Argument.name = None; value = +Expression.Integer 3 };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 3) };
                  ];
              });
     ];
@@ -5154,7 +5591,12 @@ let test_setitem _ =
                                       special = true;
                                     });
                             arguments =
-                              [{ Call.Argument.name = None; value = +Expression.Integer 3 }];
+                              [
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant (Constant.Integer 3);
+                                };
+                              ];
                           };
                    };
                  ];
@@ -5184,8 +5626,8 @@ let test_setitem _ =
                        });
                arguments =
                  [
-                   { Call.Argument.name = None; value = +Expression.Integer 7 };
-                   { Call.Argument.name = None; value = +Expression.Integer 8 };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 7) };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 8) };
                  ];
              });
     ];
@@ -5209,8 +5651,14 @@ let test_setitem _ =
                             arguments =
                               [
                                 { Call.Argument.name = None; value = !"j" };
-                                { Call.Argument.name = None; value = +Expression.NoneLiteral };
-                                { Call.Argument.name = None; value = +Expression.Integer 1 };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant Constant.NoneLiteral;
+                                };
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Constant (Constant.Integer 1);
+                                };
                               ];
                           };
                    };
@@ -5235,12 +5683,12 @@ let test_setitem _ =
                                            [
                                              {
                                                Call.Argument.name = None;
-                                               value = +Expression.NoneLiteral;
+                                               value = +Expression.Constant Constant.NoneLiteral;
                                              };
                                              { Call.Argument.name = None; value = !"j" };
                                              {
                                                Call.Argument.name = None;
-                                               value = +Expression.NoneLiteral;
+                                               value = +Expression.Constant Constant.NoneLiteral;
                                              };
                                            ];
                                        };
@@ -5268,9 +5716,9 @@ let test_setitem _ =
                      value =
                        +Expression.Ternary
                           {
-                            target = +Expression.Integer 5;
-                            test = +Expression.Integer 1;
-                            alternative = +Expression.Integer 1;
+                            target = +Expression.Constant (Constant.Integer 5);
+                            test = +Expression.Constant (Constant.Integer 1);
+                            alternative = +Expression.Constant (Constant.Integer 1);
                           };
                    };
                  ];
@@ -5357,14 +5805,15 @@ let test_setitem _ =
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
-                   { Call.Argument.name = None; value = +Expression.Ellipsis };
+                   { Call.Argument.name = None; value = +Expression.Constant Constant.Ellipsis };
                  ];
              });
       +Statement.Assign
          {
            target = !"x";
-           annotation = Some (+Expression.String (StringLiteral.create "Something"));
-           value = +Expression.Ellipsis;
+           annotation =
+             Some (+Expression.Constant (Constant.String (StringLiteral.create "Something")));
+           value = +Expression.Constant Constant.Ellipsis;
            parent = None;
          };
     ];
@@ -5410,7 +5859,8 @@ let test_setitem _ =
                               [
                                 {
                                   Call.Argument.name = None;
-                                  value = +Expression.Tuple [+Expression.Integer 3];
+                                  value =
+                                    +Expression.Tuple [+Expression.Constant (Constant.Integer 3)];
                                 };
                               ];
                           };
@@ -5460,7 +5910,9 @@ let test_setitem _ =
                               [
                                 {
                                   Call.Argument.name = None;
-                                  value = +Expression.Yield (Some (+Expression.Integer 3));
+                                  value =
+                                    +Expression.Yield
+                                       (Some (+Expression.Constant (Constant.Integer 3)));
                                 };
                               ];
                           };
@@ -5486,7 +5938,8 @@ let test_walrus_operator _ =
     "(a := 1)"
     [
       +Statement.Expression
-         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+         (+Expression.WalrusOperator
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
     ];
   assert_parsed_equal
     (* Binds more tightly than a comma. *)
@@ -5495,8 +5948,9 @@ let test_walrus_operator _ =
       +Statement.Expression
          (+Expression.Tuple
              [
-               +Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 };
-               +Expression.Integer 2;
+               +Expression.WalrusOperator
+                  { target = !"a"; value = +Expression.Constant (Constant.Integer 1) };
+               +Expression.Constant (Constant.Integer 2);
              ]);
     ];
   assert_parsed_equal
@@ -5514,11 +5968,17 @@ let test_walrus_operator _ =
                         +Expression.Name
                            (Name.Attribute
                               {
-                                base = +Expression.Integer 1;
+                                base = +Expression.Constant (Constant.Integer 1);
                                 attribute = "__add__";
                                 special = true;
                               });
-                      arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                      arguments =
+                        [
+                          {
+                            Call.Argument.name = None;
+                            value = +Expression.Constant (Constant.Integer 2);
+                          };
+                        ];
                     };
              });
     ];
@@ -5533,9 +5993,9 @@ let test_walrus_operator _ =
                value =
                  +Expression.BooleanOperator
                     {
-                      BooleanOperator.left = +Expression.True;
+                      BooleanOperator.left = +Expression.Constant Constant.True;
                       operator = BooleanOperator.And;
-                      right = +Expression.False;
+                      right = +Expression.Constant Constant.False;
                     };
              });
     ];
@@ -5550,9 +6010,9 @@ let test_walrus_operator _ =
                value =
                  +Expression.Ternary
                     {
-                      Ternary.target = +Expression.Integer 1;
-                      test = +Expression.True;
-                      alternative = +Expression.Integer 2;
+                      Ternary.target = +Expression.Constant (Constant.Integer 1);
+                      test = +Expression.Constant Constant.True;
+                      alternative = +Expression.Constant (Constant.Integer 2);
                     };
              });
     ];
@@ -5563,7 +6023,9 @@ let test_walrus_operator _ =
          (+Expression.WalrusOperator
              {
                target = !"a";
-               value = +Expression.WalrusOperator { target = !"b"; value = +Expression.Integer 1 };
+               value =
+                 +Expression.WalrusOperator
+                    { target = !"b"; value = +Expression.Constant (Constant.Integer 1) };
              });
     ];
   assert_raises (Failure "Could not parse test") (fun () ->

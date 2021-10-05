@@ -265,8 +265,8 @@ module ClassDecorators = struct
     let extract_options_from_arguments =
       let apply_arguments default argument =
         let recognize_value ~default = function
-          | Expression.False -> false
-          | True -> true
+          | Expression.Constant Constant.False -> false
+          | Expression.Constant Constant.True -> true
           | _ -> default
         in
         match argument with
@@ -433,7 +433,7 @@ module ClassDecorators = struct
                 let init_not_disabled attribute =
                   let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
                     match name, value with
-                    | Some { Node.value = parameter_name; _ }, Expression.False
+                    | Some { Node.value = parameter_name; _ }, Expression.Constant Constant.False
                       when String.equal "init" (Identifier.sanitized parameter_name) ->
                         true
                     | _ -> false
@@ -516,7 +516,8 @@ module ClassDecorators = struct
                        _;
                       } ->
                           value
-                      | { Node.location; _ } -> Node.create Expression.Ellipsis ~location
+                      | { Node.location; _ } ->
+                          Node.create (Expression.Constant Constant.Ellipsis) ~location
                     in
                     ( create_attribute
                         ~parent
@@ -2253,7 +2254,9 @@ class base class_metadata_environment dependency =
         | Simple { nested_class = true; _ } -> AnnotatedAttribute.OnClass
         | Simple { values; _ } ->
             let is_not_ellipsis = function
-              | { Attribute.value = { Node.value = Ellipsis; _ }; _ } -> false
+              | { Attribute.value = { Node.value = Constant Expression.Constant.Ellipsis; _ }; _ }
+                ->
+                  false
               | _ -> true
             in
             List.find values ~f:is_not_ellipsis
@@ -2476,7 +2479,15 @@ class base class_metadata_environment dependency =
               (* Constructor on concrete class or fully specified generic,
                * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
               Option.value (fully_specified_type callee) ~default:Type.Any)
-      | NoneLiteral -> Type.Any
+      | Constant Constant.NoneLiteral -> Type.Any
+      | Constant (Constant.Complex _) -> Type.complex
+      | Constant (Constant.False | Constant.True) -> Type.bool
+      | Constant (Constant.Float _) -> Type.float
+      | Constant (Constant.Integer _) -> Type.integer
+      | Constant (Constant.String { StringLiteral.kind; _ }) -> (
+          match kind with
+          | StringLiteral.Bytes -> Type.bytes
+          | _ -> Type.string)
       | Name name when is_simple_name name -> (
           let reference = name_to_reference_exn name in
           let unannotated_global_environment =
@@ -2501,7 +2512,6 @@ class base class_metadata_environment dependency =
               Result.ok decorated |> Option.value ~default:Type.Any
           | _ -> resolve_name expression)
       | Name _ -> resolve_name expression
-      | Complex _ -> Type.complex
       | Dictionary { Dictionary.entries; keywords = [] } ->
           let key_annotation, value_annotation =
             let join_entry (key_annotation, value_annotation) { Dictionary.Entry.key; value } =
@@ -2514,9 +2524,6 @@ class base class_metadata_environment dependency =
           let value = if Type.is_concrete value_annotation then value_annotation else Type.Any in
           Type.dictionary ~key ~value
       | Dictionary _ -> Type.dictionary ~key:Type.Any ~value:Type.Any
-      | False -> Type.bool
-      | Float _ -> Type.float
-      | Integer _ -> Type.integer
       | List elements ->
           let parameter =
             let join sofar element =
@@ -2533,10 +2540,6 @@ class base class_metadata_environment dependency =
             List.fold ~init:Type.Bottom ~f:join elements
           in
           if Type.is_concrete parameter then Type.set parameter else Type.set Type.Any
-      | String { StringLiteral.kind; _ } -> (
-          match kind with
-          | StringLiteral.Bytes -> Type.bytes
-          | _ -> Type.string)
       | Ternary { Ternary.target; alternative; _ } ->
           let annotation =
             TypeOrder.join
@@ -2545,7 +2548,6 @@ class base class_metadata_environment dependency =
               (self#resolve_literal ~assumptions alternative)
           in
           if Type.is_concrete annotation then annotation else Type.Any
-      | True -> Type.bool
       | Tuple elements -> Type.tuple (List.map elements ~f:(self#resolve_literal ~assumptions))
       | Expression.Yield _ -> Type.yield Type.Any
       | _ -> Type.Any
@@ -2744,7 +2746,10 @@ class base class_metadata_environment dependency =
                     in
                     let error = AnnotatedAttribute.CouldNotResolveArgument { argument_index } in
                     match expression with
-                    | { Node.value = Expression.Expression.NoneLiteral; _ } ->
+                    | {
+                     Node.value = Expression.Expression.Constant Expression.Constant.NoneLiteral;
+                     _;
+                    } ->
                         Ok (make_argument Type.NoneType)
                     | { Node.value = Expression.Expression.Name name; _ } ->
                         Expression.name_to_reference name

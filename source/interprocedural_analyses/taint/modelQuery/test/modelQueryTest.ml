@@ -1298,7 +1298,7 @@ let test_apply_rule context =
                        [
                          {
                            Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.Expression.Integer 1;
+                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
                          };
                        ]);
               };
@@ -1337,7 +1337,7 @@ let test_apply_rule context =
                        [
                          {
                            Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.Expression.Integer 1;
+                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
                          };
                        ]);
               };
@@ -1377,7 +1377,7 @@ let test_apply_rule context =
                          {
                            Ast.Expression.Call.Argument.name =
                              Some (Ast.Node.create_with_default_location "arg1");
-                           value = +Ast.Expression.Expression.Integer 1;
+                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
                          };
                        ]);
               };
@@ -1417,7 +1417,7 @@ let test_apply_rule context =
                          {
                            Ast.Expression.Call.Argument.name =
                              Some (Ast.Node.create_with_default_location "arg1");
-                           value = +Ast.Expression.Expression.Integer 1;
+                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
                          };
                        ]);
               };
@@ -1458,12 +1458,13 @@ let test_apply_rule context =
                            Ast.Expression.Call.Argument.name =
                              Some (Ast.Node.create_with_default_location "method");
                            value =
-                             +Ast.Expression.Expression.String
-                                (Ast.Expression.StringLiteral.create "POST");
+                             +Ast.Expression.(
+                                Expression.Constant
+                                  (Constant.String (Ast.Expression.StringLiteral.create "POST")));
                          };
                          {
                            Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.Expression.Integer 1;
+                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
                          };
                        ]);
               };
@@ -1504,12 +1505,13 @@ let test_apply_rule context =
                            Ast.Expression.Call.Argument.name =
                              Some (Ast.Node.create_with_default_location "method");
                            value =
-                             +Ast.Expression.Expression.String
-                                (Ast.Expression.StringLiteral.create "POST");
+                             +Ast.Expression.(
+                                Expression.Constant
+                                  (Constant.String (Ast.Expression.StringLiteral.create "POST")));
                          };
                          {
                            Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.Expression.Integer 1;
+                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
                          };
                        ]);
               };
@@ -1550,12 +1552,13 @@ let test_apply_rule context =
                            Ast.Expression.Call.Argument.name =
                              Some (Ast.Node.create_with_default_location "method");
                            value =
-                             +Ast.Expression.Expression.String
-                                (Ast.Expression.StringLiteral.create "POST");
+                             +Ast.Expression.(
+                                Expression.Constant
+                                  (Constant.String (Ast.Expression.StringLiteral.create "POST")));
                          };
                          {
                            Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.Expression.Integer 1;
+                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
                          };
                        ]);
               };

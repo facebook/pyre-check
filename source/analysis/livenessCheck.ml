@@ -138,7 +138,7 @@ module State (Context : Context) = struct
     (* Check for bottomed out state. *)
     let bottom =
       match value with
-      | Statement.Assert { Assert.test = { Node.value = False; _ }; _ } -> true
+      | Statement.Assert { Assert.test = { Node.value = Constant Constant.False; _ }; _ } -> true
       | Expression expression ->
           Type.is_noreturn (Resolution.resolve_expression_to_type resolution expression)
       | Return _ -> true

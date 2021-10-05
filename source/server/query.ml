@@ -302,7 +302,7 @@ let help () =
       PathOfModule (Reference.create "");
       SaveServerState path;
       Superclasses [Reference.empty];
-      Type (Node.create_with_default_location Expression.True);
+      Type (Node.create_with_default_location (Expression.Constant Constant.True));
       TypesInFiles [""];
       ValidateTaintModels None;
       Request.inline_decorators (Reference.create "");
@@ -339,8 +339,12 @@ let rec parse_request_exn query =
         | _ -> raise (InvalidQuery "expected reference")
       in
       let string_of_expression = function
-        | { Node.value = Expression.String { StringLiteral.value; kind = StringLiteral.String }; _ }
-          ->
+        | {
+            Node.value =
+              Expression.Constant
+                (Constant.String { StringLiteral.value; kind = StringLiteral.String });
+            _;
+          } ->
             value
         | _ -> raise (InvalidQuery "expected string")
       in

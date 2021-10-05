@@ -187,37 +187,6 @@ end = struct
     | Twice of Expression.t
 end
 
-and StringLiteral : sig
-  type kind =
-    | String
-    | Bytes
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-
-  val create : ?bytes:bool -> string -> t
-end = struct
-  type kind =
-    | String
-    | Bytes
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-
-  let create ?(bytes = false) value =
-    let kind =
-      if bytes then
-        Bytes
-      else
-        String
-    in
-    { value; kind }
-end
-
 and Ternary : sig
   type t = {
     target: Expression.t;
@@ -262,27 +231,20 @@ and Expression : sig
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
-    | Complex of float
+    | Constant of AstExpression.Constant.t
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
-    | Ellipsis
-    | False
-    | Float of float
     | Generator of t Comprehension.t
-    | Integer of int
     | FormatString of AstExpression.Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
-    | NoneLiteral
     | Parenthesis of t
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
-    | String of StringLiteral.t
     | Ternary of Ternary.t
-    | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
@@ -296,27 +258,20 @@ end = struct
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
-    | Complex of float
+    | Constant of AstExpression.Constant.t
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
-    | Ellipsis
-    | False
-    | Float of float
     | Generator of t Comprehension.t
-    | Integer of int
     | FormatString of AstExpression.Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
-    | NoneLiteral
     | Parenthesis of t
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
-    | String of StringLiteral.t
     | Ternary of Ternary.t
-    | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
@@ -353,7 +308,7 @@ let rec convert { Node.location; value } =
       AstExpression.Expression.ComparisonOperator
         { left = convert left; operator; right = convert right }
       |> Node.create ~location
-  | Complex value -> AstExpression.Expression.Complex value |> Node.create ~location
+  | Constant value -> AstExpression.Expression.Constant value |> Node.create ~location
   | Dictionary { Dictionary.entries; keywords } ->
       AstExpression.Expression.Dictionary
         { entries = List.map ~f:convert_entry entries; keywords = List.map ~f:convert keywords }
@@ -362,14 +317,10 @@ let rec convert { Node.location; value } =
       AstExpression.Expression.DictionaryComprehension
         { element = convert_entry element; generators = List.map ~f:convert_generator generators }
       |> Node.create ~location
-  | Ellipsis -> AstExpression.Expression.Ellipsis |> Node.create ~location
-  | False -> AstExpression.Expression.False |> Node.create ~location
-  | Float value -> AstExpression.Expression.Float value |> Node.create ~location
   | Generator { Comprehension.element; generators } ->
       AstExpression.Expression.Generator
         { element = convert element; generators = List.map ~f:convert_generator generators }
       |> Node.create ~location
-  | Integer value -> AstExpression.Expression.Integer value |> Node.create ~location
   | FormatString substrings ->
       AstExpression.Expression.FormatString substrings |> Node.create ~location
   | Lambda { Lambda.parameters; body } ->
@@ -388,7 +339,6 @@ let rec convert { Node.location; value } =
       |> Node.create ~location
   | Name (Name.Identifier name) ->
       AstExpression.Expression.Name (AstExpression.Name.Identifier name) |> Node.create ~location
-  | NoneLiteral -> AstExpression.Expression.NoneLiteral |> Node.create ~location
   | Parenthesis expression -> convert expression
   | Set expression_list ->
       AstExpression.Expression.Set (List.map ~f:convert expression_list) |> Node.create ~location
@@ -400,18 +350,10 @@ let rec convert { Node.location; value } =
       AstExpression.Expression.Starred (Once (convert expression)) |> Node.create ~location
   | Starred (Twice expression) ->
       AstExpression.Expression.Starred (Twice (convert expression)) |> Node.create ~location
-  | String { value; kind } ->
-      let value =
-        match kind with
-        | String -> AstExpression.Expression.String { value; kind = String }
-        | Bytes -> AstExpression.Expression.String { value; kind = Bytes }
-      in
-      { Node.location; value }
   | Ternary { target; test; alternative } ->
       AstExpression.Expression.Ternary
         { target = convert target; test = convert test; alternative = convert alternative }
       |> Node.create ~location
-  | True -> AstExpression.Expression.True |> Node.create ~location
   | Tuple expression_list ->
       AstExpression.Expression.Tuple (List.map ~f:convert expression_list) |> Node.create ~location
   | UnaryOperator { UnaryOperator.operator; operand } ->

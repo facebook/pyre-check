@@ -312,7 +312,11 @@ let test_simple_global_registration context =
        (SimpleAssign
           {
             explicit_annotation = None;
-            value = create_with_location (Expression.Expression.Integer 8) (3, 8) (3, 9);
+            value =
+              create_with_location
+                (Expression.Expression.Constant (Expression.Constant.Integer 8))
+                (3, 8)
+                (3, 9);
             target_location =
               { Location.start = { line = 3; column = 2 }; stop = { line = 3; column = 5 } }
               |> Location.with_module ~qualifier:(Reference.create "test");
@@ -980,7 +984,11 @@ let test_updates context =
                      ~start:(2, 0)
                      ~stop:(3, 17)
                      (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
-                     (Some (node ~start:(2, 13) ~stop:(2, 17) Expression.NoneLiteral));
+                     (Some
+                        (node
+                           ~start:(2, 13)
+                           ~stop:(2, 17)
+                           (Expression.Constant Constant.NoneLiteral)));
                  ]) );
       ]
     ~expected_triggers:[]
@@ -996,7 +1004,11 @@ let test_updates context =
                      ~start:(2, 0)
                      ~stop:(3, 17)
                      (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
-                     (Some (node ~start:(2, 13) ~stop:(2, 17) Expression.NoneLiteral));
+                     (Some
+                        (node
+                           ~start:(2, 13)
+                           ~stop:(2, 17)
+                           (Expression.Constant Constant.NoneLiteral)));
                  ]) );
       ]
     ();
@@ -1056,7 +1068,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[]
@@ -1074,7 +1086,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ();
@@ -1103,7 +1115,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1121,7 +1133,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 2)));
                  ]) );
       ]
     ();
@@ -1151,7 +1163,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1170,7 +1182,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(5, 2)
                      ~stop:(5, 10)
-                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 3));
+                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Constant (Constant.Integer 3)));
                  ]) );
       ]
     ();
@@ -1200,7 +1212,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(5, 2)
                      ~stop:(5, 10)
-                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 2));
+                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Constant (Constant.Integer 2)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1218,7 +1230,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 3));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 3)));
                  ]) );
       ]
     ();
@@ -1405,7 +1417,8 @@ let test_updates context =
               node
                 ~start:(4, 24)
                 ~stop:(4, 27)
-                (Statement.Expression (node ~start:(4, 24) ~stop:(4, 27) Expression.Ellipsis));
+                (Statement.Expression
+                   (node ~start:(4, 24) ~stop:(4, 27) (Expression.Constant Constant.Ellipsis)));
             ];
         }
     in
@@ -1449,7 +1462,8 @@ let test_updates context =
               node
                 ~start:(8, 24)
                 ~stop:(8, 27)
-                (Statement.Expression (node ~start:(8, 24) ~stop:(8, 27) Expression.Ellipsis));
+                (Statement.Expression
+                   (node ~start:(8, 24) ~stop:(8, 27) (Expression.Constant Constant.Ellipsis)));
             ];
         }
     in
@@ -1519,7 +1533,10 @@ let test_updates context =
         (let definition =
            let open FunctionDefinition in
            let create_elipsis ~start ~stop () =
-             node ~start ~stop (Statement.Expression (node ~start ~stop Expression.Ellipsis))
+             node
+               ~start
+               ~stop
+               (Statement.Expression (node ~start ~stop (Expression.Constant Constant.Ellipsis)))
            in
            let body =
              node
@@ -1598,7 +1615,11 @@ let test_updates context =
                               };
                             ];
                           return_annotation =
-                            Some (node ~start:(6, 31) ~stop:(6, 35) Expression.NoneLiteral);
+                            Some
+                              (node
+                                 ~start:(6, 31)
+                                 ~stop:(6, 35)
+                                 (Expression.Constant Constant.NoneLiteral));
                           async = false;
                           generator = false;
                           parent = Some !&"test.A";
@@ -1644,7 +1665,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1662,7 +1683,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(4, 4)
                      ~stop:(4, 12)
-                     (node ~start:(4, 11) ~stop:(4, 12) (Expression.Integer 1));
+                     (node ~start:(4, 11) ~stop:(4, 12) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ();
@@ -1691,7 +1712,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 2)));
                  ]) );
       ]
     ();
@@ -1718,7 +1739,7 @@ let test_updates context =
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[dependency]

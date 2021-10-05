@@ -598,7 +598,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
               (Expression.Name
                  (Ast.Expression.create_name ~location:Location.any "typing.Callable.__call__"));
           annotation = Some (Type.expression Type.object_primitive);
-          value = Node.create_with_default_location Expression.NoneLiteral;
+          value = Node.create_with_default_location (Expression.Constant Constant.NoneLiteral);
           parent = Some (Reference.create "typing.Callable");
         };
     ]
@@ -626,7 +626,10 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
                 Node.create_with_default_location
                   {
                     Ast.Expression.Parameter.name = "host_type";
-                    value = Some (Node.create_with_default_location Expression.NoneLiteral);
+                    value =
+                      Some
+                        (Node.create_with_default_location
+                           (Expression.Constant Constant.NoneLiteral));
                     annotation = Some (Type.expression host_type);
                   };
               ];
@@ -818,7 +821,7 @@ let missing_builtin_globals =
           {
             explicit_annotation = Some (Type.expression annotation);
             target_location = Location.WithModule.any;
-            value = Node.create_with_default_location Expression.Ellipsis;
+            value = Node.create_with_default_location (Expression.Constant Constant.Ellipsis);
           };
     }
   in

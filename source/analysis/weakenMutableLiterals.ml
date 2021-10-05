@@ -447,15 +447,17 @@ let rec weaken_mutable_literals
   | ( Some
         {
           Node.value =
-            Expression.String { StringLiteral.kind = StringLiteral.String; value = _ } as expression;
+            Expression.Constant
+              (Constant.String { StringLiteral.kind = StringLiteral.String; value = _ }) as
+            expression;
           _;
         },
       Type.Primitive "str",
       Type.Literal (Type.String _) )
-  | ( Some { Node.value = Expression.Integer _ as expression; _ },
+  | ( Some { Node.value = Expression.Constant (Constant.Integer _) as expression; _ },
       Type.Primitive "int",
       Type.Literal (Type.Integer _) )
-  | ( Some { Node.value = (Expression.True | Expression.False) as expression; _ },
+  | ( Some { Node.value = Expression.Constant Constant.(True | False) as expression; _ },
       Type.Primitive "bool",
       Type.Literal (Type.Boolean _) )
   | ( Some { Node.value = Expression.Name (Attribute _) as expression; _ },

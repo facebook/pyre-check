@@ -327,7 +327,10 @@ module Record = struct
               get_item_call
                 ~location
                 "typing.Tuple"
-                [expression annotation; Expression.Ellipsis |> Node.create ~location]
+                [
+                  expression annotation;
+                  Expression.Constant Constant.Ellipsis |> Node.create ~location;
+                ]
           | Broadcast broadcast ->
               let concatenation_to_expression { prefix; middle; suffix } =
                 List.map ~f:expression prefix
@@ -2370,7 +2373,7 @@ let rec expression annotation =
               |> Node.create ~location
         in
         Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
-    | Undefined -> Node.create ~location Expression.Ellipsis
+    | Undefined -> Node.create ~location (Expression.Constant Constant.Ellipsis)
     | ParameterVariadicTypeVariable variable ->
         parameter_variable_type_representation variable |> expression
   in
@@ -2466,20 +2469,21 @@ let rec expression annotation =
     | Literal literal ->
         let literal =
           match literal with
-          | Boolean true -> Expression.True
-          | Boolean false -> Expression.False
-          | Integer literal -> Expression.Integer literal
+          | Boolean true -> Expression.Constant Constant.True
+          | Boolean false -> Expression.Constant Constant.False
+          | Integer literal -> Expression.Constant (Constant.Integer literal)
           | String (LiteralValue literal) ->
-              Expression.String { value = literal; kind = StringLiteral.String }
+              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.String })
           | String AnyLiteral -> create_name "str"
-          | Bytes literal -> Expression.String { value = literal; kind = StringLiteral.Bytes }
+          | Bytes literal ->
+              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.Bytes })
           | EnumerationMember { enumeration_type; member_name } ->
               Expression.Name
                 (Attribute
                    { base = expression enumeration_type; attribute = member_name; special = false })
         in
         get_item_call "typing_extensions.Literal" [Node.create ~location literal]
-    | NoneType -> Expression.NoneLiteral
+    | NoneType -> Expression.Constant Constant.NoneLiteral
     | Parametric { name; parameters } ->
         let parameters =
           let expression_of_parameter = function
@@ -2586,7 +2590,7 @@ let rec expression annotation =
   in
   let value =
     match annotation with
-    | Primitive "..." -> Expression.Ellipsis
+    | Primitive "..." -> Expression.Constant Constant.Ellipsis
     | _ -> convert_annotation annotation
   in
   Node.create_with_default_location value
@@ -3171,12 +3175,12 @@ let primitive_name = function
 
 
 let create_literal = function
-  | Expression.True -> Some (Literal (Boolean true))
-  | Expression.False -> Some (Literal (Boolean false))
-  | Expression.Integer literal -> Some (Literal (Integer literal))
-  | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
+  | Expression.Constant Constant.True -> Some (Literal (Boolean true))
+  | Expression.Constant Constant.False -> Some (Literal (Boolean false))
+  | Expression.Constant (Constant.Integer literal) -> Some (Literal (Integer literal))
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
       Some (Literal (String (LiteralValue value)))
-  | Expression.String { StringLiteral.kind = StringLiteral.Bytes; value } ->
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
       Some (Literal (Bytes value))
   | Expression.Name
       (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
@@ -3190,7 +3194,7 @@ let create_literal = function
                     member_name = attribute;
                   }))
       | _ -> None)
-  | Expression.NoneLiteral -> Some none
+  | Expression.Constant Constant.NoneLiteral -> Some none
   | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
   | _ -> None
 
@@ -3797,7 +3801,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | Some
             ({
                Call.Argument.value =
-                 { Node.value = Expression.String { StringLiteral.value; _ }; _ };
+                 {
+                   Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
+                   _;
+                 };
                _;
              }
             :: _) ->
@@ -3891,7 +3898,11 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         {
           callee;
           arguments =
-            { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }; _ }
+            {
+              Call.Argument.value =
+                { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+              _;
+            }
             :: arguments;
         }
       when name_is ~name:"typing.TypeVar" callee ->
@@ -3923,13 +3934,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
           let variance_definition = function
             | {
                 Call.Argument.name = Some { Node.value = name; _ };
-                value = { Node.value = True; _ };
+                value = { Node.value = Constant Constant.True; _ };
               }
               when String.equal (Identifier.sanitized name) "covariant" ->
                 Some Record.Variable.Covariant
             | {
                 Call.Argument.name = Some { Node.value = name; _ };
-                value = { Node.value = True; _ };
+                value = { Node.value = Constant Constant.True; _ };
               }
               when String.equal (Identifier.sanitized name) "contravariant" ->
                 Some Contravariant
@@ -3943,7 +3954,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         {
           callee;
           arguments =
-            [{ Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }; _ }];
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+                _;
+              };
+            ];
         }
       when name_is ~name:"typing_extensions.IntVar" callee ->
         variable value ~constraints:LiteralIntegers
@@ -4103,7 +4120,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             (* TODO(T84854853): Add back support for `Length` and `Product`. *)
             create_parametric ~base ~argument
         | _ -> Top)
-    | NoneLiteral -> none
+    | Constant Constant.NoneLiteral -> none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
         Primitive sanitized |> resolve_aliases
@@ -4112,8 +4129,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         match create_logic base with
         | Primitive primitive -> Primitive (primitive ^ "." ^ attribute) |> resolve_aliases
         | _ -> Primitive (Expression.show base ^ "." ^ attribute))
-    | Ellipsis -> Primitive "..."
-    | String { StringLiteral.value; _ } ->
+    | Constant Constant.Ellipsis -> Primitive "..."
+    | Constant (Constant.String { StringLiteral.value; _ }) ->
         let expression =
           try
             let parsed =
@@ -4995,7 +5012,8 @@ end = struct
                             });
                       _;
                     };
-                  arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+                  arguments =
+                    [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
                 };
             _;
           }
@@ -5020,7 +5038,8 @@ end = struct
                             });
                       _;
                     };
-                  arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+                  arguments =
+                    [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
                 };
             _;
           } ->
@@ -5347,7 +5366,8 @@ end = struct
                          });
                    _;
                  };
-               arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+               arguments =
+                 [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
              };
          _;
         } ->

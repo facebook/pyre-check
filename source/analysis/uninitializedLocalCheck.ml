@@ -90,15 +90,7 @@ module AccessCollector = struct
     | WalrusOperator { WalrusOperator.value; _ } -> from_expression collected value
     | Yield yield -> Option.value_map yield ~default:collected ~f:(from_expression collected)
     | YieldFrom yield -> from_expression collected yield
-    | String _
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
-    | NoneLiteral
-    | True ->
-        collected
+    | Constant _ -> collected
 
 
   (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)

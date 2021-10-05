@@ -93,7 +93,11 @@ let test_join _ =
   assert_fixpoint
     [
       +Statement.If
-         { If.test = +Expression.True; body = [+Statement.Pass]; orelse = [+Statement.Pass] };
+         {
+           If.test = +Expression.Constant Constant.True;
+           body = [+Statement.Pass];
+           orelse = [+Statement.Pass];
+         };
     ]
     (Int.Table.of_alist_exn
        [
@@ -113,13 +117,16 @@ let test_join _ =
          (* Orelse *)
        ]);
   assert_fixpoint
-    [+Statement.If { If.test = +Expression.True; body = [+Statement.Pass]; orelse = [] }]
+    [
+      +Statement.If
+         { If.test = +Expression.Constant Constant.True; body = [+Statement.Pass]; orelse = [] };
+    ]
     (Int.Table.of_alist_exn [5, 0; 6, 1; 0, 0; 8, 0; 1, 1; 3, 1; 7, 0]);
   assert_fixpoint
     [
       +Statement.If
          {
-           If.test = +Expression.True;
+           If.test = +Expression.Constant Constant.True;
            body = [+Statement.Pass; +Statement.Pass];
            orelse = [+Statement.Pass];
          };
@@ -130,7 +137,10 @@ let test_join _ =
 let test_widening _ =
   let open Expression in
   assert_fixpoint
-    [+Statement.While { While.test = +Expression.True; body = [+Statement.Pass]; orelse = [] }]
+    [
+      +Statement.While
+         { While.test = +Expression.Constant Constant.True; body = [+Statement.Pass]; orelse = [] };
+    ]
     (Int.Table.of_alist_exn
        [
          0, 0;

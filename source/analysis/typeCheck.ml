@@ -159,7 +159,11 @@ let errors_from_not_found
                       Some
                         ({
                            AttributeResolution.Argument.expression =
-                             Some { Node.value = String { value = field_name; _ }; _ };
+                             Some
+                               {
+                                 Node.value = Constant (Constant.String { value = field_name; _ });
+                                 _;
+                               };
                            _;
                          }
                         :: _) ) ->
@@ -2548,7 +2552,10 @@ module State (Context : Context) = struct
         let qualify =
           match remainder with
           | [
-           { Call.Argument.name = Some { Node.value = name; _ }; value = { Node.value = True; _ } };
+           {
+             Call.Argument.name = Some { Node.value = name; _ };
+             value = { Node.value = Constant Constant.True; _ };
+           };
           ]
             when Identifier.equal name "$parameter$qualify" ->
               true
@@ -3038,7 +3045,11 @@ module State (Context : Context) = struct
                                   [
                                     {
                                       Call.Argument.name = None;
-                                      value = { Node.location; value = Expression.Integer 0 };
+                                      value =
+                                        {
+                                          Node.location;
+                                          value = Expression.Constant (Constant.Integer 0);
+                                        };
                                     };
                                   ];
                               };
@@ -3164,7 +3175,7 @@ module State (Context : Context) = struct
               resolved_annotation = None;
               base = None;
             })
-    | Complex _ ->
+    | Constant (Constant.Complex _) ->
         {
           resolution;
           errors = [];
@@ -3263,9 +3274,9 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
-    | Ellipsis ->
+    | Constant Constant.Ellipsis ->
         { resolution; errors = []; resolved = Type.Any; resolved_annotation = None; base = None }
-    | False ->
+    | Constant Constant.False ->
         {
           resolution;
           errors = [];
@@ -3273,7 +3284,7 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
-    | Float _ ->
+    | Constant (Constant.Float _) ->
         { resolution; errors = []; resolved = Type.float; resolved_annotation = None; base = None }
     | Generator { Comprehension.element; generators } ->
         let { Resolved.resolution; resolved; errors; _ } =
@@ -3286,7 +3297,7 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
-    | Integer literal ->
+    | Constant (Constant.Integer literal) ->
         {
           resolution;
           errors = [];
@@ -3613,7 +3624,7 @@ module State (Context : Context) = struct
           ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
           ~special
           attribute
-    | NoneLiteral ->
+    | Constant Constant.NoneLiteral ->
         {
           resolution;
           errors = [];
@@ -3663,7 +3674,7 @@ module State (Context : Context) = struct
         in
         let resolution, errors = List.fold substrings ~f:forward_substring ~init:(resolution, []) in
         { resolution; errors; resolved = Type.string; resolved_annotation = None; base = None }
-    | String { StringLiteral.kind = StringLiteral.Bytes; value } ->
+    | Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
         {
           resolution;
           errors = [];
@@ -3671,7 +3682,7 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
-    | String { StringLiteral.kind = StringLiteral.String; value } ->
+    | Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
         {
           resolution;
           errors = [];
@@ -3715,7 +3726,7 @@ module State (Context : Context) = struct
         let errors = List.append target_errors alternative_errors in
         (* The resolution is local to the ternary expression and should not be propagated out. *)
         { resolution; errors; resolved; resolved_annotation = None; base = None }
-    | True ->
+    | Constant Constant.True ->
         {
           resolution;
           errors = [];
@@ -3931,7 +3942,11 @@ module State (Context : Context) = struct
                 { Node.value = Statement.Return { Return.expression = None; _ }; _ };
               ] ->
                 true
-            | { Node.value = Statement.Expression { Node.value = Expression.String _; _ }; _ }
+            | {
+                Node.value =
+                  Statement.Expression { Node.value = Expression.Constant (Constant.String _); _ };
+                _;
+              }
               :: tail ->
                 check_unimplemented tail
             | _ -> false
@@ -4156,7 +4171,8 @@ module State (Context : Context) = struct
                                     [
                                       {
                                         Call.Argument.value =
-                                          Node.create_with_default_location (Expression.Integer 0);
+                                          Node.create_with_default_location
+                                            (Expression.Constant (Constant.Integer 0));
                                         name = None;
                                       };
                                     ];
@@ -4358,7 +4374,8 @@ module State (Context : Context) = struct
                             let is_incompatible =
                               let expression_is_ellipses =
                                 match expression with
-                                | Some { Node.value = Expression.Ellipsis; _ } -> true
+                                | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } ->
+                                    true
                                 | _ -> false
                               in
                               is_immutable
@@ -5203,7 +5220,7 @@ module State (Context : Context) = struct
               ~annotation
           in
           match Node.value test with
-          | False ->
+          | Constant Constant.False ->
               (* Explicit bottom. *)
               None, errors
           | ComparisonOperator
@@ -5493,7 +5510,7 @@ module State (Context : Context) = struct
               {
                 ComparisonOperator.left;
                 operator = ComparisonOperator.IsNot;
-                right = { Node.value = NoneLiteral; _ };
+                right = { Node.value = Constant Constant.NoneLiteral; _ };
               } ->
               forward_statement ~resolution ~statement:(Statement.assume left)
           | ComparisonOperator
@@ -5568,7 +5585,7 @@ module State (Context : Context) = struct
               | _ -> Some resolution, errors)
           | ComparisonOperator
               {
-                ComparisonOperator.left = { Node.value = NoneLiteral; _ };
+                ComparisonOperator.left = { Node.value = Constant Constant.NoneLiteral; _ };
                 operator = ComparisonOperator.NotIn;
                 right = { Node.value = Name name; _ };
               }

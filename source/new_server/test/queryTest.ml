@@ -170,7 +170,9 @@ let test_handle_query_basic context =
   in
   let parse_annotation serialized =
     serialized
-    |> (fun literal -> Expression.Expression.String (Expression.StringLiteral.create literal))
+    |> (fun literal ->
+         Expression.Expression.Constant
+           (Expression.Constant.String (Expression.StringLiteral.create literal)))
     |> Node.create_with_default_location
     |> Type.create ~aliases:Type.empty_aliases
   in

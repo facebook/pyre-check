@@ -22,6 +22,21 @@ module StringLiteral : sig
   val create : ?bytes:bool -> string -> t
 end
 
+module Constant : sig
+  type t =
+    | NoneLiteral
+    | Ellipsis
+    | False
+    | True
+    | Integer of int
+    | Float of float
+    | Complex of float
+    | String of StringLiteral.t
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end
+
 module rec BooleanOperator : sig
   type operator =
     | And
@@ -266,26 +281,19 @@ and Expression : sig
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
-    | Complex of float
+    | Constant of Constant.t
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
-    | Ellipsis
-    | False
-    | Float of float
     | Generator of t Comprehension.t
-    | Integer of int
     | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
-    | NoneLiteral
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
-    | String of StringLiteral.t
     | Ternary of Ternary.t
-    | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t

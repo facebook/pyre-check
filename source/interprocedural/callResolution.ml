@@ -15,11 +15,11 @@ let is_local identifier = String.is_prefix ~prefix:"$" identifier
 
 let extract_constant_name { Node.value = expression; _ } =
   match expression with
-  | Expression.String literal -> Some literal.value
-  | Integer i -> Some (string_of_int i)
-  | False -> Some "False"
-  | True -> Some "True"
-  | Name name -> (
+  | Expression.Constant (Constant.String literal) -> Some literal.value
+  | Expression.Constant (Constant.Integer i) -> Some (string_of_int i)
+  | Expression.Constant Constant.False -> Some "False"
+  | Expression.Constant Constant.True -> Some "True"
+  | Expression.Name name -> (
       let name = name_to_reference name >>| Reference.delocalize >>| Reference.last in
       match name with
       (* Heuristic: All uppercase names tend to be enums, so only taint the field in those cases. *)

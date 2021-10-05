@@ -111,7 +111,7 @@ module Make (Transformer : Transformer) = struct
                 operator;
                 right = transform_expression right;
               }
-        | Complex _ -> value
+        | Constant _ -> value
         | Dictionary { Dictionary.entries; keywords } ->
             Dictionary
               {
@@ -126,9 +126,6 @@ module Make (Transformer : Transformer) = struct
                 generators =
                   transform_list generators ~f:(transform_generator ~transform_expression);
               }
-        | Ellipsis -> value
-        | False -> value
-        | Float _ -> value
         | Generator { Comprehension.element; generators } ->
             Generator
               {
@@ -136,7 +133,6 @@ module Make (Transformer : Transformer) = struct
                 generators =
                   transform_list generators ~f:(transform_generator ~transform_expression);
               }
-        | Integer _ -> value
         | FormatString _ -> value
         | Lambda { Lambda.parameters; body } ->
             Lambda
@@ -156,7 +152,6 @@ module Make (Transformer : Transformer) = struct
         | Name (Name.Identifier _) -> value
         | Name (Name.Attribute ({ base; _ } as name)) ->
             Name (Name.Attribute { name with base = transform_expression base })
-        | NoneLiteral -> value
         | Set elements -> Set (transform_list elements ~f:transform_expression)
         | SetComprehension { Comprehension.element; generators } ->
             SetComprehension
@@ -172,7 +167,6 @@ module Make (Transformer : Transformer) = struct
               | Starred.Twice expression -> Starred.Twice (transform_expression expression)
             in
             Starred starred
-        | String _ -> value
         | Ternary { Ternary.target; test; alternative } ->
             Ternary
               {
@@ -180,7 +174,6 @@ module Make (Transformer : Transformer) = struct
                 test = transform_expression test;
                 alternative = transform_expression alternative;
               }
-        | True -> value
         | Tuple elements -> Tuple (transform_list elements ~f:transform_expression)
         | UnaryOperator { UnaryOperator.operator; operand } ->
             UnaryOperator { UnaryOperator.operator; operand = transform_expression operand }

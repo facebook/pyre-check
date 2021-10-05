@@ -105,16 +105,9 @@ module Binding = struct
           | Substring.Format expression -> of_expression sofar expression
         in
         List.fold substrings ~init:sofar ~f:of_substring
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
+    | Constant _
     | Lambda _
     | Name (Name.Identifier _)
-    | NoneLiteral
-    | String _
-    | True
     | Yield None ->
         sofar
 

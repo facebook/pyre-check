@@ -571,7 +571,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   | _ ->
                       (* Default to a benign self if we don't understand/retain information of what
                          self is. *)
-                      Node.create_with_default_location Expression.NoneLiteral
+                      Node.create_with_default_location (Expression.Constant Constant.NoneLiteral)
                 in
                 { Call.Argument.name = None; value = receiver } :: arguments
               else
@@ -824,7 +824,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
            { Call.Argument.value = self; name = None };
            {
              Call.Argument.value =
-               { Node.value = Expression.String { value = attribute; kind = String }; _ };
+               {
+                 Node.value =
+                   Expression.Constant (Constant.String { value = attribute; kind = String });
+                 _;
+               };
              name = None;
            };
            { Call.Argument.value; name = None };
@@ -847,7 +851,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
            { Call.Argument.value = base; _ };
            {
              Call.Argument.value =
-               { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+               {
+                 Node.value =
+                   Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
+                 _;
+               };
              _;
            };
            { Call.Argument.value = default; _ };
@@ -974,7 +982,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             match Node.value callee with
             | Name
                 (Name.Attribute
-                  { base = { Node.value = Expression.String _; _ }; attribute = "format"; _ }) ->
+                  {
+                    base = { Node.value = Expression.Constant (Constant.String _); _ };
+                    attribute = "format";
+                    _;
+                  }) ->
                 BackwardState.Tree.add_breadcrumb Features.format_string taint
             | _ -> taint
           in
@@ -1077,7 +1089,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left)
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state ~callee ~arguments
-      | Complex _ -> state
+      | Constant _ -> state
       | Dictionary { Dictionary.entries; keywords } ->
           let state =
             List.fold ~f:(analyze_dictionary_entry ~resolution taint) entries ~init:state
@@ -1104,12 +1116,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               ~expression:value
           in
           analyze_generators ~resolution ~state generators
-      | Ellipsis
-      | False
-      | Float _ ->
-          state
       | Generator comprehension -> analyze_comprehension ~resolution taint comprehension state
-      | Integer _ -> state
       | Lambda { parameters = _; body } ->
           (* Ignore parameter bindings and pretend body is inlined *)
           analyze_expression ~resolution ~taint ~state ~expression:body
@@ -1183,7 +1190,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 |> apply_attribute_sanitizers
               in
               analyze_expression ~resolution ~taint ~state ~expression:base)
-      | NoneLiteral -> state
       | Set set ->
           let element_taint = read_tree [Abstract.TreeDomain.Label.AnyIndex] taint in
           List.fold
@@ -1204,14 +1210,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~state
             ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
             substrings
-      | String _ -> state
       | Ternary { target; test; alternative } ->
           let state_then = analyze_expression ~resolution ~taint ~state ~expression:target in
           let state_else = analyze_expression ~resolution ~taint ~state ~expression:alternative in
           join state_then state_else
           |> fun state ->
           analyze_expression ~resolution ~taint:BackwardState.Tree.empty ~state ~expression:test
-      | True -> state
       | Tuple list ->
           let total = List.length list in
           List.rev list
@@ -1310,7 +1314,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let analyze_statement ~resolution state { Node.value = statement; _ } =
       match statement with
-      | Statement.Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
+      | Statement.Statement.Assign
+          { value = { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
+          state
       | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
           let target_is_sanitized =
             match target_value with

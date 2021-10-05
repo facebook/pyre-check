@@ -371,9 +371,13 @@ let test_preamble _ =
 
 let test_assume _ =
   assert_equal
-    (Statement.assume (+Expression.True))
+    (Statement.assume (+Expression.Constant Constant.True))
     (+Statement.Assert
-        { Assert.test = +Expression.True; message = None; origin = Assert.Origin.Assertion })
+        {
+          Assert.test = +Expression.Constant Constant.True;
+          message = None;
+          origin = Assert.Origin.Assertion;
+        })
 
 
 let test_pp _ =

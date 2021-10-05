@@ -487,7 +487,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     and analyze_dictionary_entry ~resolution (taint, state) { Dictionary.Entry.key; value } =
       let field_name =
         match key.Node.value with
-        | String literal -> Abstract.TreeDomain.Label.Index literal.value
+        | Constant (Constant.String literal) -> Abstract.TreeDomain.Label.Index literal.value
         | _ -> Abstract.TreeDomain.Label.AnyIndex
       in
       let key_taint, state =
@@ -609,7 +609,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               | _ ->
                   (* Default to a benign self if we don't understand/retain information of what self
                      is. *)
-                  Node.create_with_default_location Expression.NoneLiteral
+                  Node.create_with_default_location (Expression.Constant Constant.NoneLiteral)
             in
             { Call.Argument.name = None; value = receiver } :: arguments
           else
@@ -846,7 +846,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
              { Call.Argument.value = self; name = None };
              {
                Call.Argument.value =
-                 { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+                 {
+                   Node.value =
+                     Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
+                   _;
+                 };
                name = None;
              };
              { Call.Argument.value = assigned_value; name = None };
@@ -874,7 +878,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
              { Call.Argument.value = base; _ };
              {
                Call.Argument.value =
-                 { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+                 {
+                   Node.value =
+                     Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
+                   _;
+                 };
                _;
              };
              { Call.Argument.value = default; _ };
@@ -1068,7 +1076,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               match Node.value callee with
               | Name
                   (Name.Attribute
-                    { base = { Node.value = Expression.String _; _ }; attribute = "format"; _ }) ->
+                    {
+                      base = { Node.value = Expression.Constant (Constant.String _); _ };
+                      attribute = "format";
+                      _;
+                    }) ->
                   ForwardState.Tree.add_breadcrumb Features.format_string taint
               | _ -> taint
             in
@@ -1218,7 +1230,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 in
                 taint, state)
         | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
-        | Complex _ -> ForwardState.Tree.empty, state
+        | Constant (Constant.String { StringLiteral.value; _ }) ->
+            analyze_string_literal ~resolution ~state ~location ~nested_expressions:[] value
+        | Constant _ -> ForwardState.Tree.empty, state
         | Dictionary { Dictionary.entries; keywords } ->
             let taint, state =
               List.fold
@@ -1233,12 +1247,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             List.fold keywords ~f:analyze_dictionary_keywords ~init:(taint, state)
         | DictionaryComprehension comprehension ->
             analyze_dictionary_comprehension ~resolution ~state comprehension
-        | Ellipsis
-        | False
-        | Float _ ->
-            ForwardState.Tree.empty, state
         | Generator comprehension -> analyze_comprehension ~resolution comprehension state
-        | Integer _ -> ForwardState.Tree.empty, state
         | Lambda { parameters = _; body } ->
             (* Ignore parameter bindings and pretend body is inlined *)
             analyze_expression ~resolution ~state ~expression:body
@@ -1271,7 +1280,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 let arguments = [{ Call.Argument.name = None; value = base }] in
                 apply_call_targets ~resolution ~callee:expression location arguments state targets
             | _ -> analyze_attribute_access ~resolution ~state ~location base attribute)
-        | NoneLiteral -> ForwardState.Tree.empty, state
         | Set set ->
             List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
         | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state
@@ -1279,8 +1287,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | Starred (Starred.Twice expression) ->
             analyze_expression ~resolution ~state ~expression
             |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
-        | String { StringLiteral.value; _ } ->
-            analyze_string_literal ~resolution ~state ~location ~nested_expressions:[] value
         | FormatString substrings ->
             let value =
               List.map substrings ~f:(function
@@ -1303,7 +1309,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               analyze_expression ~resolution ~state ~expression:alternative
             in
             ForwardState.Tree.join taint_then taint_else, join state_then state_else
-        | True -> ForwardState.Tree.empty, state
         | Tuple expressions ->
             List.foldi
               ~f:(analyze_list_element ~resolution)
@@ -1398,8 +1403,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
-      | Statement.Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
-      | Assign { value = { Node.value = Expression.NoneLiteral; _ }; target; _ } -> (
+      | Statement.Statement.Assign
+          { value = { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
+          state
+      | Assign { value = { Node.value = Expression.Constant Constant.NoneLiteral; _ }; target; _ }
+        -> (
           match AccessPath.of_expression ~resolution target with
           | Some { AccessPath.root; path } ->
               (* We need to take some care to ensure we clear existing taint, without adding new

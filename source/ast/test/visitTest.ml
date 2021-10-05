@@ -56,93 +56,105 @@ let test_collect _ =
     assert_equal ~cmp:equal ~printer expected collect
   in
   assert_collect
-    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Float 2.0)]
-    ( [+Expression.Float 2.0; +Expression.Float 1.0],
-      [+Statement.Expression (+Expression.Float 2.0); +Statement.Expression (+Expression.Float 1.0)]
-    );
-  assert_collect
     [
-      +Statement.If
-         {
-           If.test = +Expression.Float 2.0;
-           body = [+Statement.Expression (+Expression.Float 3.0)];
-           orelse = [+Statement.Expression (+Expression.Float 4.0)];
-         };
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
     ]
-    ( [+Expression.Float 4.0; +Expression.Float 3.0; +Expression.Float 2.0],
+    ( [+Expression.Constant (Constant.Float 2.0); +Expression.Constant (Constant.Float 1.0)],
       [
-        +Statement.If
-           {
-             If.test = +Expression.Float 2.0;
-             body = [+Statement.Expression (+Expression.Float 3.0)];
-             orelse = [+Statement.Expression (+Expression.Float 4.0)];
-           };
-        +Statement.Expression (+Expression.Float 4.0);
-        +Statement.Expression (+Expression.Float 3.0);
+        +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+        +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
       ] );
   assert_collect
     [
       +Statement.If
          {
-           If.test = +Expression.Float 1.0;
-           body =
-             [
-               +Statement.If
-                  {
-                    If.test = +Expression.Float 2.0;
-                    body = [+Statement.Expression (+Expression.Float 3.0)];
-                    orelse = [+Statement.Expression (+Expression.Float 4.0)];
-                  };
-             ];
-           orelse = [+Statement.Expression (+Expression.Float 5.0)];
+           If.test = +Expression.Constant (Constant.Float 2.0);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
          };
     ]
     ( [
-        +Expression.Float 5.0;
-        +Expression.Float 4.0;
-        +Expression.Float 3.0;
-        +Expression.Float 2.0;
-        +Expression.Float 1.0;
+        +Expression.Constant (Constant.Float 4.0);
+        +Expression.Constant (Constant.Float 3.0);
+        +Expression.Constant (Constant.Float 2.0);
       ],
       [
         +Statement.If
            {
-             If.test = +Expression.Float 1.0;
+             If.test = +Expression.Constant (Constant.Float 2.0);
+             body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+             orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
+           };
+        +Statement.Expression (+Expression.Constant (Constant.Float 4.0));
+        +Statement.Expression (+Expression.Constant (Constant.Float 3.0));
+      ] );
+  assert_collect
+    [
+      +Statement.If
+         {
+           If.test = +Expression.Constant (Constant.Float 1.0);
+           body =
+             [
+               +Statement.If
+                  {
+                    If.test = +Expression.Constant (Constant.Float 2.0);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
+                  };
+             ];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 5.0))];
+         };
+    ]
+    ( [
+        +Expression.Constant (Constant.Float 5.0);
+        +Expression.Constant (Constant.Float 4.0);
+        +Expression.Constant (Constant.Float 3.0);
+        +Expression.Constant (Constant.Float 2.0);
+        +Expression.Constant (Constant.Float 1.0);
+      ],
+      [
+        +Statement.If
+           {
+             If.test = +Expression.Constant (Constant.Float 1.0);
              body =
                [
                  +Statement.If
                     {
-                      If.test = +Expression.Float 2.0;
-                      body = [+Statement.Expression (+Expression.Float 3.0)];
-                      orelse = [+Statement.Expression (+Expression.Float 4.0)];
+                      If.test = +Expression.Constant (Constant.Float 2.0);
+                      body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+                      orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
                     };
                ];
-             orelse = [+Statement.Expression (+Expression.Float 5.0)];
+             orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 5.0))];
            };
-        +Statement.Expression (+Expression.Float 5.0);
+        +Statement.Expression (+Expression.Constant (Constant.Float 5.0));
         +Statement.If
            {
-             If.test = +Expression.Float 2.0;
-             body = [+Statement.Expression (+Expression.Float 3.0)];
-             orelse = [+Statement.Expression (+Expression.Float 4.0)];
+             If.test = +Expression.Constant (Constant.Float 2.0);
+             body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+             orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
            };
-        +Statement.Expression (+Expression.Float 4.0);
-        +Statement.Expression (+Expression.Float 3.0);
+        +Statement.Expression (+Expression.Constant (Constant.Float 4.0));
+        +Statement.Expression (+Expression.Constant (Constant.Float 3.0));
       ] );
 
   assert_collect
     [
       +Statement.Expression
-         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+         (+Expression.WalrusOperator
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
     ]
     ( [
-        +Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 };
-        +Expression.Integer 1;
+        +Expression.WalrusOperator
+           { target = !"a"; value = +Expression.Constant (Constant.Integer 1) };
+        +Expression.Constant (Constant.Integer 1);
         +Expression.Name (Identifier "a");
       ],
       [
         +Statement.Expression
-           (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+           (+Expression.WalrusOperator
+               { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
       ] )
 
 

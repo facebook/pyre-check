@@ -208,7 +208,12 @@ let model_compatible
     let errors_and_requirements =
       match Node.value original with
       | { Parameter.value = Some expression; name; _ } ->
-          if not (Expression.equal_expression (Node.value expression) Expression.Ellipsis) then
+          if
+            not
+              (Expression.equal_expression
+                 (Node.value expression)
+                 (Expression.Constant Constant.Ellipsis))
+          then
             Error
               (model_verification_error
                  ~path

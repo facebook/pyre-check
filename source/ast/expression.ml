@@ -46,6 +46,57 @@ module StringLiteral = struct
     | _ -> location_insensitive_compare_kind left.kind right.kind
 end
 
+module Constant = struct
+  type t =
+    | NoneLiteral
+    | Ellipsis
+    | False
+    | True
+    | Integer of int
+    | Float of float
+    | Complex of float
+    | String of StringLiteral.t
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match left, right with
+    | NoneLiteral, NoneLiteral
+    | Ellipsis, Ellipsis
+    | False, False
+    | True, True ->
+        0
+    | Integer left, Integer right -> Int.compare left right
+    | Float left, Float right
+    | Complex left, Complex right ->
+        Float.compare left right
+    | String left, String right -> StringLiteral.compare left right
+    | NoneLiteral, _ -> -1
+    | Ellipsis, _ -> -1
+    | False, _ -> -1
+    | True, _ -> -1
+    | Integer _, _ -> -1
+    | Float _, _ -> -1
+    | Complex _, _ -> -1
+    | String _, _ -> 1
+
+
+  let pp formatter = function
+    | String { StringLiteral.value; kind } ->
+        let bytes =
+          match kind with
+          | StringLiteral.Bytes -> "b"
+          | _ -> ""
+        in
+        Format.fprintf formatter "%s\"%s\"" bytes value
+    | Ellipsis -> Format.fprintf formatter "..."
+    | Float float_value -> Format.fprintf formatter "%f" float_value
+    | Complex float_value -> Format.fprintf formatter "%fj" float_value
+    | False -> Format.fprintf formatter "%s" "False"
+    | Integer integer -> Format.fprintf formatter "%d" integer
+    | NoneLiteral -> Format.fprintf formatter "None"
+    | True -> Format.fprintf formatter "%s" "True"
+end
+
 module rec BooleanOperator : sig
   type operator =
     | And
@@ -699,26 +750,19 @@ and Expression : sig
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
-    | Complex of float
+    | Constant of Constant.t
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
-    | Ellipsis
-    | False
-    | Float of float
     | Generator of t Comprehension.t
-    | Integer of int
     | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
-    | NoneLiteral
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
-    | String of StringLiteral.t
     | Ternary of Ternary.t
-    | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
@@ -740,26 +784,19 @@ end = struct
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
-    | Complex of float
+    | Constant of Constant.t
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
-    | Ellipsis
-    | False
-    | Float of float
     | Generator of t Comprehension.t
-    | Integer of int
     | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
     | Name of Name.t
-    | NoneLiteral
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
-    | String of StringLiteral.t
     | Ternary of Ternary.t
-    | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
@@ -778,19 +815,15 @@ end = struct
     | Call left, Call right -> Call.location_insensitive_compare left right
     | ComparisonOperator left, ComparisonOperator right ->
         ComparisonOperator.location_insensitive_compare left right
-    | Complex left, Complex right -> Float.compare left right
+    | Constant left, Constant right -> Constant.compare left right
     | Dictionary left, Dictionary right -> Dictionary.location_insensitive_compare left right
     | DictionaryComprehension left, DictionaryComprehension right ->
         Comprehension.location_insensitive_compare
           Dictionary.Entry.location_insensitive_compare
           left
           right
-    | Ellipsis, Ellipsis -> 0
-    | False, False -> 0
-    | Float left, Float right -> Float.compare left right
     | Generator left, Generator right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
-    | Integer left, Integer right -> Int.compare left right
     | FormatString left, FormatString right ->
         List.compare Substring.location_insensitive_compare left right
     | Lambda left, Lambda right -> Lambda.location_insensitive_compare left right
@@ -798,14 +831,11 @@ end = struct
     | ListComprehension left, ListComprehension right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
     | Name left, Name right -> Name.location_insensitive_compare left right
-    | NoneLiteral, NoneLiteral -> 0
     | Set left, Set right -> List.compare location_insensitive_compare left right
     | SetComprehension left, SetComprehension right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
     | Starred left, Starred right -> Starred.location_insensitive_compare left right
-    | String left, String right -> StringLiteral.location_insensitive_compare left right
     | Ternary left, Ternary right -> Ternary.location_insensitive_compare left right
-    | True, True -> 0
     | Tuple left, Tuple right -> List.compare location_insensitive_compare left right
     | UnaryOperator left, UnaryOperator right ->
         UnaryOperator.location_insensitive_compare left right
@@ -817,26 +847,19 @@ end = struct
     | BooleanOperator _, _ -> -1
     | Call _, _ -> -1
     | ComparisonOperator _, _ -> -1
-    | Complex _, _ -> -1
+    | Constant _, _ -> -1
     | Dictionary _, _ -> -1
     | DictionaryComprehension _, _ -> -1
-    | Ellipsis, _ -> -1
-    | False, _ -> -1
-    | Float _, _ -> -1
     | Generator _, _ -> -1
-    | Integer _, _ -> -1
     | FormatString _, _ -> -1
     | Lambda _, _ -> -1
     | List _, _ -> -1
     | ListComprehension _, _ -> -1
     | Name _, _ -> -1
-    | NoneLiteral, _ -> -1
     | Set _, _ -> -1
     | SetComprehension _, _ -> -1
     | Starred _, _ -> -1
-    | String _, _ -> -1
     | Ternary _, _ -> -1
-    | True, _ -> -1
     | Tuple _, _ -> -1
     | UnaryOperator _, _ -> -1
     | WalrusOperator _, _ -> -1
@@ -998,13 +1021,6 @@ end = struct
               Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
           | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
           )
-      | String { StringLiteral.value; kind } ->
-          let bytes =
-            match kind with
-            | StringLiteral.Bytes -> "b"
-            | _ -> ""
-          in
-          Format.fprintf formatter "%s\"%s\"" bytes value
       | FormatString substrings ->
           let pp_substring formatter = function
             | Substring.Literal { Node.value; _ } -> Format.fprintf formatter "\"%s\"" value
@@ -1023,17 +1039,12 @@ end = struct
             operator
             pp_expression_t
             right
-      | Ellipsis -> Format.fprintf formatter "..."
-      | Float float_value
-      | Complex float_value ->
-          Format.fprintf formatter "%f" float_value
+      | Constant constant -> Format.fprintf formatter "%a" Constant.pp constant
       | Dictionary { Dictionary.entries; keywords } ->
           Format.fprintf formatter "{ %a%a }" pp_dictionary entries pp_keywords keywords
       | DictionaryComprehension { Comprehension.element; generators } ->
           Format.fprintf formatter "{ %a: %a }" pp_dictionary_entry element pp_generators generators
-      | False -> Format.fprintf formatter "%s" "False"
       | Generator generator -> Format.fprintf formatter "%a" pp_basic_comprehension generator
-      | Integer integer -> Format.fprintf formatter "%d" integer
       | Lambda { Lambda.parameters; body } ->
           Format.fprintf
             formatter
@@ -1048,13 +1059,11 @@ end = struct
       | Name (Name.Identifier name) -> Format.fprintf formatter "%s" name
       | Name (Name.Attribute { base; attribute; _ }) ->
           Format.fprintf formatter "%a.%s" pp_expression (Node.value base) attribute
-      | NoneLiteral -> Format.fprintf formatter "None"
       | Set set -> Format.fprintf formatter "set(%a)" pp_expression_list set
       | SetComprehension set_comprehension ->
           Format.fprintf formatter "set(%a)" pp_basic_comprehension set_comprehension
       | Starred starred -> Format.fprintf formatter "%a" pp_starred starred
       | Ternary ternary -> Format.fprintf formatter "%a" pp_ternary ternary
-      | True -> Format.fprintf formatter "%s" "True"
       | Tuple tuple -> Format.fprintf formatter "(%a)" pp_expression_list tuple
       | UnaryOperator { UnaryOperator.operator; operand } ->
           Format.fprintf
@@ -1128,8 +1137,8 @@ let rec normalize { Node.location; value } =
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator
               { ComparisonOperator.left; operator = ComparisonOperator.inverse operator; right }
-        | False -> True
-        | True -> False
+        | Constant Constant.False -> Constant Constant.True
+        | Constant Constant.True -> Constant Constant.False
         | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value; _ } }
           ->
             value
@@ -1148,13 +1157,13 @@ let rec normalize { Node.location; value } =
 
 let is_false { Node.value; _ } =
   match value with
-  | False -> true
+  | Constant Constant.False -> true
   | _ -> false
 
 
 let is_none { Node.value; _ } =
   match value with
-  | NoneLiteral -> true
+  | Constant Constant.NoneLiteral -> true
   | _ -> false
 
 

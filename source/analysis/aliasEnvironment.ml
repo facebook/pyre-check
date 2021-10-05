@@ -207,7 +207,7 @@ let extract_alias unannotated_global_environment name ~dependency =
               Some (TypeAlias { target = name; value })
             else
               None
-        | ( (Call _ | Name _ | String _),
+        | ( (Call _ | Name _ | Constant (Constant.String _)),
             Some
               {
                 Node.value =

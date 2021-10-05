@@ -435,15 +435,8 @@ module State (Context : Context) = struct
             | Substring.RawFormat _ ->
                 awaitables, state)
     (* Base cases. *)
-    | Complex _
-    | False
-    | Float _
-    | Integer _
-    | String _
-    | Name _
-    | NoneLiteral
-    | True
-    | Ellipsis ->
+    | Constant _
+    | Name _ ->
         [], state
 
 

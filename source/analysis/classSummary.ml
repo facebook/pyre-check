@@ -627,7 +627,9 @@ module ClassAttributes = struct
               |> function
               | Some name ->
                   let value =
-                    let index = Node.create ~location (Expression.Integer index) in
+                    let index =
+                      Node.create ~location (Expression.Constant (Constant.Integer index))
+                    in
                     match value with
                     | { Node.value = Call _; _ }
                     | { Node.value = Name _; _ } ->
@@ -957,7 +959,7 @@ module ClassAttributes = struct
             when is_slots target_value ->
               let add_attribute map { Node.value; _ } =
                 match value with
-                | Expression.String { StringLiteral.value; _ } ->
+                | Expression.Constant (Constant.String { StringLiteral.value; _ }) ->
                     Attribute.create_simple ~location ~name:value ()
                     |> fun attribute ->
                     Identifier.SerializableMap.set map ~key:value ~data:attribute
@@ -1159,7 +1161,7 @@ module ClassSummary = struct
         let name = function
           | {
               Node.value =
-                Ast.Expression.Expression.String { Ast.Expression.StringLiteral.value; _ };
+                Ast.Expression.(Expression.Constant (Constant.String { StringLiteral.value; _ }));
               _;
             } ->
               Some value

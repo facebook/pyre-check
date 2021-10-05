@@ -26,8 +26,8 @@ end = struct
   let final count = count
 
   let expression _ = function
-    | { Node.location; value = Expression.Integer number } ->
-        { Node.location; value = Expression.Integer (number + 1) }
+    | { Node.location; value = Expression.Constant (Constant.Integer number) } ->
+        { Node.location; value = Expression.Constant (Constant.Integer (number + 1)) }
     | expression -> expression
 end
 
@@ -64,50 +64,58 @@ let assert_modifying_source ?(shallow = false) statements expected_statements ex
 
 let test_transform _ =
   assert_modifying_source
-    [+Statement.Expression (+Expression.Integer 1); +Statement.Expression (+Expression.Integer 2)]
-    [+Statement.Expression (+Expression.Integer 2); +Statement.Expression (+Expression.Integer 3)]
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+    ]
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+      +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+    ]
     0;
   assert_modifying_source
     [
       +Statement.Expression
-         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+         (+Expression.WalrusOperator
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
     ]
     [
       +Statement.Expression
-         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 2 });
+         (+Expression.WalrusOperator
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 2) });
     ]
     0;
   assert_modifying_source
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
                +Statement.If
                   {
-                    If.test = +Expression.Integer 2;
-                    body = [+Statement.Expression (+Expression.Integer 3)];
-                    orelse = [+Statement.Expression (+Expression.Integer 4)];
+                    If.test = +Expression.Constant (Constant.Integer 2);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 4))];
                   };
              ];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 2;
+           If.test = +Expression.Constant (Constant.Integer 2);
            body =
              [
                +Statement.If
                   {
-                    If.test = +Expression.Integer 3;
-                    body = [+Statement.Expression (+Expression.Integer 4)];
-                    orelse = [+Statement.Expression (+Expression.Integer 5)];
+                    If.test = +Expression.Constant (Constant.Integer 3);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Integer 4))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
                   };
              ];
-           orelse = [+Statement.Expression (+Expression.Integer 6)];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 6))];
          };
     ]
     0;
@@ -116,33 +124,33 @@ let test_transform _ =
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
                +Statement.If
                   {
-                    If.test = +Expression.Integer 2;
-                    body = [+Statement.Expression (+Expression.Integer 3)];
-                    orelse = [+Statement.Expression (+Expression.Integer 4)];
+                    If.test = +Expression.Constant (Constant.Integer 2);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 4))];
                   };
              ];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
                +Statement.If
                   {
-                    If.test = +Expression.Integer 2;
-                    body = [+Statement.Expression (+Expression.Integer 3)];
-                    orelse = [+Statement.Expression (+Expression.Integer 4)];
+                    If.test = +Expression.Constant (Constant.Integer 2);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 4))];
                   };
              ];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     0
@@ -187,58 +195,64 @@ let assert_expanded_source ?(shallow = false) statements expected_statements =
 
 let test_expansion _ =
   assert_expanded_source
-    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Float 2.0)]
     [
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Float 2.0);
-      +Statement.Expression (+Expression.Float 2.0);
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+    ]
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
     ];
   assert_expanded_source
     ~shallow:true
-    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Float 2.0)]
     [
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Float 2.0);
-      +Statement.Expression (+Expression.Float 2.0);
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+    ]
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
     ];
   assert_expanded_source
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
-           body = [+Statement.Expression (+Expression.Integer 3)];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           If.test = +Expression.Constant (Constant.Integer 1);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
-               +Statement.Expression (+Expression.Integer 3);
-               +Statement.Expression (+Expression.Integer 3);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
              ];
            orelse =
              [
-               +Statement.Expression (+Expression.Integer 5);
-               +Statement.Expression (+Expression.Integer 5);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 5));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 5));
              ];
          };
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
-               +Statement.Expression (+Expression.Integer 3);
-               +Statement.Expression (+Expression.Integer 3);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
              ];
            orelse =
              [
-               +Statement.Expression (+Expression.Integer 5);
-               +Statement.Expression (+Expression.Integer 5);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 5));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 5));
              ];
          };
     ];
@@ -247,23 +261,23 @@ let test_expansion _ =
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
-           body = [+Statement.Expression (+Expression.Integer 3)];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           If.test = +Expression.Constant (Constant.Integer 1);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
-           body = [+Statement.Expression (+Expression.Integer 3)];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           If.test = +Expression.Constant (Constant.Integer 1);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
-           body = [+Statement.Expression (+Expression.Integer 3)];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           If.test = +Expression.Constant (Constant.Integer 1);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
 
@@ -502,10 +516,15 @@ let test_statement_transformer _ =
       let count, value =
         match value with
         | Statement.Assign
-            ({ Assign.value = { Node.value = Integer number; _ } as value; _ } as assign) ->
+            ({ Assign.value = { Node.value = Constant (Constant.Integer number); _ } as value; _ }
+            as assign) ->
             ( count + number,
               Statement.Assign
-                { assign with Assign.value = { value with Node.value = Integer (number + 1) } } )
+                {
+                  assign with
+                  Assign.value =
+                    { value with Node.value = Constant (Constant.Integer (number + 1)) };
+                } )
         | _ -> count, value
       in
       count, [{ Node.location; value }]

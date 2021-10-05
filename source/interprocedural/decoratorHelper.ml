@@ -410,7 +410,7 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
         `Trd
           {
             Dictionary.Entry.key =
-              Expression.String (StringLiteral.create argument_string)
+              Expression.Constant (Constant.String (StringLiteral.create argument_string))
               |> Node.create_with_default_location;
             value = argument;
           }

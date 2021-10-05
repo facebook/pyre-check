@@ -330,7 +330,10 @@ let rec parse_annotations
             [
               {
                 Call.Argument.value =
-                  { Node.value = Expression.String { StringLiteral.value; _ }; _ };
+                  {
+                    Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
+                    _;
+                  };
                 _;
               };
             ];
@@ -538,8 +541,9 @@ let rec parse_annotations
       when [%compare.equal: string option] (base_name callee) (Some "AppliesTo") ->
         let field =
           match index with
-          | Expression.Integer index -> Ok (Abstract.TreeDomain.Label.create_int_index index)
-          | Expression.String { StringLiteral.value = index; _ } ->
+          | Expression.Constant (Constant.Integer index) ->
+              Ok (Abstract.TreeDomain.Label.create_int_index index)
+          | Expression.Constant (Constant.String { StringLiteral.value = index; _ }) ->
               Ok (Abstract.TreeDomain.Label.create_name_index index)
           | _ ->
               Error
@@ -570,14 +574,18 @@ let rec parse_annotations
                    [
                      { Node.value = taint; _ };
                      {
-                       Node.value = Expression.String { StringLiteral.value = canonical_name; _ };
+                       Node.value =
+                         Expression.Constant
+                           (Constant.String { StringLiteral.value = canonical_name; _ });
                        _;
                      };
                      {
-                       Node.value = Expression.String { StringLiteral.value = canonical_port; _ };
+                       Node.value =
+                         Expression.Constant
+                           (Constant.String { StringLiteral.value = canonical_port; _ });
                        _;
                      };
-                     { Node.value = Expression.Integer producer_id; _ };
+                     { Node.value = Expression.Constant (Constant.Integer producer_id); _ };
                    ];
                _;
              };
@@ -628,11 +636,15 @@ let rec parse_annotations
                    [
                      { Node.value = taint; _ };
                      {
-                       Node.value = Expression.String { StringLiteral.value = canonical_name; _ };
+                       Node.value =
+                         Expression.Constant
+                           (Constant.String { StringLiteral.value = canonical_name; _ });
                        _;
                      };
                      {
-                       Node.value = Expression.String { StringLiteral.value = canonical_port; _ };
+                       Node.value =
+                         Expression.Constant
+                           (Constant.String { StringLiteral.value = canonical_port; _ });
                        _;
                      };
                    ];
@@ -1106,7 +1118,7 @@ let introduce_sanitize ~root model annotations =
 
 let parse_find_clause ~path ({ Node.value; location } as expression) =
   match value with
-  | Expression.String { StringLiteral.value; _ } -> (
+  | Expression.Constant (Constant.String { StringLiteral.value; _ }) -> (
       match value with
       | "functions" -> Ok ModelQuery.FunctionModel
       | "methods" -> Ok ModelQuery.MethodModel
@@ -1173,7 +1185,11 @@ let parse_name_constraint ~path ~location ({ Node.value; _ } as constraint_expre
       | [
        {
          Call.Argument.value =
-           { Node.value = Expression.String { StringLiteral.value = name_constraint; _ }; _ };
+           {
+             Node.value =
+               Expression.Constant (Constant.String { StringLiteral.value = name_constraint; _ });
+             _;
+           };
          _;
        };
       ] -> (
@@ -1209,7 +1225,11 @@ let parse_annotation_constraint ~path ~location ({ Node.value; _ } as constraint
           [
             {
               Call.Argument.value =
-                { Node.value = Expression.String { StringLiteral.value = type_name; _ }; _ };
+                {
+                  Node.value =
+                    Expression.Constant (Constant.String { StringLiteral.value = type_name; _ });
+                  _;
+                };
               _;
             };
           ] ) ->
@@ -1218,7 +1238,12 @@ let parse_annotation_constraint ~path ~location ({ Node.value; _ } as constraint
           [
             {
               Call.Argument.value =
-                { Node.value = Expression.String { StringLiteral.value = type_name_pattern; _ }; _ };
+                {
+                  Node.value =
+                    Expression.Constant
+                      (Constant.String { StringLiteral.value = type_name_pattern; _ });
+                  _;
+                };
               _;
             };
           ] ) ->
@@ -1434,7 +1459,11 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             | [
              {
                Call.Argument.value =
-                 { Node.value = Expression.String { StringLiteral.value = class_name; _ }; _ };
+                 {
+                   Node.value =
+                     Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
+                   _;
+                 };
                _;
              };
             ] ->
@@ -1474,7 +1503,11 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             | [
              {
                Call.Argument.value =
-                 { Node.value = Expression.String { StringLiteral.value = class_name; _ }; _ };
+                 {
+                   Node.value =
+                     Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
+                   _;
+                 };
                _;
              };
             ] ->
@@ -1482,7 +1515,11 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             | [
              {
                Call.Argument.value =
-                 { Node.value = Expression.String { StringLiteral.value = class_name; _ }; _ };
+                 {
+                   Node.value =
+                     Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
+                   _;
+                 };
                _;
              };
              {
@@ -1491,8 +1528,8 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
              };
             ] ->
                 (match is_transitive_value with
-                | Expression.True -> Ok true
-                | Expression.False -> Ok false
+                | Expression.Constant Constant.True -> Ok true
+                | Expression.Constant Constant.False -> Ok false
                 | _ ->
                     Error
                       (model_verification_error
@@ -1592,7 +1629,14 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
           arguments;
         } -> (
         match attribute, arguments with
-        | "equals", [{ Call.Argument.value = { Node.value = Expression.Integer index; _ }; _ }] ->
+        | ( "equals",
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Expression.Constant (Constant.Integer index); _ };
+                _;
+              };
+            ] ) ->
             Ok (ModelQuery.ParameterConstraint.IndexConstraint index)
         | _ ->
             Error
@@ -1715,7 +1759,8 @@ let parse_model_clause
           arguments =
             [
               {
-                Call.Argument.value = { Node.value = String { StringLiteral.value = name; _ }; _ };
+                Call.Argument.value =
+                  { Node.value = Constant (Constant.String { StringLiteral.value = name; _ }); _ };
                 name = Some { Node.value = "name"; _ };
               };
               { Call.Argument.value = taint; name = Some { Node.value = "taint"; _ } };
@@ -1730,7 +1775,7 @@ let parse_model_clause
           arguments =
             [
               {
-                Call.Argument.value = { Node.value = Integer index; _ };
+                Call.Argument.value = { Node.value = Constant (Constant.Integer index); _ };
                 name = Some { Node.value = "index"; _ };
               };
               { Call.Argument.value = taint; name = Some { Node.value = "taint"; _ } };
@@ -1765,7 +1810,8 @@ let parse_model_clause
             let excludes =
               let parse_string_to_exclude ({ Node.value; location } as exclude) =
                 match value with
-                | Expression.String { StringLiteral.value; _ } -> Core.Result.Ok value
+                | Expression.Constant (Constant.String { StringLiteral.value; _ }) ->
+                    Core.Result.Ok value
                 | _ ->
                     Error
                       (model_verification_error ~path ~location (InvalidParameterExclude exclude))
@@ -2205,7 +2251,10 @@ let parse_statement ~resolution ~path ~configuration statement =
      Statement.Define
        {
          signature = { name = { Node.value = name; _ }; _ } as signature;
-         body = [{ value = Statement.Expression { value = Expression.Ellipsis; _ }; _ }];
+         body =
+           [
+             { value = Statement.Expression { value = Expression.Constant Constant.Ellipsis; _ }; _ };
+           ];
          _;
        };
    location;
@@ -2234,7 +2283,14 @@ let parse_statement ~resolution ~path ~configuration statement =
        {
          Class.name = { Node.value = name; _ };
          base_arguments;
-         body = [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }];
+         body =
+           [
+             {
+               Node.value =
+                 Statement.Expression { Node.value = Expression.Constant Constant.Ellipsis; _ };
+               _;
+             };
+           ];
          _;
        };
    _;
@@ -2300,7 +2356,9 @@ let parse_statement ~resolution ~path ~configuration statement =
                                match value with
                                | None -> None
                                | Some _ ->
-                                   Some (Node.create_with_default_location Expression.Ellipsis)
+                                   Some
+                                     (Node.create_with_default_location
+                                        (Expression.Constant Constant.Ellipsis))
                              in
                              { Parameter.name; annotation = sink_annotation; value }
                            in
@@ -2498,7 +2556,11 @@ let parse_statement ~resolution ~path ~configuration statement =
         | [
          {
            Call.Argument.name = Some { Node.value = "name"; _ };
-           value = { Node.value = Expression.String { StringLiteral.value = name; _ }; _ };
+           value =
+             {
+               Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
+               _;
+             };
          };
          { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
          { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };

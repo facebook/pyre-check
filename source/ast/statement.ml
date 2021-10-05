@@ -278,7 +278,7 @@ end = struct
         when Reference.equal name (Reference.create "dataclasses.dataclass") ->
           let has_frozen_argument Call.Argument.{ name; value } =
             match name, value with
-            | Some { Node.value; _ }, { Node.value = Expression.True; _ } ->
+            | Some { Node.value; _ }, { Node.value = Expression.Constant Constant.True; _ } ->
                 String.equal "frozen" (Identifier.sanitized value)
             | _, _ -> false
           in
@@ -827,8 +827,10 @@ end = struct
   let is_stub { body; _ } =
     let open Expression in
     match List.rev body with
-    | { Node.value = Expression { Node.value = Expression.Ellipsis; _ }; _ } :: _
-    | _ :: { Node.value = Expression { Node.value = Expression.Ellipsis; _ }; _ } :: _ ->
+    | { Node.value = Expression { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } :: _
+    | _
+      :: { Node.value = Expression { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ }
+         :: _ ->
         true
     | _ -> false
 
@@ -1024,7 +1026,7 @@ end = struct
               {
                 Assign.target;
                 annotation = None;
-                value = Node.create ~location Expression.Ellipsis;
+                value = Node.create ~location (Expression.Constant Constant.Ellipsis);
                 parent = None;
               };
         };
@@ -1673,16 +1675,9 @@ let is_generator statements =
         || is_expression_generator alternative
     | UnaryOperator { UnaryOperator.operand; _ } -> is_expression_generator operand
     | WalrusOperator { WalrusOperator.value; _ } -> is_expression_generator value
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
+    | Constant _
     | Lambda _
-    | Name _
-    | NoneLiteral
-    | String _
-    | True ->
+    | Name _ ->
         false
   and is_comprehension_generator
         : 'a. is_element_generator:('a -> bool) -> 'a Comprehension.t -> bool
