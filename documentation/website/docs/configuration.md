@@ -149,8 +149,6 @@ be specified in `.pyre_configuration`.
 - `--typeshed TYPESHED`: Path to the [Typeshed](https://github.com/python/typeshed) standard library,
 which provides typed stubs for library functions. This can also be set in `.pyre_configuration`.
 
-- `--verbose`: Enable verbose logging. Most useful when used in conjunction with `--noninteractive`.
-
 - `--version`: Print the current version of Pyre.
 
 </OssOnly>
