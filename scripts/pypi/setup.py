@@ -107,6 +107,24 @@ def run(
                 "pyre-upgrade = " + module_name + ".tools.upgrade.upgrade:main",
             ]
         ),
+        # pyre-fixme[6]: Expected `List[setuptools.extension.Extension]` for 20th
+        #  param but got `object`.
+        # pyre-fixme[6]: Expected `List[str]` for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, typing.Any]` for 20th param but got
+        #  `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, List[str]]` for 20th param but got
+        #  `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, typing.Mapping[str,
+        #  Tuple[typing.Any, typing.Any]]]` for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, typing.Type[setuptools.Command]]`
+        #  for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, str]` for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `Type[setuptools.dist.Distribution]` for 20th
+        #  param but got `object`.
+        # pyre-fixme[6]: Expected `Union[List[str], str]` for 20th param but got
+        #  `object`.
+        # pyre-fixme[6]: Expected `bool` for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `str` for 20th param but got `object`.
         **kwargs
     )
 

@@ -139,6 +139,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             os.path.join(scratch_directory, relative_path),
         )
 
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `f"{tools.pyre.client.analysis_directory.__name__}"".find_buck_root"` to
+    #  decorator factory `unittest.mock.patch`.
     @patch(f"{analysis_directory_name}.find_buck_root", return_value="/buck_root")
     @patch.object(os.path, "exists", return_value=True)
     def test_filter_root_for_buck(
@@ -909,9 +912,10 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         "generate_source_directories",
         side_effect=lambda targets, build, prompt: targets,
     )
-    # pyre-fixme[56]: Argument `os.path` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "relpath", side_effect=lambda path, relative: path)
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `f"{tools.pyre.client.analysis_directory.__name__}"".find_buck_root"` to
+    #  decorator factory `unittest.mock.patch`.
     @patch(f"{analysis_directory_name}.find_buck_root", return_value="/buck_root")
     def test_resolve_analysis_directory(
         self, find_buck_root, relpath, buck  # pyre-fixme[2]

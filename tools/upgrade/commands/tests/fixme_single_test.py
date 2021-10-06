@@ -26,6 +26,9 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(Configuration, "get_errors")
     @patch.object(ErrorSuppressingCommand, "_apply_suppressions")
     @patch(f"{fixme_single.__name__}.add_local_mode")
+    # pyre-fixme[56]: Pyre was not able to infer the type of argument
+    #  `f"{tools.pyre.tools.upgrade.upgrade.__name__}"".Repository.commit_changes"` to
+    #  decorator factory `unittest.mock.patch`.
     @patch(f"{upgrade.__name__}.Repository.commit_changes")
     def test_run_fixme_single(
         self,
