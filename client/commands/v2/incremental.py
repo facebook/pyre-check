@@ -90,7 +90,10 @@ def run_incremental(
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> remote_logging.ExitCodeWithAdditionalLogging:
     socket_path = server_connection.get_default_socket_path(
-        log_directory=Path(configuration.log_directory)
+        project_root=Path(configuration.project_root),
+        relative_local_root=Path(configuration.relative_local_root)
+        if configuration.relative_local_root
+        else None,
     )
     # Need to be consistent with the log symlink location in start command
     log_path = Path(configuration.log_directory) / "new_server" / "server.stderr"

@@ -32,7 +32,10 @@ def remove_socket_if_exists(socket_path: Path) -> None:
 
 def run_stop(configuration: configuration_module.Configuration) -> commands.ExitCode:
     socket_path = server_connection.get_default_socket_path(
-        log_directory=Path(configuration.log_directory)
+        project_root=Path(configuration.project_root),
+        relative_local_root=Path(configuration.relative_local_root)
+        if configuration.relative_local_root
+        else None,
     )
     try:
         LOG.info("Stopping server...")

@@ -136,6 +136,14 @@ class Arguments:
         return {
             **self.base_arguments.serialize(),
             "strict": self.strict,
+            "socket_path": str(
+                server_connection.get_default_socket_path(
+                    Path(self.base_arguments.global_root),
+                    Path(self.base_arguments.relative_local_root)
+                    if self.base_arguments.relative_local_root
+                    else None,
+                )
+            ),
             "show_error_traces": self.show_error_traces,
             "additional_logging_sections": self.additional_logging_sections,
             **(
@@ -380,6 +388,7 @@ def _run_in_background(
     command: Sequence[str],
     environment: Mapping[str, str],
     log_directory: Path,
+    socket_path: Path,
     event_waiter: server_event.Waiter,
 ) -> commands.ExitCode:
     # In background mode, we asynchronously start the server with `Popen` and
@@ -422,9 +431,7 @@ def _run_in_background(
         # Since we abruptly terminate the background server, it may not have the
         # chance to clean up the socket file properly. Make sure the file is
         # removed on our side.
-        stop.remove_socket_if_exists(
-            server_connection.get_default_socket_path(log_directory)
-        )
+        stop.remove_socket_if_exists(socket_path)
 
         raise commands.ClientException("Interrupted by user. No server is spawned.")
 
@@ -464,10 +471,17 @@ def run_start(
         if start_arguments.terminal:
             return _run_in_foreground(server_command, server_environment)
         else:
+            socket_path = server_connection.get_default_socket_path(
+                Path(configuration.project_root),
+                Path(configuration.relative_local_root)
+                if configuration.relative_local_root
+                else None,
+            )
             return _run_in_background(
                 server_command,
                 server_environment,
                 log_directory,
+                socket_path,
                 server_event.Waiter(
                     wait_on_initialization=start_arguments.wait_on_initialization
                 ),

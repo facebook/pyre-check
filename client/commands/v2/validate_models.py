@@ -65,7 +65,10 @@ def run(
     configuration: configuration_module.Configuration, output: str
 ) -> commands.ExitCode:
     socket_path = server_connection.get_default_socket_path(
-        log_directory=Path(configuration.log_directory)
+        project_root=Path(configuration.project_root),
+        relative_local_root=Path(configuration.relative_local_root)
+        if configuration.relative_local_root
+        else None,
     )
     try:
         response = query.query_server(socket_path, "validate_taint_models()")

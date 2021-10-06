@@ -55,8 +55,12 @@ def get_default_socket_root() -> Path:
     return Path(tempfile.gettempdir())
 
 
-def get_default_socket_path(log_directory: Path) -> Path:
-    return get_socket_path(get_default_socket_root(), log_directory)
+def get_default_socket_path(
+    project_root: Path, relative_local_root: Optional[Path]
+) -> Path:
+    return get_user_independent_socket_path(
+        get_default_socket_root(), project_root, relative_local_root
+    )
 
 
 @contextlib.contextmanager
