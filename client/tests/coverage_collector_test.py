@@ -9,7 +9,7 @@ from typing import List
 
 import libcst as cst
 
-from ..commands.coverage import _collect_coverage
+from ..coverage_collector import collect_coverage_for_module
 
 
 class CoverageTest(unittest.TestCase):
@@ -20,7 +20,7 @@ class CoverageTest(unittest.TestCase):
         expected_uncovered: List[int],
     ) -> None:
         module = cst.parse_module(textwrap.dedent(file_content).strip())
-        actual_coverage = _collect_coverage({"test.py": module})[0]
+        actual_coverage = collect_coverage_for_module("test.py", module)
         self.assertEqual(
             expected_covered, actual_coverage.covered_lines, "Covered mismatch"
         )
