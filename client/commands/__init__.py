@@ -18,7 +18,6 @@ from .incremental import Incremental as Incremental
 from .query import Query as Query
 from .rage import Rage as Rage
 from .reporting import Reporting as Reporting
-from .restart import Restart as Restart
 from .servers import Servers as Servers
 from .stop import Stop as Stop
 from .validate_models import ValidateModels as ValidateModels
@@ -30,7 +29,6 @@ COMMANDS: List[Type[CommandParser]] = [
     Query,
     Rage,
     Reporting,
-    Restart,
     Servers,
     Stop,
     ValidateModels,
