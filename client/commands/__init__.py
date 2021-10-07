@@ -14,7 +14,6 @@ from .command import (  # noqa; noqa; noqa
     ExitCode as ExitCode,
     IncrementalStyle as IncrementalStyle,
 )
-from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
 from .query import Query as Query
 from .rage import Rage as Rage
@@ -28,7 +27,6 @@ from .validate_models import ValidateModels as ValidateModels
 COMMANDS: List[Type[CommandParser]] = [
     Analyze,
     Check,
-    Deobfuscate,
     Incremental,
     Query,
     Rage,
