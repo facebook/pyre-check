@@ -274,7 +274,6 @@ class FilesystemTest(unittest.TestCase):
             merge.assert_has_calls([call()])
             clear.assert_has_calls([call()])
 
-
     @patch("os.unlink")
     def test_delete_symbolic_link(self, unlink):
         # delete succeeds
