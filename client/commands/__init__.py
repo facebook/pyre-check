@@ -15,12 +15,10 @@ from .command import (  # noqa; noqa; noqa
 )
 from .query import Query as Query
 from .reporting import Reporting as Reporting
-from .validate_models import ValidateModels as ValidateModels
 
 COMMANDS: List[Type[CommandParser]] = [
     Analyze,
     Check,
     Query,
     Reporting,
-    ValidateModels,
 ]

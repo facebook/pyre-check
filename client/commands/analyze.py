@@ -4,18 +4,62 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import dataclasses
 import json
-from typing import List, Optional
+import os
+from pathlib import Path
+from typing import List, Optional, Sequence, Dict, Any
 
 from typing_extensions import Final
 
 from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from ..error import print_errors
+from ..error import ModelVerificationError, print_errors
 from .check import Check
 from .command import ClientException, ExitCode
-from .validate_models import ValidateModels
+
+
+def _relativize_error(
+    configuration: Configuration,
+    relative_root: str,
+    error: ModelVerificationError,
+    original_directory: str,
+) -> ModelVerificationError:
+    if error.path is None:
+        return error
+
+    path = os.path.realpath(os.path.join(relative_root, error.path))
+    # If relative paths don't make sense, keep the absolute path around.
+    if not path.startswith(configuration.project_root) or not os.path.exists(path):
+        return error
+
+    # Relativize path to user's cwd.
+    relative_path = os.path.relpath(path, original_directory)
+    return dataclasses.replace(error, path=relative_path)
+
+
+def parse_errors(
+    json_result: Dict[str, Any],
+    configuration: Configuration,
+    analysis_directory: AnalysisDirectory,
+    original_directory: str,
+) -> Sequence[ModelVerificationError]:
+    if "errors" not in json_result:
+        return []
+    analysis_root = os.path.realpath(analysis_directory.get_root())
+    return sorted(
+        (
+            _relativize_error(
+                configuration,
+                analysis_root,
+                ModelVerificationError.from_json(error_json),
+                original_directory,
+            )
+            for error_json in json_result["errors"]
+        ),
+        key=lambda error: (error.path or Path(), error.line, error.code),
+    )
 
 
 class Analyze(Check):
@@ -122,7 +166,7 @@ class Analyze(Check):
         result.check()
 
         try:
-            errors = ValidateModels.parse_errors(
+            errors = parse_errors(
                 json.loads(result.output),
                 self._configuration,
                 self._analysis_directory,
