@@ -974,7 +974,6 @@ def kill(context: click.Context, with_fire: bool) -> int:
 
 
 @pyre.command()
-@click.option("--no-watchman", is_flag=True, default=False, hidden=True)
 @click.pass_context
 def persistent(context: click.Context, no_watchman: bool) -> int:
     """
@@ -987,30 +986,16 @@ def persistent(context: click.Context, no_watchman: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, base_directory
     )
-    if configuration.use_command_v2:
-        _start_logging_to_directory(
-            configuration.log_directory,
-        )
-        # NOTE(grievejia): `--no-watchman` has no effect here. We might want to
-        # either respect it or deprecate it at some point.
-        return v2.persistent.run(
-            command_argument,
-            base_directory,
-            v2.backend_arguments.RemoteLogging.create(
-                configuration.logger, command_argument.log_identifier
-            ),
-        )
-    else:
-        return run_pyre_command(
-            commands.Persistent(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                no_watchman=no_watchman,
-            ),
-            configuration,
-            True,
-        )
+    _start_logging_to_directory(
+        configuration.log_directory,
+    )
+    return v2.persistent.run(
+        command_argument,
+        base_directory,
+        v2.backend_arguments.RemoteLogging.create(
+            configuration.logger, command_argument.log_identifier
+        ),
+    )
 
 
 @pyre.command()

@@ -16,7 +16,6 @@ from .command import (  # noqa; noqa; noqa
 )
 from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
-from .persistent import Persistent as Persistent
 from .query import Query as Query
 from .rage import Rage as Rage
 from .reporting import Reporting as Reporting
@@ -31,7 +30,6 @@ COMMANDS: List[Type[CommandParser]] = [
     Check,
     Deobfuscate,
     Incremental,
-    Persistent,
     Query,
     Rage,
     Reporting,
