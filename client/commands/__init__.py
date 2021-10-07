@@ -13,12 +13,10 @@ from .command import (  # noqa; noqa; noqa
     CommandParser as CommandParser,
     ExitCode as ExitCode,
 )
-from .query import Query as Query
 from .reporting import Reporting as Reporting
 
 COMMANDS: List[Type[CommandParser]] = [
     Analyze,
     Check,
-    Query,
     Reporting,
 ]

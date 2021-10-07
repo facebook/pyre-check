@@ -1042,21 +1042,8 @@ def query(context: click.Context, query: str) -> int:
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-
-    if configuration.use_command_v2:
-        _start_logging_to_directory(configuration.log_directory)
-        return v2.query.run(configuration, query)
-    else:
-        return run_pyre_command(
-            commands.Query(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                query=query,
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    _start_logging_to_directory(configuration.log_directory)
+    return v2.query.run(configuration, query)
 
 
 @pyre.command()
