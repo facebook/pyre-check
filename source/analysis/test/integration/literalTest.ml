@@ -450,6 +450,38 @@ let test_string_literal context =
         return x
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def connection_query(sql: Literal[str], value: str) -> None: ...
+
+      def my_query(value: str, limit: bool) -> None:
+        SQL = "SELECT * FROM table WHERE col = %s"
+
+        if limit:
+          SQL = SQL + "LIMIT 1"
+
+        connection_query(SQL, value)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def connection_query(sql: Literal[str], value: str) -> None: ...
+
+      def my_query(value: str, limit: bool) -> None:
+        SQL = "SELECT * FROM table WHERE col = %s"
+        if limit:
+          SQL = SQL + "LIMIT 1"
+
+        connection_query(SQL + value, value)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
+       positional only parameter to call `connection_query` but got `str`.";
+    ];
   ()
 
 
