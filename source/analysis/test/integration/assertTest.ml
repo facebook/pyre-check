@@ -270,8 +270,9 @@ let test_check_all context =
           return ','.join(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Iterable[str]` for 1st positional only \
-       parameter to call `str.join` but got `typing.Iterable[typing.Optional[str]]`.";
+      "Incompatible parameter type [6]: Expected `typing.Iterable[typing_extensions.Literal[str]]` \
+       for 1st positional only parameter to call `str.join` but got \
+       `typing.Iterable[typing.Optional[str]]`.";
     ];
   assert_type_errors
     {|

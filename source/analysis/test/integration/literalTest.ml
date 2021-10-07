@@ -482,6 +482,31 @@ let test_string_literal context =
       "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
        positional only parameter to call `connection_query` but got `str`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def foo(s: str, literal_string: Literal[str]) -> None:
+        y = ", ".join(["a", "b", "c"])
+        reveal_type(y)
+
+        y2 = ", ".join(["a", "b", s])
+        reveal_type(y2)
+
+        xs: list[Literal[str]]
+        y3 = ", ".join(xs)
+        reveal_type(y3)
+
+        xs: list[Literal[str]]
+        y4 = s.join(xs)
+        reveal_type(y4)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[str]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `str`.";
+      "Revealed type [-1]: Revealed type for `y3` is `typing_extensions.Literal[str]`.";
+      "Revealed type [-1]: Revealed type for `y4` is `str`.";
+    ];
   ()
 
 
