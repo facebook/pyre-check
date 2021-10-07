@@ -16,8 +16,8 @@ from .. import command_arguments, log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..error import ModelVerificationError, print_errors
-from .check import Check
 from .command import ClientException, ExitCode
+from .reporting import Reporting
 
 
 def _relativize_error(
@@ -62,7 +62,7 @@ def parse_errors(
     )
 
 
-class Analyze(Check):
+class Analyze(Reporting):
     NAME = "analyze"
 
     def __init__(
@@ -123,6 +123,39 @@ class Analyze(Check):
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
+        filter_directories = self._get_directories_to_analyze()
+        filter_directories.update(
+            set(self._configuration.get_existent_do_not_ignore_errors_in_paths())
+        )
+        if len(filter_directories):
+            flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
+        flags.extend(["-workers", str(self._configuration.get_number_of_workers())])
+
+        search_path = [
+            search_path.command_line_argument()
+            for search_path in (
+                self._configuration.expand_and_get_existent_search_paths()
+            )
+        ]
+
+        ignore_all_errors_paths = (
+            self._configuration.get_existent_ignore_all_errors_paths()
+        )
+        if len(ignore_all_errors_paths):
+            flags.extend(
+                ["-ignore-all-errors", ";".join(sorted(ignore_all_errors_paths))]
+            )
+        if search_path:
+            flags.extend(["-search-path", ",".join(search_path)])
+        excludes = self._configuration.excludes
+        for exclude in excludes:
+            flags.extend(["-exclude", exclude])
+        extensions = [
+            extension.command_line_argument()
+            for extension in self._configuration.extensions
+        ]
+        for extension in extensions:
+            flags.extend(["-extension", extension])
         flags.extend(["-analysis", self._analysis])
         if self._taint_models_path:
             for path in self._taint_models_path:

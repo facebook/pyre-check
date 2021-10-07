@@ -153,29 +153,20 @@ def run_pyre_command(
 
 def _run_check_command(arguments: command_arguments.CommandArguments) -> ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
-    if configuration.use_command_v2:
-        _check_configuration(configuration)
-        _start_logging_to_directory(configuration.log_directory)
-        check_arguments = command_arguments.CheckArguments(
-            debug=arguments.debug,
-            enable_memory_profiling=arguments.enable_memory_profiling,
-            enable_profiling=arguments.enable_profiling,
-            log_identifier=arguments.log_identifier,
-            logging_sections=arguments.logging_sections,
-            noninteractive=arguments.noninteractive,
-            output=arguments.output,
-            sequential=arguments.sequential,
-            show_error_traces=arguments.show_error_traces,
-        )
-        return v2.check.run(configuration, check_arguments)
-    else:
-        return run_pyre_command(
-            commands.Check(
-                arguments, original_directory=os.getcwd(), configuration=configuration
-            ),
-            configuration,
-            arguments.noninteractive,
-        )
+    _check_configuration(configuration)
+    _start_logging_to_directory(configuration.log_directory)
+    check_arguments = command_arguments.CheckArguments(
+        debug=arguments.debug,
+        enable_memory_profiling=arguments.enable_memory_profiling,
+        enable_profiling=arguments.enable_profiling,
+        log_identifier=arguments.log_identifier,
+        logging_sections=arguments.logging_sections,
+        noninteractive=arguments.noninteractive,
+        output=arguments.output,
+        sequential=arguments.sequential,
+        show_error_traces=arguments.show_error_traces,
+    )
+    return v2.check.run(configuration, check_arguments)
 
 
 def _run_incremental_command(
