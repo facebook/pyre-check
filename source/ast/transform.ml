@@ -91,6 +91,13 @@ module Make (Transformer : Transformer) = struct
     let transform_entry { Dictionary.Entry.key; value } ~transform_expression =
       { Dictionary.Entry.key = transform_expression key; value = transform_expression value }
     in
+    let transform_substring substring ~transform_expression =
+      match substring with
+      | Substring.Format expression -> Substring.Format (transform_expression expression)
+      | Substring.Literal _
+      | Substring.RawFormat _ ->
+          substring
+    in
     let rec transform_expression expression =
       let transform_children value =
         match value with
@@ -133,7 +140,8 @@ module Make (Transformer : Transformer) = struct
                 generators =
                   transform_list generators ~f:(transform_generator ~transform_expression);
               }
-        | FormatString _ -> value
+        | FormatString substrings ->
+            FormatString (transform_list substrings ~f:(transform_substring ~transform_expression))
         | Lambda { Lambda.parameters; body } ->
             Lambda
               {

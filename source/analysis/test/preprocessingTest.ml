@@ -5553,8 +5553,14 @@ let test_union_shorthand _ =
 
 let test_mangle_private_attributes _ =
   let assert_replace ?(handle = "test.py") source expected =
-    let expected = parse ~handle ~coerce_special_methods:true expected in
-    let actual = parse ~handle source |> Preprocessing.mangle_private_attributes in
+    let expected =
+      parse ~handle ~coerce_special_methods:true expected |> Preprocessing.expand_format_string
+    in
+    let actual =
+      parse ~handle source
+      |> Preprocessing.expand_format_string
+      |> Preprocessing.mangle_private_attributes
+    in
     assert_source_equal ~location_insensitive:true expected actual
   in
   assert_replace
@@ -5652,6 +5658,22 @@ let test_mangle_private_attributes _ =
         class C:
           def _C__bar(self):
             pass
+    |};
+  ();
+  assert_replace
+    {|
+      class Foo:
+        x = 1
+        __y = 1
+        def test(self) -> str:
+          return f"{self.x}" + f"{self.__y}" + "{self.__y}"
+    |}
+    {|
+      class Foo:
+        x = 1
+        _Foo__y = 1
+        def test(self) -> str:
+          return f"{self.x}" + f"{self._Foo__y}" + "{self.__y}"
     |};
   ()
 
