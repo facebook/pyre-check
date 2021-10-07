@@ -1324,47 +1324,30 @@ def start(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    if configuration.use_command_v2:
-        _check_configuration(configuration)
-        _start_logging_to_directory(configuration.log_directory)
-        return v2.start.run(
-            configuration,
-            command_arguments.StartArguments(
-                changed_files_path=command_argument.changed_files_path,
-                debug=command_argument.debug,
-                enable_memory_profiling=command_argument.enable_memory_profiling,
-                enable_profiling=command_argument.enable_profiling,
-                load_initial_state_from=command_argument.load_initial_state_from,
-                log_identifier=command_argument.log_identifier,
-                logging_sections=command_argument.logging_sections,
-                no_saved_state=command_argument.no_saved_state,
-                no_watchman=no_watchman,
-                noninteractive=command_argument.noninteractive,
-                save_initial_state_to=command_argument.save_initial_state_to,
-                saved_state_project=command_argument.saved_state_project,
-                sequential=command_argument.sequential,
-                show_error_traces=command_argument.show_error_traces,
-                store_type_check_resolution=store_type_check_resolution,
-                terminal=terminal,
-                wait_on_initialization=wait_on_initialization,
-            ),
-        )
-    else:
-        return run_pyre_command(
-            commands.Start(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                terminal=terminal,
-                store_type_check_resolution=store_type_check_resolution,
-                use_watchman=not no_watchman,
-                incremental_style=commands.IncrementalStyle.SHALLOW
-                if incremental_style == str(commands.IncrementalStyle.SHALLOW)
-                else commands.IncrementalStyle.FINE_GRAINED,
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    _check_configuration(configuration)
+    _start_logging_to_directory(configuration.log_directory)
+    return v2.start.run(
+        configuration,
+        command_arguments.StartArguments(
+            changed_files_path=command_argument.changed_files_path,
+            debug=command_argument.debug,
+            enable_memory_profiling=command_argument.enable_memory_profiling,
+            enable_profiling=command_argument.enable_profiling,
+            load_initial_state_from=command_argument.load_initial_state_from,
+            log_identifier=command_argument.log_identifier,
+            logging_sections=command_argument.logging_sections,
+            no_saved_state=command_argument.no_saved_state,
+            no_watchman=no_watchman,
+            noninteractive=command_argument.noninteractive,
+            save_initial_state_to=command_argument.save_initial_state_to,
+            saved_state_project=command_argument.saved_state_project,
+            sequential=command_argument.sequential,
+            show_error_traces=command_argument.show_error_traces,
+            store_type_check_resolution=store_type_check_resolution,
+            terminal=terminal,
+            wait_on_initialization=wait_on_initialization,
+        ),
+    )
 
 
 @pyre.command()
