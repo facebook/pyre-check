@@ -1432,30 +1432,15 @@ def statistics(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-
-    if configuration.use_command_v2:
-        return v2.statistics.run(
-            configuration,
-            command_arguments.StatisticsArguments(
-                filter_paths=list(filter_paths),
-                log_identifier=command_argument.log_identifier,
-                log_results=log_results,
-                print_aggregates=print_aggregates,
-            ),
-        )
-    else:
-        return run_pyre_command(
-            commands.Statistics(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                filter_paths=list(filter_paths),
-                log_results=log_results,
-                aggregate=print_aggregates,
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    return v2.statistics.run(
+        configuration,
+        command_arguments.StatisticsArguments(
+            filter_paths=list(filter_paths),
+            log_identifier=command_argument.log_identifier,
+            log_results=log_results,
+            print_aggregates=print_aggregates,
+        ),
+    )
 
 
 @pyre.command()
