@@ -13,6 +13,21 @@ TEXT: str = "text"
 JSON: str = "json"
 
 
+class ProfileOutput(enum.Enum):
+    TRACE_EVENT: str = "trace_event"
+    COLD_START_PHASES: str = "cold_start_phases"
+    INCREMENTAL_UPDATES: str = "incremental_updates"
+    TAINT: str = "taint"
+    INDIVIDUAL_TABLE_SIZES: str = "individual_table_sizes"
+    TOTAL_SHARED_MEMORY_SIZE_OVER_TIME: str = "total_shared_memory_size_over_time"
+    TOTAL_SHARED_MEMORY_SIZE_OVER_TIME_GRAPH: str = (
+        "total_shared_memory_size_over_time_graph"  # noqa B950
+    )
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class MissingFlowsKind(str, enum.Enum):
     OBSCURE: str = "obscure"
     TYPE: str = "type"

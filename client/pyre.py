@@ -1056,8 +1056,8 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
 @pyre.command()
 @click.option(
     "--profile-output",
-    type=click.Choice([str(x) for x in commands.ProfileOutput]),
-    default=str(commands.ProfileOutput.COLD_START_PHASES),
+    type=click.Choice([str(x) for x in command_arguments.ProfileOutput]),
+    default=str(command_arguments.ProfileOutput.COLD_START_PHASES),
     help="Specify what to output.",
 )
 @click.pass_context
@@ -1066,27 +1066,15 @@ def profile(context: click.Context, profile_output: str) -> int:
     Display profiling output.
     """
 
-    def get_profile_output(profile_output: str) -> commands.ProfileOutput:
-        for item in commands.ProfileOutput:
+    def get_profile_output(profile_output: str) -> command_arguments.ProfileOutput:
+        for item in command_arguments.ProfileOutput:
             if str(item) == profile_output:
                 return item
         raise ValueError(f"Unrecognized value for --profile-output: {profile_output}")
 
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    if configuration.use_command_v2:
-        return v2.profile.run(configuration, get_profile_output(profile_output))
-    else:
-        return run_pyre_command(
-            commands.Profile(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                profile_output=get_profile_output(profile_output),
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    return v2.profile.run(configuration, get_profile_output(profile_output))
 
 
 @pyre.command()

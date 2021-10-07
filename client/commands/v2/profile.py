@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple, Any, Optional, Sequence
 
 from typing_extensions import Final
 
-from ... import commands, configuration as configuration_module
+from ... import commands, command_arguments, configuration as configuration_module
 from . import remote_logging, backend_arguments
 
 
@@ -395,21 +395,25 @@ def print_taint(
 
 
 def run_profile(
-    configuration: configuration_module.Configuration, output: commands.ProfileOutput
+    configuration: configuration_module.Configuration,
+    output: command_arguments.ProfileOutput,
 ) -> commands.ExitCode:
-    if output == commands.ProfileOutput.INDIVIDUAL_TABLE_SIZES:
+    if output == command_arguments.ProfileOutput.INDIVIDUAL_TABLE_SIZES:
         print_individual_table_sizes(configuration)
-    elif output == commands.ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME:
+    elif output == command_arguments.ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME:
         print_total_shared_memory_size_over_time(configuration)
-    elif output == commands.ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME_GRAPH:
+    elif (
+        output
+        == command_arguments.ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME_GRAPH
+    ):
         print_total_shared_memory_size_over_time_graph(configuration)
-    elif output == commands.ProfileOutput.TRACE_EVENT:
+    elif output == command_arguments.ProfileOutput.TRACE_EVENT:
         print_trace_event(configuration)
-    elif output == commands.ProfileOutput.COLD_START_PHASES:
+    elif output == command_arguments.ProfileOutput.COLD_START_PHASES:
         print_cold_start_phases(configuration)
-    elif output == commands.ProfileOutput.INCREMENTAL_UPDATES:
+    elif output == command_arguments.ProfileOutput.INCREMENTAL_UPDATES:
         print_incremental_updates(configuration)
-    elif output == commands.ProfileOutput.TAINT:
+    elif output == command_arguments.ProfileOutput.TAINT:
         print_taint(configuration)
     else:
         raise RuntimeError(f"Unrecognized output format: {output}")
@@ -418,7 +422,8 @@ def run_profile(
 
 @remote_logging.log_usage(command_name="profile")
 def run(
-    configuration: configuration_module.Configuration, output: commands.ProfileOutput
+    configuration: configuration_module.Configuration,
+    output: command_arguments.ProfileOutput,
 ) -> commands.ExitCode:
     try:
         return run_profile(configuration, output)

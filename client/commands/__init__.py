@@ -12,13 +12,11 @@ from .command import (  # noqa; noqa; noqa
     Command as Command,
     CommandParser as CommandParser,
     ExitCode as ExitCode,
-    ProfileOutput as ProfileOutput,
     IncrementalStyle as IncrementalStyle,
 )
 from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
 from .persistent import Persistent as Persistent
-from .profile import Profile as Profile
 from .query import Query as Query
 from .rage import Rage as Rage
 from .reporting import Reporting as Reporting
@@ -34,7 +32,6 @@ COMMANDS: List[Type[CommandParser]] = [
     Deobfuscate,
     Incremental,
     Persistent,
-    Profile,
     Query,
     Rage,
     Reporting,
