@@ -1483,19 +1483,7 @@ def coverage(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    if configuration.use_command_v2:
-        return v2.coverage.run(configuration, working_directory, list(roots))
-    else:
-        return run_pyre_command(
-            commands.Coverage(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                working_directory=working_directory,
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    return v2.coverage.run(configuration, working_directory, list(roots))
 
 
 @pyre.command()
