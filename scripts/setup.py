@@ -29,14 +29,14 @@ DEPENDENCIES = [
     "base64.3.5.0",
     "core.v0.14.1",
     "re2.v0.14.0",
-    "dune.2.8.2",
+    "dune.2.9.1",
     "yojson.1.7.0",
     "ppx_deriving_yojson.3.6.1",
     "ounit.2.2.4",
-    "menhir.20201216",
-    "lwt.5.4.0",
+    "menhir.20210419",
+    "lwt.5.4.2",
     "ounit2-lwt.2.2.4",
-    "pyre-ast.0.1.3",
+    "pyre-ast.0.1.4",
 ]
 
 
