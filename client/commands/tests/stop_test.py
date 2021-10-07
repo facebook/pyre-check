@@ -25,7 +25,6 @@ def _mark_processes_as_completed(process_id: int, signal: int) -> None:
 @patch.object(os, "kill", side_effect=_mark_processes_as_completed)
 @patch.object(watchman, "stop_subscriptions")
 @patch.object(commands.stop, "open", side_effect=lambda filename: StringIO("42"))
-@patch.object(commands.Kill, "_run")
 @patch.object(commands.Command, "_state")
 class StopTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -39,7 +38,6 @@ class StopTest(unittest.TestCase):
     def test_stop_running_server(
         self,
         commands_Command_state: MagicMock,
-        kill_command_run: MagicMock,
         file_open: MagicMock,
         stop_subscriptions: MagicMock,
         os_kill: MagicMock,
@@ -53,7 +51,6 @@ class StopTest(unittest.TestCase):
                 analysis_directory=self.analysis_directory,
             ).run()
             call_client.assert_called_once_with(command=Stop.NAME)
-            kill_command_run.assert_not_called()
             os_kill.assert_called_once_with(42, 0)
             stop_subscriptions.assert_has_calls(
                 [
@@ -65,7 +62,6 @@ class StopTest(unittest.TestCase):
     def test_stop_dead_server(
         self,
         commands_Command_state: MagicMock,
-        kill_command_run: MagicMock,
         file_open: MagicMock,
         stop_subscriptions: MagicMock,
         os_kill: MagicMock,
@@ -79,14 +75,12 @@ class StopTest(unittest.TestCase):
                 analysis_directory=self.analysis_directory,
             ).run()
             call_client.assert_not_called()
-            kill_command_run.assert_not_called()
             os_kill.assert_not_called()
             self.assertEqual(stop_subscriptions.call_count, 2)
 
     def test_stop_running_server__stop_fails(
         self,
         commands_Command_state: MagicMock,
-        kill_command_run: MagicMock,
         file_open: MagicMock,
         stop_subscriptions: MagicMock,
         os_kill: MagicMock,
@@ -108,14 +102,12 @@ class StopTest(unittest.TestCase):
                 analysis_directory=self.analysis_directory,
             ).run()
             call_client.assert_has_calls([call(command=Stop.NAME)])
-            kill_command_run.assert_not_called()
             os_kill.assert_not_called()
             self.assertEqual(stop_subscriptions.call_count, 2)
 
     def test_stop_ignores_flags(
         self,
         commands_Command_state: MagicMock,
-        kill_command_run: MagicMock,
         file_open: MagicMock,
         stop_subscriptions: MagicMock,
         os_kill: MagicMock,
@@ -131,7 +123,6 @@ class StopTest(unittest.TestCase):
     def test_stop_no_pid(
         self,
         commands_Command_state: MagicMock,
-        kill_command_run: MagicMock,
         file_open: MagicMock,
         stop_subscriptions: MagicMock,
         os_kill: MagicMock,
@@ -146,4 +137,3 @@ class StopTest(unittest.TestCase):
                 analysis_directory=self.analysis_directory,
             ).run()
             call_client.assert_has_calls([call(command=Stop.NAME)])
-            kill_command_run.assert_not_called()

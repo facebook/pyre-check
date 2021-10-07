@@ -970,19 +970,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    if configuration.use_command_v2:
-        return v2.kill.run(configuration, with_fire)
-    else:
-        return run_pyre_command(
-            commands.Kill(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                with_fire=with_fire,
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    return v2.kill.run(configuration, with_fire)
 
 
 @pyre.command()
