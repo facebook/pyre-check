@@ -12,7 +12,6 @@ from .command import (  # noqa; noqa; noqa
     Command as Command,
     CommandParser as CommandParser,
     ExitCode as ExitCode,
-    IncrementalStyle as IncrementalStyle,
 )
 from .query import Query as Query
 from .reporting import Reporting as Reporting

@@ -57,14 +57,6 @@ class ClientException(Exception):
         self.exit_code = exit_code
 
 
-class IncrementalStyle(enum.Enum):
-    SHALLOW = "shallow"
-    FINE_GRAINED = "fine_grained"
-
-    def __str__(self) -> str:
-        return self.value
-
-
 class Result:
     def __init__(self, code: int, output: str, error: Optional[str] = None) -> None:
         self.code: int = code

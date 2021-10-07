@@ -181,7 +181,7 @@ def _run_check_command(arguments: command_arguments.CommandArguments) -> ExitCod
 def _run_incremental_command(
     arguments: command_arguments.CommandArguments,
     nonblocking: bool,
-    incremental_style: commands.IncrementalStyle,
+    incremental_style: command_arguments.IncrementalStyle,
     no_start_server: bool,
     no_watchman: bool,
 ) -> ExitCode:
@@ -222,7 +222,7 @@ def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitC
         return _run_incremental_command(
             arguments=arguments,
             nonblocking=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            incremental_style=command_arguments.IncrementalStyle.FINE_GRAINED,
             no_start_server=False,
             no_watchman=False,
         )
@@ -715,11 +715,11 @@ def check(context: click.Context) -> int:
     "--incremental-style",
     type=click.Choice(
         [
-            str(commands.IncrementalStyle.SHALLOW),
-            str(commands.IncrementalStyle.FINE_GRAINED),
+            str(command_arguments.IncrementalStyle.SHALLOW),
+            str(command_arguments.IncrementalStyle.FINE_GRAINED),
         ]
     ),
-    default=str(commands.IncrementalStyle.FINE_GRAINED),
+    default=str(command_arguments.IncrementalStyle.FINE_GRAINED),
     help="[DEPRECATED] How to approach doing incremental checks.",
 )
 @click.option("--no-start", is_flag=True, default=False, hidden=True)
@@ -746,9 +746,9 @@ def incremental(
     return _run_incremental_command(
         arguments=command_argument,
         nonblocking=nonblocking,
-        incremental_style=commands.IncrementalStyle.SHALLOW
-        if incremental_style == str(commands.IncrementalStyle.SHALLOW)
-        else commands.IncrementalStyle.FINE_GRAINED,
+        incremental_style=command_arguments.IncrementalStyle.SHALLOW
+        if incremental_style == str(command_arguments.IncrementalStyle.SHALLOW)
+        else command_arguments.IncrementalStyle.FINE_GRAINED,
         no_start_server=no_start,
         no_watchman=no_watchman,
     )
@@ -1114,11 +1114,11 @@ def rage(
     "--incremental-style",
     type=click.Choice(
         [
-            str(commands.IncrementalStyle.SHALLOW),
-            str(commands.IncrementalStyle.FINE_GRAINED),
+            str(command_arguments.IncrementalStyle.SHALLOW),
+            str(command_arguments.IncrementalStyle.FINE_GRAINED),
         ]
     ),
-    default=str(commands.IncrementalStyle.FINE_GRAINED),
+    default=str(command_arguments.IncrementalStyle.FINE_GRAINED),
     help="[DEPRECATED] How to approach doing incremental checks.",
 )
 @click.pass_context
@@ -1220,11 +1220,11 @@ def servers_stop(context: click.Context) -> int:
     "--incremental-style",
     type=click.Choice(
         [
-            str(commands.IncrementalStyle.SHALLOW),
-            str(commands.IncrementalStyle.FINE_GRAINED),
+            str(command_arguments.IncrementalStyle.SHALLOW),
+            str(command_arguments.IncrementalStyle.FINE_GRAINED),
         ]
     ),
-    default=str(commands.IncrementalStyle.FINE_GRAINED),
+    default=str(command_arguments.IncrementalStyle.FINE_GRAINED),
     help="[DEPRECATED] How to approach doing incremental checks.",
 )
 @click.option(
