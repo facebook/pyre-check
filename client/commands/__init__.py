@@ -16,7 +16,6 @@ from .command import (  # noqa; noqa; noqa
 )
 from .incremental import Incremental as Incremental
 from .query import Query as Query
-from .rage import Rage as Rage
 from .reporting import Reporting as Reporting
 from .servers import Servers as Servers
 from .stop import Stop as Stop
@@ -27,7 +26,6 @@ COMMANDS: List[Type[CommandParser]] = [
     Check,
     Incremental,
     Query,
-    Rage,
     Reporting,
     Servers,
     Stop,

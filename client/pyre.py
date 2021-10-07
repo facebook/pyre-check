@@ -1119,26 +1119,13 @@ def rage(
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-
-    if configuration.use_command_v2:
-        return v2.rage.run(
-            configuration,
-            command_arguments.RageArguments(
-                output=Path(output_file) if output_file is not None else None,
-                server_log_count=server_log_count,
-            ),
-        )
-    else:
-        return run_pyre_command(
-            commands.Rage(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                output_path=output_file,
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    return v2.rage.run(
+        configuration,
+        command_arguments.RageArguments(
+            output=Path(output_file) if output_file is not None else None,
+            server_log_count=server_log_count,
+        ),
+    )
 
 
 @pyre.command()
