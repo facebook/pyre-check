@@ -12,7 +12,6 @@ from unittest.mock import MagicMock
 from .. import command_arguments, configuration as configuration_module
 from ..analysis_directory import AnalysisDirectory
 from ..commands.command import IncrementalStyle
-from ..commands.incremental import Incremental
 from ..configuration import SharedMemory
 
 
@@ -96,20 +95,3 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     )
     configuration.shared_memory = SharedMemory(heap_size=1024 * 1024 * 1024)
     return configuration
-
-
-def mock_incremental_command(cfg: configuration_module.Configuration) -> Incremental:
-    arguments = mock_arguments()
-    analysis_directory = AnalysisDirectory(
-        configuration_module.SimpleSearchPathElement(".")
-    )
-    return Incremental(
-        arguments,
-        original_directory="/original/directory",
-        configuration=cfg,
-        analysis_directory=analysis_directory,
-        nonblocking=False,
-        incremental_style=IncrementalStyle.FINE_GRAINED,
-        no_start_server=False,
-        no_watchman=False,
-    )

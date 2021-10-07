@@ -186,50 +186,35 @@ def _run_incremental_command(
     no_watchman: bool,
 ) -> ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
-    if configuration.use_command_v2:
-        _check_configuration(configuration)
-        _start_logging_to_directory(configuration.log_directory)
-        start_arguments = command_arguments.StartArguments(
-            changed_files_path=arguments.changed_files_path,
-            debug=arguments.debug,
-            enable_memory_profiling=arguments.enable_memory_profiling,
-            enable_profiling=arguments.enable_profiling,
-            load_initial_state_from=arguments.load_initial_state_from,
-            log_identifier=arguments.log_identifier,
-            logging_sections=arguments.logging_sections,
-            no_saved_state=arguments.no_saved_state,
-            no_watchman=no_watchman,
-            noninteractive=arguments.noninteractive,
-            save_initial_state_to=arguments.save_initial_state_to,
-            saved_state_project=arguments.saved_state_project,
-            sequential=arguments.sequential,
-            show_error_traces=arguments.show_error_traces,
-            store_type_check_resolution=False,
-            terminal=False,
-            wait_on_initialization=True,
-        )
-        return v2.incremental.run(
-            configuration,
-            command_arguments.IncrementalArguments(
-                output=arguments.output,
-                no_start=no_start_server,
-                start_arguments=start_arguments,
-            ),
-        )
-    else:
-        return run_pyre_command(
-            commands.Incremental(
-                arguments,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                nonblocking=nonblocking,
-                incremental_style=incremental_style,
-                no_start_server=no_start_server,
-                no_watchman=no_watchman,
-            ),
-            configuration,
-            arguments.noninteractive,
-        )
+    _check_configuration(configuration)
+    _start_logging_to_directory(configuration.log_directory)
+    start_arguments = command_arguments.StartArguments(
+        changed_files_path=arguments.changed_files_path,
+        debug=arguments.debug,
+        enable_memory_profiling=arguments.enable_memory_profiling,
+        enable_profiling=arguments.enable_profiling,
+        load_initial_state_from=arguments.load_initial_state_from,
+        log_identifier=arguments.log_identifier,
+        logging_sections=arguments.logging_sections,
+        no_saved_state=arguments.no_saved_state,
+        no_watchman=no_watchman,
+        noninteractive=arguments.noninteractive,
+        save_initial_state_to=arguments.save_initial_state_to,
+        saved_state_project=arguments.saved_state_project,
+        sequential=arguments.sequential,
+        show_error_traces=arguments.show_error_traces,
+        store_type_check_resolution=False,
+        terminal=False,
+        wait_on_initialization=True,
+    )
+    return v2.incremental.run(
+        configuration,
+        command_arguments.IncrementalArguments(
+            output=arguments.output,
+            no_start=no_start_server,
+            start_arguments=start_arguments,
+        ),
+    )
 
 
 def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitCode:

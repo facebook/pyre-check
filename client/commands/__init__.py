@@ -14,7 +14,6 @@ from .command import (  # noqa; noqa; noqa
     ExitCode as ExitCode,
     IncrementalStyle as IncrementalStyle,
 )
-from .incremental import Incremental as Incremental
 from .query import Query as Query
 from .reporting import Reporting as Reporting
 from .stop import Stop as Stop
@@ -23,7 +22,6 @@ from .validate_models import ValidateModels as ValidateModels
 COMMANDS: List[Type[CommandParser]] = [
     Analyze,
     Check,
-    Incremental,
     Query,
     Reporting,
     Stop,
