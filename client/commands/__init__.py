@@ -17,7 +17,6 @@ from .command import (  # noqa; noqa; noqa
 from .incremental import Incremental as Incremental
 from .query import Query as Query
 from .reporting import Reporting as Reporting
-from .servers import Servers as Servers
 from .stop import Stop as Stop
 from .validate_models import ValidateModels as ValidateModels
 
@@ -27,7 +26,6 @@ COMMANDS: List[Type[CommandParser]] = [
     Incremental,
     Query,
     Reporting,
-    Servers,
     Stop,
     ValidateModels,
 ]

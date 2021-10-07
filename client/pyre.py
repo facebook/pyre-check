@@ -252,25 +252,6 @@ def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitC
         return _run_check_command(arguments)
 
 
-def _run_servers_list_command(
-    arguments: command_arguments.CommandArguments,
-) -> ExitCode:
-    if arguments.use_command_v2 is not False:
-        return v2.servers.run_list(arguments.output)
-    else:
-        configuration = configuration_module.create_configuration(arguments, Path("."))
-        return run_pyre_command(
-            commands.Servers(
-                arguments,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                subcommand="list",
-            ),
-            configuration,
-            arguments.noninteractive,
-        )
-
-
 def _create_configuration_with_retry(
     arguments: command_arguments.CommandArguments, base_directory: Path
 ) -> configuration_module.Configuration:
@@ -1208,7 +1189,8 @@ def servers(context: click.Context) -> int:
     Commands to manipulate multiple Pyre servers.
     """
     if context.invoked_subcommand is None:
-        return _run_servers_list_command(context.obj["arguments"])
+        arguments: command_arguments.CommandArguments = context.obj["arguments"]
+        return v2.servers.run_list(arguments.output)
     # This return value is not used anywhere.
     return ExitCode.SUCCESS
 
@@ -1219,7 +1201,8 @@ def servers_list(context: click.Context) -> int:
     """
     List all running servers.
     """
-    return _run_servers_list_command(context.obj["arguments"])
+    arguments: command_arguments.CommandArguments = context.obj["arguments"]
+    return v2.servers.run_list(arguments.output)
 
 
 @servers.command(name="stop")
@@ -1229,22 +1212,7 @@ def servers_stop(context: click.Context) -> int:
     Stop all running servers.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    if command_argument.use_command_v2 is not False:
-        return v2.servers.run_stop()
-    else:
-        configuration = configuration_module.create_configuration(
-            command_argument, Path(".")
-        )
-        return run_pyre_command(
-            commands.Servers(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-                subcommand="stop",
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    return v2.servers.run_stop()
 
 
 @pyre.command()
