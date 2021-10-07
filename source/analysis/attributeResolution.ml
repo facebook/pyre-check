@@ -2488,6 +2488,7 @@ class base class_metadata_environment dependency =
           match kind with
           | StringLiteral.Bytes -> Type.bytes
           | _ -> Type.string)
+      | FormatString _ -> Type.string
       | Name name when is_simple_name name -> (
           let reference = name_to_reference_exn name in
           let unannotated_global_environment =
