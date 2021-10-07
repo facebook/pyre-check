@@ -1348,19 +1348,8 @@ def stop(context: click.Context) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    if configuration.use_command_v2:
-        _start_logging_to_directory(configuration.log_directory)
-        return v2.stop.run(configuration)
-    else:
-        return run_pyre_command(
-            commands.Stop(
-                command_argument,
-                original_directory=os.getcwd(),
-                configuration=configuration,
-            ),
-            configuration,
-            command_argument.noninteractive,
-        )
+    _start_logging_to_directory(configuration.log_directory)
+    return v2.stop.run(configuration)
 
 
 @pyre.command()

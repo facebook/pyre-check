@@ -15,7 +15,6 @@ from .command import (  # noqa; noqa; noqa
 )
 from .query import Query as Query
 from .reporting import Reporting as Reporting
-from .stop import Stop as Stop
 from .validate_models import ValidateModels as ValidateModels
 
 COMMANDS: List[Type[CommandParser]] = [
@@ -23,6 +22,5 @@ COMMANDS: List[Type[CommandParser]] = [
     Check,
     Query,
     Reporting,
-    Stop,
     ValidateModels,
 ]
