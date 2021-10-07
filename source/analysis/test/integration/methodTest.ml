@@ -273,7 +273,6 @@ let test_check_inverse_operator context =
        `int.__lt__` but got `Optional[int]`.";
       "Unsupported operand [58]: `<` is not supported for operand types `int` and `Optional[int]`.";
     ];
-  (* TODO(T69286342): Inferred literal types give the incompatible parameter type error. *)
   assert_type_errors
     ~context
     {|
@@ -284,8 +283,9 @@ let test_check_inverse_operator context =
     |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[1]`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `int.__add__` but got `str`.";
+      "Incomplete type [37]: Type `pyre_extensions.IntExpression[1 + N2]` inferred for `y` is \
+       incomplete, add an explicit annotation.";
+      "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
     ];
   assert_type_errors
     ~context
@@ -1599,6 +1599,31 @@ let test_check_method_resolution context =
         reveal_type(input[42])
     |}
     ["Revealed type [-1]: Revealed type for `input[42]` is `typing.Type[typing.Protocol[]]`."];
+  assert_type_errors
+    ~context
+    {|
+      from typing import overload, Generic, TypeVar
+
+      T = TypeVar("T")
+
+      class Foo(Generic[T]):
+        def __add__(self, other: Foo[T]) -> Foo[int]: ...
+
+      def main() -> None:
+        x: Foo[int]
+        good: Foo[int]
+        x += good
+
+        reveal_type(x.__iadd__)
+        bad: Foo[str]
+        x += bad
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x.__iadd__` is \
+       `BoundMethod[typing.Callable(Foo.__add__)[[Named(self, Foo[int]), Named(other, Foo[int])], \
+       Foo[int]], Foo[int]]`.";
+      "Unsupported operand [58]: `+` is not supported for operand types `Foo[int]` and `Foo[str]`.";
+    ];
   ()
 
 

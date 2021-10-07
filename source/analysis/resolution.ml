@@ -312,7 +312,13 @@ let is_consistent_with ({ global_resolution; _ } as resolution) =
 
 let global_resolution { global_resolution; _ } = global_resolution
 
-let fallback_attribute ?(accessed_through_class = false) ~resolution ~name class_name =
+let fallback_attribute
+    ?(accessed_through_class = false)
+    ?(instantiated = None)
+    ~resolution
+    ~name
+    class_name
+  =
   let class_name_reference = Reference.create class_name in
   let global_resolution = global_resolution resolution in
   let compound_backup =
@@ -341,7 +347,7 @@ let fallback_attribute ?(accessed_through_class = false) ~resolution ~name class
           class_name
           ~accessed_through_class:false
           ~transitive:true
-          ~instantiated:(Type.Primitive class_name)
+          ~instantiated:(Option.value instantiated ~default:(Type.Primitive class_name))
           ~name
     | _ -> None
   in

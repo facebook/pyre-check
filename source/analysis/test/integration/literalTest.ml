@@ -486,6 +486,21 @@ let test_string_literal context =
     {|
       from typing import Literal
 
+      def connection_query(sql: Literal[str], value: str) -> None: ...
+
+      def my_query(value: str, limit: bool) -> None:
+        SQL = "SELECT * FROM table WHERE col = %s"
+
+        if limit:
+          SQL += "LIMIT 1"
+
+        connection_query(SQL, value)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Literal
+
       def foo(s: str, literal_string: Literal[str]) -> None:
         y = ", ".join(["a", "b", "c"])
         reveal_type(y)

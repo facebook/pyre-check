@@ -46,8 +46,9 @@ let test_check_assign context =
         x += 'asdf'
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `int.__add__` but got `str`.";
+      "Incomplete type [37]: Type `pyre_extensions.IntExpression[1 + N2]` inferred for `x` is \
+       incomplete, add an explicit annotation.";
+      "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
     ];
 
   (* Prune `undeclared` from assignments. *)

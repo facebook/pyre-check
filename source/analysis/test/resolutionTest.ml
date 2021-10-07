@@ -1363,7 +1363,7 @@ let test_source_is_unit_test context =
 
 
 let test_fallback_attribute context =
-  let assert_fallback_attribute ~name source annotation =
+  let assert_fallback_attribute ?(instantiated = None) ~name source annotation =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -1392,7 +1392,7 @@ let test_fallback_attribute context =
            | _ -> failwith "Last statement was not a class")
       |> ClassSummary.name
       |> Reference.show
-      |> Resolution.fallback_attribute ~resolution ~name
+      |> Resolution.fallback_attribute ~instantiated ~resolution ~name
     in
     let printer optional_type = optional_type >>| Type.show |> Option.value ~default:"None" in
     assert_equal
@@ -1447,6 +1447,29 @@ let test_fallback_attribute context =
                      "typing.Callable('test.Foo.__add__')[[Named(self, test.Foo), Named(other, \
                       test.Foo)], int]");
                 Single (Primitive "test.Foo");
+              ];
+          }));
+  assert_fallback_attribute
+    ~name:"__iadd__"
+    ~instantiated:(Some (Type.parametric "test.Foo" [Single Type.integer]))
+    {|
+      from typing import Generic, TypeVar
+      T = TypeVar("T")
+      class Foo(Generic[T]):
+        def Foo.__add__(self, other: Foo[T]) -> Foo[T]:
+          pass
+    |}
+    (Some
+       (Parametric
+          {
+            name = "BoundMethod";
+            parameters =
+              [
+                Single
+                  (parse_callable
+                     "typing.Callable(test.Foo.__add__)[[Named(self, test.Foo[int]), Named(other, \
+                      test.Foo[int])], test.Foo[int]]");
+                Single (Type.parametric "test.Foo" [Single Type.integer]);
               ];
           }));
   assert_fallback_attribute ~name:"__iadd__" {|

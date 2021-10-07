@@ -3390,6 +3390,7 @@ module State (Context : Context) = struct
                     if not (Annotated.Attribute.defined attribute) then
                       Resolution.fallback_attribute
                         class_name
+                        ~instantiated:(Some resolved_base)
                         ~accessed_through_class
                         ~resolution
                         ~name
