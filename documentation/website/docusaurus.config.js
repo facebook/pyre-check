@@ -49,8 +49,10 @@ module.exports = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Where to point users when they click "Edit this page"
           editUrl: fbContent({
-            internal: 'https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/',
-            external: 'https://github.com/facebook/pyre-check/tree/main/documentation/website'
+            internal:
+              'https://www.internalfb.com/intern/diffusion/FBS/browse/master/fbcode/tools/pyre/documentation/website/',
+            external:
+              'https://github.com/facebook/pyre-check/tree/main/documentation/website',
           }),
         },
         theme: {
@@ -88,11 +90,13 @@ module.exports = {
           ],
         },
         ...fbContent({
-          internal: [{
-            to: 'docs/fb/development-getting-started',
-            label: 'Internal',
-            position: 'left',
-          }],
+          internal: [
+            {
+              to: 'docs/fb/development-getting-started',
+              label: 'Internal',
+              position: 'left',
+            },
+          ],
           external: [],
         }),
         {
@@ -134,5 +138,9 @@ module.exports = {
     gtag: {
       trackingID: 'G-8CK1L365DB',
     },
+  },
+  customFields: {
+    fbRepoName: 'fbsource',
+    ossRepoPath: 'fbcode/tools/pyre',
   },
 };
