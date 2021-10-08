@@ -12,7 +12,8 @@ open Statement
 type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 
 val run
-  :  environment:TypeEnvironment.ReadOnly.t ->
+  :  ?profiler:TaintProfiler.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Define.t Node.t ->
   call_graph_of_define:Interprocedural.CallGraph.callees Location.Map.t ->

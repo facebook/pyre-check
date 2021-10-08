@@ -39,6 +39,7 @@ let assert_taint ~context source expected =
     in
     let backward =
       BackwardAnalysis.run
+        ?profiler:None
         ~environment:(TypeEnvironment.read_only environment)
         ~qualifier
         ~define

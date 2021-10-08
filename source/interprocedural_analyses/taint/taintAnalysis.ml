@@ -533,6 +533,12 @@ include Taint.Result.Register (struct
 
 
   let analyze ~environment ~callable ~qualifier ~define ~sanitizers ~modes existing_model =
+    let profiler =
+      if Ast.Statement.Define.dump_perf (Ast.Node.value define) then
+        TaintProfiler.create ()
+      else
+        TaintProfiler.none
+    in
     let call_graph_of_define =
       Interprocedural.CallGraph.SharedMemory.get_or_compute
         ~callable
@@ -540,16 +546,25 @@ include Taint.Result.Register (struct
         ~define:(Ast.Node.value define)
     in
     let forward, result, triggered_sinks =
-      ForwardAnalysis.run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model
+      TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->
+          ForwardAnalysis.run
+            ~profiler
+            ~environment
+            ~qualifier
+            ~define
+            ~call_graph_of_define
+            ~existing_model)
     in
     let backward =
-      BackwardAnalysis.run
-        ~environment
-        ~qualifier
-        ~define
-        ~call_graph_of_define
-        ~existing_model
-        ~triggered_sinks
+      TaintProfiler.track_duration ~profiler ~name:"Backward analysis" ~f:(fun () ->
+          BackwardAnalysis.run
+            ~profiler
+            ~environment
+            ~qualifier
+            ~define
+            ~call_graph_of_define
+            ~existing_model
+            ~triggered_sinks)
     in
     let forward, backward =
       if ModeSet.contains Mode.SkipAnalysis modes then
@@ -558,7 +573,10 @@ include Taint.Result.Register (struct
         forward, backward
     in
     let model = { forward; backward; sanitizers; modes } in
-    let model = apply_sanitizers model in
+    let model =
+      TaintProfiler.track_duration ~profiler ~name:"Sanitize" ~f:(fun () -> apply_sanitizers model)
+    in
+    TaintProfiler.dump profiler;
     result, model
 
 

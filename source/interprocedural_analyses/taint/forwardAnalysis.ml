@@ -64,6 +64,8 @@ module type FUNCTION_CONTEXT = sig
 
   val log : ('a, Format.formatter, unit, unit, unit, unit) Core.format6 -> 'a
 
+  val profiler : TaintProfiler.t
+
   val add_triggered_sinks : location:Location.t -> triggered_sinks:(Root.t * Sinks.t) list -> unit
 end
 
@@ -71,6 +73,8 @@ let ( |>> ) (taint, state) f = f taint, state
 
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
   let log = FunctionContext.log
+
+  let profiler = FunctionContext.profiler
 
   module rec FixpointState : FixpointState = struct
     type t = { taint: ForwardState.t }
@@ -135,7 +139,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         let ({ Model.model = { TaintResult.forward; backward; sanitizers; modes }; _ } as
             taint_model)
           =
-          Model.get_callsite_model ~resolution ~call_target ~arguments
+          TaintProfiler.track_model_fetch
+            ~profiler
+            ~analysis:TaintProfiler.Forward
+            ~call_target
+            ~f:(fun () -> Model.get_callsite_model ~resolution ~call_target ~arguments)
         in
         log
           "Forward analysis of call: %a@,Call site model:@,%a"
@@ -1533,25 +1541,29 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     let forward ~key state ~statement =
-      log
-        "Forward analysis of statement: `%a`@,With forward state: %a"
-        Statement.pp
-        statement
-        pp
-        state;
-      let resolution =
-        let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
-          FunctionContext.definition
-        in
-        TypeCheck.resolution_with_key
-          ~global_resolution:FunctionContext.global_resolution
-          ~local_annotations:FunctionContext.local_annotations
-          ~parent
-          ~key (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-          (module TypeCheck.DummyContext)
-      in
-
-      analyze_statement ~resolution statement state
+      TaintProfiler.track_statement_analysis
+        ~profiler
+        ~analysis:TaintProfiler.Forward
+        ~statement
+        ~f:(fun () ->
+          log
+            "Forward analysis of statement: `%a`@,With forward state: %a"
+            Statement.pp
+            statement
+            pp
+            state;
+          let resolution =
+            let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
+              FunctionContext.definition
+            in
+            TypeCheck.resolution_with_key
+              ~global_resolution:FunctionContext.global_resolution
+              ~local_annotations:FunctionContext.local_annotations
+              ~parent
+              ~key (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+              (module TypeCheck.DummyContext)
+          in
+          analyze_statement ~resolution statement state)
 
 
     let backward ~key:_ _ ~statement:_ = failwith "Don't call me"
@@ -1634,7 +1646,14 @@ let extract_source_model
   |> ForwardState.add_via_features via_features_to_attach
 
 
-let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
+let run
+    ?(profiler = TaintProfiler.none)
+    ~environment
+    ~qualifier
+    ~define
+    ~call_graph_of_define
+    ~existing_model
+  =
   let {
     Node.value =
       { Statement.Define.signature = { name = { Node.value = name; _ }; parameters; _ }; _ };
@@ -1649,6 +1668,8 @@ let run ~environment ~qualifier ~define ~call_graph_of_define ~existing_model =
     let definition = define
 
     let debug = Statement.Define.dump define.value
+
+    let profiler = profiler
 
     let log format =
       if debug then

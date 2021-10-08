@@ -63,6 +63,7 @@ let assert_taint ?models ~context source expect =
     in
     let forward, _errors, _ =
       ForwardAnalysis.run
+        ?profiler:None
         ~environment
         ~qualifier
         ~define

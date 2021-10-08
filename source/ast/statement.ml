@@ -475,6 +475,8 @@ and Define : sig
 
   val dump_call_graph : t -> bool
 
+  val dump_perf : t -> bool
+
   val show_json : t -> string
 
   val has_decorator : ?match_prefix:bool -> t -> string -> bool
@@ -842,6 +844,8 @@ end = struct
   let dump_locations define = contains_call define "pyre_dump_locations"
 
   let dump_call_graph define = contains_call define "pyre_dump_call_graph"
+
+  let dump_perf define = contains_call define "pyre_dump_perf"
 
   let show_json define = define |> to_yojson |> Yojson.Safe.pretty_to_string
 end

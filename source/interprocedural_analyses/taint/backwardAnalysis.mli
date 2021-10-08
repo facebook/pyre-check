@@ -10,7 +10,8 @@ open Analysis
 open Statement
 
 val run
-  :  environment:TypeEnvironment.ReadOnly.t ->
+  :  ?profiler:TaintProfiler.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Define.t Node.t ->
   call_graph_of_define:Interprocedural.CallGraph.callees Location.Map.t ->
