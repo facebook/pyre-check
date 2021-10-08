@@ -59,6 +59,12 @@ module.exports = {
           customCss: require.resolve('./src/css/custom.css'),
         },
         enableEditor: true,
+        staticDocsProject: 'pyre',
+        trackingFile: 'xplat/staticdocs/WATCHED_FILES',
+        'remark-code-snippets': {
+          baseDir: '../..',
+        },
+
         // ...
       },
     ],

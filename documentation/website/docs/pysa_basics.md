@@ -283,17 +283,17 @@ def module.sanitize_for_logging_and_sql(): ...
 
 Specific parameters can be marked as sanitized to remove all taint passing through them:
 
-```python file=../../../source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_START end=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_END
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_START end=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_END
 ```
 
 Similarly, the return value can be marked as sanitized:
 
-```python file=../../../source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_RETURN_SANITIZERS_START end=DOCUMENTATION_RETURN_SANITIZERS_END
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_RETURN_SANITIZERS_START end=DOCUMENTATION_RETURN_SANITIZERS_END
 ```
 
 All parameters can be marked as sanitized as well:
 
-```python file=../../../source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETERS_SANITIZERS_START end=DOCUMENTATION_PARAMETERS_SANITIZERS_END
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETERS_SANITIZERS_START end=DOCUMENTATION_PARAMETERS_SANITIZERS_END
 ```
 
 Attributes can also be marked as sanitizers to remove all taint passing through
