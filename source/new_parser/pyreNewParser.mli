@@ -70,7 +70,7 @@ val parse_module_exn
 (** Same as [parse_module], except that parsing errors are returned to its caller via exceptions
     instead of [Result.t]. *)
 
-val parse_expression : context:Context.t -> string -> (Ast.Expression.t list, Error.t) Result.t
+val parse_expression : context:Context.t -> string -> (Ast.Expression.t, Error.t) Result.t
 (** [parse_expression ~context input] takes the string [input] and parse it as a Python expression,
     represented by {!type: Ast.Expression.t}. See documentation of {!type: Context.t} for the
     meaning of the [context] argument. *)
