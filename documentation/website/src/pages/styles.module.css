@@ -53,6 +53,10 @@
   border-left: 1px solid lightgrey;
 }
 
+.playgroundMain {
+  padding: 33px;
+}
+
 .heading {
   font-size: 3em;
 }
@@ -71,4 +75,31 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.card {
+  background-color: #fff;
+  border-radius: 2px;
+  box-shadow: 1px 1px 4px rgba(0,0,0,.25), 1px 1px 1px rgba(0,0,0,.1);
+  margin: 0 auto;
+  margin-bottom: 20px;
+  padding: 10px;
+  width: 60%;
+  float: left;
+}
+
+.runPysa {
+  float: right;
+}
+
+.resultsCard {
+  float: right;
+  width: 38%;
+}
+
+@media screen and (max-width: 768px) {
+  .card, .resultsCard {
+    float: none;
+    width: 98%;
+  }
 }
