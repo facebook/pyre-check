@@ -1182,59 +1182,145 @@ let test_forward_statement context =
   assert_forward ~bottom:true ["x", Type.none] "assert x" ["x", Type.none];
   assert_forward ~bottom:true ["x", Type.none] "assert x is not None" ["x", Type.none];
 
-  (* Isinstance. *)
-  assert_forward ["x", Type.Any] "assert isinstance(x, int)" ["x", Type.integer];
-  assert_forward
-    ["x", Type.Any; "y", Type.Top]
-    "assert isinstance(y, str)"
-    ["x", Type.Any; "y", Type.string];
-  assert_forward
-    ["x", Type.Any]
-    "assert isinstance(x, (int, str))"
-    ["x", Type.union [Type.integer; Type.string]];
-  assert_forward ["x", Type.integer] "assert isinstance(x, (int, str))" ["x", Type.integer];
-  assert_forward ~bottom:true ["x", Type.integer] "assert isinstance(x, str)" ["x", Type.integer];
-  assert_forward ~bottom:false ["x", Type.Bottom] "assert isinstance(x, str)" ["x", Type.string];
-  assert_forward ~bottom:false ["x", Type.float] "assert isinstance(x, int)" ["x", Type.integer];
-  assert_forward ~bottom:false ["x", Type.integer] "assert isinstance(x, 1)" ["x", Type.integer];
-  assert_forward
+  (* isinstance, type(_) is _ *)
+  let assert_refinement_by_type_comparison
+      ?(bottom = false)
+      ~precondition
+      ?(negated = false)
+      ~variable
+      ~type_expression
+      ~postcondition
+      ()
+    =
+    let assert_forward_expression assertion_expression =
+      assert_forward
+        ~bottom
+        precondition
+        (Format.asprintf "assert %s" assertion_expression)
+        postcondition
+    in
+    Format.asprintf "%s isinstance(%s, %s)" (if negated then "not" else "") variable type_expression
+    |> assert_forward_expression;
+    Format.asprintf "type(%s) %s %s" variable (if negated then "is not" else "is") type_expression
+    |> assert_forward_expression
+  in
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.Any]
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.Any; "y", Type.Top]
+    ~variable:"y"
+    ~type_expression:"str"
+    ~postcondition:["x", Type.Any; "y", Type.string]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.Any]
+    ~variable:"x"
+    ~type_expression:"(int, str)"
+    ~postcondition:["x", Type.union [Type.integer; Type.string]]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.integer]
+    ~variable:"x"
+    ~type_expression:"(int, str)"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
     ~bottom:true
-    ["x", Type.integer]
-    "assert not isinstance(x, int)"
-    ["x", Type.integer];
-  assert_forward
+    ~precondition:["x", Type.integer]
+    ~variable:"x"
+    ~type_expression:"str"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:false
+    ~precondition:["x", Type.Bottom]
+    ~variable:"x"
+    ~type_expression:"str"
+    ~postcondition:["x", Type.string]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:false
+    ~precondition:["x", Type.float]
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:false
+    ~precondition:["x", Type.integer]
+    ~variable:"x"
+    ~type_expression:"1"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
     ~bottom:true
-    ["x", Type.integer]
-    "assert not isinstance(x, float)"
-    ["x", Type.integer];
-  assert_forward ~bottom:false ["x", Type.float] "assert not isinstance(x, int)" ["x", Type.float];
-  assert_forward
-    ["x", Type.optional (Type.union [Type.integer; Type.string])]
-    "assert not isinstance(x, int)"
-    ["x", Type.optional Type.string];
-  assert_forward
-    ["x", Type.optional (Type.union [Type.integer; Type.string])]
-    "assert not isinstance(x, type(None))"
-    ["x", Type.union [Type.integer; Type.string]];
-  assert_forward
-    ["my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string]; "x", Type.Top]
-    "assert isinstance(x, my_type)"
-    [
-      "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
-      "x", Type.union [Type.integer; Type.string];
-    ];
-  assert_forward
-    [
-      ( "my_type",
-        Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
-      "x", Type.Top;
-    ]
-    "assert isinstance(x, my_type)"
-    [
-      ( "my_type",
-        Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
-      "x", Type.integer;
-    ];
+    ~precondition:["x", Type.integer]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:true
+    ~precondition:["x", Type.integer]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"float"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:false
+    ~precondition:["x", Type.float]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.float]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.optional (Type.union [Type.integer; Type.string])]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.optional Type.string]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.optional (Type.union [Type.integer; Type.string])]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"type(None)"
+    ~postcondition:["x", Type.union [Type.integer; Type.string]]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:
+      ["my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string]; "x", Type.Top]
+    ~variable:"x"
+    ~type_expression:"my_type"
+    ~postcondition:
+      [
+        "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
+        "x", Type.union [Type.integer; Type.string];
+      ]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:
+      [
+        ( "my_type",
+          Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
+        "x", Type.Top;
+      ]
+    ~variable:"x"
+    ~type_expression:"my_type"
+    ~postcondition:
+      [
+        ( "my_type",
+          Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
+        "x", Type.integer;
+      ]
+    ();
 
   (* Works for general expressions. *)
   assert_forward
