@@ -932,7 +932,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
 
 @pyre.command()
 @click.pass_context
-def persistent(context: click.Context, no_watchman: bool) -> int:
+def persistent(context: click.Context) -> int:
     """
     Entry point for IDE integration to Pyre. Communicates with a Pyre server using
     the Language Server Protocol, accepts input from stdin and writing diagnostics
