@@ -492,7 +492,7 @@ def _relocate_errors(
     relocated = defaultdict(list)
     for line, errors in errors.items():
         target_line = target_line_map.get(line)
-        if target_line is None:
+        if target_line is None or target_line == line:
             target_line = line
         else:
             LOG.info(
