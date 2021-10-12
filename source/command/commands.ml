@@ -11,5 +11,3 @@ module NewAnalyze = NewAnalyzeCommand
 module NewCheck = NewCheckCommand
 module NewInfer = NewInferCommand
 module NewServer = NewServerCommand
-module Start = StartCommand
-module Stop = StopCommand
