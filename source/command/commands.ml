@@ -13,6 +13,5 @@ module NewCheck = NewCheckCommand
 module NewInfer = NewInferCommand
 module NewServer = NewServerCommand
 module Persistent = PersistentCommand
-module Rage = RageCommand
 module Start = StartCommand
 module Stop = StopCommand

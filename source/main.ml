@@ -12,7 +12,6 @@ let commands =
   [
     "analyze", Analyze.command;
     "check", Check.check_command;
-    "rage", Rage.command;
     "newanalyze", NewAnalyze.command;
     "newcheck", NewCheck.command;
     "newinfer", NewInfer.command;
