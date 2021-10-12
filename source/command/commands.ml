@@ -7,7 +7,6 @@
 
 module BaseConfiguration = NewCommandStartup.BaseConfiguration
 module Analyze = AnalyzeCommand
-module Check = CheckCommand
 module NewAnalyze = NewAnalyzeCommand
 module NewCheck = NewCheckCommand
 module NewInfer = NewInferCommand
