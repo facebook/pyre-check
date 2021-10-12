@@ -5293,31 +5293,6 @@ module State (Context : Context) = struct
                       None
               in
               resolution, errors
-          | Call
-              {
-                callee = { Node.value = Name (Name.Identifier "callable"); _ };
-                arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-              }
-            when is_simple_name name ->
-              let resolution =
-                match existing_annotation name with
-                | Some existing_annotation ->
-                    let undefined =
-                      Type.Callable.create
-                        ~parameters:Undefined
-                        ~annotation:Type.object_primitive
-                        ()
-                    in
-                    let { consistent_with_boundary; _ } =
-                      partition (Annotation.annotation existing_annotation) ~boundary:undefined
-                    in
-                    if Type.equal consistent_with_boundary Type.Bottom then
-                      Annotation.create undefined |> set_local ~name
-                    else
-                      Annotation.create consistent_with_boundary |> set_local ~name
-                | _ -> resolution
-              in
-              Some resolution, errors
           | ComparisonOperator
               {
                 left =
@@ -5379,6 +5354,31 @@ module State (Context : Context) = struct
               | _, { Node.value = Name name; _ } when is_simple_name name ->
                   Some (resolve ~name), errors
               | _ -> Some resolution, errors)
+          | Call
+              {
+                callee = { Node.value = Name (Name.Identifier "callable"); _ };
+                arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+              }
+            when is_simple_name name ->
+              let resolution =
+                match existing_annotation name with
+                | Some existing_annotation ->
+                    let undefined =
+                      Type.Callable.create
+                        ~parameters:Undefined
+                        ~annotation:Type.object_primitive
+                        ()
+                    in
+                    let { consistent_with_boundary; _ } =
+                      partition (Annotation.annotation existing_annotation) ~boundary:undefined
+                    in
+                    if Type.equal consistent_with_boundary Type.Bottom then
+                      Annotation.create undefined |> set_local ~name
+                    else
+                      Annotation.create consistent_with_boundary |> set_local ~name
+                | _ -> resolution
+              in
+              Some resolution, errors
           | UnaryOperator
               {
                 UnaryOperator.operator = UnaryOperator.Not;
