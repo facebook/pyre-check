@@ -133,6 +133,7 @@ async def try_initialize(
     - If an exit notification is received, return `InitializationExit`. The LSP
       spec allows exiting a server without a preceding initialize request.
     """
+    request = None
     try:
         request = await lsp.read_json_rpc(input_channel)
         LOG.debug(f"Received pre-initialization LSP request: {request}")
@@ -182,7 +183,7 @@ async def try_initialize(
         await lsp.write_json_rpc(
             output_channel,
             json_rpc.ErrorResponse(
-                id=request.id,
+                id=request.id if request is not None else None,
                 code=json_rpc_error.error_code(),
                 message=str(json_rpc_error),
                 data={"retry": False},
