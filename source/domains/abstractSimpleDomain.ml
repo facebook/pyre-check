@@ -71,6 +71,8 @@ module Make (Element : ELEMENT) = struct
 
 
     let fold = Base.fold
+
+    let apply = Base.apply
   end
 
   let _ = Base.fold (* unused module warning work-around *)

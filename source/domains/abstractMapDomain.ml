@@ -400,6 +400,8 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
     let meet = Base.meet
 
     let fold = Base.fold
+
+    let apply = Base.apply
   end
 
   let to_alist = Map.to_alist

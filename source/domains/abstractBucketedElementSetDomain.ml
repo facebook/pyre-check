@@ -141,6 +141,8 @@ module Make (Element : BUCKETED_ELEMENT) = struct
     let meet = Base.meet
 
     let fold = Base.fold
+
+    let apply = Base.apply
   end
 
   let singleton element =

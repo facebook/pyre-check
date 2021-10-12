@@ -154,6 +154,8 @@ module Make (Element : ELEMENT) = struct
     let meet = Base.meet
 
     let fold = Base.fold
+
+    let apply = Base.apply
   end
 
   let _ = Base.fold (* unused module warning work-around *)

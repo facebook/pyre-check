@@ -47,6 +47,17 @@ type ('k, 'a, _, _) operation =
   | By : ([ `Partition ], 'a, 'a -> 'b, 'b) operation
   | ByFilter : ([ `Partition ], 'a, 'a -> 'b option, 'b) operation
 
+(* datatype to encapsulate a transform operation *)
+type transform =
+  | T : {
+      part: 'a part;
+      op: ([ `Transform ], 'a, 'f, _) operation;
+      f: 'f;
+    }
+      -> transform
+  | TSeq of transform list
+  | TNone : transform
+
 module type S = sig
   type t [@@deriving show]
 
@@ -89,6 +100,9 @@ module type S = sig
 
   (* Create an abstract value based on a part list. *)
   val create : value_part list -> t
+
+  (* A way to apply transforms as data *)
+  val apply : transform -> t -> t
 end
 
 (* First class abstract domain value. Used e.g., in the product domain. Should not be stored as part
@@ -151,6 +165,8 @@ module type BASE = sig
   val introspect : 'a introspect -> 'a
 
   val meet : t -> t -> t
+
+  val apply : transform -> t -> t
 end
 
 module MakeBase (D : sig
@@ -277,4 +293,10 @@ end) : BASE with type t := D.t = struct
 
   (* default meet, returns the smaller argument if determinable, otherwise the first argument *)
   let meet a b = if D.less_or_equal ~left:b ~right:a then b else a
+
+  let rec apply t v =
+    match t with
+    | TNone -> v
+    | T { part; op; f } -> D.transform D.Self (Nest (part, op)) ~f v
+    | TSeq ts -> List.fold_left (fun v t -> apply t v) v ts
 end

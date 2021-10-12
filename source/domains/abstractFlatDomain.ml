@@ -166,6 +166,8 @@ module Make (Element : ELEMENT) = struct
 
 
     let fold = Base.fold
+
+    let apply = Base.apply
   end
 
   let make e = Concrete e
