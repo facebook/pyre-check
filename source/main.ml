@@ -16,7 +16,6 @@ let commands =
     "newcheck", NewCheck.command;
     "newinfer", NewInfer.command;
     "newserver", NewServer.command;
-    "persistent", Persistent.command;
     "start", Start.command;
     "stop", Stop.command;
   ]
