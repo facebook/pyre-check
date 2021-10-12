@@ -10,7 +10,7 @@
    preprocessingTest refinementUnitTest resolutionTest resolvedCallableTest
    scopeTest sqlAlchemyTest typeCheckTest typeConstraintsTest
    typeOperationTest typeOrderTest typeTest unannotatedGlobalEnvironmentTest
-   uninitializedLocalCheckTest)
+   uninitializedLocalCheckTest weakTopologicalOrderTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv
     ppx_sexp_message ppx_hash))

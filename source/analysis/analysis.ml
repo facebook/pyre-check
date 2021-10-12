@@ -59,3 +59,4 @@ module UnannotatedGlobalEnvironment = UnannotatedGlobalEnvironment
 module UndecoratedFunctionEnvironment = UndecoratedFunctionEnvironment
 module UninitializedLocalCheck = UninitializedLocalCheck
 module WeakenMutableLiterals = WeakenMutableLiterals
+module WeakTopologicalOrder = WeakTopologicalOrder

@@ -83,6 +83,8 @@ module Node = struct
     node
 
 
+  let id { id; _ } = id
+
   let statements { kind; _ } =
     match kind with
     | Block statements -> statements

@@ -32,6 +32,8 @@ module Node : sig
 
   val create : int -> kind -> Int.Set.t -> Int.Set.t -> t
 
+  val id : t -> int
+
   val statements : t -> Statement.t list
 
   val successors : t -> Int.Set.t
@@ -41,6 +43,7 @@ module Node : sig
   val description : t -> string
 end
 
+(* Control flow graph of a define body. *)
 type t = Node.t Int.Table.t [@@deriving eq, show]
 
 val entry_index : int
