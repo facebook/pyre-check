@@ -10,7 +10,7 @@ open Core
 module ServerConfiguration : sig
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
-    socket_path: PyrePath.t option;
+    socket_path: PyrePath.t;
     strict: bool;
     show_error_traces: bool;
     additional_logging_sections: string list;

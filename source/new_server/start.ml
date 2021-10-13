@@ -43,19 +43,6 @@ module ExitStatus = struct
     | Error -> 1
 end
 
-(* Socket paths in most Unixes are limited to a length of +-100 characters, whereas `log_path` might
-   exceed that limit. We have to work around this by shortening the original log path into
-   `/tmp/pyre_server_XXX.sock`, where XXX is obtained by computing an MD5 hash of `log_path`. *)
-(* Note that creating socket path this way implicitly assumes that `log_path` uniquely determines
-   server instances. *)
-let socket_path_of log_path =
-  let socket_directory = Path.create_absolute (Caml.Filename.get_temp_dir_name ()) in
-  let log_path_digest = Path.absolute log_path |> Digest.string |> Digest.to_hex in
-  Path.create_relative
-    ~root:socket_directory
-    ~relative:(Format.sprintf "pyre_server_%s.sock" log_path_digest)
-
-
 let with_performance_logging ?(normals = []) ~name f =
   let open Lwt.Infix in
   let timer = Timer.start () in
@@ -227,7 +214,6 @@ let initialize_server_state
       List.iter errors ~f:add_error;
       table
     in
-    let socket_path = Option.value socket_path ~default:(socket_path_of log_directory) in
     ServerState.create
       ~socket_path
       ~critical_files
@@ -410,9 +396,6 @@ let initialize_server_state
                   in
                   Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
                   let error_table = Server.SavedState.ServerErrors.load () in
-                  let socket_path =
-                    Option.value socket_path ~default:(socket_path_of log_directory)
-                  in
                   ServerState.create
                     ~socket_path
                     ~critical_files
@@ -527,12 +510,11 @@ let on_watchman_update ~server_state paths =
 let with_server
     ?watchman
     ?build_system_initializer
-    ~configuration:({ Configuration.Analysis.log_directory; extensions; _ } as configuration)
+    ~configuration:({ Configuration.Analysis.extensions; _ } as configuration)
     ~f
     ({ StartOptions.socket_path; source_paths; watchman_root; critical_files; _ } as start_options)
   =
   let open Lwt in
-  let socket_path = Option.value socket_path ~default:(socket_path_of log_directory) in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
   get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions ~source_paths ()

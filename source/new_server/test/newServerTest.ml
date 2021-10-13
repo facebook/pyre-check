@@ -134,7 +134,10 @@ module ScratchProject = struct
     let start_options =
       {
         StartOptions.source_paths = Configuration.SourcePaths.Simple [SearchPath.Root source_root];
-        socket_path = None;
+        socket_path =
+          Path.create_relative
+            ~root:(Path.create_absolute (bracket_tmpdir context))
+            ~relative:"pyre_server_hash.sock";
         watchman_root;
         critical_files = [];
         saved_state_action = None;
