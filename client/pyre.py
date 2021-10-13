@@ -1174,7 +1174,6 @@ def servers_stop(context: click.Context) -> int:
     """
     Stop all running servers.
     """
-    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     return v2.servers.run_stop()
 
 
