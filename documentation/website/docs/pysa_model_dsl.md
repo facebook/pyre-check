@@ -35,10 +35,10 @@ Things to note in this example:
 1. The `where` clause is how you refine your criteria for when a model should be generated - in this example, we're filtering for functions where the name matches `"foo"`.
 1. The `model` clause is a list of models to generate. Here, the syntax means that the functions matching the where clause should be modelled as returning `TaintSource[Test]`.
 
-When invoking Pysa, if you add the `--dump-model-query-results` flag to your invocation, the generated models will be written to a file in JSON format.
+When invoking Pysa, if you add the `--dump-model-query-results /path/to/output/file` flag to your invocation, the generated models will be written to a file in JSON format.
 
 ```
-$ pyre analyze --dump-model-query-results
+$ pyre analyze --dump-model-query-results /path/to/output/file.txt
 ...
 > Emitting the model query results to `/my/home/dir/.pyre/model_query_results.pysa`
 ```
