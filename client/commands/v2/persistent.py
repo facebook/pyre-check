@@ -196,6 +196,7 @@ async def try_initialize(
 async def _read_lsp_request(
     input_channel: connection.TextReader, output_channel: connection.TextWriter
 ) -> AsyncIterator[json_rpc.Request]:
+    message = None
     try:
         message = await lsp.read_json_rpc(input_channel)
         yield message
@@ -203,7 +204,8 @@ async def _read_lsp_request(
         await lsp.write_json_rpc(
             output_channel,
             json_rpc.ErrorResponse(
-                id=message.id,
+                # pyre-ignore[16] - refinement doesn't work here for some reason
+                id=message.id if message is not None else None,
                 code=json_rpc_error.error_code(),
                 message=str(json_rpc_error),
             ),
