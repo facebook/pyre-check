@@ -808,6 +808,28 @@ class ErrorsTest(unittest.TestCase):
             max_line_length=25,
         )
 
+    def test_suppress_errors__manual_import(self) -> None:
+        self.assertSuppressErrors(
+            {
+                3: [{"code": "21", "description": "description"}],
+                4: [{"code": "21", "description": "description"}],
+            },
+            """
+            from a import b
+            # @manual=//special:case
+            from a import c
+            from a import d
+            """,
+            """
+            from a import b
+            # FIXME[21]: description
+            # @manual=//special:case
+            from a import c
+            # FIXME[21]: description
+            from a import d
+            """,
+        )
+
     def test_suppress_errors__format_string(self) -> None:
         self.assertSuppressErrors(
             {

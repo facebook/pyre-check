@@ -434,6 +434,10 @@ def _lines_after_suppressing_errors(
             else:
                 removing_pyre_comments = False
         number = index + 1
+        if line.startswith("#") and re.match(r"# *@manual=.*$", line):
+            # Apply suppressions for lines following @manual to current line.
+            errors[number] = errors[number + 1]
+            del errors[number + 1]
 
         # Deduplicate errors
         error_mapping = {
