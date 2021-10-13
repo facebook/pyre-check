@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 from typing import List, Dict
 
+import pkg_resources
+
 from ... import commands, configuration as configuration_module, error as error_module
 from . import query, server_connection, remote_logging
 
@@ -33,7 +35,18 @@ def parse_validation_errors(
     if not isinstance(errors_payload, list):
         message = f"Invalid error payload for model validation: `{errors_payload}`."
         raise query.InvalidQueryResponse(message)
-
+    # Check if the error is caused due to module not being installed or the definition being wrong
+    for error in errors_payload:
+        # More like a hack than a feature. TODO: Passing it from Ocaml would make it less hacky
+        package_name: str = error["description"].split("`")[1].split(".")[0]
+        try:
+            if pkg_resources.get_distribution(package_name):
+                error[
+                    "description"
+                ] += f" Provided definition is not found part of `{package_name}` or is unused in code."
+        except pkg_resources.DistributionNotFound:
+            error["description"] += f" `{package_name}` is not installed."
+            continue
     return sorted(
         (
             _relativize_error_path(error_module.ModelVerificationError.from_json(item))
