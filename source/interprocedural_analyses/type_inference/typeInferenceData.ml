@@ -396,15 +396,7 @@ module LocalResult = struct
         Node.value =
           {
             Statement.Define.signature =
-              {
-                name = { Node.value = define_name; _ };
-                parameters;
-                return_annotation;
-                decorators;
-                parent;
-                async;
-                _;
-              };
+              { name; parameters; return_annotation; decorators; parent; async; _ };
             _;
           };
         Node.location = define_location;
@@ -431,7 +423,7 @@ module LocalResult = struct
         |> List.fold ~init:Parameters.ByName.empty ~f:(Parameters.ByName.add ~global_resolution)
       in
       {
-        name = define_name;
+        name;
         parent;
         return;
         parameters;

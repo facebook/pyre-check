@@ -610,9 +610,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       {
         signature =
           {
-            name =
-              Node.create_with_default_location
-                (Reference.combine parent (Reference.create "__get__"));
+            name = Reference.combine parent (Reference.create "__get__");
             parameters =
               [
                 Node.create_with_default_location
@@ -688,9 +686,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
         {
           signature =
             {
-              name =
-                Reference.create "typing.GenericMeta.__getitem__"
-                |> Node.create_with_default_location;
+              name = Reference.create "typing.GenericMeta.__getitem__";
               parameters =
                 [
                   { Parameter.name = "cls"; value = None; annotation = None }

@@ -18,7 +18,7 @@ let test_apply_decorators context =
   let decorator ?arguments name = { Decorator.name = + !&name; arguments } in
   let create_define ~decorators ~parameters ~return_annotation =
     {
-      Define.Signature.name = + !&"define";
+      Define.Signature.name = !&"define";
       parameters;
       decorators;
       return_annotation;

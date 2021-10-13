@@ -29,7 +29,7 @@ let test_return_annotation context =
       in
       let signature =
         {
-          Define.Signature.name = + !&"derp";
+          Define.Signature.name = !&"derp";
           parameters = [];
           decorators = [];
           return_annotation;

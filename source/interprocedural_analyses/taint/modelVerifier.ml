@@ -68,8 +68,7 @@ let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
   let get_matching_define = function
     | {
         Node.value =
-          Statement.Define
-            ({ signature = { name = { value = define_name; _ }; _ } as signature; _ } as define);
+          Statement.Define ({ signature = { name = define_name; _ } as signature; _ } as define);
         _;
       } ->
         if Reference.equal define_name name && predicate define then

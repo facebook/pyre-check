@@ -1556,11 +1556,7 @@ let run
     ~triggered_sinks
   =
   let timer = Timer.start () in
-  let ({
-         Node.value = { Statement.Define.signature = { name = { Node.value = name; _ }; _ }; _ };
-         _;
-       } as define)
-    =
+  let ({ Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } as define) =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     Annotated.Define.create define
@@ -1618,7 +1614,7 @@ let run
     let local_annotations =
       TypeEnvironment.ReadOnly.get_local_annotations
         environment
-        (Node.value define |> Statement.Define.name |> Node.value)
+        (Node.value define |> Statement.Define.name)
 
 
     let is_constructor = is_constructor

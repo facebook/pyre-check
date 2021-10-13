@@ -534,8 +534,7 @@ let test_define_local_bindings _ =
         ( "bar",
           let signature =
             {
-              Statement.Define.Signature.name =
-                Node.create ~location:(location (3, 6) (3, 9)) !&"bar";
+              Statement.Define.Signature.name = !&"bar";
               parameters = [];
               decorators = [];
               return_annotation = None;
@@ -953,7 +952,7 @@ let test_scope_stack_lookup _ =
           let find_define name =
             match
               List.find all_defines ~f:(fun { Node.value; _ } ->
-                  Reference.equal name (Node.value (Statement.Define.name value)))
+                  Reference.equal name (Statement.Define.name value))
             with
             | None ->
                 let message =

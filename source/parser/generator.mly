@@ -800,12 +800,12 @@ compound_statement:
         | _ ->
             parameters
       in
-      let name_location, name = name in
+      let _, name = name in
       {
         Node.location;
         value = Define {
           signature = {
-            name = { Node.location = name_location; value = name };
+            name = name;
             parameters = List.map ~f:convert_parameter parameters;
             decorators = [];
             return_annotation = annotation >>| convert;

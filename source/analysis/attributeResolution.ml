@@ -2846,7 +2846,7 @@ class base class_metadata_environment dependency =
         match implementation, overloads with
         | Some { Define.Signature.name; _ }, _
         | _, { Define.Signature.name; _ } :: _ ->
-            Type.Callable.Named (Node.value name)
+            Type.Callable.Named name
         | None, [] ->
             (* Should never happen, but not worth crashing over *)
             Type.Callable.Anonymous

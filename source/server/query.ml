@@ -629,7 +629,7 @@ let rec process_request ~environment ~configuration request =
               { Base.parameter_name = Identifier.sanitized name; parameter_annotation = annotation }
             in
             {
-              Base.define_name = Node.value name;
+              Base.define_name = name;
               parameters = List.map parameters ~f:represent_parameter;
               return_annotation;
             }
@@ -644,8 +644,7 @@ let rec process_request ~environment ~configuration request =
               {
                 Node.value =
                   {
-                    Statement.Define.signature =
-                      { Statement.Define.Signature.name = { Node.value = caller; _ }; _ };
+                    Statement.Define.signature = { Statement.Define.Signature.name = caller; _ };
                     _;
                   };
                 _;

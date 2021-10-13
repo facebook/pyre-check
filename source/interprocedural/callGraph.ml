@@ -839,9 +839,7 @@ let call_graph_of_define
   let module DefineFixpoint = DefineCallGraph (struct
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
-    let local_annotations =
-      TypeEnvironment.ReadOnly.get_local_annotations environment (Node.value name)
-
+    let local_annotations = TypeEnvironment.ReadOnly.get_local_annotations environment name
 
     let parent = parent
 

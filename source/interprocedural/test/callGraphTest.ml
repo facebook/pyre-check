@@ -35,8 +35,7 @@ let test_call_graph_of_define context =
     let define, test_source, environment =
       let find_define = function
         | { Node.value = define; _ }
-          when String.equal (Reference.show (Node.value (Statement.Define.name define))) define_name
-          ->
+          when String.equal (Statement.Define.name define |> Reference.show) define_name ->
             Some define
         | _ -> None
       in

@@ -563,9 +563,7 @@ let define resolution decorator_name =
     | [{ Node.value = { Define.body; _ } as define; location }] ->
         let transform_statement = function
           | {
-              Node.value =
-                Statement.Define
-                  { body = []; signature = { name = { Node.value = define_name; _ }; _ }; _ };
+              Node.value = Statement.Define { body = []; signature = { name = define_name; _ }; _ };
               _;
             } as statement ->
               get_define define_name

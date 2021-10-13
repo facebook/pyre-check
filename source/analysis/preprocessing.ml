@@ -462,11 +462,9 @@ let qualify
           }
       | Class { Class.name = { Node.value = name; _ }; _ } ->
           { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
-      | Define { Define.signature = { name = { Node.value = name; _ }; _ }; _ } when is_in_function
-        ->
+      | Define { Define.signature = { name; _ }; _ } when is_in_function ->
           qualify_function_name ~scope name |> fst
-      | Define { Define.signature = { name = { Node.value = name; _ }; _ }; _ }
-        when not is_in_function ->
+      | Define { Define.signature = { name; _ }; _ } when not is_in_function ->
           { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
       | If { If.body; orelse; _ } ->
           let scope = explore_scope ~scope body in
@@ -735,15 +733,7 @@ let qualify
           ({ qualifier; _ } as original_scope)
           ({
              Define.signature =
-               {
-                 name = { Node.value = name; location = name_location };
-                 parameters;
-                 decorators;
-                 return_annotation;
-                 parent;
-                 nesting_define;
-                 _;
-               };
+               { name; parameters; decorators; return_annotation; parent; nesting_define; _ };
              body;
              _;
            } as define)
@@ -775,7 +765,7 @@ let qualify
         let signature =
           {
             define.signature with
-            name = { Node.value = name; location = name_location };
+            name;
             parameters;
             decorators;
             return_annotation;
@@ -809,17 +799,8 @@ let qualify
             let scope, statement =
               match value with
               | Statement.Define
-                  ({
-                     signature =
-                       {
-                         name = { Node.value = name; location = name_location };
-                         parameters;
-                         return_annotation;
-                         decorators;
-                         _;
-                       };
-                     _;
-                   } as define) ->
+                  ({ signature = { name; parameters; return_annotation; decorators; _ }; _ } as
+                  define) ->
                   let _, define = qualify_define original_scope define in
                   let _, parameters = qualify_parameters ~scope parameters in
                   let return_annotation =
@@ -845,8 +826,7 @@ let qualify
                   let signature =
                     {
                       define.signature with
-                      name =
-                        { Node.value = qualify_reference ~scope name; location = name_location };
+                      name = qualify_reference ~scope name;
                       parameters;
                       decorators;
                       return_annotation;
@@ -2175,7 +2155,7 @@ let replace_mypy_extensions_stub
     in
     let replace_typed_dictionary_define = function
       | { Node.location; value = Statement.Define { signature = { name; _ }; _ } }
-        when String.equal (Reference.show (Node.value name)) "TypedDict" ->
+        when String.equal (Reference.show name) "TypedDict" ->
           typed_dictionary_stub ~location
       | statement -> statement
     in
@@ -2663,7 +2643,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           {
             signature =
               {
-                name = Node.create ~location (Reference.create ~prefix:parent name);
+                name = Reference.create ~prefix:parent name;
                 parameters = self_parameter :: parameters;
                 decorators = [];
                 return_annotation = Some return_annotation;
@@ -2772,7 +2752,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                             Statement.Define { Define.signature = { Define.Signature.name; _ }; _ };
                           _;
                         } ->
-                          String.equal (Reference.last (Node.value name)) generated_name
+                          String.equal (Reference.last name) generated_name
                       | _ -> false
                     in
                     if
@@ -2860,7 +2840,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
               {
                 signature =
                   {
-                    name = Node.create ~location (Reference.create ~prefix:name "__init__");
+                    name = Reference.create ~prefix:name "__init__";
                     parameters =
                       [
                         Parameter.create ~location ~name:"self" ();
@@ -2952,7 +2932,7 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
      value =
        Define
          {
-           Define.signature = { Define.Signature.name = { Node.value = name; _ }; _ } as signature;
+           Define.signature = { Define.Signature.name; _ } as signature;
            captures;
            unbound_names;
            body;
@@ -3831,12 +3811,8 @@ let mangle_private_attributes source =
             }
         | ( class_name :: _,
             Statement.Define
-              ({
-                 Define.signature =
-                   { Define.Signature.name = { Node.value = name; _ } as name_node; parent; _ } as
-                   signature;
-                 _;
-               } as define) )
+              ({ Define.signature = { Define.Signature.name; parent; _ } as signature; _ } as
+              define) )
           when should_mangle (Reference.last name) ->
             {
               statement with
@@ -3847,7 +3823,7 @@ let mangle_private_attributes source =
                     signature =
                       {
                         signature with
-                        name = { name_node with value = mangle_reference class_name name };
+                        name = mangle_reference class_name name;
                         parent = parent >>| mangle_parent_name;
                       };
                   };

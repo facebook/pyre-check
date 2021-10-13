@@ -122,7 +122,7 @@ end
 and Define : sig
   module Signature : sig
     type t = {
-      name: Reference.t Node.t;
+      name: Reference.t;
       parameters: Expression.Parameter.t list;
       decorators: Decorator.t list;
       return_annotation: Expression.t option;
@@ -219,9 +219,11 @@ and Define : sig
     statements:Statement.t list ->
     t
 
-  val name : t -> Reference.t Node.t
+  val name : t -> Reference.t
 
   val unqualified_name : t -> Identifier.t
+
+  val name_location : body_location:Location.t -> t -> Location.t
 
   val self_identifier : t -> Identifier.t
 

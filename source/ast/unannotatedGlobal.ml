@@ -155,7 +155,7 @@ module Collector = struct
           { Result.name = Node.value name |> Reference.last; unannotated_global = Class } :: globals
       | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
           {
-            Result.name = Node.value name |> Reference.last;
+            Result.name = name |> Reference.last;
             unannotated_global =
               Define [{ define = signature; location = Location.with_module ~qualifier location }];
           }

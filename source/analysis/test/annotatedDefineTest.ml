@@ -20,7 +20,7 @@ let test_parent_definition context =
     {
       StatementDefine.signature =
         {
-          name = + !&name;
+          name = !&name;
           parameters = [];
           decorators = [];
           return_annotation = None;

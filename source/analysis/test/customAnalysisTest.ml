@@ -19,7 +19,7 @@ let test_nested_defines_deep_to_shallow _ =
       |> Node.create_with_default_location
       |> CustomAnalysis.nested_defines_deep_to_shallow
       |> List.map ~f:Node.value
-      |> List.map ~f:(fun { Define.signature = { Define.Signature.name; _ }; _ } -> Node.value name)
+      |> List.map ~f:(fun { Define.signature = { Define.Signature.name; _ }; _ } -> name)
     in
     let expected = List.map ~f:Reference.create expected in
     assert_equal

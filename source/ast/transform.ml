@@ -490,12 +490,8 @@ let sanitize_statement statement =
       | {
           Node.value =
             Statement.Define
-              ({
-                 Define.signature =
-                   { Define.Signature.name = { Node.value = name; _ } as name_node; parameters; _ }
-                   as signature;
-                 _;
-               } as define);
+              ({ Define.signature = { Define.Signature.name; parameters; _ } as signature; _ } as
+              define);
           _;
         } as statement ->
           let transform_parameter
@@ -515,7 +511,7 @@ let sanitize_statement statement =
                       signature =
                         {
                           signature with
-                          name = { name_node with value = Reference.sanitized name };
+                          name = Reference.sanitized name;
                           parameters = List.map parameters ~f:transform_parameter;
                         };
                     };

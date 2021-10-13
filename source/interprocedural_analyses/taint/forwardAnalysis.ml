@@ -1580,14 +1580,7 @@ let extract_source_model
     ~via_features_to_attach
     exit_taint
   =
-  let {
-    Statement.Define.signature =
-      { return_annotation; name = { Node.value = name; _ }; parameters; _ };
-    _;
-  }
-    =
-    define
-  in
+  let { Statement.Define.signature = { return_annotation; name; parameters; _ }; _ } = define in
   let return_annotation =
     Option.map ~f:(GlobalResolution.parse_annotation resolution) return_annotation
   in
@@ -1654,14 +1647,7 @@ let run
     ~call_graph_of_define
     ~existing_model
   =
-  let {
-    Node.value =
-      { Statement.Define.signature = { name = { Node.value = name; _ }; parameters; _ }; _ };
-    _;
-  }
-    =
-    define
-  in
+  let { Node.value = { Statement.Define.signature = { name; parameters; _ }; _ }; _ } = define in
   let module Context = struct
     let qualifier = qualifier
 
@@ -1714,7 +1700,7 @@ let run
     let local_annotations =
       TypeEnvironment.ReadOnly.get_local_annotations
         environment
-        (Node.value define |> Statement.Define.name |> Node.value)
+        (Node.value define |> Statement.Define.name)
 
 
     let candidates = Location.WithModule.Table.create ()
@@ -1804,7 +1790,7 @@ let run
     |> String.concat ~sep:"\n"
     |> Log.dump
          "Call graph of `%s`:\n %s"
-         (Statement.Define.name (Node.value define) |> Node.value |> Reference.show);
+         (Statement.Define.name (Node.value define) |> Reference.show);
   let module AnalysisInstance = AnalysisInstance (Context) in
   let open AnalysisInstance in
   log "Forward analysis of callable: `%a`" Reference.pp name;

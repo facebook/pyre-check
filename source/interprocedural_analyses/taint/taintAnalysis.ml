@@ -585,11 +585,7 @@ include Taint.Result.Register (struct
       ~callable
       ~qualifier
       ~define:
-        ({
-           Ast.Node.value =
-             { Ast.Statement.Define.signature = { name = { Ast.Node.value = name; _ }; _ }; _ };
-           _;
-         } as define)
+        ({ Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define)
       ~existing
     =
     let define_qualifier = Ast.Reference.delocalize name in

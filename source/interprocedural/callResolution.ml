@@ -43,8 +43,7 @@ let is_super ~resolution ~define expression =
         | Type.Parametric { name = parent_name; _ }
         | Type.Primitive parent_name ->
             let class_name =
-              Reference.prefix define.Node.value.Statement.Define.signature.name.Node.value
-              >>| Reference.show
+              Reference.prefix define.Node.value.Statement.Define.signature.name >>| Reference.show
             in
             class_name
             >>| (fun class_name ->

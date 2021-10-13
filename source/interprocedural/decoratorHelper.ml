@@ -240,8 +240,8 @@ let create_function_call_to ~location ~callee_name { Define.Signature.parameters
   |> create_function_call ~location ~callee_name ~async
 
 
-let rename_define ~new_name ({ Define.signature = { name; _ } as signature; _ } as define) =
-  { define with Define.signature = { signature with name = { name with Node.value = new_name } } }
+let rename_define ~new_name ({ Define.signature; _ } as define) =
+  { define with Define.signature = { signature with name = new_name } }
 
 
 let set_first_parameter_type
@@ -293,8 +293,7 @@ let extract_decorator_data
     ~is_decorator_factory
     {
       decorator_define =
-        { Define.signature = { name = { Node.value = outer_decorator_reference; _ }; _ }; body; _ }
-        as decorator_define;
+        { Define.signature = { name = outer_decorator_reference; _ }; body; _ } as decorator_define;
       module_reference;
     }
   =
@@ -320,16 +319,12 @@ let extract_decorator_data
     | _ -> None
   in
   let extract_decorator_data
-      {
-        Define.signature = { parameters; name = { Node.value = decorator_reference; _ }; _ };
-        body;
-        _;
-      }
+      { Define.signature = { parameters; name = decorator_reference; _ }; body; _ }
     =
     let partition_wrapper_helpers body =
       match wrapper_function_name body with
       | Some wrapper_name ->
-          let define_name_matches { Define.signature = { name = { Node.value = name; _ }; _ }; _ } =
+          let define_name_matches { Define.signature = { name; _ }; _ } =
             Identifier.equal (Reference.show name) wrapper_name
           in
           get_nested_defines body |> List.partition_tf ~f:define_name_matches |> Option.some
@@ -594,7 +589,7 @@ let replace_signature_if_always_passing_on_arguments
 let add_function_decorator_module_mapping
     ~qualifier
     ~module_reference
-    { Define.signature = { name = { Node.value = name; _ }; _ }; _ }
+    { Define.signature = { name; _ }; _ }
   =
   let qualified_inlined_name = Reference.combine qualifier name in
   Option.iter module_reference ~f:(DecoratorModule.add qualified_inlined_name)
@@ -614,8 +609,7 @@ let make_wrapper_define
       wrapper_define =
         {
           Define.signature =
-            { name = { Node.value = wrapper_define_name; _ } as name; return_annotation; _ } as
-            wrapper_signature;
+            { name = wrapper_define_name; return_annotation; _ } as wrapper_signature;
           _;
         } as wrapper_define;
       helper_defines;
@@ -648,13 +642,10 @@ let make_wrapper_define
   in
   let inlined_wrapper_define_name = make_wrapper_function_name outer_decorator_reference in
   let wrapper_function_name = Reference.last inlined_wrapper_define_name in
-  let outer_signature =
-    { outer_signature with parent; name = { name with value = inlined_wrapper_define_name } }
-  in
+  let outer_signature = { outer_signature with parent; name = inlined_wrapper_define_name } in
   let wrapper_qualifier = Reference.create ~prefix:qualifier wrapper_function_name in
   let make_helper_define
-      ({ Define.signature = { name = { Node.value = helper_function_name; _ }; _ }; _ } as
-      helper_define)
+      ({ Define.signature = { name = helper_function_name; _ }; _ } as helper_define)
     =
     let helper_function_reference = Reference.delocalize helper_function_name in
     let new_helper_function_reference =
@@ -705,7 +696,7 @@ let inline_decorators_at_same_scope
          _;
        } as head_decorator)
     ~tail_decorators
-    ({ Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define)
+    ({ Define.signature = { name; _ }; _ } as define)
   =
   let inlinable_decorators = head_decorator :: tail_decorators in
   let qualifier = Reference.delocalize name in
@@ -719,8 +710,7 @@ let inline_decorators_at_same_scope
   in
   let wrapper_defines, outer_signature =
     let inline_wrapper_and_call_previous_wrapper
-        ( wrapper_defines,
-          { Define.Signature.name = { Node.value = previous_inlined_wrapper; _ }; _ } )
+        (wrapper_defines, { Define.Signature.name = previous_inlined_wrapper; _ })
         decorator_data
       =
       let wrapper_define, new_signature =

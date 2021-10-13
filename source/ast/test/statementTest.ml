@@ -19,7 +19,7 @@ let test_is_method _ =
     {
       Define.signature =
         {
-          name = + !&name;
+          name = !&name;
           parameters = [];
           decorators = [];
           return_annotation = None;
@@ -44,7 +44,7 @@ let test_is_classmethod _ =
     {
       Define.signature =
         {
-          name = + !&name;
+          name = !&name;
           parameters = [];
           decorators;
           return_annotation = None;
@@ -71,7 +71,7 @@ let test_is_class_property _ =
     {
       Define.signature =
         {
-          name = + !&name;
+          name = !&name;
           parameters = [];
           decorators;
           return_annotation = None;
@@ -96,7 +96,7 @@ let test_decorator _ =
     {
       Define.signature =
         {
-          name = + !&"foo";
+          name = !&"foo";
           parameters = [];
           decorators;
           return_annotation = None;
@@ -134,7 +134,7 @@ let test_is_constructor _ =
       {
         Define.signature =
           {
-            name = + !&name;
+            name = !&name;
             parameters = [];
             decorators = [];
             return_annotation = None;
@@ -226,16 +226,13 @@ let test_defines _ =
     let method_id = method_name in
     match Class.find_define definition ~method_name:method_id with
     | Some define when exists ->
-        assert_equal
-          (Node.value define.Node.value.Define.signature.name)
-          !&method_id
-          ~printer:Reference.show
+        assert_equal define.Node.value.Define.signature.name !&method_id ~printer:Reference.show
     | None when not exists -> ()
     | Some { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
         Format.asprintf
           "method %a found when not expected (looking for %s)"
           Reference.pp
-          (Node.value name)
+          name
           method_name
         |> assert_failure
     | None -> Format.sprintf "method %s not found when expected" method_name |> assert_failure

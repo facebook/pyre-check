@@ -111,8 +111,7 @@ let create
     let open UnannotatedGlobal in
     let is_getattr_any
         {
-          UnannotatedDefine.define =
-            { Define.Signature.name = { Node.value = name; _ }; parameters; return_annotation; _ };
+          UnannotatedDefine.define = { Define.Signature.name; parameters; return_annotation; _ };
           _;
         }
       =

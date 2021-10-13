@@ -96,7 +96,7 @@ let test_parse_stubs_modules_list context =
             _;
           }
         when Bool.equal (Statement.Define.is_stub define) is_stub ->
-          Node.value name
+          name
       | _ -> failwith "Could not get source."
     in
     assert_equal ~cmp:Reference.equal ~printer:Reference.show (Reference.create define) name
@@ -140,11 +140,7 @@ let test_parse_source context =
   assert_equal relative "x.py";
   match statements with
   | [{ Node.value = Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
-      assert_equal
-        ~cmp:Reference.equal
-        ~printer:Reference.show
-        (Node.value name)
-        (Reference.create "x.foo")
+      assert_equal ~cmp:Reference.equal ~printer:Reference.show name (Reference.create "x.foo")
   | _ -> assert_unreached ()
 
 

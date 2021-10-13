@@ -334,7 +334,7 @@ let analyze_define
           ~section:`Info
           "Could not generate model for `%a` due to invalid annotation `%s`"
           Reference.pp
-          (Node.value name)
+          name
           annotation;
         AnalysisResult.Kind.Map.empty, AnalysisResult.Kind.Map.empty
     | Sys.Break as exn -> analysis_failed step ~exn ~message:"Hit Ctrl+C" callable
@@ -692,7 +692,7 @@ let compute_fixpoint
       in
       Log.dump
         "Model for `%s` after %d iterations:\n%a"
-        (Log.Color.yellow (Reference.show (Node.value name)))
+        (Log.Color.yellow (Reference.show name))
         iterations
         AnalysisResult.pp_model_t
         model

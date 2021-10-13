@@ -1795,14 +1795,8 @@ let test_replace_signature _ =
     with
     | ( expected,
         [{ Node.value = Define given; _ }],
-        [
-          {
-            Node.value =
-              Define
-                { signature = { name = { Node.value = callee_name; _ }; _ } as new_signature; _ };
-            _;
-          };
-        ] ) ->
+        [{ Node.value = Define { signature = { name = callee_name; _ } as new_signature; _ }; _ }] )
+      ->
         let actual =
           DecoratorHelper.replace_signature_if_always_passing_on_arguments
             ~callee_name:(Reference.show callee_name)

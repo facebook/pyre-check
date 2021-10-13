@@ -101,7 +101,7 @@ let create_property_setter_override reference =
 
 let create { Node.value = define; _ } =
   let open Define in
-  let name = Node.value define.signature.name in
+  let name = define.signature.name in
   match define.signature.parent with
   | Some _ ->
       if Define.is_property_setter define then

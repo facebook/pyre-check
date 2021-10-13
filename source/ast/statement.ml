@@ -324,7 +324,7 @@ end
 and Define : sig
   module Signature : sig
     type t = {
-      name: Reference.t Node.t;
+      name: Reference.t;
       parameters: Expression.Parameter.t list;
       decorators: Decorator.t list;
       return_annotation: Expression.t option;
@@ -427,9 +427,11 @@ and Define : sig
     statements:Statement.t list ->
     t
 
-  val name : t -> Reference.t Node.t
+  val name : t -> Reference.t
 
   val unqualified_name : t -> Identifier.t
+
+  val name_location : body_location:Location.t -> t -> Location.t
 
   val self_identifier : t -> Identifier.t
 
@@ -485,7 +487,7 @@ and Define : sig
 end = struct
   module Signature = struct
     type t = {
-      name: Reference.t Node.t;
+      name: Reference.t;
       parameters: Expression.Parameter.t list;
       decorators: Decorator.t list;
       return_annotation: Expression.t option;
@@ -499,7 +501,7 @@ end = struct
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
-      match Node.location_insensitive_compare [%compare: Reference.t] left.name right.name with
+      match Reference.compare left.name right.name with
       | x when not (Int.equal x 0) -> x
       | _ -> (
           match
@@ -539,7 +541,7 @@ end = struct
 
     let create_toplevel ~qualifier =
       {
-        name = Reference.create ?prefix:qualifier "$toplevel" |> Node.create_with_default_location;
+        name = Reference.create ?prefix:qualifier "$toplevel";
         parameters = [];
         decorators = [];
         return_annotation = None;
@@ -552,8 +554,7 @@ end = struct
 
     let create_class_toplevel ~parent =
       {
-        name =
-          Reference.create ~prefix:parent "$class_toplevel" |> Node.create_with_default_location;
+        name = Reference.create ~prefix:parent "$class_toplevel";
         parameters = [];
         decorators = [];
         return_annotation = None;
@@ -564,7 +565,7 @@ end = struct
       }
 
 
-    let unqualified_name { name; _ } = Reference.last (Node.value name)
+    let unqualified_name { name; _ } = Reference.last name
 
     let self_identifier { parameters; _ } =
       match parameters with
@@ -762,6 +763,28 @@ end = struct
   let name { signature = { Signature.name; _ }; _ } = name
 
   let unqualified_name { signature; _ } = Signature.unqualified_name signature
+
+  let name_location
+      ~body_location:{ Location.start = { line = start_line; column = start_column }; _ }
+      define
+    =
+    if Signature.is_class_toplevel define.signature then
+      Location.any
+    else
+      let start_column =
+        let def_and_space_offset = 4 in
+        start_column + def_and_space_offset
+      in
+      let stop_column_ =
+        let name_length = define |> unqualified_name |> String.length in
+        start_column + name_length
+      in
+      Location.
+        {
+          start = { line = start_line; column = start_column };
+          stop = { line = start_line; column = stop_column_ };
+        }
+
 
   let self_identifier { signature; _ } = Signature.self_identifier signature
 
@@ -1467,7 +1490,7 @@ module PrettyPrinter = struct
       parent
       (if Option.is_some parent then "#" else "")
       Reference.pp
-      (Node.value name)
+      name
       Expression.pp_expression_parameter_list
       parameters
       return_annotation

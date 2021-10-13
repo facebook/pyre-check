@@ -865,10 +865,7 @@ let infer_local
     ~global_resolution
     ~source:{ Source.source_path = { SourcePath.qualifier; _ }; _ }
     ~define:
-      ({
-         Node.location;
-         value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
-       } as define_node)
+      ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
   let module State = State (struct
     let configuration = configuration
@@ -1016,9 +1013,7 @@ let legacy_infer_for_define
     ~configuration
     ~global_resolution
     ~source:({ Source.source_path = { SourcePath.qualifier; relative; _ }; _ } as source)
-    ~define:
-      ({ Node.location; value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } }
-      as define)
+    ~define:({ Node.location; value = { Define.signature = { name; _ }; _ } } as define)
   =
   try
     let local_errors = infer_local ~configuration ~global_resolution ~source ~define in

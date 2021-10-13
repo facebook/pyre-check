@@ -2084,7 +2084,7 @@ let resolve_global_callable
     ~location
     ~verify_decorators
     ~resolution
-    ({ Define.Signature.name = { Node.value = name; _ }; decorators; _ } as define)
+    ({ Define.Signature.name; decorators; _ } as define)
   =
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
   let open ModelVerifier in
@@ -2250,7 +2250,7 @@ let parse_statement ~resolution ~path ~configuration statement =
    Node.value =
      Statement.Define
        {
-         signature = { name = { Node.value = name; _ }; _ } as signature;
+         signature = { name; _ } as signature;
          body =
            [
              { value = Statement.Expression { value = Expression.Constant Constant.Ellipsis; _ }; _ };
@@ -2272,10 +2272,7 @@ let parse_statement ~resolution ~path ~configuration statement =
         | None -> Target.create_function name
       in
       Ok [ParsedSignature { signature; location; call_target }]
-  | {
-   Node.value = Statement.Define { signature = { name = { Node.value = name; _ }; _ }; _ };
-   location;
-  } ->
+  | { Node.value = Statement.Define { signature = { name; _ }; _ }; location } ->
       Error (model_verification_error ~path ~location (DefineBodyNotEllipsis (Reference.show name)))
   | {
    Node.value =
@@ -2340,12 +2337,7 @@ let parse_statement ~resolution ~path ~configuration statement =
                  | Statement.Define
                      {
                        Define.signature =
-                         {
-                           Define.Signature.name = { Node.value = name; _ };
-                           parameters;
-                           decorators;
-                           _;
-                         } as signature;
+                         { Define.Signature.name; parameters; decorators; _ } as signature;
                        _;
                      } ->
                      let signature ~extra_decorators ~source_annotation ~sink_annotation =
@@ -2602,13 +2594,8 @@ let create_model_from_signature
     ~is_obscure
     {
       signature =
-        {
-          Define.Signature.name = { Node.value = callable_name; _ };
-          parameters;
-          return_annotation;
-          decorators;
-          _;
-        } as define;
+        { Define.Signature.name = callable_name; parameters; return_annotation; decorators; _ } as
+        define;
       location;
       call_target;
     }

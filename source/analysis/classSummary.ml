@@ -482,7 +482,7 @@ module ClassAttributes = struct
                       { signature = { name = callee; parent = Some parent; _ }; body; _ };
                   _;
                 }
-                when Reference.equal (Node.value callee) (Reference.create ~prefix:parent name) ->
+                when Reference.equal callee (Reference.create ~prefix:parent name) ->
                   Some body
               | _ -> None
             in
@@ -527,11 +527,7 @@ module ClassAttributes = struct
 
     let create
         ~location
-        ({
-           Define.signature =
-             { name = { Node.value = name; _ }; return_annotation; parameters; parent; _ };
-           _;
-         } as define)
+        ({ Define.signature = { name; return_annotation; parameters; parent; _ }; _ } as define)
       =
       let inspect_decorators name =
         let async = Define.is_async define in
@@ -802,9 +798,8 @@ module ClassAttributes = struct
       let callable_attributes =
         let callable_attributes map { Node.location; value } =
           match value with
-          | Statement.Define
-              ({ Define.signature = { name = { Node.value = target; _ }; _ } as signature; _ } as
-              define) ->
+          | Statement.Define ({ Define.signature = { name = target; _ } as signature; _ } as define)
+            ->
               Attribute.name (Expression.from_reference ~location target) ~parent:parent_name
               >>| (fun name ->
                     let attribute =

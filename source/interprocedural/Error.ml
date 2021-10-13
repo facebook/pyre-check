@@ -31,7 +31,7 @@ let create ~location ~kind ~define =
     =
     define
   in
-  { location; kind; define_name = Node.value define_name }
+  { location; kind; define_name }
 
 
 let code { kind = { code; _ }; _ } = code

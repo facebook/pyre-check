@@ -674,11 +674,7 @@ let rec messages ~concise ~signature location kind =
     =
     location
   in
-  let {
-    Node.value = { Define.Signature.name = { Node.value = define_name; _ }; _ };
-    location = define_location;
-  }
-    =
+  let { Node.value = { Define.Signature.name = define_name; _ }; location = define_location } =
     signature
   in
   let show_sanitized_expression expression =
@@ -2443,7 +2439,7 @@ module Instantiated = struct
       description = description ~show_error_traces ~concise:false ~separator:" ";
       long_description = description ~show_error_traces:true ~concise:false ~separator:"\n";
       concise_description = description ~show_error_traces ~concise:true ~separator:"\n";
-      define = Reference.show_sanitized (Reference.delocalize (Node.value signature.name));
+      define = Reference.show_sanitized (Reference.delocalize signature.name);
     }
 end
 

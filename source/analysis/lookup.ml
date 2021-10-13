@@ -200,23 +200,17 @@ module Visit = struct
           annotation >>| store_annotation |> ignore;
           precondition_visit value
       | Define
-          {
-            Define.signature =
-              {
-                name = { Node.value = name; location = name_location };
-                parameters;
-                decorators;
-                return_annotation;
-                _;
-              };
-            _;
-          } ->
+          ({ Define.signature = { name; parameters; decorators; return_annotation; _ }; _ } as
+          define) ->
           let visit_parameter { Node.value = { Parameter.annotation; value; name }; location } =
             Expression.Name (Name.Identifier name) |> Node.create ~location |> postcondition_visit;
             Option.iter ~f:postcondition_visit value;
             annotation >>| store_annotation |> ignore
           in
-          precondition_visit (Ast.Expression.from_reference ~location:name_location name);
+          precondition_visit
+            (Ast.Expression.from_reference
+               ~location:(Define.name_location ~body_location:statement.location define)
+               name);
           List.iter parameters ~f:visit_parameter;
           List.map decorators ~f:Ast.Statement.Decorator.to_expression
           |> List.iter ~f:postcondition_visit;
@@ -245,10 +239,7 @@ let create_of_module type_environment qualifier =
   let definitions_lookup = Location.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
-      ({
-         Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
-         _;
-       } as define_node)
+      ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
     let annotation_lookup =
       TypeCheck.get_or_recompute_local_annotations ~environment:type_environment name

@@ -51,7 +51,7 @@ let assert_fixpoint body expected =
     {
       Define.signature =
         {
-          name = + !&"foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           return_annotation = None;

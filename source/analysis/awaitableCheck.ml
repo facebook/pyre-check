@@ -622,9 +622,7 @@ let run
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
       let local_annotations =
-        TypeCheck.get_or_recompute_local_annotations
-          ~environment
-          (Node.value define |> Define.name |> Node.value)
+        TypeCheck.get_or_recompute_local_annotations ~environment (Node.value define |> Define.name)
     end
     in
     let module State = State (Context) in
