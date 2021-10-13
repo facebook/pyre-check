@@ -71,7 +71,7 @@ let test_check_assert context =
           assert not True
         return int_to_int(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   assert_type_errors
     {|
       from builtins import int_to_int

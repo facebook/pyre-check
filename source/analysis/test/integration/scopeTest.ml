@@ -42,7 +42,7 @@ let test_uninitialized context =
           x = y
           y = 5
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
 
   assert_type_errors
     {|
@@ -58,7 +58,7 @@ let test_uninitialized context =
           _ = z    # Refers to nonlocal `z`, error as not defined in outer scope
     |}
     [
-      "Uninitialized local [61]: Local variable `x` may not be initialized here.";
+      "Uninitialized local [61]: Local variable `x` is undefined, or not always defined.";
       "Unbound name [10]: Name `z` is used but not defined in the current scope.";
     ];
 
@@ -89,7 +89,10 @@ let test_uninitialized context =
                       harness_config = task.harness_config
                   foo(harness_config)
       |}
-    ["Uninitialized local [61]: Local variable `harness_config` may not be initialized here."];
+    [
+      "Uninitialized local [61]: Local variable `harness_config` is undefined, or not always \
+       defined.";
+    ];
 
   ()
 

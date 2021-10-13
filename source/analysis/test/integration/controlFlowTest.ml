@@ -288,7 +288,7 @@ let test_check_unbound_variables context =
           other = 1
         return result
     |}
-    ["Uninitialized local [61]: Local variable `result` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `result` is undefined, or not always defined."];
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -298,7 +298,7 @@ let test_check_unbound_variables context =
     |}
     [
       "Unbound name [10]: Name `narnia` is used but not defined in the current scope.";
-      "Uninitialized local [61]: Local variable `result` may not be initialized here.";
+      "Uninitialized local [61]: Local variable `result` is undefined, or not always defined.";
     ];
   assert_type_errors
     {|
@@ -311,7 +311,7 @@ let test_check_unbound_variables context =
     |}
     [
       "Unbound name [10]: Name `narnia` is used but not defined in the current scope.";
-      "Uninitialized local [61]: Local variable `result` may not be initialized here.";
+      "Uninitialized local [61]: Local variable `result` is undefined, or not always defined.";
     ];
   assert_type_errors
     {|

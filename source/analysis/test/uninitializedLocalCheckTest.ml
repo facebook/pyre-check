@@ -28,7 +28,7 @@ let test_simple context =
         x = y
         y = 5
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
   assert_uninitialized_errors {|
       def f(y):
         x = y
@@ -43,7 +43,7 @@ let test_simple context =
         z = 5
         return z   # OK
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       def f(x):
@@ -51,7 +51,7 @@ let test_simple context =
           y = 2
         return y
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       def f() -> int:
@@ -61,7 +61,7 @@ let test_simple context =
           except ZeroDivisionError:
               return x
     |}
-    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       x, y, z = 0, 0, 0
@@ -73,7 +73,7 @@ let test_simple context =
         y = 1
         _ = z      # Refers to global `z`, implicitly
     |}
-    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       class Foo(object):
@@ -158,7 +158,7 @@ let test_simple context =
         _ = x, y
         x, y = None, None
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       def f():
@@ -167,7 +167,7 @@ let test_simple context =
         _ = x, y
         y = None
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
 
   ()
 
@@ -199,7 +199,7 @@ let test_cfg context =
           assert True, "error"
         return z
     |}
-    ["Uninitialized local [61]: Local variable `z` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `z` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       def baz() -> int:

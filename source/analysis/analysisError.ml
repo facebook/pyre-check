@@ -2121,14 +2121,14 @@ let rec messages ~concise ~signature location kind =
         "Did you forget to import it or assign to it?";
       ]
   | UninitializedLocal name when concise ->
-      [Format.asprintf "`%a` may not be initialized here." Identifier.pp_sanitized name]
+      [Format.asprintf "`%a` is undefined, or not always defined." Identifier.pp_sanitized name]
   | UninitializedLocal name ->
       [
         Format.asprintf
-          "Local variable `%a` may not be initialized here."
+          "Local variable `%a` is undefined, or not always defined."
           Identifier.pp_sanitized
           name;
-        "Check if along control flows the variable is defined.";
+        "Check if the variable is defined in all preceding branches of logic.";
       ]
   | UndefinedAttribute { attribute; origin } -> (
       let private_attribute_warning () =
