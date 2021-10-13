@@ -23,7 +23,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 COMPILER_VERSION = "4.10.2"
 DEVELOPMENT_COMPILER: str = COMPILER_VERSION
-# pyre-fixme[5]: Global expression must be annotated.
 RELEASE_COMPILER = f"{COMPILER_VERSION}+flambda"
 DEPENDENCIES = [
     "base64.3.5.0",
