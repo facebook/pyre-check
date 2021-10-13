@@ -18,16 +18,9 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 from .. import (
     buck,
-    commands,
     filesystem,
-    find_directories,
-    configuration as configuration_module,
 )
-from ..analysis_directory import (
-    NotWithinLocalConfigurationException,
-    SharedAnalysisDirectory,
-)
-from ..commands.command import __name__ as command_name
+from ..analysis_directory import SharedAnalysisDirectory
 from ..filesystem import (
     __name__ as filesystem_name,
     _delete_symbolic_link,

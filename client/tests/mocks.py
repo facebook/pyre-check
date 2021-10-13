@@ -10,7 +10,6 @@ from typing import Optional
 from unittest.mock import MagicMock
 
 from .. import command_arguments, configuration as configuration_module
-from ..analysis_directory import AnalysisDirectory
 from ..configuration import SharedMemory
 
 
