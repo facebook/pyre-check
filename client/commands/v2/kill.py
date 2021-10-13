@@ -64,7 +64,7 @@ PYRE_FIRE = """
 
 def _kill_processes_by_name(name: str) -> None:
     for process in psutil.process_iter(attrs=["name"]):
-        if process.info["name"] != name:
+        if process.name() != name:
             continue
         # Do not kill the `pyre kill` command itself.
         pid_to_kill = process.pid
