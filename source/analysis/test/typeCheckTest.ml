@@ -1202,6 +1202,8 @@ let test_forward_statement context =
     Format.asprintf "%s isinstance(%s, %s)" (if negated then "not" else "") variable type_expression
     |> assert_forward_expression;
     Format.asprintf "type(%s) %s %s" variable (if negated then "is not" else "is") type_expression
+    |> assert_forward_expression;
+    Format.asprintf "type(%s) %s %s" variable (if negated then "!=" else "==") type_expression
     |> assert_forward_expression
   in
   assert_refinement_by_type_comparison

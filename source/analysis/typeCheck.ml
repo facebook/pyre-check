@@ -5240,6 +5240,22 @@ module State (Context : Context) = struct
                 operator = ComparisonOperator.Is;
                 right = annotation;
               }
+          | ComparisonOperator
+              {
+                left =
+                  {
+                    Node.value =
+                      Call
+                        {
+                          callee = { Node.value = Name (Name.Identifier "type"); _ };
+                          arguments =
+                            [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+                        };
+                    _;
+                  };
+                operator = ComparisonOperator.Equals;
+                right = annotation;
+              }
           | Call
               {
                 callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
@@ -5306,6 +5322,21 @@ module State (Context : Context) = struct
                     _;
                   };
                 operator = ComparisonOperator.IsNot;
+                right = annotation_expression;
+              }
+          | ComparisonOperator
+              {
+                left =
+                  {
+                    Node.value =
+                      Call
+                        {
+                          callee = { Node.value = Name (Name.Identifier "type"); _ };
+                          arguments = [{ Call.Argument.name = None; value }];
+                        };
+                    _;
+                  };
+                operator = ComparisonOperator.NotEquals;
                 right = annotation_expression;
               }
           | UnaryOperator
