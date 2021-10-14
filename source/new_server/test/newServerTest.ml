@@ -83,6 +83,11 @@ module ScratchProject = struct
       ?build_system_initializer
       sources
     =
+    (* MacOS tends to use very long directory name as the default `temp_dir`. This unfortunately
+       would make the filename of temporary socket files exceed the default Unix limit. Hard-coding
+       temp dir to `/tmp` to avoid the issue for now. *)
+    Caml.Filename.set_temp_dir_name "/tmp";
+
     let add_source ~root (relative, content) =
       let content = Test.trim_extra_indentation content in
       let file = File.create ~content (Path.create_relative ~root ~relative) in
@@ -165,7 +170,6 @@ module ScratchProject = struct
     =
     let open Lwt.Infix in
     Memory.reset_shared_memory ();
-    Caml.Filename.set_temp_dir_name "/tmp";
     Start.start_server
       start_options
       ~configuration

@@ -56,7 +56,6 @@ let test_cleanup context =
     ScratchProject.configuration_of project, ScratchProject.start_options_of project
   in
 
-  Caml.Filename.set_temp_dir_name "/tmp";
   Start.start_server
     start_options
     ~configuration
