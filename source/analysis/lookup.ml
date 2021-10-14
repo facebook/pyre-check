@@ -112,7 +112,7 @@ module NodeVisitor = struct
 
               iterator |> to_call "__iter__" |> to_call "__next__"
             in
-            { Assign.target; value = iterator_element_call; annotation = None; parent = None }
+            { Assign.target; value = iterator_element_call; annotation = None }
           in
           Resolution.resolve_assignment resolution target_assignment
         in

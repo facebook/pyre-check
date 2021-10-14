@@ -229,13 +229,12 @@ module Make (Transformer : Transformer) = struct
     let rec transform_statement statement =
       let transform_children value =
         match value with
-        | Statement.Assign { Assign.target; annotation; value; parent } ->
+        | Statement.Assign { Assign.target; annotation; value } ->
             Statement.Assign
               {
                 Assign.target = transform_expression target;
                 annotation = annotation >>| transform_expression;
                 value = transform_expression value;
-                parent;
               }
         | Assert { Assert.test; message; origin } ->
             Assert

@@ -57,7 +57,6 @@ let test_get_module_and_definition context =
                   Statement.Assign.target = !"$parameter$self._foo";
                   annotation = None;
                   value = !"$parameter$value";
-                  parent = None;
                 };
              +Statement.Statement.Return { Statement.Return.is_implicit = true; expression = None };
            ] ))

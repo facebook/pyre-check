@@ -594,7 +594,7 @@ let qualify
     =
     let scope, value =
       let local_alias ~qualifier ~name = { name; qualifier; is_forward_reference = false } in
-      let qualify_assign { Assign.target; annotation; value; parent } =
+      let qualify_assign { Assign.target; annotation; value } =
         let qualify_value ~qualify_potential_alias_strings ~scope = function
           | { Node.value = Expression.Constant (Constant.String _); _ } ->
               (* String literal assignments might be type aliases. *)
@@ -721,13 +721,7 @@ let qualify
           in
           qualify_value ~scope:target_scope ~qualify_potential_alias_strings value
         in
-        ( target_scope,
-          {
-            Assign.target;
-            annotation = qualified_annotation;
-            value = qualified_value;
-            parent = (parent >>| fun parent -> qualify_reference ~scope parent);
-          } )
+        target_scope, { Assign.target; annotation = qualified_annotation; value = qualified_value }
       in
       let qualify_define
           ({ qualifier; _ } as original_scope)
@@ -2149,7 +2143,6 @@ let replace_mypy_extensions_stub
                          special = false;
                        })));
           value = node (Expression.Constant Constant.Ellipsis);
-          parent = None;
         }
       |> node
     in
@@ -2208,7 +2201,6 @@ let expand_typed_dictionary_declarations
                              |> Node.create ~location;
                            annotation = Some value;
                            value = Node.create ~location (Expression.Constant Constant.Ellipsis);
-                           parent = Some class_reference;
                          }
                       |> Node.create ~location)
                 | _ -> None
@@ -2524,7 +2516,6 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           Assign.target = Reference.create ~prefix:parent "_fields" |> from_reference ~location;
           annotation = Some annotation;
           value;
-          parent = Some parent;
         }
       |> Node.create ~location
     in
@@ -2562,7 +2553,6 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               Assign.target;
               annotation = Some annotation;
               value = Node.create (Expression.Constant Constant.Ellipsis) ~location;
-              parent = Some parent;
             }
           |> Node.create ~location
         in
@@ -2632,7 +2622,6 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                                }));
                      annotation = None;
                      value = Node.create (Expression.Name (Identifier name)) ~location;
-                     parent = None;
                    })
                 ~location
             in
@@ -3792,11 +3781,6 @@ let mangle_private_attributes source =
           | _ -> parent
         in
         match state, value with
-        | _, Statement.Assign ({ parent; _ } as assign) ->
-            {
-              statement with
-              Node.value = Statement.Assign { assign with parent = parent >>| mangle_parent_name };
-            }
         | ( class_name :: _,
             Statement.Class ({ name = { Node.value = name; _ } as name_node; _ } as class_value) )
           when should_mangle (Reference.last name) ->
@@ -4163,7 +4147,6 @@ let expand_pytorch_register_buffer source =
                     |> from_reference ~location;
                   annotation;
                   value = initial_value;
-                  parent = None;
                 }
               |> Node.create ~location:statement_location;
             ] )

@@ -462,7 +462,6 @@ small_statement:
           Assign.target = convert target;
           annotation = None;
           value = convert value;
-          parent = None;
         };
       }]
     }
@@ -477,7 +476,6 @@ small_statement:
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = create_ellipsis_after annotation |> convert;
-          parent = None;
         };
       }]
     }
@@ -492,7 +490,6 @@ small_statement:
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = create_ellipsis_after annotation |> convert;
-          parent = None;
         };
       }]
     }
@@ -509,7 +506,6 @@ small_statement:
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = convert value;
-          parent = None;
         };
       }]
     }
@@ -526,7 +522,6 @@ small_statement:
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = convert value;
-          parent = None;
         };
       }]
     }
@@ -551,7 +546,6 @@ small_statement:
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = convert ellipsis;
-          parent = None;
         };
       }]
     }
@@ -683,16 +677,11 @@ compound_statement:
       let name_location, name = name in
       let body =
         let rec transform_toplevel_statements = function
-          | { Node.location; value = Statement.Assign assign } ->
-              {
-                Node.location;
-                value = Statement.Assign { assign with Assign.parent = Some name };
-              }
-          | { Node.location; value = Define define } ->
+          | { Node.location; value = Statement.Define define } ->
               let signature = { define.signature with Define.Signature.parent = Some name } in
               {
                 Node.location;
-                value = Define { define with signature };
+                value = Statement.Define { define with signature };
               }
           | {
               Node.location;
@@ -1286,7 +1275,6 @@ import:
             Assign.target = convert target;
             annotation = annotation >>| convert;
             value = convert value;
-            parent = None;
           };
         }
       in

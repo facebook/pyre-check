@@ -3810,10 +3810,7 @@ module State (Context : Context) = struct
             { resolved with resolved = Type.bool; resolved_annotation = None; base = None })
     | WalrusOperator { value; target } ->
         let statement =
-          {
-            Node.value = Statement.Assign { value; target; annotation = None; parent = None };
-            location;
-          }
+          { Node.value = Statement.Assign { value; target; annotation = None }; location }
         in
         let resolution, errors =
           let post_resolution, errors = forward_statement ~resolution ~statement in
@@ -3868,13 +3865,8 @@ module State (Context : Context) = struct
       value =
         {
           Define.signature =
-            {
-              async;
-              parent = define_parent;
-              return_annotation = return_annotation_expression;
-              generator;
-              _;
-            } as signature;
+            { async; parent; return_annotation = return_annotation_expression; generator; _ } as
+            signature;
           body;
           _;
         } as define;
@@ -4002,7 +3994,7 @@ module State (Context : Context) = struct
           emit_typed_dictionary_errors ~errors typed_dictionary_errors
     in
     match value with
-    | Assign { Assign.target; annotation; value; parent } -> (
+    | Assign { Assign.target; annotation; value } -> (
         let errors, is_final, original_annotation =
           match annotation with
           | None -> [], false, None
@@ -4635,7 +4627,7 @@ module State (Context : Context) = struct
                       let is_illegal_attribute_annotation attribute =
                         let attribute_parent = AnnotatedAttribute.parent attribute in
                         let parent_annotation =
-                          match define_parent with
+                          match parent with
                           | None -> Type.Top
                           | Some reference -> Type.Primitive (Reference.show reference)
                         in

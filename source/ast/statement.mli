@@ -10,11 +10,8 @@ module Assign : sig
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t;
-    parent: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
-
-  val is_static_attribute_initialization : t -> bool
 
   val location_insensitive_compare : t -> t -> int
 end

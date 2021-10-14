@@ -3284,7 +3284,6 @@ let test_yield _ =
            Assign.target = !"x";
            annotation = None;
            value = +Expression.Yield (Some (+Expression.Constant (Constant.Integer 1)));
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -3295,7 +3294,6 @@ let test_yield _ =
            Assign.target = !"x";
            annotation = Some !"str";
            value = +Expression.Yield (Some (+Expression.Constant (Constant.Integer 1)));
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -3319,7 +3317,6 @@ let test_yield _ =
                       };
                     ];
                 };
-           parent = None;
          };
     ]
 
@@ -3978,7 +3975,6 @@ let test_class _ =
                     Assign.target = !"attribute";
                     annotation = Some !"int";
                     value = +Expression.Constant (Constant.Integer 1);
-                    parent = Some !&"foo";
                   };
              ];
            decorators = [];
@@ -4000,7 +3996,6 @@ let test_class _ =
                     annotation =
                       Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                     value = +Expression.Constant (Constant.Integer 1);
-                    parent = Some !&"foo";
                   };
              ];
            decorators = [];
@@ -4021,7 +4016,6 @@ let test_class _ =
                     Assign.target = !"attribute";
                     annotation = Some !"int";
                     value = +Expression.Constant Constant.Ellipsis;
-                    parent = Some !&"foo";
                   };
              ];
            decorators = [];
@@ -4093,7 +4087,6 @@ let test_class _ =
                                      { base = !"self"; attribute = "bar"; special = false });
                              annotation = None;
                              value = +Expression.Constant (Constant.Integer 0);
-                             parent = None;
                            };
                       ];
                   };
@@ -4172,7 +4165,7 @@ let test_delete _ =
 let test_assign _ =
   assert_parsed_equal
     "a = b"
-    [+Statement.Assign { Assign.target = !"a"; annotation = None; value = !"b"; parent = None }];
+    [+Statement.Assign { Assign.target = !"a"; annotation = None; value = !"b" }];
   assert_parsed_equal
     "a = 1"
     [
@@ -4181,7 +4174,6 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = None;
            value = +Expression.Constant (Constant.Integer 1);
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4192,7 +4184,6 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = Some !"int";
            value = +Expression.Constant (Constant.Integer 1);
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4203,7 +4194,6 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
            value = +Expression.Constant (Constant.Integer 1);
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4214,7 +4204,6 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
            value = +Expression.Constant (Constant.Integer 1);
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4225,7 +4214,6 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = Some !"int";
            value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4236,7 +4224,6 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
            value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4247,7 +4234,6 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = None;
            value = +Expression.Constant (Constant.Integer 1);
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4258,7 +4244,6 @@ let test_assign _ =
            Assign.target = +Expression.Tuple [!"a"; !"b"];
            annotation = None;
            value = +Expression.Constant (Constant.Integer 1);
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4281,7 +4266,6 @@ let test_assign _ =
                           });
                   arguments = [];
                 };
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4292,26 +4276,19 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = None;
            value = +Expression.Constant (Constant.Integer 1);
-           parent = None;
          };
       +Statement.Assign
          {
            Assign.target = !"b";
            annotation = None;
            value = +Expression.Constant (Constant.Integer 1);
-           parent = None;
          };
     ];
   assert_parsed_equal
     "a = yield from b"
     [
       +Statement.Assign
-         {
-           Assign.target = !"a";
-           annotation = None;
-           value = +Expression.YieldFrom !"b";
-           parent = None;
-         };
+         { Assign.target = !"a"; annotation = None; value = +Expression.YieldFrom !"b" };
     ];
   assert_parsed_equal
     "a += 1"
@@ -4334,7 +4311,6 @@ let test_assign _ =
                       };
                     ];
                 };
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4366,7 +4342,6 @@ let test_assign _ =
                       };
                     ];
                 };
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4377,7 +4352,6 @@ let test_assign _ =
            Assign.target = !"a";
            annotation = None;
            value = +Expression.Ternary { Ternary.target = !"b"; test = !"b"; alternative = !"c" };
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4390,7 +4364,6 @@ let test_assign _ =
            value =
              +Expression.BooleanOperator
                 { BooleanOperator.left = !"b"; operator = BooleanOperator.Or; right = !"c" };
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -4409,7 +4382,6 @@ let test_assign _ =
                     +Expression.BooleanOperator
                        { BooleanOperator.left = !"c"; operator = BooleanOperator.Or; right = !"d" };
                 };
-           parent = None;
          };
     ]
 
@@ -5259,12 +5231,7 @@ let test_stubs _ =
     "a = ..."
     [
       +Statement.Assign
-         {
-           Assign.target = !"a";
-           annotation = None;
-           value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
-         };
+         { Assign.target = !"a"; annotation = None; value = +Expression.Constant Constant.Ellipsis };
     ];
   assert_parsed_equal
     "a: int = ..."
@@ -5274,7 +5241,6 @@ let test_stubs _ =
            Assign.target = !"a";
            annotation = Some !"int";
            value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -5285,7 +5251,6 @@ let test_stubs _ =
            Assign.target = !"a";
            annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
            value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -5297,7 +5262,6 @@ let test_stubs _ =
            annotation =
              Some (+Expression.Constant (Constant.String (StringLiteral.create "Tuple[str]")));
            value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -5309,7 +5273,6 @@ let test_stubs _ =
            annotation =
              Some (+Expression.Constant (Constant.String (StringLiteral.create "Tuple[str, ...]")));
            value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -5329,7 +5292,6 @@ let test_stubs _ =
                      arguments = [{ Call.Argument.name = None; value = !"int" }];
                    });
            value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -5347,7 +5309,6 @@ let test_stubs _ =
                     annotation =
                       Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                     value = +Expression.Constant Constant.Ellipsis;
-                    parent = Some !&"A";
                   };
              ];
            decorators = [];
@@ -5727,7 +5688,7 @@ let test_setitem _ =
   assert_parsed_equal
     "x = i[j] = y"
     [
-      +Statement.Assign { target = !"x"; annotation = None; value = !"y"; parent = None };
+      +Statement.Assign { target = !"x"; annotation = None; value = !"y" };
       +Statement.Expression
          (+Expression.Call
              {
@@ -5756,7 +5717,7 @@ let test_setitem _ =
                    { Call.Argument.name = None; value = !"y" };
                  ];
              });
-      +Statement.Assign { target = !"x"; annotation = None; value = !"y"; parent = None };
+      +Statement.Assign { target = !"x"; annotation = None; value = !"y" };
       +Statement.Expression
          (+Expression.Call
              {
@@ -5790,7 +5751,6 @@ let test_setitem _ =
                 ];
            annotation = None;
            value = !"y";
-           parent = None;
          };
     ];
   assert_parsed_equal
@@ -5814,7 +5774,6 @@ let test_setitem _ =
            annotation =
              Some (+Expression.Constant (Constant.String (StringLiteral.create "Something")));
            value = +Expression.Constant Constant.Ellipsis;
-           parent = None;
          };
     ];
   assert_parsed_equal

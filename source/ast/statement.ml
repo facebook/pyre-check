@@ -13,11 +13,8 @@ module Assign = struct
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t;
-    parent: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let is_static_attribute_initialization { parent; _ } = Option.is_some parent
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.target right.target with
@@ -27,10 +24,7 @@ module Assign = struct
           Option.compare Expression.location_insensitive_compare left.annotation right.annotation
         with
         | x when not (Int.equal x 0) -> x
-        | _ -> (
-            match Expression.location_insensitive_compare left.value right.value with
-            | x when not (Int.equal x 0) -> x
-            | _ -> [%compare: Reference.t option] left.parent right.parent))
+        | _ -> Expression.location_insensitive_compare left.value right.value)
 end
 
 module Import = struct
@@ -944,10 +938,7 @@ end = struct
       else
         { Node.location; value }
     in
-    {
-      Node.location;
-      value = Statement.Assign { Assign.target; annotation = None; value; parent = None };
-    }
+    { Node.location; value = Statement.Assign { Assign.target; annotation = None; value } }
 
 
   let location_insensitive_compare left right =
@@ -1054,7 +1045,6 @@ end = struct
                 Assign.target;
                 annotation = None;
                 value = Node.create ~location (Expression.Constant Constant.Ellipsis);
-                parent = None;
               };
         };
         {
@@ -1192,7 +1182,7 @@ end = struct
       in
       match target with
       | Some target ->
-          let assign = { Assign.target; annotation = None; value = enter_call; parent = None } in
+          let assign = { Assign.target; annotation = None; value = enter_call } in
           Node.create ~location (Statement.Assign assign)
       | None -> Node.create ~location (Statement.Expression enter_call)
     in
@@ -1383,7 +1373,7 @@ end = struct
               };
         }
     in
-    { Assign.target; annotation = None; value; parent = None }
+    { Assign.target; annotation = None; value }
 end
 
 include Statement
@@ -1437,12 +1427,10 @@ module PrettyPrinter = struct
         Format.fprintf formatter "%a@;%a" pp_statement_t statement pp_statement_list statement_list
 
 
-  and pp_assign formatter { Assign.target; annotation; value; parent } =
+  and pp_assign formatter { Assign.target; annotation; value } =
     Format.fprintf
       formatter
-      "%a%a%a = %a"
-      pp_reference_option
-      parent
+      "%a%a = %a"
       Expression.pp
       target
       pp_expression_option

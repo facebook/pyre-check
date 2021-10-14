@@ -599,7 +599,6 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
                  (Ast.Expression.create_name ~location:Location.any "typing.Callable.__call__"));
           annotation = Some (Type.expression Type.object_primitive);
           value = Node.create_with_default_location (Expression.Constant Constant.NoneLiteral);
-          parent = Some (Reference.create "typing.Callable");
         };
     ]
     |> List.map ~f:Node.create_with_default_location

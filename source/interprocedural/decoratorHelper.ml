@@ -383,7 +383,6 @@ let make_args_assignment_from_parameters ~args_local_variable_name parameters =
           (create_name_from_reference ~location (Reference.create args_local_variable_name))
         |> Node.create ~location;
       annotation = None;
-      parent = None;
       value = Expression.Tuple elements |> Node.create ~location;
     }
   |> Node.create ~location
@@ -418,7 +417,6 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
           (create_name_from_reference ~location (Reference.create kwargs_local_variable_name))
         |> Node.create ~location;
       annotation = None;
-      parent = None;
       value = Expression.Dictionary { Dictionary.keywords; entries } |> Node.create ~location;
     }
   |> Node.create ~location
