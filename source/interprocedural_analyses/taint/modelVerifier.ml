@@ -112,7 +112,8 @@ let resolve_global ~resolution name =
       match find_method_definitions ~resolution name with
       | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
       | first :: _ :: _ as overloads ->
-          (* Note that we use the first overload as the base implementation, which might be unsound. *)
+          (* Note that we use the first overload as the base implementation, which might be
+             unsound. *)
           Some
             (Global.Attribute
                (Type.Callable.create
@@ -370,6 +371,19 @@ let verify_global ~path ~location ~resolution ~name =
                  (MissingAttribute
                     { class_name = Reference.show class_name; attribute_name = Reference.last name }))
       | None, Some _ -> Ok ()
-      | None, None ->
-          Result.Error
-            (model_verification_error ~path ~location (NotInEnvironment (Reference.show name))))
+      | None, None -> (
+          let module_name = Reference.first name in
+          let module_resolved = resolve_global ~resolution (Reference.create module_name) in
+          match module_resolved with
+          | Some _ ->
+              Result.Error
+                (model_verification_error
+                   ~path
+                   ~location
+                   (MissingSymbol { module_name; symbol_name = Reference.show name }))
+          | None ->
+              Result.Error
+                (model_verification_error
+                   ~path
+                   ~location
+                   (NotInEnvironment { module_name; name = Reference.show name }))))

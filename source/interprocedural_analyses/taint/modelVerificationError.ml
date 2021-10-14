@@ -61,13 +61,20 @@ module T = struct
         class_name: string;
         attribute_name: string;
       }
+    | MissingSymbol of {
+        module_name: string;
+        symbol_name: string;
+      }
     | ModelingClassAsDefine of string
     | ModelingModuleAsDefine of string
     | ModelingAttributeAsDefine of string
     | ModelingClassAsAttribute of string
     | ModelingModuleAsAttribute of string
     | ModelingCallableAsAttribute of string
-    | NotInEnvironment of string
+    | NotInEnvironment of {
+        module_name: string;
+        name: string;
+      }
     | UnexpectedDecorators of {
         name: Reference.t;
         unexpected_decorators: Statement.Decorator.t list;
@@ -194,6 +201,8 @@ let description error =
       Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
       Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name
+  | MissingSymbol { module_name; symbol_name } ->
+      Format.sprintf "Module `%s` does not define `%s`." module_name symbol_name
   | ModelingClassAsDefine class_name ->
       Format.sprintf
         "The class `%s` is not a valid define - did you mean to model `%s.__init__()`?"
@@ -219,7 +228,8 @@ let description error =
          %s(): ...`?"
         callable_name
         callable_name
-  | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name
+  | NotInEnvironment { module_name; name } ->
+      Format.sprintf "`%s` is not part of the environment, no module `%s` in search path." name module_name
 
 
 let code { kind; _ } =
@@ -252,6 +262,7 @@ let code { kind; _ } =
   | ParseError -> 25
   | InvalidArgumentsClause _ -> 26
   | InvalidTypeAnnotationClause _ -> 27
+  | MissingSymbol _ -> 28
 
 
 let display { kind = error; path; location } =
