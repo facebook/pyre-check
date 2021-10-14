@@ -1,9 +1,0 @@
-(library
- (name languageServer)
- (public_name pyrelib.languageServer)
- (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries core core.uuid sexplib ppxlib yojson ppx_deriving
-   ppx_deriving_yojson ppx_deriving_yojson.runtime pyrelib.ast
-   pyrelib.analysis pyrelib.version))

@@ -7,5 +7,4 @@
  (libraries base64 core core.uuid sexplib ppxlib yojson ppx_deriving
    ppx_deriving_yojson ppx_deriving_yojson.runtime pyrelib.ast
    pyrelib.analysis pyrelib.configuration pyrelib.fetchSavedState
-   pyrelib.memory pyrelib.network pyrelib.languageServer pyrelib.service
-   pyrelib.version))
+   pyrelib.memory pyrelib.network pyrelib.service pyrelib.version))
