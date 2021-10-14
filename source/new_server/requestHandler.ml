@@ -121,7 +121,7 @@ let process_incremental_update_request
       in
       let _ =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-            Server.IncrementalCheck.recheck
+            Service.IncrementalCheck.recheck
               ~configuration
               ~scheduler
               ~environment:type_environment

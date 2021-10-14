@@ -182,7 +182,7 @@ let run_analysis
                 Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
                   ~configuration
                   ~scheduler
-                  ~recheck:Server.IncrementalCheck.recheck
+                  ~recheck:Service.IncrementalCheck.recheck
                   ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
                   environment
               in
