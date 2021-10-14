@@ -366,9 +366,7 @@ let initialize_server_state
             Memory.reset_shared_memory ();
             build_and_start_from_scratch ~build_system_initializer ()
         | Result.Ok () -> (
-            match
-              configuration_equal configuration (Server.SavedState.StoredConfiguration.load ())
-            with
+            match configuration_equal configuration (ServerState.load_stored_configuration ()) with
             | false ->
                 (* Although this is a rare occurrence, it *is* possible for the provided
                    `Configuration.Analysis.t` to be different from what's stored in the saved state

@@ -58,6 +58,44 @@ let create
   }
 
 
+module StoredConfiguration = Memory.Serializer (struct
+  type t = Configuration.Analysis.t
+
+  module Serialized = struct
+    type t = Configuration.Analysis.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Configuration"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  let serialize = Fn.id
+
+  let deserialize = Fn.id
+end)
+
+module ServerErrors = Memory.Serializer (struct
+  type t = Analysis.AnalysisError.t list Reference.Table.t
+
+  module Serialized = struct
+    type t = (Reference.t * Analysis.AnalysisError.t list) list
+
+    let prefix = Prefix.make ()
+
+    let description = "All errors"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  let serialize = Hashtbl.to_alist
+
+  let deserialize data = Reference.Table.of_alist_exn data
+end)
+
+let load_stored_configuration = StoredConfiguration.load
+
 let load ~socket_path ~configuration ~critical_files ~build_system () =
   let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
   let ast_environment = Analysis.AstEnvironment.load module_tracker in
@@ -65,7 +103,7 @@ let load ~socket_path ~configuration ~critical_files ~build_system () =
     Analysis.AnnotatedGlobalEnvironment.create ast_environment |> Analysis.TypeEnvironment.create
   in
   Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
-  let error_table = Server.SavedState.ServerErrors.load () in
+  let error_table = ServerErrors.load () in
   create ~socket_path ~critical_files ~configuration ~build_system ~type_environment ~error_table ()
 
 
@@ -74,8 +112,8 @@ let store ~path { configuration; type_environment; error_table; build_system; _ 
   Analysis.TypeEnvironment.module_tracker type_environment
   |> Analysis.ModuleTracker.SharedMemory.store;
   Analysis.TypeEnvironment.ast_environment type_environment |> Analysis.AstEnvironment.store;
-  Server.SavedState.StoredConfiguration.store configuration;
-  Server.SavedState.ServerErrors.store error_table;
+  StoredConfiguration.store configuration;
+  ServerErrors.store error_table;
   BuildSystem.store build_system;
   Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
   Memory.save_shared_memory ~path:(Path.absolute path) ~configuration

@@ -44,6 +44,8 @@ val create
   unit ->
   t
 
+val load_stored_configuration : unit -> Configuration.Analysis.t
+
 val load
   :  socket_path:Path.t ->
   configuration:Configuration.Analysis.t ->
