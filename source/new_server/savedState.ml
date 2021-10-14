@@ -104,7 +104,7 @@ let fetch_exn { Queried.bucket; path; target; changed_files; commit_id } =
     | None -> Log.info "Downloading saved state..."
     | Some commit_id -> Log.info "Downloading saved state at commit %s..." commit_id
   in
-  FetchSavedStateNew.fetch ~bucket ~path ~target ()
+  FetchSavedState.fetch ~bucket ~path ~target ()
   >>= fun () -> Lwt.return { Fetched.path = target; changed_files }
 
 
