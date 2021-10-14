@@ -191,15 +191,6 @@ let recheck
   recheck_modules, new_errors
 
 
-let recheck_with_state
-    ~state:{ State.environment; errors; scheduler; connections; _ }
-    ~configuration
-    paths
-  =
-  StatusUpdate.write
-    ~message:"Incremental recheck in progress..."
-    ~connections
-    ~message_type:WarningMessage;
+let recheck_with_state ~state:{ State.environment; errors; scheduler; _ } ~configuration paths =
   let _, new_errors = recheck ~configuration ~scheduler ~environment ~errors paths in
-  StatusUpdate.write ~message:"Done recheck." ~connections ~message_type:InfoMessage;
   new_errors
