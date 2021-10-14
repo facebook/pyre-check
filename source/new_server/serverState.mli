@@ -43,3 +43,13 @@ val create
   type_environment:Analysis.TypeEnvironment.t ->
   unit ->
   t
+
+val load
+  :  socket_path:Path.t ->
+  configuration:Configuration.Analysis.t ->
+  critical_files:CriticalFile.t list ->
+  build_system:BuildSystem.t ->
+  unit ->
+  t
+
+val store : path:Path.t -> t -> unit

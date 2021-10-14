@@ -388,22 +388,7 @@ let initialize_server_state
                 BuildSystem.Initializer.load build_system_initializer
                 >>= fun build_system ->
                 let loaded_state =
-                  let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
-                  let ast_environment = Analysis.AstEnvironment.load module_tracker in
-                  let type_environment =
-                    Analysis.AnnotatedGlobalEnvironment.create ast_environment
-                    |> Analysis.TypeEnvironment.create
-                  in
-                  Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
-                  let error_table = Server.SavedState.ServerErrors.load () in
-                  ServerState.create
-                    ~socket_path
-                    ~critical_files
-                    ~configuration
-                    ~build_system
-                    ~type_environment
-                    ~error_table
-                    ()
+                  ServerState.load ~socket_path ~critical_files ~configuration ~build_system ()
                 in
                 Log.info "Processing recent updates not included in saved state...";
                 Statistics.event ~name:"saved state success" ();
@@ -439,20 +424,10 @@ let initialize_server_state
           ~name:"initialization"
           (fun _ -> build_and_start_from_scratch ~build_system_initializer ())
   in
-  let store_initial_state
-      { ServerState.configuration; type_environment; error_table; build_system; _ }
-    =
+  let store_initial_state state =
     match saved_state_action with
     | Some (SavedStateAction.SaveToFile { shared_memory_path }) ->
-        Memory.SharedMemory.collect `aggressive;
-        Analysis.TypeEnvironment.module_tracker type_environment
-        |> Analysis.ModuleTracker.SharedMemory.store;
-        Analysis.TypeEnvironment.ast_environment type_environment |> Analysis.AstEnvironment.store;
-        Server.SavedState.StoredConfiguration.store configuration;
-        Server.SavedState.ServerErrors.store error_table;
-        BuildSystem.store build_system;
-        Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
-        Memory.save_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
+        ServerState.store ~path:shared_memory_path state;
         Log.info "Initial server state written to %a" Path.pp shared_memory_path
     | _ -> ()
   in

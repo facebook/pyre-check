@@ -56,3 +56,26 @@ let create
     error_table = Option.value error_table ~default:(Reference.Table.create ());
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
   }
+
+
+let load ~socket_path ~configuration ~critical_files ~build_system () =
+  let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
+  let ast_environment = Analysis.AstEnvironment.load module_tracker in
+  let type_environment =
+    Analysis.AnnotatedGlobalEnvironment.create ast_environment |> Analysis.TypeEnvironment.create
+  in
+  Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
+  let error_table = Server.SavedState.ServerErrors.load () in
+  create ~socket_path ~critical_files ~configuration ~build_system ~type_environment ~error_table ()
+
+
+let store ~path { configuration; type_environment; error_table; build_system; _ } =
+  Memory.SharedMemory.collect `aggressive;
+  Analysis.TypeEnvironment.module_tracker type_environment
+  |> Analysis.ModuleTracker.SharedMemory.store;
+  Analysis.TypeEnvironment.ast_environment type_environment |> Analysis.AstEnvironment.store;
+  Server.SavedState.StoredConfiguration.store configuration;
+  Server.SavedState.ServerErrors.store error_table;
+  BuildSystem.store build_system;
+  Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
+  Memory.save_shared_memory ~path:(Path.absolute path) ~configuration
