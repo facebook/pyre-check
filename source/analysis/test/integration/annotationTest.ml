@@ -1522,6 +1522,15 @@ let test_check_invalid_inheritance context =
       "Invalid inheritance [39]: `test.D (resolves to Dict[str, Union[D, str]])` is not a valid \
        parent class.";
     ];
+    assert_type_errors
+    {|
+      from typing import List, Tuple
+
+      class Foo(List[int]): ...
+
+      class Bar(Tuple[int, int]): ...
+     |}
+    [];
   ()
 
 

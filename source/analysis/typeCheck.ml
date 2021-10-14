@@ -1444,7 +1444,8 @@ module State (Context : Context) = struct
                 errors
           | Top
           (* There's some other problem we already errored on *)
-          | Parametric _ ->
+          | Parametric _
+          | Tuple _ ->
               errors
           | Any when GlobalResolution.base_is_from_placeholder_stub global_resolution base -> errors
           | annotation ->
