@@ -50,6 +50,12 @@ def to_sink_via_side_effect(y):
     _test_sink(x)
 
 
+def dict_to_sink_via_side_effect(y):
+    x = {}
+    change_arg0(x["foo"], y)
+    _test_sink(x)
+
+
 # Mocks that have models
 
 

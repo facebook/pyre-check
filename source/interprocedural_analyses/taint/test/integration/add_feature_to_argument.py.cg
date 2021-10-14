@@ -3,6 +3,7 @@ Call dependencies
 add_feature_to_argument.add_feature_to_first (fun) -> []
 add_feature_to_argument.add_via_value_of (fun) -> []
 add_feature_to_argument.adds_and_taints (fun) -> [_test_source (fun) add_feature_to_argument.add_feature_to_first (fun)]
+add_feature_to_argument.dict_test_add_via_value_of_second (fun) -> [_test_source (fun) add_feature_to_argument.add_via_value_of (fun)]
 add_feature_to_argument.propagate_add_feature (fun) -> [add_feature_to_argument.add_feature_to_first (fun)]
 add_feature_to_argument.test_add_feature_in_comprehension (fun) -> [_test_sink (fun) _test_source (fun) add_feature_to_argument.add_feature_to_first (fun) list::__getitem__ (method)]
 add_feature_to_argument.test_add_feature_to_sink (fun) -> [_test_sink (fun) add_feature_to_argument.add_feature_to_first (fun)]

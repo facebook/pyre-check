@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "add_feature_to_argument.test_add_feature_in_comprehension",
-    "callable_line": 38,
+    "callable_line": 44,
     "code": 5002,
-    "line": 41,
+    "line": 47,
     "start": 15,
     "end": 19,
     "filename": "add_feature_to_argument.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 39,
+              "line": 45,
               "start": 15,
               "end": 29
             },
@@ -37,7 +37,7 @@
           {
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 41,
+              "line": 47,
               "start": 15,
               "end": 19
             },
@@ -68,7 +68,7 @@
           {
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 45,
+              "line": 51,
               "start": 54,
               "end": 63
             },
@@ -83,7 +83,7 @@
           {
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 46,
+              "line": 52,
               "start": 15,
               "end": 24
             },
@@ -159,6 +159,29 @@
 {
   "kind": "model",
   "data": {
+    "callable": "add_feature_to_argument.dict_test_add_via_value_of_second",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 34,
+              "start": 8,
+              "end": 22
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "add_feature_to_argument.propagate_add_feature",
     "sinks": [
       {
@@ -195,7 +218,7 @@
           {
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 34,
+              "line": 40,
               "start": 25,
               "end": 34
             },
@@ -210,7 +233,7 @@
           {
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 35,
+              "line": 41,
               "start": 15,
               "end": 24
             },

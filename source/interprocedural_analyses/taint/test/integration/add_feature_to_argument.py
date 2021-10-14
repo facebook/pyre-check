@@ -30,6 +30,12 @@ def test_add_via_value_of_second():
     return x
 
 
+def dict_test_add_via_value_of_second():
+    x = _test_source()
+    add_via_value_of(x["foo"], "second")
+    return x
+
+
 def test_add_feature_to_sink(parameter):
     add_feature_to_first(parameter, "")
     _test_sink(parameter)
