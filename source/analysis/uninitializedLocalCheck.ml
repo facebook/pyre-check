@@ -171,10 +171,14 @@ module type Context = sig
 end
 
 module State (Context : Context) = struct
-  type t = InitializedVariables.t
+  type t =
+    | Bottom
+    | Value of InitializedVariables.t
 
-  let show state =
-    InitializedVariables.elements state |> String.concat ~sep:", " |> Format.sprintf "[%s]"
+  let show = function
+    | Bottom -> "[]"
+    | Value state ->
+        state |> InitializedVariables.elements |> String.concat ~sep:", " |> Format.sprintf "[%s]"
 
 
   let pp format state = Format.fprintf format "%s" (show state)
@@ -185,6 +189,7 @@ module State (Context : Context) = struct
     |> List.map ~f:Scope.Binding.name
     |> List.map ~f:Identifier.sanitized
     |> InitializedVariables.of_list
+    |> fun value -> Value value
 
 
   let errors ~qualifier ~define _ =
@@ -225,22 +230,37 @@ module State (Context : Context) = struct
     |> List.map ~f:emit_error
 
 
-  let less_or_equal ~left ~right = InitializedVariables.is_subset right ~of_:left
+  let less_or_equal ~left ~right =
+    match left, right with
+    | Value left, Value right -> InitializedVariables.is_subset right ~of_:left
+    | Value _, Bottom -> false
+    | Bottom, Value _ -> true
+    | Bottom, Bottom -> true
 
-  let join left right = InitializedVariables.inter left right
+
+  let join left right =
+    match left, right with
+    | Value left, Value right -> Value (InitializedVariables.inter left right)
+    | Value left, Bottom -> Value left
+    | Bottom, Value right -> Value right
+    | Bottom, Bottom -> Bottom
+
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
   let forward ~key state ~statement =
-    let new_state =
-      Scope.Binding.of_statement [] statement
-      |> List.map ~f:Scope.Binding.name
-      |> List.map ~f:Identifier.sanitized
-      |> InitializedVariables.of_list
-      |> InitializedVariables.union state
-    in
-    Hashtbl.set Context.fixpoint_post_statement ~key ~data:(statement, new_state);
-    new_state
+    match state with
+    | Bottom -> Bottom
+    | Value state ->
+        let new_state =
+          Scope.Binding.of_statement [] statement
+          |> List.map ~f:Scope.Binding.name
+          |> List.map ~f:Identifier.sanitized
+          |> InitializedVariables.of_list
+          |> InitializedVariables.union state
+        in
+        Hashtbl.set Context.fixpoint_post_statement ~key ~data:(statement, new_state);
+        Value new_state
 
 
   let backward ~key:_ _ ~statement:_ = failwith "Not implemented"
