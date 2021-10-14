@@ -274,7 +274,7 @@ let run_taint_analysis
         in
         let filename_lookup path_reference =
           match
-            Newserver.RequestHandler.instantiate_path
+            Server.RequestHandler.instantiate_path
               ~build_system
               ~configuration
               ~ast_environment
@@ -310,7 +310,7 @@ let run_analyze analyze_configuration =
     =
     analyze_configuration
   in
-  Newserver.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+  Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       let static_analysis_configuration =
         AnalyzeConfiguration.analysis_configuration_of analyze_configuration
       in

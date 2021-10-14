@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Newserver
+open Server
 module Path = Pyre.Path
 
 let ( ! ) = Path.create_absolute

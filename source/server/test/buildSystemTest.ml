@@ -7,8 +7,8 @@
 
 open Core
 open OUnit2
-open Newserver
-open NewServerTest
+open Server
+open ServerTest
 module Path = Pyre.Path
 
 let test_initialize context =

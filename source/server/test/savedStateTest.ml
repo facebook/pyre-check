@@ -8,7 +8,7 @@
 open Core
 open OUnit2
 open Lwt.Infix
-open Newserver
+open Server
 module Path = Pyre.Path
 
 let test_configuration_parsing context =

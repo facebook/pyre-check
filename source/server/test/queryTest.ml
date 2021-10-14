@@ -8,8 +8,8 @@
 open OUnit2
 open Core
 open Ast
-open Newserver
-open NewServerTest
+open Server
+open ServerTest
 module Path = PyrePath
 
 let test_parse_query context =

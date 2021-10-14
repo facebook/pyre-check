@@ -8,8 +8,8 @@
 open Core
 open OUnit2
 open Lwt.Infix
-open Newserver
-open NewServerTest
+open Server
+open ServerTest
 module Path = Pyre.Path
 
 let test_basic client =

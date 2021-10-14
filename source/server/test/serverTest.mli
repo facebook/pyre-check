@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Newserver
+open Server
 
 module Client : sig
   type t

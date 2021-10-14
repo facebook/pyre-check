@@ -152,7 +152,7 @@ let compute_errors ~configuration ~build_system () =
   let errors, ast_environment = do_check configuration in
   List.map
     (List.sort ~compare:Analysis.AnalysisError.compare errors)
-    ~f:(Newserver.RequestHandler.instantiate_error ~build_system ~configuration ~ast_environment)
+    ~f:(Server.RequestHandler.instantiate_error ~build_system ~configuration ~ast_environment)
 
 
 let print_errors errors =
@@ -171,7 +171,7 @@ let run_check check_configuration =
   let { CheckConfiguration.base = { NewCommandStartup.BaseConfiguration.source_paths; _ }; _ } =
     check_configuration
   in
-  Newserver.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+  Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       let errors =
         compute_errors
           ~configuration:(CheckConfiguration.analysis_configuration_of check_configuration)

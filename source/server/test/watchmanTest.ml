@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Newserver
+open Server
 module Path = Pyre.Path
 
 let test_low_level_apis _ =

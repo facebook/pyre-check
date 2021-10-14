@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Newserver
+open Server
 
 let random_shuffle_list ~random_state l =
   let rec do_shuffle = function

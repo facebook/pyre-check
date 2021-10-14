@@ -73,9 +73,9 @@ let test_json_parsing context =
         dummy_server_configuration with
         critical_files =
           [
-            Newserver.CriticalFile.BaseName "foo.py";
-            Newserver.CriticalFile.Extension "derp";
-            Newserver.CriticalFile.FullPath (Path.create_absolute "/home/bar.txt");
+            Server.CriticalFile.BaseName "foo.py";
+            Server.CriticalFile.Extension "derp";
+            Server.CriticalFile.FullPath (Path.create_absolute "/home/bar.txt");
           ];
       };
   assert_parsed
@@ -95,7 +95,7 @@ let test_json_parsing context =
         dummy_server_configuration with
         saved_state_action =
           Some
-            (Newserver.SavedStateAction.LoadFromProject
+            (Server.SavedStateAction.LoadFromProject
                { project_name = "project"; project_metadata = None });
       };
   ()

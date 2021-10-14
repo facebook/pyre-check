@@ -8,7 +8,7 @@
 open Core
 open OUnit2
 open Pyre
-open Newserver
+open Server
 
 let assert_consumed ~log_path expected =
   assert_equal

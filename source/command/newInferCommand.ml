@@ -118,7 +118,7 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
           let ast_environment =
             Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
           in
-          Newserver.RequestHandler.instantiate_path
+          Server.RequestHandler.instantiate_path
             ~build_system
             ~configuration
             ~ast_environment
@@ -194,7 +194,7 @@ let run_infer_interprocedural ~configuration ~build_system () =
               ~use_cache:false
           in
           let filename_lookup path_reference =
-            Newserver.RequestHandler.instantiate_path
+            Server.RequestHandler.instantiate_path
               ~build_system
               ~configuration
               ~ast_environment
@@ -223,7 +223,7 @@ let run_infer infer_configuration =
     =
     infer_configuration
   in
-  Newserver.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+  Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       let configuration = InferConfiguration.analysis_configuration_of infer_configuration in
       match infer_mode with
       | InferMode.Local -> run_infer_local ~configuration ~build_system ~paths_to_modify ()

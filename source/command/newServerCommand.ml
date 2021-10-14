@@ -6,7 +6,7 @@
  *)
 
 open Core
-open Newserver
+open Server
 module Path = PyrePath
 
 module ServerConfiguration = struct
