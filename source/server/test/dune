@@ -1,7 +1,6 @@
 (tests
- (names incrementalCheckTest lookupLocationTest savedStateTest)
+ (names lookupLocationTest savedStateTest)
  (preprocess
   (pps ppx_sexp_conv ppx_compare ppx_deriving_yojson))
- (libraries oUnit ppx_deriving pyrelib.test pyrelib.network pyrelib.server
-   pyrelib.ast)
+ (libraries oUnit ppx_deriving pyrelib.test pyrelib.server pyrelib.ast)
  (deps locationTests.json))

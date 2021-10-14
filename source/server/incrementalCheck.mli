@@ -20,13 +20,3 @@ val recheck
   errors:errors Ast.Reference.Table.t ->
   PyrePath.t list ->
   Ast.Reference.t list * errors
-
-(* A wrapper around `recheck` that can be easier to use if one has a `State.t` available. *)
-(* Note that the return value is a list of type errors contained within rechecked modules only. It
-   does NOT return a list of all type errors after the recheck. If one wants all errors instead,
-   query the `errors` table in the state. *)
-val recheck_with_state
-  :  state:State.t ->
-  configuration:Configuration.Analysis.t ->
-  PyrePath.t list ->
-  errors

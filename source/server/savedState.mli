@@ -27,7 +27,3 @@ val restore_symbolic_links
   source_path:Path.t list ->
   get_old_link_path:(Path.t -> Path.t option) ->
   Path.t list
-
-val load : server_configuration:Configuration.Server.t -> connections:State.connections -> State.t
-
-val save : configuration:Configuration.Analysis.t -> saved_state_path:string -> State.t -> unit

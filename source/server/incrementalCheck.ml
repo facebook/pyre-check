@@ -189,8 +189,3 @@ let recheck
       ]
     ();
   recheck_modules, new_errors
-
-
-let recheck_with_state ~state:{ State.environment; errors; scheduler; _ } ~configuration paths =
-  let _, new_errors = recheck ~configuration ~scheduler ~environment ~errors paths in
-  new_errors
