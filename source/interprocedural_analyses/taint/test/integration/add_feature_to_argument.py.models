@@ -172,7 +172,10 @@
               "end": 22
             },
             "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            "features": [
+              { "via-value": "second" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }

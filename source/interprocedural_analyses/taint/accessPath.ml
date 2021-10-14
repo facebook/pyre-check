@@ -288,24 +288,44 @@ let get_global ~resolution name =
 
 let is_global ~resolution name = Option.is_some (get_global ~resolution name)
 
-let of_expression ~resolution = function
-  | { Node.value = Expression.Name _; _ } as expression ->
-      let expression =
-        if is_global ~resolution expression then
-          Ast.Expression.delocalize expression
-        else
-          expression
-      in
-      let rec of_expression path = function
-        | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
-            Some { root = Root.Variable identifier; path }
-        | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
-            let path = Abstract.TreeDomain.Label.Index attribute :: path in
-            of_expression path base
-        | _ -> None
-      in
-      of_expression [] expression
-  | _ -> None
+let of_expression ~resolution expression =
+  let expression =
+    if is_global ~resolution expression then
+      Ast.Expression.delocalize expression
+    else
+      expression
+  in
+  let rec of_expression path = function
+    | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
+        Some { root = Root.Variable identifier; path }
+    | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
+        let path = Abstract.TreeDomain.Label.Index attribute :: path in
+        of_expression path base
+    | {
+        Node.value =
+          Call
+            {
+              Call.callee =
+                {
+                  Node.value =
+                    Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                  _;
+                };
+              arguments =
+                [
+                  {
+                    Call.Argument.name = None;
+                    value = { Node.value = Expression.Constant (Constant.String { value; _ }); _ };
+                  };
+                ];
+            };
+        _;
+      } ->
+        let path = Abstract.TreeDomain.Label.Index value :: path in
+        of_expression path base
+    | _ -> None
+  in
+  of_expression [] expression
 
 
 let dictionary_keys = Abstract.TreeDomain.Label.Field "**keys"

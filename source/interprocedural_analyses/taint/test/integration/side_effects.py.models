@@ -46,6 +46,33 @@
 {
   "kind": "model",
   "data": {
+    "callable": "side_effects.dict_to_sink_via_side_effect",
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "root": {
+              "filename": "side_effects.py",
+              "line": 56,
+              "start": 15,
+              "end": 16
+            },
+            "tito": [ { "line": 55, "start": 26, "end": 27 } ],
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "side_effects.test_from_0_to_1",
     "sources": [
       {

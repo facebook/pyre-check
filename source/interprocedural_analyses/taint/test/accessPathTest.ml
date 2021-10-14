@@ -42,6 +42,35 @@ let test_of_expression context =
          AccessPath.root = AccessPath.Root.Variable "a";
          path = [Abstract.TreeDomain.Label.Index "b"; Abstract.TreeDomain.Label.Index "c"];
        });
+  assert_of_expression
+    ~resolution
+    !+"a[\"b\"]['c']"
+    (Some
+       {
+         AccessPath.root = AccessPath.Root.Variable "a";
+         path = [Abstract.TreeDomain.Label.Index "b"; Abstract.TreeDomain.Label.Index "c"];
+       });
+  assert_of_expression
+    ~resolution
+    !+"a['b']['c']['d']"
+    (Some
+       {
+         AccessPath.root = AccessPath.Root.Variable "a";
+         path =
+           [
+             Abstract.TreeDomain.Label.Index "b";
+             Abstract.TreeDomain.Label.Index "c";
+             Abstract.TreeDomain.Label.Index "d";
+           ];
+       });
+  assert_of_expression
+    ~resolution
+    !+"mydict['level1']['level2']"
+    (Some
+       {
+         AccessPath.root = AccessPath.Root.Variable "mydict";
+         path = [Abstract.TreeDomain.Label.Index "level1"; Abstract.TreeDomain.Label.Index "level2"];
+       });
   assert_of_expression ~resolution !+"a.b.call()" None;
 
   let resolution =
