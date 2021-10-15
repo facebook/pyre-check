@@ -20,6 +20,10 @@ module DefaultContext = struct
 
   let define = +Test.mock_define
 
+  let resolution_fixpoint = None
+
+  let error_map = None
+
   module Builder = Callgraph.NullBuilder
 end
 
@@ -91,13 +95,13 @@ module Create (Context : TypeCheck.Context) = struct
   let create ?(bottom = false) ?(immutables = []) ~resolution annotations =
     let module State = State (Context) in
     if bottom then
-      State.create_unreachable ()
+      State.unreachable
     else
       let resolution =
         let annotation_store = create_annotation_store ~immutables annotations in
         Resolution.with_annotation_store resolution ~annotation_store
       in
-      State.create ~resolution ()
+      State.create ~resolution
 end
 
 let description ~resolution error =
@@ -126,6 +130,10 @@ let test_initial context =
       let qualifier = Reference.empty
 
       let define = +define
+
+      let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+
+      let error_map = Some (LocalErrorMap.empty ())
 
       module Builder = Callgraph.NullBuilder
     end

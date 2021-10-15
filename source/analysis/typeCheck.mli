@@ -9,6 +9,14 @@ open Ast
 open Statement
 module Error = AnalysisError
 
+module LocalErrorMap : sig
+  type t
+
+  val empty : unit -> t
+
+  val all_errors : t -> Error.t list
+end
+
 module type Context = sig
   val qualifier : Reference.t
 
@@ -16,17 +24,21 @@ module type Context = sig
 
   val define : Define.t Node.t
 
+  (* Where to store local annotations during the fixpoint. `None` discards them. *)
+  val resolution_fixpoint : LocalAnnotationMap.t option
+
+  (* Where to store errors found during the fixpoint. `None` discards them. *)
+  val error_map : LocalErrorMap.t option
+
   module Builder : Callgraph.Builder
 end
 
 module type Signature = sig
   type t [@@deriving eq]
 
-  val create : resolution:Resolution.t -> unit -> t
+  val create : resolution:Resolution.t -> t
 
-  val create_unreachable : unit -> t
-
-  val all_errors : t -> Error.t list
+  val unreachable : t
 
   val resolution : t -> Resolution.t option
 

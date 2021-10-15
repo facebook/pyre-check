@@ -11,6 +11,10 @@ module type Context = sig
   val qualifier : Ast.Reference.t
 
   val define : Ast.Statement.Define.t Ast.Node.t
+
+  val resolution_fixpoint : Analysis.LocalAnnotationMap.t option
+
+  val error_map : Analysis.TypeCheck.LocalErrorMap.t option
 end
 
 module type Signature = sig

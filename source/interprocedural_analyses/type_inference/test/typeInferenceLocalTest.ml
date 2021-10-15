@@ -22,6 +22,10 @@ let assert_backward ~resolution precondition statement postcondition =
     let configuration = configuration
 
     let define = +mock_define
+
+    let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+
+    let error_map = Some (TypeCheck.LocalErrorMap.empty ())
   end)
   in
   let create annotations =

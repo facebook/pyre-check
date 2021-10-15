@@ -48,6 +48,10 @@ module type Context = sig
   val qualifier : Reference.t
 
   val define : Define.t Node.t
+
+  val resolution_fixpoint : LocalAnnotationMap.t option
+
+  val error_map : TypeCheck.LocalErrorMap.t option
 end
 
 module type Signature = sig
@@ -71,6 +75,10 @@ module State (Context : Context) = struct
     let debug = Context.configuration.debug
 
     let define = Context.define
+
+    let resolution_fixpoint = Context.resolution_fixpoint
+
+    let error_map = Context.error_map
 
     module Builder = Callgraph.NullBuilder
   end
@@ -269,7 +277,9 @@ module State (Context : Context) = struct
     let state = TypeCheckState.initial ~resolution in
     let resolution = TypeCheckState.resolution state |> Option.value ~default:resolution in
     let errors =
-      TypeCheckState.all_errors state
+      Context.error_map
+      >>| TypeCheck.LocalErrorMap.all_errors
+      |> Option.value ~default:[]
       |> List.fold ~init:ErrorMap.Map.empty ~f:(fun errors error -> ErrorMap.add ~errors error)
     in
     Value { resolution; errors }
@@ -907,6 +917,10 @@ let infer_local
     let qualifier = qualifier
 
     let define = Node.create ~location define
+
+    let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+
+    let error_map = Some (TypeCheck.LocalErrorMap.empty ())
   end)
   in
   let resolution = TypeCheck.resolution global_resolution (module State.TypeCheckContext) in

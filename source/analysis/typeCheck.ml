@@ -26,7 +26,7 @@ module LocalErrorMap = struct
 
   let set error_map ~statement_key ~errors = Int.Table.set error_map ~key:statement_key ~data:errors
 
-  let append error_map ~statement_key error =
+  let append error_map ~statement_key ~error =
     Int.Table.add_multi error_map ~key:statement_key ~data:error
 
 
@@ -40,17 +40,21 @@ module type Context = sig
 
   val define : Define.t Node.t
 
+  (* Where to store local annotations during the fixpoint. `None` discards them. *)
+  val resolution_fixpoint : LocalAnnotationMap.t option
+
+  (* Where to store errors found during the fixpoint. `None` discards them. *)
+  val error_map : LocalErrorMap.t option
+
   module Builder : Callgraph.Builder
 end
 
 module type Signature = sig
   type t [@@deriving eq]
 
-  val create : resolution:Resolution.t -> unit -> t
+  val create : resolution:Resolution.t -> t
 
-  val create_unreachable : unit -> t
-
-  val all_errors : t -> Error.t list
+  val unreachable : t
 
   val resolution : t -> Resolution.t option
 
@@ -269,14 +273,10 @@ module State (Context : Context) = struct
     not_consistent_with_boundary: Type.t option;
   }
 
-  and t = {
-    (* None means the state in unreachable *)
-    resolution: Resolution.t option;
-    resolution_fixpoint: LocalAnnotationMap.t;
-    error_map: LocalErrorMap.t;
-  }
+  (* None means the state in unreachable *)
+  and t = { resolution: Resolution.t option }
 
-  let pp format { resolution; error_map; _ } =
+  let pp format { resolution } =
     match resolution with
     | None -> Format.fprintf format "  <UNREACHABLE STATE>\n"
     | Some resolution ->
@@ -311,7 +311,10 @@ module State (Context : Context) = struct
               (Error.Instantiated.location error)
               (Error.Instantiated.description error)
           in
-          List.map (LocalErrorMap.all_errors error_map) ~f:error_to_string
+          Context.error_map
+          >>| LocalErrorMap.all_errors
+          >>| List.map ~f:error_to_string
+          |> Option.value ~default:[]
           |> String.concat ~sep:"\n"
         in
         Format.fprintf
@@ -340,21 +343,9 @@ module State (Context : Context) = struct
     | _, _ -> false
 
 
-  let create ~resolution () =
-    {
-      resolution = Some resolution;
-      resolution_fixpoint = LocalAnnotationMap.empty ();
-      error_map = LocalErrorMap.empty ();
-    }
+  let create ~resolution = { resolution = Some resolution }
 
-
-  let create_unreachable () =
-    {
-      resolution = None;
-      resolution_fixpoint = LocalAnnotationMap.empty ();
-      error_map = LocalErrorMap.empty ();
-    }
-
+  let unreachable = { resolution = None }
 
   let emit_error ~errors ~location ~kind =
     Error.create
@@ -498,9 +489,7 @@ module State (Context : Context) = struct
     errors, annotation
 
 
-  let all_errors { error_map; _ } = LocalErrorMap.all_errors error_map
-
-  let resolution { resolution; _ } = resolution
+  let resolution { resolution } = resolution
 
   let less_or_equal ~left ~right =
     match left.resolution, right.resolution with
@@ -570,7 +559,7 @@ module State (Context : Context) = struct
 
   let widening_threshold = 10
 
-  let add_fixpoint_threshold_reached_error error_map =
+  let add_fixpoint_threshold_reached_error () =
     let define = Context.define in
     let { Node.value = define_value; location = define_location } = define in
     match StatementDefine.is_toplevel define_value with
@@ -583,9 +572,10 @@ module State (Context : Context) = struct
           AnalysisError.AnalysisFailure (FixpointThresholdReached { define })
         in
         let location = Location.with_module ~qualifier:Context.qualifier define_location in
+        let error = AnalysisError.create ~location ~kind ~define in
         let statement_key = [%hash: int * int] (Cfg.entry_index, 0) in
-        AnalysisError.create ~location ~kind ~define
-        |> LocalErrorMap.append ~statement_key error_map
+        let (_ : unit option) = Context.error_map >>| LocalErrorMap.append ~statement_key ~error in
+        ()
 
 
   let widen ~previous ~next ~iteration =
@@ -638,14 +628,9 @@ module State (Context : Context) = struct
                 (Resolution.temporary_annotations next_resolution);
           }
         in
-        let error_map = next.error_map in
         if iteration > widening_threshold then
-          add_fixpoint_threshold_reached_error error_map;
-        {
-          resolution = Some (Resolution.with_annotation_store next_resolution ~annotation_store);
-          resolution_fixpoint = next.resolution_fixpoint;
-          error_map;
-        }
+          add_fixpoint_threshold_reached_error ();
+        { resolution = Some (Resolution.with_annotation_store next_resolution ~annotation_store) }
 
 
   module Resolved = struct
@@ -1897,13 +1882,13 @@ module State (Context : Context) = struct
       resolution, errors
     in
     let state =
-      let resolution_fixpoint = LocalAnnotationMap.empty () in
-      let error_map = LocalErrorMap.empty () in
       let postcondition = Resolution.annotation_store resolution in
       let statement_key = [%hash: int * int] (Cfg.entry_index, 0) in
-      LocalAnnotationMap.set resolution_fixpoint ~statement_key ~postcondition;
-      LocalErrorMap.set error_map ~statement_key ~errors;
-      { resolution = Some resolution; resolution_fixpoint; error_map }
+      let (_ : unit option) =
+        Context.resolution_fixpoint >>| LocalAnnotationMap.set ~statement_key ~postcondition
+      in
+      let (_ : unit option) = Context.error_map >>| LocalErrorMap.set ~statement_key ~errors in
+      { resolution = Some resolution }
     in
     state
 
@@ -5999,19 +5984,19 @@ module State (Context : Context) = struct
     | Some resolution ->
         let post_resolution, errors = forward_statement ~resolution ~statement in
         let () =
-          LocalErrorMap.set state.error_map ~statement_key ~errors;
+          let (_ : unit option) = Context.error_map >>| LocalErrorMap.set ~statement_key ~errors in
           match post_resolution with
           | None -> ()
           | Some post_resolution ->
               let precondition = Resolution.annotation_store resolution in
               let postcondition = Resolution.annotation_store post_resolution in
-              LocalAnnotationMap.set
-                state.resolution_fixpoint
-                ~statement_key
-                ~precondition
-                ~postcondition
+              let (_ : unit option) =
+                Context.resolution_fixpoint
+                >>| LocalAnnotationMap.set ~statement_key ~precondition ~postcondition
+              in
+              ()
         in
-        { state with resolution = post_resolution }
+        { resolution = post_resolution }
 
 
   let backward ~statement_key:_ state ~statement:_ = state
@@ -6037,6 +6022,10 @@ module DummyContext = struct
     Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
     |> Node.create_with_default_location
 
+
+  let resolution_fixpoint = None
+
+  let error_map = None
 
   module Builder = Callgraph.NullBuilder
 end
@@ -6729,7 +6718,11 @@ let exit_state ~resolution (module Context : Context) =
       let { State.resolution; _ } = initial in
       Option.value_exn resolution
     in
-    let errors_sofar = State.all_errors initial |> Error.deduplicate in
+    let errors_sofar =
+      Option.value_exn
+        ~message:"analysis context has no error map"
+        (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
+    in
     ( emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
       |> filter_errors (module Context) ~global_resolution,
       None,
@@ -6784,17 +6777,25 @@ let exit_state ~resolution (module Context : Context) =
          (Cfg.to_dot ~precondition:(precondition fixpoint) ~single_line:true cfg));
 
     let callees = Context.Builder.get_all_callees () in
-    let errors, local_annotations =
-      match exit with
-      | None -> [], None
-      | Some ({ State.resolution_fixpoint; resolution = post_resolution; _ } as state) ->
-          let errors_sofar = State.all_errors state |> Error.deduplicate in
-          let resolution = Option.value post_resolution ~default:resolution in
-          ( emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
-            |> filter_errors (module Context) ~global_resolution,
-            Some resolution_fixpoint )
+    let local_annotations =
+      Option.value_exn
+        ~message:"analysis context has no resolution fixpoint"
+        Context.resolution_fixpoint
     in
-    errors, local_annotations, Some callees)
+    let errors =
+      Option.value_exn
+        ~message:"analysis context has no error map"
+        (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
+    in
+    let errors =
+      match exit with
+      | None -> errors
+      | Some { State.resolution = post_resolution } ->
+          let resolution = Option.value post_resolution ~default:resolution in
+          emit_errors_on_exit (module Context) ~errors_sofar:errors ~resolution ()
+          |> filter_errors (module Context) ~global_resolution
+    in
+    errors, Some local_annotations, Some callees)
 
 
 let check_define
@@ -6812,6 +6813,10 @@ let check_define
         let debug = debug
 
         let define = define_node
+
+        let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+
+        let error_map = Some (LocalErrorMap.empty ())
 
         module Builder = Builder
       end
@@ -6865,6 +6870,10 @@ let get_or_recompute_local_annotations ~environment name =
               let debug = false
 
               let define = define_node
+
+              let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+
+              let error_map = Some (LocalErrorMap.empty ())
 
               module Builder = Callgraph.NullBuilder
             end
