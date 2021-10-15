@@ -19,6 +19,9 @@
       "site-package": "dataclasses_json"
     },
     {
+      "site-package": "fb-re2"
+    },
+    {
       "site-package": "flask"
     },
     {

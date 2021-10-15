@@ -2,6 +2,7 @@ dataclasses; python_version < "3.7"
 async-generator
 click
 dataclasses-json
+fb-re2
 libcst
 psutil
 pyre-extensions

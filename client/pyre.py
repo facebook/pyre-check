@@ -25,6 +25,7 @@ from . import (
     log,
     recently_used_configurations,
     statistics_logger,
+    taint_config_verifier,
 )
 from .commands import Command, ExitCode, v2
 from .exceptions import EnvironmentException
@@ -622,6 +623,11 @@ def analyze(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
+    try:
+        taint_config_verifier.verify_configs_in(configuration.taint_models_path)
+    except taint_config_verifier.InvalidTaintConfigError as error:
+        LOG.error(str(error))
+        return ExitCode.INVALID_TAINT_CONFIG
 
     if configuration.use_command_v2:
         _check_configuration(configuration)

@@ -45,6 +45,7 @@ class ExitCode(enum.IntEnum):
     CONFIGURATION_ERROR = 6
     BUCK_USER_ERROR = 7
     WATCHMAN_ERROR = 8
+    INVALID_TAINT_CONFIG = 9
     # If the process exited due to a signal, this will be the negative signal number.
     SIGSEGV = -signal.SIGSEGV
 
