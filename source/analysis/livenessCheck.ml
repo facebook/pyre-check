@@ -60,6 +60,8 @@ end
 module type Context = sig
   val qualifier : Reference.t
 
+  val define : Define.t Node.t
+
   val environment : TypeEnvironment.ReadOnly.t
 
   val errors : ErrorMap.t
@@ -70,7 +72,6 @@ end
 module State (Context : Context) = struct
   type t = {
     used: Identifier.Set.t;
-    define: Define.t Node.t;
     local_annotations: LocalAnnotationMap.ReadOnly.t option;
   }
 
@@ -78,13 +79,13 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~define =
+  let initial =
     let local_annotations =
       TypeCheck.get_or_recompute_local_annotations
         ~environment:Context.environment
-        (Node.value define |> Define.name)
+        (Node.value Context.define |> Define.name)
     in
-    { used = Identifier.Set.empty; define; local_annotations }
+    { used = Identifier.Set.empty; local_annotations }
 
 
   let less_or_equal ~left:{ used = left; _ } ~right:{ used = right; _ } =
@@ -95,8 +96,10 @@ module State (Context : Context) = struct
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let errors { used; define; _ } =
-    let { Node.value = { Define.signature = { Define.Signature.parameters; _ }; _ }; _ } = define in
+  let errors { used; _ } =
+    let { Node.value = { Define.signature = { Define.Signature.parameters; _ }; _ }; _ } =
+      Context.define
+    in
     let check_parameter { Node.value = { Parameter.name; _ }; location } =
       match Set.find used ~f:(Identifier.equal name) with
       | Some _ -> ()
@@ -105,7 +108,7 @@ module State (Context : Context) = struct
             Error.create
               ~location:(Location.with_module ~qualifier:Context.qualifier location)
               ~kind:(Error.DeadStore name)
-              ~define
+              ~define:Context.define
           in
           ErrorMap.Table.set
             Context.errors
@@ -120,11 +123,13 @@ module State (Context : Context) = struct
 
   let backward
       ~statement_key
-      ({ used; define; local_annotations; _ } as state)
+      ({ used; local_annotations; _ } as state)
       ~statement:({ Node.location; value } as statement)
     =
     let resolution =
-      let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } = define in
+      let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
+        Context.define
+      in
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution Context.environment in
       TypeCheck.resolution_with_key
         ~global_resolution
@@ -155,7 +160,7 @@ module State (Context : Context) = struct
               Error.create
                 ~location:(Location.with_module ~qualifier:Context.qualifier location)
                 ~kind:(Error.DeadStore identifier)
-                ~define
+                ~define:Context.define
             in
             ErrorMap.Table.set Context.errors ~key:{ ErrorMap.location; identifier } ~data:error;
             used
@@ -220,27 +225,31 @@ let run
     ~environment
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
-  let module Context = struct
-    let qualifier = qualifier
-
-    let environment = environment
-
-    let errors = ErrorMap.Table.create ()
-
-    let nested_define_lookup = NestedDefineLookup.Table.create ()
-  end
-  in
-  let module State = State (Context) in
-  let module Fixpoint = Fixpoint.Make (State) in
-  let define = Source.top_level_define_node source in
+  let errors = ErrorMap.Table.create () in
+  let nested_define_lookup = NestedDefineLookup.Table.create () in
   let check ({ Node.value = { Define.signature = { Define.Signature.name; _ }; _ }; _ } as define) =
+    let module Context = struct
+      let qualifier = qualifier
+
+      let define = define
+
+      let environment = environment
+
+      let errors = errors
+
+      let nested_define_lookup = nested_define_lookup
+    end
+    in
+    let module State = State (Context) in
+    let module Fixpoint = Fixpoint.Make (State) in
     let cfg = Cfg.create (Node.value define) in
-    Fixpoint.backward ~cfg ~initial:(State.initial ~define)
+    Fixpoint.backward ~cfg ~initial:State.initial
     |> Fixpoint.entry
     >>| (fun ({ used; _ } as state) ->
           NestedDefineLookup.Table.set Context.nested_define_lookup ~key:name ~data:used;
           State.errors state)
     |> Option.value ~default:[]
   in
+  let define = Source.top_level_define_node source in
   List.map ~f:check (nested_defines_deep_to_shallow define) |> ignore;
   check define

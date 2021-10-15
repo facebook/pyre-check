@@ -33,6 +33,8 @@ end
 module type Context = sig
   val qualifier : Reference.t
 
+  val define : Define.t Node.t
+
   val environment : TypeEnvironment.ReadOnly.t
 
   val errors : ErrorMap.t
@@ -43,7 +45,6 @@ end
 module State (Context : Context) : sig
   type t = {
     used: Identifier.Set.t;
-    define: Define.t Node.t;
     local_annotations: LocalAnnotationMap.ReadOnly.t option;
   }
 
@@ -53,13 +54,13 @@ module State (Context : Context) : sig
 
   val errors : t -> Error.t list
 
-  val initial : define:Define.t Node.t -> t
+  val initial : t
 
   val less_or_equal : left:t -> right:t -> bool
 
   val join : t -> t -> t
 
-  val widen : previous:t -> next:t -> iteration:'a -> t
+  val widen : previous:t -> next:t -> iteration:int -> t
 
   val forward : statement_key:int -> t -> statement:Statement.t -> t
 
