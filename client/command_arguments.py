@@ -11,6 +11,7 @@ from typing import List, Optional, Set
 
 TEXT: str = "text"
 JSON: str = "json"
+SARIF: str = "sarif"
 
 
 class IncrementalStyle(enum.Enum):
