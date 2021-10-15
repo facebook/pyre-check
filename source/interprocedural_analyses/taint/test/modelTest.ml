@@ -2398,7 +2398,7 @@ let test_invalid_models context =
   assert_valid_model ~model_source:"test.unannotated_global: TaintSink[Test]" ();
   assert_invalid_model
     ~model_source:"test.missing_global: TaintSink[Test]"
-    ~expect:"`test.missing_global` is not part of the environment!"
+    ~expect:"Module `test` does not define `test.missing_global`."
     ();
   assert_invalid_model
     ~source:{|
@@ -2906,7 +2906,7 @@ let test_invalid_models context =
       @Sanitize
       def a.not_in_environment(self): ...
     |}
-    ~expect:"a.py:2: `a.not_in_environment` is not part of the environment!"
+    ~expect:"a.py:2: `a.not_in_environment` is not part of the environment, no module `a` in search path."
     ();
   assert_invalid_model
     ~path:"a.py"
@@ -2916,7 +2916,7 @@ let test_invalid_models context =
       @Sanitize(TaintSource)
       def a.not_in_environment(self): ...
     |}
-    ~expect:"a.py:2: `a.not_in_environment` is not part of the environment!"
+    ~expect:"a.py:2: `a.not_in_environment` is not part of the environment, no module `a` in search path."
     ();
   assert_invalid_model
     ~source:{|
@@ -2957,11 +2957,11 @@ let test_invalid_models context =
   (* Error on non-existenting callables. *)
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"`not_in_the_environment` is not part of the environment!"
+    ~expect:"`not_in_the_environment` is not part of the environment, no module `not_in_the_environment` in search path."
     ();
   assert_invalid_model
     ~model_source:"def not_in_the_environment.derp(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"`not_in_the_environment.derp` is not part of the environment!"
+    ~expect:"`not_in_the_environment.derp` is not part of the environment, no module `not_in_the_environment` in search path."
     ();
   assert_invalid_model
     ~model_source:"def test(parameter: InvalidTaintDirection[Test]): ..."
@@ -3115,7 +3115,7 @@ let test_invalid_models context =
       @property
       def test.Child.foo(self) -> TaintSource[Test]: ...
     |}
-    ~expect:"`test.Child.foo` is not part of the environment!"
+    ~expect:"Module `test` does not define `test.Child.foo`."
     ();
   assert_invalid_model
     ~source:{|
