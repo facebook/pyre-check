@@ -1584,7 +1584,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     List.fold parameters ~init:{ taint = ForwardState.empty } ~f:prime_parameter
 
 
-  let forward ~key state ~statement =
+  let forward ~statement_key state ~statement =
     TaintProfiler.track_statement_analysis
       ~profiler
       ~analysis:TaintProfiler.Forward
@@ -1604,13 +1604,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~global_resolution
             ~local_annotations
             ~parent
-            ~key (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+            ~statement_key
+            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
             (module TypeCheck.DummyContext)
         in
         analyze_statement ~resolution statement state)
 
 
-  let backward ~key:_ _ ~statement:_ = failwith "Don't call me"
+  let backward ~statement_key:_ _ ~statement:_ = failwith "Don't call me"
 end
 
 let extract_source_model

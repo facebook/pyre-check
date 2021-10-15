@@ -248,7 +248,7 @@ module State (Context : Context) = struct
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let forward ~key state ~statement =
+  let forward ~statement_key state ~statement =
     match state with
     | Bottom -> Bottom
     | Value state ->
@@ -259,11 +259,11 @@ module State (Context : Context) = struct
           |> InitializedVariables.of_list
           |> InitializedVariables.union state
         in
-        Hashtbl.set Context.fixpoint_post_statement ~key ~data:(statement, new_state);
+        Hashtbl.set Context.fixpoint_post_statement ~key:statement_key ~data:(statement, new_state);
         Value new_state
 
 
-  let backward ~key:_ _ ~statement:_ = failwith "Not implemented"
+  let backward ~statement_key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
 let run_on_define ~qualifier define =

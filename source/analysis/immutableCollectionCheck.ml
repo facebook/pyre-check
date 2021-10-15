@@ -65,9 +65,9 @@ module State (Context : Context) = struct
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let forward ~key:_ state ~statement:_ = state
+  let forward ~statement_key:_ state ~statement:_ = state
 
-  let backward ~key:_ _ ~statement:_ =
+  let backward ~statement_key:_ _ ~statement:_ =
     (* TODO (T44181093): Remove the ignores *)
     ignore Context.define;
     ignore Context.global_resolution;

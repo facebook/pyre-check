@@ -275,7 +275,7 @@ module State (Context : Context) = struct
     Value { resolution; errors }
 
 
-  let forward ~key:_ state ~statement:({ Node.value; _ } as statement) =
+  let forward ~statement_key:_ state ~statement:({ Node.value; _ } as statement) =
     match state with
     | Bottom -> Bottom
     | Value ({ resolution; errors } as state) -> (
@@ -709,7 +709,7 @@ module State (Context : Context) = struct
         Value { state with errors = List.fold parameters ~init:errors ~f:add_parameter_errors }
 
 
-  let backward ~key:_ state ~statement =
+  let backward ~statement_key:_ state ~statement =
     match state with
     | Bottom -> Bottom
     | Value ({ resolution; _ } as state) ->

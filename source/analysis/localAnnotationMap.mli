@@ -18,16 +18,16 @@ val show : t -> string
 val set
   :  ?precondition:Resolution.annotation_store ->
   ?postcondition:Resolution.annotation_store ->
-  key:int ->
+  statement_key:int ->
   t ->
   unit
 
 module ReadOnly : sig
   type t
 
-  val get_precondition : t -> int -> Resolution.annotation_store option
+  val get_precondition : t -> statement_key:int -> Resolution.annotation_store option
 
-  val get_postcondition : t -> int -> Resolution.annotation_store option
+  val get_postcondition : t -> statement_key:int -> Resolution.annotation_store option
 end
 
 val read_only : t -> ReadOnly.t

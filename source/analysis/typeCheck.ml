@@ -24,9 +24,11 @@ module LocalErrorMap = struct
 
   let empty () = Int.Table.create ()
 
-  let set error_map ~key ~errors = Int.Table.set error_map ~key ~data:errors
+  let set error_map ~statement_key ~errors = Int.Table.set error_map ~key:statement_key ~data:errors
 
-  let append error_map ~key error = Int.Table.add_multi error_map ~key ~data:error
+  let append error_map ~statement_key error =
+    Int.Table.add_multi error_map ~key:statement_key ~data:error
+
 
   let all_errors error_map = Int.Table.data error_map |> List.concat
 end
@@ -581,8 +583,9 @@ module State (Context : Context) = struct
           AnalysisError.AnalysisFailure (FixpointThresholdReached { define })
         in
         let location = Location.with_module ~qualifier:Context.qualifier define_location in
-        let key = [%hash: int * int] (Cfg.entry_index, 0) in
-        AnalysisError.create ~location ~kind ~define |> LocalErrorMap.append ~key error_map
+        let statement_key = [%hash: int * int] (Cfg.entry_index, 0) in
+        AnalysisError.create ~location ~kind ~define
+        |> LocalErrorMap.append ~statement_key error_map
 
 
   let widen ~previous ~next ~iteration =
@@ -1897,9 +1900,9 @@ module State (Context : Context) = struct
       let resolution_fixpoint = LocalAnnotationMap.empty () in
       let error_map = LocalErrorMap.empty () in
       let postcondition = Resolution.annotation_store resolution in
-      let key = [%hash: int * int] (Cfg.entry_index, 0) in
-      LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition;
-      LocalErrorMap.set error_map ~key ~errors;
+      let statement_key = [%hash: int * int] (Cfg.entry_index, 0) in
+      LocalAnnotationMap.set resolution_fixpoint ~statement_key ~postcondition;
+      LocalErrorMap.set error_map ~statement_key ~errors;
       { resolution = Some resolution; resolution_fixpoint; error_map }
     in
     state
@@ -5990,24 +5993,28 @@ module State (Context : Context) = struct
           ~kind:(Error.InvalidType (InvalidType { annotation; expected = "an Enum member" })))
 
 
-  let forward ~key ({ resolution; _ } as state) ~statement =
+  let forward ~statement_key ({ resolution; _ } as state) ~statement =
     match resolution with
     | None -> state
     | Some resolution ->
         let post_resolution, errors = forward_statement ~resolution ~statement in
         let () =
-          LocalErrorMap.set state.error_map ~key ~errors;
+          LocalErrorMap.set state.error_map ~statement_key ~errors;
           match post_resolution with
           | None -> ()
           | Some post_resolution ->
               let precondition = Resolution.annotation_store resolution in
               let postcondition = Resolution.annotation_store post_resolution in
-              LocalAnnotationMap.set state.resolution_fixpoint ~key ~precondition ~postcondition
+              LocalAnnotationMap.set
+                state.resolution_fixpoint
+                ~statement_key
+                ~precondition
+                ~postcondition
         in
         { state with resolution = post_resolution }
 
 
-  let backward ~key:_ state ~statement:_ = state
+  let backward ~statement_key:_ state ~statement:_ = state
 end
 
 module CheckResult = struct
@@ -6055,12 +6062,12 @@ let resolution
   Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
 
 
-let resolution_with_key ~global_resolution ~local_annotations ~parent ~key context =
+let resolution_with_key ~global_resolution ~local_annotations ~parent ~statement_key context =
   let annotation_store =
     Option.value_map
       local_annotations
       ~f:(fun map ->
-        LocalAnnotationMap.ReadOnly.get_precondition map key
+        LocalAnnotationMap.ReadOnly.get_precondition map ~statement_key
         |> Option.value ~default:Resolution.empty_annotation_store)
       ~default:Resolution.empty_annotation_store
   in

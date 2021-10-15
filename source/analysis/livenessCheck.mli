@@ -61,9 +61,9 @@ module State (Context : Context) : sig
 
   val widen : previous:t -> next:t -> iteration:'a -> t
 
-  val forward : key:int -> t -> statement:Statement.t -> t
+  val forward : statement_key:int -> t -> statement:Statement.t -> t
 
-  val backward : key:int -> t -> statement:Statement.t -> t
+  val backward : statement_key:int -> t -> statement:Statement.t -> t
 end
 
 val name : string

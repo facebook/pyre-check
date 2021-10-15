@@ -116,10 +116,10 @@ module State (Context : Context) = struct
     ErrorMap.Table.data Context.errors |> List.sort ~compare:Error.compare
 
 
-  let forward ~key:_ state ~statement:_ = state
+  let forward ~statement_key:_ state ~statement:_ = state
 
   let backward
-      ~key
+      ~statement_key
       ({ used; define; local_annotations; _ } as state)
       ~statement:({ Node.location; value } as statement)
     =
@@ -130,7 +130,7 @@ module State (Context : Context) = struct
         ~global_resolution
         ~local_annotations
         ~parent
-        ~key
+        ~statement_key
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)
     in

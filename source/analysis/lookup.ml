@@ -250,10 +250,10 @@ let create_of_module type_environment qualifier =
     let cfg = Cfg.create define in
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
-        let key = [%hash: int * int] (node_id, statement_index) in
-        ( LocalAnnotationMap.ReadOnly.get_precondition annotation_lookup key
+        let statement_key = [%hash: int * int] (node_id, statement_index) in
+        ( LocalAnnotationMap.ReadOnly.get_precondition annotation_lookup ~statement_key
           |> Option.value ~default:Resolution.empty_annotation_store,
-          LocalAnnotationMap.ReadOnly.get_postcondition annotation_lookup key
+          LocalAnnotationMap.ReadOnly.get_postcondition annotation_lookup ~statement_key
           |> Option.value ~default:Resolution.empty_annotation_store )
       in
       let pre_resolution =

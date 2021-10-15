@@ -352,9 +352,9 @@ let test_type_collection context =
       |> fun value -> Option.value_exn value
     in
     let test_expect (node_id, statement_index, test_expression, expected_type) =
-      let key = [%hash: int * int] (node_id, statement_index) in
+      let statement_key = [%hash: int * int] (node_id, statement_index) in
       let annotation_store =
-        LocalAnnotationMap.ReadOnly.get_precondition lookup key
+        LocalAnnotationMap.ReadOnly.get_precondition lookup ~statement_key
         |> fun value -> Option.value_exn value
       in
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in

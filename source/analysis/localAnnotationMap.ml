@@ -77,7 +77,7 @@ let set
       { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
     ?(postcondition =
       { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
-    ~key
+    ~statement_key
     local_annotations
   =
   let convert_to_tree { Resolution.annotations; temporary_annotations } =
@@ -88,7 +88,7 @@ let set
   in
   Hashtbl.set
     local_annotations
-    ~key
+    ~key:statement_key
     ~data:
       {
         Annotations.precondition = convert_to_tree precondition;
@@ -106,13 +106,13 @@ module ReadOnly = struct
     }
 
 
-  let get_precondition local_annotations key =
-    Int.Map.Tree.find local_annotations key
+  let get_precondition local_annotations ~statement_key =
+    Int.Map.Tree.find local_annotations statement_key
     >>| fun { Annotations.precondition; _ } -> convert_to_map precondition
 
 
-  let get_postcondition local_annotations key =
-    Int.Map.Tree.find local_annotations key
+  let get_postcondition local_annotations ~statement_key =
+    Int.Map.Tree.find local_annotations statement_key
     >>| fun { Annotations.postcondition; _ } -> convert_to_map postcondition
 end
 

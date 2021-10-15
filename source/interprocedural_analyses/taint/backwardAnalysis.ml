@@ -1395,7 +1395,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         state
 
 
-  let backward ~key state ~statement =
+  let backward ~statement_key state ~statement =
     TaintProfiler.track_statement_analysis
       ~profiler
       ~analysis:TaintProfiler.Backward
@@ -1415,14 +1415,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~global_resolution
             ~local_annotations
             ~parent
-            ~key
+            ~statement_key
             (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
             (module TypeCheck.DummyContext)
         in
         analyze_statement ~resolution state statement)
 
 
-  let forward ~key:_ _ ~statement:_ = failwith "Don't call me"
+  let forward ~statement_key:_ _ ~statement:_ = failwith "Don't call me"
 end
 
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and sink_taint. *)

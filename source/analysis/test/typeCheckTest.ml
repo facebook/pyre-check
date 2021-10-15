@@ -1376,7 +1376,7 @@ let test_forward context =
         | _ -> failwith "unable to parse test"
       in
       List.fold
-        ~f:(fun state statement -> State.forward ~key:Cfg.entry_index ~statement state)
+        ~f:(fun state statement -> State.forward ~statement_key:Cfg.entry_index ~statement state)
         ~init:(create ~bottom:precondition_bottom precondition)
         parsed
     in

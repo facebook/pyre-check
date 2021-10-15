@@ -16,9 +16,9 @@ module type State = sig
 
   val widen : previous:t -> next:t -> iteration:int -> t
 
-  val forward : key:int -> t -> statement:Statement.t -> t
+  val forward : statement_key:int -> t -> statement:Statement.t -> t
 
-  val backward : key:int -> t -> statement:Statement.t -> t
+  val backward : statement_key:int -> t -> statement:Statement.t -> t
 end
 
 module type Fixpoint = sig
@@ -112,9 +112,8 @@ module Make (State : State) = struct
   let forward ~cfg ~initial =
     let transition node_id init statements =
       let forward statement_index before statement =
-        let after =
-          State.forward ~key:([%hash: int * int] (node_id, statement_index)) before ~statement
-        in
+        let statement_key = [%hash: int * int] (node_id, statement_index) in
+        let after = State.forward ~statement_key before ~statement in
         Log.log
           ~section:`Fixpoint
           "\n%a\n  {  %a  }\n\n%a"
@@ -141,7 +140,8 @@ module Make (State : State) = struct
       let statement_index = ref (List.length statements) in
       let backward statement =
         statement_index := !statement_index - 1;
-        State.backward ~key:([%hash: int * int] (node_id, !statement_index)) ~statement
+        let statement_key = [%hash: int * int] (node_id, !statement_index) in
+        State.backward ~statement_key ~statement
       in
       List.fold_right ~f:backward ~init statements
     in
