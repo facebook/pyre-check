@@ -3798,7 +3798,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body = [+Statement.Pass];
            decorators = [decorator "bar"];
@@ -3810,7 +3810,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body = [+Statement.Pass];
            decorators = [];
@@ -3822,7 +3822,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body =
              [
@@ -3853,7 +3853,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body =
              [
@@ -3903,7 +3903,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo.bar";
+           Class.name = !&"foo.bar";
            base_arguments = [];
            body = [+Statement.Pass];
            decorators = [];
@@ -3915,7 +3915,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments =
              [
                { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
@@ -3931,7 +3931,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments =
              [
                {
@@ -3950,7 +3950,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments =
              [
                { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
@@ -3966,7 +3966,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body =
              [
@@ -3986,7 +3986,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body =
              [
@@ -4007,7 +4007,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body =
              [
@@ -4027,7 +4027,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [{ Call.Argument.name = None; value = !"superfoo" }];
            body =
              [
@@ -4058,7 +4058,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body =
              [
@@ -4108,7 +4108,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body =
              [
@@ -5299,7 +5299,7 @@ let test_stubs _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"A";
+           Class.name = !&"A";
            base_arguments = [];
            body =
              [
@@ -5411,7 +5411,7 @@ let test_stubs _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
            decorators = [];
@@ -5423,7 +5423,7 @@ let test_stubs _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
            decorators = [];
@@ -5435,7 +5435,7 @@ let test_stubs _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"foo";
+           Class.name = !&"foo";
            base_arguments = [];
            body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
            decorators = [];

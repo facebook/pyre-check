@@ -461,7 +461,7 @@ let test_is_protocol _ =
   let assert_is_protocol base_arguments expected =
     let is_protocol base_arguments =
       {
-        StatementClass.name = + !&"Derp";
+        StatementClass.name = !&"Derp";
         base_arguments;
         body = [];
         decorators = [];

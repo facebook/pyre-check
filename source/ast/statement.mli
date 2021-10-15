@@ -87,7 +87,7 @@ end
 
 and Class : sig
   type t = {
-    name: Reference.t Node.t;
+    name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
@@ -112,6 +112,8 @@ and Class : sig
   val metaclass : t -> Expression.t option
 
   val init_subclass_arguments : t -> Expression.Call.Argument.t list
+
+  val name_location : body_location:Location.t -> t -> Location.t
 
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end

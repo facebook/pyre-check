@@ -8,6 +8,23 @@
 open Core
 open Pyre
 
+let name_location
+    ~offset_columns
+    ~body_location:{ Location.start = { line = start_line; column = start_column }; _ }
+    name_string
+  =
+  let start_column = start_column + offset_columns in
+  let stop_column_ =
+    let name_length = name_string |> String.length in
+    start_column + name_length
+  in
+  Location.
+    {
+      start = { line = start_line; column = start_column };
+      stop = { line = start_line; column = stop_column_ };
+    }
+
+
 module Assign = struct
   type t = {
     target: Expression.t;
@@ -162,7 +179,7 @@ end
 
 and Class : sig
   type t = {
-    name: Reference.t Node.t;
+    name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
@@ -188,10 +205,12 @@ and Class : sig
 
   val init_subclass_arguments : t -> Expression.Call.Argument.t list
 
+  val name_location : body_location:Location.t -> t -> Location.t
+
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end = struct
   type t = {
-    name: Reference.t Node.t;
+    name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Decorator.t list;
@@ -202,7 +221,7 @@ end = struct
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
-    match Node.location_insensitive_compare [%compare: Reference.t] left.name right.name with
+    match Reference.compare left.name right.name with
     | x when not (Int.equal x 0) -> x
     | _ -> (
         match
@@ -230,10 +249,10 @@ end = struct
                       right.top_level_unbound_names)))
 
 
-  let toplevel_define { name = { Node.value; _ }; top_level_unbound_names; body; _ } =
+  let toplevel_define { name; top_level_unbound_names; body; _ } =
     Define.create_class_toplevel
       ~unbound_names:top_level_unbound_names
-      ~parent:value
+      ~parent:name
       ~statements:body
 
 
@@ -313,6 +332,11 @@ end = struct
         | Some _ -> true
         | None -> false)
       base_arguments
+
+
+  let name_location ~body_location { name; _ } =
+    let class_and_space_offset = 6 in
+    name |> Reference.last |> name_location ~offset_columns:class_and_space_offset ~body_location
 end
 
 and Define : sig
@@ -758,26 +782,16 @@ end = struct
 
   let unqualified_name { signature; _ } = Signature.unqualified_name signature
 
-  let name_location
-      ~body_location:{ Location.start = { line = start_line; column = start_column }; _ }
-      define
-    =
+  let name_location ~body_location define =
     if Signature.is_class_toplevel define.signature then
+      (* This causes lookup.ml to skip class toplevel defines, which is what we want because they
+         are handled by reading class bodies. *)
       Location.any
     else
-      let start_column =
-        let def_and_space_offset = 4 in
-        start_column + def_and_space_offset
-      in
-      let stop_column_ =
-        let name_length = define |> unqualified_name |> String.length in
-        start_column + name_length
-      in
-      Location.
-        {
-          start = { line = start_line; column = start_column };
-          stop = { line = start_line; column = stop_column_ };
-        }
+      let def_and_space_offset = 4 in
+      define
+      |> unqualified_name
+      |> name_location ~offset_columns:def_and_space_offset ~body_location
 
 
   let self_identifier { signature; _ } = Signature.self_identifier signature
@@ -1446,7 +1460,7 @@ module PrettyPrinter = struct
       pp_decorators
       decorators
       Reference.pp
-      (Node.value name)
+      name
       Expression.pp_expression_argument_list
       base_arguments
       pp_statement_list

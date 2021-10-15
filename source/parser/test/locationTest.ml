@@ -970,7 +970,7 @@ let test_class_locations _ =
         ~stop:(3, 5)
         (Statement.Class
            {
-             Class.name = node ~start:(2, 6) ~stop:(2, 9) !&"foo";
+             Class.name = !&"foo";
              base_arguments = [];
              body = [node ~start:(3, 1) ~stop:(3, 5) Statement.Pass];
              decorators = [{ name = node ~start:(1, 1) ~stop:(1, 4) !&"bar"; arguments = None }];
@@ -985,7 +985,7 @@ let test_class_locations _ =
         ~stop:(2, 16)
         (Statement.Class
            {
-             Class.name = node ~start:(1, 6) ~stop:(1, 9) !&"foo";
+             Class.name = !&"foo";
              base_arguments = [];
              body =
                [
@@ -1022,7 +1022,7 @@ let test_class_locations _ =
         ~stop:(2, 2)
         (Statement.Class
            {
-             Class.name = node ~start:(1, 6) ~stop:(1, 9) !&"foo";
+             Class.name = !&"foo";
              base_arguments =
                [
                  {
@@ -1062,7 +1062,7 @@ let test_class_locations _ =
         ~stop:(5, 10)
         (Statement.Class
            {
-             Class.name = node ~start:(2, 6) ~stop:(2, 9) !&"foo";
+             Class.name = !&"foo";
              base_arguments = [];
              body =
                [
@@ -2897,7 +2897,7 @@ let test_stub_locations _ =
         ~stop:(2, 8)
         (Statement.Class
            {
-             Class.name = node ~start:(1, 6) ~stop:(1, 7) !&"A";
+             Class.name = !&"A";
              base_arguments = [];
              body =
                [
@@ -2930,7 +2930,7 @@ let test_stub_locations _ =
         ~stop:(1, 16)
         (Statement.Class
            {
-             Class.name = node ~start:(1, 6) ~stop:(1, 9) !&"foo";
+             Class.name = !&"foo";
              base_arguments = [];
              body =
                [

@@ -42,7 +42,7 @@ let collect_typecheck_units { Source.statements; _ } =
   (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
   let rec collect_from_statement ~ignore_class sofar { Node.value; location } =
     match value with
-    | Statement.Class ({ Class.name = { Node.value = name; _ }; body; _ } as class_) ->
+    | Statement.Class ({ Class.name; body; _ } as class_) ->
         if ignore_class then (
           Log.debug
             "Dropping the body of class %a as it is nested inside a function"

@@ -586,7 +586,7 @@ module ClassAttributes = struct
     | _ -> right
 
 
-  let create ({ Class.name = { Node.value = parent_name; _ }; body; _ } as definition) =
+  let create ({ Class.name = parent_name; body; _ } as definition) =
     let explicitly_assigned_attributes =
       let assigned_attributes map { Node.location; value } =
         let open Expression in
@@ -838,7 +838,7 @@ module ClassAttributes = struct
       let class_attributes =
         let callable_attributes map { Node.location; value } =
           match value with
-          | Statement.Class { name = { Node.value = name; _ }; _ } ->
+          | Statement.Class { name; _ } ->
               let open Expression in
               let annotation =
                 let meta_annotation =
@@ -1042,10 +1042,7 @@ module ClassSummary = struct
   }
   [@@deriving compare, eq, sexp, show, hash]
 
-  let create
-      ~qualifier
-      ({ Ast.Statement.Class.name = { Node.value = name; _ }; decorators; _ } as class_definition)
-    =
+  let create ~qualifier ({ Ast.Statement.Class.name; decorators; _ } as class_definition) =
     let bases =
       {
         base_classes = Ast.Statement.Class.base_classes class_definition;

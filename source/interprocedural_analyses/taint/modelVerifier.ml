@@ -54,7 +54,7 @@ let class_definitions ~resolution reference =
         containing_source ~resolution reference
         >>| Preprocessing.classes
         >>| List.filter ~f:(fun { Node.value = { Statement.Class.name; _ }; _ } ->
-                Reference.equal reference (Node.value name))
+                Reference.equal reference name)
         (* Prefer earlier definitions. *)
         >>| List.rev
       in

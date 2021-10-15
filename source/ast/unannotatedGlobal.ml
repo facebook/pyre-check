@@ -152,7 +152,7 @@ module Collector = struct
           in
           List.fold imports ~init:globals ~f:collect_name_import
       | Class { Class.name; _ } ->
-          { Result.name = Node.value name |> Reference.last; unannotated_global = Class } :: globals
+          { Result.name = name |> Reference.last; unannotated_global = Class } :: globals
       | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
           {
             Result.name = name |> Reference.last;

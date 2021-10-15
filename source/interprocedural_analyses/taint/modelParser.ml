@@ -2278,7 +2278,7 @@ let parse_statement ~resolution ~path ~configuration statement =
    Node.value =
      Class
        {
-         Class.name = { Node.value = name; _ };
+         Class.name;
          base_arguments;
          body =
            [
@@ -2410,7 +2410,7 @@ let parse_statement ~resolution ~path ~configuration statement =
         |> return
       else
         Ok []
-  | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
+  | { Node.value = Class { Class.name; _ }; location } ->
       Error (model_verification_error ~path ~location (ClassBodyNotEllipsis (Reference.show name)))
   | {
    Node.value =

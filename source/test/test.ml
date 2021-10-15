@@ -3004,7 +3004,7 @@ let assert_equivalent_attributes ~context source expected =
     in
     let get_name_if_class { Node.value; _ } =
       match value with
-      | Statement.Class { Class.name = { Node.value; _ }; _ } -> Some (Reference.show value)
+      | Statement.Class { Class.name; _ } -> Some (Reference.show name)
       | _ -> None
     in
     List.map ~f:Source.statements expected

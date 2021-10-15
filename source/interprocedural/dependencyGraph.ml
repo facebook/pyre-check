@@ -255,7 +255,7 @@ let create_overrides ~environment ~source =
         | _ -> None
       in
       let methods = List.filter_map ~f:extract_define body in
-      let class_name = Node.value name in
+      let class_name = name in
       List.filter_map methods ~f:(get_method_overrides class_name)
     in
     let record_overrides map (ancestor_method, overriding_type) =

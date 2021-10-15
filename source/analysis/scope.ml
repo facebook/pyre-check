@@ -151,7 +151,7 @@ module Binding = struct
     | Statement.Assign { Assign.target; value; _ } ->
         let sofar = of_expression sofar value in
         of_unannotated_target ~kind:(Kind.AssignTarget None) sofar target
-    | Statement.Class { Class.name = { Node.value = name; _ }; base_arguments; decorators; _ } ->
+    | Statement.Class { Class.name; base_arguments; decorators; _ } ->
         let sofar =
           List.map decorators ~f:Decorator.to_expression |> List.fold ~init:sofar ~f:of_expression
         in

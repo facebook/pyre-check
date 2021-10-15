@@ -34,7 +34,7 @@ let test_inferred_generic_base context =
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
-          when String.equal (Reference.show (Node.value name)) target ->
+          when String.equal (Reference.show name) target ->
             Some { Node.location; value = definition }
         | _ -> None
       in

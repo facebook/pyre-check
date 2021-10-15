@@ -122,6 +122,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
 
 
   let rec visit_statement ~state statement =
+    let location = Node.location statement in
     let visitor = Visitor.node in
     let visit_expression = visit_expression ~state in
     let visit_statement = visit_statement ~state in
@@ -134,8 +135,12 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Assert { Assert.test; message; _ } ->
           visit_expression test;
           Option.iter ~f:visit_expression message
-      | Class { Class.name; base_arguments; body; decorators; _ } ->
-          visit_node ~state ~visitor (Reference name);
+      | Class ({ Class.name; base_arguments; body; decorators; _ } as class_) ->
+          visit_node
+            ~state
+            ~visitor
+            (Reference
+               (Node.create ~location:(Class.name_location ~body_location:location class_) name));
           List.iter base_arguments ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.map decorators ~f:Decorator.to_expression |> List.iter ~f:visit_expression
@@ -146,9 +151,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
               ~state
               ~visitor
               (Reference
-                 (Node.create
-                    ~location:(Define.name_location ~body_location:statement.location define)
-                    name));
+                 (Node.create ~location:(Define.name_location ~body_location:location define) name));
             List.iter parameters ~f:(visit_parameter ~state ~visitor ~visit_expression);
             List.map decorators ~f:Decorator.to_expression |> List.iter ~f:visit_expression;
             Option.iter ~f:visit_expression return_annotation

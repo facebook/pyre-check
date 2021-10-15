@@ -2974,7 +2974,7 @@ let test_defines _ =
   let body = [+Statement.Define define_foo; +Statement.Define define_bar] in
   let parent =
     {
-      Class.name = + !&"Foo";
+      Class.name = !&"Foo";
       base_arguments = [];
       body;
       decorators = [];
@@ -3000,7 +3000,7 @@ let test_classes _ =
   in
   let class_define =
     {
-      Class.name = + !&"foo";
+      Class.name = !&"foo";
       base_arguments = [];
       body =
         [
@@ -3029,7 +3029,7 @@ let test_classes _ =
   assert_classes [+Statement.Class class_define] [class_define];
   let inner =
     {
-      Class.name = + !&"bar";
+      Class.name = !&"bar";
       base_arguments = [];
       body = [+Statement.Pass];
       decorators = [];
@@ -3038,7 +3038,7 @@ let test_classes _ =
   in
   let class_define =
     {
-      Class.name = + !&"foo";
+      Class.name = !&"foo";
       base_arguments = [];
       body = [+Statement.Class inner];
       decorators = [];
@@ -4184,7 +4184,7 @@ let test_populate_nesting_define _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"C";
+           Class.name = !&"C";
            base_arguments = [];
            decorators = [];
            body =
@@ -4257,7 +4257,7 @@ let test_populate_nesting_define _ =
              [
                +Statement.Class
                   {
-                    Class.name = + !&"C";
+                    Class.name = !&"C";
                     base_arguments = [];
                     decorators = [];
                     body =
