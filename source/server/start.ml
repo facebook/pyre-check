@@ -180,9 +180,15 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
         in
         result
         >>= fun (new_connection_state, response) ->
-        Response.to_yojson response
-        |> Yojson.Safe.to_string
-        |> Lwt_io.write_line output_channel
+        let on_io_exception exn =
+          Log.log
+            ~section:`Server
+            "Exception occurred while sending responses: %s"
+            (Exn.to_string exn);
+          Lwt.return_unit
+        in
+        let raw_response = Yojson.Safe.to_string (Response.to_yojson response) in
+        Lwt.catch (fun () -> Lwt_io.write_line output_channel raw_response) on_io_exception
         >>= fun () -> handle_line new_connection_state
   in
   ConnectionState.create () |> handle_line
@@ -597,7 +603,7 @@ let start_server_and_wait ?event_channel ~configuration start_options =
           wait_on_signals [Signal.int] ~on_caught:(fun _ -> return ExitStatus.Ok);
           (* Getting these signals usually indicates something serious went wrong. *)
           wait_on_signals
-            [Signal.abrt; Signal.term; Signal.pipe; Signal.quit; Signal.segv]
+            [Signal.abrt; Signal.term; Signal.quit; Signal.segv]
             ~on_caught:(fun signal ->
               let { ServerState.start_time; _ } =
                 (* The use of `unsafe_read` is justified because (1) we really do not want to block
