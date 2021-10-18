@@ -48,3 +48,7 @@
 .navbar__toggle svg path {
   stroke: #fff !important;
 }
+
+.cm-s-height100 {
+  height: 100px !important;
+}
