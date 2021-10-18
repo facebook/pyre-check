@@ -1,0 +1,7 @@
+@generated
+Call dependencies
+dictionary_delete.dict_into_sink (fun) -> [_test_sink (fun)]
+dictionary_delete.return_dict_with_bad_key (fun) -> [_test_source (fun) dict::__getitem__ (method)]
+dictionary_delete.take_dict_with_bad_key (fun) -> []
+dictionary_delete.test_del_keyword (fun) -> [_test_sink (fun) _test_source (fun) dict::__getitem__ (method)]
+dictionary_delete.test_pop_method (fun) -> [_test_sink (fun) _test_source (fun) dict::__getitem__ (method)]

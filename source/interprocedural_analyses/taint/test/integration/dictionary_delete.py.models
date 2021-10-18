@@ -1,0 +1,56 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary_delete.test_pop_method",
+    "callable_line": 33,
+    "code": 5002,
+    "line": 37,
+    "start": 15,
+    "end": 29,
+    "filename": "dictionary_delete.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary_delete.py",
+              "line": 34,
+              "start": 10,
+              "end": 24
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
+            "features": [
+              { "has": "first-index" },
+              { "first-index": "key" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary_delete.py",
+              "line": 37,
+              "start": 15,
+              "end": 29
+            },
+            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "key" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}

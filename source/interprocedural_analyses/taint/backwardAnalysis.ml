@@ -1373,7 +1373,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Continue ->
         state
     | Define define -> analyze_definition ~define state
-    | Delete _ -> state
+    | Delete expression -> (
+        match AccessPath.of_expression ~resolution expression with
+        | Some { AccessPath.root; path } ->
+            { taint = BackwardState.assign ~root ~path BackwardState.Tree.bottom state.taint }
+        | _ -> state)
     | Expression expression ->
         analyze_expression ~resolution ~taint:BackwardState.Tree.empty ~state ~expression
     | For _

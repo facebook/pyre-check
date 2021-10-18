@@ -1519,7 +1519,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Continue ->
         state
     | Define define -> analyze_definition ~define state
-    | Delete _ -> state
+    | Delete expression -> (
+        match AccessPath.of_expression ~resolution expression with
+        | Some { AccessPath.root; path } ->
+            { taint = ForwardState.assign ~root ~path ForwardState.Tree.bottom state.taint }
+        | _ -> state)
     | Expression expression ->
         let _, state = analyze_expression ~resolution ~state ~expression in
         state
