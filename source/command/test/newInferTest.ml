@@ -29,7 +29,6 @@ let test_json_parsing context =
       {
         InferConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
         paths_to_modify = None;
-        infer_mode = InferMode.Local;
       };
   assert_parsed
     (`Assoc
@@ -39,7 +38,6 @@ let test_json_parsing context =
       {
         InferConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
         paths_to_modify = Some ["my/module.py"];
-        infer_mode = InferMode.Interprocedural;
       };
   ()
 

@@ -7,20 +7,12 @@
 
 open Core
 
-module InferMode : sig
-  type t =
-    | Local
-    | Interprocedural
-  [@@deriving sexp, compare, hash, yojson]
-end
-
 module InferConfiguration : sig
   type file_list = string list option [@@deriving yojson, sexp, compare, hash]
 
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
     paths_to_modify: file_list;
-    infer_mode: InferMode.t;
   }
   [@@deriving sexp, compare, hash]
 

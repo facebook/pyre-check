@@ -11,20 +11,12 @@ module Path = PyrePath
 (* Infer command uses the same exit code scheme as check command. *)
 module ExitStatus = NewCheckCommand.ExitStatus
 
-module InferMode = struct
-  type t =
-    | Local
-    | Interprocedural
-  [@@deriving sexp, compare, hash, yojson]
-end
-
 module InferConfiguration = struct
   type file_list = string list option [@@deriving yojson, sexp, compare, hash]
 
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
     paths_to_modify: file_list;
-    infer_mode: InferMode.t;
   }
   [@@deriving sexp, compare, hash]
 
@@ -38,10 +30,7 @@ module InferConfiguration = struct
           let paths_to_modify =
             json |> member "paths_to_modify" |> file_list_of_yojson |> Result.ok_or_failwith
           in
-          let infer_mode =
-            json |> member "infer_mode" |> InferMode.of_yojson |> Result.ok_or_failwith
-          in
-          Result.Ok { base; infer_mode; paths_to_modify }
+          Result.Ok { base; paths_to_modify }
     with
     | Type_error (message, _)
     | Undefined (message, _) ->
@@ -138,96 +127,17 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
   Lwt.return ExitStatus.Ok
 
 
-let with_performance_tracking f =
-  let timer = Timer.start () in
-  let result = f () in
-  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-  Statistics.performance
-    ~name:"analyze"
-    ~timer
-    ~integers:
-      [
-        "gc_minor_collections", minor_collections;
-        "gc_major_collections", major_collections;
-        "gc_compactions", compactions;
-      ]
-    ();
-  result
-
-
-let run_infer_interprocedural ~configuration ~build_system () =
-  let static_analysis_configuration =
-    {
-      Configuration.StaticAnalysis.configuration;
-      result_json_path = None;
-      dump_call_graph = None;
-      verify_models = false;
-      rule_filter = None;
-      find_missing_flows = None;
-      dump_model_query_results = None;
-      use_cache = false;
-      maximum_trace_length = None;
-      maximum_tito_depth = None;
-    }
-  in
-  let analysis_kind = TypeInference.Analysis.abstract_kind in
-  with_performance_tracking (fun () ->
-      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          Interprocedural.FixpointAnalysis.initialize_configuration
-            ~static_analysis_configuration
-            analysis_kind;
-          let environment =
-            Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache:false
-          in
-          let qualifiers =
-            Analysis.TypeEnvironment.module_tracker environment
-            |> Analysis.ModuleTracker.tracked_explicit_modules
-          in
-          let environment = Analysis.TypeEnvironment.read_only environment in
-          let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
-          let initial_callables =
-            Service.StaticAnalysis.fetch_initial_callables
-              ~scheduler
-              ~configuration
-              ~environment
-              ~qualifiers
-              ~use_cache:false
-          in
-          let filename_lookup path_reference =
-            Server.RequestHandler.instantiate_path
-              ~build_system
-              ~configuration
-              ~ast_environment
-              path_reference
-          in
-          Service.StaticAnalysis.analyze
-            ~scheduler
-            ~analysis:analysis_kind
-            ~static_analysis_configuration
-            ~filename_lookup
-            ~environment
-            ~qualifiers
-            ~initial_callables
-            ~initial_models:Interprocedural.Target.Map.empty
-            ~skip_overrides:Ast.Reference.Set.empty
-            ()));
-  Lwt.return ExitStatus.Ok
-
-
 let run_infer infer_configuration =
   let {
     InferConfiguration.base = { NewCommandStartup.BaseConfiguration.source_paths; _ };
     paths_to_modify;
-    infer_mode;
   }
     =
     infer_configuration
   in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       let configuration = InferConfiguration.analysis_configuration_of infer_configuration in
-      match infer_mode with
-      | InferMode.Local -> run_infer_local ~configuration ~build_system ~paths_to_modify ()
-      | InferMode.Interprocedural -> run_infer_interprocedural ~configuration ~build_system ())
+      run_infer_local ~configuration ~build_system ~paths_to_modify ())
 
 
 let run_infer configuration_file =
