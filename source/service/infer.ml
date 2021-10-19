@@ -91,7 +91,7 @@ let run_infer
           ~configuration
           ~global_resolution
           ~filename_lookup
-          ~source
+          source
       in
       qualifier |> AstEnvironment.ReadOnly.get_processed_source ast_environment >>| analyze_source
     in

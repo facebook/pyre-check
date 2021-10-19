@@ -1143,14 +1143,43 @@ let empty_infer_for_define ~global_resolution ~qualifier ~define =
   TypeInferenceData.LocalResult.from_signature ~global_resolution ~lookup ~qualifier define
 
 
+let should_analyze_define
+    ~skip_annotated
+    ~global_resolution
+    { Node.value = { Define.signature = { return_annotation; parameters; _ }; _ } as define; _ }
+  =
+  let alias_environment = GlobalResolution.alias_environment global_resolution in
+  let is_missing_or_invalid maybe_expression =
+    let resolve_type expression =
+      expression
+      |> AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+           alias_environment
+    in
+    maybe_expression >>| resolve_type >>| Type.is_untyped |> Option.value ~default:true
+  in
+  let is_parameter_missing_any_or_alias { Node.value = { Parameter.annotation; _ }; _ } =
+    is_missing_or_invalid annotation
+  in
+  (not skip_annotated)
+  || Define.is_toplevel define
+  || Define.is_class_toplevel define
+  || Define.is_constructor define
+  || is_missing_or_invalid return_annotation
+  || parameters |> List.exists ~f:is_parameter_missing_any_or_alias
+
+
 let infer_for_module
+    ?(skip_annotated = true)
     ~configuration
     ~global_resolution
     ~filename_lookup
-    ~source:({ Ast.Source.source_path = { qualifier; _ } as source_path; _ } as source)
+    ({ Ast.Source.source_path = { qualifier; _ } as source_path; _ } as source)
   =
   Log.debug "Running infer for %s..." source_path.relative;
   let check define =
     infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filename_lookup ~define
   in
-  source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check
+  source
+  |> Preprocessing.defines ~include_toplevels:true
+  |> List.filter ~f:(should_analyze_define ~skip_annotated ~global_resolution)
+  |> List.map ~f:check

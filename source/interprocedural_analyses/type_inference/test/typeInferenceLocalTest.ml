@@ -204,7 +204,7 @@ module Setup = struct
     environment, configuration
 
 
-  let run_inference ~context ~target code =
+  let run_inference ?(skip_annotated = false) ~context ~target code =
     let environment, configuration = set_up_project ~context code in
     let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
     let ast_environment = GlobalResolution.ast_environment global_resolution in
@@ -214,21 +214,56 @@ module Setup = struct
     in
     let module_results =
       TypeInference.Local.infer_for_module
+        ~skip_annotated
         ~configuration
         ~global_resolution
         ~filename_lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
-        ~source
+        source
     in
     let is_target local_result =
       let name = LocalResult.define_name local_result in
       Reference.equal name (Reference.create target)
     in
-    let first = function
-      | head :: _ -> head
-      | [] -> failwith ("Could not find target define " ^ target)
-    in
-    module_results |> List.filter ~f:is_target |> first
+    module_results |> List.filter ~f:is_target |> List.hd
+
+
+  let run_inference_exn ~context ~target code =
+    match run_inference ~context ~target code with
+    | Some result -> result
+    | None -> failwith ("Could not find target define " ^ target)
 end
+
+let test_should_analyze_define context =
+  let check_define_skipped ~target code =
+    code
+    |> Setup.run_inference ~skip_annotated:true ~context ~target
+    |> Option.is_none
+    |> assert_bool "Analysis was not skipped as expected"
+  in
+  check_define_skipped {|
+      def foo() -> int:
+          pass
+    |} ~target:"test.foo";
+  check_define_skipped {|
+      def foo(x: str) -> int:
+          pass
+    |} ~target:"test.foo";
+  let check_define_not_skipped ~target code =
+    code
+    |> Setup.run_inference ~context ~target
+    |> Option.is_some
+    |> assert_bool "Analysis was not run as expected"
+  in
+  check_define_not_skipped {|
+      def foo() -> int:
+          pass
+    |} ~target:"test.$toplevel";
+  check_define_not_skipped {|
+      def foo(x: Any) -> int:
+          pass
+    |} ~target:"test.foo";
+  ()
+
 
 let assert_json_equal ~context ~expected result =
   let expected = Yojson.Safe.from_string expected in
@@ -258,7 +293,7 @@ let access_by_path field_path body =
 
 let check_inference_results ?(field_path = []) ~context ~target ~expected code =
   code
-  |> Setup.run_inference ~context ~target
+  |> Setup.run_inference_exn ~context ~target
   |> LocalResult.to_yojson
   |> access_by_path field_path
   |> assert_json_equal ~context ~expected
@@ -277,13 +312,6 @@ let test_inferred_returns context =
     {|
       def foo(x: int):
           return x
-    |}
-    ~target:"test.foo"
-    ~expected:{|"int"|};
-  check_inference_results
-    {|
-      def foo() -> int:
-          pass
     |}
     ~target:"test.foo"
     ~expected:{|"int"|};
@@ -1051,6 +1079,7 @@ let () =
   "typeInferenceLocalTest"
   >::: [
          "test_backward_resolution_handling" >:: test_backward_resolution_handling;
+         "test_should_analyze_define" >:: test_should_analyze_define;
          "test_inferred_returns" >:: test_inferred_returns;
          "test_inferred_function_parameters" >:: test_inferred_function_parameters;
          "test_inferred_method_parameters" >:: test_inferred_method_parameters;

@@ -49,8 +49,9 @@ val empty_infer_for_define
   TypeInferenceData.LocalResult.t
 
 val infer_for_module
-  :  configuration:Configuration.Analysis.t ->
+  :  ?skip_annotated:bool ->
+  configuration:Configuration.Analysis.t ->
   global_resolution:Analysis.GlobalResolution.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
-  source:Ast.Source.t ->
+  Ast.Source.t ->
   TypeInferenceData.LocalResult.t list
