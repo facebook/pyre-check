@@ -20,21 +20,21 @@ let identifier x = x
 let expression_context = PyreAst.TaglessFinal.ExpressionContext.make ~load:() ~store:() ~del:() ()
 
 let constant =
-  let none () = failwith "not implemented yet" in
-  let false_ () = failwith "not implemented yet" in
-  let true_ () = failwith "not implemented yet" in
-  let ellipsis () = failwith "not implemented yet" in
-  let integer _ = failwith "not implemented yet" in
-  let big_integer _ = failwith "not implemented yet" in
-  let float_ _ = failwith "not implemented yet" in
-  let complex _ = failwith "not implemented yet" in
-  let string_ _ = failwith "not implemented yet" in
-  let byte_string _ = failwith "not implemented yet" in
+  let open Ast.Expression in
+  let integer i = Constant.Integer i in
+  let big_integer _ =
+    (* TODO (T102723192): We should probably mark this case properly. *)
+    Constant.Integer Int.max_value
+  in
+  let float_ f = Constant.Float f in
+  let complex f = Constant.Complex f in
+  let string_ s = Constant.String (StringLiteral.create s) in
+  let byte_string s = Constant.String (StringLiteral.create ~bytes:true s) in
   PyreAst.TaglessFinal.Constant.make
-    ~none
-    ~false_
-    ~true_
-    ~ellipsis
+    ~none:Constant.NoneLiteral
+    ~false_:Constant.False
+    ~true_:Constant.True
+    ~ellipsis:Constant.Ellipsis
     ~integer
     ~big_integer
     ~float_
@@ -150,7 +150,7 @@ let expression =
     failwith "not implemented yet"
   in
   let joined_str ~location:_ ~values:_ = failwith "not implemented yet" in
-  let constant ~location:_ ~value:_ ~kind:_ = failwith "not implemented yet" in
+  let constant ~location ~value ~kind:_ = Expression.Constant value |> Node.create ~location in
   let attribute ~location:_ ~value:_ ~attr:_ ~ctx:() = failwith "not implemented yet" in
   let subscript ~location:_ ~value:_ ~slice:_ ~ctx:() = failwith "not implemented yet" in
   let starred ~location:_ ~value:_ ~ctx:() = failwith "not implemented yet" in
