@@ -228,7 +228,91 @@ let test_fstring _ =
   PyreNewParser.with_context do_test
 
 
+let test_await_yield _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed "await x" ~expected:(+Expression.Await !"x");
+    assert_parsed "(yield)" ~expected:(+Expression.Yield None);
+    assert_parsed
+      "(yield 1)"
+      ~expected:(+Expression.Yield (Some (+Expression.Constant (Constant.Integer 1))));
+    assert_parsed "(yield from x)" ~expected:(+Expression.YieldFrom !"x");
+    assert_parsed "(yield (await x))" ~expected:(+Expression.Yield (Some (+Expression.Await !"x")));
+    assert_parsed "await (yield from x)" ~expected:(+Expression.Await (+Expression.YieldFrom !"x"));
+
+    assert_not_parsed "await";
+    (* Standalone yield/yield from expressions are required to be protected with parenthesis. *)
+    assert_not_parsed "yield";
+    assert_not_parsed "yield from";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
+let test_ternary_walrus _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "1 if 2 else 3"
+      ~expected:
+        (+Expression.Ternary
+            {
+              Ternary.target = +Expression.Constant (Constant.Integer 1);
+              test = +Expression.Constant (Constant.Integer 2);
+              alternative = +Expression.Constant (Constant.Integer 3);
+            });
+    assert_parsed
+      "1 if 2 else 3 if 4 else 5"
+      ~expected:
+        (+Expression.Ternary
+            {
+              Ternary.target = +Expression.Constant (Constant.Integer 1);
+              test = +Expression.Constant (Constant.Integer 2);
+              alternative =
+                +Expression.Ternary
+                   {
+                     Ternary.target = +Expression.Constant (Constant.Integer 3);
+                     test = +Expression.Constant (Constant.Integer 4);
+                     alternative = +Expression.Constant (Constant.Integer 5);
+                   };
+            });
+    assert_parsed
+      "(a := 1)"
+      ~expected:
+        (+Expression.WalrusOperator
+            { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
+    assert_parsed
+      "(a := (b := 1))"
+      ~expected:
+        (+Expression.WalrusOperator
+            {
+              target = !"a";
+              value =
+                +Expression.WalrusOperator
+                   { target = !"b"; value = +Expression.Constant (Constant.Integer 1) };
+            });
+
+    (* Standalone assignment expressions are required to be protected with parenthesis. *)
+    assert_not_parsed "a := 1";
+    assert_not_parsed "(a := 1) := 2";
+    assert_not_parsed "(a.b := 1)";
+    assert_not_parsed "(a[b] := 1)";
+    assert_not_parsed "((a, b) := 1)";
+    assert_not_parsed "([a, b] := 1)";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_expression"
-  >::: ["name" >:: test_name; "constant" >:: test_constant; "fstring" >:: test_fstring]
+  >::: [
+         "name" >:: test_name;
+         "constant" >:: test_constant;
+         "fstring" >:: test_fstring;
+         "await_yield" >:: test_await_yield;
+         "ternary_walrus" >:: test_ternary_walrus;
+       ]
   |> Test.run

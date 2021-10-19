@@ -130,20 +130,27 @@ let expression =
   let open Ast.Expression in
   let module Node = Ast.Node in
   let bool_op ~location:_ ~op:_ ~values:_ = failwith "not implemented yet" in
-  let named_expr ~location:_ ~target:_ ~value:_ = failwith "not implemented yet" in
+  let named_expr ~location ~target ~value =
+    (* TODO(T47589601): `target` can be strenghthened into `Identifier.t` if qualification is
+       removed. *)
+    Expression.WalrusOperator { WalrusOperator.target; value } |> Node.create ~location
+  in
   let bin_op ~location:_ ~left:_ ~op:_ ~right:_ = failwith "not implemented yet" in
   let unary_op ~location:_ ~op:_ ~operand:_ = failwith "not implemented yet" in
   let lambda ~location:_ ~args:_ ~body:_ = failwith "not implemented yet" in
-  let if_exp ~location:_ ~test:_ ~body:_ ~orelse:_ = failwith "not implemented yet" in
+  let if_exp ~location ~test ~body ~orelse =
+    Expression.Ternary { Ternary.target = body; test; alternative = orelse }
+    |> Node.create ~location
+  in
   let dict ~location:_ ~keys:_ ~values:_ = failwith "not implemented yet" in
   let set ~location:_ ~elts:_ = failwith "not implemented yet" in
   let list_comp ~location:_ ~elt:_ ~generators:_ = failwith "not implemented yet" in
   let set_comp ~location:_ ~elt:_ ~generators:_ = failwith "not implemented yet" in
   let dict_comp ~location:_ ~key:_ ~value:_ ~generators:_ = failwith "not implemented yet" in
   let generator_exp ~location:_ ~elt:_ ~generators:_ = failwith "not implemented yet" in
-  let await ~location:_ ~value:_ = failwith "not implemented yet" in
-  let yield ~location:_ ~value:_ = failwith "not implemented yet" in
-  let yield_from ~location:_ ~value:_ = failwith "not implemented yet" in
+  let await ~location ~value = Expression.Await value |> Node.create ~location in
+  let yield ~location ~value = Expression.Yield value |> Node.create ~location in
+  let yield_from ~location ~value = Expression.YieldFrom value |> Node.create ~location in
   let compare ~location:_ ~left:_ ~ops:_ ~comparators:_ = failwith "not implemented yet" in
   let call ~location:_ ~func:_ ~args:_ ~keywords:_ = failwith "not implemented yet" in
   let formatted_value ~location ~value ~conversion:_ ~format_spec:_ =
