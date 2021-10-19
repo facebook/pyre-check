@@ -146,10 +146,21 @@ let expression =
   let yield_from ~location:_ ~value:_ = failwith "not implemented yet" in
   let compare ~location:_ ~left:_ ~ops:_ ~comparators:_ = failwith "not implemented yet" in
   let call ~location:_ ~func:_ ~args:_ ~keywords:_ = failwith "not implemented yet" in
-  let formatted_value ~location:_ ~value:_ ~conversion:_ ~format_spec:_ =
-    failwith "not implemented yet"
+  let formatted_value ~location ~value ~conversion:_ ~format_spec:_ =
+    Expression.FormatString [Substring.Format value] |> Node.create ~location
   in
-  let joined_str ~location:_ ~values:_ = failwith "not implemented yet" in
+  let joined_str ~location ~values =
+    let collapse_formatted_value ({ Node.value; location } as expression) =
+      match value with
+      | Expression.Constant (Constant.String { StringLiteral.kind = String; value }) ->
+          Substring.Literal (Node.create ~location value)
+      | Expression.FormatString [substring] -> substring
+      | _ ->
+          (* NOTE (grievejia): It may be impossible for CPython parser to reach this branch *)
+          Substring.Format expression
+    in
+    Expression.FormatString (List.map values ~f:collapse_formatted_value) |> Node.create ~location
+  in
   let constant ~location ~value ~kind:_ = Expression.Constant value |> Node.create ~location in
   let attribute ~location:_ ~value:_ ~attr:_ ~ctx:() = failwith "not implemented yet" in
   let subscript ~location:_ ~value:_ ~slice:_ ~ctx:() = failwith "not implemented yet" in
