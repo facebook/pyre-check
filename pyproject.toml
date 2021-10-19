@@ -28,3 +28,11 @@ commands =
     usort check client scripts tools
     flake8 client scripts tools
 """
+[tool.ufmt]
+excludes = [
+    "documentation/",
+    "generate_taint_models/",
+    "scripts/",
+    "source/",
+    "stubs/"
+]
