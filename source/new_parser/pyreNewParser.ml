@@ -114,7 +114,14 @@ let comparison_operator =
     ()
 
 
-let comprehension ~target:_ ~iter:_ ~ifs:_ ~is_async:_ = failwith "not implemented yet"
+let comprehension ~target ~iter ~ifs ~is_async =
+  {
+    Ast.Expression.Comprehension.Generator.target;
+    iterator = iter;
+    conditions = ifs;
+    async = is_async;
+  }
+
 
 let keyword ~location:_ ~arg:_ ~value:_ = failwith "not implemented yet"
 
@@ -154,10 +161,21 @@ let expression =
     Expression.Dictionary { Dictionary.entries; keywords } |> Node.create ~location
   in
   let set ~location ~elts = Expression.Set elts |> Node.create ~location in
-  let list_comp ~location:_ ~elt:_ ~generators:_ = failwith "not implemented yet" in
-  let set_comp ~location:_ ~elt:_ ~generators:_ = failwith "not implemented yet" in
-  let dict_comp ~location:_ ~key:_ ~value:_ ~generators:_ = failwith "not implemented yet" in
-  let generator_exp ~location:_ ~elt:_ ~generators:_ = failwith "not implemented yet" in
+  let list_comp ~location ~elt ~generators =
+    Expression.ListComprehension { Comprehension.element = elt; generators }
+    |> Node.create ~location
+  in
+  let set_comp ~location ~elt ~generators =
+    Expression.SetComprehension { Comprehension.element = elt; generators } |> Node.create ~location
+  in
+  let dict_comp ~location ~key ~value ~generators =
+    Expression.DictionaryComprehension
+      { Comprehension.element = { Dictionary.Entry.key; value }; generators }
+    |> Node.create ~location
+  in
+  let generator_exp ~location ~elt ~generators =
+    Expression.Generator { Comprehension.element = elt; generators } |> Node.create ~location
+  in
   let await ~location ~value = Expression.Await value |> Node.create ~location in
   let yield ~location ~value = Expression.Yield value |> Node.create ~location in
   let yield_from ~location ~value = Expression.YieldFrom value |> Node.create ~location in
