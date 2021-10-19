@@ -1087,10 +1087,9 @@ let legacy_infer_for_define
 
 
 let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filename_lookup ~define =
-  let abstract =
-    let { Node.value = { Define.signature; _ }; _ } = define in
-    Define.Signature.is_abstract_method signature
-  in
+  let timer = Timer.start () in
+  let { Node.location; value = { Define.signature; _ } } = define in
+  let abstract = Define.Signature.is_abstract_method signature in
   let error_to_inference { AnalysisError.location; kind; _ } =
     let open AnalysisError in
     match kind with
@@ -1114,10 +1113,29 @@ let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filen
         raw |> Inference.create |> LocalResult.add_inference ~global_resolution ~lookup result
   in
   let errors = legacy_infer_for_define ~configuration ~global_resolution ~source ~define in
-  List.fold
-    ~init:(LocalResult.from_signature ~global_resolution ~lookup:filename_lookup ~qualifier define)
-    ~f:(add_missing_annotation_error ~global_resolution ~lookup:filename_lookup)
-    errors
+  let result =
+    List.fold
+      ~init:
+        (LocalResult.from_signature ~global_resolution ~lookup:filename_lookup ~qualifier define)
+      ~f:(add_missing_annotation_error ~global_resolution ~lookup:filename_lookup)
+      errors
+  in
+  let number_of_lines = location.stop.line - location.start.line + 1 in
+  Statistics.performance
+    ~flush:false
+    ~randomly_log_every:1
+    ~section:`Infer
+    ~name:"SingleDefineInfer"
+    ~timer
+    ~normals:
+      [
+        "name", Reference.show signature.name;
+        "path", filename_lookup qualifier |> Option.value ~default:"*";
+        "request kind", "SingleDefineInfer";
+      ]
+    ~integers:["number of lines", number_of_lines; "line", location.start.line]
+    ();
+  result
 
 
 let empty_infer_for_define ~global_resolution ~qualifier ~define =

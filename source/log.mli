@@ -30,6 +30,7 @@ type section =
   | `Event
   | `Fixpoint
   | `Info
+  | `Infer
   | `Interprocedural
   | `Memory
   | `Performance

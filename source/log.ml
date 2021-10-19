@@ -18,6 +18,7 @@ type section =
   | `Error
   | `Event
   | `Fixpoint
+  | `Infer
   | `Info
   | `Interprocedural
   | `Memory
@@ -41,6 +42,7 @@ let section_to_string = function
   | `Event -> "Event"
   | `Fixpoint -> "Fixpoint"
   | `Info -> "Info"
+  | `Infer -> "Infer"
   | `Interprocedural -> "Interprocedural"
   | `Memory -> "Memory"
   | `Performance -> "Performance"
