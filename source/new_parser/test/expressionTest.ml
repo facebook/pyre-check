@@ -786,6 +786,102 @@ let test_starred _ =
   PyreNewParser.with_context do_test
 
 
+let test_boolean_operators _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "True and False"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left = +Expression.Constant Constant.True;
+              operator = BooleanOperator.And;
+              right = +Expression.Constant Constant.False;
+            });
+    assert_parsed
+      "True or False"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left = +Expression.Constant Constant.True;
+              operator = BooleanOperator.Or;
+              right = +Expression.Constant Constant.False;
+            });
+    assert_parsed
+      "1 and 2 and 3"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left =
+                +Expression.BooleanOperator
+                   {
+                     BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
+                     operator = BooleanOperator.And;
+                     right = +Expression.Constant (Constant.Integer 2);
+                   };
+              operator = BooleanOperator.And;
+              right = +Expression.Constant (Constant.Integer 3);
+            });
+    assert_parsed
+      "1 or 2 or 3"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left =
+                +Expression.BooleanOperator
+                   {
+                     BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
+                     operator = BooleanOperator.Or;
+                     right = +Expression.Constant (Constant.Integer 2);
+                   };
+              operator = BooleanOperator.Or;
+              right = +Expression.Constant (Constant.Integer 3);
+            });
+    assert_parsed
+      "1 and 2 or 3"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left =
+                +Expression.BooleanOperator
+                   {
+                     BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
+                     operator = BooleanOperator.And;
+                     right = +Expression.Constant (Constant.Integer 2);
+                   };
+              operator = BooleanOperator.Or;
+              right = +Expression.Constant (Constant.Integer 3);
+            });
+    (* `and` has higher precedence than `or` *)
+    assert_parsed
+      "1 or 2 and 3"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
+              operator = BooleanOperator.Or;
+              right =
+                +Expression.BooleanOperator
+                   {
+                     BooleanOperator.left = +Expression.Constant (Constant.Integer 2);
+                     operator = BooleanOperator.And;
+                     right = +Expression.Constant (Constant.Integer 3);
+                   };
+            });
+
+    assert_not_parsed "and";
+    assert_not_parsed "or";
+    assert_not_parsed "and or";
+    assert_not_parsed "True and";
+    assert_not_parsed "and True";
+    assert_not_parsed "True or";
+    assert_not_parsed "or True";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_expression"
   >::: [
@@ -798,5 +894,6 @@ let () =
          "container_literals" >:: test_container_literals;
          "comprehensions" >:: test_comprehensions;
          "starred" >:: test_starred;
+         "boolean_operators" >:: test_boolean_operators;
        ]
   |> Test.run

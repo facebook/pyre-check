@@ -45,9 +45,8 @@ let constant =
 
 
 let boolean_operator =
-  let and_ () = failwith "not implemented yet" in
-  let or_ () = failwith "not implemented yet" in
-  PyreAst.TaglessFinal.BooleanOperator.make ~and_ ~or_ ()
+  let open Ast.Expression in
+  PyreAst.TaglessFinal.BooleanOperator.make ~and_:BooleanOperator.And ~or_:BooleanOperator.Or ()
 
 
 let binary_operator =
@@ -136,7 +135,30 @@ let arguments ~posonlyargs:_ ~args:_ ~vararg:_ ~kwonlyargs:_ ~kw_defaults:_ ~kwa
 let expression =
   let open Ast.Expression in
   let module Node = Ast.Node in
-  let bool_op ~location:_ ~op:_ ~values:_ = failwith "not implemented yet" in
+  let bool_op ~location ~op ~values =
+    match values with
+    | [] ->
+        (* NOTE(grievejia): I don't think the CPython parser will give us empty boolean operands.
+           Doing this just to be safe. *)
+        let default_value =
+          match op with
+          | BooleanOperator.And -> Constant.True
+          | BooleanOperator.Or -> Constant.False
+        in
+        Expression.Constant default_value |> Node.create ~location
+    | [value] -> value
+    | first :: second :: rest ->
+        (* Boolean operators are left-associative *)
+        let init =
+          Expression.BooleanOperator { BooleanOperator.left = first; operator = op; right = second }
+          |> Node.create ~location:{ location with stop = second.location.stop }
+        in
+        let f sofar next =
+          Expression.BooleanOperator { BooleanOperator.left = sofar; operator = op; right = next }
+          |> Node.create ~location:{ location with stop = next.location.stop }
+        in
+        List.fold rest ~init ~f
+  in
   let named_expr ~location ~target ~value =
     (* TODO(T47589601): `target` can be strenghthened into `Identifier.t` if qualification is
        removed. *)
