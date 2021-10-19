@@ -142,8 +142,18 @@ let expression =
     Expression.Ternary { Ternary.target = body; test; alternative = orelse }
     |> Node.create ~location
   in
-  let dict ~location:_ ~keys:_ ~values:_ = failwith "not implemented yet" in
-  let set ~location:_ ~elts:_ = failwith "not implemented yet" in
+  let dict ~location ~keys ~values =
+    let entries, keywords =
+      (* `keys` and `values` are guaranteed by CPython parser to be of the same length. *)
+      List.zip_exn keys values
+      |> List.partition_map ~f:(fun (key, value) ->
+             match key with
+             | None -> Either.Second value
+             | Some key -> Either.First { Dictionary.Entry.key; value })
+    in
+    Expression.Dictionary { Dictionary.entries; keywords } |> Node.create ~location
+  in
+  let set ~location ~elts = Expression.Set elts |> Node.create ~location in
   let list_comp ~location:_ ~elt:_ ~generators:_ = failwith "not implemented yet" in
   let set_comp ~location:_ ~elt:_ ~generators:_ = failwith "not implemented yet" in
   let dict_comp ~location:_ ~key:_ ~value:_ ~generators:_ = failwith "not implemented yet" in
@@ -173,8 +183,8 @@ let expression =
   let subscript ~location:_ ~value:_ ~slice:_ ~ctx:() = failwith "not implemented yet" in
   let starred ~location:_ ~value:_ ~ctx:() = failwith "not implemented yet" in
   let name ~location ~id ~ctx:() = Expression.Name (Name.Identifier id) |> Node.create ~location in
-  let list ~location:_ ~elts:_ ~ctx:() = failwith "not implemented yet" in
-  let tuple ~location:_ ~elts:_ ~ctx:() = failwith "not implemented yet" in
+  let list ~location ~elts ~ctx:() = Expression.List elts |> Node.create ~location in
+  let tuple ~location ~elts ~ctx:() = Expression.Tuple elts |> Node.create ~location in
   let slice ~location:_ ~lower:_ ~upper:_ ~step:_ = failwith "not implemented yet" in
   PyreAst.TaglessFinal.Expression.make
     ~bool_op

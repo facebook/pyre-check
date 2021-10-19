@@ -306,6 +306,205 @@ let test_ternary_walrus _ =
   PyreNewParser.with_context do_test
 
 
+let test_container_literals _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed "()" ~expected:(+Expression.Tuple []);
+    (* The outer parens will *NOT* be interpreted as another layer of tuple. *)
+    assert_parsed "(())" ~expected:(+Expression.Tuple []);
+    assert_parsed "((),)" ~expected:(+Expression.Tuple [+Expression.Tuple []]);
+    assert_parsed "1," ~expected:(+Expression.Tuple [+Expression.Constant (Constant.Integer 1)]);
+    assert_parsed "(1,)" ~expected:(+Expression.Tuple [+Expression.Constant (Constant.Integer 1)]);
+    assert_parsed
+      "1,2"
+      ~expected:
+        (+Expression.Tuple
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    assert_parsed
+      "1,2,"
+      ~expected:
+        (+Expression.Tuple
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    assert_parsed
+      "(1,2)"
+      ~expected:
+        (+Expression.Tuple
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    assert_parsed
+      "(\n\t1,\n\t2\n)"
+      ~expected:
+        (+Expression.Tuple
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+
+    assert_parsed "[]" ~expected:(+Expression.List []);
+    assert_parsed "[[]]" ~expected:(+Expression.List [+Expression.List []]);
+    assert_parsed "[1]" ~expected:(+Expression.List [+Expression.Constant (Constant.Integer 1)]);
+    assert_parsed "[1,]" ~expected:(+Expression.List [+Expression.Constant (Constant.Integer 1)]);
+    assert_parsed
+      "[1,2]"
+      ~expected:
+        (+Expression.List
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    assert_parsed
+      "[1,2,]"
+      ~expected:
+        (+Expression.List
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    assert_parsed
+      "[\n\t1,\n\t2\n]"
+      ~expected:
+        (+Expression.List
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+
+    assert_parsed "{1}" ~expected:(+Expression.Set [+Expression.Constant (Constant.Integer 1)]);
+    assert_parsed "{1,}" ~expected:(+Expression.Set [+Expression.Constant (Constant.Integer 1)]);
+    assert_parsed
+      "{1,2}"
+      ~expected:
+        (+Expression.Set
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    assert_parsed
+      "{1,2,}"
+      ~expected:
+        (+Expression.Set
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+    assert_parsed
+      "{\n\t1,\n\t2\n}"
+      ~expected:
+        (+Expression.Set
+            [+Expression.Constant (Constant.Integer 1); +Expression.Constant (Constant.Integer 2)]);
+
+    assert_parsed "{}" ~expected:(+Expression.Dictionary { Dictionary.entries = []; keywords = [] });
+    assert_parsed
+      "{{}}"
+      ~expected:
+        (+Expression.Set [+Expression.Dictionary { Dictionary.entries = []; keywords = [] }]);
+    assert_parsed
+      "{1:2}"
+      ~expected:
+        (+Expression.Dictionary
+            {
+              Dictionary.entries =
+                [
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                    value = +Expression.Constant (Constant.Integer 2);
+                  };
+                ];
+              keywords = [];
+            });
+    assert_parsed
+      "{1:2,}"
+      ~expected:
+        (+Expression.Dictionary
+            {
+              Dictionary.entries =
+                [
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                    value = +Expression.Constant (Constant.Integer 2);
+                  };
+                ];
+              keywords = [];
+            });
+    assert_parsed
+      "{1:2,3:4}"
+      ~expected:
+        (+Expression.Dictionary
+            {
+              Dictionary.entries =
+                [
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                    value = +Expression.Constant (Constant.Integer 2);
+                  };
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 3);
+                    value = +Expression.Constant (Constant.Integer 4);
+                  };
+                ];
+              keywords = [];
+            });
+    assert_parsed
+      "{1:2,3:4,}"
+      ~expected:
+        (+Expression.Dictionary
+            {
+              Dictionary.entries =
+                [
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                    value = +Expression.Constant (Constant.Integer 2);
+                  };
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 3);
+                    value = +Expression.Constant (Constant.Integer 4);
+                  };
+                ];
+              keywords = [];
+            });
+    assert_parsed
+      "{\n\t1:2,\n\t3:4\n}"
+      ~expected:
+        (+Expression.Dictionary
+            {
+              Dictionary.entries =
+                [
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                    value = +Expression.Constant (Constant.Integer 2);
+                  };
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 3);
+                    value = +Expression.Constant (Constant.Integer 4);
+                  };
+                ];
+              keywords = [];
+            });
+    assert_parsed
+      "{**foo}"
+      ~expected:(+Expression.Dictionary { Dictionary.entries = []; keywords = [!"foo"] });
+    assert_parsed
+      "{**foo, **bar}"
+      ~expected:(+Expression.Dictionary { Dictionary.entries = []; keywords = [!"foo"; !"bar"] });
+    assert_parsed
+      "{**foo, 1:2}"
+      ~expected:
+        (+Expression.Dictionary
+            {
+              Dictionary.entries =
+                [
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                    value = +Expression.Constant (Constant.Integer 2);
+                  };
+                ];
+              keywords = [!"foo"];
+            });
+    assert_parsed
+      "{1:2,**foo}"
+      ~expected:
+        (+Expression.Dictionary
+            {
+              Dictionary.entries =
+                [
+                  {
+                    Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
+                    value = +Expression.Constant (Constant.Integer 2);
+                  };
+                ];
+              keywords = [!"foo"];
+            });
+
+    assert_not_parsed "(1,2";
+    assert_not_parsed "[1,2";
+    assert_not_parsed "{1,2";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_expression"
   >::: [
@@ -314,5 +513,6 @@ let () =
          "fstring" >:: test_fstring;
          "await_yield" >:: test_await_yield;
          "ternary_walrus" >:: test_ternary_walrus;
+         "container_literals" >:: test_container_literals;
        ]
   |> Test.run
