@@ -91,27 +91,18 @@ let unary_operator =
 
 
 let comparison_operator =
-  let eq () = failwith "not implemented yet" in
-  let noteq () = failwith "not implemented yet" in
-  let lt () = failwith "not implemented yet" in
-  let lte () = failwith "not implemented yet" in
-  let gt () = failwith "not implemented yet" in
-  let gte () = failwith "not implemented yet" in
-  let is () = failwith "not implemented yet" in
-  let isnot () = failwith "not implemented yet" in
-  let in_ () = failwith "not implemented yet" in
-  let notin () = failwith "not implemented yet" in
+  let open Ast.Expression in
   PyreAst.TaglessFinal.ComparisonOperator.make
-    ~eq
-    ~noteq
-    ~lt
-    ~lte
-    ~gt
-    ~gte
-    ~is
-    ~isnot
-    ~in_
-    ~notin
+    ~eq:ComparisonOperator.Equals
+    ~noteq:ComparisonOperator.NotEquals
+    ~lt:ComparisonOperator.LessThan
+    ~lte:ComparisonOperator.LessThanOrEquals
+    ~gt:ComparisonOperator.GreaterThan
+    ~gte:ComparisonOperator.GreaterThanOrEquals
+    ~is:ComparisonOperator.Is
+    ~isnot:ComparisonOperator.IsNot
+    ~in_:ComparisonOperator.In
+    ~notin:ComparisonOperator.NotIn
     ()
 
 
@@ -205,7 +196,34 @@ let expression =
   let await ~location ~value = Expression.Await value |> Node.create ~location in
   let yield ~location ~value = Expression.Yield value |> Node.create ~location in
   let yield_from ~location ~value = Expression.YieldFrom value |> Node.create ~location in
-  let compare ~location:_ ~left:_ ~ops:_ ~comparators:_ = failwith "not implemented yet" in
+  let compare ~location ~left ~ops ~comparators =
+    let f (sofar, last) (operator, next) =
+      (* NOTE(grievejia): This is not 100% accurate since `last` is never evaluated more than once
+         at runtime. But it's a fairly close approximation. *)
+      let right =
+        Expression.ComparisonOperator { ComparisonOperator.left = last; operator; right = next }
+        |> Node.create
+             ~location:{ Ast.Location.start = last.location.start; stop = next.location.stop }
+      in
+      let sofar =
+        Expression.BooleanOperator
+          { BooleanOperator.left = sofar; operator = BooleanOperator.And; right }
+        |> Node.create ~location:{ location with stop = right.location.stop }
+      in
+      sofar, next
+    in
+    (* `ops` and `comparators` are guaranteed by CPython parser to be of the same length. *)
+    List.zip_exn ops comparators
+    |> function
+    | [] -> left
+    | (operator, right) :: rest ->
+        let first_operand =
+          Expression.ComparisonOperator { ComparisonOperator.left; operator; right }
+          |> Node.create ~location:{ location with stop = right.location.stop }
+        in
+        let result, _ = List.fold ~init:(first_operand, right) ~f rest in
+        result
+  in
   let call ~location:_ ~func:_ ~args:_ ~keywords:_ = failwith "not implemented yet" in
   let formatted_value ~location ~value ~conversion:_ ~format_spec:_ =
     Expression.FormatString [Substring.Format value] |> Node.create ~location

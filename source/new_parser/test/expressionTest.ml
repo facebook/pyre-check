@@ -970,6 +970,173 @@ let test_unary_operators _ =
   PyreNewParser.with_context do_test
 
 
+let test_comparison_operators _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    assert_parsed
+      "a == b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            { ComparisonOperator.left = !"a"; operator = ComparisonOperator.Equals; right = !"b" });
+    assert_parsed
+      "a != b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            {
+              ComparisonOperator.left = !"a";
+              operator = ComparisonOperator.NotEquals;
+              right = !"b";
+            });
+    assert_parsed
+      "a < b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            { ComparisonOperator.left = !"a"; operator = ComparisonOperator.LessThan; right = !"b" });
+    assert_parsed
+      "a <= b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            {
+              ComparisonOperator.left = !"a";
+              operator = ComparisonOperator.LessThanOrEquals;
+              right = !"b";
+            });
+    assert_parsed
+      "a > b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            {
+              ComparisonOperator.left = !"a";
+              operator = ComparisonOperator.GreaterThan;
+              right = !"b";
+            });
+    assert_parsed
+      "a >= b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            {
+              ComparisonOperator.left = !"a";
+              operator = ComparisonOperator.GreaterThanOrEquals;
+              right = !"b";
+            });
+    assert_parsed
+      "a is b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            { ComparisonOperator.left = !"a"; operator = ComparisonOperator.Is; right = !"b" });
+    assert_parsed
+      "a is not b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            { ComparisonOperator.left = !"a"; operator = ComparisonOperator.IsNot; right = !"b" });
+    assert_parsed
+      "a in b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            { ComparisonOperator.left = !"a"; operator = ComparisonOperator.In; right = !"b" });
+    assert_parsed
+      "a not in b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            { ComparisonOperator.left = !"a"; operator = ComparisonOperator.NotIn; right = !"b" });
+    assert_parsed
+      "a < b < c"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left =
+                +Expression.ComparisonOperator
+                   {
+                     ComparisonOperator.left = !"a";
+                     operator = ComparisonOperator.LessThan;
+                     right = !"b";
+                   };
+              operator = BooleanOperator.And;
+              right =
+                +Expression.ComparisonOperator
+                   {
+                     ComparisonOperator.left = !"b";
+                     operator = ComparisonOperator.LessThan;
+                     right = !"c";
+                   };
+            });
+    (* Comparisions bind tighter than `not` *)
+    assert_parsed
+      "not a in b"
+      ~expected:
+        (+Expression.UnaryOperator
+            {
+              UnaryOperator.operator = UnaryOperator.Not;
+              operand =
+                +Expression.ComparisonOperator
+                   {
+                     ComparisonOperator.left = !"a";
+                     operator = ComparisonOperator.In;
+                     right = !"b";
+                   };
+            });
+    (* Comparisions bind tighter than `and`/`or` *)
+    assert_parsed
+      "a < b and b < c"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left =
+                +Expression.ComparisonOperator
+                   {
+                     ComparisonOperator.left = !"a";
+                     operator = ComparisonOperator.LessThan;
+                     right = !"b";
+                   };
+              operator = BooleanOperator.And;
+              right =
+                +Expression.ComparisonOperator
+                   {
+                     ComparisonOperator.left = !"b";
+                     operator = ComparisonOperator.LessThan;
+                     right = !"c";
+                   };
+            });
+    assert_parsed
+      "a < b or b < c"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left =
+                +Expression.ComparisonOperator
+                   {
+                     ComparisonOperator.left = !"a";
+                     operator = ComparisonOperator.LessThan;
+                     right = !"b";
+                   };
+              operator = BooleanOperator.Or;
+              right =
+                +Expression.ComparisonOperator
+                   {
+                     ComparisonOperator.left = !"b";
+                     operator = ComparisonOperator.LessThan;
+                     right = !"c";
+                   };
+            });
+    (* Comparisions bind looser than `+`/`-` *)
+    assert_parsed
+      "+a >= -b"
+      ~expected:
+        (+Expression.ComparisonOperator
+            {
+              ComparisonOperator.left =
+                +Expression.UnaryOperator
+                   { UnaryOperator.operator = UnaryOperator.Positive; operand = !"a" };
+              operator = ComparisonOperator.GreaterThanOrEquals;
+              right =
+                +Expression.UnaryOperator
+                   { UnaryOperator.operator = UnaryOperator.Negative; operand = !"b" };
+            });
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_expression"
   >::: [
@@ -984,5 +1151,6 @@ let () =
          "starred" >:: test_starred;
          "boolean_operators" >:: test_boolean_operators;
          "unary_operators" >:: test_unary_operators;
+         "comparison_operators" >:: test_comparison_operators;
        ]
   |> Test.run
