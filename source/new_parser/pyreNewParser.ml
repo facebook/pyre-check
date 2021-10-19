@@ -197,7 +197,11 @@ let expression =
     Expression.FormatString (List.map values ~f:collapse_formatted_value) |> Node.create ~location
   in
   let constant ~location ~value ~kind:_ = Expression.Constant value |> Node.create ~location in
-  let attribute ~location:_ ~value:_ ~attr:_ ~ctx:() = failwith "not implemented yet" in
+  let attribute ~location ~value ~attr ~ctx:() =
+    Expression.Name
+      (Name.Attribute { Name.Attribute.base = value; attribute = attr; special = false })
+    |> Node.create ~location
+  in
   let subscript ~location:_ ~value:_ ~slice:_ ~ctx:() = failwith "not implemented yet" in
   let starred ~location ~value ~ctx:() =
     Expression.Starred (Starred.Once value) |> Node.create ~location

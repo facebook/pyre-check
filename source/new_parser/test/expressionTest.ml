@@ -53,6 +53,49 @@ let test_name _ =
   PyreNewParser.with_context do_test
 
 
+let test_attribute _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "a.b"
+      ~expected:
+        (+Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false }));
+    assert_parsed
+      "a  .  b"
+      ~expected:
+        (+Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false }));
+    assert_parsed
+      "a.b.c"
+      ~expected:
+        (+Expression.Name
+            (Name.Attribute
+               {
+                 base =
+                   +Expression.Name
+                      (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                 attribute = "c";
+                 special = false;
+               }));
+    assert_parsed
+      "1.0.b"
+      ~expected:
+        (+Expression.Name
+            (Name.Attribute
+               {
+                 base = +Expression.Constant (Constant.Float 1.0);
+                 attribute = "b";
+                 special = false;
+               }));
+
+    assert_not_parsed "a.async";
+    assert_not_parsed "a.1";
+    assert_not_parsed "1 .0 .a";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let test_constant _ =
   let do_test context =
     let assert_parsed = assert_parsed ~context in
@@ -747,6 +790,7 @@ let () =
   "parse_expression"
   >::: [
          "name" >:: test_name;
+         "attribute" >:: test_attribute;
          "constant" >:: test_constant;
          "fstring" >:: test_fstring;
          "await_yield" >:: test_await_yield;
