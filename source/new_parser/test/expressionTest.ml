@@ -684,6 +684,65 @@ let test_comprehensions _ =
   PyreNewParser.with_context do_test
 
 
+let test_starred _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+
+    assert_parsed "( *a, )" ~expected:(+Expression.Tuple [+Expression.Starred (Starred.Once !"a")]);
+    assert_parsed
+      "(a, *b)"
+      ~expected:(+Expression.Tuple [!"a"; +Expression.Starred (Starred.Once !"b")]);
+    assert_parsed
+      "( *a, b )"
+      ~expected:(+Expression.Tuple [+Expression.Starred (Starred.Once !"a"); !"b"]);
+    assert_parsed
+      "( *a, *b )"
+      ~expected:
+        (+Expression.Tuple
+            [+Expression.Starred (Starred.Once !"a"); +Expression.Starred (Starred.Once !"b")]);
+
+    assert_parsed "[*a]" ~expected:(+Expression.List [+Expression.Starred (Starred.Once !"a")]);
+    assert_parsed "[*a,]" ~expected:(+Expression.List [+Expression.Starred (Starred.Once !"a")]);
+    assert_parsed
+      "[*a, b]"
+      ~expected:(+Expression.List [+Expression.Starred (Starred.Once !"a"); !"b"]);
+    assert_parsed
+      "[a, *b]"
+      ~expected:(+Expression.List [!"a"; +Expression.Starred (Starred.Once !"b")]);
+    assert_parsed
+      "[*a, *b]"
+      ~expected:
+        (+Expression.List
+            [+Expression.Starred (Starred.Once !"a"); +Expression.Starred (Starred.Once !"b")]);
+
+    assert_parsed "{*a}" ~expected:(+Expression.Set [+Expression.Starred (Starred.Once !"a")]);
+    assert_parsed "{*a,}" ~expected:(+Expression.Set [+Expression.Starred (Starred.Once !"a")]);
+    assert_parsed
+      "{*a, b}"
+      ~expected:(+Expression.Set [+Expression.Starred (Starred.Once !"a"); !"b"]);
+    assert_parsed
+      "{a, *b}"
+      ~expected:(+Expression.Set [!"a"; +Expression.Starred (Starred.Once !"b")]);
+    assert_parsed
+      "{*a, *b}"
+      ~expected:
+        (+Expression.Set
+            [+Expression.Starred (Starred.Once !"a"); +Expression.Starred (Starred.Once !"b")]);
+
+    (* Star expressions cannot appear out-of-context. *)
+    assert_not_parsed "*x";
+    assert_not_parsed "**x";
+    assert_not_parsed "*(x)";
+    assert_not_parsed "*[x]";
+    assert_not_parsed "( *x )";
+    assert_not_parsed "( **x )";
+    assert_not_parsed "[**x]";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_expression"
   >::: [
@@ -694,5 +753,6 @@ let () =
          "ternary_walrus" >:: test_ternary_walrus;
          "container_literals" >:: test_container_literals;
          "comprehensions" >:: test_comprehensions;
+         "starred" >:: test_starred;
        ]
   |> Test.run

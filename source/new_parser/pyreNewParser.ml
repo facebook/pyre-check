@@ -199,7 +199,9 @@ let expression =
   let constant ~location ~value ~kind:_ = Expression.Constant value |> Node.create ~location in
   let attribute ~location:_ ~value:_ ~attr:_ ~ctx:() = failwith "not implemented yet" in
   let subscript ~location:_ ~value:_ ~slice:_ ~ctx:() = failwith "not implemented yet" in
-  let starred ~location:_ ~value:_ ~ctx:() = failwith "not implemented yet" in
+  let starred ~location ~value ~ctx:() =
+    Expression.Starred (Starred.Once value) |> Node.create ~location
+  in
   let name ~location ~id ~ctx:() = Expression.Name (Name.Identifier id) |> Node.create ~location in
   let list ~location ~elts ~ctx:() = Expression.List elts |> Node.create ~location in
   let tuple ~location ~elts ~ctx:() = Expression.Tuple elts |> Node.create ~location in
