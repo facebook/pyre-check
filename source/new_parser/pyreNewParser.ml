@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Base
 module Context = PyreAst.Parser.Context
 module Error = PyreAst.Parser.Error
 
@@ -126,6 +127,8 @@ let arguments ~posonlyargs:_ ~args:_ ~vararg:_ ~kwonlyargs:_ ~kw_defaults:_ ~kwa
 
 
 let expression =
+  let open Ast.Expression in
+  let module Node = Ast.Node in
   let bool_op ~location:_ ~op:_ ~values:_ = failwith "not implemented yet" in
   let named_expr ~location:_ ~target:_ ~value:_ = failwith "not implemented yet" in
   let bin_op ~location:_ ~left:_ ~op:_ ~right:_ = failwith "not implemented yet" in
@@ -151,7 +154,7 @@ let expression =
   let attribute ~location:_ ~value:_ ~attr:_ ~ctx:() = failwith "not implemented yet" in
   let subscript ~location:_ ~value:_ ~slice:_ ~ctx:() = failwith "not implemented yet" in
   let starred ~location:_ ~value:_ ~ctx:() = failwith "not implemented yet" in
-  let name ~location:_ ~id:_ ~ctx:() = failwith "not implemented yet" in
+  let name ~location ~id ~ctx:() = Expression.Name (Name.Identifier id) |> Node.create ~location in
   let list ~location:_ ~elts:_ ~ctx:() = failwith "not implemented yet" in
   let tuple ~location:_ ~elts:_ ~ctx:() = failwith "not implemented yet" in
   let slice ~location:_ ~lower:_ ~upper:_ ~step:_ = failwith "not implemented yet" in
