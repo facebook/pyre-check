@@ -81,11 +81,13 @@ let binary_operator =
 
 
 let unary_operator =
-  let invert () = failwith "not implemented yet" in
-  let not_ () = failwith "not implemented yet" in
-  let uadd () = failwith "not implemented yet" in
-  let usub () = failwith "not implemented yet" in
-  PyreAst.TaglessFinal.UnaryOperator.make ~invert ~not_ ~uadd ~usub ()
+  let open Ast.Expression in
+  PyreAst.TaglessFinal.UnaryOperator.make
+    ~invert:UnaryOperator.Invert
+    ~not_:UnaryOperator.Not
+    ~uadd:UnaryOperator.Positive
+    ~usub:UnaryOperator.Negative
+    ()
 
 
 let comparison_operator =
@@ -165,7 +167,9 @@ let expression =
     Expression.WalrusOperator { WalrusOperator.target; value } |> Node.create ~location
   in
   let bin_op ~location:_ ~left:_ ~op:_ ~right:_ = failwith "not implemented yet" in
-  let unary_op ~location:_ ~op:_ ~operand:_ = failwith "not implemented yet" in
+  let unary_op ~location ~op ~operand =
+    Expression.UnaryOperator { UnaryOperator.operator = op; operand } |> Node.create ~location
+  in
   let lambda ~location:_ ~args:_ ~body:_ = failwith "not implemented yet" in
   let if_exp ~location ~test ~body ~orelse =
     Expression.Ternary { Ternary.target = body; test; alternative = orelse }

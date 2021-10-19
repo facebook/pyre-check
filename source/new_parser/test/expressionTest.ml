@@ -882,6 +882,94 @@ let test_boolean_operators _ =
   PyreNewParser.with_context do_test
 
 
+let test_unary_operators _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "not x"
+      ~expected:
+        (+Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" });
+    assert_parsed
+      "~x"
+      ~expected:
+        (+Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Invert; operand = !"x" });
+    assert_parsed
+      "+x"
+      ~expected:
+        (+Expression.UnaryOperator
+            { UnaryOperator.operator = UnaryOperator.Positive; operand = !"x" });
+    assert_parsed
+      "-x"
+      ~expected:
+        (+Expression.UnaryOperator
+            { UnaryOperator.operator = UnaryOperator.Negative; operand = !"x" });
+    assert_parsed
+      "+-x"
+      ~expected:
+        (+Expression.UnaryOperator
+            {
+              UnaryOperator.operator = UnaryOperator.Positive;
+              operand =
+                +Expression.UnaryOperator
+                   { UnaryOperator.operator = UnaryOperator.Negative; operand = !"x" };
+            });
+    assert_parsed
+      "not ~x"
+      ~expected:
+        (+Expression.UnaryOperator
+            {
+              UnaryOperator.operator = UnaryOperator.Not;
+              operand =
+                +Expression.UnaryOperator
+                   { UnaryOperator.operator = UnaryOperator.Invert; operand = !"x" };
+            });
+    assert_parsed
+      "-(not x)"
+      ~expected:
+        (+Expression.UnaryOperator
+            {
+              UnaryOperator.operator = UnaryOperator.Negative;
+              operand =
+                +Expression.UnaryOperator
+                   { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
+            });
+
+    (* `not` has higher precedence than `and`/`or` *)
+    assert_parsed
+      "not x and y"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left =
+                +Expression.UnaryOperator
+                   { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
+              operator = BooleanOperator.And;
+              right = !"y";
+            });
+    assert_parsed
+      "not x or y"
+      ~expected:
+        (+Expression.BooleanOperator
+            {
+              BooleanOperator.left =
+                +Expression.UnaryOperator
+                   { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
+              operator = BooleanOperator.Or;
+              right = !"y";
+            });
+
+    assert_not_parsed "not";
+    assert_not_parsed "x not";
+    assert_not_parsed "x~";
+    assert_not_parsed "x+";
+    assert_not_parsed "x-";
+    assert_not_parsed "+ not x";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_expression"
   >::: [
@@ -895,5 +983,6 @@ let () =
          "comprehensions" >:: test_comprehensions;
          "starred" >:: test_starred;
          "boolean_operators" >:: test_boolean_operators;
+         "unary_operators" >:: test_unary_operators;
        ]
   |> Test.run
