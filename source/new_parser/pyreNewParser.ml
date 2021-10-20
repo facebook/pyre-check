@@ -436,6 +436,8 @@ let pattern =
 
 
 let statement =
+  let open Ast.Statement in
+  let module Node = Ast.Node in
   let function_def ~location:_ ~name:_ ~args:_ ~body:_ ~decorator_list:_ ~returns:_ ~type_comment:_ =
     failwith "not implemented yet"
   in
@@ -484,9 +486,9 @@ let statement =
   let global ~location:_ ~names:_ = failwith "not implemented yet" in
   let nonlocal ~location:_ ~names:_ = failwith "not implemented yet" in
   let expr ~location:_ ~value:_ = failwith "not implemented yet" in
-  let pass ~location:_ = failwith "not implemented yet" in
-  let break ~location:_ = failwith "not implemented yet" in
-  let continue ~location:_ = failwith "not implemented yet" in
+  let pass ~location = Statement.Pass |> Node.create ~location in
+  let break ~location = Statement.Break |> Node.create ~location in
+  let continue ~location = Statement.Continue |> Node.create ~location in
   PyreAst.TaglessFinal.Statement.make
     ~function_def
     ~async_function_def
