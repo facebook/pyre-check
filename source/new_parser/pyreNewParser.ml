@@ -246,6 +246,7 @@ let expression =
   in
   let call ~location ~func ~args ~keywords =
     let arguments =
+      (* NOTE(T101305324): Ordering between positional and keyword args is artificial. *)
       List.append
         (List.map args ~f:convert_positional_argument)
         (List.map keywords ~f:convert_keyword_argument)
@@ -273,7 +274,17 @@ let expression =
       (Name.Attribute { Name.Attribute.base = value; attribute = attr; special = false })
     |> Node.create ~location
   in
-  let subscript ~location:_ ~value:_ ~slice:_ ~ctx:() = failwith "not implemented yet" in
+  let subscript ~location ~value ~slice ~ctx:() =
+    (* TODO(T101303314): We should avoid lowering subscript expressions at parser phase. *)
+    let callee =
+      let { Node.location = value_location; _ } = value in
+      Expression.Name
+        (Name.Attribute { Name.Attribute.base = value; attribute = "__getitem__"; special = true })
+      |> Node.create ~location:value_location
+    in
+    let arguments = [{ Call.Argument.name = None; value = slice }] in
+    Expression.Call { callee; arguments } |> Node.create ~location
+  in
   let starred ~location ~value ~ctx:() =
     Expression.Starred (Starred.Once value) |> Node.create ~location
   in

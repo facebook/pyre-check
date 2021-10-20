@@ -1530,6 +1530,97 @@ let test_call _ =
   PyreNewParser.with_context do_test
 
 
+let test_subscript _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "a[b]"
+      ~expected:
+        (+Expression.Call
+            {
+              callee =
+                +Expression.Name
+                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+              arguments = [{ Call.Argument.name = None; value = !"b" }];
+            });
+    assert_parsed
+      "a.__getitem__(b)"
+      ~expected:
+        (+Expression.Call
+            {
+              callee =
+                +Expression.Name
+                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = false });
+              arguments = [{ Call.Argument.name = None; value = !"b" }];
+            });
+    assert_parsed
+      "a[(b)]"
+      ~expected:
+        (+Expression.Call
+            {
+              callee =
+                +Expression.Name
+                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+              arguments = [{ Call.Argument.name = None; value = !"b" }];
+            });
+    assert_parsed
+      "a[1 < 2]"
+      ~expected:
+        (+Expression.Call
+            {
+              callee =
+                +Expression.Name
+                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+              arguments =
+                [
+                  {
+                    Call.Argument.name = None;
+                    value =
+                      +Expression.ComparisonOperator
+                         {
+                           ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
+                           operator = ComparisonOperator.LessThan;
+                           right = +Expression.Constant (Constant.Integer 2);
+                         };
+                  };
+                ];
+            });
+    assert_parsed
+      "a[b,c]"
+      ~expected:
+        (+Expression.Call
+            {
+              callee =
+                +Expression.Name
+                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+              arguments = [{ Call.Argument.name = None; value = +Expression.Tuple [!"b"; !"c"] }];
+            });
+    assert_parsed
+      "a[b].c"
+      ~expected:
+        (+Expression.Name
+            (Name.Attribute
+               {
+                 base =
+                   +Expression.Call
+                      {
+                        callee =
+                          +Expression.Name
+                             (Name.Attribute
+                                { base = !"a"; attribute = "__getitem__"; special = true });
+                        arguments = [{ Call.Argument.name = None; value = !"b" }];
+                      };
+                 attribute = "c";
+                 special = false;
+               }));
+
+    assert_not_parsed "a[]";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_expression"
   >::: [
@@ -1547,5 +1638,6 @@ let () =
          "comparison_operators" >:: test_comparison_operators;
          "binary_operators" >:: test_binary_operators;
          "test_call" >:: test_call;
+         "test_subscript" >:: test_subscript;
        ]
   |> Test.run
