@@ -50,33 +50,20 @@ let boolean_operator =
 
 
 let binary_operator =
-  let add () = failwith "not implemented yet" in
-  let sub () = failwith "not implemented yet" in
-  let mult () = failwith "not implemented yet" in
-  let matmult () = failwith "not implemented yet" in
-  let div () = failwith "not implemented yet" in
-  let mod_ () = failwith "not implemented yet" in
-  let pow () = failwith "not implemented yet" in
-  let lshift () = failwith "not implemented yet" in
-  let rshift () = failwith "not implemented yet" in
-  let bitor () = failwith "not implemented yet" in
-  let bitxor () = failwith "not implemented yet" in
-  let bitand () = failwith "not implemented yet" in
-  let floordiv () = failwith "not implemented yet" in
   PyreAst.TaglessFinal.BinaryOperator.make
-    ~add
-    ~sub
-    ~mult
-    ~matmult
-    ~div
-    ~mod_
-    ~pow
-    ~lshift
-    ~rshift
-    ~bitor
-    ~bitxor
-    ~bitand
-    ~floordiv
+    ~add:"add"
+    ~sub:"sub"
+    ~mult:"mul"
+    ~matmult:"matmul"
+    ~div:"truediv"
+    ~mod_:"mod"
+    ~pow:"pow"
+    ~lshift:"lshift"
+    ~rshift:"rshift"
+    ~bitor:"or"
+    ~bitxor:"xor"
+    ~bitand:"and"
+    ~floordiv:"floordiv"
     ()
 
 
@@ -157,7 +144,17 @@ let expression =
        removed. *)
     Expression.WalrusOperator { WalrusOperator.target; value } |> Node.create ~location
   in
-  let bin_op ~location:_ ~left:_ ~op:_ ~right:_ = failwith "not implemented yet" in
+  let bin_op ~location ~left ~op ~right =
+    (* TODO(T101299882): Avoid lowering binary operators in parsing phase. *)
+    let callee =
+      let dunder_name = Caml.Format.sprintf "__%s__" op in
+      Expression.Name
+        (Name.Attribute { base = left; attribute = identifier dunder_name; special = true })
+      |> Node.create ~location
+    in
+    Expression.Call { callee; arguments = [{ Call.Argument.name = None; value = right }] }
+    |> Node.create ~location
+  in
   let unary_op ~location ~op ~operand =
     Expression.UnaryOperator { UnaryOperator.operator = op; operand } |> Node.create ~location
   in
