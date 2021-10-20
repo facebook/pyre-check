@@ -102,7 +102,30 @@ let comprehension ~target ~iter ~ifs ~is_async =
   }
 
 
-let keyword ~location:_ ~arg:_ ~value:_ = failwith "not implemented yet"
+module KeywordArgument = struct
+  type t = {
+    location: Ast.Location.t;
+    name: Ast.Identifier.t option;
+    value: Ast.Expression.t;
+  }
+end
+
+let keyword ~location ~arg ~value = { KeywordArgument.location; name = arg; value }
+
+let convert_positional_argument value = { Ast.Expression.Call.Argument.name = None; value }
+
+let convert_keyword_argument { KeywordArgument.location; name; value } =
+  let open Ast.Expression in
+  let module Node = Ast.Node in
+  match name with
+  | None ->
+      (* CPython quirk: **arg is represented as keyword arg without a name. *)
+      {
+        Call.Argument.name = None;
+        value = Expression.Starred (Starred.Twice value) |> Node.create ~location;
+      }
+  | Some keyword_name -> { Call.Argument.name = Some (Node.create ~location keyword_name); value }
+
 
 let argument ~location:_ ~identifier:_ ~annotation:_ ~type_comment:_ =
   failwith "not implemented yet"
@@ -221,7 +244,14 @@ let expression =
         let result, _ = List.fold ~init:(first_operand, right) ~f rest in
         result
   in
-  let call ~location:_ ~func:_ ~args:_ ~keywords:_ = failwith "not implemented yet" in
+  let call ~location ~func ~args ~keywords =
+    let arguments =
+      List.append
+        (List.map args ~f:convert_positional_argument)
+        (List.map keywords ~f:convert_keyword_argument)
+    in
+    Expression.Call { callee = func; arguments } |> Node.create ~location
+  in
   let formatted_value ~location ~value ~conversion:_ ~format_spec:_ =
     Expression.FormatString [Substring.Format value] |> Node.create ~location
   in
