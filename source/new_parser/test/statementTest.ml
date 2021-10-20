@@ -47,4 +47,26 @@ let test_pass_break_continue _ =
   PyreNewParser.with_context do_test
 
 
-let () = "parse_statements" >::: ["pass_break_continue" >:: test_pass_break_continue] |> Test.run
+let test_global_nonlocal _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed "global a" ~expected:[+Statement.Global ["a"]];
+    assert_parsed "global a, b" ~expected:[+Statement.Global ["a"; "b"]];
+    assert_parsed "nonlocal a" ~expected:[+Statement.Nonlocal ["a"]];
+    assert_parsed "nonlocal a, b" ~expected:[+Statement.Nonlocal ["a"; "b"]];
+
+    assert_not_parsed "global";
+    assert_not_parsed "nonlocal";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
+let () =
+  "parse_statements"
+  >::: [
+         "pass_break_continue" >:: test_pass_break_continue;
+         "global_nonlocal" >:: test_global_nonlocal;
+       ]
+  |> Test.run
