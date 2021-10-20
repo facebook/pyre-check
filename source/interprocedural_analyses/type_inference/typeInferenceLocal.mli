@@ -42,12 +42,6 @@ val infer_for_define
   define:Ast.Statement.Define.t Ast.Node.t ->
   TypeInferenceData.LocalResult.t
 
-val empty_infer_for_define
-  :  global_resolution:Analysis.GlobalResolution.t ->
-  qualifier:Ast.Reference.t ->
-  define:Ast.Statement.Define.t Ast.Node.t ->
-  TypeInferenceData.LocalResult.t
-
 val infer_for_module
   :  ?skip_annotated:bool ->
   configuration:Configuration.Analysis.t ->
