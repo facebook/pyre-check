@@ -53,13 +53,18 @@ let assert_global_result ~context ~test_source ~expected () =
 
 
 (* The "*" in the path is because we arent' using a full on v2 builder pattern. This is okay for
-   unit tests since we know everything's path would be "test.py" *)
+   unit tests since we know everything's path would be "test.py"
+
+   The divergent handling of sqlalchemy.Integer in the parameter versus return position is a bug
+   we'd like to fix - it is due to the given annotation being an expression whereas the inferred
+   annotation is a type. The type is being dequalified. *)
 let serialization_test context =
   assert_global_result
     ~context
     ~test_source:
       {|
       import functools
+      from sqlalchemy import Integer
 
       x = 1 + 1
 
@@ -70,7 +75,7 @@ let serialization_test context =
           return x
 
       @functools.lru_cache(4)
-      def needs_return(y: int, x: int):
+      def needs_return(y: C, x: Integer):
           return x
     |}
     ~expected:
@@ -79,7 +84,7 @@ let serialization_test context =
           "globals": [
             {
               "name": "x",
-              "location": { "qualifier": "test", "path": "*", "line": 4 },
+              "location": { "qualifier": "test", "path": "*", "line": 5 },
               "annotation": "int"
             }
           ],
@@ -87,7 +92,7 @@ let serialization_test context =
             {
               "parent": "C",
               "name": "x",
-              "location": { "qualifier": "test", "path": "*", "line": 7 },
+              "location": { "qualifier": "test", "path": "*", "line": 8 },
               "annotation": "int"
             }
           ],
@@ -95,13 +100,13 @@ let serialization_test context =
             {
               "name": "test.needs_return",
               "parent": null,
-              "return": "int",
+              "return": "Integer",
               "parameters": [
-                { "name": "y", "annotation": "int", "value": null, "index": 0 },
-                { "name": "x", "annotation": "int", "value": null, "index": 1 }
+                { "name": "y", "annotation": "test.C", "value": null, "index": 0 },
+                { "name": "x", "annotation": "sqlalchemy.Integer", "value": null, "index": 1 }
               ],
               "decorators": [ "functools.lru_cache(4)" ],
-              "location": { "qualifier": "test", "path": "*", "line": 13 },
+              "location": { "qualifier": "test", "path": "*", "line": 14 },
               "async": false
             }
           ]
