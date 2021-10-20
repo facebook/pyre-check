@@ -127,12 +127,76 @@ let convert_keyword_argument { KeywordArgument.location; name; value } =
   | Some keyword_name -> { Call.Argument.name = Some (Node.create ~location keyword_name); value }
 
 
-let argument ~location:_ ~identifier:_ ~annotation:_ ~type_comment:_ =
-  failwith "not implemented yet"
+module SingleParameter = struct
+  type t = {
+    location: Ast.Location.t;
+    identifier: Ast.Identifier.t;
+    annotation: Ast.Expression.t option;
+  }
+end
+
+let argument ~location ~identifier ~annotation ~type_comment =
+  let annotation =
+    match annotation with
+    | Some _ -> annotation
+    | None -> (
+        match type_comment with
+        | None -> None
+        | Some comment ->
+            let comment_annotation =
+              Ast.Expression.(
+                Expression.Constant
+                  (Constant.String { StringLiteral.kind = String; value = comment }))
+            in
+            Some (Ast.Node.create ~location comment_annotation))
+  in
+  { SingleParameter.location; identifier; annotation }
 
 
-let arguments ~posonlyargs:_ ~args:_ ~vararg:_ ~kwonlyargs:_ ~kw_defaults:_ ~kwarg:_ ~defaults:_ =
-  failwith "not implemented yet"
+let arguments ~posonlyargs ~args ~vararg ~kwonlyargs ~kw_defaults ~kwarg ~defaults =
+  let open Ast.Expression in
+  let module Node = Ast.Node in
+  let to_parameter ({ SingleParameter.location; identifier; annotation }, default_value) =
+    { Parameter.name = identifier; value = default_value; annotation } |> Node.create ~location
+  in
+  let to_parameters parameter_list default_list =
+    List.zip_exn parameter_list default_list |> List.map ~f:to_parameter
+  in
+  let positional_only_defaults, regular_defaults =
+    let positional_only_count = List.length posonlyargs in
+    let regular_count = List.length args in
+    let expanded_defaults =
+      let total_counts = positional_only_count + regular_count in
+      let fill_counts = total_counts - List.length defaults in
+      List.map defaults ~f:Option.some |> List.append (List.init fill_counts ~f:(fun _ -> None))
+    in
+    List.split_n expanded_defaults positional_only_count
+  in
+  let positional_only_parameters = to_parameters posonlyargs positional_only_defaults in
+  let regular_parameters = to_parameters args regular_defaults in
+  let keyword_only_parameters = to_parameters kwonlyargs kw_defaults in
+  let vararg_parameter =
+    let handle_vararg { SingleParameter.location; identifier; annotation } =
+      let name = Caml.Format.sprintf "*%s" identifier in
+      { Parameter.name; value = None; annotation } |> Node.create ~location
+    in
+    Option.map vararg ~f:handle_vararg
+  in
+  let kwarg_parameter =
+    let handle_kwarg { SingleParameter.location; identifier; annotation } =
+      let name = Caml.Format.sprintf "**%s" identifier in
+      { Parameter.name; value = None; annotation } |> Node.create ~location
+    in
+    Option.map kwarg ~f:handle_kwarg
+  in
+  List.concat
+    [
+      positional_only_parameters;
+      regular_parameters;
+      Option.to_list vararg_parameter;
+      keyword_only_parameters;
+      Option.to_list kwarg_parameter;
+    ]
 
 
 let expression =
@@ -181,7 +245,9 @@ let expression =
   let unary_op ~location ~op ~operand =
     Expression.UnaryOperator { UnaryOperator.operator = op; operand } |> Node.create ~location
   in
-  let lambda ~location:_ ~args:_ ~body:_ = failwith "not implemented yet" in
+  let lambda ~location ~args ~body =
+    Expression.Lambda { Lambda.parameters = args; body } |> Node.create ~location
+  in
   let if_exp ~location ~test ~body ~orelse =
     Expression.Ternary { Ternary.target = body; test; alternative = orelse }
     |> Node.create ~location

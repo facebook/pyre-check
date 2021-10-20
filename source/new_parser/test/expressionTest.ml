@@ -1976,6 +1976,147 @@ let test_subscript _ =
   PyreNewParser.with_context do_test
 
 
+let test_lambda _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "lambda: 1"
+      ~expected:
+        (+Expression.Lambda
+            { Lambda.parameters = []; body = +Expression.Constant (Constant.Integer 1) });
+    assert_parsed
+      "lambda x: x"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+              body = !"x";
+            });
+    assert_parsed
+      "lambda x,: x"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+              body = !"x";
+            });
+    assert_parsed
+      "lambda x: x is y"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+              body =
+                +Expression.ComparisonOperator
+                   {
+                     ComparisonOperator.left = !"x";
+                     operator = ComparisonOperator.Is;
+                     right = !"y";
+                   };
+            });
+
+    assert_parsed
+      "lambda x,y=1: x"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters =
+                [
+                  +{ Parameter.name = "x"; value = None; annotation = None };
+                  +{
+                     Parameter.name = "y";
+                     value = Some (+Expression.Constant (Constant.Integer 1));
+                     annotation = None;
+                   };
+                ];
+              body = !"x";
+            });
+    assert_parsed
+      "lambda *args, **kwargs: args"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters =
+                [
+                  +{ Parameter.name = "*args"; value = None; annotation = None };
+                  +{ Parameter.name = "**kwargs"; value = None; annotation = None };
+                ];
+              body = !"args";
+            });
+    assert_parsed
+      "lambda x, /: x"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+              body = !"x";
+            });
+    assert_parsed
+      "lambda *, x: x"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+              body = !"x";
+            });
+    assert_parsed
+      "lambda x, /, y, z=1, *, w=2: x"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters =
+                [
+                  +{ Parameter.name = "x"; value = None; annotation = None };
+                  +{ Parameter.name = "y"; value = None; annotation = None };
+                  +{
+                     Parameter.name = "z";
+                     value = Some (+Expression.Constant (Constant.Integer 1));
+                     annotation = None;
+                   };
+                  +{
+                     Parameter.name = "w";
+                     value = Some (+Expression.Constant (Constant.Integer 2));
+                     annotation = None;
+                   };
+                ];
+              body = !"x";
+            });
+    assert_parsed
+      "lambda x, y=1, /, z=2, *, u, v=3, **w: x"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters =
+                [
+                  +{ Parameter.name = "x"; value = None; annotation = None };
+                  +{
+                     Parameter.name = "y";
+                     value = Some (+Expression.Constant (Constant.Integer 1));
+                     annotation = None;
+                   };
+                  +{
+                     Parameter.name = "z";
+                     value = Some (+Expression.Constant (Constant.Integer 2));
+                     annotation = None;
+                   };
+                  +{ Parameter.name = "u"; value = None; annotation = None };
+                  +{
+                     Parameter.name = "v";
+                     value = Some (+Expression.Constant (Constant.Integer 3));
+                     annotation = None;
+                   };
+                  +{ Parameter.name = "**w"; value = None; annotation = None };
+                ];
+              body = !"x";
+            });
+
+    assert_not_parsed "lambda x=1, y: x";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_expression"
   >::: [
@@ -1994,5 +2135,6 @@ let () =
          "binary_operators" >:: test_binary_operators;
          "test_call" >:: test_call;
          "test_subscript" >:: test_subscript;
+         "test_lambda" >:: test_lambda;
        ]
   |> Test.run
