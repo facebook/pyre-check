@@ -1138,11 +1138,6 @@ let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filen
   result
 
 
-let empty_infer_for_define ~global_resolution ~qualifier ~define =
-  let lookup _ = None in
-  TypeInferenceData.LocalResult.from_signature ~global_resolution ~lookup ~qualifier define
-
-
 let should_analyze_define
     ~skip_annotated
     ~global_resolution
@@ -1168,6 +1163,11 @@ let should_analyze_define
   || parameters |> List.exists ~f:is_parameter_missing_any_or_alias
 
 
+let empty_infer_for_define ~global_resolution ~qualifier ~define =
+  let lookup _ = None in
+  TypeInferenceData.LocalResult.from_signature ~global_resolution ~lookup ~qualifier define
+
+
 let infer_for_module
     ?(skip_annotated = true)
     ~configuration
@@ -1176,10 +1176,12 @@ let infer_for_module
     ({ Ast.Source.source_path = { qualifier; _ } as source_path; _ } as source)
   =
   Log.debug "Running infer for %s..." source_path.relative;
+  (* We cannot use should_analyze_define as a filter because we need to know about all defines in
+     order to reliably exclude duplicates from overloads *)
   let check define =
-    infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filename_lookup ~define
+    if should_analyze_define ~skip_annotated ~global_resolution define then
+      infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filename_lookup ~define
+    else
+      empty_infer_for_define ~global_resolution ~qualifier ~define
   in
-  source
-  |> Preprocessing.defines ~include_toplevels:true
-  |> List.filter ~f:(should_analyze_define ~skip_annotated ~global_resolution)
-  |> List.map ~f:check
+  source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check
