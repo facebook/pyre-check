@@ -1,10 +1,8 @@
 <!-- Thanks for submitting a pull request! We appreciate you spending the time to work on these changes. Please provide enough information so that others can review your pull request. -->
 
 **Pre-submission checklist**
-- [ ] I've ran the following linters locally and fixed lint errors related to the files I modified in this PR. You can install the linters by running `pip install -r requirements-dev.txt`
-    - [ ] `black .`
-    - [ ] `usort format .`
-    - [ ] `flake8`
+- [ ] I've ran the linters locally and fixed lint errors related to the files I modified in this PR. You can install the linters by running `pip install -r requirements-dev.txt && pre-commit install`
+    - [ ] `pre-commit run`
 
 ## Summary
 
