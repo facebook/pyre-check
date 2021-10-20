@@ -455,7 +455,9 @@ let statement =
   let class_def ~location:_ ~name:_ ~bases:_ ~keywords:_ ~body:_ ~decorator_list:_ =
     failwith "not implemented yet"
   in
-  let return ~location:_ ~value:_ = failwith "not implemented yet" in
+  let return ~location ~value =
+    Statement.Return { Return.expression = value; is_implicit = false } |> Node.create ~location
+  in
   let delete ~location:_ ~targets:_ = failwith "not implemented yet" in
   let assign ~location:_ ~targets:_ ~value:_ ~type_comment:_ = failwith "not implemented yet" in
   let aug_assign ~location:_ ~target:_ ~op:_ ~value:_ = failwith "not implemented yet" in
@@ -476,7 +478,9 @@ let statement =
     (* TODO(T102720335): Support pattern matching *)
     failwith "not implemented yet"
   in
-  let raise_ ~location:_ ~exc:_ ~cause:_ = failwith "not implemented yet" in
+  let raise_ ~location ~exc ~cause =
+    Statement.Raise { Raise.expression = exc; from = cause } |> Node.create ~location
+  in
   let try_ ~location:_ ~body:_ ~handlers:_ ~orelse:_ ~finalbody:_ =
     failwith "not implemented yet"
   in
@@ -485,7 +489,7 @@ let statement =
   let import_from ~location:_ ~module_:_ ~names:_ ~level:_ = failwith "not implemented yet" in
   let global ~location ~names = Statement.Global names |> Node.create ~location in
   let nonlocal ~location ~names = Statement.Nonlocal names |> Node.create ~location in
-  let expr ~location:_ ~value:_ = failwith "not implemented yet" in
+  let expr ~location ~value = Statement.Expression value |> Node.create ~location in
   let pass ~location = Statement.Pass |> Node.create ~location in
   let break ~location = Statement.Break |> Node.create ~location in
   let continue ~location = Statement.Continue |> Node.create ~location in

@@ -8,6 +8,7 @@
 open Base
 open OUnit2
 open Test
+open Ast.Expression
 open Ast.Statement
 
 let statements_location_insensitive_equal left right =
@@ -63,10 +64,49 @@ let test_global_nonlocal _ =
   PyreNewParser.with_context do_test
 
 
+let test_expression_return_raise _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    assert_parsed "a" ~expected:[+Statement.Expression !"a"];
+    assert_parsed
+      "a is b"
+      ~expected:
+        [
+          +Statement.Expression
+             (+Expression.ComparisonOperator
+                 { ComparisonOperator.left = !"a"; operator = ComparisonOperator.Is; right = !"b" });
+        ];
+    assert_parsed
+      "foo(x)"
+      ~expected:
+        [
+          +Statement.Expression
+             (+Expression.Call
+                 { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
+        ];
+    assert_parsed
+      "return"
+      ~expected:[+Statement.Return { Return.expression = None; is_implicit = false }];
+    assert_parsed
+      "return a"
+      ~expected:[+Statement.Return { Return.expression = Some !"a"; is_implicit = false }];
+    assert_parsed "raise" ~expected:[+Statement.Raise { Raise.expression = None; from = None }];
+    assert_parsed
+      "raise a"
+      ~expected:[+Statement.Raise { Raise.expression = Some !"a"; from = None }];
+    assert_parsed
+      "raise a from b"
+      ~expected:[+Statement.Raise { Raise.expression = Some !"a"; from = Some !"b" }];
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
          "pass_break_continue" >:: test_pass_break_continue;
          "global_nonlocal" >:: test_global_nonlocal;
+         "expression_return_raise" >:: test_expression_return_raise;
        ]
   |> Test.run
