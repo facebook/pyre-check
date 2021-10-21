@@ -339,6 +339,13 @@ class SkippingUnparseableFileException(Exception):
     pass
 
 
+def _str_to_int(digits: str) -> Optional[int]:
+    try:
+        return int(digits)
+    except ValueError:
+        return None
+
+
 def _get_unused_ignore_codes(errors: List[Dict[str, str]]) -> List[int]:
     unused_ignore_codes: List[int] = []
     ignore_errors = [error for error in errors if error["code"] == "0"]
@@ -348,7 +355,11 @@ def _get_unused_ignore_codes(errors: List[Dict[str, str]]) -> List[int]:
         )
         if match:
             unused_ignore_codes.extend(
-                [int(code.strip()) for code in match.group(1).split(",")]
+                int_code
+                for int_code in (
+                    _str_to_int(code.strip()) for code in match.group(1).split(",")
+                )
+                if int_code is not None
             )
     unused_ignore_codes.sort()
     return unused_ignore_codes

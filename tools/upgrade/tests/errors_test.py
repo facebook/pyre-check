@@ -177,6 +177,18 @@ class ErrorsTest(unittest.TestCase):
             ),
             [],
         )
+        self.assertEqual(
+            _get_unused_ignore_codes(
+                [
+                    {
+                        "code": "1",
+                        "description": "The `pyre-ignore[]` or `pyre-fixme[]` "
+                        + "comment is not suppressing type errors, please remove it.",
+                    }
+                ]
+            ),
+            [],
+        )
 
     @patch.object(errors, "_get_unused_ignore_codes")
     def test_remove_unused_ignores(self, get_unused_ignore_codes) -> None:
