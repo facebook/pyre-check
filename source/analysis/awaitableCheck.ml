@@ -77,6 +77,8 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
+  let bottom = { unawaited = Location.Map.empty; locals = AliasMap.empty; need_to_await = false }
+
   let initial ~global_resolution { Define.signature = { Define.Signature.parameters; _ }; _ } =
     let state = { unawaited = Location.Map.empty; locals = AliasMap.empty; need_to_await = true } in
     let forward_parameter

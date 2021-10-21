@@ -9,6 +9,8 @@ open Ast
 
 type t [@@deriving eq, show]
 
+val top : t
+
 val base : t -> Annotation.t option
 
 val create : ?base:Annotation.t -> ?attribute_refinements:t Identifier.Map.Tree.t -> unit -> t

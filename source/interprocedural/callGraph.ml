@@ -797,7 +797,11 @@ struct
   include Fixpoint.Make (struct
     type t = unit [@@deriving show]
 
+    let bottom = ()
+
     let less_or_equal ~left:_ ~right:_ = true
+
+    let join _ _ = ()
 
     let widen ~previous:_ ~next:_ ~iteration:_ = ()
 

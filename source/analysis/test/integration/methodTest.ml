@@ -2996,83 +2996,33 @@ let test_fixpoint_threshold context =
       def foo() -> bool: ...
 
       def bar() -> None:
-          u = 42
-
-          if foo():
-              x1 = foo()
-              if x1:
-                  x2 = foo()
-                  if x2:
-                      pass
-              else:
-                  pass
-
-              if foo():
-                  pass
-
-              if foo():
-                  x3 = foo()
-                  if x3:
-                      x4 = foo()
-                      if foo():
-                          pass
-                  if foo():
-                      pass
-              pass
-
-          if foo():
-              if foo():
-                  x5 = foo()
-              else:
-                  x6 = foo()
-                  if foo():
-                      pass
-                  else:
-                      pass
-
-          reveal_type(u)
-
-          if foo():
-              if foo():
-                  x7 = foo()
-              pass
-              if foo():
-                  pass
-
-          reveal_type(u)
-
-          if foo():
-              x8 = foo()
-              if x8:
-                  x9 = foo()
-                  if foo():
-                      pass
-                  pass
-              pass
-
-
-          reveal_type(u)
-
-          if foo():
-              x10 = await foo()
-
-              if x10 is not None:
-                  if foo():
-                      pass
-                  elif foo():
-                      pass
-
-          final_type = u
-          reveal_type(final_type)
+          l = [(0, 1)]
+          for x in range(1000000):
+              l = [(0, l*x)]
+          reveal_type(l)
     |}
     [
       "Analysis failure [30]: Pyre gave up inferring types for some variables because function \
        `test.bar` was too complex.";
-      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
-      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
-      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
-      "Incompatible awaitable type [12]: Expected an awaitable but got `bool`.";
-      "Revealed type [-1]: Revealed type for `final_type` is `unknown`.";
+      "Unsupported operand [58]: `*` is not supported for operand types `unknown` and `int`.";
+      "Revealed type [-1]: Revealed type for `l` is `unknown`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      from typing import Set
+      def foo() -> None:
+        for _ in range(10000):
+          s = set() # type: Set[Missing]
+          reveal_type(s)
+    |}
+    [
+      "Undefined import [21]: Could not find a name `Set` defined in module `typing`.";
+      "Analysis failure [30]: Pyre gave up inferring types for some variables because function \
+       `test.foo` was too complex.";
+      "Illegal annotation target [35]: Target `s` cannot be annotated after it is first declared.";
+      "Undefined or invalid type [11]: Annotation `Missing` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `s` is `Set[Variable[_T]]`.";
     ];
   ()
 

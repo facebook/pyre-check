@@ -659,7 +659,7 @@
     "callable": "taint_broadening.widen_collapse_sink",
     "sinks": [
       {
-        "port": "formal(d)[a][a][a][a]",
+        "port": "formal(d)[a][a][a][a][1]",
         "taint": [
           {
             "root": {
@@ -672,11 +672,14 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
-              { "via": "issue-broadening" },
-              { "via": "broadening" },
               { "always-via": "special_sink" }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "port": "formal(d)[a][a][a][a][2]",
+        "taint": [
           {
             "root": {
               "filename": "taint_broadening.py",
@@ -688,8 +691,6 @@
             "features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
-              { "via": "issue-broadening" },
-              { "via": "broadening" },
               { "always-via": "special_sink" }
             ]
           }
@@ -704,7 +705,7 @@
     "callable": "taint_broadening.widen_collapse_source",
     "sources": [
       {
-        "port": "result[a][a][a][a]",
+        "port": "result[a][a][a][a][1]",
         "taint": [
           {
             "root": {
@@ -714,12 +715,13 @@
               "end": 51
             },
             "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "via": "issue-broadening" },
-              { "via": "broadening" },
-              { "always-via": "special_source" }
-            ]
-          },
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "port": "result[a][a][a][a][2]",
+        "taint": [
           {
             "root": {
               "filename": "taint_broadening.py",
@@ -728,11 +730,7 @@
               "end": 51
             },
             "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "via": "issue-broadening" },
-              { "via": "broadening" },
-              { "always-via": "special_source" }
-            ]
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }

@@ -11,7 +11,11 @@ open Ast
 module type State = sig
   type t [@@deriving show]
 
+  val bottom : t
+
   val less_or_equal : left:t -> right:t -> bool
+
+  val join : t -> t -> t
 
   val widen : previous:t -> next:t -> iteration:int -> t
 
@@ -23,8 +27,11 @@ end
 module type Fixpoint = sig
   type state
 
-  (* Mapping from node to preconditions. *)
-  type t = state Int.Table.t [@@deriving show]
+  type t = {
+    preconditions: state Int.Table.t;
+    postconditions: state Int.Table.t;
+  }
+  [@@deriving show]
 
   val entry : t -> state option
 

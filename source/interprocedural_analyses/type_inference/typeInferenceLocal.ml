@@ -165,6 +165,8 @@ module State (Context : Context) = struct
     | _ -> false
 
 
+  let bottom = Bottom
+
   let create ?(bottom = false) ~resolution () =
     if bottom then
       Bottom
@@ -219,7 +221,7 @@ module State (Context : Context) = struct
              (Resolution.temporary_annotations right.resolution)
 
 
-  let widening_threshold = 10
+  let widening_threshold = 3
 
   let widen ~previous ~next ~iteration =
     match previous, next with
@@ -257,7 +259,7 @@ module State (Context : Context) = struct
           }
         in
         let combine_errors ~key:_ left_error right_error =
-          if iteration > widening_threshold then
+          if iteration + 1 >= widening_threshold then
             { left_error with Error.kind = Error.Top }
           else
             Error.join
@@ -272,6 +274,8 @@ module State (Context : Context) = struct
             resolution = Resolution.with_annotation_store ~annotation_store resolution;
           }
 
+
+  let join left right = widen ~previous:left ~next:right ~iteration:0
 
   let initial ~resolution =
     let state = TypeCheckState.initial ~resolution in

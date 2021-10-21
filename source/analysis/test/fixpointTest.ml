@@ -19,26 +19,36 @@ module CountingState : sig
 end = struct
   type t = int [@@deriving show]
 
+  let bottom = -1
+
   let less_or_equal ~left ~right = left <= right
 
   let forward ~statement_key:_ state ~statement =
     match statement with
-    | { Node.value = Statement.Pass; _ } -> state + 1
+    | { Node.value = Statement.Pass; _ } ->
+        if Int.equal state Int.max_value then
+          Int.max_value
+        else
+          state + 1
     | _ -> state
 
 
   let backward ~statement_key:_ state ~statement =
     match statement with
-    | { Node.value = Statement.Pass; _ } -> state + 1
+    | { Node.value = Statement.Pass; _ } ->
+        if Int.equal state Int.max_value then
+          Int.max_value
+        else
+          state + 1
     | _ -> state
 
 
   let join left right = Int.max left right
 
-  let widening_threshold = 10
+  let widening_threshold = 3
 
   let widen ~previous ~next ~iteration =
-    if iteration > widening_threshold then
+    if iteration + 1 >= widening_threshold then
       Int.max_value
     else
       join previous next
@@ -76,16 +86,32 @@ let assert_fixpoint body expected =
 let test_forward _ =
   assert_fixpoint
     [+Statement.Pass]
-    (Int.Table.of_alist_exn [0, 0; (* Entry *) 1, 1; (* Exit *) 3, 1; (* Final *) 5, 0 (* Pass *)]);
+    {
+      preconditions =
+        Int.Table.of_alist_exn
+          [0, 0; (* Entry *) 1, 1; (* Exit *) 3, 1; (* Final *) 5, 0 (* Pass *)];
+      postconditions =
+        Int.Table.of_alist_exn
+          [0, 0; (* Entry *) 1, 1; (* Exit *) 3, 1; (* Final *) 5, 1 (* Pass *)];
+    };
   assert_fixpoint
     [+Statement.Pass; +Statement.Expression !"ignored"]
-    (Int.Table.of_alist_exn [0, 0; 1, 1; 3, 1; 5, 0]);
+    {
+      preconditions = Int.Table.of_alist_exn [0, 0; 1, 1; 3, 1; 5, 0];
+      postconditions = Int.Table.of_alist_exn [0, 0; 1, 1; 3, 1; 5, 1];
+    };
   assert_fixpoint
     [+Statement.Pass; +Statement.Pass]
-    (Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0]);
+    {
+      preconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0];
+      postconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 2];
+    };
   assert_fixpoint
     [+Statement.Pass; +Statement.Pass; +Statement.Expression !"ignored"; +Statement.Pass]
-    (Int.Table.of_alist_exn [0, 0; 1, 3; 3, 3; 5, 0])
+    {
+      preconditions = Int.Table.of_alist_exn [0, 0; 1, 3; 3, 3; 5, 0];
+      postconditions = Int.Table.of_alist_exn [0, 0; 1, 3; 3, 3; 5, 3];
+    }
 
 
 let test_join _ =
@@ -99,29 +125,53 @@ let test_join _ =
            orelse = [+Statement.Pass];
          };
     ]
-    (Int.Table.of_alist_exn
-       [
-         0, 0;
-         (* Entry *)
-         1, 1;
-         (* Exit *)
-         3, 1;
-         (* Final *)
-         5, 0;
-         (* If *)
-         6, 1;
-         (* Join *)
-         7, 0;
-         (* Body *)
-         8, 0;
-         (* Orelse *)
-       ]);
+    {
+      preconditions =
+        Int.Table.of_alist_exn
+          [
+            0, 0;
+            (* Entry *)
+            1, 1;
+            (* Exit *)
+            3, 1;
+            (* Final *)
+            5, 0;
+            (* If *)
+            6, 1;
+            (* Join *)
+            7, 0;
+            (* Body *)
+            8, 0;
+            (* Orelse *)
+          ];
+      postconditions =
+        Int.Table.of_alist_exn
+          [
+            0, 0;
+            (* Entry *)
+            1, 1;
+            (* Exit *)
+            3, 1;
+            (* Final *)
+            5, 0;
+            (* If *)
+            6, 1;
+            (* Join *)
+            7, 1;
+            (* Body *)
+            8, 1;
+            (* Orelse *)
+          ];
+    };
   assert_fixpoint
     [
       +Statement.If
          { If.test = +Expression.Constant Constant.True; body = [+Statement.Pass]; orelse = [] };
     ]
-    (Int.Table.of_alist_exn [5, 0; 6, 1; 0, 0; 8, 0; 1, 1; 3, 1; 7, 0]);
+    {
+      preconditions = Int.Table.of_alist_exn [5, 0; 6, 1; 0, 0; 8, 0; 1, 1; 3, 1; 7, 0];
+      postconditions = Int.Table.of_alist_exn [5, 0; 6, 1; 0, 0; 8, 0; 1, 1; 3, 1; 7, 1];
+    };
   assert_fixpoint
     [
       +Statement.If
@@ -131,7 +181,10 @@ let test_join _ =
            orelse = [+Statement.Pass];
          };
     ]
-    (Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0; 6, 2; 7, 0; 8, 0])
+    {
+      preconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0; 6, 2; 7, 0; 8, 0];
+      postconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0; 6, 2; 7, 2; 8, 1];
+    }
 
 
 let test_widening _ =
@@ -141,21 +194,40 @@ let test_widening _ =
       +Statement.While
          { While.test = +Expression.Constant Constant.True; body = [+Statement.Pass]; orelse = [] };
     ]
-    (Int.Table.of_alist_exn
-       [
-         0, 0;
-         (* Entry *)
-         1, Int.max_value;
-         (* Exit *)
-         3, Int.max_value;
-         (* Final *)
-         5, Int.max_value;
-         (* Split *)
-         7, Int.max_value;
-         (* Pass *)
-         8, Int.max_value;
-         (* Synthetic assert False *)
-       ])
+    {
+      preconditions =
+        Int.Table.of_alist_exn
+          [
+            0, 0;
+            (* Entry *)
+            1, Int.max_value;
+            (* Exit *)
+            3, Int.max_value;
+            (* Final *)
+            5, Int.max_value;
+            (* Split *)
+            7, Int.max_value;
+            (* Pass *)
+            8, Int.max_value;
+            (* Synthetic assert False *)
+          ];
+      postconditions =
+        Int.Table.of_alist_exn
+          [
+            0, 0;
+            (* Entry *)
+            1, Int.max_value;
+            (* Exit *)
+            3, Int.max_value;
+            (* Final *)
+            5, Int.max_value;
+            (* Split *)
+            7, Int.max_value;
+            (* Pass *)
+            8, Int.max_value;
+            (* Synthetic assert False *)
+          ];
+    }
 
 
 let () =

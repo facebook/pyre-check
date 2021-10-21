@@ -181,6 +181,8 @@ module State (Context : Context) = struct
         state |> InitializedVariables.elements |> String.concat ~sep:", " |> Format.sprintf "[%s]"
 
 
+  let bottom = Bottom
+
   let pp format state = Format.fprintf format "%s" (show state)
 
   let initial ~define:{ Node.value = { Define.signature; _ }; _ } =

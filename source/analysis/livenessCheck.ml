@@ -79,6 +79,8 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
+  let bottom = { used = Identifier.Set.empty; local_annotations = None }
+
   let initial =
     let local_annotations =
       TypeCheck.get_or_recompute_local_annotations

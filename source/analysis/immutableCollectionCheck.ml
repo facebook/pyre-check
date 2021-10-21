@@ -37,6 +37,8 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
+  let bottom = Reference.Map.empty
+
   let initial = Reference.Map.empty
 
   let errors =

@@ -535,6 +535,18 @@ let test_inferred_function_parameters context =
       type_
       (option_to_json default)
   in
+  let no_inferences =
+    {|
+      [{ "name": "x", "annotation": null, "value": null, "index": 0 }]
+    |}
+  in
+  let no_inferences_with_default ~default =
+    Format.asprintf
+      {|
+      [{ "name": "x", "annotation": null, "value": "%s", "index": 0 }]
+    |}
+      default
+  in
   check_inference_results
     {|
       def foo(x: typing.Any) -> None:
@@ -632,7 +644,7 @@ let test_inferred_function_parameters context =
               x = ""
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~default:"None" "str");
+    ~expected:(no_inferences_with_default ~default:"None");
   check_inference_results
     {|
       from typing import Optional
@@ -668,11 +680,6 @@ let test_inferred_function_parameters context =
     |}
     ~target:"test.foo"
     ~expected:(single_parameter "sqlalchemy.ext.declarative.DeclarativeMeta");
-  let no_inferences =
-    {|
-      [{ "name": "x", "annotation": null, "value": null, "index": 0 }]
-    |}
-  in
   (* TODO(T84365830): Support inference on addition. *)
   check_inference_results
     {|

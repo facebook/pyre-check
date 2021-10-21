@@ -348,6 +348,8 @@ module State (Context : Context) = struct
 
   let unreachable = Unreachable
 
+  let bottom = Unreachable
+
   let emit_error ~errors ~location ~kind =
     Error.create
       ~location:(Location.with_module ~qualifier:Context.qualifier location)
@@ -566,7 +568,7 @@ module State (Context : Context) = struct
     Resolution.with_annotation_store left_resolution ~annotation_store
 
 
-  let widening_threshold = 10
+  let widening_threshold = 3
 
   let add_fixpoint_threshold_reached_error () =
     let define = Context.define in
@@ -637,10 +639,12 @@ module State (Context : Context) = struct
                 (Resolution.temporary_annotations next_resolution);
           }
         in
-        if iteration > widening_threshold then
+        if iteration + 1 >= widening_threshold then
           add_fixpoint_threshold_reached_error ();
         Value (Resolution.with_annotation_store next_resolution ~annotation_store)
 
+
+  let join left right = widen ~previous:left ~next:right ~iteration:0
 
   module Resolved = struct
     type base =
@@ -6758,8 +6762,8 @@ let exit_state ~resolution (module Context : Context) =
       Log.dump "AST of %a:\n----%a\n----" Reference.pp name Define.pp define;
       Option.iter exit ~f:(Log.dump "Exit state:\n%a" State.pp));
     (if Define.dump_cfg define then
-       let precondition table id =
-         match Hashtbl.find table id with
+       let precondition { Fixpoint.preconditions; _ } id =
+         match Hashtbl.find preconditions id with
          | Some (State.Value exit_resolution) ->
              let stringify ~temporary ~key ~data label =
                let annotation_string =

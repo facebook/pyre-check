@@ -38,6 +38,8 @@ let ( |>> ) (taint, state) f = f taint, state
 module State (FunctionContext : FUNCTION_CONTEXT) = struct
   type t = { taint: ForwardState.t }
 
+  let bottom = { taint = ForwardState.bottom }
+
   let pp formatter { taint } = ForwardState.pp formatter taint
 
   let show = Format.asprintf "%a" pp

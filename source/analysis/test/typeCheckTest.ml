@@ -257,7 +257,7 @@ let test_widen context =
       ~printer:(Format.asprintf "%a" State.pp)
       ~pp_diff:(diff ~print:State.pp)
   in
-  let widening_threshold = 10 in
+  let widening_threshold = 3 in
   assert_state_equal
     (State.widen
        ~previous:(create ["x", Type.string])

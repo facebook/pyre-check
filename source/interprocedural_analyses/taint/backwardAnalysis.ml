@@ -32,6 +32,8 @@ end
 module State (FunctionContext : FUNCTION_CONTEXT) = struct
   type t = { taint: BackwardState.t }
 
+  let bottom = { taint = BackwardState.bottom }
+
   let pp formatter { taint } = BackwardState.pp formatter taint
 
   let show = Format.asprintf "%a" pp
