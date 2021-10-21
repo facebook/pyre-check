@@ -204,20 +204,28 @@ module Setup = struct
     environment, configuration
 
 
-  let run_inference ?(skip_annotated = false) ~context ~target code =
+  let get_environment_data ~context code =
     let environment, configuration = set_up_project ~context code in
     let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
     let ast_environment = GlobalResolution.ast_environment global_resolution in
+    let filename_lookup = Analysis.AstEnvironment.ReadOnly.get_relative ast_environment in
     let source =
       AstEnvironment.ReadOnly.get_processed_source ast_environment (Reference.create "test")
       |> fun option -> Option.value_exn option
+    in
+    configuration, global_resolution, filename_lookup, source
+
+
+  let run_inference ?(skip_annotated = false) ~context ~target code =
+    let configuration, global_resolution, filename_lookup, source =
+      get_environment_data ~context code
     in
     let module_results =
       TypeInference.Local.infer_for_module
         ~skip_annotated
         ~configuration
         ~global_resolution
-        ~filename_lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
+        ~filename_lookup
         source
     in
     let is_target local_result =
@@ -234,44 +242,44 @@ module Setup = struct
 end
 
 let test_should_analyze_define context =
-  (* TODO: revive this test *)
-  let _temporarily_disabled_test =
+  let check ~should_analyze ~target code =
+    let _, global_resolution, _, source = Setup.get_environment_data ~context code in
+    let would_analyze =
+      source
+      |> TypeInference.Local.Testing.define_names_to_analyze ~global_resolution
+      |> List.exists ~f:(Reference.equal target)
+    in
+    Bool.equal would_analyze should_analyze
+    |> assert_bool "Unexpected result from should_analyze_define"
+  in
+  check
     {|
-  let check_define_skipped ~target code =
-    code
-    |> Setup.run_inference ~skip_annotated:true ~context ~target
-    |> (fun result ->
-      Format.printf "result: %s" ([%show: LocalResult.t option] result);
-      result
-    )
-    |> Option.is_none
-    |> assert_bool "Analysis was not skipped as expected"
-  in
-  |}
-  in
-  let check_define_skipped ~target:_ _ = () in
-  check_define_skipped {|
       def foo() -> int:
           pass
-    |} ~target:"test.foo";
-  check_define_skipped {|
+    |}
+    ~target:(Reference.create "test.foo")
+    ~should_analyze:false;
+  check
+    {|
       def foo(x: str) -> int:
           pass
-    |} ~target:"test.foo";
-  let check_define_not_skipped ~target code =
-    code
-    |> Setup.run_inference ~context ~target
-    |> Option.is_some
-    |> assert_bool "Analysis was not run as expected"
-  in
-  check_define_not_skipped {|
+    |}
+    ~target:(Reference.create "test.foo")
+    ~should_analyze:false;
+  check
+    {|
       def foo() -> int:
           pass
-    |} ~target:"test.$toplevel";
-  check_define_not_skipped {|
+    |}
+    ~target:(Reference.create "test.$toplevel")
+    ~should_analyze:true;
+  check
+    {|
       def foo(x: Any) -> int:
           pass
-    |} ~target:"test.foo";
+    |}
+    ~target:(Reference.create "test.foo")
+    ~should_analyze:true;
   ()
 
 

@@ -1189,3 +1189,12 @@ let infer_for_module
       empty_infer_for_define ~global_resolution ~qualifier ~define
   in
   source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check
+
+
+module Testing = struct
+  let define_names_to_analyze ~global_resolution source =
+    source
+    |> Preprocessing.defines ~include_toplevels:true
+    |> List.filter ~f:(should_analyze_define ~skip_annotated:true ~global_resolution)
+    |> List.map ~f:(fun define -> define |> Node.value |> Define.name)
+end

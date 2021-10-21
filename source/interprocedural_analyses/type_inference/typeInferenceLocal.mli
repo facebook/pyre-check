@@ -49,3 +49,10 @@ val infer_for_module
   filename_lookup:(Ast.Reference.t -> string option) ->
   Ast.Source.t ->
   TypeInferenceData.LocalResult.t list
+
+module Testing : sig
+  val define_names_to_analyze
+    :  global_resolution:Analysis.GlobalResolution.t ->
+    Ast.Source.t ->
+    Ast.Reference.t list
+end
