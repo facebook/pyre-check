@@ -224,7 +224,6 @@ class PathLikeAnnotationFixer(libcst.CSTTransformer):
 def sanitize_annotation(
     annotation: str,
     dequalify_all: bool = False,
-    dequalify_typing: bool = True,
 ) -> str:
     """
     Transform raw annotations in an attempt to reduce incorrectly-imported
@@ -253,9 +252,6 @@ def sanitize_annotation(
         match = re.fullmatch(r"([^.]*?\.)*?([^.]+)(\[.*\])", annotation)
         if match is not None:
             annotation = f"{match.group(2)}{match.group(3)}"
-
-    if dequalify_typing:
-        annotation = annotation.replace("typing.", "")
 
     if annotation.find("PathLike") >= 0:
         try:
@@ -316,17 +312,6 @@ class TypeAnnotation:
         else:
             return re.split("[^\\w.]+", self.annotation)
 
-    def typing_imports(self) -> Set[str]:
-        if self.quote:
-            return set()
-        typing_imports = set()
-        for simple_type in self._simple_types():
-            if simple_type:
-                split_type = re.findall(r"[\w]+", simple_type)
-                if len(split_type) > 1 and split_type[0] == "typing":
-                    typing_imports.add(split_type[1])
-        return typing_imports
-
     @property
     def missing(self) -> bool:
         return self.annotation is None
@@ -360,12 +345,6 @@ class FunctionAnnotation:
         return_ = self.return_annotation.sanitized(prefix=" -> ")
         return f"{decorators}{async_}def {name}({parameters}){return_}: ..."
 
-    def typing_imports(self) -> Set[str]:
-        typing_imports = self.return_annotation.typing_imports()
-        for parameter in self.parameters:
-            typing_imports |= parameter.annotation.typing_imports()
-        return typing_imports
-
 
 @dataclasses.dataclass(frozen=True)
 class MethodAnnotation(FunctionAnnotation):
@@ -384,9 +363,6 @@ class FieldAnnotation:
     def to_stub(self) -> str:
         name = _sanitize_name(self.name)
         return f"{name}: {self.annotation.sanitized()} = ..."
-
-    def typing_imports(self) -> Set[str]:
-        return self.annotation.typing_imports()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -529,31 +505,8 @@ class ModuleAnnotations:
             else []
         )
 
-    def _typing_imports(self) -> List[str]:
-        from_typing = sorted(
-            {
-                typing_import
-                for by_category in [
-                    (global_.typing_imports() for global_ in self.globals_),
-                    (function.typing_imports() for function in self.functions),
-                    (
-                        attribute.typing_imports()
-                        for class_attributes in self.classes.values()
-                        for attribute in class_attributes
-                    ),
-                ]
-                for by_annotation in by_category
-                for typing_import in by_annotation
-            }
-        )
-        return (
-            []
-            if from_typing == []
-            else [f"from typing import {', '.join(from_typing)}"]
-        )
-
     def _imports(self) -> str:
-        import_statements = self._header_imports() + self._typing_imports()
+        import_statements = self._header_imports()
         imports_str = (
             "" if import_statements == [] else "\n".join(import_statements) + "\n"
         )

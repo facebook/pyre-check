@@ -684,40 +684,6 @@ def _assert_stubs_equal(actual: str, expected: str) -> None:
 
 
 class InferUtilsTestSuite(testslide.TestCase):
-    def test_sanitize_annotation__dequalify_typing(self) -> None:
-        self.assertEqual(sanitize_annotation("typing.List"), "List")
-        self.assertEqual(
-            sanitize_annotation("typing.Union[typing.List[int]]"),
-            "Union[List[int]]",
-        )
-        self.assertEqual(
-            sanitize_annotation("typing.List", dequalify_typing=False), "typing.List"
-        )
-        self.assertEqual(
-            sanitize_annotation(
-                "typing.Union[typing.List[int]]", dequalify_typing=False
-            ),
-            "typing.Union[typing.List[int]]",
-        )
-
-    def test_sanitize_annotation__dequalify_all(self) -> None:
-        self.assertEqual(sanitize_annotation("int", dequalify_all=True), "int")
-        self.assertEqual(
-            sanitize_annotation("sql.Column[int]", dequalify_all=True), "Column[int]"
-        )
-        self.assertEqual(
-            sanitize_annotation(
-                "sqlalchemy.sql.schema.Column[int]", dequalify_all=True
-            ),
-            "Column[int]",
-        )
-        self.assertEqual(
-            sanitize_annotation(
-                "sqlalchemy.sql.schema.Column[Optional[int]]", dequalify_all=True
-            ),
-            "Column[Optional[int]]",
-        )
-
     def test_sanitize_annotation__fix_PathLike(self) -> None:
         self.assertEqual(
             sanitize_annotation("PathLike[str]"),
@@ -728,12 +694,15 @@ class InferUtilsTestSuite(testslide.TestCase):
             "os.PathLike[str]",
         )
         self.assertEqual(
-            sanitize_annotation("Union[PathLike[bytes], PathLike[str], str]"),
-            "Union['os.PathLike[bytes]', 'os.PathLike[str]', str]",
+            sanitize_annotation("typing.Union[PathLike[bytes], PathLike[str], str]"),
+            "typing.Union['os.PathLike[bytes]', 'os.PathLike[str]', str]",
         )
         # The libcst code throws an exception on this annotation because it is
         # invalid; this unit test verifies that we try/catch as expected rather than
         # crashing infer.
+        #
+        # This is necessary because at this point there are still cases where
+        # the backend spits out a type's representation as invalid python.
         self.assertEqual(
             sanitize_annotation("PathLike[Variable[AnyStr <: [str, bytes]]]"),
             "PathLike[Variable[AnyStr <: [str, bytes]]]",
@@ -762,19 +731,6 @@ class TypeAnnotationTest(testslide.TestCase):
         )
         self.assertEqual(actual.sanitized(), "Foo[int]")
         self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
-
-    def test_typing_imports(self) -> None:
-        actual = TypeAnnotation.from_raw(
-            "typing.Union[int, typing.Optional[str]]",
-            options=StubGenerationOptions(),
-        )
-        self.assertEqual(actual.typing_imports(), {"Union", "Optional"})
-
-        actual = TypeAnnotation.from_raw(
-            "typing.Union[int, typing.Optional[str]]",
-            options=StubGenerationOptions(quote_annotations=True),
-        )
-        self.assertEqual(actual.typing_imports(), set())
 
 
 class StubGenerationTest(testslide.TestCase):
@@ -1052,10 +1008,8 @@ class StubGenerationTest(testslide.TestCase):
                 ],
             },
             """\
-            from typing import Dict
-
             class Test:
-                def ret_dict(self) -> Dict[int, str]: ...
+                def ret_dict(self) -> typing.Dict[int, str]: ...
             """,
         )
 
@@ -1095,11 +1049,9 @@ class StubGenerationTest(testslide.TestCase):
                 ],
             },
             """\
-            from typing import Dict, Union
-
             class Test:
-                def b(self) -> Union[Dict[str, int], str]: ...
-                def a(self) -> Union[Dict[str, int], str]: ...
+                def b(self) -> typing.Union[typing.Dict[str, int], str]: ...
+                def a(self) -> typing.Union[typing.Dict[str, int], str]: ...
             """,
         )
 
@@ -1139,13 +1091,11 @@ class StubGenerationTest(testslide.TestCase):
                 ],
             },
             """\
-            from typing import Dict, Union
-
             class TestA:
-                def f(self) -> Union[Dict[str, int], str]: ...
+                def f(self) -> typing.Union[typing.Dict[str, int], str]: ...
 
             class TestB:
-                def f(self) -> Union[Dict[str, int], str]: ...
+                def f(self) -> typing.Union[typing.Dict[str, int], str]: ...
             """,
         )
 
@@ -1223,9 +1173,7 @@ class StubGenerationTest(testslide.TestCase):
                 ]
             },
             """\
-            from typing import List
-
-            def with_params(y=7, x: List[int] = [5]) -> Union[int, str]: ...
+            def with_params(y=7, x: typing.List[int] = [5]) -> Union[int, str]: ...
             """,
         )
 
