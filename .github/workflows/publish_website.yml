@@ -3,7 +3,8 @@ name: publish website
 on:
   push:
     branches: [ main ]
-
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -24,6 +25,7 @@ jobs:
     - name: Get output time
       run: echo "The time was ${{ steps.build.outputs.time }}"
     - name: Deploy
+      if: ${{ github.event_name == 'push' }}
       uses: JamesIves/github-pages-deploy-action@releases/v3
       with:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
