@@ -483,6 +483,186 @@ let test_for_while_if _ =
   PyreNewParser.with_context do_test
 
 
+let test_try _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "try:\n\ta\nfinally:\n\tb"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers = [];
+               orelse = [];
+               finally = [+Statement.Expression !"b"];
+             };
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept:\n\tb"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [{ Try.Handler.kind = None; name = None; body = [+Statement.Expression !"b"] }];
+               orelse = [];
+               finally = [];
+             };
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept a:\n\tb"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [
+                   { Try.Handler.kind = Some !"a"; name = None; body = [+Statement.Expression !"b"] };
+                 ];
+               orelse = [];
+               finally = [];
+             };
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept a as b:\n\tb"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [
+                   {
+                     Try.Handler.kind = Some !"a";
+                     name = Some "b";
+                     body = [+Statement.Expression !"b"];
+                   };
+                 ];
+               orelse = [];
+               finally = [];
+             };
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept a or b:\n\tc"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [
+                   {
+                     Try.Handler.kind =
+                       Some
+                         (+Expression.BooleanOperator
+                             {
+                               BooleanOperator.left = !"a";
+                               operator = BooleanOperator.Or;
+                               right = !"b";
+                             });
+                     name = None;
+                     body = [+Statement.Expression !"c"];
+                   };
+                 ];
+               orelse = [];
+               finally = [];
+             };
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept a or b as e:\n\tc"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [
+                   {
+                     Try.Handler.kind =
+                       Some
+                         (+Expression.BooleanOperator
+                             {
+                               BooleanOperator.left = !"a";
+                               operator = BooleanOperator.Or;
+                               right = !"b";
+                             });
+                     name = Some "e";
+                     body = [+Statement.Expression !"c"];
+                   };
+                 ];
+               orelse = [];
+               finally = [];
+             };
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept (a, b) as c:\n\tb"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [
+                   {
+                     Try.Handler.kind = Some (+Expression.Tuple [!"a"; !"b"]);
+                     name = Some "c";
+                     body = [+Statement.Expression !"b"];
+                   };
+                 ];
+               orelse = [];
+               finally = [];
+             };
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept a as b:\n\tb\nexcept d:\n\te"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [
+                   {
+                     Try.Handler.kind = Some !"a";
+                     name = Some "b";
+                     body = [+Statement.Expression !"b"];
+                   };
+                   {
+                     Try.Handler.kind = Some !"d";
+                     name = None;
+                     body = [+Statement.Expression !"e"];
+                   };
+                 ];
+               orelse = [];
+               finally = [];
+             };
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept:\n\tb\nelse:\n\tc\nfinally:\n\td"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [{ Try.Handler.kind = None; name = None; body = [+Statement.Expression !"b"] }];
+               orelse = [+Statement.Expression !"c"];
+               finally = [+Statement.Expression !"d"];
+             };
+        ];
+
+    assert_not_parsed "try: a";
+    assert_not_parsed "try:\n\ta\nelse:\n\tb";
+    assert_not_parsed "try:\n\ta\nexcept a, b:\n\tb";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
@@ -492,5 +672,6 @@ let () =
          "assert_delete" >:: test_assert_delete;
          "import" >:: test_import;
          "for_while_if" >:: test_for_while_if;
+         "try" >:: test_try;
        ]
   |> Test.run

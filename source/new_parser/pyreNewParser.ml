@@ -411,7 +411,9 @@ let import_alias ~location ~name ~asname =
   Node.create ~location { Statement.Import.name = Reference.create name; alias = asname }
 
 
-let exception_handler ~location:_ ~type_:_ ~name:_ ~body:_ = failwith "not implemented yet"
+let exception_handler ~location:_ ~type_ ~name ~body =
+  { Ast.Statement.Try.Handler.kind = type_; name; body }
+
 
 (* TODO(T102720335): Support pattern matching *)
 let match_case ~pattern:_ ~guard:_ ~body:_ = failwith "not implemented yet"
@@ -490,8 +492,8 @@ let statement =
   let raise_ ~location ~exc ~cause =
     Statement.Raise { Raise.expression = exc; from = cause } |> Node.create ~location
   in
-  let try_ ~location:_ ~body:_ ~handlers:_ ~orelse:_ ~finalbody:_ =
-    failwith "not implemented yet"
+  let try_ ~location ~body ~handlers ~orelse ~finalbody =
+    Statement.Try { Try.body; orelse; finally = finalbody; handlers } |> Node.create ~location
   in
   let assert_ ~location ~test ~msg =
     Statement.Assert { Assert.test; message = msg; origin = Assert.Origin.Assertion }
