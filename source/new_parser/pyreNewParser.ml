@@ -404,7 +404,7 @@ let expression =
     ()
 
 
-let with_item ~context_expr:_ ~optional_vars:_ = failwith "not implemented yet"
+let with_item ~context_expr ~optional_vars = context_expr, optional_vars
 
 let import_alias ~location ~name ~asname =
   let open Ast in
@@ -483,8 +483,12 @@ let statement =
   let if_ ~location ~test ~body ~orelse =
     Statement.If { If.test; body; orelse } |> Node.create ~location
   in
-  let with_ ~location:_ ~items:_ ~body:_ ~type_comment:_ = failwith "not implemented yet" in
-  let async_with ~location:_ ~items:_ ~body:_ ~type_comment:_ = failwith "not implemented yet" in
+  let with_ ~location ~items ~body ~type_comment:_ =
+    Statement.With { With.items; body; async = false } |> Node.create ~location
+  in
+  let async_with ~location ~items ~body ~type_comment:_ =
+    Statement.With { With.items; body; async = true } |> Node.create ~location
+  in
   let match_ ~location:_ ~subject:_ ~cases:_ =
     (* TODO(T102720335): Support pattern matching *)
     failwith "not implemented yet"

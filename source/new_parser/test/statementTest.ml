@@ -663,6 +663,91 @@ let test_try _ =
   PyreNewParser.with_context do_test
 
 
+let test_with _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    (* let assert_not_parsed = assert_not_parsed ~context in *)
+    assert_parsed
+      "with a: b\n"
+      ~expected:
+        [
+          +Statement.With
+             { With.items = [!"a", None]; body = [+Statement.Expression !"b"]; async = false };
+        ];
+    assert_parsed
+      "with (yield from a): b\n"
+      ~expected:
+        [
+          +Statement.With
+             {
+               With.items = [+Expression.YieldFrom !"a", None];
+               body = [+Statement.Expression !"b"];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "async with a: b\n"
+      ~expected:
+        [
+          +Statement.With
+             { With.items = [!"a", None]; body = [+Statement.Expression !"b"]; async = true };
+        ];
+    assert_parsed
+      "with a as b: b\n"
+      ~expected:
+        [
+          +Statement.With
+             { With.items = [!"a", Some !"b"]; body = [+Statement.Expression !"b"]; async = false };
+        ];
+    assert_parsed
+      "with a as b, c as d: b\n"
+      ~expected:
+        [
+          +Statement.With
+             {
+               With.items = [!"a", Some !"b"; !"c", Some !"d"];
+               body = [+Statement.Expression !"b"];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "with a, c as d: b\n"
+      ~expected:
+        [
+          +Statement.With
+             {
+               With.items = [!"a", None; !"c", Some !"d"];
+               body = [+Statement.Expression !"b"];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "with (a as b, c as d,): b\n"
+      ~expected:
+        [
+          +Statement.With
+             {
+               With.items = [!"a", Some !"b"; !"c", Some !"d"];
+               body = [+Statement.Expression !"b"];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "with (\n  a as b,\n  c as d\n):\n  b\n"
+      ~expected:
+        [
+          +Statement.With
+             {
+               With.items = [!"a", Some !"b"; !"c", Some !"d"];
+               body = [+Statement.Expression !"b"];
+               async = false;
+             };
+        ];
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
@@ -673,5 +758,6 @@ let () =
          "import" >:: test_import;
          "for_while_if" >:: test_for_while_if;
          "try" >:: test_try;
+         "with" >:: test_with;
        ]
   |> Test.run
