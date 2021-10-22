@@ -124,9 +124,9 @@ of square brackets to access a dictionary.
 ### `pyre_dump()`
 
 You can insert a call to the (non-existent) `pyre_dump()` function in your code
-to trigger to pyre to output a ton of metadata about it's current state when it
-parses the that function call. This can be useful as a starting point to figure
-out why something is/isn't happening. This will produce *very* verbose output.
+to enable verbose logging of the forward and backward analysis of the current
+function or method. This can be useful as a starting point to figure out why
+something is/isn't happening. This will produce *very* verbose output.
 
 ### `reveal_type(YOUR_VARIABLE)`
 
@@ -144,6 +144,12 @@ output indicating what taint Pysa has discovered. Note that each time Pysa
 analyzes the function (which could be many times) it will update it's
 understanding of the taint flowing into the function and output the current
 state. The final output will be the most complete.
+
+### `pyre_dump_perf()`
+
+You can insert a call to `pyre_dump_perf` (no import needed) in a function or
+method to profile the current analysis on that function or method, and dump
+the results on stdout.
 
 ### `results.json`
 
