@@ -406,7 +406,10 @@ let expression =
 
 let with_item ~context_expr:_ ~optional_vars:_ = failwith "not implemented yet"
 
-let import_alias ~location:_ ~name:_ ~asname:_ = failwith "not implemented yet"
+let import_alias ~location ~name ~asname =
+  let open Ast in
+  Node.create ~location { Statement.Import.name = Reference.create name; alias = asname }
+
 
 let exception_handler ~location:_ ~type_:_ ~name:_ ~body:_ = failwith "not implemented yet"
 
@@ -488,8 +491,15 @@ let statement =
     Statement.Assert { Assert.test; message = msg; origin = Assert.Origin.Assertion }
     |> Node.create ~location
   in
-  let import ~location:_ ~names:_ = failwith "not implemented yet" in
-  let import_from ~location:_ ~module_:_ ~names:_ ~level:_ = failwith "not implemented yet" in
+  let import ~location ~names =
+    Statement.Import { Import.imports = names; from = None } |> Node.create ~location
+  in
+  let import_from ~location ~module_ ~names ~level =
+    let dots = List.init level ~f:(fun _ -> ".") |> String.concat ~sep:"" in
+    let from_module_name = Option.value module_ ~default:"" in
+    let from = Caml.Format.sprintf "%s%s" dots from_module_name |> Ast.Reference.create in
+    Statement.Import { Import.imports = names; from = Some from } |> Node.create ~location
+  in
   let global ~location ~names = Statement.Global names |> Node.create ~location in
   let nonlocal ~location ~names = Statement.Nonlocal names |> Node.create ~location in
   let expr ~location ~value = Statement.Expression value |> Node.create ~location in

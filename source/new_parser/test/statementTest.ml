@@ -159,6 +159,138 @@ let test_assert_delete _ =
   PyreNewParser.with_context do_test
 
 
+let test_import _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "import a"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = None; imports = [+{ Import.name = !&"a"; alias = None }] };
+        ];
+    assert_parsed
+      "import a.b"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = None; imports = [+{ Import.name = !&"a.b"; alias = None }] };
+        ];
+    assert_parsed
+      "import a as b"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = None; imports = [+{ Import.name = !&"a"; alias = Some "b" }] };
+        ];
+    assert_parsed
+      "import a as b, c, d as e"
+      ~expected:
+        [
+          +Statement.Import
+             {
+               Import.from = None;
+               imports =
+                 [
+                   +{ Import.name = !&"a"; alias = Some "b" };
+                   +{ Import.name = !&"c"; alias = None };
+                   +{ Import.name = !&"d"; alias = Some "e" };
+                 ];
+             };
+        ];
+    assert_parsed
+      "from a import b"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = Some !&"a"; imports = [+{ Import.name = !&"b"; alias = None }] };
+        ];
+    assert_parsed
+      "from a import *"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = Some !&"a"; imports = [+{ Import.name = !&"*"; alias = None }] };
+        ];
+    assert_parsed
+      "from . import b"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = Some !&"."; imports = [+{ Import.name = !&"b"; alias = None }] };
+        ];
+    assert_parsed
+      "from ...foo import b"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = Some !&"...foo"; imports = [+{ Import.name = !&"b"; alias = None }] };
+        ];
+    assert_parsed
+      "from .....foo import b"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = Some !&".....foo"; imports = [+{ Import.name = !&"b"; alias = None }] };
+        ];
+    assert_parsed
+      "from .a import b"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = Some !&".a"; imports = [+{ Import.name = !&"b"; alias = None }] };
+        ];
+    assert_parsed
+      "from ..a import b"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = Some !&"..a"; imports = [+{ Import.name = !&"b"; alias = None }] };
+        ];
+    assert_parsed
+      "from a import (b, c)"
+      ~expected:
+        [
+          +Statement.Import
+             {
+               Import.from = Some !&"a";
+               imports =
+                 [+{ Import.name = !&"b"; alias = None }; +{ Import.name = !&"c"; alias = None }];
+             };
+        ];
+    assert_parsed
+      "from a.b import c"
+      ~expected:
+        [
+          +Statement.Import
+             { Import.from = Some !&"a.b"; imports = [+{ Import.name = !&"c"; alias = None }] };
+        ];
+    assert_parsed
+      "from f import a as b, c, d as e"
+      ~expected:
+        [
+          +Statement.Import
+             {
+               Import.from = Some !&"f";
+               imports =
+                 [
+                   +{ Import.name = !&"a"; alias = Some "b" };
+                   +{ Import.name = !&"c"; alias = None };
+                   +{ Import.name = !&"d"; alias = Some "e" };
+                 ];
+             };
+        ];
+
+    assert_not_parsed "import";
+    assert_not_parsed "import .";
+    assert_not_parsed "import a.async";
+    assert_not_parsed "from import foo";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
@@ -166,5 +298,6 @@ let () =
          "global_nonlocal" >:: test_global_nonlocal;
          "expression_return_raise" >:: test_expression_return_raise;
          "assert_delete" >:: test_assert_delete;
+         "import" >:: test_import;
        ]
   |> Test.run
