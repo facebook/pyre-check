@@ -1051,10 +1051,8 @@ let infer_parameters_from_parent
   overridden_callable >>| missing_parameter_errors |> Option.value ~default:[]
 
 
-let merge_errors ~global_resolution ~source errors =
-  let dequalify_map = Preprocessing.dequalify_map source in
+let merge_errors ~global_resolution errors =
   errors
-  |> List.map ~f:(Error.dequalify dequalify_map ~resolution:global_resolution)
   |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
          { error with kind = Error.weaken_literals kind })
   |> Error.join_at_source ~resolution:global_resolution
@@ -1071,7 +1069,7 @@ let legacy_infer_for_define
     let local_errors = infer_local ~configuration ~global_resolution ~source ~define in
     let global_errors = infer_parameters_from_parent ~global_resolution ~source ~define in
     let errors = List.rev_append global_errors local_errors in
-    merge_errors ~global_resolution ~source errors
+    merge_errors ~global_resolution errors
   with
   | ClassHierarchy.Untracked annotation ->
       Statistics.event

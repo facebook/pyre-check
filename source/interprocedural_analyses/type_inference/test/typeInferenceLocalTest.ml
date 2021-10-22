@@ -417,7 +417,7 @@ let test_inferred_returns context =
               return self
     |}
     ~target:"test.Test.ret_self"
-    ~expected:{|"Test"|};
+    ~expected:{|"test.Test"|};
   check_inference_results
     {|
       def foo():
@@ -445,10 +445,19 @@ let test_inferred_returns context =
     {|
       from typing import Any
       def foo(x: Any):
-          return {"": x}
+          return {1 + 1: x}
     |}
     ~target:"test.foo"
     ~expected:{|null|};
+  (* This is allowed because of special-casing in Type.contains_prohibited_any *)
+  check_inference_results
+    {|
+      from typing import Any
+      def foo(x: Any):
+          return {"": x}
+    |}
+    ~target:"test.foo"
+    ~expected:{|"typing.Dict[str, typing.Any]"|};
   check_inference_results
     {|
       def foo(y: bool):
@@ -625,7 +634,7 @@ let test_inferred_function_parameters context =
           return x
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter "Optional[str]");
+    ~expected:(single_parameter "typing.Optional[str]");
   check_inference_results
     {|
       def foo(y) -> typing.Tuple[int, float]:
@@ -674,7 +683,7 @@ let test_inferred_function_parameters context =
           foo(x)
     |}
     ~target:"test.bar"
-    ~expected:(single_parameter ~default:"None" "Optional[str]");
+    ~expected:(single_parameter ~default:"None" "typing.Optional[str]");
   (* For given annotations, use expressions rather than types so that the qualifier will match the
      code rather than the fully qualified type name. This is important for aliased imports *)
   check_inference_results
@@ -824,7 +833,7 @@ let test_inferred_method_parameters context =
               return x
     |}
     ~target:"test.B.foo"
-    ~expected:(single_parameter_method (Some "A"));
+    ~expected:(single_parameter_method (Some "test.A"));
   (* Don't override explicit annotations if they clash with parent class *)
   check_inference_results
     {|
@@ -1015,7 +1024,7 @@ let test_inferred_attributes context =
       {|
         [
           {
-            "parent": "Foo",
+            "parent": "test.Foo",
             "name": "x",
             "location": { "qualifier": "test", "path": "test.py", "line": 5 },
             "annotation": "int"
@@ -1032,7 +1041,7 @@ let test_inferred_attributes context =
       {|
         [
           {
-            "parent": "Foo",
+            "parent": "test.Foo",
             "name": "x",
             "location": { "qualifier": "test", "path": "test.py", "line": 3 },
             "annotation": "int"
@@ -1050,7 +1059,7 @@ let test_inferred_attributes context =
       {|
         [
           {
-            "parent": "Foo",
+            "parent": "test.Foo",
             "name": "x",
             "location": { "qualifier": "test", "path": "test.py", "line": 4 },
             "annotation": "int"
@@ -1071,7 +1080,7 @@ let test_inferred_attributes context =
       {|
         [
           {
-            "parent": "Foo",
+            "parent": "test.Foo",
             "name": "x",
             "location": { "qualifier": "test", "path": "test.py", "line": 4 },
             "annotation": "int"
@@ -1090,7 +1099,7 @@ let test_inferred_attributes context =
       {|
         [
           {
-            "parent": "Foo",
+            "parent": "test.Foo",
             "name": "foo",
             "location": { "qualifier": "test", "path": "test.py", "line": 3 },
             "annotation": "None"

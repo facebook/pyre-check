@@ -76,7 +76,7 @@ let serialization_test context =
 
       @functools.lru_cache(4)
       def needs_return(y: C, x: Integer):
-          return x
+          return (x, y)
     |}
     ~expected:
       {|
@@ -90,7 +90,7 @@ let serialization_test context =
           ],
           "attributes": [
             {
-              "parent": "C",
+              "parent": "test.C",
               "name": "x",
               "location": { "qualifier": "test", "path": "*", "line": 8 },
               "annotation": "int"
@@ -100,7 +100,7 @@ let serialization_test context =
             {
               "name": "test.needs_return",
               "parent": null,
-              "return": "Integer",
+              "return": "typing.Tuple[sqlalchemy.Integer, test.C]",
               "parameters": [
                 { "name": "y", "annotation": "test.C", "value": null, "index": 0 },
                 { "name": "x", "annotation": "sqlalchemy.Integer", "value": null, "index": 1 }
@@ -221,7 +221,7 @@ let attribute_widen_test context =
           "globals": [],
           "attributes": [
             {
-              "parent": "Foo",
+              "parent": "test.Foo",
               "name": "x",
               "location": { "qualifier": "test", "path": "*", "line": 3 },
               "annotation": "typing.Optional[int]"
