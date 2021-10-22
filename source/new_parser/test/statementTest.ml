@@ -291,6 +291,198 @@ let test_import _ =
   PyreNewParser.with_context do_test
 
 
+let test_for_while_if _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "for a in b: c\n"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = !"a";
+               iterator = !"b";
+               body = [+Statement.Expression !"c"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "for a, b in c: d\n"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = +Expression.Tuple [!"a"; !"b"];
+               iterator = !"c";
+               body = [+Statement.Expression !"d"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "for (a, b) in c: d\n"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = +Expression.Tuple [!"a"; !"b"];
+               iterator = !"c";
+               body = [+Statement.Expression !"d"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "for [a, b] in c: d\n"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = +Expression.List [!"a"; !"b"];
+               iterator = !"c";
+               body = [+Statement.Expression !"d"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "for a.b in c: d\n"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target =
+                 +Expression.Name
+                    (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false });
+               iterator = !"c";
+               body = [+Statement.Expression !"d"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "async for a in b: c\n"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = !"a";
+               iterator = !"b";
+               body = [+Statement.Expression !"c"];
+               orelse = [];
+               async = true;
+             };
+        ];
+    assert_parsed
+      "for a in b:\n\tc\n"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = !"a";
+               iterator = !"b";
+               body = [+Statement.Expression !"c"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "for a in b:\n\tc\nelse:\n\td\n"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = !"a";
+               iterator = !"b";
+               body = [+Statement.Expression !"c"];
+               orelse = [+Statement.Expression !"d"];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "for a, *b in c: \n\ta"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = +Expression.Tuple [!"a"; +Expression.Starred (Starred.Once !"b")];
+               iterator = !"c";
+               body = [+Statement.Expression !"a"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "while a: b\n"
+      ~expected:
+        [+Statement.While { While.test = !"a"; body = [+Statement.Expression !"b"]; orelse = [] }];
+    assert_parsed
+      "while a:\n\tb\nelse:\n\tc\n"
+      ~expected:
+        [
+          +Statement.While
+             {
+               While.test = !"a";
+               body = [+Statement.Expression !"b"];
+               orelse = [+Statement.Expression !"c"];
+             };
+        ];
+    assert_parsed
+      "if a: b\n"
+      ~expected:[+Statement.If { If.test = !"a"; body = [+Statement.Expression !"b"]; orelse = [] }];
+    assert_parsed
+      "if a: b\nelif c: d"
+      ~expected:
+        [
+          +Statement.If
+             {
+               If.test = !"a";
+               body = [+Statement.Expression !"b"];
+               orelse =
+                 [
+                   +Statement.If { If.test = !"c"; body = [+Statement.Expression !"d"]; orelse = [] };
+                 ];
+             };
+        ];
+    assert_parsed
+      "if a:\n\n\tb\n"
+      ~expected:[+Statement.If { If.test = !"a"; body = [+Statement.Expression !"b"]; orelse = [] }];
+    assert_parsed
+      "if a:\n\tb\n\n\tc"
+      ~expected:
+        [
+          +Statement.If
+             {
+               If.test = !"a";
+               body = [+Statement.Expression !"b"; +Statement.Expression !"c"];
+               orelse = [];
+             };
+        ];
+    assert_parsed
+      "if a:\n\tb\nelse:\n\tc\n"
+      ~expected:
+        [
+          +Statement.If
+             {
+               If.test = !"a";
+               body = [+Statement.Expression !"b"];
+               orelse = [+Statement.Expression !"c"];
+             };
+        ];
+
+    assert_not_parsed "for";
+    assert_not_parsed "for a in b";
+    assert_not_parsed "while a";
+    assert_not_parsed "while a:";
+    assert_not_parsed "if a";
+    assert_not_parsed "if a:";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
@@ -299,5 +491,6 @@ let () =
          "expression_return_raise" >:: test_expression_return_raise;
          "assert_delete" >:: test_assert_delete;
          "import" >:: test_import;
+         "for_while_if" >:: test_for_while_if;
        ]
   |> Test.run

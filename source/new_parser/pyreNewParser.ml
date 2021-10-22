@@ -467,14 +467,20 @@ let statement =
   let ann_assign ~location:_ ~target:_ ~annotation:_ ~value:_ ~simple:_ =
     failwith "not implemented yet"
   in
-  let for_ ~location:_ ~target:_ ~iter:_ ~body:_ ~orelse:_ ~type_comment:_ =
-    failwith "not implemented yet"
+  let for_ ~location ~target ~iter ~body ~orelse ~type_comment:_ =
+    Statement.For { For.target; iterator = iter; body; orelse; async = false }
+    |> Node.create ~location
   in
-  let async_for ~location:_ ~target:_ ~iter:_ ~body:_ ~orelse:_ ~type_comment:_ =
-    failwith "not implemented yet"
+  let async_for ~location ~target ~iter ~body ~orelse ~type_comment:_ =
+    Statement.For { For.target; iterator = iter; body; orelse; async = true }
+    |> Node.create ~location
   in
-  let while_ ~location:_ ~test:_ ~body:_ ~orelse:_ = failwith "not implemented yet" in
-  let if_ ~location:_ ~test:_ ~body:_ ~orelse:_ = failwith "not implemented yet" in
+  let while_ ~location ~test ~body ~orelse =
+    Statement.While { While.test; body; orelse } |> Node.create ~location
+  in
+  let if_ ~location ~test ~body ~orelse =
+    Statement.If { If.test; body; orelse } |> Node.create ~location
+  in
   let with_ ~location:_ ~items:_ ~body:_ ~type_comment:_ = failwith "not implemented yet" in
   let async_with ~location:_ ~items:_ ~body:_ ~type_comment:_ = failwith "not implemented yet" in
   let match_ ~location:_ ~subject:_ ~cases:_ =
