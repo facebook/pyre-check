@@ -102,11 +102,69 @@ let test_expression_return_raise _ =
   PyreNewParser.with_context do_test
 
 
+let test_assert_delete _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    let assert_not_parsed = assert_not_parsed ~context in
+    assert_parsed
+      "assert a"
+      ~expected:
+        [+Statement.Assert { Assert.test = !"a"; message = None; origin = Assert.Origin.Assertion }];
+    assert_parsed
+      "assert a, b"
+      ~expected:
+        [
+          +Statement.Assert
+             { Assert.test = !"a"; message = Some !"b"; origin = Assert.Origin.Assertion };
+        ];
+    assert_parsed
+      "assert (a, b)"
+      ~expected:
+        [
+          +Statement.Assert
+             {
+               Assert.test = +Expression.Tuple [!"a"; !"b"];
+               message = None;
+               origin = Assert.Origin.Assertion;
+             };
+        ];
+    assert_parsed
+      "assert a is not None, 'b or c'"
+      ~expected:
+        [
+          +Statement.Assert
+             {
+               Assert.test =
+                 +Expression.ComparisonOperator
+                    {
+                      ComparisonOperator.left = !"a";
+                      operator = ComparisonOperator.IsNot;
+                      right = +Expression.Constant Constant.NoneLiteral;
+                    };
+               message =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "b or c")));
+               origin = Assert.Origin.Assertion;
+             };
+        ];
+    assert_parsed "del ()" ~expected:[+Statement.Delete [+Expression.Tuple []]];
+    assert_parsed "del a" ~expected:[+Statement.Delete [!"a"]];
+    assert_parsed "del (a)" ~expected:[+Statement.Delete [!"a"]];
+    assert_parsed "del a, b" ~expected:[+Statement.Delete [!"a"; !"b"]];
+    assert_parsed "del (a, b)" ~expected:[+Statement.Delete [+Expression.Tuple [!"a"; !"b"]]];
+
+    assert_not_parsed "assert";
+    assert_not_parsed "del";
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
          "pass_break_continue" >:: test_pass_break_continue;
          "global_nonlocal" >:: test_global_nonlocal;
          "expression_return_raise" >:: test_expression_return_raise;
+         "assert_delete" >:: test_assert_delete;
        ]
   |> Test.run

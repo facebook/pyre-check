@@ -458,7 +458,7 @@ let statement =
   let return ~location ~value =
     Statement.Return { Return.expression = value; is_implicit = false } |> Node.create ~location
   in
-  let delete ~location:_ ~targets:_ = failwith "not implemented yet" in
+  let delete ~location ~targets = Statement.Delete targets |> Node.create ~location in
   let assign ~location:_ ~targets:_ ~value:_ ~type_comment:_ = failwith "not implemented yet" in
   let aug_assign ~location:_ ~target:_ ~op:_ ~value:_ = failwith "not implemented yet" in
   let ann_assign ~location:_ ~target:_ ~annotation:_ ~value:_ ~simple:_ =
@@ -484,7 +484,10 @@ let statement =
   let try_ ~location:_ ~body:_ ~handlers:_ ~orelse:_ ~finalbody:_ =
     failwith "not implemented yet"
   in
-  let assert_ ~location:_ ~test:_ ~msg:_ = failwith "not implemented yet" in
+  let assert_ ~location ~test ~msg =
+    Statement.Assert { Assert.test; message = msg; origin = Assert.Origin.Assertion }
+    |> Node.create ~location
+  in
   let import ~location:_ ~names:_ = failwith "not implemented yet" in
   let import_from ~location:_ ~module_:_ ~names:_ ~level:_ = failwith "not implemented yet" in
   let global ~location ~names = Statement.Global names |> Node.create ~location in
