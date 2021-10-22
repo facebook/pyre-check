@@ -185,7 +185,9 @@ module Filter = struct
       | CriticalFile.Extension suffix -> Some suffix
     in
     let suffixes =
-      String.Set.of_list (List.map ~f:Configuration.Extension.suffix extensions)
+      List.map ~f:Configuration.Extension.suffix extensions
+      |> List.map ~f:(String.lstrip ~drop:(Char.equal '.'))
+      |> String.Set.of_list
       |> fun set ->
       List.filter_map critical_files ~f:extension_of
       |> List.fold ~init:set ~f:String.Set.add

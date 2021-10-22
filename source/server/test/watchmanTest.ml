@@ -302,7 +302,7 @@ let test_filter_creation context =
   assert_filter
     (from_server_configurations
        ~critical_files:[]
-       ~extensions:[Extension.create_extension "foo"]
+       ~extensions:[Extension.create_extension ".foo"]
        ~source_paths:(SourcePaths.Simple [])
        ())
     ~expected:
