@@ -157,7 +157,8 @@ def _print_running_server_status(running_status: Sequence[RunningServerStatus]) 
 def _print_defunct_server_status(defunct_status: Sequence[DefunctServerStatus]) -> None:
     defunct_count = len(defunct_status)
     if defunct_count > 0:
-        log.stdout.write(f"Found {defunct_count} defunct server at:\n")
+        plurality = "" if defunct_count == 1 else "s"
+        log.stdout.write(f"Found {defunct_count} defunct server{plurality} at:\n")
         for status in defunct_status:
             log.stdout.write(f" {status.socket_path}\n")
         log.stdout.write("\n")
