@@ -1332,14 +1332,10 @@ let test_delete_locations _ =
         ~start:(1, 0)
         ~stop:(1, 8)
         (Statement.Delete
-           (node
-              ~start:(1, 4)
-              ~stop:(1, 8)
-              (Expression.Tuple
-                 [
-                   node ~start:(1, 4) ~stop:(1, 5) (Expression.Name (Name.Identifier "a"));
-                   node ~start:(1, 7) ~stop:(1, 8) (Expression.Name (Name.Identifier "b"));
-                 ])));
+           [
+             node ~start:(1, 4) ~stop:(1, 5) (Expression.Name (Name.Identifier "a"));
+             node ~start:(1, 7) ~stop:(1, 8) (Expression.Name (Name.Identifier "b"));
+           ]);
     ]
 
 

@@ -878,8 +878,10 @@ let qualify
       | Define define ->
           let scope, define = qualify_define scope define in
           scope, Define define
-      | Delete expression ->
-          scope, Delete (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
+      | Delete expressions ->
+          ( scope,
+            Delete
+              (List.map expressions ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)) )
       | Expression expression ->
           scope, Expression (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
       | For ({ For.target; iterator; body; orelse; _ } as block) ->
@@ -3109,9 +3111,8 @@ module AccessCollector = struct
               from_optional_expression sofar value)
         in
         from_optional_expression collected return_annotation
-    | Delete expression
-    | Expression expression ->
-        from_expression collected expression
+    | Delete expressions -> List.fold expressions ~init:collected ~f:from_expression
+    | Expression expression -> from_expression collected expression
     | For { For.target; iterator; body; orelse; _ } ->
         let collected = from_expression collected target in
         let collected = from_expression collected iterator in

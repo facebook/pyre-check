@@ -654,11 +654,11 @@ small_statement:
     }
 
   | delete = DELETE;
-    expression = expression_list {
-      let stop = Node.stop expression in
+    expressions = separated_nonempty_list(COMMA, expression) {
+      let stop = Node.stop (List.last_exn expressions) in
       [{
         Node.location = location_create_with_stop ~start:delete ~stop;
-        value = Delete (convert expression);
+        value = Delete (List.map expressions ~f:convert);
       }]
     }
   ;

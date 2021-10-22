@@ -572,9 +572,10 @@ module State (Context : Context) = struct
           ~expression:value
           ~awaitables
           ~target
-    | Delete expression
-    | Expression expression ->
-        forward_expression ~resolution ~state ~expression |> snd
+    | Delete expressions ->
+        let f state expression = forward_expression ~resolution ~state ~expression |> snd in
+        List.fold expressions ~init:state ~f
+    | Expression expression -> forward_expression ~resolution ~state ~expression |> snd
     | Raise { Raise.expression = None; _ } -> state
     | Raise { Raise.expression = Some expression; _ } ->
         forward_expression ~resolution ~state ~expression |> snd

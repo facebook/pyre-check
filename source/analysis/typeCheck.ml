@@ -5677,13 +5677,19 @@ module State (Context : Context) = struct
           | _ -> errors
         in
         resolution, errors
-    | Delete expression ->
-        let { Resolved.resolution; errors; _ } = forward_expression ~resolution ~expression in
-        let resolution =
-          match Node.value expression with
-          | Name (Identifier identifier) ->
-              Resolution.unset_local resolution ~reference:(Reference.create identifier)
-          | _ -> resolution
+    | Delete expressions ->
+        let process_expression (resolution, errors_sofar) expression =
+          let { Resolved.resolution; errors; _ } = forward_expression ~resolution ~expression in
+          let resolution =
+            match Node.value expression with
+            | Name (Identifier identifier) ->
+                Resolution.unset_local resolution ~reference:(Reference.create identifier)
+            | _ -> resolution
+          in
+          resolution, List.append errors errors_sofar
+        in
+        let resolution, errors =
+          List.fold expressions ~init:(resolution, []) ~f:process_expression
         in
         Value resolution, errors
     | Expression

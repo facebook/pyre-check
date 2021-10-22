@@ -360,7 +360,7 @@ and Statement : sig
     | Class of Class.t
     | Continue
     | Define of Define.t
-    | Delete of Expression.t
+    | Delete of Expression.t list
     | Expression of Expression.t
     | For of For.t
     | Global of Identifier.t list

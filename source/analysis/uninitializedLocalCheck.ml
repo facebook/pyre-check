@@ -140,11 +140,11 @@ let extract_reads_statement { Node.value; _ } =
   let expressions =
     match value with
     | Statement.Assign { Assign.value = expression; _ }
-    | Delete expression
     | Expression expression
     | If { If.test = expression; _ }
     | While { While.test = expression; _ } ->
         [expression]
+    | Delete expressions -> expressions
     | Assert { Assert.test; message; _ } -> [test] @ Option.to_list message
     | For { For.target; iterator; _ } -> [target; iterator]
     | Raise { Raise.expression; from } -> Option.to_list expression @ Option.to_list from

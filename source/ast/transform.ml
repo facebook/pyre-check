@@ -299,7 +299,7 @@ module Make (Transformer : Transformer) = struct
                 unbound_names;
                 body = transform_list body ~f:transform_statement |> List.concat;
               }
-        | Delete expression -> Delete (transform_expression expression)
+        | Delete expressions -> Delete (List.map expressions ~f:transform_expression)
         | Expression expression -> Expression (transform_expression expression)
         | For { For.target; iterator; body; orelse; async } ->
             For

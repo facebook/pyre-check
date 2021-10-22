@@ -166,9 +166,8 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           iter_signature signature;
           List.iter body ~f:visit_statement;
           List.iter captures ~f:iter_capture
-      | Delete expression
-      | Expression expression ->
-          visit_expression expression
+      | Delete expressions -> List.iter expressions ~f:visit_expression
+      | Expression expression -> visit_expression expression
       | For { For.target; iterator; body; orelse; _ } ->
           visit_expression target;
           visit_expression iterator;

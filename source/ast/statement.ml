@@ -1211,7 +1211,7 @@ and Statement : sig
     | Class of Class.t
     | Continue
     | Define of Define.t
-    | Delete of Expression.t
+    | Delete of Expression.t list
     | Expression of Expression.t
     | For of For.t
     | Global of Identifier.t list
@@ -1241,7 +1241,7 @@ end = struct
     | Class of Class.t
     | Continue
     | Define of Define.t
-    | Delete of Expression.t
+    | Delete of Expression.t list
     | Expression of Expression.t
     | For of For.t
     | Global of Identifier.t list
@@ -1266,7 +1266,7 @@ end = struct
     | Class left, Class right -> Class.location_insensitive_compare left right
     | Continue, Continue -> 0
     | Define left, Define right -> Define.location_insensitive_compare left right
-    | Delete left, Delete right -> Expression.location_insensitive_compare left right
+    | Delete left, Delete right -> List.compare Expression.location_insensitive_compare left right
     | Expression left, Expression right -> Expression.location_insensitive_compare left right
     | For left, For right -> For.location_insensitive_compare left right
     | Global left, Global right -> List.compare Identifier.compare left right
@@ -1515,7 +1515,10 @@ module PrettyPrinter = struct
     | Class definition -> Format.fprintf formatter "%a" pp_class definition
     | Continue -> Format.fprintf formatter "continue"
     | Define define -> Format.fprintf formatter "%a" pp_define define
-    | Delete expression -> Format.fprintf formatter "del %a" Expression.pp expression
+    | Delete expressions ->
+        List.map expressions ~f:Expression.show
+        |> String.concat ~sep:", "
+        |> Format.fprintf formatter "del %s"
     | Expression expression -> Expression.pp formatter expression
     | For { For.target; iterator; body; orelse; async } ->
         Format.fprintf
@@ -1724,9 +1727,8 @@ let is_generator statements =
     | Assign { Assign.value; _ } -> is_expression_generator value
     | Assert { Assert.test; message; _ } ->
         is_expression_generator test || is_optional_expression_generator message
-    | Delete expression
-    | Expression expression ->
-        is_expression_generator expression
+    | Delete expressions -> List.exists expressions ~f:is_expression_generator
+    | Expression expression -> is_expression_generator expression
     | Raise { Raise.expression; from } ->
         is_optional_expression_generator expression || is_optional_expression_generator from
     | Return { Return.expression; _ } -> is_optional_expression_generator expression

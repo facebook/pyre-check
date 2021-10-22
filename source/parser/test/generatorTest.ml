@@ -4158,8 +4158,9 @@ let test_return _ =
 
 
 let test_delete _ =
-  assert_parsed_equal "del a" [+Statement.Delete !"a"];
-  assert_parsed_equal "del a, b" [+Statement.Delete (+Expression.Tuple [!"a"; !"b"])]
+  assert_parsed_equal "del a" [+Statement.Delete [!"a"]];
+  assert_parsed_equal "del a, b" [+Statement.Delete [!"a"; !"b"]];
+  assert_parsed_equal "del (a, b)" [+Statement.Delete [+Expression.Tuple [!"a"; !"b"]]]
 
 
 let test_assign _ =
