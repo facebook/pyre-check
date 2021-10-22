@@ -27,7 +27,7 @@ from ..infer import (
     RawParameter,
     RawDefineAnnotation,
     RawInferOutput,
-    RawInferOutputParsingError,
+    RawInferOutputForPath,
     StubGenerationOptions,
     TypeAnnotation,
     FunctionAnnotation,
@@ -75,6 +75,9 @@ class ArgumentTest(testslide.TestCase):
 
 
 class InferTest(testslide.TestCase):
+
+    maxDiff = 2000
+
     def test_create_infer_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
@@ -155,7 +158,7 @@ class InferTest(testslide.TestCase):
             self.assertEqual(RawInferOutput.create_from_json(input), expected)
 
         def assert_not_parsed(input: str) -> None:
-            with self.assertRaises(RawInferOutputParsingError):
+            with self.assertRaises(RawInferOutput.ParsingError):
                 RawInferOutput.create_from_string(input)
 
         assert_not_parsed("")
@@ -290,7 +293,7 @@ class InferTest(testslide.TestCase):
         def assert_split(given: Dict[str, object], expected: Dict[str, Any]) -> None:
             input_infer_output = RawInferOutput.create_from_json(given)
             expected_infer_output = {
-                path: RawInferOutput.create_from_json(output)
+                path: RawInferOutputForPath.create_from_json(output)
                 for (path, output) in expected.items()
             }
             self.assertDictEqual(
@@ -329,7 +332,15 @@ class InferTest(testslide.TestCase):
         }
 
         assert_split({}, expected={})
-        assert_split({"globals": [foo_global0]}, {"foo.py": {"globals": [foo_global0]}})
+        assert_split(
+            {"globals": [foo_global0]},
+            {
+                "foo.py": {
+                    "qualifier": "foo",
+                    "globals": [foo_global0],
+                },
+            },
+        )
         assert_split(
             {
                 "globals": [
@@ -339,8 +350,14 @@ class InferTest(testslide.TestCase):
                 ]
             },
             {
-                "foo.py": {"globals": [foo_global0, foo_global1]},
-                "bar.py": {"globals": [bar_global0]},
+                "foo.py": {
+                    "qualifier": "foo",
+                    "globals": [foo_global0, foo_global1],
+                },
+                "bar.py": {
+                    "qualifier": "bar",
+                    "globals": [bar_global0],
+                },
             },
         )
         assert_split(
@@ -353,12 +370,19 @@ class InferTest(testslide.TestCase):
             },
             {
                 "foo.py": {
+                    "qualifier": "foo",
                     "globals": [
                         foo_global0,
-                    ]
+                    ],
                 },
-                "bar.py": {"attributes": [bar_attribute0]},
-                "baz.py": {"defines": [baz_define0]},
+                "bar.py": {
+                    "qualifier": "bar",
+                    "attributes": [bar_attribute0],
+                },
+                "baz.py": {
+                    "qualifier": "baz",
+                    "defines": [baz_define0],
+                },
             },
         )
 
@@ -400,14 +424,17 @@ class InferTest(testslide.TestCase):
 @dataclasses.dataclass(frozen=True)
 class ExpectedModuleAnnotationItem:
     path: str
-    infer_output: RawInferOutput
+    infer_output: RawInferOutputForPath
 
 
 class ModuleAnnotationTest(testslide.TestCase):
+
+    maxDiff = 2000
+
     def test_module_annotations_from_infer_output(self) -> None:
         def assert_result(
             path: str,
-            infer_output: RawInferOutput,
+            infer_output: RawInferOutputForPath,
             options: StubGenerationOptions,
             expected: ModuleAnnotations,
         ) -> None:
@@ -417,18 +444,20 @@ class ModuleAnnotationTest(testslide.TestCase):
             )
 
         default_path = "test.py"
+        default_qualifier = "test"
         default_options = StubGenerationOptions()
 
         assert_result(
             path=default_path,
-            infer_output=RawInferOutput(),
+            infer_output=RawInferOutputForPath(qualifier=default_qualifier),
             options=default_options,
             expected=ModuleAnnotations(path=default_path, options=default_options),
         )
 
         assert_result(
             path=default_path,
-            infer_output=RawInferOutput(
+            infer_output=RawInferOutputForPath(
+                qualifier=default_qualifier,
                 define_annotations=[
                     RawDefineAnnotation(
                         name="test.Foo.foo",
@@ -456,7 +485,9 @@ class ModuleAnnotationTest(testslide.TestCase):
                     FunctionAnnotation(
                         name="test.bar",
                         return_annotation=TypeAnnotation.from_raw(
-                            None, options=default_options
+                            None,
+                            qualifier=default_qualifier,
+                            options=default_options,
                         ),
                         parameters=[],
                         decorators=[],
@@ -468,7 +499,9 @@ class ModuleAnnotationTest(testslide.TestCase):
                         parent="test.Foo",
                         name="test.Foo.foo",
                         return_annotation=TypeAnnotation.from_raw(
-                            "int", options=default_options
+                            "int",
+                            qualifier=default_qualifier,
+                            options=default_options,
                         ),
                         parameters=[],
                         decorators=["derp"],
@@ -480,7 +513,8 @@ class ModuleAnnotationTest(testslide.TestCase):
 
         assert_result(
             path=default_path,
-            infer_output=RawInferOutput(
+            infer_output=RawInferOutputForPath(
+                qualifier=default_qualifier,
                 global_annotations=[
                     RawGlobalAnnotation(
                         name="x",
@@ -499,7 +533,9 @@ class ModuleAnnotationTest(testslide.TestCase):
                     GlobalAnnotation(
                         name="x",
                         annotation=TypeAnnotation.from_raw(
-                            "int", options=default_options
+                            "int",
+                            qualifier=default_qualifier,
+                            options=default_options,
                         ),
                     )
                 ],
@@ -508,7 +544,8 @@ class ModuleAnnotationTest(testslide.TestCase):
 
         assert_result(
             path=default_path,
-            infer_output=RawInferOutput(
+            infer_output=RawInferOutputForPath(
+                qualifier=default_qualifier,
                 attribute_annotations=[
                     RawAttributeAnnotation(
                         parent="Foo",
@@ -532,7 +569,8 @@ class ModuleAnnotationTest(testslide.TestCase):
         )
         assert_result(
             path=default_path,
-            infer_output=RawInferOutput(
+            infer_output=RawInferOutputForPath(
+                qualifier=default_qualifier,
                 attribute_annotations=[
                     RawAttributeAnnotation(
                         parent="Foo",
@@ -553,7 +591,9 @@ class ModuleAnnotationTest(testslide.TestCase):
                         parent="Foo",
                         name="x",
                         annotation=TypeAnnotation.from_raw(
-                            "int", options=annotate_attribute_options
+                            "int",
+                            qualifier=default_qualifier,
+                            options=default_options,
                         ),
                     )
                 ],
@@ -582,21 +622,21 @@ class ModuleAnnotationTest(testslide.TestCase):
         foo_global0 = RawGlobalAnnotation(
             name="x",
             location=RawAnnotationLocation(
-                qualifier="foo", path="/root/p0/foo.py", line=1
+                qualifier="p0.foo", path="/root/p0/foo.py", line=1
             ),
             annotation="int",
         )
         foo_global1 = RawGlobalAnnotation(
             name="y",
             location=RawAnnotationLocation(
-                qualifier="foo", path="/root/p0/foo.py", line=2
+                qualifier="p0.foo", path="/root/p0/foo.py", line=2
             ),
             annotation="str",
         )
         bar_global0 = RawGlobalAnnotation(
             name="x",
             location=RawAnnotationLocation(
-                qualifier="bar", path="/root/p1/bar.py", line=1
+                qualifier="p1.bar", path="/root/p1/bar.py", line=1
             ),
             annotation="int",
         )
@@ -604,7 +644,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             parent="bar.Foo",
             name="a",
             location=RawAnnotationLocation(
-                qualifier="bar", path="/root/p1/bar.py", line=2
+                qualifier="p1.bar", path="/root/p1/bar.py", line=2
             ),
             annotation="bool",
         )
@@ -630,13 +670,15 @@ class ModuleAnnotationTest(testslide.TestCase):
             expected=[
                 ExpectedModuleAnnotationItem(
                     path="p0/foo.py",
-                    infer_output=RawInferOutput(
+                    infer_output=RawInferOutputForPath(
+                        qualifier="p0.foo",
                         global_annotations=[foo_global0, foo_global1],
                     ),
                 ),
                 ExpectedModuleAnnotationItem(
                     path="p1/bar.py",
-                    infer_output=RawInferOutput(
+                    infer_output=RawInferOutputForPath(
+                        qualifier="p1.bar",
                         global_annotations=[bar_global0],
                         attribute_annotations=[bar_attribute0],
                     ),
@@ -645,6 +687,11 @@ class ModuleAnnotationTest(testslide.TestCase):
         )
 
         # Test relativization & path filtering
+        #
+        # Note that the qualifier doesn't inherently correspond to the
+        # relative path - a local configuration can be nested inside a
+        # project, in which case the qualifier is still relative to the
+        # project root.
         assert_created(
             infer_output=RawInferOutput(
                 global_annotations=[
@@ -657,7 +704,8 @@ class ModuleAnnotationTest(testslide.TestCase):
             expected=[
                 ExpectedModuleAnnotationItem(
                     path="bar.py",
-                    infer_output=RawInferOutput(
+                    infer_output=RawInferOutputForPath(
+                        qualifier="p1.bar",
                         global_annotations=[bar_global0],
                     ),
                 )
@@ -686,15 +734,24 @@ def _assert_stubs_equal(actual: str, expected: str) -> None:
 class InferUtilsTestSuite(testslide.TestCase):
     def test_sanitize_annotation__fix_PathLike(self) -> None:
         self.assertEqual(
-            sanitize_annotation("PathLike[str]"),
+            sanitize_annotation(
+                "PathLike[str]",
+                qualifier="foo",
+            ),
             "'os.PathLike[str]'",
         )
         self.assertEqual(
-            sanitize_annotation("os.PathLike[str]"),
+            sanitize_annotation(
+                "os.PathLike[str]",
+                qualifier="foo",
+            ),
             "os.PathLike[str]",
         )
         self.assertEqual(
-            sanitize_annotation("typing.Union[PathLike[bytes], PathLike[str], str]"),
+            sanitize_annotation(
+                "typing.Union[PathLike[bytes], PathLike[str], str]",
+                qualifier="foo",
+            ),
             "typing.Union['os.PathLike[bytes]', 'os.PathLike[str]', str]",
         )
         # The libcst code throws an exception on this annotation because it is
@@ -704,8 +761,33 @@ class InferUtilsTestSuite(testslide.TestCase):
         # This is necessary because at this point there are still cases where
         # the backend spits out a type's representation as invalid python.
         self.assertEqual(
-            sanitize_annotation("PathLike[Variable[AnyStr <: [str, bytes]]]"),
+            sanitize_annotation(
+                "PathLike[Variable[AnyStr <: [str, bytes]]]", qualifier="foo"
+            ),
             "PathLike[Variable[AnyStr <: [str, bytes]]]",
+        )
+
+    def test_sanitize_annotation__strip_qualifier(self) -> None:
+        self.assertEqual(
+            sanitize_annotation(
+                "foo.A",
+                qualifier="foo",
+            ),
+            "A",
+        )
+        self.assertEqual(
+            sanitize_annotation(
+                "typing.Union[foo.A[bar.B], bar.C[foo.B]]",
+                qualifier="foo",
+            ),
+            "typing.Union[A[bar.B], bar.C[B]]",
+        )
+        self.assertEqual(
+            sanitize_annotation(
+                "foo.bar.A",
+                qualifier="foo",
+            ),
+            "foo.bar.A",
         )
 
 
@@ -713,6 +795,7 @@ class TypeAnnotationTest(testslide.TestCase):
     def test_sanitized(self) -> None:
         actual = TypeAnnotation.from_raw(
             "foo.Foo[int]",
+            qualifier="bar",
             options=StubGenerationOptions(),
         )
         self.assertEqual(actual.sanitized(), "foo.Foo[int]")
@@ -720,17 +803,27 @@ class TypeAnnotationTest(testslide.TestCase):
 
         actual = TypeAnnotation.from_raw(
             "foo.Foo[int]",
-            options=StubGenerationOptions(quote_annotations=True),
-        )
-        self.assertEqual(actual.sanitized(), '"foo.Foo[int]"')
-        self.assertEqual(actual.sanitized(prefix=": "), ': "foo.Foo[int]"')
-
-        actual = TypeAnnotation.from_raw(
-            "foo.Foo[int]",
+            qualifier="bar",
             options=StubGenerationOptions(dequalify=True),
         )
         self.assertEqual(actual.sanitized(), "Foo[int]")
         self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
+
+        actual = TypeAnnotation.from_raw(
+            "foo.Foo[int]",
+            qualifier="foo",
+            options=StubGenerationOptions(),
+        )
+        self.assertEqual(actual.sanitized(), "Foo[int]")
+        self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
+
+        actual = TypeAnnotation.from_raw(
+            "foo.Foo[int]",
+            qualifier="foo",
+            options=StubGenerationOptions(quote_annotations=True),
+        )
+        self.assertEqual(actual.sanitized(), '"foo.Foo[int]"')
+        self.assertEqual(actual.sanitized(prefix=": "), ': "foo.Foo[int]"')
 
 
 class StubGenerationTest(testslide.TestCase):

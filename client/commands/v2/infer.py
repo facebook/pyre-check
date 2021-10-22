@@ -6,6 +6,8 @@
 import contextlib
 import dataclasses
 import enum
+import functools
+import itertools
 import json
 import logging
 import multiprocessing
@@ -145,6 +147,9 @@ class RawInferOutput:
         metadata=dataclasses_json.config(field_name="defines"), default_factory=list
     )
 
+    class ParsingError(Exception):
+        pass
+
     @staticmethod
     def create_from_string(input: str) -> "RawInferOutput":
         try:
@@ -156,13 +161,23 @@ class RawInferOutput:
             ValueError,
             dataclasses_json.mm.ValidationError,
         ) as error:
-            raise RawInferOutputParsingError(str(error)) from error
+            raise RawInferOutput.ParsingError(str(error)) from error
 
     @staticmethod
     def create_from_json(input: Dict[str, object]) -> "RawInferOutput":
         return RawInferOutput.create_from_string(json.dumps(input))
 
-    def split_by_path(self) -> "Dict[str, RawInferOutput]":
+    def qualifiers_by_path(self) -> Dict[str, str]:
+        return {
+            annotation.location.path: annotation.location.qualifier
+            for annotation in itertools.chain(
+                self.global_annotations,
+                self.attribute_annotations,
+                self.define_annotations,
+            )
+        }
+
+    def split_by_path(self) -> "Dict[str, RawInferOutputForPath]":
         def create_index(
             annotations: Sequence[TAnnotation],
         ) -> Dict[str, List[TAnnotation]]:
@@ -172,15 +187,17 @@ class RawInferOutput:
                 result.setdefault(key, []).append(annotation)
             return result
 
+        qualifiers_by_path = self.qualifiers_by_path()
         global_annotation_index = create_index(self.global_annotations)
         attribute_annotation_index = create_index(self.attribute_annotations)
         define_annotation_index = create_index(self.define_annotations)
 
         return {
-            path: RawInferOutput(
+            path: RawInferOutputForPath(
                 global_annotations=global_annotation_index.get(path, []),
                 attribute_annotations=attribute_annotation_index.get(path, []),
                 define_annotations=define_annotation_index.get(path, []),
+                qualifier=qualifiers_by_path[path],
             )
             for path in global_annotation_index.keys()
             | attribute_annotation_index.keys()
@@ -188,8 +205,27 @@ class RawInferOutput:
         }
 
 
-class RawInferOutputParsingError(Exception):
-    pass
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class RawInferOutputForPath:
+    qualifier: str
+    global_annotations: List[RawGlobalAnnotation] = dataclasses.field(
+        metadata=dataclasses_json.config(field_name="globals"), default_factory=list
+    )
+    attribute_annotations: List[RawAttributeAnnotation] = dataclasses.field(
+        metadata=dataclasses_json.config(field_name="attributes"), default_factory=list
+    )
+    define_annotations: List[RawDefineAnnotation] = dataclasses.field(
+        metadata=dataclasses_json.config(field_name="defines"), default_factory=list
+    )
+
+    @staticmethod
+    def create_from_json(input: Dict[str, object]) -> "RawInferOutputForPath":
+        # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+        return RawInferOutputForPath.schema().loads(json.dumps(input))
 
 
 def _sanitize_name(name: str) -> str:
@@ -197,7 +233,58 @@ def _sanitize_name(name: str) -> str:
     return name.split(".")[-1]
 
 
-class PathLikeAnnotationFixer(libcst.CSTTransformer):
+@functools.lru_cache()
+def empty_module() -> libcst.Module:
+    return libcst.parse_module("")
+
+
+def code_for_node(node: libcst.CSTNode) -> str:
+    return empty_module().code_for_node(node)
+
+
+class AnnotationFixer(libcst.CSTTransformer):
+    def __init__(self, qualifier: str) -> None:
+        """
+        AnnotationFixer sanitizes annotations.
+
+        There are two transformations we apply:
+
+        (1) Strip any prefix matching `prefix` from names. This is because
+        the pyre backend always uses fully-qualified names, but in our stubs
+        we should not include the prefix for names coming from this module.
+
+        (2) Convert `Pathlike` annotations, which come from pyre in a
+        special-cased form that isn't a correct annotation, to a quoted
+        `"os.Pathlike[_]"`.
+
+        Note: we eventually will need to either have a proper protocol in the
+        backend for generating python-readable types, or extend (2) to handle
+        various other special cases where pyre outputs types that are invalid
+        in python.
+
+        """
+        super().__init__()
+        self.qualifier = qualifier
+
+    def leave_Attribute(
+        self,
+        original_node: libcst.Attribute,
+        updated_node: libcst.Attribute,
+    ) -> Union[libcst.Attribute, libcst.Name]:
+        """
+        Note: in order to avoid complex reverse-name-matching, we're
+        effectively operating at the top level of attributes, by using only
+        the `original_node`. This means the transform we're performing cannot
+        be donce concurrently with a transform that has to be done
+        incrementally.
+        """
+        value = code_for_node(original_node.value)
+        if value == self.qualifier and libcst.matchers.matches(
+            original_node.attr, libcst.matchers.Name()
+        ):
+            return libcst.ensure_type(original_node.attr, libcst.Name)
+        return original_node
+
     def leave_Subscript(
         self,
         original_node: libcst.Subscript,
@@ -214,15 +301,14 @@ class PathLikeAnnotationFixer(libcst.CSTTransformer):
                 ),
                 attr=libcst.Name(value="PathLike"),
             )
-            node_as_string = libcst.parse_module("").code_for_node(
-                updated_node.with_changes(value=name_node)
-            )
+            node_as_string = code_for_node(updated_node.with_changes(value=name_node))
             updated_node = libcst.SimpleString(f"'{node_as_string}'")
         return updated_node
 
 
 def sanitize_annotation(
     annotation: str,
+    qualifier: str,
     dequalify_all: bool = False,
 ) -> str:
     """
@@ -253,12 +339,15 @@ def sanitize_annotation(
         if match is not None:
             annotation = f"{match.group(2)}{match.group(3)}"
 
-    if annotation.find("PathLike") >= 0:
-        try:
-            tree = libcst.parse_module(annotation)
-            annotation = tree.visit(PathLikeAnnotationFixer()).code
-        except libcst._exceptions.ParserSyntaxError:
-            pass
+    try:
+        tree = libcst.parse_module(annotation)
+        annotation = tree.visit(
+            AnnotationFixer(
+                qualifier=qualifier,
+            )
+        ).code
+    except libcst._exceptions.ParserSyntaxError:
+        pass
 
     return annotation
 
@@ -282,15 +371,19 @@ class StubGenerationOptions:
 @dataclasses.dataclass(frozen=True)
 class TypeAnnotation:
     annotation: Optional[str]
+    qualifier: str
     quote: bool
     dequalify: bool
 
     @staticmethod
     def from_raw(
-        annotation: Optional[str], options: StubGenerationOptions
+        annotation: Optional[str],
+        options: StubGenerationOptions,
+        qualifier: str,
     ) -> "TypeAnnotation":
         return TypeAnnotation(
             annotation=annotation,
+            qualifier=qualifier,
             dequalify=options.dequalify,
             quote=options.quote_annotations,
         )
@@ -302,7 +395,9 @@ class TypeAnnotation:
             return f'{prefix}"{self.annotation}"'
         else:
             return prefix + sanitize_annotation(
-                self.annotation, dequalify_all=self.dequalify
+                self.annotation,
+                dequalify_all=self.dequalify,
+                qualifier=self.qualifier,
             )
 
     def _simple_types(self) -> List[str]:
@@ -387,12 +482,13 @@ class ModuleAnnotations:
     @staticmethod
     def from_infer_output(
         path: str,
-        infer_output: RawInferOutput,
+        infer_output: RawInferOutputForPath,
         options: StubGenerationOptions,
     ) -> "ModuleAnnotations":
         def type_annotation(annotation: Optional[str]) -> TypeAnnotation:
             return TypeAnnotation.from_raw(
                 annotation,
+                qualifier=infer_output.qualifier,
                 options=options,
             )
 
@@ -782,13 +878,15 @@ def _relativize_path(path: str, against: Path) -> Optional[str]:
 def create_module_annotations(
     infer_output: RawInferOutput, base_path: Path, options: StubGenerationOptions
 ) -> List[ModuleAnnotations]:
-    infer_output_relativized: Dict[Optional[str], RawInferOutput] = {
+    infer_output_relativized: Dict[Optional[str], RawInferOutputForPath] = {
         _relativize_path(path, against=base_path): data
         for path, data in infer_output.split_by_path().items()
     }
     return [
         ModuleAnnotations.from_infer_output(
-            path=path, infer_output=infer_output_for_path, options=options
+            path=path,
+            infer_output=infer_output_for_path,
+            options=options,
         )
         for path, infer_output_for_path in infer_output_relativized.items()
         if path is not None
