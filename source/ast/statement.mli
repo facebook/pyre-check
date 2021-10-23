@@ -92,7 +92,7 @@ and Class : sig
     name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
-    decorators: Decorator.t list;
+    decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -125,7 +125,7 @@ and Define : sig
     type t = {
       name: Reference.t;
       parameters: Expression.Parameter.t list;
-      decorators: Decorator.t list;
+      decorators: Expression.t list;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;

@@ -70,7 +70,7 @@ module T = struct
     | NotInEnvironment of string
     | UnexpectedDecorators of {
         name: Reference.t;
-        unexpected_decorators: Statement.Decorator.t list;
+        unexpected_decorators: Expression.t list;
       }
     | InvalidIdentifier of Expression.t
     | ClassBodyNotEllipsis of string
@@ -166,10 +166,7 @@ let description error =
         (Expression.show taint_annotation)
         reason
   | UnexpectedDecorators { name; unexpected_decorators } ->
-      let decorators =
-        List.map unexpected_decorators ~f:Statement.Decorator.to_expression
-        |> List.map ~f:Expression.show
-      in
+      let decorators = List.map unexpected_decorators ~f:Expression.show in
       let property_decorator_message =
         if List.exists decorators ~f:(String.is_substring ~substring:"property") then
           " If you're looking to model a custom property decorator, use the @property decorator."

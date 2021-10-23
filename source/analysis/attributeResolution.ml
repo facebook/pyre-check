@@ -2554,274 +2554,296 @@ class base class_metadata_environment dependency =
       | _ -> Type.Any
 
     method resolve_define ~assumptions ~implementation ~overloads =
-      let apply_decorator (index, { Decorator.name; arguments }) argument =
-        let name = Node.value name |> Reference.delocalize in
-        let decorator =
-          UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
-            (unannotated_global_environment class_metadata_environment)
-            ?dependency
-            name
+      let apply_decorator (index, decorator) argument =
+        let make_error reason =
+          Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
         in
-        let simple_decorator_name =
-          match decorator with
-          | Some (ModuleAttribute { from; name; remaining; _ }) ->
-              Reference.create_from_list (Reference.as_list from @ name :: remaining)
-              |> Reference.show
-          | _ -> Reference.show name
-        in
-        match simple_decorator_name, argument with
-        | ("click.decorators.pass_context" | "click.decorators.pass_obj"), Type.Callable callable ->
-            (* Suppress caller/callee parameter matching by altering the click entry point to have a
-               generic parameter list. *)
-            let parameters =
-              Type.Callable.Defined
-                [
-                  Type.Callable.Parameter.Variable (Concrete Type.Any);
-                  Type.Callable.Parameter.Keywords Type.Any;
-                ]
+        match Decorator.from_expression decorator with
+        | None -> make_error CouldNotResolve
+        | Some { Decorator.name; arguments } -> (
+            let name = Node.value name |> Reference.delocalize in
+            let decorator =
+              UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
+                (unannotated_global_environment class_metadata_environment)
+                ?dependency
+                name
             in
-            Type.Callable (Type.Callable.map_parameters callable ~f:(fun _ -> parameters))
-            |> Result.return
-        | name, Callable callable
-          when String.equal name "contextlib.asynccontextmanager"
-               || Set.mem Recognized.asyncio_contextmanager_decorators name ->
-            let process_overload ({ Type.Callable.annotation; _ } as overload) =
-              let joined =
-                let order = self#full_order ~assumptions in
-                try TypeOrder.join order annotation (Type.async_iterator Type.Bottom) with
-                | ClassHierarchy.Untracked _ ->
-                    (* create_overload gets called when building the environment, which is unsound
-                       and can raise. *)
-                    Type.Any
-              in
-              if Type.is_async_iterator joined then
-                {
-                  overload with
-                  Type.Callable.annotation =
-                    Type.parametric
-                      "typing.AsyncContextManager"
-                      [Single (Type.single_parameter joined)];
-                }
-              else
-                overload
+            let simple_decorator_name =
+              match decorator with
+              | Some (ModuleAttribute { from; name; remaining; _ }) ->
+                  Reference.create_from_list (Reference.as_list from @ name :: remaining)
+                  |> Reference.show
+              | _ -> Reference.show name
             in
-            let { Type.Callable.implementation = old_implementation; overloads = old_overloads; _ } =
-              callable
-            in
-            Type.Callable
-              {
-                callable with
-                implementation = process_overload old_implementation;
-                overloads = List.map old_overloads ~f:process_overload;
-              }
-            |> Result.return
-        | name, callable when String.is_suffix name ~suffix:".validator" ->
-            (* TODO(T70606997): We should be type checking attr validators properly. *)
-            Result.return callable
-        | "contextlib.contextmanager", Callable callable ->
-            let process_overload ({ Type.Callable.annotation; _ } as overload) =
-              let joined =
-                let order = self#full_order ~assumptions in
-                try TypeOrder.join order annotation (Type.iterator Type.Bottom) with
-                | ClassHierarchy.Untracked _ ->
-                    (* create_overload gets called when building the environment, which is unsound
-                       and can raise. *)
-                    Type.Any
-              in
-              if Type.is_iterator joined then
-                {
-                  overload with
-                  Type.Callable.annotation =
-                    Type.parametric
-                      "contextlib._GeneratorContextManager"
-                      [Single (Type.single_parameter joined)];
-                }
-              else
-                overload
-            in
-            let { Type.Callable.implementation = old_implementation; overloads = old_overloads; _ } =
-              callable
-            in
-            Type.Callable
-              {
-                callable with
-                implementation = process_overload old_implementation;
-                overloads = List.map old_overloads ~f:process_overload;
-              }
-            |> Result.return
-        | name, argument when Set.mem Decorators.special_decorators name ->
-            Decorators.apply ~argument ~name |> Result.return
-        | name, _ when Set.mem Recognized.classmethod_decorators name ->
-            (* TODO (T67024249): convert these to just normal stubs *)
-            Type.parametric "typing.ClassMethod" [Single argument] |> Result.return
-        | "staticmethod", _ ->
-            Type.parametric "typing.StaticMethod" [Single argument] |> Result.return
-        | _ -> (
-            let make_error reason =
-              Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
-            in
-            let { decorator_assumptions; _ } = assumptions in
-            if
-              Assumptions.DecoratorAssumptions.not_a_decorator decorator_assumptions ~candidate:name
-            then
-              make_error CouldNotResolve
-            else
-              let assumptions =
-                {
-                  assumptions with
-                  decorator_assumptions =
-                    Assumptions.DecoratorAssumptions.add
-                      decorator_assumptions
-                      ~assume_is_not_a_decorator:name;
-                }
-              in
-              let resolve_attribute_access ?special_method base ~attribute_name =
-                let access { Type.instantiated; accessed_through_class; class_name } =
-                  self#attribute
-                    ~assumptions
-                    ~transitive:true
-                    ~accessed_through_class
-                    ~include_generated_attributes:true
-                    ?special_method
-                    ~attribute_name
-                    ~instantiated
-                    class_name
+            match simple_decorator_name, argument with
+            | ( ("click.decorators.pass_context" | "click.decorators.pass_obj"),
+                Type.Callable callable ) ->
+                (* Suppress caller/callee parameter matching by altering the click entry point to
+                   have a generic parameter list. *)
+                let parameters =
+                  Type.Callable.Defined
+                    [
+                      Type.Callable.Parameter.Variable (Concrete Type.Any);
+                      Type.Callable.Parameter.Keywords Type.Any;
+                    ]
                 in
-                let join_all = function
-                  | head :: tail ->
-                      let order = self#full_order ~assumptions in
-                      List.fold tail ~init:head ~f:(TypeOrder.join order) |> Option.some
-                  | [] -> None
+                Type.Callable (Type.Callable.map_parameters callable ~f:(fun _ -> parameters))
+                |> Result.return
+            | name, Callable callable
+              when String.equal name "contextlib.asynccontextmanager"
+                   || Set.mem Recognized.asyncio_contextmanager_decorators name ->
+                let process_overload ({ Type.Callable.annotation; _ } as overload) =
+                  let joined =
+                    let order = self#full_order ~assumptions in
+                    try TypeOrder.join order annotation (Type.async_iterator Type.Bottom) with
+                    | ClassHierarchy.Untracked _ ->
+                        (* create_overload gets called when building the environment, which is
+                           unsound and can raise. *)
+                        Type.Any
+                  in
+                  if Type.is_async_iterator joined then
+                    {
+                      overload with
+                      Type.Callable.annotation =
+                        Type.parametric
+                          "typing.AsyncContextManager"
+                          [Single (Type.single_parameter joined)];
+                    }
+                  else
+                    overload
                 in
-                Type.resolve_class base
-                >>| List.map ~f:access
-                >>= Option.all
-                >>| List.map ~f:AnnotatedAttribute.annotation
-                >>| List.map ~f:Annotation.annotation
-                >>= join_all
-              in
-              let resolver = function
-                | UnannotatedGlobalEnvironment.ResolvedReference.Module _ -> None
-                | PlaceholderStub _ -> Some Type.Any
-                | ModuleAttribute { from; name; remaining; _ } ->
-                    let rec resolve_remaining base ~remaining =
-                      match remaining with
-                      | [] -> Some base
-                      | attribute_name :: remaining ->
-                          resolve_attribute_access base ~attribute_name
-                          >>= resolve_remaining ~remaining
+                let {
+                  Type.Callable.implementation = old_implementation;
+                  overloads = old_overloads;
+                  _;
+                }
+                  =
+                  callable
+                in
+                Type.Callable
+                  {
+                    callable with
+                    implementation = process_overload old_implementation;
+                    overloads = List.map old_overloads ~f:process_overload;
+                  }
+                |> Result.return
+            | name, callable when String.is_suffix name ~suffix:".validator" ->
+                (* TODO(T70606997): We should be type checking attr validators properly. *)
+                Result.return callable
+            | "contextlib.contextmanager", Callable callable ->
+                let process_overload ({ Type.Callable.annotation; _ } as overload) =
+                  let joined =
+                    let order = self#full_order ~assumptions in
+                    try TypeOrder.join order annotation (Type.iterator Type.Bottom) with
+                    | ClassHierarchy.Untracked _ ->
+                        (* create_overload gets called when building the environment, which is
+                           unsound and can raise. *)
+                        Type.Any
+                  in
+                  if Type.is_iterator joined then
+                    {
+                      overload with
+                      Type.Callable.annotation =
+                        Type.parametric
+                          "contextlib._GeneratorContextManager"
+                          [Single (Type.single_parameter joined)];
+                    }
+                  else
+                    overload
+                in
+                let {
+                  Type.Callable.implementation = old_implementation;
+                  overloads = old_overloads;
+                  _;
+                }
+                  =
+                  callable
+                in
+                Type.Callable
+                  {
+                    callable with
+                    implementation = process_overload old_implementation;
+                    overloads = List.map old_overloads ~f:process_overload;
+                  }
+                |> Result.return
+            | name, argument when Set.mem Decorators.special_decorators name ->
+                Decorators.apply ~argument ~name |> Result.return
+            | name, _ when Set.mem Recognized.classmethod_decorators name ->
+                (* TODO (T67024249): convert these to just normal stubs *)
+                Type.parametric "typing.ClassMethod" [Single argument] |> Result.return
+            | "staticmethod", _ ->
+                Type.parametric "typing.StaticMethod" [Single argument] |> Result.return
+            | _ -> (
+                let { decorator_assumptions; _ } = assumptions in
+                if
+                  Assumptions.DecoratorAssumptions.not_a_decorator
+                    decorator_assumptions
+                    ~candidate:name
+                then
+                  make_error CouldNotResolve
+                else
+                  let assumptions =
+                    {
+                      assumptions with
+                      decorator_assumptions =
+                        Assumptions.DecoratorAssumptions.add
+                          decorator_assumptions
+                          ~assume_is_not_a_decorator:name;
+                    }
+                  in
+                  let resolve_attribute_access ?special_method base ~attribute_name =
+                    let access { Type.instantiated; accessed_through_class; class_name } =
+                      self#attribute
+                        ~assumptions
+                        ~transitive:true
+                        ~accessed_through_class
+                        ~include_generated_attributes:true
+                        ?special_method
+                        ~attribute_name
+                        ~instantiated
+                        class_name
                     in
-                    Reference.create_from_list [name]
-                    |> Reference.combine from
-                    |> self#global_annotation ~assumptions
-                    >>| (fun { Global.annotation = { annotation; _ }; _ } -> annotation)
-                    >>= resolve_remaining ~remaining
-              in
-              let extract_callable = function
-                | Type.Callable callable -> Some callable
-                | other -> (
-                    match
-                      resolve_attribute_access other ~attribute_name:"__call__" ~special_method:true
-                    with
-                    | None -> None
-                    | Some (Type.Callable callable) -> Some callable
-                    | Some other -> (
-                        (* We potentially need to go specifically two layers in order to support
-                           when name resolves to Type[X], which has a __call__ of its constructor
-                           that is itself a BoundMethod, which has a Callable __call__ *)
+                    let join_all = function
+                      | head :: tail ->
+                          let order = self#full_order ~assumptions in
+                          List.fold tail ~init:head ~f:(TypeOrder.join order) |> Option.some
+                      | [] -> None
+                    in
+                    Type.resolve_class base
+                    >>| List.map ~f:access
+                    >>= Option.all
+                    >>| List.map ~f:AnnotatedAttribute.annotation
+                    >>| List.map ~f:Annotation.annotation
+                    >>= join_all
+                  in
+                  let resolver = function
+                    | UnannotatedGlobalEnvironment.ResolvedReference.Module _ -> None
+                    | PlaceholderStub _ -> Some Type.Any
+                    | ModuleAttribute { from; name; remaining; _ } ->
+                        let rec resolve_remaining base ~remaining =
+                          match remaining with
+                          | [] -> Some base
+                          | attribute_name :: remaining ->
+                              resolve_attribute_access base ~attribute_name
+                              >>= resolve_remaining ~remaining
+                        in
+                        Reference.create_from_list [name]
+                        |> Reference.combine from
+                        |> self#global_annotation ~assumptions
+                        >>| (fun { Global.annotation = { annotation; _ }; _ } -> annotation)
+                        >>= resolve_remaining ~remaining
+                  in
+                  let extract_callable = function
+                    | Type.Callable callable -> Some callable
+                    | other -> (
                         match
                           resolve_attribute_access
                             other
                             ~attribute_name:"__call__"
                             ~special_method:true
                         with
-                        | Some (Callable callable) -> Some callable
-                        | _ -> None))
-              in
-              let apply_arguments_to_decorator_factory ~factory_callable ~arguments =
-                let arguments =
-                  let resolve argument_index argument =
-                    let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-                    let make_argument resolved =
-                      { Argument.kind; expression = Some expression; resolved }
-                    in
-                    let error = AnnotatedAttribute.CouldNotResolveArgument { argument_index } in
-                    match expression with
-                    | {
-                     Node.value = Expression.Expression.Constant Expression.Constant.NoneLiteral;
-                     _;
-                    } ->
-                        Ok (make_argument Type.NoneType)
-                    | { Node.value = Expression.Expression.Name name; _ } ->
-                        Expression.name_to_reference name
-                        >>| Reference.delocalize
-                        >>= UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
-                              (unannotated_global_environment class_metadata_environment)
-                              ?dependency
-                        >>= resolver
-                        >>| make_argument
-                        |> Result.of_option
-                             ~error:(AnnotatedAttribute.InvalidDecorator { index; reason = error })
-                    | expression ->
-                        let resolved = self#resolve_literal ~assumptions expression in
-                        if Type.is_untyped resolved || Type.contains_unknown resolved then
-                          make_error error
-                        else
-                          Ok (make_argument resolved)
+                        | None -> None
+                        | Some (Type.Callable callable) -> Some callable
+                        | Some other -> (
+                            (* We potentially need to go specifically two layers in order to support
+                               when name resolves to Type[X], which has a __call__ of its
+                               constructor that is itself a BoundMethod, which has a Callable
+                               __call__ *)
+                            match
+                              resolve_attribute_access
+                                other
+                                ~attribute_name:"__call__"
+                                ~special_method:true
+                            with
+                            | Some (Callable callable) -> Some callable
+                            | _ -> None))
                   in
-                  List.mapi arguments ~f:resolve |> Result.all
-                in
-                let select arguments =
-                  self#signature_select
-                    ~assumptions
-                    ~resolve_with_locals:(fun ~locals:_ _ -> Type.Top)
-                    ~arguments
-                    ~callable:factory_callable
-                    ~self_argument:None
-                    ~skip_marking_escapees:false
-                in
-                let extract = function
-                  | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
-                      Result.Ok selected_return_annotation
-                  | NotFound { reason; _ } ->
-                      make_error
-                        (FactorySignatureSelectionFailed { reason; callable = factory_callable })
-                in
-                Result.map arguments ~f:select |> Result.bind ~f:extract
-              in
-              let resolved_decorator =
-                match decorator >>= resolver with
-                | None -> make_error CouldNotResolve
-                | Some Any -> Ok Type.Any
-                | Some fetched -> (
-                    match arguments with
-                    | None -> Ok fetched
-                    | Some arguments -> (
-                        match extract_callable fetched with
-                        | None -> make_error (NonCallableDecoratorFactory fetched)
-                        | Some factory_callable ->
-                            apply_arguments_to_decorator_factory ~factory_callable ~arguments))
-              in
-              match resolved_decorator with
-              | Error error -> Result.Error error
-              | Ok Any -> Ok Any
-              | Ok resolved_decorator -> (
-                  match extract_callable resolved_decorator with
-                  | None -> make_error (NonCallableDecorator resolved_decorator)
-                  | Some callable -> (
-                      match
-                        self#signature_select
-                          ~assumptions
-                          ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
-                          ~arguments:[{ kind = Positional; expression = None; resolved = argument }]
-                          ~callable
-                          ~self_argument:None
-                          ~skip_marking_escapees:false
-                      with
+                  let apply_arguments_to_decorator_factory ~factory_callable ~arguments =
+                    let arguments =
+                      let resolve argument_index argument =
+                        let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+                        let make_argument resolved =
+                          { Argument.kind; expression = Some expression; resolved }
+                        in
+                        let error = AnnotatedAttribute.CouldNotResolveArgument { argument_index } in
+                        match expression with
+                        | {
+                         Node.value = Expression.Expression.Constant Expression.Constant.NoneLiteral;
+                         _;
+                        } ->
+                            Ok (make_argument Type.NoneType)
+                        | { Node.value = Expression.Expression.Name name; _ } ->
+                            Expression.name_to_reference name
+                            >>| Reference.delocalize
+                            >>= UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
+                                  (unannotated_global_environment class_metadata_environment)
+                                  ?dependency
+                            >>= resolver
+                            >>| make_argument
+                            |> Result.of_option
+                                 ~error:
+                                   (AnnotatedAttribute.InvalidDecorator { index; reason = error })
+                        | expression ->
+                            let resolved = self#resolve_literal ~assumptions expression in
+                            if Type.is_untyped resolved || Type.contains_unknown resolved then
+                              make_error error
+                            else
+                              Ok (make_argument resolved)
+                      in
+                      List.mapi arguments ~f:resolve |> Result.all
+                    in
+                    let select arguments =
+                      self#signature_select
+                        ~assumptions
+                        ~resolve_with_locals:(fun ~locals:_ _ -> Type.Top)
+                        ~arguments
+                        ~callable:factory_callable
+                        ~self_argument:None
+                        ~skip_marking_escapees:false
+                    in
+                    let extract = function
                       | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
-                          Ok selected_return_annotation
+                          Result.Ok selected_return_annotation
                       | NotFound { reason; _ } ->
-                          make_error (ApplicationFailed { reason; callable }))))
+                          make_error
+                            (FactorySignatureSelectionFailed { reason; callable = factory_callable })
+                    in
+                    Result.map arguments ~f:select |> Result.bind ~f:extract
+                  in
+                  let resolved_decorator =
+                    match decorator >>= resolver with
+                    | None -> make_error CouldNotResolve
+                    | Some Any -> Ok Type.Any
+                    | Some fetched -> (
+                        match arguments with
+                        | None -> Ok fetched
+                        | Some arguments -> (
+                            match extract_callable fetched with
+                            | None -> make_error (NonCallableDecoratorFactory fetched)
+                            | Some factory_callable ->
+                                apply_arguments_to_decorator_factory ~factory_callable ~arguments))
+                  in
+                  match resolved_decorator with
+                  | Error error -> Result.Error error
+                  | Ok Any -> Ok Any
+                  | Ok resolved_decorator -> (
+                      match extract_callable resolved_decorator with
+                      | None -> make_error (NonCallableDecorator resolved_decorator)
+                      | Some callable -> (
+                          match
+                            self#signature_select
+                              ~assumptions
+                              ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
+                              ~arguments:
+                                [{ kind = Positional; expression = None; resolved = argument }]
+                              ~callable
+                              ~self_argument:None
+                              ~skip_marking_escapees:false
+                          with
+                          | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
+                              Ok selected_return_annotation
+                          | NotFound { reason; _ } ->
+                              make_error (ApplicationFailed { reason; callable })))))
       in
       let parse =
         let parser =
@@ -2867,7 +2889,7 @@ class base class_metadata_environment dependency =
             in
             let enforce_equality ~parsed ~current sofar =
               let equal left right =
-                Int.equal (Ast.Statement.Decorator.location_insensitive_compare left right) 0
+                Int.equal (Ast.Expression.location_insensitive_compare left right) 0
               in
               if List.equal equal sofar (purify current) then
                 Ok sofar

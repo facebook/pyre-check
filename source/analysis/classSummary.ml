@@ -1037,7 +1037,7 @@ module ClassSummary = struct
     name: Reference.t;
     qualifier: Reference.t;
     bases: bases;
-    decorators: Decorator.t list;
+    decorators: Expression.t list;
     class_attributes: ClassAttributes.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
@@ -1101,7 +1101,6 @@ module ClassSummary = struct
 
 
   let has_decorator { decorators; _ } decorator =
-    let decorators = List.map decorators ~f:Decorator.to_expression in
     Expression.exists_in_list ~expression_list:decorators decorator
 
 

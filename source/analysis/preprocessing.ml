@@ -744,7 +744,7 @@ let qualify
           List.map
             decorators
             ~f:
-              (qualify_decorator
+              (qualify_expression
                  ~qualify_strings:DoNotQualify
                  ~scope:{ scope with use_forward_references = true })
         in
@@ -778,7 +778,7 @@ let qualify
           }
         in
         let decorators =
-          List.map decorators ~f:(qualify_decorator ~qualify_strings:DoNotQualify ~scope)
+          List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
         let body =
           let qualifier = qualify_if_needed ~qualifier name in
@@ -797,21 +797,25 @@ let qualify
                   let return_annotation =
                     return_annotation >>| qualify_expression ~scope ~qualify_strings:Qualify
                   in
-                  let qualify_decorator
-                      ({ Decorator.name = { Node.value = name; _ }; _ } as decorator)
-                    =
-                    match name |> Reference.as_list |> List.rev with
-                    | ["staticmethod"]
-                    | ["classmethod"]
-                    | ["property"]
-                    | "getter" :: _
-                    | "setter" :: _
-                    | "deleter" :: _ ->
+                  let qualify_decorator decorator =
+                    let is_reserved name =
+                      match Reference.as_list name |> List.rev with
+                      | ["staticmethod"]
+                      | ["classmethod"]
+                      | ["property"]
+                      | "getter" :: _
+                      | "setter" :: _
+                      | "deleter" :: _ ->
+                          true
+                      | _ -> false
+                    in
+                    match Decorator.from_expression decorator with
+                    | Some { Decorator.name = { Node.value = name; _ }; _ } when is_reserved name ->
                         decorator
                     | _ ->
                         (* TODO (T41755857): Decorator qualification logic should be slightly more
                            involved than this. *)
-                        qualify_decorator ~qualify_strings:DoNotQualify ~scope decorator
+                        qualify_expression ~qualify_strings:DoNotQualify ~scope decorator
                   in
                   let decorators = List.map decorators ~f:qualify_decorator in
                   let signature =
@@ -1252,11 +1256,6 @@ let qualify
       | Constant _ -> value
     in
     { expression with Node.value }
-  and qualify_decorator ~qualify_strings ~scope { Decorator.name; arguments } =
-    {
-      Decorator.name = Node.map name ~f:(qualify_reference ~scope);
-      arguments = arguments >>| List.map ~f:(qualify_argument ~qualify_strings ~scope);
-    }
   and qualify_argument { Call.Argument.name; value } ~qualify_strings ~scope =
     let name =
       let rename identifier =
@@ -3093,15 +3092,11 @@ module AccessCollector = struct
           List.fold base_arguments ~init:collected ~f:(fun sofar { Call.Argument.value; _ } ->
               from_expression sofar value)
         in
-        List.map decorators ~f:Decorator.to_expression
-        |> List.fold ~init:collected ~f:from_expression
+        List.fold ~init:collected ~f:from_expression decorators
     | Define
         { Define.signature = { Define.Signature.decorators; parameters; return_annotation; _ }; _ }
       ->
-        let collected =
-          List.map decorators ~f:Decorator.to_expression
-          |> List.fold ~init:collected ~f:from_expression
-        in
+        let collected = List.fold ~init:collected ~f:from_expression decorators in
         let collected =
           List.fold
             parameters
@@ -3828,11 +3823,15 @@ let inline_six_metaclass ({ Source.statements; _ } as source) =
       let transform_class
           ~class_statement:({ Class.base_arguments; decorators; _ } as class_statement)
         =
-        let is_six_add_metaclass_decorator { Decorator.name; _ } =
-          Identifier.equal (Node.value name |> Reference.show) "six.add_metaclass"
+        let is_six_add_metaclass_decorator expression =
+          match Decorator.from_expression expression with
+          | Some ({ Decorator.name = { Node.value = name; _ }; _ } as decorator)
+            when Reference.equal name (Reference.create_from_list ["six"; "add_metaclass"]) ->
+              Either.First decorator
+          | _ -> Either.Second expression
         in
         let six_add_metaclass_decorators, rest =
-          List.partition_tf decorators ~f:is_six_add_metaclass_decorator
+          List.partition_map decorators ~f:is_six_add_metaclass_decorator
         in
         match six_add_metaclass_decorators with
         | [

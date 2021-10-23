@@ -243,22 +243,20 @@ module ReadOnly = struct
     resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
 
 
-  let resolve_decorator_if_matches
-      read_only
-      ?dependency
-      ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator)
-      ~target
-    =
-    let resolved_name =
-      match resolve_exports read_only ?dependency name with
-      | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
-          Reference.create_from_list (name :: remaining) |> Reference.combine from
-      | _ -> name
-    in
-    if String.equal (Reference.show resolved_name) target then
-      Some { decorator with name = { Node.value = resolved_name; location } }
-    else
-      None
+  let resolve_decorator_if_matches read_only ?dependency decorator ~target =
+    match Decorator.from_expression decorator with
+    | None -> None
+    | Some ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator) ->
+        let resolved_name =
+          match resolve_exports read_only ?dependency name with
+          | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
+              Reference.create_from_list (name :: remaining) |> Reference.combine from
+          | _ -> name
+        in
+        if String.equal (Reference.show resolved_name) target then
+          Some { decorator with name = { Node.value = resolved_name; location } }
+        else
+          None
 
 
   let get_decorator

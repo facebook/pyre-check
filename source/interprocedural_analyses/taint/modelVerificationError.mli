@@ -68,7 +68,7 @@ module T : sig
     | NotInEnvironment of string
     | UnexpectedDecorators of {
         name: Reference.t;
-        unexpected_decorators: Statement.Decorator.t list;
+        unexpected_decorators: Expression.t list;
       }
     | InvalidIdentifier of Expression.t
     | ClassBodyNotEllipsis of string

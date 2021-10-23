@@ -1400,7 +1400,22 @@ let test_updates context =
                     };
                 ];
               decorators =
-                [{ name = node ~start:(3, 1) ~stop:(3, 9) !&"typing.overload"; arguments = None }];
+                [
+                  node
+                    ~start:(3, 1)
+                    ~stop:(3, 9)
+                    (Expression.Name
+                       (Name.Attribute
+                          {
+                            Name.Attribute.base =
+                              node
+                                ~start:(3, 1)
+                                ~stop:(3, 9)
+                                (Expression.Name (Name.Identifier "typing"));
+                            attribute = "overload";
+                            special = false;
+                          }));
+                ];
               return_annotation =
                 Some (node ~start:(4, 19) ~stop:(4, 22) (Expression.Name (Name.Identifier "int")));
               async = false;
@@ -1445,7 +1460,22 @@ let test_updates context =
                     };
                 ];
               decorators =
-                [{ name = node ~start:(7, 1) ~stop:(7, 9) !&"typing.overload"; arguments = None }];
+                [
+                  node
+                    ~start:(7, 1)
+                    ~stop:(7, 9)
+                    (Expression.Name
+                       (Name.Attribute
+                          {
+                            Name.Attribute.base =
+                              node
+                                ~start:(7, 1)
+                                ~stop:(7, 9)
+                                (Expression.Name (Name.Identifier "typing"));
+                            attribute = "overload";
+                            special = false;
+                          }));
+                ];
               return_annotation =
                 Some (node ~start:(8, 19) ~stop:(8, 22) (Expression.Name (Name.Identifier "str")));
               async = false;
@@ -1552,7 +1582,12 @@ let test_updates context =
                            { Parameter.name = "$parameter$self"; value = None; annotation = None };
                        ];
                      decorators =
-                       [{ name = node ~start:(3, 3) ~stop:(3, 11) !&"property"; arguments = None }];
+                       [
+                         node
+                           ~start:(3, 3)
+                           ~stop:(3, 11)
+                           (Expression.Name (Name.Identifier "property"));
+                       ];
                      return_annotation =
                        Some
                          (node
@@ -1605,10 +1640,20 @@ let test_updates context =
                             ];
                           decorators =
                             [
-                              {
-                                name = node ~start:(5, 3) ~stop:(5, 13) !&"foo.setter";
-                                arguments = None;
-                              };
+                              node
+                                ~start:(5, 3)
+                                ~stop:(5, 13)
+                                (Expression.Name
+                                   (Name.Attribute
+                                      {
+                                        Name.Attribute.base =
+                                          node
+                                            ~start:(5, 3)
+                                            ~stop:(5, 6)
+                                            (Expression.Name (Name.Identifier "foo"));
+                                        attribute = "setter";
+                                        special = false;
+                                      }));
                             ];
                           return_annotation =
                             Some

@@ -104,7 +104,7 @@ module ReadOnly : sig
   val resolve_decorator_if_matches
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-    Ast.Statement.Decorator.t ->
+    Ast.Expression.t ->
     target:string ->
     Ast.Statement.Decorator.t option
 

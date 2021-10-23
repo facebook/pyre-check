@@ -740,7 +740,7 @@ let test_compound _ =
 
 
 let decorator ?arguments name =
-  { Decorator.name = Node.create_with_default_location !&name; arguments }
+  Decorator.to_expression { Decorator.name = Node.create_with_default_location !&name; arguments }
 
 
 let test_define _ =
@@ -961,6 +961,83 @@ let test_define _ =
                name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [decorator "foo"; decorator "bar"];
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           captures = [];
+           unbound_names = [];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+         };
+    ];
+  assert_parsed_equal
+    "@x[0].y\ndef foo(a):\n  1"
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+               decorators =
+                 [
+                   +Expression.Name
+                      (Name.Attribute
+                         {
+                           Name.Attribute.base =
+                             +Expression.Call
+                                {
+                                  Call.callee =
+                                    +Expression.Name
+                                       (Name.Attribute
+                                          {
+                                            Name.Attribute.base = !"x";
+                                            attribute = "__getitem__";
+                                            special = true;
+                                          });
+                                  arguments =
+                                    [
+                                      {
+                                        Call.Argument.name = None;
+                                        value = +Expression.Constant (Constant.Integer 0);
+                                      };
+                                    ];
+                                };
+                           attribute = "y";
+                           special = false;
+                         });
+                 ];
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           captures = [];
+           unbound_names = [];
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+         };
+    ];
+  assert_parsed_equal
+    "@(x<y)\ndef foo(a):\n  1"
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+               decorators =
+                 [
+                   +Expression.ComparisonOperator
+                      {
+                        ComparisonOperator.left = !"x";
+                        operator = ComparisonOperator.LessThan;
+                        right = !"y";
+                      };
+                 ];
                return_annotation = None;
                async = false;
                generator = false;

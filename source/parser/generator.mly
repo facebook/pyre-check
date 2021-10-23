@@ -13,13 +13,8 @@
   open Pyre
   open ParserExpression
 
-  type decorator = { decorator_name : Reference.t Node.t; arguments : Call.Argument.t list option }
-
   let with_decorators decorators decoratee =
     let decorators =
-      let convert ({ decorator_name; arguments } ) =
-        { Decorator.name = decorator_name; arguments = arguments >>| List.map ~f:convert_argument }
-      in
       List.map decorators ~f:convert
     in
     match decoratee with
@@ -994,13 +989,9 @@ bases:
     }
   ;
 
-decorator_arguments:
-  | { None }
-  | LEFTPARENS; arguments = arguments; RIGHTPARENS { Some arguments }
-
 decorator:
-  | AT; name = reference; arguments = decorator_arguments; NEWLINE+ {
-      { decorator_name = { Node.location = fst name; value = snd name }; arguments }
+  | AT; expression = expression; NEWLINE+ {
+      expression
     }
   ;
 

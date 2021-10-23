@@ -2303,10 +2303,7 @@ let parse_statement ~resolution ~path ~configuration statement =
       in
       let source_annotations, extra_decorators =
         let decorator_with_name name =
-          {
-            Decorator.name = Node.create_with_default_location (Reference.create name);
-            arguments = None;
-          }
+          Node.create_with_default_location (Expression.Name (Name.Identifier name))
         in
         let class_source_base { Call.Argument.value; _ } =
           let name = Expression.show value in
@@ -2606,17 +2603,20 @@ let create_model_from_signature
   let is_object_target = false in
   (* Strip off the decorators only used for taint annotations. *)
   let top_level_decorators, define =
-    let is_taint_decorator decorator =
-      match Reference.show (Node.value decorator.Decorator.name) with
-      | "Sanitize"
-      | "SkipAnalysis"
-      | "SkipDecoratorWhenInlining"
-      | "SkipOverrides"
-      | "SkipObscure" ->
-          true
-      | _ -> false
+    let get_taint_decorator decorator_expression =
+      match Decorator.from_expression decorator_expression with
+      | None -> Either.Second decorator_expression
+      | Some ({ Decorator.name = { Node.value = name; _ }; _ } as decorator) -> (
+          match Reference.as_list name with
+          | ["Sanitize"]
+          | ["SkipAnalysis"]
+          | ["SkipDecoratorWhenInlining"]
+          | ["SkipOverrides"]
+          | ["SkipObscure"] ->
+              Either.first decorator
+          | _ -> Either.Second decorator_expression)
     in
-    let sanitizers, nonsanitizers = List.partition_tf define.decorators ~f:is_taint_decorator in
+    let sanitizers, nonsanitizers = List.partition_map define.decorators ~f:get_taint_decorator in
     sanitizers, { define with decorators = nonsanitizers }
   in
   (* To ensure that the start/stop lines can be used for commenting out models,
@@ -2625,7 +2625,7 @@ let create_model_from_signature
     let start =
       match decorators with
       | [] -> location.Location.start
-      | first :: _ -> first.name.location.start
+      | first :: _ -> first.location.start
     in
     { location with start }
   in

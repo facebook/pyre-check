@@ -208,24 +208,6 @@ module Make (Transformer : Transformer) = struct
       in
       transform_list arguments ~f:transform_argument
     in
-    let transform_decorator { Decorator.name; arguments } =
-      (* Really we should be leaving this up to the client inside of `statement` since this isn't an
-         expression. However, it used to be one, so we do a best-effort transformation here *)
-      let name =
-        let { Node.location; value = name } = name in
-        from_reference name ~location
-        |> transform_expression
-        |> Node.value
-        |> (function
-             | Expression.Name name -> Some name
-             | _ -> None)
-        >>= name_to_reference
-        |> Option.value ~default:name
-        |> Node.create ~location
-      in
-      let arguments = arguments >>| transform_arguments in
-      { Decorator.name; arguments }
-    in
     let rec transform_statement statement =
       let transform_children value =
         match value with
@@ -251,7 +233,7 @@ module Make (Transformer : Transformer) = struct
                 base_arguments =
                   transform_list base_arguments ~f:(transform_argument ~transform_expression);
                 body = transform_list body ~f:transform_statement |> List.concat;
-                decorators = transform_list decorators ~f:transform_decorator;
+                decorators = transform_list decorators ~f:transform_expression;
                 top_level_unbound_names;
               }
         | Continue -> value
@@ -272,7 +254,7 @@ module Make (Transformer : Transformer) = struct
                 Define.Signature.name;
                 parameters =
                   transform_list parameters ~f:(transform_parameter ~transform_expression);
-                decorators = transform_list decorators ~f:transform_decorator;
+                decorators = transform_list decorators ~f:transform_expression;
                 return_annotation = return_annotation >>| transform_expression;
                 async;
                 parent;

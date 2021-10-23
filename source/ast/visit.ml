@@ -143,7 +143,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
                (Node.create ~location:(Class.name_location ~body_location:location class_) name));
           List.iter base_arguments ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
-          List.map decorators ~f:Decorator.to_expression |> List.iter ~f:visit_expression
+          List.iter ~f:visit_expression decorators
       | Define ({ Define.signature; captures; body; unbound_names = _ } as define) ->
           let iter_signature { Define.Signature.name; parameters; decorators; return_annotation; _ }
             =
@@ -153,7 +153,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
               (Reference
                  (Node.create ~location:(Define.name_location ~body_location:location define) name));
             List.iter parameters ~f:(visit_parameter ~state ~visitor ~visit_expression);
-            List.map decorators ~f:Decorator.to_expression |> List.iter ~f:visit_expression;
+            List.iter ~f:visit_expression decorators;
             Option.iter ~f:visit_expression return_annotation
           in
           let iter_capture { Define.Capture.kind; _ } =

@@ -152,9 +152,7 @@ module Binding = struct
         let sofar = of_expression sofar value in
         of_unannotated_target ~kind:(Kind.AssignTarget None) sofar target
     | Statement.Class { Class.name; base_arguments; decorators; _ } ->
-        let sofar =
-          List.map decorators ~f:Decorator.to_expression |> List.fold ~init:sofar ~f:of_expression
-        in
+        let sofar = List.fold ~init:sofar ~f:of_expression decorators in
         let sofar =
           List.fold
             base_arguments
@@ -163,9 +161,7 @@ module Binding = struct
         in
         { kind = Kind.ClassName; name = Reference.show name; location } :: sofar
     | Statement.Define { Define.signature = { name; decorators; parameters; _ } as signature; _ } ->
-        let sofar =
-          List.map decorators ~f:Decorator.to_expression |> List.fold ~init:sofar ~f:of_expression
-        in
+        let sofar = List.fold ~init:sofar ~f:of_expression decorators in
         let sofar =
           List.fold
             parameters

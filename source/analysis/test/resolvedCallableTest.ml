@@ -15,7 +15,6 @@ open Test
 
 let test_apply_decorators context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
-  let decorator ?arguments name = { Decorator.name = + !&name; arguments } in
   let create_define ~decorators ~parameters ~return_annotation =
     {
       Define.Signature.name = !&"define";
@@ -62,7 +61,7 @@ let test_apply_decorators context =
     Type.string;
   assert_apply_contextlib_decorators
     (create_define
-       ~decorators:[decorator "contextlib.contextmanager"]
+       ~decorators:[!"contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:
          (Some
@@ -70,7 +69,7 @@ let test_apply_decorators context =
     (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
   assert_apply_contextlib_decorators
     (create_define
-       ~decorators:[decorator "contextlib.contextmanager"]
+       ~decorators:[!"contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:
          (Some
@@ -81,7 +80,7 @@ let test_apply_decorators context =
   let create_parameter ~name = Parameter.create ~location:Location.any ~name () in
   (* Custom decorators. *)
   create_define
-    ~decorators:[decorator "$strip_first_parameter"]
+    ~decorators:[!"$strip_first_parameter"]
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
     ~return_annotation:None
   |> (fun define ->

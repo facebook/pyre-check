@@ -850,53 +850,54 @@ module State (Context : Context) = struct
           errors
       in
       let check_decorator errors decorator =
-        let is_allowlisted decorator =
-          let has_suffix
-              { Ast.Statement.Decorator.name = { Node.value = name; _ }; arguments }
-              suffix
-            =
-            Option.is_none arguments && String.equal (Reference.last name) suffix
-          in
-          let is_property_derivative decorator =
-            has_suffix decorator "setter"
-            || has_suffix decorator "getter"
-            || has_suffix decorator "deleter"
-          in
-          let is_attr_validator decorator = has_suffix decorator "validator" in
-          let is_click_derivative decorator = has_suffix decorator "command" in
-          (* TODO (T41383196): Properly deal with @property and @click *)
-          is_property_derivative decorator
-          || is_click_derivative decorator
-          || is_attr_validator decorator
+        let get_allowlisted decorator =
+          match Decorator.from_expression decorator with
+          | None -> None
+          | Some decorator ->
+              let has_suffix
+                  { Ast.Statement.Decorator.name = { Node.value = name; _ }; arguments }
+                  suffix
+                =
+                Option.is_none arguments && String.equal (Reference.last name) suffix
+              in
+              let is_property_derivative decorator =
+                has_suffix decorator "setter"
+                || has_suffix decorator "getter"
+                || has_suffix decorator "deleter"
+              in
+              let is_attr_validator decorator = has_suffix decorator "validator" in
+              let is_click_derivative decorator = has_suffix decorator "command" in
+              (* TODO (T41383196): Properly deal with @property and @click *)
+              Option.some_if
+                (is_property_derivative decorator
+                || is_click_derivative decorator
+                || is_attr_validator decorator)
+                decorator
         in
-        if is_allowlisted decorator then
-          let { Ast.Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } =
-            decorator
-          in
-          match Reference.as_list decorator_name |> List.rev with
-          | "setter" :: decorated_property_name :: _ ->
-              if String.equal (Reference.last name) decorated_property_name then
-                errors
-              else
-                emit_error
-                  ~errors
-                  ~location
-                  ~kind:
-                    (Error.InvalidDecoration
-                       (Error.SetterNameMismatch
-                          {
-                            name = decorator_name;
-                            actual = decorated_property_name;
-                            expected = Reference.last name;
-                          }))
-          | _ -> errors
-        else
-          let { Resolved.errors = decorator_errors; _ } =
-            forward_expression
-              ~resolution
-              ~expression:(Ast.Statement.Decorator.to_expression decorator)
-          in
-          List.append decorator_errors errors
+        match get_allowlisted decorator with
+        | Some { Ast.Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } -> (
+            match Reference.as_list decorator_name |> List.rev with
+            | "setter" :: decorated_property_name :: _ ->
+                if String.equal (Reference.last name) decorated_property_name then
+                  errors
+                else
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.InvalidDecoration
+                         (Error.SetterNameMismatch
+                            {
+                              name = decorator_name;
+                              actual = decorated_property_name;
+                              expected = Reference.last name;
+                            }))
+            | _ -> errors)
+        | None ->
+            let { Resolved.errors = decorator_errors; _ } =
+              forward_expression ~resolution ~expression:decorator
+            in
+            List.append decorator_errors errors
       in
       List.fold decorators ~init:errors ~f:check_decorator |> check_final_decorator
     in
@@ -1149,10 +1150,13 @@ module State (Context : Context) = struct
                         List.append annotation_errors errors, annotation
                       in
                       let enforce_here =
-                        let is_literal_classmethod { Decorator.name = { Node.value = name; _ }; _ } =
-                          match Reference.as_list name with
-                          | ["classmethod"] -> true
-                          | _ -> false
+                        let is_literal_classmethod decorator =
+                          match Decorator.from_expression decorator with
+                          | None -> false
+                          | Some { Decorator.name = { Node.value = name; _ }; _ } -> (
+                              match Reference.as_list name with
+                              | ["classmethod"] -> true
+                              | _ -> false)
                         in
                         match List.rev decorators with
                         | [] -> true
@@ -6644,10 +6648,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               else
                 index
             in
-            let add_error
-                ({ Decorator.name = { Node.location; value = name }; arguments } as decorator)
-              =
-              let make_error reason =
+            let add_error decorator =
+              let make_error ~location reason =
                 let error =
                   Error.create
                     ~location:(Location.with_module ~qualifier:Context.qualifier location)
@@ -6669,35 +6671,45 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 in
                 reason >>| convert >>= List.hd >>| fun (_, kind) -> kind
               in
-              match reason with
-              | CouldNotResolve -> make_error (CouldNotResolve (Decorator.to_expression decorator))
-              | CouldNotResolveArgument { argument_index } ->
-                  let add_error argument =
-                    let argument, _ = Ast.Expression.Call.Argument.unpack argument in
-                    make_error (CouldNotResolveArgument { name; argument })
-                  in
-                  arguments
-                  >>= (fun arguments -> List.nth arguments argument_index)
-                  >>| add_error
-                  |> Option.value ~default:errors
-              | NonCallableDecoratorFactory resolved ->
-                  make_error (NonCallableDecoratorFactory { name; annotation = resolved })
-              | NonCallableDecorator result ->
-                  make_error
-                    (NonCallableDecorator
-                       { name; has_arguments = Option.is_some arguments; annotation = result })
-              | FactorySignatureSelectionFailed { reason; callable } ->
-                  make_error
-                    (DecoratorFactoryFailedToApply
-                       { name; reason = extract_error ~reason ~callable })
-              | ApplicationFailed { reason; callable } ->
-                  make_error
-                    (ApplicationFailed
-                       {
-                         name;
-                         has_arguments = Option.is_some arguments;
-                         reason = extract_error ~reason ~callable;
-                       })
+              match Decorator.from_expression decorator with
+              | None ->
+                  let { Node.location; _ } = decorator in
+                  make_error ~location (CouldNotResolve decorator)
+              | Some { Decorator.name = { Node.location; value = name }; arguments } -> (
+                  match reason with
+                  | CouldNotResolve -> make_error ~location (CouldNotResolve decorator)
+                  | CouldNotResolveArgument { argument_index } ->
+                      let add_error argument =
+                        let argument, _ = Ast.Expression.Call.Argument.unpack argument in
+                        make_error ~location (CouldNotResolveArgument { name; argument })
+                      in
+                      arguments
+                      >>= (fun arguments -> List.nth arguments argument_index)
+                      >>| add_error
+                      |> Option.value ~default:errors
+                  | NonCallableDecoratorFactory resolved ->
+                      make_error
+                        ~location
+                        (NonCallableDecoratorFactory { name; annotation = resolved })
+                  | NonCallableDecorator result ->
+                      make_error
+                        ~location
+                        (NonCallableDecorator
+                           { name; has_arguments = Option.is_some arguments; annotation = result })
+                  | FactorySignatureSelectionFailed { reason; callable } ->
+                      make_error
+                        ~location
+                        (DecoratorFactoryFailedToApply
+                           { name; reason = extract_error ~reason ~callable })
+                  | ApplicationFailed { reason; callable } ->
+                      make_error
+                        ~location
+                        (ApplicationFailed
+                           {
+                             name;
+                             has_arguments = Option.is_some arguments;
+                             reason = extract_error ~reason ~callable;
+                           }))
             in
 
             let { StatementDefine.Signature.decorators; _ } = signature in

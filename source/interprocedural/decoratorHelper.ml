@@ -70,14 +70,17 @@ let all_decorators environment =
   in
   let decorator_set = DecoratorReferenceAndModule.Hash_set.create () in
   let add_decorators define_reference =
-    let add_decorator_to_set { Decorator.name = { Node.value = decorator; _ }; _ } =
-      let module_reference =
-        AnnotatedGlobalEnvironment.ReadOnly.get_global_location
-          annotated_global_environment
-          decorator
-        >>| fun { Location.WithModule.path; _ } -> path
-      in
-      Base.Hash_set.add decorator_set { decorator; module_reference }
+    let add_decorator_to_set decorator =
+      match Decorator.from_expression decorator with
+      | None -> ()
+      | Some { Decorator.name = { Node.value = decorator; _ }; _ } ->
+          let module_reference =
+            AnnotatedGlobalEnvironment.ReadOnly.get_global_location
+              annotated_global_environment
+              decorator
+            >>| fun { Location.WithModule.path; _ } -> path
+          in
+          Base.Hash_set.add decorator_set { decorator; module_reference }
     in
     UnannotatedGlobalEnvironment.ReadOnly.get_define_body
       unannotated_global_environment
@@ -765,10 +768,7 @@ let postprocess
       {
         signature with
         decorators =
-          {
-            Decorator.name = Node.create_with_default_location (Reference.create "classmethod");
-            arguments = None;
-          }
+          Node.create_with_default_location (Expression.Name (Name.Identifier "classmethod"))
           :: decorators;
       }
     else
@@ -796,16 +796,18 @@ let inline_decorators_for_define
       ~set_reference:(fun reference decorator_data ->
         { decorator_data with outer_decorator_reference = reference })
   in
-  let find_decorator_data
-      {
-        Decorator.name = { Node.value = decorator_name; location = decorator_call_location };
-        arguments;
-      }
-    =
-    Map.find decorator_bodies decorator_name
-    >>= extract_decorator_data
-          ~decorator_call_location
-          ~is_decorator_factory:(Option.is_some arguments)
+  let find_decorator_data decorator =
+    match Decorator.from_expression decorator with
+    | None -> None
+    | Some
+        {
+          Decorator.name = { Node.value = decorator_name; location = decorator_call_location };
+          arguments;
+        } ->
+        Map.find decorator_bodies decorator_name
+        >>= extract_decorator_data
+              ~decorator_call_location
+              ~is_decorator_factory:(Option.is_some arguments)
   in
   let inlinable_decorators =
     List.filter_map original_decorators ~f:find_decorator_data |> uniquify_decorator_data_list

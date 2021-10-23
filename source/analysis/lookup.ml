@@ -212,8 +212,7 @@ module Visit = struct
                ~location:(Define.name_location ~body_location:statement.location define)
                name);
           List.iter parameters ~f:visit_parameter;
-          List.map decorators ~f:Ast.Statement.Decorator.to_expression
-          |> List.iter ~f:postcondition_visit;
+          List.iter decorators ~f:postcondition_visit;
           Option.iter ~f:postcondition_visit return_annotation
       | Import { Import.from; imports } ->
           let visit_import { Node.value = { Import.name; _ }; location = import_location } =

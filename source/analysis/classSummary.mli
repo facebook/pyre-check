@@ -111,7 +111,7 @@ type t = {
   name: Reference.t;
   qualifier: Reference.t;
   bases: bases;
-  decorators: Decorator.t list;
+  decorators: Expression.t list;
   class_attributes: ClassAttributes.t;
 }
 [@@deriving compare, eq, sexp, show, hash]

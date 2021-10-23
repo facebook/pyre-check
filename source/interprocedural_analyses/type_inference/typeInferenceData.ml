@@ -26,13 +26,10 @@ module SerializableReference = struct
 end
 
 module SerializableDecorator = struct
-  type t = Statement.Decorator.t [@@deriving compare, eq, sexp, hash, show]
+  type t = Expression.t [@@deriving compare, eq, sexp, hash, show]
 
   let to_yojson decorator =
-    Ast.Statement.Decorator.to_expression decorator
-    |> Expression.sanitized
-    |> Expression.show
-    |> fun shown -> `String shown
+    Expression.sanitized decorator |> Expression.show |> fun shown -> `String shown
 end
 
 module DefaultValue = struct

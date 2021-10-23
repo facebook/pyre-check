@@ -141,7 +141,9 @@ let matches_decorator_constraint ~name_constraint ~arguments_constraint decorato
              (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
              (SanitizedCallArgumentSet.of_list decorator_keyword_arguments)
   in
-  decorator_name_matches decorator && decorator_arguments_matches decorator
+  match Statement.Decorator.from_expression decorator with
+  | None -> false
+  | Some decorator -> decorator_name_matches decorator && decorator_arguments_matches decorator
 
 
 let matches_annotation_constraint ~annotation_constraint ~annotation =

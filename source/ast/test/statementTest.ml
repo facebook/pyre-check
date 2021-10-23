@@ -60,7 +60,7 @@ let test_is_classmethod _ =
   in
   assert_false (Define.is_class_method (define "foo" []));
   assert_false (Define.is_class_method (define "__init__" []));
-  assert_true (Define.is_class_method (define "foo" [decorator "classmethod"]));
+  assert_true (Define.is_class_method (define "foo" [!"classmethod"]));
   assert_true (Define.is_class_method (define "__init_subclass__" []));
   assert_true (Define.is_class_method (define "__new__" []));
   assert_true (Define.is_class_method (define "__class_getitem__" []))
@@ -87,7 +87,7 @@ let test_is_class_property _ =
   in
   assert_false (Define.is_class_property (define "foo" []));
   assert_false (Define.is_class_property (define "__init__" []));
-  assert_true (Define.is_class_property (define "foo" [decorator "pyre_extensions.classproperty"]));
+  assert_true (Define.is_class_property (define "foo" [!"pyre_extensions.classproperty"]));
   assert_false (Define.is_class_property (define "__new__" []))
 
 
@@ -98,7 +98,7 @@ let test_decorator _ =
         {
           name = !&"foo";
           parameters = [];
-          decorators;
+          decorators = List.map decorators ~f:Decorator.to_expression;
           return_annotation = None;
           async = false;
           generator = false;
