@@ -235,19 +235,32 @@ and tuple_concatenation_problem =
   | UnpackingNonIterable of { annotation: Type.t }
 [@@deriving compare, eq, sexp, show, hash]
 
-type invalid_decoration = {
-  decorator: Decorator.t;
-  reason: invalid_decoration_reason;
-}
-
-and invalid_decoration_reason =
-  | CouldNotResolve
-  | CouldNotResolveArgument of Expression.t
-  | NonCallableDecoratorFactory of Type.t
-  | NonCallableDecorator of Type.t
-  | DecoratorFactoryFailedToApply of kind option
-  | ApplicationFailed of kind option
+type invalid_decoration =
+  | CouldNotResolve of Expression.t
+  | CouldNotResolveArgument of {
+      name: Reference.t;
+      argument: Expression.t;
+    }
+  | NonCallableDecoratorFactory of {
+      name: Reference.t;
+      annotation: Type.t;
+    }
+  | NonCallableDecorator of {
+      name: Reference.t;
+      has_arguments: bool;
+      annotation: Type.t;
+    }
+  | DecoratorFactoryFailedToApply of {
+      name: Reference.t;
+      reason: kind option;
+    }
+  | ApplicationFailed of {
+      name: Reference.t;
+      has_arguments: bool;
+      reason: kind option;
+    }
   | SetterNameMismatch of {
+      name: Reference.t;
       actual: string;
       expected: string;
     }
@@ -1109,11 +1122,14 @@ let rec messages ~concise ~signature location kind =
               variable
               unconcatenatable;
           ])
-  | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolve } ->
-      let name = Node.value name |> Reference.sanitized |> Reference.show in
-      [Format.asprintf "Pyre was not able to infer the type of the decorator `%s`." name]
-  | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolveArgument argument } ->
-      let name = Node.value name |> Reference.sanitized |> Reference.show in
+  | InvalidDecoration (CouldNotResolve expression) ->
+      [
+        Format.asprintf
+          "Pyre was not able to infer the type of the decorator `%s`."
+          (show_sanitized_expression expression);
+      ]
+  | InvalidDecoration (CouldNotResolveArgument { name; argument }) ->
+      let name = Reference.sanitized name |> Reference.show in
       [
         Format.asprintf
           "Pyre was not able to infer the type of argument `%s` to decorator factory `%s`."
@@ -1122,46 +1138,43 @@ let rec messages ~concise ~signature location kind =
         "This can usually be worked around by extracting your argument into a global variable and \
          providing an explicit type annotation.";
       ]
-  | InvalidDecoration { decorator = { name; _ }; reason = NonCallableDecoratorFactory result } ->
-      let name = Node.value name |> Reference.sanitized |> Reference.show in
+  | InvalidDecoration (NonCallableDecoratorFactory { name; annotation }) ->
+      let name = Reference.sanitized name |> Reference.show in
       [
         Format.asprintf
           "Decorator factory `%s` could not be called, because its type `%a` is not callable."
           name
           pp_type
-          result;
+          annotation;
       ]
-  | InvalidDecoration { decorator = { name; arguments }; reason = NonCallableDecorator result } ->
-      let name = Node.value name |> Reference.sanitized |> Reference.show in
-      let arguments = if Option.is_some arguments then "(...)" else "" in
+  | InvalidDecoration (NonCallableDecorator { name; has_arguments; annotation }) ->
+      let name = Reference.sanitized name |> Reference.show in
+      let arguments = if has_arguments then "(...)" else "" in
       [
         Format.asprintf
           "Decorator `%s%s` could not be called, because its type `%a` is not callable."
           name
           arguments
           pp_type
-          result;
+          annotation;
       ]
-  | InvalidDecoration
-      { decorator = { name; _ }; reason = DecoratorFactoryFailedToApply inner_reason } -> (
-      let name = Node.value name |> Reference.sanitized |> Reference.show in
+  | InvalidDecoration (DecoratorFactoryFailedToApply { name; reason }) -> (
+      let name = Reference.sanitized name |> Reference.show in
       let recurse = messages ~concise ~signature location in
-      match inner_reason >>| recurse >>= List.hd with
+      match reason >>| recurse >>= List.hd with
       | Some inner_message ->
           [Format.asprintf "While applying decorator factory `%s`: %s" name inner_message]
       | None -> [Format.asprintf "Decorator factory `%s` failed to apply." name])
-  | InvalidDecoration { decorator = { name; arguments }; reason = ApplicationFailed inner_reason }
-    -> (
-      let name = Node.value name |> Reference.sanitized |> Reference.show in
-      let arguments = if Option.is_some arguments then "(...)" else "" in
+  | InvalidDecoration (ApplicationFailed { name; has_arguments; reason }) -> (
+      let name = Reference.sanitized name |> Reference.show in
+      let arguments = if has_arguments then "(...)" else "" in
       let recurse = messages ~concise ~signature location in
-      match inner_reason >>| recurse >>= List.hd with
+      match reason >>| recurse >>= List.hd with
       | Some inner_message ->
           [Format.asprintf "While applying decorator `%s%s`: %s" name arguments inner_message]
       | None -> [Format.asprintf "Decorator `%s%s` failed to apply." name arguments])
-  | InvalidDecoration { decorator = { name; _ }; reason = SetterNameMismatch { expected; actual } }
-    ->
-      let name = Node.value name |> Reference.sanitized |> Reference.show in
+  | InvalidDecoration (SetterNameMismatch { name; expected; actual }) ->
+      let name = Reference.sanitized name |> Reference.show in
       [
         Format.asprintf
           "Invalid property setter `%s`: `%s` does not match decorated method `%s`."
@@ -3573,8 +3586,8 @@ let suppress ~mode ~ignore_codes error =
     | InconsistentOverride
         { override = StrengthenedPrecondition (Found { expected = Type.Variable _; _ }); _ } ->
         true
-    | InvalidDecoration { reason = CouldNotResolve; _ }
-    | InvalidDecoration { reason = CouldNotResolveArgument _; _ } ->
+    | InvalidDecoration (CouldNotResolve _)
+    | InvalidDecoration (CouldNotResolveArgument _) ->
         true
     | InvalidTypeParameters
         { kind = AttributeResolution.IncorrectNumberOfParameters { actual = 0; _ }; _ } ->

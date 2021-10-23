@@ -226,22 +226,35 @@ and tuple_concatenation_problem =
   | UnpackingNonIterable of { annotation: Type.t }
 [@@deriving compare, eq, sexp, show, hash]
 
-type invalid_decoration_reason =
-  | CouldNotResolve
-  | CouldNotResolveArgument of Expression.t
-  | NonCallableDecoratorFactory of Type.t
-  | NonCallableDecorator of Type.t
-  | DecoratorFactoryFailedToApply of kind option
-  | ApplicationFailed of kind option
+type invalid_decoration =
+  | CouldNotResolve of Expression.t
+  | CouldNotResolveArgument of {
+      name: Reference.t;
+      argument: Expression.t;
+    }
+  | NonCallableDecoratorFactory of {
+      name: Reference.t;
+      annotation: Type.t;
+    }
+  | NonCallableDecorator of {
+      name: Reference.t;
+      has_arguments: bool;
+      annotation: Type.t;
+    }
+  | DecoratorFactoryFailedToApply of {
+      name: Reference.t;
+      reason: kind option;
+    }
+  | ApplicationFailed of {
+      name: Reference.t;
+      has_arguments: bool;
+      reason: kind option;
+    }
   | SetterNameMismatch of {
+      name: Reference.t;
       actual: string;
       expected: string;
     }
-
-and invalid_decoration = {
-  decorator: Statement.Decorator.t;
-  reason: invalid_decoration_reason;
-}
 
 and kind =
   | AnalysisFailure of analysis_failure

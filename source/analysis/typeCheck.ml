@@ -883,12 +883,12 @@ module State (Context : Context) = struct
                   ~location
                   ~kind:
                     (Error.InvalidDecoration
-                       {
-                         decorator;
-                         reason =
-                           Error.SetterNameMismatch
-                             { actual = decorated_property_name; expected = Reference.last name };
-                       })
+                       (Error.SetterNameMismatch
+                          {
+                            name = decorator_name;
+                            actual = decorated_property_name;
+                            expected = Reference.last name;
+                          }))
           | _ -> errors
         else
           let { Resolved.errors = decorator_errors; _ } =
@@ -6644,13 +6644,15 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               else
                 index
             in
-            let add_error ({ Decorator.name = { Node.location; _ }; arguments } as decorator) =
+            let add_error
+                ({ Decorator.name = { Node.location; value = name }; arguments } as decorator)
+              =
               let make_error reason =
                 let error =
                   Error.create
                     ~location:(Location.with_module ~qualifier:Context.qualifier location)
                     ~define:Context.define
-                    ~kind:(Error.InvalidDecoration { decorator; reason })
+                    ~kind:(Error.InvalidDecoration reason)
                 in
                 error :: errors
               in
@@ -6668,23 +6670,34 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 reason >>| convert >>= List.hd >>| fun (_, kind) -> kind
               in
               match reason with
-              | CouldNotResolve -> make_error CouldNotResolve
+              | CouldNotResolve -> make_error (CouldNotResolve (Decorator.to_expression decorator))
               | CouldNotResolveArgument { argument_index } ->
                   let add_error argument =
                     let argument, _ = Ast.Expression.Call.Argument.unpack argument in
-                    make_error (CouldNotResolveArgument argument)
+                    make_error (CouldNotResolveArgument { name; argument })
                   in
                   arguments
                   >>= (fun arguments -> List.nth arguments argument_index)
                   >>| add_error
                   |> Option.value ~default:errors
               | NonCallableDecoratorFactory resolved ->
-                  make_error (NonCallableDecoratorFactory resolved)
-              | NonCallableDecorator result -> make_error (NonCallableDecorator result)
+                  make_error (NonCallableDecoratorFactory { name; annotation = resolved })
+              | NonCallableDecorator result ->
+                  make_error
+                    (NonCallableDecorator
+                       { name; has_arguments = Option.is_some arguments; annotation = result })
               | FactorySignatureSelectionFailed { reason; callable } ->
-                  make_error (DecoratorFactoryFailedToApply (extract_error ~reason ~callable))
+                  make_error
+                    (DecoratorFactoryFailedToApply
+                       { name; reason = extract_error ~reason ~callable })
               | ApplicationFailed { reason; callable } ->
-                  make_error (ApplicationFailed (extract_error ~reason ~callable))
+                  make_error
+                    (ApplicationFailed
+                       {
+                         name;
+                         has_arguments = Option.is_some arguments;
+                         reason = extract_error ~reason ~callable;
+                       })
             in
 
             let { StatementDefine.Signature.decorators; _ } = signature in
