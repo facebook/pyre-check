@@ -667,6 +667,49 @@ let test_is_generator context =
   ()
 
 
+let test_decorator_from_expression context =
+  let assert_decorator ~expected expression =
+    let actual = Decorator.from_expression expression in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Decorator.t option]
+      ~printer:(fun decorator ->
+        Format.asprintf "%a" Sexp.pp_hum ([%sexp_of: Decorator.t option] decorator))
+      expected
+      actual
+  in
+
+  assert_decorator !"a" ~expected:(Some (decorator "a"));
+  assert_decorator !"a.b" ~expected:(Some (decorator "a.b"));
+  assert_decorator
+    (+Expression.Call { callee = !"a"; arguments = [] })
+    ~expected:(Some (decorator "a" ~arguments:[]));
+  assert_decorator
+    (+Expression.Call { callee = !"a.b"; arguments = [] })
+    ~expected:(Some (decorator "a.b" ~arguments:[]));
+  assert_decorator
+    (+Expression.Call { callee = !"a"; arguments = [{ Call.Argument.name = None; value = !"b" }] })
+    ~expected:(Some (decorator "a" ~arguments:[{ Call.Argument.name = None; value = !"b" }]));
+
+  assert_decorator (+Expression.Tuple []) ~expected:None;
+  assert_decorator
+    (+Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"a" })
+    ~expected:None;
+  assert_decorator
+    (+Expression.ComparisonOperator
+        { ComparisonOperator.left = !"a"; operator = ComparisonOperator.LessThan; right = !"b" })
+    ~expected:None;
+  assert_decorator
+    (+Expression.Name
+        (Name.Attribute
+           { Name.Attribute.base = +Expression.List []; attribute = "b"; special = false }))
+    ~expected:None;
+  assert_decorator
+    (+Expression.Call { callee = +Expression.List [!"a"]; arguments = [] })
+    ~expected:None;
+  ()
+
+
 let () =
   "define"
   >::: [
@@ -686,5 +729,6 @@ let () =
          "preamble" >:: test_preamble;
          "pp" >:: test_pp;
          "is_generator" >:: test_is_generator;
+         "decorator_from_expression" >:: test_decorator_from_expression;
        ]
   |> Test.run

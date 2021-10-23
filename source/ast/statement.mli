@@ -62,6 +62,8 @@ module Decorator : sig
   val location_insensitive_compare : t -> t -> int
 
   val to_expression : t -> Expression.t
+
+  val from_expression : Expression.t -> t option
 end
 
 module rec Assert : sig

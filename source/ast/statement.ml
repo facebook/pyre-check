@@ -122,6 +122,24 @@ module Decorator = struct
     | Some arguments ->
         Node.create ~location (Expression.Expression.Call { callee = name; arguments })
     | None -> name
+
+
+  let from_expression { Node.value; location } =
+    let open Expression in
+    match value with
+    | Expression.Name name -> (
+        match name_to_reference name with
+        | Some reference -> Some { name = Node.create ~location reference; arguments = None }
+        | None -> None)
+    | Call { callee = { Node.value; location }; arguments } -> (
+        match value with
+        | Expression.Name name -> (
+            match name_to_reference name with
+            | Some reference ->
+                Some { name = Node.create ~location reference; arguments = Some arguments }
+            | None -> None)
+        | _ -> None)
+    | _ -> None
 end
 
 module rec Assert : sig
