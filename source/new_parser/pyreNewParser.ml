@@ -450,7 +450,50 @@ let pattern =
     ()
 
 
+let create_assign ~location ~target ~annotation ~value () =
+  let open Ast.Expression in
+  let open Ast.Statement in
+  let module Node = Ast.Node in
+  let value =
+    (* TODO(T101298692): Make `value` optional in assign statement and stop auto-filling `...` *)
+    let location =
+      let open Ast.Location in
+      { location with start = location.stop }
+    in
+    Option.value value ~default:(Expression.Constant Constant.Ellipsis |> Node.create ~location)
+  in
+  match Node.value target with
+  | Expression.Call
+      {
+        callee =
+          {
+            Node.value =
+              Expression.Name
+                (Name.Attribute { Name.Attribute.base; attribute = "__getitem__"; special = true });
+            location = callee_location;
+          };
+        arguments;
+      } ->
+      let setitem =
+        Expression.Call
+          {
+            callee =
+              Expression.Name
+                (Name.Attribute { Name.Attribute.base; attribute = "__setitem__"; special = true })
+              |> Node.create ~location:callee_location;
+            arguments = List.append arguments [{ Call.Argument.name = None; value }];
+          }
+        |> Node.create ~location
+      in
+      Statement.Expression setitem |> Node.create ~location
+  | _ ->
+      (* TODO(T101303314): This does not take into account things like `a[0], b = ...`, where we'll
+         need to turn `a[0]` into `__setitem__` call. *)
+      Statement.Assign { target; annotation; value } |> Node.create ~location
+
+
 let statement =
+  let open Ast.Expression in
   let open Ast.Statement in
   let module Node = Ast.Node in
   let function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment:_ =
@@ -513,10 +556,31 @@ let statement =
     [Statement.Return { Return.expression = value; is_implicit = false } |> Node.create ~location]
   in
   let delete ~location ~targets = [Statement.Delete targets |> Node.create ~location] in
-  let assign ~location:_ ~targets:_ ~value:_ ~type_comment:_ = failwith "not implemented yet" in
-  let aug_assign ~location:_ ~target:_ ~op:_ ~value:_ = failwith "not implemented yet" in
-  let ann_assign ~location:_ ~target:_ ~annotation:_ ~value:_ ~simple:_ =
-    failwith "not implemented yet"
+  let assign ~location ~targets ~value ~type_comment:_ =
+    (* Eagerly turn chained assignments `a = b = c` into `a = c; b = c`. *)
+    List.map targets ~f:(fun target ->
+        let location =
+          let open Ast.Location in
+          let { start; _ } = Node.location target in
+          { location with start }
+        in
+        create_assign ~location ~target ~annotation:None ~value:(Some value) ())
+  in
+  let aug_assign ~location ~target ~op ~value =
+    let callee =
+      let dunder_name = Caml.Format.sprintf "__i%s__" op in
+      Expression.Name
+        (Name.Attribute { base = target; attribute = identifier dunder_name; special = true })
+      |> Node.create ~location:(Node.location target)
+    in
+    let value =
+      Expression.Call { callee; arguments = [{ Call.Argument.name = None; value }] }
+      |> Node.create ~location
+    in
+    [create_assign ~location ~target ~annotation:None ~value:(Some value) ()]
+  in
+  let ann_assign ~location ~target ~annotation ~value ~simple:_ =
+    [create_assign ~location ~target ~annotation:(Some annotation) ~value ()]
   in
   let for_ ~location ~target ~iter ~body ~orelse ~type_comment:_ =
     [
