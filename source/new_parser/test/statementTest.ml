@@ -748,6 +748,620 @@ let test_with _ =
   PyreNewParser.with_context do_test
 
 
+let test_define _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    assert_parsed
+      "def foo(a):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(*, a):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters =
+                     [
+                       +{ Parameter.name = "*"; value = None; annotation = None };
+                       +{ Parameter.name = "a"; value = None; annotation = None };
+                     ];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(a, /, b):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters =
+                     [
+                       +{ Parameter.name = "a"; value = None; annotation = None };
+                       +{ Parameter.name = "/"; value = None; annotation = None };
+                       +{ Parameter.name = "b"; value = None; annotation = None };
+                     ];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(**a):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [+{ Parameter.name = "**a"; value = None; annotation = None }];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(a, b,) -> c:\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters =
+                     [
+                       +{ Parameter.name = "a"; value = None; annotation = None };
+                       +{ Parameter.name = "b"; value = None; annotation = None };
+                     ];
+                   decorators = [];
+                   return_annotation = Some !"c";
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "async def foo():\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [];
+                   decorators = [];
+                   return_annotation = None;
+                   async = true;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "async def foo():\n  ..."
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [];
+                   decorators = [];
+                   return_annotation = None;
+                   async = true;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
+             };
+        ];
+    assert_parsed
+      "@foo\nasync def foo():\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [];
+                   decorators = [!"foo"];
+                   return_annotation = None;
+                   async = true;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "@decorator\ndef foo(a):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                   decorators = [!"decorator"];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "@decorator(a=b, c=d)\ndef foo(a):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                   decorators =
+                     [
+                       +Expression.Call
+                          {
+                            Call.callee = !"decorator";
+                            arguments =
+                              [
+                                { Call.Argument.name = Some ~+"a"; value = !"b" };
+                                { Call.Argument.name = Some ~+"c"; value = !"d" };
+                              ];
+                          };
+                     ];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "@foo\n\n@bar\ndef foo(a):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                   decorators = [!"foo"; !"bar"];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "@x[0].y\ndef foo(a):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                   decorators =
+                     [
+                       +Expression.Name
+                          (Name.Attribute
+                             {
+                               Name.Attribute.base =
+                                 +Expression.Call
+                                    {
+                                      Call.callee =
+                                        +Expression.Name
+                                           (Name.Attribute
+                                              {
+                                                Name.Attribute.base = !"x";
+                                                attribute = "__getitem__";
+                                                special = true;
+                                              });
+                                      arguments =
+                                        [
+                                          {
+                                            Call.Argument.name = None;
+                                            value = +Expression.Constant (Constant.Integer 0);
+                                          };
+                                        ];
+                                    };
+                               attribute = "y";
+                               special = false;
+                             });
+                     ];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "@(x<y)\ndef foo(a):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                   decorators =
+                     [
+                       +Expression.ComparisonOperator
+                          {
+                            ComparisonOperator.left = !"x";
+                            operator = ComparisonOperator.LessThan;
+                            right = !"y";
+                          };
+                     ];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(a, b):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   Define.Signature.name = !&"foo";
+                   parameters =
+                     [
+                       +{ Parameter.name = "a"; value = None; annotation = None };
+                       +{ Parameter.name = "b"; value = None; annotation = None };
+                     ];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(a, b = 1):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters =
+                     [
+                       +{ Parameter.name = "a"; value = None; annotation = None };
+                       +{
+                          Parameter.name = "b";
+                          value = Some (+Expression.Constant (Constant.Integer 1));
+                          annotation = None;
+                        };
+                     ];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(a=()):\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters =
+                     [
+                       +{
+                          Parameter.name = "a";
+                          value = Some (+Expression.Tuple []);
+                          annotation = None;
+                        };
+                     ];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(): 1; 2"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body =
+                 [
+                   +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                   +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+                 ];
+             };
+        ];
+    assert_parsed
+      "def foo():\n  1\n  2\n3"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body =
+                 [
+                   +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                   +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+                 ];
+             };
+          +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+        ];
+    assert_parsed
+      "def foo():\n  def bar():\n    1\n    2\n3"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body =
+                 [
+                   +Statement.Define
+                      {
+                        signature =
+                          {
+                            name = !&"bar";
+                            parameters = [];
+                            decorators = [];
+                            return_annotation = None;
+                            async = false;
+                            generator = false;
+                            parent = None;
+                            nesting_define = None;
+                          };
+                        captures = [];
+                        unbound_names = [];
+                        body =
+                          [
+                            +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                            +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+                          ];
+                      };
+                 ];
+             };
+          +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+        ];
+    assert_parsed
+      "def foo(a: int):  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"int" }];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(a: int = 1):  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters =
+                     [
+                       +{
+                          Parameter.name = "a";
+                          value = Some (+Expression.Constant (Constant.Integer 1));
+                          annotation = Some !"int";
+                        };
+                     ];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    assert_parsed
+      "def foo(a: int, b: str):  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters =
+                     [
+                       +{ Parameter.name = "a"; value = None; annotation = Some !"int" };
+                       +{ Parameter.name = "b"; value = None; annotation = Some !"str" };
+                     ];
+                   decorators = [];
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+             };
+        ];
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
@@ -759,5 +1373,6 @@ let () =
          "for_while_if" >:: test_for_while_if;
          "try" >:: test_try;
          "with" >:: test_with;
+         "define" >:: test_define;
        ]
   |> Test.run

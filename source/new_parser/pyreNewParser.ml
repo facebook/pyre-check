@@ -453,19 +453,37 @@ let pattern =
 let statement =
   let open Ast.Statement in
   let module Node = Ast.Node in
-  let function_def ~location:_ ~name:_ ~args:_ ~body:_ ~decorator_list:_ ~returns:_ ~type_comment:_ =
-    failwith "not implemented yet"
+  let function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment:_ =
+    let signature =
+      {
+        Define.Signature.name = Ast.Reference.create name;
+        parameters = args;
+        decorators = decorator_list;
+        return_annotation = returns;
+        async = false;
+        generator = is_generator body;
+        parent = None;
+        nesting_define = None;
+      }
+    in
+    Statement.Define { Define.signature; captures = []; unbound_names = []; body }
+    |> Node.create ~location
   in
-  let async_function_def
-      ~location:_
-      ~name:_
-      ~args:_
-      ~body:_
-      ~decorator_list:_
-      ~returns:_
-      ~type_comment:_
-    =
-    failwith "not implemented yet"
+  let async_function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment:_ =
+    let signature =
+      {
+        Define.Signature.name = Ast.Reference.create name;
+        parameters = args;
+        decorators = decorator_list;
+        return_annotation = returns;
+        async = true;
+        generator = is_generator body;
+        parent = None;
+        nesting_define = None;
+      }
+    in
+    Statement.Define { Define.signature; captures = []; unbound_names = []; body }
+    |> Node.create ~location
   in
   let class_def ~location:_ ~name:_ ~bases:_ ~keywords:_ ~body:_ ~decorator_list:_ =
     failwith "not implemented yet"
