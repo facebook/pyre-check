@@ -43,6 +43,9 @@ let test_pass_break_continue _ =
     assert_parsed "continue" ~expected:[+Statement.Continue];
     assert_parsed "pass\npass" ~expected:[+Statement.Pass; +Statement.Pass];
     assert_not_parsed "pass\n  pass";
+    assert_parsed
+      "break\ncontinue\npass\n"
+      ~expected:[+Statement.Break; +Statement.Continue; +Statement.Pass];
     ()
   in
   PyreNewParser.with_context do_test
@@ -309,6 +312,19 @@ let test_for_while_if _ =
              };
         ];
     assert_parsed
+      "for a in b:\n  c\n  d"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = !"a";
+               iterator = !"b";
+               body = [+Statement.Expression !"c"; +Statement.Expression !"d"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
       "for a, b in c: d\n"
       ~expected:
         [
@@ -389,7 +405,7 @@ let test_for_while_if _ =
              };
         ];
     assert_parsed
-      "for a in b:\n\tc\nelse:\n\td\n"
+      "for a in b:\n\tc\nelse:\n\td\n\te"
       ~expected:
         [
           +Statement.For
@@ -397,7 +413,7 @@ let test_for_while_if _ =
                For.target = !"a";
                iterator = !"b";
                body = [+Statement.Expression !"c"];
-               orelse = [+Statement.Expression !"d"];
+               orelse = [+Statement.Expression !"d"; +Statement.Expression !"e"];
                async = false;
              };
         ];
@@ -419,19 +435,41 @@ let test_for_while_if _ =
       ~expected:
         [+Statement.While { While.test = !"a"; body = [+Statement.Expression !"b"]; orelse = [] }];
     assert_parsed
-      "while a:\n\tb\nelse:\n\tc\n"
+      "while a:\n  b\n  c\n"
+      ~expected:
+        [
+          +Statement.While
+             {
+               While.test = !"a";
+               body = [+Statement.Expression !"b"; +Statement.Expression !"c"];
+               orelse = [];
+             };
+        ];
+    assert_parsed
+      "while a:\n\tb\nelse:\n\tc\n\td\n"
       ~expected:
         [
           +Statement.While
              {
                While.test = !"a";
                body = [+Statement.Expression !"b"];
-               orelse = [+Statement.Expression !"c"];
+               orelse = [+Statement.Expression !"c"; +Statement.Expression !"d"];
              };
         ];
     assert_parsed
       "if a: b\n"
       ~expected:[+Statement.If { If.test = !"a"; body = [+Statement.Expression !"b"]; orelse = [] }];
+    assert_parsed
+      "if a:\n  b\n  c\n"
+      ~expected:
+        [
+          +Statement.If
+             {
+               If.test = !"a";
+               body = [+Statement.Expression !"b"; +Statement.Expression !"c"];
+               orelse = [];
+             };
+        ];
     assert_parsed
       "if a: b\nelif c: d"
       ~expected:
@@ -461,14 +499,14 @@ let test_for_while_if _ =
              };
         ];
     assert_parsed
-      "if a:\n\tb\nelse:\n\tc\n"
+      "if a:\n\tb\nelse:\n\tc\n\td\n"
       ~expected:
         [
           +Statement.If
              {
                If.test = !"a";
                body = [+Statement.Expression !"b"];
-               orelse = [+Statement.Expression !"c"];
+               orelse = [+Statement.Expression !"c"; +Statement.Expression !"d"];
              };
         ];
 
@@ -654,6 +692,25 @@ let test_try _ =
                finally = [+Statement.Expression !"d"];
              };
         ];
+    assert_parsed
+      "try:\n\ta\n\tb\nexcept:\n\tc\n\td\nelse:\n\te\n\tf\nfinally:\n\tg\n\th"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"; +Statement.Expression !"b"];
+               handlers =
+                 [
+                   {
+                     Try.Handler.kind = None;
+                     name = None;
+                     body = [+Statement.Expression !"c"; +Statement.Expression !"d"];
+                   };
+                 ];
+               orelse = [+Statement.Expression !"e"; +Statement.Expression !"f"];
+               finally = [+Statement.Expression !"g"; +Statement.Expression !"h"];
+             };
+        ];
 
     assert_not_parsed "try: a";
     assert_not_parsed "try:\n\ta\nelse:\n\tb";
@@ -666,13 +723,23 @@ let test_try _ =
 let test_with _ =
   let do_test context =
     let assert_parsed = assert_parsed ~context in
-    (* let assert_not_parsed = assert_not_parsed ~context in *)
     assert_parsed
       "with a: b\n"
       ~expected:
         [
           +Statement.With
              { With.items = [!"a", None]; body = [+Statement.Expression !"b"]; async = false };
+        ];
+    assert_parsed
+      "with a:\n  b\n  c"
+      ~expected:
+        [
+          +Statement.With
+             {
+               With.items = [!"a", None];
+               body = [+Statement.Expression !"b"; +Statement.Expression !"c"];
+               async = false;
+             };
         ];
     assert_parsed
       "with (yield from a): b\n"
