@@ -226,7 +226,7 @@ let dump = function
       in
       Log.dump
         "| Analysis | Fetch Count | Total Time | Percent of Total Time | Average Model Size \
-         (words) | Target |";
+         (bytes) | Target |";
       let display_model_row ({ TargetKey.target; analysis }, events) =
         let count = List.length events in
         let seconds =
@@ -236,7 +236,7 @@ let dump = function
           events
           |> List.map ~f:(fun { model_words; _ } -> model_words)
           |> List.fold ~init:0 ~f:( + )
-          |> fun size -> size / count
+          |> fun size -> 8 * size / count
         in
         Log.dump
           "| %a | %3d | %8.3fs | %4.2f%% | %d | %a |"
