@@ -916,6 +916,19 @@ def init(context: click.Context, local: bool) -> int:
 
 
 @pyre.command()
+@click.pass_context
+def init_pysa(context: click.Context) -> int:
+    """
+    Creates a suitable environment for running pyre analyze.
+    """
+    create_configuration_return_code: int = v2.initialize.run()
+    if create_configuration_return_code == ExitCode.SUCCESS:
+        return v2.initialize_pysa.run()
+    else:
+        return create_configuration_return_code
+
+
+@pyre.command()
 @click.option(
     "--with-fire", is_flag=True, default=False, help="A no-op flag that adds emphasis."
 )
