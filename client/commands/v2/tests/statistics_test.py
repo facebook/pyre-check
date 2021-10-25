@@ -38,7 +38,7 @@ class StatisticsTest(testslide.TestCase):
 
     def test_find_roots__filter_path_expand(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
             with setup.switch_working_directory(root_path):
                 self.assertCountEqual(
                     find_roots(
@@ -67,7 +67,7 @@ class StatisticsTest(testslide.TestCase):
 
     def test_find_roots__current_working_directory(self) -> None:
         with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
             with setup.switch_working_directory(root_path):
                 self.assertCountEqual(
                     find_roots(
