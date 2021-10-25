@@ -2049,7 +2049,11 @@ let test_lambda _ =
       ~expected:
         (+Expression.Lambda
             {
-              Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+              Lambda.parameters =
+                [
+                  +{ Parameter.name = "x"; value = None; annotation = None };
+                  +{ Parameter.name = "/"; value = None; annotation = None };
+                ];
               body = !"x";
             });
     assert_parsed
@@ -2057,7 +2061,11 @@ let test_lambda _ =
       ~expected:
         (+Expression.Lambda
             {
-              Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+              Lambda.parameters =
+                [
+                  +{ Parameter.name = "*"; value = None; annotation = None };
+                  +{ Parameter.name = "x"; value = None; annotation = None };
+                ];
               body = !"x";
             });
     assert_parsed
@@ -2068,12 +2076,14 @@ let test_lambda _ =
               Lambda.parameters =
                 [
                   +{ Parameter.name = "x"; value = None; annotation = None };
+                  +{ Parameter.name = "/"; value = None; annotation = None };
                   +{ Parameter.name = "y"; value = None; annotation = None };
                   +{
                      Parameter.name = "z";
                      value = Some (+Expression.Constant (Constant.Integer 1));
                      annotation = None;
                    };
+                  +{ Parameter.name = "*"; value = None; annotation = None };
                   +{
                      Parameter.name = "w";
                      value = Some (+Expression.Constant (Constant.Integer 2));
@@ -2095,11 +2105,13 @@ let test_lambda _ =
                      value = Some (+Expression.Constant (Constant.Integer 1));
                      annotation = None;
                    };
+                  +{ Parameter.name = "/"; value = None; annotation = None };
                   +{
                      Parameter.name = "z";
                      value = Some (+Expression.Constant (Constant.Integer 2));
                      annotation = None;
                    };
+                  +{ Parameter.name = "*"; value = None; annotation = None };
                   +{ Parameter.name = "u"; value = None; annotation = None };
                   +{
                      Parameter.name = "v";

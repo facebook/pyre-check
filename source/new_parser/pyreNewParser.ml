@@ -189,11 +189,21 @@ let arguments ~posonlyargs ~args ~vararg ~kwonlyargs ~kw_defaults ~kwarg ~defaul
     in
     Option.map kwarg ~f:handle_kwarg
   in
+  let delimiter_parameter ~delimited name =
+    (* TODO(T101307161): This is just an ugly temporary hack that helps preserve backward
+       compatibility. *)
+    if List.is_empty delimited then
+      []
+    else
+      [Node.create_with_default_location { Parameter.name; value = None; annotation = None }]
+  in
   List.concat
     [
       positional_only_parameters;
+      delimiter_parameter ~delimited:positional_only_parameters "/";
       regular_parameters;
       Option.to_list vararg_parameter;
+      delimiter_parameter ~delimited:keyword_only_parameters "*";
       keyword_only_parameters;
       Option.to_list kwarg_parameter;
     ]
