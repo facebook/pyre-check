@@ -485,8 +485,21 @@ let statement =
     Statement.Define { Define.signature; captures = []; unbound_names = []; body }
     |> Node.create ~location
   in
-  let class_def ~location:_ ~name:_ ~bases:_ ~keywords:_ ~body:_ ~decorator_list:_ =
-    failwith "not implemented yet"
+  let class_def ~location ~name ~bases ~keywords ~body ~decorator_list =
+    let base_arguments =
+      List.append
+        (List.map bases ~f:convert_positional_argument)
+        (List.map keywords ~f:convert_keyword_argument)
+    in
+    Statement.Class
+      {
+        Class.name = Ast.Reference.create name;
+        base_arguments;
+        body;
+        decorators = decorator_list;
+        top_level_unbound_names = [];
+      }
+    |> Node.create ~location
   in
   let return ~location ~value =
     Statement.Return { Return.expression = value; is_implicit = false } |> Node.create ~location

@@ -1362,6 +1362,213 @@ let test_define _ =
   PyreNewParser.with_context do_test
 
 
+let test_class _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    assert_parsed
+      "class foo: pass"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"foo";
+               base_arguments = [];
+               body = [+Statement.Pass];
+               decorators = [];
+               top_level_unbound_names = [];
+             };
+        ];
+    assert_parsed
+      "@bar\nclass foo():\n\tpass"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"foo";
+               base_arguments = [];
+               body = [+Statement.Pass];
+               decorators = [!"bar"];
+               top_level_unbound_names = [];
+             };
+        ];
+    assert_parsed
+      "class foo():\n\tdef bar(): pass"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"foo";
+               base_arguments = [];
+               body =
+                 [
+                   +Statement.Define
+                      {
+                        signature =
+                          {
+                            name = !&"bar";
+                            parameters = [];
+                            decorators = [];
+                            return_annotation = None;
+                            async = false;
+                            generator = false;
+                            parent = None;
+                            nesting_define = None;
+                          };
+                        captures = [];
+                        unbound_names = [];
+                        body = [+Statement.Pass];
+                      };
+                 ];
+               decorators = [];
+               top_level_unbound_names = [];
+             };
+        ];
+    assert_parsed
+      "class foo():\n\tdef bar():\n\t\tdef baz(): pass"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"foo";
+               base_arguments = [];
+               body =
+                 [
+                   +Statement.Define
+                      {
+                        signature =
+                          {
+                            name = !&"bar";
+                            parameters = [];
+                            decorators = [];
+                            return_annotation = None;
+                            async = false;
+                            generator = false;
+                            parent = None;
+                            nesting_define = None;
+                          };
+                        captures = [];
+                        unbound_names = [];
+                        body =
+                          [
+                            +Statement.Define
+                               {
+                                 signature =
+                                   {
+                                     name = !&"baz";
+                                     parameters = [];
+                                     decorators = [];
+                                     return_annotation = None;
+                                     async = false;
+                                     generator = false;
+                                     parent = None;
+                                     nesting_define = None;
+                                   };
+                                 captures = [];
+                                 unbound_names = [];
+                                 body = [+Statement.Pass];
+                               };
+                          ];
+                      };
+                 ];
+               decorators = [];
+               top_level_unbound_names = [];
+             };
+        ];
+    assert_parsed
+      "class foo(1, 2):\n\t1"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"foo";
+               base_arguments =
+                 [
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) };
+                 ];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+               decorators = [];
+               top_level_unbound_names = [];
+             };
+        ];
+    assert_parsed
+      "class foo(init_subclass_arg=\"literal_string\"):\n\t1"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"foo";
+               base_arguments =
+                 [
+                   {
+                     Call.Argument.name = Some ~+"init_subclass_arg";
+                     value =
+                       +Expression.Constant
+                          (Constant.String (StringLiteral.create "literal_string"));
+                   };
+                 ];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+               decorators = [];
+               top_level_unbound_names = [];
+             };
+        ];
+    assert_parsed
+      "class foo(1, **kwargs):\n\t1"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"foo";
+               base_arguments =
+                 [
+                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
+                   {
+                     Call.Argument.name = None;
+                     value = +Expression.Starred (Starred.Twice !"kwargs");
+                   };
+                 ];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+               decorators = [];
+               top_level_unbound_names = [];
+             };
+        ];
+    assert_parsed
+      "class foo(superfoo):\n\tdef bar(): pass"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"foo";
+               base_arguments = [{ Call.Argument.name = None; value = !"superfoo" }];
+               body =
+                 [
+                   +Statement.Define
+                      {
+                        signature =
+                          {
+                            name = !&"bar";
+                            parameters = [];
+                            decorators = [];
+                            return_annotation = None;
+                            async = false;
+                            generator = false;
+                            parent = None;
+                            nesting_define = None;
+                          };
+                        captures = [];
+                        unbound_names = [];
+                        body = [+Statement.Pass];
+                      };
+                 ];
+               decorators = [];
+               top_level_unbound_names = [];
+             };
+        ];
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parse_statements"
   >::: [
@@ -1374,5 +1581,6 @@ let () =
          "try" >:: test_try;
          "with" >:: test_with;
          "define" >:: test_define;
+         "class" >:: test_class;
        ]
   |> Test.run
