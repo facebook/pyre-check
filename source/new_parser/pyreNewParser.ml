@@ -11,6 +11,8 @@ module Error = PyreAst.Parser.Error
 
 exception Exception of Error.t
 
+exception InternalError of Error.t
+
 let position ~line ~column = { Ast.Location.line; column }
 
 let location ~start ~stop = { Ast.Location.start; stop }
@@ -426,7 +428,9 @@ let exception_handler ~location:_ ~type_ ~name ~body =
 
 
 (* TODO(T102720335): Support pattern matching *)
-let match_case ~pattern:_ ~guard:_ ~body:_ = failwith "not implemented yet"
+let match_case ~pattern:_ ~guard:_ ~body:_ =
+  raise (InternalError { Error.line = -1; column = -1; message = "match_case not implemented yet" })
+
 
 (* TODO(T102720335): Support pattern matching *)
 let pattern =
@@ -626,9 +630,10 @@ let statement =
   let async_with ~location ~items ~body ~type_comment:_ =
     [Statement.With { With.items; body = List.concat body; async = true } |> Node.create ~location]
   in
-  let match_ ~location:_ ~subject:_ ~cases:_ =
+  let match_ ~location ~subject:_ ~cases:_ =
     (* TODO(T102720335): Support pattern matching *)
-    failwith "not implemented yet"
+    let { Ast.Location.start = { Ast.Location.line; column }; _ } = location in
+    raise (InternalError { Error.line; column; message = "match statement not implemented yet" })
   in
   let raise_ ~location ~exc ~cause =
     [Statement.Raise { Raise.expression = exc; from = cause } |> Node.create ~location]
@@ -732,12 +737,16 @@ let specification =
 
 let with_context ?on_failure = PyreAst.Parser.with_context ?on_init_failure:on_failure
 
-let parse_module ?filename ?enable_type_comment ~context =
-  PyreAst.Parser.TaglessFinal.parse_module
-    ?filename
-    ?enable_type_comment
-    ~context
-    ~spec:specification
+let parse_module ?filename ?enable_type_comment ~context text =
+  try
+    PyreAst.Parser.TaglessFinal.parse_module
+      ?filename
+      ?enable_type_comment
+      ~context
+      ~spec:specification
+      text
+  with
+  | InternalError error -> Result.Error error
 
 
 let parse_module_exn ?filename ?enable_type_comment ~context text =
