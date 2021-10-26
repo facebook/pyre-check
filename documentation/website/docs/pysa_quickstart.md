@@ -63,46 +63,18 @@ $ python3.8 -m venv ~/.venvs/pysa
 $ source ~/.venvs/pysa/bin/activate
 ```
 
-2. Install dependencies for your project
-
-You can check which packages are installed in your virtual environment by looking at the files in:
-```shell
-(pysa) $ ls ~/.venvs/pysa/lib/python3.8/site-packages
-```
-
-If you already have dependencies installed for your project in your virtual environment, you can skip this step. If not, usually Python projects will list their dependencies in a `requirements.txt` file. If your project has a `requirements.txt` file, you can install dependencies by:
-```shell
-(pysa) $ pip install -r requirements.txt
-```
-
-Installing your project dependencies in your virtual environment will allow Pysa to provide you better results, because it allows Pysa to use [models](pysa_basics.md#model-files) that correspond to those dependencies and detect [sources](pysa_basics.md#sources) and [sinks](pysa_basics.md#sinks) that might be hidden in your dependencies' code
-
-3. Install Pyre and SAPP in the virtual environment:
+2. Install Pyre and SAPP in the virtual environment:
 ```shell
 (pysa) $ pip install pyre-check fb-sapp
 ```
 
-4. Create Pyre configuration file in the project directory you want to run Pysa on:
+3. Initialize Pysa and SAPP
 
-`pyre init` will set up a [configuration file for Pyre (`.pyre_configuration`)](configuration.md) in your project's directory. The defaults for `pyre init` should cover most projects.
+You can quickly setup a suitable environment to run Pysa and SAPP with the following command:
 ```shell
-(pysa) $ cd /path/to/your/repo
-(pysa) $ pyre init
+(pysa) $ pyre init-pysa
 ```
-
-5. Optional, but recommended - Add type annotations automatically to your project:
-
-If your project uses Python 3.5 or later and isn't type annotated, running Pyre's type inference might improve your Pysa results. Note: this command will modify your code, but don't worry the type annotations won't affect your code at runtime if your project is running Python 3.5 or later.
-```shell
-(pysa) $ pyre infer -i
-```
-
-6. Set up SAPP with some high signal filters
-
-Run the following command to set up SAPP and import a list of filters to help you start looking into issues once Pysa has found them:
-```shell
-(pysa) $ sapp filter import ~/.venvs/pysa/lib/pyre_check/pysa_filters
-```
+This command setups sets up your repo to run Pysa and provides some optional tweaks to your repo to improve Pysa's results.
 
 ## Run Pysa
 Now that Pysa is set up to run on your project, you won't need to repeat any of the earlier steps to run Pysa on subsequent runs. You can run Pysa with `pyre analyze`.
@@ -186,7 +158,7 @@ $ (pysa) pip3 install wheel
 $ (pysa) python3.8 -m pip install --upgrade setuptools
 ```
 ----
-**Problem**: `pyre init` shows `ƛ Source directory path/to/dir does not exist. Be sure the source path is relative to the import_root`.
+**Problem**: `pyre init-pysa` shows `ƛ Source directory path/to/dir does not exist. Be sure the source path is relative to the import_root`.
 
 **Solution**: You will need to manually update `source_directories` in `.pyre_configuration`. Refer to [Pyre Global configuration section](configuration.md#the-global-configuration) to set up `source_directories`.
 
