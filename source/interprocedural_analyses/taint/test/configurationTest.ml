@@ -53,7 +53,10 @@ let test_simple _ =
   assert_equal
     ~cmp:(Option.equal Int.equal)
     configuration.analysis_model_constraints.maximum_overrides_to_analyze
-    (Some 50)
+    (Some 50);
+  assert_equal
+    (Sources.Map.of_alist_exn [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "D"]])
+    configuration.matching_sources
 
 
 let test_invalid_source _ =
@@ -765,6 +768,133 @@ let test_implicit_sinks _ =
   | _ -> Test.assert_unreached ()
 
 
+let test_matching_kinds _ =
+  let assert_matching ~configuration ~matching_sources ~matching_sinks =
+    let configuration = parse configuration in
+    let matching_sources_printer matching =
+      matching
+      |> Sources.Map.to_alist
+      |> List.map ~f:(fun (source, sinks) ->
+             Format.asprintf "%a -> %a" Sources.pp source Sinks.Set.pp sinks)
+      |> String.concat ~sep:", "
+      |> Format.asprintf "{%s}"
+    in
+    assert_equal
+      ~printer:matching_sources_printer
+      ~cmp:(Sources.Map.equal Sinks.Set.equal)
+      (Sources.Map.of_alist_exn matching_sources)
+      configuration.matching_sources;
+    let matching_sinks_printer matching =
+      matching
+      |> Sinks.Map.to_alist
+      |> List.map ~f:(fun (sink, sources) ->
+             Format.asprintf "%a -> %a" Sinks.pp sink Sources.Set.pp sources)
+      |> String.concat ~sep:", "
+      |> Format.asprintf "{%s}"
+    in
+    assert_equal
+      ~printer:matching_sinks_printer
+      ~cmp:(Sinks.Map.equal Sources.Set.equal)
+      (Sinks.Map.of_alist_exn matching_sinks)
+      configuration.matching_sinks
+  in
+  assert_matching
+    ~configuration:
+      {|
+        { sources: [
+            { name: "A" },
+            { name: "B" }
+          ],
+          sinks: [
+            { name: "C" },
+            { name: "D" }
+          ],
+          rules: [
+            {
+               name: "test rule",
+               sources: ["A"],
+               sinks: ["C", "D"],
+               code: 1,
+               message_format: ""
+            }
+          ]
+        }
+      |}
+    ~matching_sources:
+      [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "C"; Sinks.NamedSink "D"]]
+    ~matching_sinks:
+      [
+        Sinks.NamedSink "C", Sources.Set.of_list [Sources.NamedSource "A"];
+        Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"];
+      ];
+  assert_matching
+    ~configuration:
+      {|
+        { sources: [
+            { name: "A" },
+            { name: "B" }
+          ],
+          sinks: [
+            { name: "C" },
+            { name: "D" }
+          ],
+          rules: [
+            {
+               name: "test rule",
+               sources: ["A", "B"],
+               sinks: ["D"],
+               code: 1,
+               message_format: ""
+            }
+          ]
+        }
+      |}
+    ~matching_sources:
+      [
+        Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "D"];
+        Sources.NamedSource "B", Sinks.Set.of_list [Sinks.NamedSink "D"];
+      ]
+    ~matching_sinks:
+      [Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"; Sources.NamedSource "B"]];
+  assert_matching
+    ~configuration:
+      {|
+        { sources: [
+            { name: "A" },
+            { name: "B" }
+          ],
+          sinks: [
+            { name: "C" },
+            { name: "D" }
+          ],
+          rules: [
+            {
+               name: "test rule",
+               sources: ["A"],
+               sinks: ["C"],
+               code: 1,
+               message_format: ""
+            },
+            {
+               name: "test rule 2",
+               sources: ["A"],
+               sinks: ["D"],
+               code: 2,
+               message_format: ""
+            }
+          ]
+        }
+      |}
+    ~matching_sources:
+      [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "C"; Sinks.NamedSink "D"]]
+    ~matching_sinks:
+      [
+        Sinks.NamedSink "C", Sources.Set.of_list [Sources.NamedSource "A"];
+        Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"];
+      ];
+  ()
+
+
 let () =
   "configuration"
   >::: [
@@ -779,5 +909,6 @@ let () =
          "partial_sink_converter" >:: test_partial_sink_converter;
          "simple" >:: test_simple;
          "validate" >:: test_validate;
+         "matching_kinds" >:: test_matching_kinds;
        ]
   |> Test.run

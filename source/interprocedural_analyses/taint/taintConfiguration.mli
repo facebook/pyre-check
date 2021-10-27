@@ -62,6 +62,8 @@ type t = {
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list Core.String.Map.Tree.t;
+  matching_sources: Sinks.Set.t Sources.Map.t;
+  matching_sinks: Sources.Set.t Sinks.Map.t;
   find_missing_flows: missing_flows_kind option;
   dump_model_query_results_path: Path.t option;
   analysis_model_constraints: analysis_model_constraints;

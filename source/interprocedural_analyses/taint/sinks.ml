@@ -97,6 +97,28 @@ module Set = struct
     set |> elements |> List.map ~f:to_transform |> SanitizeTransform.Set.of_list
 end
 
+module Map = struct
+  include Stdlib.Map.Make (struct
+    include T
+  end)
+
+  let of_alist_exn =
+    let add map (key, data) =
+      update
+        key
+        (function
+          | None -> Some data
+          | Some _ -> failwith "key already exists")
+        map
+    in
+    List.fold ~init:empty ~f:add
+
+
+  let to_alist map =
+    let gather key data sofar = (key, data) :: sofar in
+    fold gather map []
+end
+
 let discard_subkind = function
   | ParametricSink { sink_name; _ } -> NamedSink sink_name
   | sink -> sink

@@ -37,6 +37,14 @@ module Set : sig
   val to_sanitize_transforms_exn : t -> SanitizeTransform.Set.t
 end
 
+module Map : sig
+  include Stdlib.Map.S with type key = t
+
+  val of_alist_exn : (key * 'a) list -> 'a t
+
+  val to_alist : 'a t -> (key * 'a) list
+end
+
 val discard_subkind : t -> t
 
 val discard_transforms : t -> t
