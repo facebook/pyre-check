@@ -4016,3 +4016,49 @@ let create_mismatch ~resolution ~actual ~expected ~covariant =
     actual;
     due_to_invariance = GlobalResolution.is_invariance_mismatch resolution ~left ~right;
   }
+
+
+module SimplificationMap = struct
+  (* (Lazy) suffix trie for references. Lazy only for leaf nodes. *)
+  type node =
+    | LazyLeaf of { to_be_expanded: Identifier.t list }
+    | Node of { children: node Identifier.Map.t }
+
+  let create references =
+    let empty_trie = Node { children = Identifier.Map.empty } in
+    let add_to_suffix_trie trie reference =
+      let rec add sofar node =
+        match sofar, node with
+        | [], _ -> node
+        | _, LazyLeaf { to_be_expanded } -> empty_trie |> add to_be_expanded |> add sofar
+        | head :: remaining, Node { children } ->
+            let updated_children =
+              Identifier.Map.update children head ~f:(fun existing ->
+                  match existing with
+                  | None -> LazyLeaf { to_be_expanded = remaining }
+                  | Some child -> add remaining child)
+            in
+            Node { children = updated_children }
+      in
+      let reference_reversed_as_list = Reference.reverse reference |> Reference.as_list in
+      add reference_reversed_as_list trie
+    in
+    (* Idea is that the leaves we could avoid expanding correspond to simplifications. *)
+    let extract_simplifications_from_suffix_trie trie =
+      let rec extract suffix node collected =
+        match node with
+        | LazyLeaf { to_be_expanded = [] } -> collected
+        | LazyLeaf { to_be_expanded } ->
+            let shortened = Reference.create_from_list suffix in
+            let dropped = List.rev to_be_expanded |> Reference.create_from_list in
+            (Reference.combine dropped shortened, shortened) :: collected
+        | Node { children } ->
+            Identifier.Map.fold children ~init:collected ~f:(fun ~key ~data ->
+                extract (key :: suffix) data)
+      in
+      extract [] trie []
+    in
+    List.fold references ~init:empty_trie ~f:add_to_suffix_trie
+    |> extract_simplifications_from_suffix_trie
+    |> Reference.Map.of_alist_exn
+end

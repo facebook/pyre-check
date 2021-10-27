@@ -495,3 +495,7 @@ val create_mismatch
   expected:Type.t ->
   covariant:bool ->
   mismatch
+
+module SimplificationMap : sig
+  val create : Reference.t list -> Reference.t Reference.Map.t
+end

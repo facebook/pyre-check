@@ -1024,6 +1024,74 @@ let test_weaken_literals _ =
   ()
 
 
+let test_simplification_map _ =
+  let assert_simplification_map names expected_simplifications =
+    let references = List.map ~f:Reference.create names in
+    let computed = Error.SimplificationMap.create references in
+    let expected =
+      expected_simplifications
+      |> List.map ~f:(fun (x, y) -> Reference.create x, Reference.create y)
+      |> Reference.Map.of_alist_exn
+    in
+    let pp_map fmt map =
+      let pp_one ~key ~data =
+        Format.fprintf fmt "\n  %a -> %a" Reference.pp key Reference.pp data
+      in
+      Reference.Map.iteri ~f:pp_one map
+    in
+    assert_equal
+      ~cmp:(Map.equal Reference.equal)
+      ~printer:(Format.asprintf "%a" pp_map)
+      expected
+      computed
+  in
+  assert_simplification_map [] [];
+  assert_simplification_map [""] [];
+  assert_simplification_map ["a"] [];
+  assert_simplification_map ["a.b"] ["a.b", "b"];
+  assert_simplification_map ["a.b.c"] ["a.b.c", "c"];
+  assert_simplification_map ["a"; "a"] [];
+  assert_simplification_map ["a"; "b"] [];
+  assert_simplification_map ["Foo.a"; "Foo.b"] ["Foo.a", "a"; "Foo.b", "b"];
+  assert_simplification_map ["Foo.a"; "Bar.a"] [];
+  assert_simplification_map ["Foo.Bar.a"; "Foo.Bar.b"] ["Foo.Bar.a", "a"; "Foo.Bar.b", "b"];
+  assert_simplification_map ["X.Foo.Bar.a"; "X.Foo.Bar.b"] ["X.Foo.Bar.a", "a"; "X.Foo.Bar.b", "b"];
+  assert_simplification_map ["a"; "Foo.a"] [];
+  assert_simplification_map ["a"; "Foo.a"; "Bar.a"] [];
+  assert_simplification_map ["a"; "X.Foo.a"; "X.Bar.a"] ["X.Foo.a", "Foo.a"; "X.Bar.a", "Bar.a"];
+  assert_simplification_map ["Foo.Bar"; "Bar.Foo"] ["Foo.Bar", "Bar"; "Bar.Foo", "Foo"];
+  assert_simplification_map
+    [
+      "typing.Tuple";
+      "str";
+      "typing.Union";
+      "None";
+      "typing.Mapping";
+      "typing.Sequence";
+      "bool";
+      "bytes";
+      "datetime.date";
+      "datetime.datetime";
+      "datetime.time";
+      "datetime.timedelta";
+      "decimal.Decimal";
+      "float";
+      "int";
+    ]
+    [
+      "typing.Tuple", "Tuple";
+      "typing.Union", "Union";
+      "typing.Mapping", "Mapping";
+      "typing.Sequence", "Sequence";
+      "datetime.date", "date";
+      "datetime.datetime", "datetime";
+      "datetime.time", "time";
+      "datetime.timedelta", "timedelta";
+      "decimal.Decimal", "Decimal";
+    ];
+  ()
+
+
 let () =
   "error"
   >::: [
@@ -1035,5 +1103,6 @@ let () =
          "namespace_insensitive_set" >:: test_namespace_insensitive_set;
          "messages" >:: test_description;
          "weaken_literals" >:: test_weaken_literals;
+         "test_simplification_map" >:: test_simplification_map;
        ]
   |> Test.run
