@@ -190,6 +190,88 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
     ()
 
 
+let parse_source_v2
+    ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
+    ~context
+    ({ SourcePath.relative; qualifier; _ } as source_path)
+  =
+  let parse content =
+    let metadata = Source.Metadata.parse ~qualifier (String.split content ~on:'\n') in
+    match
+      PyreNewParser.parse_module
+        ~filename:relative
+        ~enable_type_comment:enable_type_comments
+        ~context
+        content
+    with
+    | Ok statements -> Success (create_source ~metadata ~source_path statements)
+    | Error { PyreNewParser.Error.line; column; message } ->
+        let is_suppressed =
+          let { Source.Metadata.local_mode; ignore_codes; _ } = metadata in
+          match Source.mode ~configuration ~local_mode with
+          | Source.Declare -> true
+          | _ ->
+              (* NOTE: The number needs to be updated when the error code changes. *)
+              List.exists ignore_codes ~f:(Int.equal 404)
+        in
+        let message = Format.sprintf "Parse error on line %d, column %d: %s" line column message in
+        Error { message; is_suppressed }
+  in
+  let path = SourcePath.full_path ~configuration source_path in
+  try File.content_exn (File.create path) |> parse with
+  | Sys_error error ->
+      let message = Format.asprintf "Cannot open file `%a` due to: %s" Path.pp path error in
+      Error { message; is_suppressed = false }
+
+
+let parse_raw_sources_v2 ~configuration ~scheduler ~ast_environment source_paths =
+  let parse_and_categorize result source_path =
+    let do_parse context =
+      match parse_source_v2 ~configuration ~context source_path with
+      | Success ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
+          let source =
+            let {
+              Configuration.Analysis.python_major_version;
+              python_minor_version;
+              python_micro_version;
+              _;
+            }
+              =
+              configuration
+            in
+            Preprocessing.replace_version_specific_code
+              ~major_version:python_major_version
+              ~minor_version:python_minor_version
+              ~micro_version:python_micro_version
+              source
+            |> Preprocessing.preprocess_phase0
+          in
+          Raw.add_parsed_source ast_environment source;
+          qualifier :: result
+      | Error { message; is_suppressed } ->
+          let { SourcePath.qualifier; _ } = source_path in
+          Raw.add_unparsed_source
+            ast_environment
+            { ParserError.source_path; message; is_suppressed };
+          qualifier :: result
+    in
+    PyreNewParser.with_context do_parse
+  in
+  Scheduler.map_reduce
+    scheduler
+    ~policy:
+      (Scheduler.Policy.fixed_chunk_count
+         ~minimum_chunks_per_worker:1
+         ~minimum_chunk_size:100
+         ~preferred_chunks_per_worker:5
+         ())
+    ~initial:[]
+    ~map:(fun _ -> List.fold ~init:[] ~f:parse_and_categorize)
+    ~reduce:List.append
+    ~inputs:source_paths
+    ()
+
+
 let expand_wildcard_imports ?dependency ~ast_environment source =
   let open Statement in
   let module Transform = Transform.MakeStatementTransformer (struct
@@ -293,6 +375,10 @@ let get_and_preprocess_source
 
 
 let parse_sources ~configuration ~scheduler ~ast_environment source_paths =
+  let parse_raw_sources =
+    let { Configuration.Analysis.use_new_parser; _ } = configuration in
+    if use_new_parser then parse_raw_sources_v2 else parse_raw_sources
+  in
   parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths
   |> List.sort ~compare:Reference.compare
 
