@@ -11,7 +11,7 @@ open Expression
 type node =
   | Expression of Expression.t
   | Statement of Statement.t
-  | Identifier of Identifier.t Node.t
+  | Argument of Identifier.t Node.t
   | Parameter of Parameter.t
   | Reference of Reference.t Node.t
   | Substring of Substring.t

@@ -218,7 +218,7 @@ let collect_nodes_as_strings source =
           Some
             (Transform.sanitize_expression expression |> Expression.show, Node.location expression)
       | Visit.Statement _ -> None
-      | Visit.Identifier { Node.value; location } -> Some (Identifier.sanitized value, location)
+      | Visit.Argument { Node.value; location } -> Some (Identifier.sanitized value, location)
       | Visit.Parameter { Node.value = { Expression.Parameter.name; _ }; location } ->
           Some (Identifier.sanitized name, location)
       | Visit.Reference { Node.value; location } -> Some (Reference.show value, location)

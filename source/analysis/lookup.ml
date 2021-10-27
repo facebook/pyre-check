@@ -127,11 +127,9 @@ module NodeVisitor = struct
       in
       match value with
       | Call { arguments; _ } ->
-          let annotate_argument_name { Call.Argument.name; value = { Node.location; _ } as value } =
+          let annotate_argument_name { Call.Argument.name; value } =
             match name, resolve ~resolution ~expression:value with
-            | Some { Node.location = { Location.start; _ }; _ }, Some annotation ->
-                let location = { location with Location.start } in
-                store_annotation location annotation
+            | Some { Node.location; _ }, Some annotation -> store_annotation location annotation
             | _ -> ()
           in
           List.iter ~f:annotate_argument_name arguments

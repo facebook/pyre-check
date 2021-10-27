@@ -304,7 +304,7 @@ let test_node_visitor _ =
       | Visit.Statement _ ->
           increment state "statement";
           state
-      | Visit.Identifier _ ->
+      | Visit.Argument _ ->
           increment state "identifier";
           state
       | Visit.Parameter _ ->

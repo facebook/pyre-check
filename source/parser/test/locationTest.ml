@@ -580,7 +580,7 @@ let test_call_locations _ =
                              (Expression.Constant (Constant.Integer 1));
                        };
                        {
-                         Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 8) "a");
+                         Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 12) "a");
                          value =
                            node
                              ~start:(1, 11)
@@ -641,7 +641,7 @@ let test_call_locations _ =
                              (Expression.Constant (Constant.Integer 1));
                        };
                        {
-                         Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 13) "second");
+                         Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 17) "second");
                          value =
                            node
                              ~start:(1, 16)
@@ -676,7 +676,7 @@ let test_call_locations _ =
                              (Expression.Constant (Constant.Integer 1));
                        };
                        {
-                         Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 13) "second");
+                         Call.Argument.name = Some (node ~start:(1, 7) ~stop:(2, 1) "second");
                          value =
                            node
                              ~start:(2, 0)
