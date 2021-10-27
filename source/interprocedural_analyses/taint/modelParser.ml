@@ -2634,7 +2634,16 @@ let create_model_from_signature
   let callable_annotation =
     resolve_global_callable ~path ~location ~verify_decorators:true ~resolution define
     >>= function
-    | None -> model_verification_error (NotInEnvironment (Reference.show callable_name))
+    | None -> (
+        let module_name = Reference.first callable_name in
+        let module_resolved = resolve_global ~resolution (Reference.create module_name) in
+        match module_resolved with
+        | Some _ ->
+            model_verification_error
+              (MissingSymbol { module_name; symbol_name = Reference.show callable_name })
+        | None ->
+            model_verification_error
+              (NotInEnvironment { module_name; name = Reference.show callable_name }))
     | Some Global.Class ->
         model_verification_error (ModelingClassAsDefine (Reference.show callable_name))
     | Some Global.Module ->

@@ -144,6 +144,11 @@ let prefix reference =
 
 let head reference = List.hd reference >>| fun head -> [head]
 
+let first = function
+  | [] -> ""
+  | head :: _ -> head
+
+
 let last = function
   | [] -> ""
   | reference -> List.last_exn reference

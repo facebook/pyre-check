@@ -59,13 +59,20 @@ module T : sig
         class_name: string;
         attribute_name: string;
       }
+    | MissingSymbol of {
+        module_name: string;
+        symbol_name: string;
+      }
     | ModelingClassAsDefine of string
     | ModelingModuleAsDefine of string
     | ModelingAttributeAsDefine of string
     | ModelingClassAsAttribute of string
     | ModelingModuleAsAttribute of string
     | ModelingCallableAsAttribute of string
-    | NotInEnvironment of string
+    | NotInEnvironment of {
+        module_name: string;
+        name: string;
+      }
     | UnexpectedDecorators of {
         name: Reference.t;
         unexpected_decorators: Expression.t list;
