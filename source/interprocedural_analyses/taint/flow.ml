@@ -177,7 +177,9 @@ let generate_issues ~define { location; flows } =
        *)
       let gather_sanitized_sinks kind sofar =
         let sanitized =
-          kind |> Sources.extract_transforms |> Sinks.extract_sanitized_sinks_from_transforms
+          kind
+          |> Sources.extract_sanitize_transforms
+          |> Sinks.extract_sanitized_sinks_from_transforms
         in
         match sofar with
         | None -> Some sanitized
@@ -191,7 +193,9 @@ let generate_issues ~define { location; flows } =
 
       let gather_sanitized_sources kind sofar =
         let sanitized =
-          kind |> Sinks.extract_transforms |> Sources.extract_sanitized_sources_from_transforms
+          kind
+          |> Sinks.extract_sanitize_transforms
+          |> Sources.extract_sanitized_sources_from_transforms
         in
         match sofar with
         | None -> Some sanitized

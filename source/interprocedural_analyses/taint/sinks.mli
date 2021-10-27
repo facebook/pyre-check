@@ -9,7 +9,7 @@ type partial_sink = {
   kind: string;
   label: string;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, eq, show]
 
 type t =
   | Attach
@@ -25,14 +25,12 @@ type t =
   | AddFeatureToArgument
   | Transform of {
       (* Invariant: concatenation of local @ global is non-empty. *)
-      (* Invariant: local @ global is the temporal order in which transforms
-       * are applied in the code. *)
-      local: TaintTransform.t list;
-      global: TaintTransform.t list;
+      sanitize_local: SanitizeTransform.Set.t;
+      sanitize_global: SanitizeTransform.Set.t;
       (* Invariant: not a transform. *)
       base: t;
     }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, eq, show]
 
 val name : string
 
@@ -47,7 +45,7 @@ module Set : sig
 
   val show : t -> string
 
-  val to_sanitize_taint_transforms_exn : t -> TaintTransform.t list
+  val to_sanitize_transforms_exn : t -> SanitizeTransform.Set.t
 end
 
 val discard_subkind : t -> t
@@ -56,19 +54,13 @@ val discard_transforms : t -> t
 
 val discard_sanitize_transforms : t -> t
 
-val extract_sanitized_sinks_from_transforms : TaintTransform.t list -> Set.t
+val extract_sanitized_sinks_from_transforms : SanitizeTransform.Set.t -> Set.t
 
-val extract_transforms : t -> TaintTransform.t list
+val extract_sanitize_transforms : t -> SanitizeTransform.Set.t
 
 val extract_partial_sink : t -> partial_sink option
 
-val apply_taint_transform : TaintTransform.t -> t -> t
+val apply_sanitize_transforms : SanitizeTransform.Set.t -> t -> t
 
-(* Transforms must be provided in the temporal order in which they are applied. *)
-val apply_taint_transforms : TaintTransform.t list -> t -> t
-
-(* Apply taint transforms only to the special `LocalReturn` sink. *)
-val apply_sanitize_sink_transform : TaintTransform.t -> t -> t
-
-(* Apply taint transforms only to the special `LocalReturn` sink. *)
-val apply_sanitize_sink_transforms : TaintTransform.t list -> t -> t
+(* Apply sanitize transforms only to the special `LocalReturn` sink. *)
+val apply_sanitize_sink_transforms : SanitizeTransform.Set.t -> t -> t

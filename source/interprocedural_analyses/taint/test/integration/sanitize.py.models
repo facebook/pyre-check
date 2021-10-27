@@ -2469,7 +2469,7 @@
             ],
             "leaves": [
               {
-                "kind": "NotSink[TestB]:NotSink[TestA]@Test",
+                "kind": "NotSink[TestA]:NotSink[TestB]@Test",
                 "name": "_test_source"
               }
             ],

@@ -208,19 +208,22 @@ let check_expectation
       ~f:extract_tito_parameter_name
       ~init:String.Set.empty
   in
+  let print_list ~show list =
+    list |> List.map ~f:show |> String.concat ~sep:", " |> Format.asprintf "[%s]"
+  in
   let check_each_sink ~key:name ~data =
     match data with
     | `Both (expected, actual) ->
         assert_equal
           ~cmp:(List.equal Taint.Sinks.equal)
-          ~printer:(fun list -> Sexp.to_string [%message (list : Taint.Sinks.t list)])
+          ~printer:(print_list ~show:Taint.Sinks.show)
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           actual
     | `Left expected ->
         assert_equal
           ~cmp:(List.equal Taint.Sinks.equal)
-          ~printer:(fun list -> Sexp.to_string [%message (list : Taint.Sinks.t list)])
+          ~printer:(print_list ~show:Taint.Sinks.show)
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           []
@@ -233,14 +236,14 @@ let check_expectation
     | `Both (expected, actual) ->
         assert_equal
           ~cmp:(List.equal Taint.Sources.equal)
-          ~printer:(fun list -> Sexp.to_string [%message (list : Taint.Sources.t list)])
+          ~printer:(print_list ~show:Taint.Sources.show)
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           actual
     | `Left expected ->
         assert_equal
           ~cmp:(List.equal Taint.Sources.equal)
-          ~printer:(fun list -> Sexp.to_string [%message (list : Taint.Sources.t list)])
+          ~printer:(print_list ~show:Taint.Sources.show)
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           []

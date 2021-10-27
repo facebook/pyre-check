@@ -310,14 +310,14 @@ include Taint.Result.Register (struct
       }
     =
     let open Domains in
-    let kinds_to_taint_transforms ~sources ~sinks =
-      let source_transforms = Sources.Set.to_sanitize_taint_transforms_exn sources in
-      let sink_transforms = Sinks.Set.to_sanitize_taint_transforms_exn sinks in
-      List.rev_append source_transforms sink_transforms
+    let kinds_to_sanitize_transforms ~sources ~sinks =
+      let source_transforms = Sources.Set.to_sanitize_transforms_exn sources in
+      let sink_transforms = Sinks.Set.to_sanitize_transforms_exn sinks in
+      SanitizeTransform.Set.union source_transforms sink_transforms
     in
     let sanitize_tito ?(sources = Sources.Set.empty) ?(sinks = Sinks.Set.empty) taint_in_taint_out =
-      let transforms = kinds_to_taint_transforms ~sources ~sinks in
-      BackwardState.apply_taint_transforms transforms taint_in_taint_out
+      let transforms = kinds_to_sanitize_transforms ~sources ~sinks in
+      BackwardState.apply_sanitize_transforms transforms taint_in_taint_out
     in
     let sanitize_tito_parameter
         parameter
@@ -328,8 +328,8 @@ include Taint.Result.Register (struct
       let sanitize_tito_taint_tree = function
         | None -> BackwardState.Tree.bottom
         | Some taint_tree ->
-            let transforms = kinds_to_taint_transforms ~sources ~sinks in
-            BackwardState.Tree.apply_taint_transforms transforms taint_tree
+            let transforms = kinds_to_sanitize_transforms ~sources ~sinks in
+            BackwardState.Tree.apply_sanitize_transforms transforms taint_tree
       in
       BackwardState.update taint_in_taint_out parameter ~f:sanitize_tito_taint_tree
     in
@@ -375,10 +375,10 @@ include Taint.Result.Register (struct
       | Some Sanitize.AllSources -> sink_taint, taint_in_taint_out
       | Some (Sanitize.SpecificSources sanitized_sources) ->
           let sanitized_sources_transforms =
-            Sources.Set.to_sanitize_taint_transforms_exn sanitized_sources
+            Sources.Set.to_sanitize_transforms_exn sanitized_sources
           in
           let sink_taint =
-            BackwardState.apply_taint_transforms sanitized_sources_transforms sink_taint
+            BackwardState.apply_sanitize_transforms sanitized_sources_transforms sink_taint
           in
           let taint_in_taint_out = sanitize_tito ~sources:sanitized_sources taint_in_taint_out in
           sink_taint, taint_in_taint_out
@@ -443,11 +443,9 @@ include Taint.Result.Register (struct
         match sanitize.Sanitize.sinks with
         | Some Sanitize.AllSinks -> source_taint, taint_in_taint_out
         | Some (Sanitize.SpecificSinks sanitized_sinks) ->
-            let sanitized_sinks_transforms =
-              Sinks.Set.to_sanitize_taint_transforms_exn sanitized_sinks
-            in
+            let sanitized_sinks_transforms = Sinks.Set.to_sanitize_transforms_exn sanitized_sinks in
             let source_taint =
-              ForwardState.apply_taint_transforms sanitized_sinks_transforms source_taint
+              ForwardState.apply_sanitize_transforms sanitized_sinks_transforms source_taint
             in
             let taint_in_taint_out = sanitize_tito ~sinks:sanitized_sinks taint_in_taint_out in
             source_taint, taint_in_taint_out
@@ -467,9 +465,11 @@ include Taint.Result.Register (struct
               | None -> BackwardState.Tree.bottom
               | Some taint_tree ->
                   let sanitized_sources_transforms =
-                    Sources.Set.to_sanitize_taint_transforms_exn sanitized_sources
+                    Sources.Set.to_sanitize_transforms_exn sanitized_sources
                   in
-                  BackwardState.Tree.apply_taint_transforms sanitized_sources_transforms taint_tree
+                  BackwardState.Tree.apply_sanitize_transforms
+                    sanitized_sources_transforms
+                    taint_tree
             in
             let sink_taint = BackwardState.update sink_taint parameter ~f:apply_taint_transforms in
             let taint_in_taint_out =

@@ -273,25 +273,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             let taint_to_propagate =
               match kind with
-              | Sinks.Transform { local; global; _ } ->
+              | Sinks.Transform { sanitize_local; sanitize_global; _ } ->
                   (* Apply source- and sink-specific tito sanitizers. *)
-                  let transforms = local @ global in
+                  let transforms = SanitizeTransform.Set.union sanitize_local sanitize_global in
                   let sanitized_tito_sinks =
                     Sinks.extract_sanitized_sinks_from_transforms transforms
                   in
-                  (* Sort sanitized kinds to make the analysis deterministic
-                   * and prevent combinatory explosion. *)
-                  let sanitized_tito_sources =
-                    TaintTransform.filter_sanitized_sources transforms
-                    |> List.sort ~compare:TaintTransform.compare
-                  in
+                  let sanitized_tito_sources = SanitizeTransform.Set.filter_sources transforms in
                   let sanitized_tito_sinks_transforms =
-                    TaintTransform.filter_sanitized_sinks transforms
-                    |> List.sort ~compare:TaintTransform.compare
+                    SanitizeTransform.Set.filter_sinks transforms
                   in
                   taint_to_propagate
                   |> BackwardState.Tree.sanitize sanitized_tito_sinks
-                  |> BackwardState.Tree.apply_taint_transforms sanitized_tito_sources
+                  |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
                   |> BackwardState.Tree.apply_sanitize_sink_transforms
                        sanitized_tito_sinks_transforms
               | _ -> taint_to_propagate
@@ -368,14 +362,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               | Some AllTito -> BackwardState.Tree.bottom
               | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
                   let sanitized_tito_sources =
-                    Sources.Set.to_sanitize_taint_transforms_exn sanitized_tito_sources
+                    Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources
                   in
                   let sanitized_tito_sinks_transforms =
-                    Sinks.Set.to_sanitize_taint_transforms_exn sanitized_tito_sinks
+                    Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
                   in
                   obscure_taint
                   |> BackwardState.Tree.sanitize sanitized_tito_sinks
-                  |> BackwardState.Tree.apply_taint_transforms sanitized_tito_sources
+                  |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
                   |> BackwardState.Tree.apply_sanitize_sink_transforms
                        sanitized_tito_sinks_transforms
               | None -> obscure_taint
@@ -1188,7 +1182,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 | Some AllSinks -> BackwardState.Tree.empty
                 | Some (SpecificSinks sanitized_sinks) ->
                     let sanitized_sinks_transforms =
-                      Sinks.Set.to_sanitize_taint_transforms_exn sanitized_sinks
+                      Sinks.Set.to_sanitize_transforms_exn sanitized_sinks
                     in
                     taint
                     |> BackwardState.Tree.sanitize sanitized_sinks
@@ -1199,9 +1193,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 match sanitizer.sources with
                 | Some (SpecificSources sanitized_sources) ->
                     let sanitized_sources_transforms =
-                      Sources.Set.to_sanitize_taint_transforms_exn sanitized_sources
+                      Sources.Set.to_sanitize_transforms_exn sanitized_sources
                     in
-                    BackwardState.Tree.apply_taint_transforms sanitized_sources_transforms taint
+                    BackwardState.Tree.apply_sanitize_transforms sanitized_sources_transforms taint
                 | _ -> taint
               in
               taint

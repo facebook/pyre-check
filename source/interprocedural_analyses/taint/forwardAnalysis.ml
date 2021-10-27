@@ -295,21 +295,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             let taint_to_propagate =
               match kind with
-              | Sinks.Transform { local; global; _ } ->
+              | Sinks.Transform { sanitize_local; sanitize_global; _ } ->
                   (* Apply source- and sink- specific tito sanitizers. *)
-                  let transforms = local @ global in
+                  let transforms = SanitizeTransform.Set.union sanitize_local sanitize_global in
                   let sanitized_tito_sources =
                     Sources.extract_sanitized_sources_from_transforms transforms
                   in
-                  let sanitized_tito_sinks =
-                    TaintTransform.filter_sanitized_sinks transforms
-                    (* Sort sanitized sinks to make the analysis deterministic
-                     * and prevent combinatory explosion. *)
-                    |> List.sort ~compare:TaintTransform.compare
-                  in
+                  let sanitized_tito_sinks = SanitizeTransform.Set.filter_sinks transforms in
                   taint_to_propagate
                   |> ForwardState.Tree.sanitize sanitized_tito_sources
-                  |> ForwardState.Tree.apply_taint_transforms sanitized_tito_sinks
+                  |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
               | _ -> taint_to_propagate
             in
             let return_paths =
@@ -375,11 +370,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               | Some AllTito -> ForwardState.Tree.bottom
               | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
                   let sanitized_tito_sinks =
-                    Sinks.Set.to_sanitize_taint_transforms_exn sanitized_tito_sinks
+                    Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
                   in
                   obscure_tito
                   |> ForwardState.Tree.sanitize sanitized_tito_sources
-                  |> ForwardState.Tree.apply_taint_transforms sanitized_tito_sinks
+                  |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
               | None -> obscure_tito
             in
             let returned_tito =
@@ -1197,10 +1192,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let taint =
         match sanitizer.sinks with
         | Some (SpecificSinks sanitized_sinks) ->
-            let sanitized_sinks_transforms =
-              Sinks.Set.to_sanitize_taint_transforms_exn sanitized_sinks
-            in
-            ForwardState.Tree.apply_taint_transforms sanitized_sinks_transforms taint
+            let sanitized_sinks_transforms = Sinks.Set.to_sanitize_transforms_exn sanitized_sinks in
+            ForwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms taint
         | _ -> taint
       in
       taint

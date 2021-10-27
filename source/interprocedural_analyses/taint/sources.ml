@@ -19,22 +19,25 @@ module T = struct
       }
     | Transform of {
         (* Invariant: concatenation of local @ global is non-empty. *)
-        (* Invariant: local @ global is the *reverse* temporal order in which transforms
-         * are applied in the code. *)
-        local: TaintTransform.t list;
-        global: TaintTransform.t list;
+        sanitize_local: SanitizeTransform.Set.t;
+        sanitize_global: SanitizeTransform.Set.t;
         (* Invariant: not a transform. *)
         base: t;
       }
-  [@@deriving compare, eq, sexp, hash]
+  [@@deriving compare, eq]
 
   let rec pp formatter = function
     | Attach -> Format.fprintf formatter "Attach"
     | NamedSource name -> Format.fprintf formatter "%s" name
     | ParametricSource { source_name; subkind } ->
         Format.fprintf formatter "%s[%s]" source_name subkind
-    | Transform { local; global; base } ->
-        TaintTransform.pp_kind ~formatter ~pp_base:pp ~local ~global ~base
+    | Transform { sanitize_local; sanitize_global; base } ->
+        SanitizeTransform.pp_kind
+          ~formatter
+          ~pp_base:pp
+          ~local:sanitize_local
+          ~global:sanitize_global
+          ~base
 
 
   let show = Format.asprintf "%a" pp
@@ -48,7 +51,13 @@ let ignore_kind_at_call = function
 
 
 let apply_call = function
-  | Transform { local; global; base } -> Transform { local = []; global = local @ global; base }
+  | Transform { sanitize_local; sanitize_global; base } ->
+      Transform
+        {
+          sanitize_local = SanitizeTransform.Set.empty;
+          sanitize_global = SanitizeTransform.Set.union sanitize_local sanitize_global;
+          base;
+        }
   | source -> source
 
 
@@ -63,12 +72,12 @@ module Set = struct
 
   let pp format set = Format.fprintf format "%s" (show set)
 
-  let to_sanitize_taint_transforms_exn set =
+  let to_sanitize_transforms_exn set =
     let to_transform = function
-      | NamedSource name -> TaintTransform.SanitizeNamedSource name
+      | NamedSource name -> SanitizeTransform.NamedSource name
       | source -> Format.asprintf "cannot sanitize the source `%a`" T.pp source |> failwith
     in
-    set |> elements |> List.map ~f:to_transform
+    set |> elements |> List.map ~f:to_transform |> SanitizeTransform.Set.of_list
 end
 
 let discard_subkind = function
@@ -86,38 +95,40 @@ let discard_sanitize_transforms =
   discard_transforms
 
 
-let extract_sanitized_sources_from_transforms =
-  let extract sources = function
-    | TaintTransform.SanitizeNamedSource name -> Set.add (NamedSource name) sources
+let extract_sanitized_sources_from_transforms transforms =
+  let extract transform sources =
+    match transform with
+    | SanitizeTransform.NamedSource name -> Set.add (NamedSource name) sources
     | _ -> sources
   in
-  List.fold ~init:Set.empty ~f:extract
+  SanitizeTransform.Set.fold extract transforms Set.empty
 
 
-let extract_transforms = function
-  | Transform { local; global; _ } -> local @ global
-  | _ -> []
+let extract_sanitize_transforms = function
+  | Transform { sanitize_local; sanitize_global; _ } ->
+      SanitizeTransform.Set.union sanitize_local sanitize_global
+  | _ -> SanitizeTransform.Set.empty
 
 
-let apply_taint_transform source transform =
+let apply_sanitize_transforms transforms source =
   match source with
   | Attach -> Attach
   | NamedSource _
   | ParametricSource _ ->
-      Transform { local = [transform]; global = []; base = source }
-  | Transform { local; global; base } ->
-      if
-        List.mem local transform ~equal:TaintTransform.equal
-        || List.mem global transform ~equal:TaintTransform.equal
-      then
-        source
-      else
-        Transform { local = transform :: local; global; base }
+      Transform
+        {
+          sanitize_local = transforms;
+          sanitize_global = SanitizeTransform.Set.empty;
+          base = source;
+        }
+  | Transform { sanitize_local; sanitize_global; base } ->
+      let transforms = SanitizeTransform.Set.diff transforms sanitize_global in
+      Transform
+        {
+          sanitize_local = SanitizeTransform.Set.union sanitize_local transforms;
+          sanitize_global;
+          base;
+        }
 
 
-(* Transforms must be provided in the temporal order in which they are applied. *)
-let apply_taint_transforms transforms source =
-  List.fold_left transforms ~init:source ~f:apply_taint_transform
-
-
-let apply_sanitize_sink_transforms = apply_taint_transforms
+let apply_sanitize_sink_transforms = apply_sanitize_transforms

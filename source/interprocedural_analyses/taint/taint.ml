@@ -12,6 +12,7 @@ module CallGraphBuilder = CallGraphBuilder
 module TaintConfiguration = TaintConfiguration
 module PartialSinkConverter = PartialSinkConverter
 module Domains = Domains
+module SanitizeTransform = SanitizeTransform
 module TaintProfiler = TaintProfiler
 module Features = Features
 module Flow = Flow
