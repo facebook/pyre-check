@@ -249,7 +249,7 @@ let expression =
       let dunder_name = Caml.Format.sprintf "__%s__" op in
       Expression.Name
         (Name.Attribute { base = left; attribute = identifier dunder_name; special = true })
-      |> Node.create ~location
+      |> Node.create ~location:(Node.location left)
     in
     Expression.Call { callee; arguments = [{ Call.Argument.name = None; value = right }] }
     |> Node.create ~location
