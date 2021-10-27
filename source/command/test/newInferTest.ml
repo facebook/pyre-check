@@ -24,7 +24,7 @@ let test_json_parsing context =
           actual
   in
   assert_parsed
-    (`Assoc (("infer_mode", `List [`String "Local"]) :: BaseConfigurationTest.dummy_base_json))
+    (`Assoc BaseConfigurationTest.dummy_base_json)
     ~expected:
       {
         InferConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
@@ -32,8 +32,7 @@ let test_json_parsing context =
       };
   assert_parsed
     (`Assoc
-      (("paths_to_modify", `List [`String "my/module.py"])
-       :: ("infer_mode", `List [`String "Interprocedural"]) :: BaseConfigurationTest.dummy_base_json))
+      (("paths_to_modify", `List [`String "my/module.py"]) :: BaseConfigurationTest.dummy_base_json))
     ~expected:
       {
         InferConfiguration.base = BaseConfigurationTest.dummy_base_configuration;

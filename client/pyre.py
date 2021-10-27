@@ -834,16 +834,6 @@ def incremental(
         "in a principled way."
     ),
 )
-@click.option(
-    "--interprocedural",
-    is_flag=True,
-    default=False,
-    help=(
-        "Use (experimental) interprocedural inference. "
-        "Not recommended except for pyre developers, this work "
-        "is incomplete."
-    ),
-)
 @click.pass_context
 def infer(
     context: click.Context,
@@ -857,7 +847,6 @@ def infer(
     no_future_annotations: bool,
     quote_annotations: bool,
     dequalify: bool,
-    interprocedural: bool,
 ) -> int:
     """
     Run pyre infer.
@@ -887,7 +876,6 @@ def infer(
             debug_infer=debug_infer,
             quote_annotations=quote_annotations,
             dequalify=dequalify,
-            interprocedural=interprocedural,
             log_identifier=command_argument.log_identifier,
             logging_sections=command_argument.logging_sections,
             no_future_annotations=no_future_annotations,

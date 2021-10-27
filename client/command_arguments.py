@@ -136,7 +136,6 @@ class InferArguments:
     dequalify: bool = False
     enable_memory_profiling: bool = False
     enable_profiling: bool = False
-    interprocedural: bool = False
     log_identifier: Optional[str] = None
     logging_sections: Optional[str] = None
     no_future_annotations: bool = False

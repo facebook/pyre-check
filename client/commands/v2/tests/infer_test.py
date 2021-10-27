@@ -16,7 +16,6 @@ from ....tests import setup
 from .. import backend_arguments
 from ..infer import (
     Arguments,
-    InferMode,
     create_infer_arguments,
     create_module_annotations,
     sanitize_annotation,
@@ -60,7 +59,6 @@ class ArgumentTest(testslide.TestCase):
                     ),
                 ),
                 ignore_infer=["/ignore"],
-                infer_mode=InferMode.INTERPROCEDURAL,
                 paths_to_modify={Path("/derp3.py")},
             ),
             [
@@ -68,7 +66,6 @@ class ArgumentTest(testslide.TestCase):
                 ("global_root", "/project"),
                 ("source_paths", {"kind": "simple", "paths": ["source"]}),
                 ("ignore_infer", ["/ignore"]),
-                ("infer_mode", ["Interprocedural"]),
                 ("paths_to_modify", ["/derp3.py"]),
             ],
         )
@@ -115,7 +112,6 @@ class InferTest(testslide.TestCase):
                         working_directory=Path("/some/directory"),
                         debug_infer=True,
                         sequential=False,
-                        interprocedural=False,
                         paths_to_modify={Path("path/to/module.py")},
                     ),
                 ),
@@ -148,7 +144,6 @@ class InferTest(testslide.TestCase):
                         ),
                     ),
                     ignore_infer=[str(root_path / "ignores")],
-                    infer_mode=InferMode.LOCAL,
                     paths_to_modify={Path("path/to/module.py")},
                 ),
             )

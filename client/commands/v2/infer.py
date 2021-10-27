@@ -5,7 +5,6 @@
 
 import contextlib
 import dataclasses
-import enum
 import functools
 import itertools
 import json
@@ -29,14 +28,6 @@ from . import remote_logging, backend_arguments, start
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class InferMode(enum.Enum):
-    LOCAL: str = "Local"
-    INTERPROCEDURAL: str = "Interprocedural"
-
-    def serialize(self) -> List[str]:
-        return [self.value]
-
-
 @dataclasses.dataclass(frozen=True)
 class Arguments:
     """
@@ -46,7 +37,6 @@ class Arguments:
 
     base_arguments: backend_arguments.BaseArguments
 
-    infer_mode: InferMode = InferMode.LOCAL
     ignore_infer: Sequence[str] = dataclasses.field(default_factory=list)
     paths_to_modify: Optional[Set[Path]] = None
 
@@ -54,7 +44,6 @@ class Arguments:
         return {
             **self.base_arguments.serialize(),
             "ignore_infer": self.ignore_infer,
-            "infer_mode": self.infer_mode.serialize(),
             **(
                 {}
                 if self.paths_to_modify is None
@@ -707,12 +696,6 @@ def create_infer_arguments(
     """
     source_paths = backend_arguments.get_source_path_for_check(configuration)
 
-    infer_mode = (
-        InferMode.INTERPROCEDURAL
-        if infer_arguments.interprocedural
-        else InferMode.LOCAL
-    )
-
     profiling_output = (
         backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
         if infer_arguments.enable_profiling
@@ -758,7 +741,6 @@ def create_infer_arguments(
             source_paths=source_paths,
         ),
         ignore_infer=configuration.get_existent_ignore_infer_paths(),
-        infer_mode=infer_mode,
         paths_to_modify=infer_arguments.paths_to_modify,
     )
 
