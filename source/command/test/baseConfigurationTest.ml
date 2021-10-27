@@ -31,6 +31,7 @@ let dummy_base_configuration =
     global_root = Path.create_absolute "/project";
     local_root = None;
     debug = false;
+    enable_type_comments = true;
     python_version = Configuration.PythonVersion.default;
     parallel = false;
     number_of_workers = 1;
@@ -156,6 +157,7 @@ let test_json_parsing context =
             "source_paths": ["/source"],
             "global_root": "/project",
             "debug": true,
+            "enable_type_comments": false,
             "python_version": {
               "major": 3,
               "minor": 7,
@@ -167,6 +169,7 @@ let test_json_parsing context =
       {
         dummy_base_configuration with
         debug = true;
+        enable_type_comments = false;
         python_version = { Configuration.PythonVersion.major = 3; minor = 7; micro = 4 };
       };
 

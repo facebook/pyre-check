@@ -67,6 +67,7 @@ module CheckConfiguration = struct
             global_root;
             local_root;
             debug;
+            enable_type_comments;
             python_version = { Configuration.PythonVersion.major; minor; micro };
             parallel;
             number_of_workers;
@@ -108,6 +109,7 @@ module CheckConfiguration = struct
       ~shared_memory_heap_size:heap_size
       ~shared_memory_dependency_table_power:dependency_table_power
       ~shared_memory_hash_table_power:hash_table_power
+      ~enable_type_comments
       ~source_path
       ()
 end

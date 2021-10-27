@@ -100,6 +100,7 @@ module AnalyzeConfiguration = struct
             number_of_workers;
             shared_memory =
               { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+            enable_type_comments;
             remote_logging = _;
             profiling_output = _;
             memory_profiling_output = _;
@@ -148,6 +149,7 @@ module AnalyzeConfiguration = struct
         ~shared_memory_heap_size:heap_size
         ~shared_memory_dependency_table_power:dependency_table_power
         ~shared_memory_hash_table_power:hash_table_power
+        ~enable_type_comments
         ~source_path
         ()
     in

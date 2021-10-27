@@ -24,6 +24,7 @@ module BaseConfiguration = struct
     local_root: Path.t option;
     (* Type checking controls *)
     debug: bool;
+    enable_type_comments: bool;
     python_version: Configuration.PythonVersion.t;
     (* Parallelism controls *)
     parallel: bool;
@@ -71,6 +72,7 @@ module BaseConfiguration = struct
       let global_root = json |> path_member "global_root" in
       let local_root = json |> optional_path_member "local_root" in
       let debug = json |> bool_member "debug" ~default:false in
+      let enable_type_comments = json |> bool_member "enable_type_comments" ~default:true in
       let python_version =
         json
         |> member "python_version"
@@ -109,6 +111,7 @@ module BaseConfiguration = struct
           global_root;
           local_root;
           debug;
+          enable_type_comments;
           python_version;
           parallel;
           number_of_workers;
