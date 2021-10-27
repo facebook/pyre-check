@@ -29,7 +29,7 @@ let run_analysis
     maximum_trace_length
     maximum_tito_depth
     _verbose
-    expected_version
+    _expected_version
     sections
     debug
     strict
@@ -83,7 +83,6 @@ let run_analysis
     let repository_root = repository_root >>| Path.create_absolute ~follow_symbolic_links:true in
     let configuration =
       Configuration.Analysis.create
-        ?expected_version
         ~debug
         ~strict
         ~show_error_traces

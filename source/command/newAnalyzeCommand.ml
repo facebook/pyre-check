@@ -141,8 +141,6 @@ module AnalyzeConfiguration = struct
         ~excludes
         ~extensions
         ~incremental_style:Configuration.Analysis.Shallow
-        ~include_hints:false
-        ~perform_autocompletion:false
         ~log_directory:(Path.absolute log_path)
         ~python_major_version:major
         ~python_minor_version:minor

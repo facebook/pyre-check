@@ -2750,7 +2750,6 @@ module ScratchProject = struct
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
         ~incremental_style
-        ~features:{ Configuration.Features.default with go_to_definition = true }
         ~show_error_traces
         ~parallel:false
         ()

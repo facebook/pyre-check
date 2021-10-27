@@ -57,19 +57,6 @@ module SharedMemory : sig
   val default : t
 end
 
-module Features : sig
-  type t = {
-    click_to_fix: bool;
-    go_to_definition: bool;
-    hover: bool;
-  }
-  [@@deriving yojson, show]
-
-  val create : string option -> t
-
-  val default : t
-end
-
 module Extension : sig
   type t = {
     suffix: string;
@@ -96,7 +83,6 @@ module Analysis : sig
   [@@deriving show]
 
   type t = {
-    configuration_file_hash: string option;
     parallel: bool;
     analyze_external_sources: bool;
     filter_directories: Path.t list option;
@@ -108,27 +94,22 @@ module Analysis : sig
     source_path: SearchPath.t list;
     search_path: SearchPath.t list;
     taint_model_paths: Path.t list;
-    expected_version: string option;
     strict: bool;
     show_error_traces: bool;
     excludes: Str.regexp list;
     extensions: Extension.t list;
     store_type_check_resolution: bool;
     incremental_style: incremental_style;
-    include_hints: bool;
-    perform_autocompletion: bool;
-    features: Features.t;
     log_directory: Path.t;
     python_major_version: int;
     python_minor_version: int;
     python_micro_version: int;
     shared_memory: shared_memory;
   }
-  [@@deriving show, eq]
+  [@@deriving show]
 
   val create
-    :  ?configuration_file_hash:string ->
-    ?parallel:bool ->
+    :  ?parallel:bool ->
     ?analyze_external_sources:bool ->
     ?filter_directories:Path.t list ->
     ?ignore_all_errors:Path.t list ->
@@ -137,7 +118,6 @@ module Analysis : sig
     ?project_root:Path.t ->
     ?search_path:SearchPath.t list ->
     ?taint_model_paths:Path.t list ->
-    ?expected_version:string ->
     ?strict:bool ->
     ?debug:bool ->
     ?show_error_traces:bool ->
@@ -145,9 +125,6 @@ module Analysis : sig
     ?extensions:Extension.t list ->
     ?store_type_check_resolution:bool ->
     ?incremental_style:incremental_style ->
-    ?include_hints:bool ->
-    ?perform_autocompletion:bool ->
-    ?features:Features.t ->
     ?log_directory:string ->
     ?python_major_version:int ->
     ?python_minor_version:int ->
@@ -166,8 +143,6 @@ module Analysis : sig
   val extension_suffixes : t -> string list
 
   val find_extension : t -> Path.t -> Extension.t option
-
-  val features : t -> Features.t
 end
 
 module Server : sig
