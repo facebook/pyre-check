@@ -970,6 +970,7 @@ let test_handle_query_pysa context =
         {
             "response": {
                 "typing.Iterable.__iter__": [],
+                "pyre_extensions.generic.Generic.__class_getitem__": [],
                 "wait.bar": [
                     {
                         "locations": [

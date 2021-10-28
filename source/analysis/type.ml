@@ -2301,6 +2301,7 @@ let parametric_substitution_map =
     "typing.Type", "type";
     "typing_extensions.Protocol", "typing.Protocol";
     "pyre_extensions.Generic", "typing.Generic";
+    "pyre_extensions.generic.Generic", "typing.Generic";
   ]
   |> Identifier.Table.of_alist_exn
 

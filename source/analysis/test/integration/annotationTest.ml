@@ -1746,6 +1746,23 @@ let test_check_literal_assignment context =
   ()
 
 
+let test_check_pyre_extensions_generic context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import Generic
+      from typing import TypeVar
+
+      T = TypeVar("T")
+
+      # Pyre should not complain about the `pyre_extensions` Generic not being
+      # subscriptable.
+      class Foo(Generic[T]): ...
+    |}
+    [];
+  ()
+
+
 let test_check_safe_cast context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -3699,6 +3716,7 @@ let () =
          "check_invalid_inheritance" >:: test_check_invalid_inheritance;
          "check_invalid_generic_inheritance" >:: test_check_invalid_generic_inheritance;
          "check_literal_assignment" >:: test_check_literal_assignment;
+         "check_pyre_extensions_generic" >:: test_check_pyre_extensions_generic;
          "check_safe_cast" >:: test_check_safe_cast;
          "check_annotation_with_any" >:: test_check_annotation_with_any;
          "check_typevar_arithmetic" >:: test_check_typevar_arithmetic;
