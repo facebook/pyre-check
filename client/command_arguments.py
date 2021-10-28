@@ -138,7 +138,7 @@ class InferArguments:
     enable_profiling: bool = False
     log_identifier: Optional[str] = None
     logging_sections: Optional[str] = None
-    no_future_annotations: bool = False
+    use_future_annotations: bool = False
     in_place: bool = False
     paths_to_modify: Optional[Set[Path]] = None
     print_only: bool = False

@@ -292,6 +292,7 @@ class AnnotationFixer(libcst.CSTTransformer):
             )
             node_as_string = code_for_node(updated_node.with_changes(value=name_node))
             updated_node = libcst.SimpleString(f"'{node_as_string}'")
+
         return updated_node
 
 
@@ -981,7 +982,7 @@ def run_infer(
             base_path=working_directory,
             options=StubGenerationOptions(
                 annotate_attributes=infer_arguments.annotate_attributes,
-                use_future_annotations=not infer_arguments.no_future_annotations,
+                use_future_annotations=infer_arguments.use_future_annotations,
                 dequalify=infer_arguments.dequalify,
                 quote_annotations=infer_arguments.quote_annotations,
             ),

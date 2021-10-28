@@ -798,16 +798,13 @@ def incremental(
     ),
 )
 @click.option(
-    "--no-future-annotations",
+    "--use-future-annotations/--no-future-annotations",
     is_flag=True,
     default=False,
     help=(
-        "Infer assumes it can insert unquoted annotations anywhere in a "
-        "module. In python versions between 3.7 and 3.10, we can ensure this "
-        "is valid by inserting `from __future__ import annotations`, which"
-        "we do by default. You can use this flag to disable the import, which "
-        "is illegal in pre-3.7 python versions and is unnecessary (but allowed) "
-        "in python 3.10+. This flag disables inserting the import."
+        "Should pyre infer inject `from __future__ import annotations`? "
+        "By default, we won't because it may not work depending on the "
+        "version of python and libcst we ware using."
     ),
 )
 @click.option(
@@ -844,7 +841,7 @@ def infer(
     debug_infer: bool,
     read_stdin: bool,
     annotate_attributes: bool,
-    no_future_annotations: bool,
+    use_future_annotations: bool,
     quote_annotations: bool,
     dequalify: bool,
 ) -> int:
@@ -878,7 +875,7 @@ def infer(
             dequalify=dequalify,
             log_identifier=command_argument.log_identifier,
             logging_sections=command_argument.logging_sections,
-            no_future_annotations=no_future_annotations,
+            use_future_annotations=use_future_annotations,
             in_place=in_place,
             paths_to_modify=modify_paths,
             print_only=print_only,
