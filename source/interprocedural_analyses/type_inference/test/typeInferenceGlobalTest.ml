@@ -102,8 +102,8 @@ let serialization_test context =
               "parent": null,
               "return": "typing.Tuple[sqlalchemy.Integer, test.C]",
               "parameters": [
-                { "name": "y", "annotation": "test.C", "value": null, "index": 0 },
-                { "name": "x", "annotation": "sqlalchemy.Integer", "value": null, "index": 1 }
+                { "name": "y", "annotation": null, "value": null, "index": 0 },
+                { "name": "x", "annotation": null, "value": null, "index": 1 }
               ],
               "decorators": [ "functools.lru_cache(4)" ],
               "location": { "qualifier": "test", "path": "*", "line": 14 },

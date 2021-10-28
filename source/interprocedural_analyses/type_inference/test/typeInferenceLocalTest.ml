@@ -672,7 +672,7 @@ let test_inferred_function_parameters context =
           foo(x)
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter "typing.Optional[str]");
+    ~expected:no_inferences;
   check_inference_results
     {|
       from typing import Optional
@@ -684,19 +684,6 @@ let test_inferred_function_parameters context =
     |}
     ~target:"test.bar"
     ~expected:(single_parameter ~default:"None" "typing.Optional[str]");
-  (* For given annotations, use expressions rather than types so that the qualifier will match the
-     code rather than the fully qualified type name. This is important for aliased imports *)
-  check_inference_results
-    {|
-      # This is an aliased import.
-      # The full qualifier is sqlalchemy.ext.declarative.api.DeclarativeMeta.
-      from sqlalchemy.ext.declarative import DeclarativeMeta
-
-      def foo(x: DeclarativeMeta) -> None:
-          return None
-    |}
-    ~target:"test.foo"
-    ~expected:(single_parameter "sqlalchemy.ext.declarative.DeclarativeMeta");
   (* TODO(T84365830): Support inference on addition. *)
   check_inference_results
     {|
@@ -834,6 +821,7 @@ let test_inferred_method_parameters context =
     |}
     ~target:"test.B.foo"
     ~expected:(single_parameter_method (Some "test.A"));
+  let no_inferences = single_parameter_method None in
   (* Don't override explicit annotations if they clash with parent class *)
   check_inference_results
     {|
@@ -844,8 +832,7 @@ let test_inferred_method_parameters context =
               return x
     |}
     ~target:"test.B.foo"
-    ~expected:(single_parameter_method (Some "str"));
-  let no_inferences = single_parameter_method None in
+    ~expected:no_inferences;
   check_inference_results
     {|
       from typing import Any
@@ -895,13 +882,13 @@ let test_inferred_method_parameters context =
     ~expected:{|
         [{ "name": "self", "annotation": null, "value": null, "index": 0 }]
      |};
-  (* Do not propagate types on `self` *)
+  (* Don't override existing explicit annotations *)
   check_inference_results
     {|
       class A:
-          def foo(self, x: int, y: str) -> int: ...
+          def foo(self, x: int, y: str, z: int) -> int: ...
       class B(A):
-          def foo(self, x, y: str):
+          def foo(self, x, y: str, z: int):
               return x
     |}
     ~target:"test.B.foo"
@@ -910,7 +897,8 @@ let test_inferred_method_parameters context =
         [
           { "name": "self", "annotation": null, "value": null, "index": 0 },
           { "name": "x", "annotation": "int", "value": null, "index": 1 },
-          { "name": "y", "annotation": "str", "value": null, "index": 2 }
+          { "name": "y", "annotation": null, "value": null, "index": 2 },
+          { "name": "z", "annotation": null, "value": null, "index": 3 }
         ]
       |};
   check_inference_results

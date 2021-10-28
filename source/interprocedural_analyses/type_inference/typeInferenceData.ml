@@ -107,8 +107,9 @@ module TypeAnnotation = struct
 
   let to_yojson = function
     | Inferred type_ -> SerializableType.to_yojson type_
-    | Given expression -> expression_to_json expression
-    | Missing -> `Null
+    | Given _
+    | Missing ->
+        `Null
 end
 
 module AnnotationsByName = struct
