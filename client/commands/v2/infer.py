@@ -393,13 +393,6 @@ class TypeAnnotation:
                 dequalify_all=self.options.dequalify,
             )
 
-    def _simple_types(self) -> List[str]:
-        """Split an annotation into its tokens"""
-        if self.annotation is None or self.annotation == "":
-            return []
-        else:
-            return re.split("[^\\w.]+", self.annotation)
-
     @property
     def missing(self) -> bool:
         return self.annotation is None
