@@ -497,5 +497,11 @@ val create_mismatch
   mismatch
 
 module SimplificationMap : sig
-  val create : Reference.t list -> Reference.t Reference.Map.t
+  type t = Reference.t Reference.Map.t
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+
+  val create : Reference.t list -> t
 end

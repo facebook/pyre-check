@@ -4024,12 +4024,23 @@ module SimplificationMap = struct
     | LazyLeaf of { to_be_expanded: Identifier.t list }
     | Node of { children: node Identifier.Map.t }
 
+  type t = Reference.t Reference.Map.t
+
+  let pp fmt map =
+    let pp_one ~key ~data = Format.fprintf fmt "\n  %a -> %a" Reference.pp key Reference.pp data in
+    Reference.Map.iteri ~f:pp_one map
+
+
+  let show map = Format.asprintf "%a" pp map
+
   let create references =
     let empty_trie = Node { children = Identifier.Map.empty } in
     let add_to_suffix_trie trie reference =
       let rec add sofar node =
         match sofar, node with
         | [], _ -> node
+        | _, LazyLeaf { to_be_expanded } when List.equal Identifier.equal sofar to_be_expanded ->
+            node
         | _, LazyLeaf { to_be_expanded } -> empty_trie |> add to_be_expanded |> add sofar
         | head :: remaining, Node { children } ->
             let updated_children =

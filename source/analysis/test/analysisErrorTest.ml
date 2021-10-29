@@ -1033,15 +1033,9 @@ let test_simplification_map _ =
       |> List.map ~f:(fun (x, y) -> Reference.create x, Reference.create y)
       |> Reference.Map.of_alist_exn
     in
-    let pp_map fmt map =
-      let pp_one ~key ~data =
-        Format.fprintf fmt "\n  %a -> %a" Reference.pp key Reference.pp data
-      in
-      Reference.Map.iteri ~f:pp_one map
-    in
     assert_equal
       ~cmp:(Map.equal Reference.equal)
-      ~printer:(Format.asprintf "%a" pp_map)
+      ~printer:Error.SimplificationMap.show
       expected
       computed
   in
@@ -1053,6 +1047,7 @@ let test_simplification_map _ =
   assert_simplification_map ["a"; "a"] [];
   assert_simplification_map ["a"; "b"] [];
   assert_simplification_map ["Foo.a"; "Foo.b"] ["Foo.a", "a"; "Foo.b", "b"];
+  assert_simplification_map ["Foo.a"; "Foo.a"] ["Foo.a", "a"];
   assert_simplification_map ["Foo.a"; "Bar.a"] [];
   assert_simplification_map ["Foo.Bar.a"; "Foo.Bar.b"] ["Foo.Bar.a", "a"; "Foo.Bar.b", "b"];
   assert_simplification_map ["X.Foo.Bar.a"; "X.Foo.Bar.b"] ["X.Foo.Bar.a", "a"; "X.Foo.Bar.b", "b"];
