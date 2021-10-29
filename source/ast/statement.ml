@@ -1019,12 +1019,91 @@ end = struct
 end
 
 and Match : sig
-  type t = unit [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  module Pattern : sig
+    type t =
+      | MatchAs of {
+          pattern: t option;
+          name: Identifier.t;
+        }
+      | MatchClass of {
+          cls: Expression.Name.t;
+          patterns: t list;
+          keyword_attributes: Identifier.t list;
+          keyword_patterns: t list;
+        }
+      | MatchMapping of {
+          keys: Expression.t list;
+          patterns: t list;
+          rest: Identifier.t option;
+        }
+      | MatchOr of t list
+      | MatchSequence of t list
+      | MatchSingleton of Expression.Constant.t
+      | MatchStar of Identifier.t option
+      | MatchValue of Expression.t
+      | MatchWildcard
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  module Case : sig
+    type t = {
+      pattern: Pattern.t Node.t;
+      guard: Expression.t option;
+      body: Statement.t list;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type t = {
+    subject: Expression.t;
+    cases: Case.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
-  type t = unit [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  module Pattern = struct
+    type t =
+      | MatchAs of {
+          pattern: t option;
+          name: Identifier.t;
+        }
+      | MatchClass of {
+          cls: Expression.Name.t;
+          patterns: t list;
+          keyword_attributes: Identifier.t list;
+          keyword_patterns: t list;
+        }
+      | MatchMapping of {
+          keys: Expression.t list;
+          patterns: t list;
+          rest: Identifier.t option;
+        }
+      | MatchOr of t list
+      | MatchSequence of t list
+      | MatchSingleton of Expression.Constant.t
+      | MatchStar of Identifier.t option
+      | MatchValue of Expression.t
+      | MatchWildcard
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
 
+  module Case = struct
+    type t = {
+      pattern: Pattern.t Node.t;
+      guard: Expression.t option;
+      body: Statement.t list;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type t = {
+    subject: Expression.t;
+    cases: Case.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  (* TODO(T102720335): Support match statement. *)
   let location_insensitive_compare _ _ = 0
 end
 
