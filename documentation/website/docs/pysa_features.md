@@ -106,7 +106,25 @@ def django.http.response.HttpResponse.__setitem__(
 ```
 
 In cases where the argument is not a constant, the feature will appear as
-`via-value:<unknown>`. If the argument is not provided at the call site (e.g,
+`via-value:<unknown:ARGUMENT_TYPE>`, where `ARGUMENT_TYPE` indicates how the
+argument value is provided at the callsite. For a model such as this:
+
+```python
+def f (first, second, third) -> TaintSource[Test, ViaValueOf[second]]:...
+```
+
+The following function invocations will produce the features shown
+in the comments:
+
+```
+f(*args)            # Generates via-value:<unknown:args>
+f(**kwargs)         # Generates via-value:<unknown:kwargs>
+f(second=foo)       # Generates via-value:<unknown:named>
+f(foo, bar)         # Generates via-value:<unknown:positional>
+f(*args, **kwargs)  # Generates via-value:<unknown:args_or_kwargs>
+```
+
+If the argument is not provided at the call site (e.g,
 using the default value), the feature will appear as `via-value:<missing>`.
 
 You can also associate a tag with a `via-value` feature to ensure that different
