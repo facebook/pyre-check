@@ -305,6 +305,12 @@ and If : sig
   val location_insensitive_compare : t -> t -> int
 end
 
+and Match : sig
+  type t = unit [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end
+
 and Try : sig
   module Handler : sig
     type t = {
@@ -368,6 +374,7 @@ and Statement : sig
     | Global of Identifier.t list
     | If of If.t
     | Import of Import.t
+    | Match of Match.t
     | Nonlocal of Identifier.t list
     | Pass
     | Raise of Raise.t

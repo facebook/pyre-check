@@ -80,6 +80,8 @@ let collect_typecheck_units { Source.statements; _ } =
     | Expression _
     | Global _
     | Import _
+    (* TODO(T102720335): Support match statement. *)
+    | Match _
     | Nonlocal _
     | Pass
     | Raise _

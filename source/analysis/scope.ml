@@ -231,6 +231,8 @@ module Binding = struct
     | Continue
     | Delete _
     | Global _
+    (* TODO(T102720335): Support match statement. *)
+    | Match _
     | Nonlocal _
     | Pass ->
         sofar
@@ -293,6 +295,8 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | Delete _
   | Expression _
   | Import _
+  (* TODO(T102720335): Support match statement. *)
+  | Match _
   | Nonlocal _
   | Pass
   | Raise _
@@ -332,6 +336,8 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | Expression _
   | Global _
   | Import _
+  (* TODO(T102720335): Support match statement. *)
+  | Match _
   | Pass
   | Raise _
   | Return _ ->

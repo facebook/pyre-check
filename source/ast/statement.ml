@@ -1018,6 +1018,16 @@ end = struct
         | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse)
 end
 
+and Match : sig
+  type t = unit [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end = struct
+  type t = unit [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare _ _ = 0
+end
+
 and Try : sig
   module Handler : sig
     type t = {
@@ -1237,6 +1247,7 @@ and Statement : sig
     | Global of Identifier.t list
     | If of If.t
     | Import of Import.t
+    | Match of Match.t
     | Nonlocal of Identifier.t list
     | Pass
     | Raise of Raise.t
@@ -1267,6 +1278,7 @@ end = struct
     | Global of Identifier.t list
     | If of If.t
     | Import of Import.t
+    | Match of Match.t
     | Nonlocal of Identifier.t list
     | Pass
     | Raise of Raise.t
@@ -1292,6 +1304,7 @@ end = struct
     | Global left, Global right -> List.compare Identifier.compare left right
     | If left, If right -> If.location_insensitive_compare left right
     | Import left, Import right -> Import.location_insensitive_compare left right
+    | Match left, Match right -> Match.location_insensitive_compare left right
     | Nonlocal left, Nonlocal right -> List.compare Identifier.compare left right
     | Pass, Pass -> 0
     | Raise left, Raise right -> Raise.location_insensitive_compare left right
@@ -1311,6 +1324,7 @@ end = struct
     | Global _, _ -> -1
     | If _, _ -> -1
     | Import _, _ -> -1
+    | Match _, _ -> -1
     | Nonlocal _, _ -> -1
     | Pass, _ -> -1
     | Raise _, _ -> -1
@@ -1585,6 +1599,7 @@ module PrettyPrinter = struct
         | Some from ->
             Format.fprintf formatter "@[<v>from %a import %a@]" Reference.pp from pp_imports imports
         )
+    | Match _ -> Format.fprintf formatter "%s" "match"
     | Nonlocal nonlocal_list -> pp_list formatter String.pp "," nonlocal_list
     | Pass -> Format.fprintf formatter "%s" "pass"
     | Raise { Raise.expression; _ } ->
@@ -1774,6 +1789,8 @@ let is_generator statements =
     | Define _
     | Global _
     | Import _
+    (* TODO(T102720335): Support match statement. *)
+    | Match _
     | Nonlocal _
     | Pass ->
         false

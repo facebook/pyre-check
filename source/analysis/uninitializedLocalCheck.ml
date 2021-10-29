@@ -156,6 +156,8 @@ let extract_reads_statement { Node.value; _ } =
     | Define _
     | Global _
     | Import _
+    (* TODO(T102720335): Support match statement. *)
+    | Match _
     | Nonlocal _
     | Pass
     | Try _ ->

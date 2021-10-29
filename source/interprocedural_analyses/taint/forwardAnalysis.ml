@@ -1537,6 +1537,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Global _
     | If _
     | Import _
+    | Match _
     | Nonlocal _
     | Pass
     | Raise _ ->

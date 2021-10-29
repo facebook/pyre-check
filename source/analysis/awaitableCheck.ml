@@ -602,6 +602,7 @@ module State (Context : Context) = struct
     | Global _
     | Import _
     | Nonlocal _
+    | Match _
     | Pass ->
         state
 

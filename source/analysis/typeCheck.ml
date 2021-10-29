@@ -5930,6 +5930,7 @@ module State (Context : Context) = struct
         Value resolution, List.fold (Class.base_classes class_statement) ~f:check_base ~init:[]
     | For _
     | If _
+    | Match _
     | Try _
     | With _
     | While _ ->

@@ -1014,6 +1014,8 @@ let qualify
       | Break
       | Continue
       | Import _
+      (* TODO(T102720335): Support match statement. *)
+      | Match _
       | Pass ->
           scope, value
     in
@@ -3151,6 +3153,8 @@ module AccessCollector = struct
     | Continue
     | Global _
     | Import _
+    (* TODO(T102720335): Support match statement. *)
+    | Match _
     | Nonlocal _
     | Pass ->
         collected

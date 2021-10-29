@@ -204,6 +204,8 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Import _
       | Nonlocal _
       | Global _
+      (* TODO(T102720335): Support match statement. *)
+      | Match _
       | Pass
       | Continue
       | Break ->
@@ -268,6 +270,8 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | Expression _
         | Global _
         | Import _
+        (* TODO(T102720335): Support match statement. *)
+        | Match _
         | Pass
         | Raise _
         | Return _
