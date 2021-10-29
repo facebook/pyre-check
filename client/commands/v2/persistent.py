@@ -853,7 +853,7 @@ class PyreServerHandler(connection.BackgroundTask):
                         f"Cannot start a new Pyre server at `{server_identifier}`. "
                         f"{start_status.message}",
                         short_message="Pyre Stopped",
-                        level=lsp.MessageType.WARNING,
+                        level=lsp.MessageType.INFO,
                     )
                 else:
                     await self.show_status_message_to_client(
