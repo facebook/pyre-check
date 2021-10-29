@@ -633,11 +633,11 @@ let test_unpacking context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(x: int, xs: Tuple[str, *Ts, bool]) -> Tuple[int, str, *Ts, bool]:
+      def foo(x: int, xs: Tuple[str, Unpack[Ts], bool]) -> Tuple[int, str, Unpack[Ts], bool]:
         y = (x, *xs)
         reveal_type(y)
         return y
@@ -646,11 +646,11 @@ let test_unpacking context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(xs: Tuple[str, *Ts, bool]) -> None:
+      def foo(xs: Tuple[str, Unpack[Ts], bool]) -> None:
         y = ( *xs, *(2, 3), *xs)
         reveal_type(y)
     |}

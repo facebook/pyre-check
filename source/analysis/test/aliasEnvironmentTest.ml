@@ -260,15 +260,15 @@ let test_harder_registrations context =
   assert_registers
     {|
     from typing import Generic, TypeVar
-    from pyre_extensions import TypeVarTuple
+    from pyre_extensions import TypeVarTuple, Unpack
     from typing_extensions import Literal as L
 
     T = TypeVar("T")
     Ts = TypeVarTuple("Ts")
 
-    class Tensor(Generic[T, *Ts]): ...
+    class Tensor(Generic[T, Unpack[Ts]]): ...
 
-    FloatTensor = Tensor[float, *Ts]
+    FloatTensor = Tensor[float, Unpack[Ts]]
   |}
     "test.FloatTensor"
     ~expected_alias:

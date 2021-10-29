@@ -79,7 +79,7 @@ let test_check_with_qualification context =
       def len(s: str) -> int:
         return 1
       def assign_outer() -> None:
-          global_number="a" # type: str
+          global_number: str ="a"
           def assign_inner_access() -> int:
               return len(global_number)
           def assign_inner_global() -> int:

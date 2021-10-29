@@ -1409,7 +1409,6 @@ let test_callable_parameter_variadics context =
       def invalid(x: int, y: str) -> int: ...
       def foo() -> None:
         call_n_times(valid, 75, 1, "A")
-        call_n_times(valid, 75, y="A", 1)
         # invalid first argument
         call_n_times(invalid, 75, 1, "A")
         # missing second argument
@@ -2771,11 +2770,11 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(x: Tuple[int, *Ts]) -> Tuple[bool, *Ts]: ...
+      def foo(x: Tuple[int, Unpack[Ts]]) -> Tuple[bool, Unpack[Ts]]: ...
 
       def bar() -> None:
         x: Tuple[int, str, bool]
@@ -2793,11 +2792,11 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(x: Tuple[int, *Ts, str]) -> Tuple[bool, *Ts]: ...
+      def foo(x: Tuple[int, Unpack[Ts], str]) -> Tuple[bool, Unpack[Ts]]: ...
 
       def bar() -> None:
         x: Tuple[int]
@@ -2811,14 +2810,14 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def add_int(xs: Tuple[*Ts]) -> Tuple[int, *Ts]: ...
-      def remove_int(xs: Tuple[int, *Ts]) -> Tuple[*Ts]: ...
+      def add_int(xs: Tuple[Unpack[Ts]]) -> Tuple[int, Unpack[Ts]]: ...
+      def remove_int(xs: Tuple[int, Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
-      def generic_function(xs: Tuple[*Ts]) -> None:
+      def generic_function(xs: Tuple[Unpack[Ts]]) -> None:
         y = remove_int(add_int(xs))
         reveal_type(y)
 
@@ -2834,11 +2833,11 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+      def expects_same_tuples(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
       def bar() -> None:
         tuple1: Tuple[int, str]
@@ -2853,11 +2852,11 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+      def expects_same_tuples(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
       def bar() -> None:
         tuple1: Tuple[int, str]
@@ -2871,11 +2870,11 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+      def expects_same_tuples(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
       def bar() -> None:
         tuple1: Tuple[int, str]
@@ -2889,11 +2888,11 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def add_int(xs: Tuple[*Tuple[str, ...]]) -> Tuple[int, *Tuple[str, ...]]: ...
+      def add_int(xs: Tuple[Unpack[Tuple[str, ...]]]) -> Tuple[int, Unpack[Tuple[str, ...]]]: ...
 
       def foo() -> None:
         xs: Tuple[str, str]
@@ -2911,11 +2910,11 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(xs: Tuple[*Ts]) -> Tuple[*Ts]: ...
+      def foo(xs: Tuple[Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
       def baz() -> None:
        	unbounded_tuple: Tuple[int, ...]
@@ -2926,12 +2925,12 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      def foo(xs: Tuple[T, *Tuple[str, ...]]) -> T: ...
+      def foo(xs: Tuple[T, Unpack[Tuple[str, ...]]]) -> T: ...
 
       def baz() -> None:
        	some_tuple: Tuple[int, str, str]
@@ -2949,12 +2948,12 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Any, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       N = TypeVar("N", bound=int)
 
-      def foo(x: Tuple[N, *Ts]) -> Tuple[*Ts, N]: ...
+      def foo(x: Tuple[N, Unpack[Ts]]) -> Tuple[Unpack[Ts], N]: ...
 
       def bar() -> None:
         x: Tuple[Any, ...]
@@ -2974,12 +2973,12 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Any, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       N = TypeVar("N", bound=int)
 
-      def foo(x: Tuple[N, *Ts]) -> Tuple[*Ts, N]: ...
+      def foo(x: Tuple[N, Unpack[Ts]]) -> Tuple[Unpack[Ts], N]: ...
 
       def bar() -> None:
         x_error: Tuple[str, ...]
@@ -3024,13 +3023,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[Unpack[Ts]]): ...
 
-      def add_bool(x: Tensor[int, *Ts, str]) -> Tensor[bool, *Ts]: ...
+      def add_bool(x: Tensor[int, Unpack[Ts], str]) -> Tensor[bool, Unpack[Ts]]: ...
 
       def foo() -> None:
         x: Tensor[int, bool, str]
@@ -3043,13 +3042,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[Unpack[Ts]]): ...
 
-      def expects_same_tensors(x: Tensor[*Ts], y: Tensor[*Ts]) -> Tensor[*Ts]: ...
+      def expects_same_tensors(x: Tensor[Unpack[Ts]], y: Tensor[Unpack[Ts]]) -> Tensor[Unpack[Ts]]: ...
 
       def bar() -> None:
         tensor: Tensor[int, str]
@@ -3066,13 +3065,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[Unpack[Ts]]): ...
 
-      def expects_same_length(xs: Tensor[*Ts], ys: Tensor[*Ts]) -> Tensor[*Ts]: ...
+      def expects_same_length(xs: Tensor[Unpack[Ts]], ys: Tensor[Unpack[Ts]]) -> Tensor[Unpack[Ts]]: ...
 
       def bar() -> None:
         xs: Tensor[int, str]
@@ -3088,12 +3087,12 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, List, Protocol, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
       class Base: ...
       class Child(Base): ...
@@ -3114,7 +3113,7 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       Ts = TypeVarTuple("Ts")
@@ -3122,7 +3121,7 @@ let test_variadic_classes context =
       Tin = TypeVar("Tin")
       Tout = TypeVar("Tout")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[Unpack[Ts]]): ...
 
       class Linear(Generic[Tin, Tout]):
         """Transform the last dimension from Tin to Tout."""
@@ -3131,7 +3130,7 @@ let test_variadic_classes context =
           self.in_dimension = in_dimension
           self.out_dimension = out_dimension
 
-        def __call__(self, x: Tensor[*Ts, Tin]) -> Tensor[*Ts, Tout]: ...
+        def __call__(self, x: Tensor[Unpack[Ts], Tin]) -> Tensor[Unpack[Ts], Tout]: ...
 
       def bar() -> None:
         x: Tensor[L[10], L[20]]
@@ -3154,12 +3153,12 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]):
-        def some_method(self, x: Tensor[*Ts]) -> None: ...
+      class Tensor(Generic[Unpack[Ts]]):
+        def some_method(self, x: Tensor[Unpack[Ts]]) -> None: ...
 
       def bar() -> None:
         xs: Tensor[int, str]
@@ -3169,12 +3168,12 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
       def bar() -> None:
         x = Tensor.__getitem__
@@ -3189,21 +3188,21 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, List, Protocol, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class VariadicProtocol(Protocol[T, *Ts]):
-        def foo(self, x: Tuple[T, *Ts]) -> None: ...
+      class VariadicProtocol(Protocol[T, Unpack[Ts]]):
+        def foo(self, x: Tuple[T, Unpack[Ts]]) -> None: ...
 
-      class Tensor(Generic[*Ts]):
-        """This implements VariadicProtocol with T = List[int] and Ts = Tuple[*Ts]."""
+      class Tensor(Generic[Unpack[Ts]]):
+        """This implements VariadicProtocol with T = List[int] and Ts = Tuple[Unpack[Ts]]."""
 
-        def foo(self, x: Tuple[List[int], *Ts]) -> None:...
+        def foo(self, x: Tuple[List[int], Unpack[Ts]]) -> None:...
 
 
-      def accepts_variadic_protocol(x: VariadicProtocol[T, *Ts]) -> VariadicProtocol[T, *Ts]: ...
+      def accepts_variadic_protocol(x: VariadicProtocol[T, Unpack[Ts]]) -> VariadicProtocol[T, Unpack[Ts]]: ...
 
       def bar() -> None:
         x: Tensor[int, str]
@@ -3216,13 +3215,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]):
-        def __init__(self, default: T, shape: Tuple[*Ts]) -> None: ...
+      class Tensor(Generic[T, Unpack[Ts]]):
+        def __init__(self, default: T, shape: Tuple[Unpack[Ts]]) -> None: ...
 
       class Base: ...
       class Child(Base): ...
@@ -3239,15 +3238,15 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
-      FloatTensor = Tensor[float, *Ts]
+      FloatTensor = Tensor[float, Unpack[Ts]]
 
       def bar() -> None:
         x: FloatTensor[L[10], L[20]]
@@ -3264,15 +3263,15 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
-      def get_last_type(t: Tensor[float, *Tuple[int, ...], T]) -> T: ...
+      def get_last_type(t: Tensor[float, Unpack[Tuple[int, ...]], T]) -> T: ...
 
       def bar() -> None:
         x: Tensor[float, L[10], L[20]]
@@ -3283,13 +3282,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
       # pyre-ignore[24]: Generic type `Tensor` expects at least 1 type parameter.
       def accept_arbitrary_tensor(t: Tensor) -> Tensor: ...
@@ -3307,15 +3306,15 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
-      def strip_last(x: Tensor[int, *Ts, int]) -> Tensor[int, *Ts]: ...
+      def strip_last(x: Tensor[int, Unpack[Ts], int]) -> Tensor[int, Unpack[Ts]]: ...
 
       def bar() -> None:
         invalid: Tensor[int, L[10], str]
@@ -3332,15 +3331,15 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Callable, Generic, Tuple, TypeVar
-      from pyre_extensions import ParameterSpecification, TypeVarTuple
+      from pyre_extensions import ParameterSpecification, TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
       TParams = ParameterSpecification("TParams")
 
-      class Tensor(Generic[T, TParams, *Ts]):
-        def __init__(self, f: Callable[TParams, T], shape: Tuple[*Ts]) -> None:
+      class Tensor(Generic[T, TParams, Unpack[Ts]]):
+        def __init__(self, f: Callable[TParams, T], shape: Tuple[Unpack[Ts]]) -> None:
           self.f = f
           self.shape = shape
 
@@ -3364,11 +3363,11 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def make_tuple(leave_this_out: int, *args: *Ts, message: str) -> Tuple[*Ts, bool]: ...
+      def make_tuple(leave_this_out: int, *args: Unpack[Ts], message: str) -> Tuple[Unpack[Ts], bool]: ...
 
       def foo() -> None:
         y = make_tuple(1, 2, 3, message="hello")
@@ -3385,11 +3384,11 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def make_tuple(leave_this_out: int, *args: *Tuple[int, *Ts, str], message: str) -> Tuple[int, *Ts, str]:
+      def make_tuple(leave_this_out: int, *args: Unpack[Tuple[int, Unpack[Ts], str]], message: str) -> Tuple[int, Unpack[Ts], str]:
         return args
 
       def foo() -> None:
@@ -3403,13 +3402,13 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def make_tuple( *args: *Tuple[int, *Ts, str]) -> None: ...
+      def make_tuple( *args: Unpack[Tuple[int, Unpack[Ts], str]]) -> None: ...
 
-      def foo(x: Tuple[*Ts]) -> None:
+      def foo(x: Tuple[Unpack[Ts]]) -> None:
         unbounded_tuple: Tuple[int, ...]
         make_tuple(1, *unbounded_tuple, "foo")
 
@@ -3425,13 +3424,13 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def make_tuple( *args: *Tuple[int, *Ts, str]) -> None: ...
+      def make_tuple( *args: Unpack[Tuple[int, Unpack[Ts], str]]) -> None: ...
 
-      def foo(x: Tuple[*Ts]) -> None:
+      def foo(x: Tuple[Unpack[Ts]]) -> None:
         make_tuple(1, 2)
         make_tuple(1, *x, *x, "foo")
      |}
@@ -3447,11 +3446,11 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def strip_int_parameter(f: Callable[[int, *Ts], None]) -> Callable[[*Ts], None]: ...
+      def strip_int_parameter(f: Callable[[int, Unpack[Ts]], None]) -> Callable[[Unpack[Ts]], None]: ...
 
       def foo(x: int, y: str, z: bool) -> None: ...
 
@@ -3472,11 +3471,11 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def strip_int_parameter(f: Callable[[int, *Ts], None]) -> Callable[[*Ts], None]: ...
+      def strip_int_parameter(f: Callable[[int, Unpack[Ts]], None]) -> Callable[[Unpack[Ts]], None]: ...
 
       def no_leading_int(y: str, z: bool) -> None: ...
 
@@ -3491,13 +3490,13 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]):
-        def some_method(self, *args: *Ts) -> Tuple[*Ts]: ...
+      class Tensor(Generic[Unpack[Ts]]):
+        def some_method(self, *args: Unpack[Ts]) -> Tuple[Unpack[Ts]]: ...
 
       def bar() -> None:
         x: Tensor[int, str]
@@ -3513,12 +3512,12 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       T = TypeVar("T")
 
-      def apply(f: Callable[[*Ts], T], *args: *Ts) -> T: ...
+      def apply(f: Callable[[Unpack[Ts]], T], *args: Unpack[Ts]) -> T: ...
 
       def foo(x: int, y: str, z: bool) -> str: ...
 
@@ -3537,12 +3536,12 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       T = TypeVar("T")
 
-      def apply(f: Callable[[*Ts], T], *args: *Ts) -> T: ...
+      def apply(f: Callable[[Unpack[Ts]], T], *args: Unpack[Ts]) -> T: ...
 
       class Base: ...
       class Child(Base): ...

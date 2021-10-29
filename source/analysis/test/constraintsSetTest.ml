@@ -102,7 +102,7 @@ let make_assert_functions context =
         pass
 
       class Constructable:
-        def Constructable.__init__(self, x: int) -> None:
+        def __init__(self, x: int) -> None:
           pass
 
       class Parent: pass

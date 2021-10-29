@@ -92,7 +92,7 @@ let test_unresolved_select context =
                   int_to_int_dictionary: typing.Dict[int, int] = ...
                   union_list: typing.Union[typing.List[int], typing.List[str]] = ...
 
-                  unknown: $unknown = ...
+                  unknown: Unknown = ...
                   g: typing.Callable[[int], bool]
                   f: typing.Callable[[int], typing.List[bool]]
                   Tparams = pyre_extensions.ParameterSpecification("Tparams")
@@ -651,40 +651,40 @@ let test_unresolved_select context =
   (* Ranking. *)
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
+    "[..., Unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0)"
     (* Ambiguous, pick the first one. *)
     (`NotFoundMissingAnonymousArgumentWithClosest ("int", 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str], str][[int, str], int]]"
+    "[..., Unknown][[[str], str][[int, str], int]]"
     "(1)"
     (* Ambiguous, prefer the one with the closer arity over the type match. *)
     (`NotFoundMismatchWithClosest ("str", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, Keywords()], int][[int, str], int]]"
+    "[..., Unknown][[[int, Keywords()], int][[int, str], int]]"
     "(1, 1)" (* Prefer anonymous unmatched parameters over keywords. *)
     (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str], str][[], str]]"
+    "[..., Unknown][[[str], str][[], str]]"
     "(1)"
     (`NotFoundMismatchWithClosest ("str", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str, Keywords()], int][[Keywords()], int]]"
+    "[..., Unknown][[[str, Keywords()], int][[Keywords()], int]]"
     "(1)" (* Prefer arity matches. *)
     (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
+    "[..., Unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0, 'string')"
     (* Clear winner. *)
     (`NotFoundMissingAnonymousArgumentWithClosest ("int", 2));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, str, str, str], int][[int, str, bool], int]]"
+    "[..., Unknown][[[int, str, str, str], int][[int, str, bool], int]]"
     "(0, 'string')"
     (`NotFoundMissingAnonymousArgumentWithClosest ("int", 2));
 
@@ -695,19 +695,19 @@ let test_unresolved_select context =
     (`NotFoundMismatchWithClosest ("str", Type.Top, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[Named(a, int), Named(b, int)], int][[Named(c, int), Named(d, int)], int]]"
+    "[..., Unknown][[[Named(a, int), Named(b, int)], int][[Named(c, int), Named(d, int)], int]]"
     "(i=1, d=2)"
     (`NotFoundUnexpectedKeywordWithClosest ("int", "i"));
 
   (* Prefer the overload where the mismatch comes latest *)
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, str], int][[str, int], str]]"
+    "[..., Unknown][[[int, str], int][[str, int], str]]"
     "(1, 1)"
     (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str, int], str][[int, str], int]]"
+    "[..., Unknown][[[str, int], str][[int, str], int]]"
     "(1, 1)"
     (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
 

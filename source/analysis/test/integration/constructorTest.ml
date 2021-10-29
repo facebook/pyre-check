@@ -1049,7 +1049,7 @@ let test_init_subclass context =
             cls.swallow = swallow
             super().__init_subclass__()
 
-      class Quest(swallow="african", QuestBase):
+      class Quest(QuestBase, swallow="african"):
           pass
     |}
     [];

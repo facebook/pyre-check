@@ -1076,10 +1076,10 @@ let test_invalid_type_parameters context =
     ~source:
       {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
-      class Foo(Generic[*Ts]): ...
+      class Foo(Generic[Unpack[Ts]]): ...
     |}
     ~given_type:"test.Foo[int, str]"
     ~expected_transformed_type:"test.Foo[int, str]"
@@ -1092,10 +1092,10 @@ let test_invalid_type_parameters context =
     ~source:
       {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
-      class Foo(Generic[*Ts]): ...
+      class Foo(Generic[Unpack[Ts]]): ...
     |}
     ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
     ~expected_transformed_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
@@ -1104,10 +1104,10 @@ let test_invalid_type_parameters context =
     ~source:
       {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
-      class Foo(Generic[*Ts]): ...
+      class Foo(Generic[Unpack[Ts]]): ...
     |}
     ~given_type:
       (Type.parametric
@@ -1147,11 +1147,11 @@ let test_invalid_type_parameters context =
     ~source:
       {|
       from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       T = TypeVar("T")
-      class Foo(Generic[T, *Ts]): ...
+      class Foo(Generic[T, Unpack[Ts]]): ...
     |}
     ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
     ~expected_transformed_type:

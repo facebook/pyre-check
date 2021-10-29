@@ -248,7 +248,7 @@ let test_check_function_parameters context =
     ];
   assert_type_errors
     {|
-      def preprocessed($renamed_i: str) -> None:
+      def preprocessed(i: str) -> None:
         pass
       def foo() -> None:
         preprocessed(1.0)
@@ -393,7 +393,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
-      def foo(a):  # type: (typing.Optional[int]) -> None
+      def foo(a: typing.Optional[int]) -> None:
         pass
       foo(None)
     |}
@@ -401,7 +401,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
-      def foo(a):  # type: (typing.Optional[int]) -> None
+      def foo(a: typing.Optional[int]) -> None:
         pass
       foo("hello")
     |}
@@ -413,21 +413,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
-      def foo(a):
-        # type: (typing.Optional[int]) -> None
-        pass
-      foo("hello")
-    |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[int]` for 1st positional only parameter to call `foo` but got \
-         `str`.";
-    ];
-  assert_type_errors
-    {|
-      import typing
-      def foo(a, b):
-        # type: (typing.Optional[int], str) -> None
+      def foo(a: typing.Optional[int], b: str) -> None:
         pass
       foo(1, "hello")
     |}
@@ -435,8 +421,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
-      def foo(a, b):
-        # type: (typing.Optional[int], str) -> None
+      def foo(a: typing.Optional[int], b: str) -> None:
         pass
       foo(1, 1)
     |}

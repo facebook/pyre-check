@@ -351,11 +351,10 @@ let test_module_exports context =
   let assert_exports_resolved expression expected =
     let sources =
       [
-        ( "implementing.py",
-          {|
-        def implementing.function() -> int: ...
+        "implementing.py", {|
+        def function() -> int: ...
         constant: int = 1
-      |} );
+      |};
         ( "exporting.py",
           {|
         from implementing import function, constant
@@ -638,9 +637,9 @@ let test_forward_expression context =
     ~environment:
       {|
       class MetaFoo(type):
-        def MetaFoo.__contains__(self, x:int) -> bool: ...
+        def __contains__(self, x:int) -> bool: ...
       class Foo(metaclass=MetaFoo):
-        def Foo.foo(self) -> int:
+        def foo(self) -> int:
           return 9
     |}
     ~precondition:["Container", Type.meta (Type.Primitive "test.Foo")]

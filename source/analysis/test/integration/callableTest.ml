@@ -182,14 +182,6 @@ let test_position_only_parameters context =
     [];
   assert_type_errors
     {|
-    def foo(a: int, b: int, /) -> None:
-        pass
-
-    foo(a=1, 2)
-    |}
-    ["Unexpected keyword [28]: Unexpected keyword argument `a` to call `foo`."];
-  assert_type_errors
-    {|
     def foo(a: int, b: int, /, c: str) -> None:
         pass
 

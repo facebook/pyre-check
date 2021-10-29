@@ -151,28 +151,6 @@ let test_reveal_type context =
     ["Revealed type [-1]: Revealed type for `test.Foo.attribute` is `typing.Optional[int]`."];
   assert_type_errors
     {|
-      def f( *args) -> None: # type: ( *str) -> None
-        reveal_type(args[0])
-    |}
-    ["Revealed type [-1]: Revealed type for `args[0]` is `str`."];
-  assert_type_errors
-    {|
-      def f( **kwargs) -> None: # type: ( **int) -> None
-        reveal_type(kwargs['key'])
-    |}
-    ["Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`."];
-  assert_type_errors
-    {|
-      def f( *args, **kwargs) -> None: # type: ( *str, **int) -> None
-        reveal_type(args[0])
-        reveal_type(kwargs['key'])
-    |}
-    [
-      "Revealed type [-1]: Revealed type for `args[0]` is `str`.";
-      "Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`.";
-    ];
-  assert_type_errors
-    {|
       class A:
         def foo(self) -> None:
           reveal_type(self)

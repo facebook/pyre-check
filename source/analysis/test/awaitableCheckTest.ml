@@ -646,7 +646,7 @@ let test_forward context =
     {|
       async def awaitable() -> typing.Awaitable[int]: ...
       def meta_awaitable():
-        x = y := awaitable()
+        x = (y := awaitable())
     |}
     (* TODO(T53600647): Mention y in the error message. *)
     ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];

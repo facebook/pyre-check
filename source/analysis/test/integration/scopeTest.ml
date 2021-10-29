@@ -22,14 +22,6 @@ let test_check_scoping context =
           return foo
     |}
     [];
-
-  (* TODO (T78261323): should be no error *)
-  assert_type_errors
-    {|
-    f'{"".join(f"{}{metric}" for metric in [])}'
-    |}
-    ["Unbound name [10]: Name `metric` is used but not defined in the current scope."];
-
   ()
 
 

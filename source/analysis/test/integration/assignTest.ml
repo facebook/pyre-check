@@ -279,7 +279,7 @@ let test_check_assign context =
       def f() -> None:
         x: int = 42
         def g(x: str) -> None:
-          print x
+          print(x)
         g("hello")
     |}
     [];

@@ -521,7 +521,7 @@ let test_connect_type_order context =
        class D(C):
          pass
        class CallMe:
-         def CallMe.__call__(self, x: int) -> str:
+         def __call__(self, x: int) -> str:
            ...
        B = D
        A = B
@@ -663,7 +663,7 @@ let test_populate context =
       class int(): pass
       A: int = 0
       B = 0
-      C = ... # type: int
+      C: int = ...
 
       class Foo(): pass
       alias = Foo
@@ -692,7 +692,7 @@ let test_populate context =
       global_unknown = x
       global_function = function
       class Class():
-        def Class.__init__(self):
+        def __init__(self):
           pass
       def function():
         pass
@@ -776,7 +776,7 @@ let test_populate context =
         ( "test.py",
           {|
       class CallMe:
-        def CallMe.__call__(self, x: int) -> str:
+        def __call__(self, x: int) -> str:
           pass
       class AlsoCallable(CallMe):
         pass

@@ -1409,7 +1409,7 @@ let test_fallback_attribute context =
     ~name:"attribute"
     {|
       class Foo:
-        def Foo.__getattr__(self, attribute: str) -> int:
+        def __getattr__(self, attribute: str) -> int:
           return 1
     |}
     (Some Type.integer);
@@ -1417,14 +1417,14 @@ let test_fallback_attribute context =
     ~name:"attribute"
     {|
       class Foo:
-        def Foo.__getattr__(self, attribute: str) -> int: ...
+        def __getattr__(self, attribute: str) -> int: ...
     |}
     (Some Type.integer);
   assert_fallback_attribute
     ~name:"attribute"
     {|
       class Foo:
-        def Foo.__getattr__(self, attribute: str) -> int: ...
+        def __getattr__(self, attribute: str) -> int: ...
       class Bar(Foo):
         pass
     |}
@@ -1433,7 +1433,7 @@ let test_fallback_attribute context =
     ~name:"__iadd__"
     {|
       class Foo:
-        def Foo.__add__(self, other: Foo) -> int:
+        def __add__(self, other: Foo) -> int:
           pass
     |}
     (Some
@@ -1456,7 +1456,7 @@ let test_fallback_attribute context =
       from typing import Generic, TypeVar
       T = TypeVar("T")
       class Foo(Generic[T]):
-        def Foo.__add__(self, other: Foo[T]) -> Foo[T]:
+        def __add__(self, other: Foo[T]) -> Foo[T]:
           pass
     |}
     (Some
@@ -1480,7 +1480,7 @@ let test_fallback_attribute context =
     ~name:"__iadd__"
     {|
       class Foo:
-        def Foo.__getattr__(self, attribute) -> int: ...
+        def __getattr__(self, attribute) -> int: ...
     |}
     (Some Type.integer);
   assert_fallback_attribute
@@ -1490,11 +1490,11 @@ let test_fallback_attribute context =
       import typing_extensions
       class Foo:
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
         @overload
-        def Foo.__getattr__(self, attribute: str) -> None: ...
+        def __getattr__(self, attribute: str) -> None: ...
     |}
     (Some Type.integer);
   assert_fallback_attribute
@@ -1504,11 +1504,11 @@ let test_fallback_attribute context =
       import typing_extensions
       class Foo:
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
         @overload
-        def Foo.__getattr__(self, attribute: str) -> None: ...
+        def __getattr__(self, attribute: str) -> None: ...
     |}
     (Some Type.string);
   assert_fallback_attribute
@@ -1518,11 +1518,11 @@ let test_fallback_attribute context =
       import typing_extensions
       class Foo:
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
         @overload
-        def Foo.__getattr__(self, attribute: str) -> None: ...
+        def __getattr__(self, attribute: str) -> None: ...
     |}
     (Some Type.none);
   assert_fallback_attribute
@@ -1532,7 +1532,7 @@ let test_fallback_attribute context =
       import typing_extensions
       class Foo:
         @overload
-        def Foo.__getattr__(self: Foo, attribute: str) -> int: ...
+        def __getattr__(self: Foo, attribute: str) -> int: ...
     |}
     (Some Type.integer);
   (* Callables on the instance do not get picked up by the runtime. Who knew? *)
