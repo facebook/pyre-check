@@ -307,7 +307,7 @@ end
 
 and Match : sig
   module Pattern : sig
-    type t =
+    type pattern =
       | MatchAs of {
           pattern: t option;
           name: Identifier.t;
@@ -330,6 +330,8 @@ and Match : sig
       | MatchValue of Expression.t
       | MatchWildcard
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    and t = pattern Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   module Case : sig
