@@ -18,7 +18,6 @@ from ..infer import (
     Arguments,
     create_infer_arguments,
     create_module_annotations,
-    sanitize_annotation,
     should_annotate_in_place,
     RawAnnotationLocation,
     RawGlobalAnnotation,
@@ -588,7 +587,7 @@ class ModuleAnnotationTest(testslide.TestCase):
                         annotation=TypeAnnotation.from_raw(
                             "int",
                             qualifier=default_qualifier,
-                            options=default_options,
+                            options=annotate_attribute_options,
                         ),
                     )
                 ],
@@ -726,99 +725,81 @@ def _assert_stubs_equal(actual: str, expected: str) -> None:
         raise AssertionError("Stubs not as expected, see stdout")
 
 
-class InferUtilsTestSuite(testslide.TestCase):
-    def test_sanitize_annotation__fix_PathLike(self) -> None:
-        self.assertEqual(
-            sanitize_annotation(
-                "PathLike[str]",
-                qualifier="foo",
+class TypeAnnotationTest(testslide.TestCase):
+    def assert_to_stub(
+        self,
+        raw_annotation: str,
+        expected: str,
+        qualifier: str = "foo",
+        prefix: str = "",
+        **stub_generation_options_kwargs: Any,
+    ) -> None:
+        actual = TypeAnnotation(
+            annotation=raw_annotation,
+            qualifier=qualifier,
+            options=StubGenerationOptions(
+                **stub_generation_options_kwargs,
             ),
+        ).to_stub(prefix=prefix)
+        self.assertEqual(actual, expected)
+
+    def test_sanitize__fix_PathLike(self) -> None:
+        self.assert_to_stub(
+            "PathLike[str]",
             "'os.PathLike[str]'",
         )
-        self.assertEqual(
-            sanitize_annotation(
-                "os.PathLike[str]",
-                qualifier="foo",
-            ),
-            "os.PathLike[str]",
-        )
-        self.assertEqual(
-            sanitize_annotation(
-                "typing.Union[PathLike[bytes], PathLike[str], str]",
-                qualifier="foo",
-            ),
+        self.assert_to_stub(
+            "typing.Union[PathLike[bytes], PathLike[str], str]",
             "typing.Union['os.PathLike[bytes]', 'os.PathLike[str]', str]",
         )
-        # The libcst code throws an exception on this annotation because it is
-        # invalid; this unit test verifies that we try/catch as expected rather than
-        # crashing infer.
-        #
-        # This is necessary because at this point there are still cases where
-        # the backend spits out a type's representation as invalid python.
-        self.assertEqual(
-            sanitize_annotation(
-                "PathLike[Variable[AnyStr <: [str, bytes]]]", qualifier="foo"
-            ),
+        # This type is unparseable. The test verifies that libcst doesn't
+        # throw an exception here - we wouldn't want to completely crash
+        # just because the backend prints out a type that isn't valid
+        # python.
+        self.assert_to_stub(
+            "PathLike[Variable[AnyStr <: [str, bytes]]]",
             "PathLike[Variable[AnyStr <: [str, bytes]]]",
         )
+        # only bare PathLike gets converted, not a qualified type
+        self.assert_to_stub(
+            "bar.PathLike[str]",
+            "bar.PathLike[str]",
+        )
 
-    def test_sanitize_annotation__strip_qualifier(self) -> None:
-        self.assertEqual(
-            sanitize_annotation(
-                "foo.A",
-                qualifier="foo",
-            ),
+    def test_sanitize__strip_qualifier(self) -> None:
+        self.assert_to_stub(
+            "foo.A",
             "A",
         )
-        self.assertEqual(
-            sanitize_annotation(
-                "typing.Union[foo.A[bar.B], bar.C[foo.B]]",
-                qualifier="foo",
-            ),
+        self.assert_to_stub(
+            "typing.Union[foo.A[bar.B], bar.C[foo.B]]",
             "typing.Union[A[bar.B], bar.C[B]]",
         )
+        # don't strip the qualifier when it's only a partial match
         self.assertEqual(
-            sanitize_annotation(
-                "foo.bar.A",
-                qualifier="foo",
-            ),
+            "foo.bar.A",
             "foo.bar.A",
         )
 
-
-class TypeAnnotationTest(testslide.TestCase):
-    def test_sanitized(self) -> None:
-        actual = TypeAnnotation.from_raw(
-            "foo.Foo[int]",
-            qualifier="bar",
-            options=StubGenerationOptions(),
+    def test_sanitize__quote_annotations(self) -> None:
+        self.assert_to_stub(
+            "typing.Union[foo.A[bar.B], bar.C[foo.B]]",
+            '"typing.Union[foo.A[bar.B], bar.C[foo.B]]"',
+            quote_annotations=True,
         )
-        self.assertEqual(actual.sanitized(), "foo.Foo[int]")
-        self.assertEqual(actual.sanitized(prefix=": "), ": foo.Foo[int]")
 
-        actual = TypeAnnotation.from_raw(
+    def test_to_stub_with_prefix(self) -> None:
+        self.assert_to_stub(
             "foo.Foo[int]",
-            qualifier="bar",
-            options=StubGenerationOptions(dequalify=True),
+            ": Foo[int]",
+            prefix=": ",
         )
-        self.assertEqual(actual.sanitized(), "Foo[int]")
-        self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
-
-        actual = TypeAnnotation.from_raw(
+        self.assert_to_stub(
             "foo.Foo[int]",
-            qualifier="foo",
-            options=StubGenerationOptions(),
+            ': "foo.Foo[int]"',
+            prefix=": ",
+            quote_annotations=True,
         )
-        self.assertEqual(actual.sanitized(), "Foo[int]")
-        self.assertEqual(actual.sanitized(prefix=": "), ": Foo[int]")
-
-        actual = TypeAnnotation.from_raw(
-            "foo.Foo[int]",
-            qualifier="foo",
-            options=StubGenerationOptions(quote_annotations=True),
-        )
-        self.assertEqual(actual.sanitized(), '"foo.Foo[int]"')
-        self.assertEqual(actual.sanitized(prefix=": "), ': "foo.Foo[int]"')
 
 
 class StubGenerationTest(testslide.TestCase):
@@ -1327,30 +1308,4 @@ class StubGenerationTest(testslide.TestCase):
                 def f(self) -> Test: ...
             """,
             use_future_annotations=True,
-        )
-
-    def test_stubs_with_pathlike(self) -> None:
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "Union[PathLike[bytes],"
-                        + " PathLike[str], bytes, str]",
-                        "name": "test.bar",
-                        "parent": None,
-                        "parameters": [
-                            {
-                                "name": "x",
-                                "annotation": "int",
-                                "value": None,
-                                "index": 0,
-                            }
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ]
-            },
-            "def bar(x: int) -> Union['os.PathLike[bytes]',"
-            + " 'os.PathLike[str]', bytes, str]: ...",
         )

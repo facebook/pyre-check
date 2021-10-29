@@ -295,51 +295,57 @@ class AnnotationFixer(libcst.CSTTransformer):
 
         return updated_node
 
+    @staticmethod
+    def sanitize(
+        annotation: str,
+        qualifier: str,
+        quote_annotations: bool = False,
+        dequalify_all: bool = False,
+    ) -> str:
+        """
+        Transform raw annotations in an attempt to reduce incorrectly-imported
+        annotations in generated code.
 
-def sanitize_annotation(
-    annotation: str,
-    qualifier: str,
-    dequalify_all: bool = False,
-) -> str:
-    """
-    Transform raw annotations in an attempt to reduce incorrectly-imported
-    annotations in generated code.
+        TODO(T93381000): Handle qualification in a principled way and remove
+        this: all of these transforms are attempts to hack simple fixes to the
+        problem of us not actually understanding qualified types and existing
+        imports.
 
-    TODO(T93381000): Handle qualification in a principled way and remove
-    this: all of these transforms are attempts to hack simple fixes to the
-    problem of us not actually understanding qualified types and existing
-    imports.
+        (1) If `quote_annotations` is set to True, then spit out a quoted
+        raw annotation (with fully-qualified names). The resulting generated
+        code will not technically be PEP 484 compliant because it will use
+        fully qualified type names without import, but pyre can understand
+        this and it's useful for pysa to avoid adding import lines that
+        change traces.
 
-    (1) If `dequalify_typing` is set, then remove all uses of `typing.`, for
-    example `typing.Optional[int]` becomes `Optional[int]`. We do this because
-    we automatically add a `from typing import ...` if necessary.
+        (2) If `dequalify_all` is set, then remove all qualifiers from any
+        top-level type (by top-level I mean outside the outermost brackets). For
+        example, convert `sqlalchemy.sql.schema.Column[typing.Optional[int]]`
+        into `Column[typing.Optional[int]]`.
 
-    (2) If `dequalify_all` is set, then remove all qualifiers from any
-    top-level type (by top-level I mean outside the outermost brackets). For
-    example, convert `sqlalchemy.sql.schema.Column[typing.Optional[int]]`
-    into `Column[typing.Optional[int]]`.
+        (3) Fix PathLike annotations: convert all bare `PathLike` uses to
+        `'os.PathLike'`; the ocaml side of pyre currently spits out an unqualified
+        type here which is incorrect, and quoting makes the use of os safer
+        given that we don't handle imports correctly yet.
+        """
+        if quote_annotations:
+            return f'"{annotation}"'
+        if dequalify_all:
+            match = re.fullmatch(r"([^.]*?\.)*?([^.]+)(\[.*\])", annotation)
+            if match is not None:
+                annotation = f"{match.group(2)}{match.group(3)}"
 
-    (3) Fix PathLike annotations: convert all bare `PathLike` uses to
-    `'os.PathLike'`; the ocaml side of pyre currently spits out an unqualified
-    type here which is incorrect, and quoting makes the use of os safer
-    given that we don't handle imports correctly yet.
-    """
-    if dequalify_all:
-        match = re.fullmatch(r"([^.]*?\.)*?([^.]+)(\[.*\])", annotation)
-        if match is not None:
-            annotation = f"{match.group(2)}{match.group(3)}"
+        try:
+            tree = libcst.parse_module(annotation)
+            annotation = tree.visit(
+                AnnotationFixer(
+                    qualifier=qualifier,
+                )
+            ).code
+        except libcst._exceptions.ParserSyntaxError:
+            pass
 
-    try:
-        tree = libcst.parse_module(annotation)
-        annotation = tree.visit(
-            AnnotationFixer(
-                qualifier=qualifier,
-            )
-        ).code
-    except libcst._exceptions.ParserSyntaxError:
-        pass
-
-    return annotation
+        return annotation
 
 
 @dataclasses.dataclass(frozen=True)
@@ -362,8 +368,7 @@ class StubGenerationOptions:
 class TypeAnnotation:
     annotation: Optional[str]
     qualifier: str
-    quote: bool
-    dequalify: bool
+    options: StubGenerationOptions
 
     @staticmethod
     def from_raw(
@@ -374,20 +379,18 @@ class TypeAnnotation:
         return TypeAnnotation(
             annotation=annotation,
             qualifier=qualifier,
-            dequalify=options.dequalify,
-            quote=options.quote_annotations,
+            options=options,
         )
 
-    def sanitized(self, prefix: str = "") -> str:
+    def to_stub(self, prefix: str = "") -> str:
         if self.annotation is None:
             return ""
-        if self.quote:
-            return f'{prefix}"{self.annotation}"'
         else:
-            return prefix + sanitize_annotation(
-                self.annotation,
-                dequalify_all=self.dequalify,
+            return prefix + AnnotationFixer.sanitize(
+                annotation=self.annotation,
                 qualifier=self.qualifier,
+                quote_annotations=self.options.quote_annotations,
+                dequalify_all=self.options.dequalify,
             )
 
     def _simple_types(self) -> List[str]:
@@ -411,7 +414,7 @@ class Parameter:
     def to_stub(self) -> str:
         delimiter = "=" if self.annotation.missing else " = "
         value = f"{delimiter}{self.value}" if self.value else ""
-        return f"{self.name}{self.annotation.sanitized(prefix=': ')}{value}"
+        return f"{self.name}{self.annotation.to_stub(prefix=': ')}{value}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -427,7 +430,7 @@ class FunctionAnnotation:
         decorators = "".join(f"@{decorator}\n" for decorator in self.decorators)
         async_ = "async " if self.is_async else ""
         parameters = ", ".join(parameter.to_stub() for parameter in self.parameters)
-        return_ = self.return_annotation.sanitized(prefix=" -> ")
+        return_ = self.return_annotation.to_stub(prefix=" -> ")
         return f"{decorators}{async_}def {name}({parameters}){return_}: ..."
 
 
@@ -447,7 +450,7 @@ class FieldAnnotation:
 
     def to_stub(self) -> str:
         name = _sanitize_name(self.name)
-        return f"{name}: {self.annotation.sanitized()} = ..."
+        return f"{name}: {self.annotation.to_stub()} = ..."
 
 
 @dataclasses.dataclass(frozen=True)
