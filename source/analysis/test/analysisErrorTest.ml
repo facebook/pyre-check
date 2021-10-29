@@ -1087,6 +1087,32 @@ let test_simplification_map _ =
   ()
 
 
+let test_simplify_mismatch _ =
+  let create_mismatch actual expected =
+    let create_type s =
+      Type.create
+        ~aliases:(fun ?replace_unbound_parameters_with_any:_ _ -> None)
+        (parse_single_expression ~preprocess:true s)
+      |> Type.dequalify Reference.Map.empty
+    in
+    {
+      Error.actual = create_type actual;
+      expected = create_type expected;
+      due_to_invariance = false;
+    }
+  in
+  let show_mismatch { Error.actual; expected; _ } = Type.show actual ^ " " ^ Type.show expected in
+  let original = create_mismatch "Foo.a" "Foo.b" in
+  let simplified = create_mismatch "a" "b" in
+  assert_equal ~printer:show_mismatch simplified (Error.simplify_mismatch original);
+  let original =
+    create_mismatch "typing.Union[Foo.a, builtins.bool]" "typing.Union[Foo.b, builtins.bool]"
+  in
+  let simplified = create_mismatch "Union[a, bool]" "Union[b, bool]" in
+  assert_equal ~printer:show_mismatch simplified (Error.simplify_mismatch original);
+  ()
+
+
 let () =
   "error"
   >::: [
@@ -1099,5 +1125,6 @@ let () =
          "messages" >:: test_description;
          "weaken_literals" >:: test_weaken_literals;
          "test_simplification_map" >:: test_simplification_map;
+         "test_simplify_mismatch" >:: test_simplify_mismatch;
        ]
   |> Test.run

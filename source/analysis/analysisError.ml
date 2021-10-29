@@ -4073,3 +4073,32 @@ module SimplificationMap = struct
     |> extract_simplifications_from_suffix_trie
     |> Reference.Map.of_alist_exn
 end
+
+let simplify_mismatch ({ actual; expected; _ } as mismatch) =
+  let collect_references annotation =
+    let module CollectIdentifiers = Type.Transform.Make (struct
+      type state = Identifier.t list
+
+      let visit_children_before _ _ = true
+
+      let visit_children_after = false
+
+      let visit sofar annotation =
+        let updated =
+          match annotation with
+          | Type.Parametric { name; _ }
+          | Variable { variable = name; _ }
+          | Primitive name ->
+              name :: sofar
+          | _ -> sofar
+        in
+        { Type.Transform.transformed_annotation = annotation; new_state = updated }
+    end)
+    in
+    fst (CollectIdentifiers.visit [] annotation) |> List.map ~f:Reference.create
+  in
+  let references = collect_references actual @ collect_references expected in
+  let simplification_map = SimplificationMap.create references in
+  let simplified_expected = Type.dequalify simplification_map expected in
+  let simplified_actual = Type.dequalify simplification_map actual in
+  { mismatch with expected = simplified_expected; actual = simplified_actual }

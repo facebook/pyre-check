@@ -505,3 +505,5 @@ module SimplificationMap : sig
 
   val create : Reference.t list -> t
 end
+
+val simplify_mismatch : mismatch -> mismatch
