@@ -234,14 +234,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         Model.pp
         taint_model;
       let sink_argument_matches =
-        BackwardState.roots backward.sink_taint |> AccessPath.match_actuals_to_formals arguments
+        BackwardState.roots backward.sink_taint
+        |> AccessPath.match_actuals_to_formals arguments
+        |> List.map ~f:(fun (argument, argument_match) ->
+               argument.Call.Argument.value, argument_match)
       in
       let tito_argument_matches =
         BackwardState.roots backward.taint_in_taint_out
         |> AccessPath.match_actuals_to_formals arguments
+        |> List.map ~f:(fun (argument, argument_match) ->
+               argument.Call.Argument.value, argument_match)
       in
       let sanitize_argument_matches =
-        SanitizeRootMap.roots sanitizers.roots |> AccessPath.match_actuals_to_formals arguments
+        SanitizeRootMap.roots sanitizers.roots
+        |> AccessPath.match_actuals_to_formals arguments
+        |> List.map ~f:(fun (argument, argument_match) ->
+               argument.Call.Argument.value, argument_match)
       in
       let combined_matches =
         List.zip_exn tito_argument_matches sanitize_argument_matches

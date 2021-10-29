@@ -186,13 +186,31 @@ module ViaFeature = struct
 
   let show = Format.asprintf "%a" pp
 
-  let via_value_of_breadcrumb ?tag ~argument =
+  let via_value_of_breadcrumb ?tag ~arguments =
+    let open Ast.Expression.Call.Argument in
+    let extract_constant_value arguments =
+      List.find_map
+        ~f:(fun argument -> Interprocedural.CallResolution.extract_constant_name argument.value)
+        arguments
+    in
+    let argument_kind = function
+      | { value = { Node.value = Starred (Once _); _ }; _ } -> "args"
+      | { value = { Node.value = Starred (Twice _); _ }; _ } -> "kwargs"
+      | { value = _; name = Some _ } -> "named"
+      | { value = _; name = None } -> "positional"
+    in
+    let generate_kind arguments =
+      List.map ~f:argument_kind arguments
+      |> List.sort ~compare:String.compare
+      |> String.concat ~sep:"_or_"
+    in
     let feature =
-      match argument with
-      | None -> "<missing>"
-      | Some argument ->
-          Interprocedural.CallResolution.extract_constant_name argument
-          |> Option.value ~default:"<unknown>"
+      match arguments with
+      | [] -> "<missing>"
+      | arguments -> (
+          match extract_constant_value arguments with
+          | Some value -> value
+          | None -> Format.asprintf "<unknown:%s>" (generate_kind arguments))
     in
     Breadcrumb.ViaValue { value = feature; tag }
 

@@ -39,6 +39,10 @@ def meta(parameter):
     return return_via_parameter_name(parameter)
 
 
+def meta_named(parameter):
+    return return_via_parameter_name(parameter=parameter)
+
+
 def test_via_value_of_does_not_propagate():
     return meta("Name")
 
@@ -66,6 +70,18 @@ def test_backwards_tito(parameter):
 
 def meta_sink(parameter, value):
     sink_via_value_of(parameter, value)
+
+
+def meta_sink_args(parameter, value):
+    sink_via_value_of(*[parameter, value])
+
+
+def meta_sink_kwargs(parameter, value):
+    sink_via_value_of(**{"x": parameter, "y": value})
+
+
+def meta_sink_positional_kwargs(parameter, value):
+    sink_via_value_of("x", **{"y": value})
 
 
 def test_sinks_do_not_propagate(parameter):
@@ -96,7 +112,7 @@ def test_return_including_name():
     return return_including_name("parameter_value")
 
 
-def return_via_second_parameter(first, second):
+def return_via_second_parameter(first, second, third=3, fourth=4, fifth=5):
     return 0
 
 
@@ -106,3 +122,81 @@ def test_return_second_parameter():
 
 def test_return_second_parameter_keyword():
     return return_via_second_parameter(second=2, first=1)
+
+
+def test_args_parameter():
+    args = ["first", "second"]
+    return return_via_second_parameter(*args)
+
+
+def test_kwargs_parameter():
+    kwargs = {"first": "1", "second": "2"}
+    return return_via_second_parameter(**kwargs)
+
+
+def test_args_kwargs_parameter():
+    args = ["1"]
+    kwargs = {"second": "2"}
+    return return_via_second_parameter(*args, **kwargs)
+
+
+def test_positional_kwargs_parameter():
+    kwargs = {"second": "2"}
+    return return_via_second_parameter("1", **kwargs)
+
+
+def test_named_kwargs_parameter():
+    kwargs = {"first": "1"}
+    return return_via_second_parameter(**kwargs, second="2")
+
+
+def test_unknown_named_args(b, e):
+    args = [e]
+    return return_via_second_parameter(*args, second=b)
+
+
+def test_unknown_named_kwargs(b, e):
+    kwargs = {"fifth": e}
+    return return_via_second_parameter(**kwargs, second=b)
+
+
+def test_unknown_positional_args(a, b, c):
+    args = [c]
+    return return_via_second_parameter(a, b, *args)
+
+
+def test_unknown_positional_kwargs(a, b, c):
+    kwargs = {"third": c}
+    return return_via_second_parameter(a, b, **kwargs)
+
+
+def test_unknown_positional_named_args1(a, b, c):
+    args = [c]
+    return return_via_second_parameter(a, *args, second=b)
+
+
+def test_unknown_positional_named_args2(a, b, c, d):
+    args = [d]
+    return return_via_second_parameter(a, c, *args, second=b)
+
+
+def test_unknown_positional_named_kwargs1(a, b, c):
+    kwargs = {"third": c}
+    return return_via_second_parameter(a, **kwargs, second=b)
+
+
+def test_unknown_positional_named_kwargs2(a, b, c, d):
+    kwargs = {"fourth": d}
+    return return_via_second_parameter(a, c, **kwargs, second=b)
+
+
+def test_unknown_named_args_kwargs(a, b, c):
+    args = [a]
+    kwargs = {"third": c}
+    return return_via_second_parameter(*args, **kwargs, second=b)
+
+
+def test_unknown_positional_named_args_kwargs1(a, b, c, d, e):
+    args = [d]
+    kwargs = {"fifth": e}
+    return return_via_second_parameter(a, *args, **kwargs, second=b)

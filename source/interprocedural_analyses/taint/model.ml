@@ -127,17 +127,24 @@ let get_callsite_model ~resolution ~call_target ~arguments =
         =
         let expand flow_details =
           let transform via_feature flow_details =
-            let match_argument_to_parameter parameter =
+            let match_all_arguments_to_parameter parameter =
               AccessPath.match_actuals_to_formals arguments [parameter]
-              |> List.find ~f:(fun (_, matches) -> not (List.is_empty matches))
-              >>| fst
+              |> List.filter_map ~f:(fun (argument, matches) ->
+                     if not (List.is_empty matches) then
+                       Some argument
+                     else
+                       None)
+            in
+            let match_argument_to_parameter parameter =
+              match match_all_arguments_to_parameter parameter with
+              | [] -> None
+              | argument :: _ -> Some argument.value
             in
             match via_feature with
             | Features.ViaFeature.ViaValueOf { parameter; tag } ->
+                let arguments = match_all_arguments_to_parameter parameter in
                 FlowDetails.add_breadcrumb
-                  (Features.ViaFeature.via_value_of_breadcrumb
-                     ?tag
-                     ~argument:(match_argument_to_parameter parameter))
+                  (Features.ViaFeature.via_value_of_breadcrumb ?tag ~arguments)
                   flow_details
             | Features.ViaFeature.ViaTypeOf { parameter; tag } ->
                 let breadcrumb =

@@ -177,23 +177,23 @@ let match_actuals_to_formals arguments roots =
         Some { root = formal; actual_path = []; formal_path = [] }
     | (`Star _ | `Precise _ | `Approximate _), _ -> None
   in
-  let match_actual matched_names (position, matches) { Call.Argument.name; value } =
+  let match_actual matched_names (position, matches) ({ Call.Argument.name; value } as argument) =
     match name, value.Node.value with
     | None, Starred (Once _) ->
         let formals = List.filter_map roots ~f:(filter_to_positional (`Star position)) in
-        approximate position, (value, formals) :: matches
+        approximate position, (argument, formals) :: matches
     | None, Starred (Twice _) ->
         let formals = List.filter_map roots ~f:(filter_to_named matched_names `StarStar) in
-        position, (value, formals) :: matches
+        position, (argument, formals) :: matches
     | None, _ ->
         let formals = List.filter_map roots ~f:(filter_to_positional position) in
-        increment position, (value, formals) :: matches
+        increment position, (argument, formals) :: matches
     | Some { value = name; _ }, _ ->
         let normal_name = chop_parameter_prefix name in
         let formals =
           List.filter_map roots ~f:(filter_to_named matched_names (`Name normal_name))
         in
-        position, (value, formals) :: matches
+        position, (argument, formals) :: matches
   in
   let matched_names =
     let matched_named_arguments =

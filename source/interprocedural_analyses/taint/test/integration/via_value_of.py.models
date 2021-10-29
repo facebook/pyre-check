@@ -11,7 +11,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 84,
+              "line": 100,
               "start": 15,
               "end": 24
             },
@@ -35,7 +35,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 76,
+              "line": 92,
               "start": 11,
               "end": 25
             },
@@ -68,7 +68,35 @@
                 "name": "via_value_of.return_via_parameter_name"
               }
             ],
-            "features": [ { "always-via-value": "<unknown>" } ]
+            "features": [ { "always-via-value": "<unknown:positional>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.meta_named",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 43,
+              "start": 11,
+              "end": 57
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_parameter_name"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:named>" } ]
           }
         ]
       }
@@ -86,14 +114,64 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 68,
+              "line": 72,
               "start": 22,
               "end": 31
             },
             "leaves": [
               { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
             ],
-            "features": [ { "always-via-value": "<unknown>" } ]
+            "features": [ { "always-via-value": "<unknown:positional>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.meta_sink_args",
+    "sinks": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 76,
+              "start": 22,
+              "end": 41
+            },
+            "leaves": [
+              { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
+            ],
+            "features": [ { "always-via-value": "<unknown:args>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.meta_sink_kwargs",
+    "sinks": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 80,
+              "start": 22,
+              "end": 52
+            },
+            "leaves": [
+              { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
+            ],
+            "features": [ { "always-via-value": "<unknown:kwargs>" } ]
           }
         ]
       }
@@ -151,6 +229,64 @@
 {
   "kind": "model",
   "data": {
+    "callable": "via_value_of.test_args_kwargs_parameter",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 140,
+              "start": 11,
+              "end": 55
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [
+              { "always-via-value": "<unknown:args_or_kwargs>" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_args_parameter",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 129,
+              "start": 11,
+              "end": 45
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:args>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "via_value_of.test_attach_to_sink",
     "sinks": [
       {
@@ -160,7 +296,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 88,
+                "line": 104,
                 "start": 19,
                 "end": 28
               },
@@ -191,7 +327,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 80,
+                "line": 96,
                 "start": 11,
                 "end": 49
               },
@@ -220,7 +356,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 64, "start": 16, "end": 25 } ],
+            "tito": [ { "line": 68, "start": 16, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
             "features": [
               { "always-via": "tito" },
@@ -291,6 +427,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "via_value_of.test_kwargs_parameter",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 134,
+              "start": 11,
+              "end": 48
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:kwargs>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "via_value_of.test_missing",
     "sources": [
       {
@@ -310,6 +474,34 @@
               }
             ],
             "features": [ { "always-via-value": "<missing>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_named_kwargs_parameter",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 150,
+              "start": 11,
+              "end": 60
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "2" } ]
           }
         ]
       }
@@ -347,6 +539,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "via_value_of.test_positional_kwargs_parameter",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 145,
+              "start": 11,
+              "end": 53
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:kwargs>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "via_value_of.test_return_including_name",
     "sources": [
       {
@@ -355,7 +575,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 96,
+              "line": 112,
               "start": 11,
               "end": 51
             },
@@ -385,7 +605,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 104,
+              "line": 120,
               "start": 11,
               "end": 44
             },
@@ -413,7 +633,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 108,
+              "line": 124,
               "start": 11,
               "end": 57
             },
@@ -441,7 +661,7 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 60,
+              "line": 64,
               "start": 29,
               "end": 36
             },
@@ -467,7 +687,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 72,
+                "line": 88,
                 "start": 14,
                 "end": 23
               },
@@ -478,7 +698,7 @@
             "leaves": [
               { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
             ],
-            "features": [ { "always-via-value": "<unknown>" } ]
+            "features": [ { "always-via-value": "<unknown:positional>" } ]
           }
         ]
       }
@@ -524,16 +744,300 @@
           {
             "root": {
               "filename": "via_value_of.py",
-              "line": 51,
+              "line": 55,
               "start": 13,
               "end": 27
             },
-            "tito": [ { "line": 51, "start": 13, "end": 27 } ],
+            "tito": [ { "line": 55, "start": 13, "end": 27 } ],
             "leaves": [ { "kind": "Test", "name": "_test_source" } ],
             "features": [
               { "always-via": "tito" },
               { "always-via-value": "second" },
               { "always-via": "special_source" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_named_args",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 155,
+              "start": 11,
+              "end": 55
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:args_or_named>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_named_args_kwargs",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 196,
+              "start": 11,
+              "end": 65
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:args_or_named>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_named_kwargs",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 160,
+              "start": 11,
+              "end": 58
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:named>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_args",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 165,
+              "start": 11,
+              "end": 51
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:positional>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_kwargs",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 170,
+              "start": 11,
+              "end": 54
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:positional>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_args1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 175,
+              "start": 11,
+              "end": 58
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:args_or_named>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_args2",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 180,
+              "start": 11,
+              "end": 61
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [
+              { "always-via-value": "<unknown:named_or_positional>" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_args_kwargs1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 202,
+              "start": 11,
+              "end": 68
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:args_or_named>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_kwargs1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 185,
+              "start": 11,
+              "end": 61
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [ { "always-via-value": "<unknown:named>" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_kwargs2",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "via_value_of.py",
+              "line": 190,
+              "start": 11,
+              "end": 64
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "via_value_of.return_via_second_parameter"
+              }
+            ],
+            "features": [
+              { "always-via-value": "<unknown:named_or_positional>" }
             ]
           }
         ]
@@ -553,7 +1057,7 @@
             "call": {
               "position": {
                 "filename": "via_value_of.py",
-                "line": 43,
+                "line": 47,
                 "start": 11,
                 "end": 23
               },
@@ -567,7 +1071,7 @@
                 "name": "via_value_of.return_via_parameter_name"
               }
             ],
-            "features": [ { "always-via-value": "<unknown>" } ]
+            "features": [ { "always-via-value": "<unknown:positional>" } ]
           }
         ]
       }

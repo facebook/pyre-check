@@ -137,7 +137,7 @@ let test_match_actuals_to_formals _ =
     in
     let actual =
       AccessPath.match_actuals_to_formals actuals formals
-      |> List.map ~f:(fun (expression, matches) -> Expression.show expression, matches)
+      |> List.map ~f:(fun ({ Call.Argument.value; _ }, matches) -> Expression.show value, matches)
     in
     let printer items =
       List.map items ~f:(fun (expression, matches) ->
