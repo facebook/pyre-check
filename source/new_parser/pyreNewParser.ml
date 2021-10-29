@@ -416,6 +416,11 @@ let expression =
     ()
 
 
+let build_statements ~context statement_builders =
+  let build_statement builder = builder ~context in
+  List.concat (List.map statement_builders ~f:build_statement)
+
+
 let with_item ~context_expr ~optional_vars = context_expr, optional_vars
 
 let import_alias ~location ~name ~asname =
@@ -423,8 +428,13 @@ let import_alias ~location ~name ~asname =
   Node.create ~location { Statement.Import.name = Reference.create name; alias = asname }
 
 
-let exception_handler ~location:_ ~type_ ~name ~body =
-  { Ast.Statement.Try.Handler.kind = type_; name; body = List.concat body }
+let exception_handler ~location:_ ~type_ ~name ~body ~context =
+  { Ast.Statement.Try.Handler.kind = type_; name; body = build_statements ~context body }
+
+
+let build_exception_handlers ~context exception_handler_builders =
+  let build_exception_handler builder = builder ~context in
+  List.map exception_handler_builders ~f:build_exception_handler
 
 
 (* TODO(T102720335): Support pattern matching *)
@@ -500,8 +510,8 @@ let statement =
   let open Ast.Expression in
   let open Ast.Statement in
   let module Node = Ast.Node in
-  let function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment:_ =
-    let body = List.concat body in
+  let function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment:_ ~context =
+    let body = build_statements ~context body in
     let signature =
       {
         Define.Signature.name = Ast.Reference.create name;
@@ -519,8 +529,17 @@ let statement =
       |> Node.create ~location;
     ]
   in
-  let async_function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment:_ =
-    let body = List.concat body in
+  let async_function_def
+      ~location
+      ~name
+      ~args
+      ~body
+      ~decorator_list
+      ~returns
+      ~type_comment:_
+      ~context
+    =
+    let body = build_statements ~context body in
     let signature =
       {
         Define.Signature.name = Ast.Reference.create name;
@@ -538,7 +557,7 @@ let statement =
       |> Node.create ~location;
     ]
   in
-  let class_def ~location ~name ~bases ~keywords ~body ~decorator_list =
+  let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~context =
     let base_arguments =
       List.append
         (List.map bases ~f:convert_positional_argument)
@@ -549,18 +568,18 @@ let statement =
         {
           Class.name = Ast.Reference.create name;
           base_arguments;
-          body = List.concat body;
+          body = build_statements ~context body;
           decorators = decorator_list;
           top_level_unbound_names = [];
         }
       |> Node.create ~location;
     ]
   in
-  let return ~location ~value =
+  let return ~location ~value ~context:_ =
     [Statement.Return { Return.expression = value; is_implicit = false } |> Node.create ~location]
   in
-  let delete ~location ~targets = [Statement.Delete targets |> Node.create ~location] in
-  let assign ~location ~targets ~value ~type_comment:_ =
+  let delete ~location ~targets ~context:_ = [Statement.Delete targets |> Node.create ~location] in
+  let assign ~location ~targets ~value ~type_comment:_ ~context:_ =
     (* Eagerly turn chained assignments `a = b = c` into `a = c; b = c`. *)
     List.map targets ~f:(fun target ->
         let location =
@@ -570,7 +589,7 @@ let statement =
         in
         create_assign ~location ~target ~annotation:None ~value:(Some value) ())
   in
-  let aug_assign ~location ~target ~op ~value =
+  let aug_assign ~location ~target ~op ~value ~context:_ =
     let callee =
       let dunder_name = Caml.Format.sprintf "__i%s__" op in
       Expression.Name
@@ -583,94 +602,110 @@ let statement =
     in
     [create_assign ~location ~target ~annotation:None ~value:(Some value) ()]
   in
-  let ann_assign ~location ~target ~annotation ~value ~simple:_ =
+  let ann_assign ~location ~target ~annotation ~value ~simple:_ ~context:_ =
     [create_assign ~location ~target ~annotation:(Some annotation) ~value ()]
   in
-  let for_ ~location ~target ~iter ~body ~orelse ~type_comment:_ =
+  let for_ ~location ~target ~iter ~body ~orelse ~type_comment:_ ~context =
     [
       Statement.For
         {
           For.target;
           iterator = iter;
-          body = List.concat body;
-          orelse = List.concat orelse;
+          body = build_statements ~context body;
+          orelse = build_statements ~context orelse;
           async = false;
         }
       |> Node.create ~location;
     ]
   in
-  let async_for ~location ~target ~iter ~body ~orelse ~type_comment:_ =
+  let async_for ~location ~target ~iter ~body ~orelse ~type_comment:_ ~context =
     [
       Statement.For
         {
           For.target;
           iterator = iter;
-          body = List.concat body;
-          orelse = List.concat orelse;
+          body = build_statements ~context body;
+          orelse = build_statements ~context orelse;
           async = true;
         }
       |> Node.create ~location;
     ]
   in
-  let while_ ~location ~test ~body ~orelse =
+  let while_ ~location ~test ~body ~orelse ~context =
     [
-      Statement.While { While.test; body = List.concat body; orelse = List.concat orelse }
-      |> Node.create ~location;
-    ]
-  in
-  let if_ ~location ~test ~body ~orelse =
-    [
-      Statement.If { If.test; body = List.concat body; orelse = List.concat orelse }
-      |> Node.create ~location;
-    ]
-  in
-  let with_ ~location ~items ~body ~type_comment:_ =
-    [Statement.With { With.items; body = List.concat body; async = false } |> Node.create ~location]
-  in
-  let async_with ~location ~items ~body ~type_comment:_ =
-    [Statement.With { With.items; body = List.concat body; async = true } |> Node.create ~location]
-  in
-  let match_ ~location ~subject:_ ~cases:_ =
-    (* TODO(T102720335): Support pattern matching *)
-    let { Ast.Location.start = { Ast.Location.line; column }; _ } = location in
-    raise (InternalError { Error.line; column; message = "match statement not implemented yet" })
-  in
-  let raise_ ~location ~exc ~cause =
-    [Statement.Raise { Raise.expression = exc; from = cause } |> Node.create ~location]
-  in
-  let try_ ~location ~body ~handlers ~orelse ~finalbody =
-    [
-      Statement.Try
+      Statement.While
         {
-          Try.body = List.concat body;
-          orelse = List.concat orelse;
-          finally = List.concat finalbody;
-          handlers;
+          While.test;
+          body = build_statements ~context body;
+          orelse = build_statements ~context orelse;
         }
       |> Node.create ~location;
     ]
   in
-  let assert_ ~location ~test ~msg =
+  let if_ ~location ~test ~body ~orelse ~context =
+    [
+      Statement.If
+        {
+          If.test;
+          body = build_statements ~context body;
+          orelse = build_statements ~context orelse;
+        }
+      |> Node.create ~location;
+    ]
+  in
+  let with_ ~location ~items ~body ~type_comment:_ ~context =
+    [
+      Statement.With { With.items; body = build_statements ~context body; async = false }
+      |> Node.create ~location;
+    ]
+  in
+  let async_with ~location ~items ~body ~type_comment:_ ~context =
+    [
+      Statement.With { With.items; body = build_statements ~context body; async = true }
+      |> Node.create ~location;
+    ]
+  in
+  let match_ ~location ~subject:_ ~cases:_ ~context:_ =
+    (* TODO(T102720335): Support pattern matching *)
+    let { Ast.Location.start = { Ast.Location.line; column }; _ } = location in
+    raise (InternalError { Error.line; column; message = "match statement not implemented yet" })
+  in
+  let raise_ ~location ~exc ~cause ~context:_ =
+    [Statement.Raise { Raise.expression = exc; from = cause } |> Node.create ~location]
+  in
+  let try_ ~location ~body ~handlers ~orelse ~finalbody ~context =
+    [
+      Statement.Try
+        {
+          Try.body = build_statements ~context body;
+          orelse = build_statements ~context orelse;
+          finally = build_statements ~context finalbody;
+          handlers = build_exception_handlers ~context handlers;
+        }
+      |> Node.create ~location;
+    ]
+  in
+  let assert_ ~location ~test ~msg ~context:_ =
     [
       Statement.Assert { Assert.test; message = msg; origin = Assert.Origin.Assertion }
       |> Node.create ~location;
     ]
   in
-  let import ~location ~names =
+  let import ~location ~names ~context:_ =
     [Statement.Import { Import.imports = names; from = None } |> Node.create ~location]
   in
-  let import_from ~location ~module_ ~names ~level =
+  let import_from ~location ~module_ ~names ~level ~context:_ =
     let dots = List.init level ~f:(fun _ -> ".") |> String.concat ~sep:"" in
     let from_module_name = Option.value module_ ~default:"" in
     let from = Caml.Format.sprintf "%s%s" dots from_module_name |> Ast.Reference.create in
     [Statement.Import { Import.imports = names; from = Some from } |> Node.create ~location]
   in
-  let global ~location ~names = [Statement.Global names |> Node.create ~location] in
-  let nonlocal ~location ~names = [Statement.Nonlocal names |> Node.create ~location] in
-  let expr ~location ~value = [Statement.Expression value |> Node.create ~location] in
-  let pass ~location = [Statement.Pass |> Node.create ~location] in
-  let break ~location = [Statement.Break |> Node.create ~location] in
-  let continue ~location = [Statement.Continue |> Node.create ~location] in
+  let global ~location ~names ~context:_ = [Statement.Global names |> Node.create ~location] in
+  let nonlocal ~location ~names ~context:_ = [Statement.Nonlocal names |> Node.create ~location] in
+  let expr ~location ~value ~context:_ = [Statement.Expression value |> Node.create ~location] in
+  let pass ~location ~context:_ = [Statement.Pass |> Node.create ~location] in
+  let break ~location ~context:_ = [Statement.Break |> Node.create ~location] in
+  let continue ~location ~context:_ = [Statement.Continue |> Node.create ~location] in
   PyreAst.TaglessFinal.Statement.make
     ~function_def
     ~async_function_def
@@ -703,7 +738,7 @@ let statement =
 
 let type_ignore ~lineno:_ ~tag:_ = ()
 
-let module_ ~body ~type_ignores:_ = List.concat body
+let module_ ~body ~type_ignores:_ ~context = build_statements ~context body
 
 let function_type ~argtypes:_ ~returns:_ = ()
 
@@ -739,12 +774,14 @@ let with_context ?on_failure = PyreAst.Parser.with_context ?on_init_failure:on_f
 
 let parse_module ?filename ?enable_type_comment ~context text =
   try
+    let open Result in
     PyreAst.Parser.TaglessFinal.parse_module
       ?filename
       ?enable_type_comment
       ~context
       ~spec:specification
       text
+    >>= fun module_builder -> Ok (module_builder ~context:())
   with
   | InternalError error -> Result.Error error
 
