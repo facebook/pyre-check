@@ -147,10 +147,32 @@ let matches_decorator_constraint ~name_constraint ~arguments_constraint decorato
 
 
 let matches_annotation_constraint ~annotation_constraint ~annotation =
+  let open Expression in
   match annotation_constraint, annotation with
-  | ModelQuery.IsAnnotatedTypeConstraint, Type.Annotated _ -> true
-  | ModelQuery.AnnotationNameConstraint name_constraint, _ ->
-      matches_name_constraint ~name_constraint (Type.show annotation)
+  | ( ModelQuery.IsAnnotatedTypeConstraint,
+      {
+        Node.value =
+          Expression.Call
+            {
+              Call.callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base =
+                            { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
+                          _;
+                        });
+                  _;
+                };
+              _;
+            };
+        _;
+      } ) ->
+      true
+  | ModelQuery.AnnotationNameConstraint name_constraint, annotation_expression ->
+      matches_name_constraint ~name_constraint (Expression.show annotation_expression)
   | _ -> false
 
 
@@ -162,10 +184,7 @@ let rec normalized_parameter_matches_constraint
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
-      >>| (fun annotation ->
-            matches_annotation_constraint
-              ~annotation_constraint
-              ~annotation:(GlobalResolution.parse_annotation resolution annotation))
+      >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint (Identifier.sanitized parameter_name)
@@ -212,15 +231,14 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
           {
             Node.value =
               {
-                Statement.Define.signature =
-                  { Statement.Define.Signature.return_annotation = Some annotation; _ };
+                Statement.Define.signature = { Statement.Define.Signature.return_annotation; _ };
                 _;
               };
             _;
           } ->
-          matches_annotation_constraint
-            ~annotation_constraint
-            ~annotation:(GlobalResolution.parse_annotation resolution annotation)
+          return_annotation
+          >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
+          |> Option.value ~default:false
       | _ -> false)
   | ModelQuery.AnyParameterConstraint parameter_constraint -> (
       let callable_type = get_callable_type () in
@@ -500,22 +518,19 @@ let apply_callable_query_rule
     []
 
 
-let rec attribute_matches_constraint query_constraint ~resolution ~attribute =
-  let attribute_class_name = Reference.prefix attribute >>| Reference.show in
+let rec attribute_matches_constraint query_constraint ~resolution ~name ~annotation =
+  let attribute_class_name = Reference.prefix name >>| Reference.show in
   match query_constraint with
   | ModelQuery.NameConstraint name_constraint ->
-      matches_name_constraint ~name_constraint (Reference.show attribute)
+      matches_name_constraint ~name_constraint (Reference.show name)
   | ModelQuery.AnnotationConstraint annotation_constraint ->
-      let resolution =
-        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-        Analysis.TypeCheck.resolution resolution (module Analysis.TypeCheck.DummyContext)
-      in
-      let annotation = Resolution.resolve_reference resolution attribute in
-      matches_annotation_constraint ~annotation_constraint ~annotation
+      annotation
+      >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
+      |> Option.value ~default:false
   | ModelQuery.AnyOf constraints ->
-      List.exists constraints ~f:(attribute_matches_constraint ~resolution ~attribute)
+      List.exists constraints ~f:(attribute_matches_constraint ~resolution ~name ~annotation)
   | ModelQuery.Not query_constraint ->
-      not (attribute_matches_constraint ~resolution ~attribute query_constraint)
+      not (attribute_matches_constraint ~resolution ~name ~annotation query_constraint)
   | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
       attribute_class_name
       >>| matches_name_constraint ~name_constraint
@@ -542,8 +557,9 @@ let apply_attribute_productions ~productions =
 let apply_attribute_query_rule
     ~verbose
     ~resolution
-    ~rule:{ ModelQuery.rule_kind; query; productions; name }
-    ~attribute
+    ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name }
+    ~name
+    ~annotation
   =
   let kind_matches =
     match rule_kind with
@@ -551,13 +567,15 @@ let apply_attribute_query_rule
     | _ -> false
   in
 
-  if kind_matches && List.for_all ~f:(attribute_matches_constraint ~resolution ~attribute) query
+  if
+    kind_matches
+    && List.for_all ~f:(attribute_matches_constraint ~resolution ~name ~annotation) query
   then begin
     if verbose then
       Log.info
         "Attribute `%s` matches all constraints for the model query rule%s."
-        (Reference.show attribute)
-        (name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
+        (Reference.show name)
+        (rule_name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
     apply_attribute_productions ~productions
   end
   else
@@ -578,11 +596,22 @@ let get_class_attributes ~global_resolution ~class_name =
       let all_attributes =
         Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
       in
-      Identifier.SerializableMap.fold
-        (fun attribute _ accumulator ->
-          Reference.create ~prefix:class_name_reference attribute :: accumulator)
-        all_attributes
-        []
+      let get_name_and_annotation_from_attributes attribute_name attribute accumulator =
+        match attribute with
+        | {
+         Node.value =
+           {
+             ClassSummary.Attribute.kind =
+               ClassSummary.Attribute.Simple { ClassSummary.Attribute.annotation; _ };
+             _;
+           };
+         _;
+        } ->
+            (Reference.create ~prefix:class_name_reference attribute_name, annotation)
+            :: accumulator
+        | _ -> accumulator
+      in
+      Identifier.SerializableMap.fold get_name_and_annotation_from_attributes all_attributes []
 
 
 let apply_all_rules
@@ -676,21 +705,22 @@ let apply_all_rules
     in
 
     (* Generate models for attributes. *)
-    let apply_rules_for_attribute models attribute =
+    let apply_rules_for_attribute models (name, annotation) =
       let taint_to_model =
         List.concat_map attribute_rules ~f:(fun rule ->
             apply_attribute_query_rule
               ~verbose:(Option.is_some configuration.dump_model_query_results_path)
               ~resolution:global_resolution
               ~rule
-              ~attribute)
+              ~name
+              ~annotation)
       in
       if not (List.is_empty taint_to_model) then (
-        let callable = Target.create_object attribute in
+        let callable = Target.create_object name in
         match
           ModelParser.create_attribute_model_from_annotations
             ~resolution
-            ~name:attribute
+            ~name
             ~sources_to_keep
             ~sinks_to_keep
             taint_to_model

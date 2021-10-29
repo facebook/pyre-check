@@ -7,6 +7,7 @@
 
 open OUnit2
 open Core
+open Pyre
 open Test
 open Taint
 open Model.ModelQuery
@@ -64,7 +65,7 @@ let test_apply_rule context =
       expected
       actual
   in
-  let assert_applied_rules_for_attribute ~source ~rule ~attribute_name ~expected =
+  let assert_applied_rules_for_attribute ~source ~rule ~name ~annotation ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -77,7 +78,8 @@ let test_apply_rule context =
         ~verbose:false
         ~resolution
         ~rule
-        ~attribute:(Ast.Reference.create attribute_name)
+        ~name:(Ast.Reference.create name)
+        ~annotation:(annotation >>| Type.expression)
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> Taint.Model.compare_taint_annotation left right = 0))
@@ -1105,7 +1107,7 @@ let test_apply_rule context =
         rule_kind = FunctionModel;
       }
     ~callable:(`Function "test.foo")
-    ~expected:[];
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
 
   (* Decorator names. *)
   assert_applied_rules
@@ -1643,7 +1645,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.x"
+    ~name:"test.C.x"
+    ~annotation:None
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:{|
@@ -1659,7 +1662,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (sink "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.x"
+    ~name:"test.C.x"
+    ~annotation:None
     ~expected:[sink "Test"];
   assert_applied_rules_for_attribute
     ~source:{|
@@ -1675,7 +1679,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.D.y"
+    ~name:"test.D.y"
+    ~annotation:None
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:{|
@@ -1691,7 +1696,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.x"
+    ~name:"test.C.x"
+    ~annotation:None
     ~expected:[source "Test"];
   ();
   assert_applied_rules_for_attribute
@@ -1708,7 +1714,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.D.y"
+    ~name:"test.D.y"
+    ~annotation:None
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:
@@ -1727,7 +1734,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.E.z"
+    ~name:"test.E.z"
+    ~annotation:None
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:{|
@@ -1742,7 +1750,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.x"
+    ~name:"test.C.x"
+    ~annotation:(Some Type.integer)
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:{|
@@ -1757,7 +1766,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.y"
+    ~name:"test.C.y"
+    ~annotation:(Some Type.string)
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
@@ -1780,7 +1790,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.x"
+    ~name:"test.C.x"
+    ~annotation:(Some (Type.meta (Type.Primitive "Foo1")))
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:
@@ -1803,7 +1814,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.y"
+    ~name:"test.C.y"
+    ~annotation:(Some (Type.meta (Type.Primitive "Foo2")))
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:
@@ -1826,7 +1838,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.z"
+    ~name:"test.C.z"
+    ~annotation:(Some (Type.meta (Type.Primitive "Bar")))
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
@@ -1843,7 +1856,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.x"
+    ~name:"test.C.x"
+    ~annotation:(Some Type.integer)
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
@@ -1860,7 +1874,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.y"
+    ~name:"test.C.y"
+    ~annotation:(Some (Type.Annotated Type.string))
     ~expected:[source "Test"];
 
   (* Test 'Not' clause *)
@@ -1993,7 +2008,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.x"
+    ~name:"test.C.x"
+    ~annotation:None
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
@@ -2012,7 +2028,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.D.y"
+    ~name:"test.D.y"
+    ~annotation:None
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
@@ -2031,7 +2048,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.E.z"
+    ~name:"test.E.z"
+    ~annotation:None
     ~expected:[source "Test"];
 
   (* Test transitive extends *)
@@ -2052,7 +2070,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.E.z"
+    ~name:"test.E.z"
+    ~annotation:None
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:
@@ -2071,7 +2090,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.D.y"
+    ~name:"test.D.y"
+    ~annotation:None
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:
@@ -2090,7 +2110,8 @@ let test_apply_rule context =
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
       }
-    ~attribute_name:"test.C.x"
+    ~name:"test.C.x"
+    ~annotation:None
     ~expected:[source "Test"];
   assert_applied_rules
     ~source:

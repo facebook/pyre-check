@@ -1,0 +1,14 @@
+@generated
+Call dependencies
+model_query_annotated.test1_alarm1 (fun) -> [_test_sink (fun)]
+model_query_annotated.test1_alarm2 (fun) -> [_test_sink (fun)]
+model_query_annotated.test1_alarm3 (fun) -> [_test_sink (fun)]
+model_query_annotated.test1_alarm4 (fun) -> [_test_sink (fun)]
+model_query_annotated.test2_alarm1 (fun) -> [_test_sink (fun)]
+model_query_annotated.test2_alarm2 (fun) -> [_test_sink (fun)]
+model_query_annotated.test2_noalarm1 (fun) -> [_test_sink (fun)]
+model_query_annotated.test3_alarm1 (fun) -> [_test_sink (fun)]
+model_query_annotated.test3_alarm2 (fun) -> [_test_sink (fun)]
+model_query_annotated.test3_noalarm1 (fun) -> [_test_sink (fun)]
+model_query_annotated.test3_noalarm2 (fun) -> [_test_sink (fun)]
+model_query_annotated.test3_noalarm3 (fun) -> [_test_sink (fun)]

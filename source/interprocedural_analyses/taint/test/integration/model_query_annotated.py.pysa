@@ -1,0 +1,42 @@
+ModelQuery(
+  find = "attributes",
+  where = [
+      parent.equals("model_query_annotated.Test1_C"),
+      type_annotation.matches(".*Annotated\[.*Color\..*")
+    ],
+  model = [
+    AttributeModel(TaintSource[Test, ViaTypeOf]),
+  ]
+)
+
+ModelQuery(
+  find = "attributes",
+  where = [
+      parent.equals("model_query_annotated.Test2_C"),
+      AnyOf(
+        type_annotation.equals("typing.Annotated[(typing.Optional[float], model_query_annotated.Color.RED)]"),
+        type_annotation.equals("typing.Annotated[(typing.Optional[float], model_query_annotated.Color.RED, foo)]")
+      )
+    ],
+  model = [
+    AttributeModel(TaintSource[Test, ViaTypeOf]),
+  ]
+)
+
+ModelQuery(
+  find = "functions",
+  where = [
+      name.matches("test3_"),
+      AnyOf(
+        any_parameter.annotation.matches(".*Annotated\[.*Color\..*"),
+      )
+    ],
+  model = [
+    Parameters(TaintSource[Test], where=[
+      AnyOf(
+        type_annotation.equals("typing.Annotated[(str, model_query_annotated.Color.RED)]"),
+        type_annotation.equals("typing.Annotated[(str, model_query_annotated.Color.BLUE, foo)]")
+      )
+    ]),
+  ]
+)

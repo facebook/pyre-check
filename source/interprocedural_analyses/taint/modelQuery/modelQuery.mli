@@ -16,7 +16,8 @@ val apply_attribute_query_rule
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
   rule:Taint.Model.ModelQuery.rule ->
-  attribute:Ast.Reference.t ->
+  name:Ast.Reference.t ->
+  annotation:Ast.Expression.t option ->
   Taint.Model.taint_annotation list
 
 val apply_all_rules
