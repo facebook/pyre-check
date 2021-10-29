@@ -416,6 +416,13 @@ let expression =
     ()
 
 
+module StatementContext = struct
+  type t = {
+    (* [parent] holds the name of the immediate containing class of a statement. *)
+    parent: Ast.Identifier.t option;
+  }
+end
+
 let build_statements ~context statement_builders =
   let build_statement builder = builder ~context in
   List.concat (List.map statement_builders ~f:build_statement)
@@ -510,8 +517,17 @@ let statement =
   let open Ast.Expression in
   let open Ast.Statement in
   let module Node = Ast.Node in
-  let function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment:_ ~context =
-    let body = build_statements ~context body in
+  let function_def
+      ~location
+      ~name
+      ~args
+      ~body
+      ~decorator_list
+      ~returns
+      ~type_comment:_
+      ~context:({ StatementContext.parent } as context)
+    =
+    let body = build_statements ~context:{ context with parent = None } body in
     let signature =
       {
         Define.Signature.name = Ast.Reference.create name;
@@ -520,7 +536,7 @@ let statement =
         return_annotation = returns;
         async = false;
         generator = is_generator body;
-        parent = None;
+        parent = Option.map parent ~f:Ast.Reference.create;
         nesting_define = None;
       }
     in
@@ -537,9 +553,9 @@ let statement =
       ~decorator_list
       ~returns
       ~type_comment:_
-      ~context
+      ~context:({ StatementContext.parent } as context)
     =
-    let body = build_statements ~context body in
+    let body = build_statements ~context:{ context with parent = None } body in
     let signature =
       {
         Define.Signature.name = Ast.Reference.create name;
@@ -548,7 +564,7 @@ let statement =
         return_annotation = returns;
         async = true;
         generator = is_generator body;
-        parent = None;
+        parent = Option.map parent ~f:Ast.Reference.create;
         nesting_define = None;
       }
     in
@@ -568,7 +584,7 @@ let statement =
         {
           Class.name = Ast.Reference.create name;
           base_arguments;
-          body = build_statements ~context body;
+          body = build_statements ~context:{ context with StatementContext.parent = Some name } body;
           decorators = decorator_list;
           top_level_unbound_names = [];
         }
@@ -781,7 +797,7 @@ let parse_module ?filename ?enable_type_comment ~context text =
       ~context
       ~spec:specification
       text
-    >>= fun module_builder -> Ok (module_builder ~context:())
+    >>= fun module_builder -> Ok (module_builder ~context:{ StatementContext.parent = None })
   with
   | InternalError error -> Result.Error error
 

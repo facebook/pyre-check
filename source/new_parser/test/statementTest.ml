@@ -1478,7 +1478,7 @@ let test_class _ =
                             return_annotation = None;
                             async = false;
                             generator = false;
-                            parent = None;
+                            parent = Some !&"foo";
                             nesting_define = None;
                           };
                         captures = [];
@@ -1510,7 +1510,7 @@ let test_class _ =
                             return_annotation = None;
                             async = false;
                             generator = false;
-                            parent = None;
+                            parent = Some !&"foo";
                             nesting_define = None;
                           };
                         captures = [];
@@ -1619,12 +1619,71 @@ let test_class _ =
                             return_annotation = None;
                             async = false;
                             generator = false;
-                            parent = None;
+                            parent = Some !&"foo";
                             nesting_define = None;
                           };
                         captures = [];
                         unbound_names = [];
                         body = [+Statement.Pass];
+                      };
+                 ];
+               decorators = [];
+               top_level_unbound_names = [];
+             };
+        ];
+    assert_parsed
+      "class A:\n\tdef foo(): pass\n\tclass B:\n\t\tdef bar(): pass\n"
+      ~expected:
+        [
+          +Statement.Class
+             {
+               Class.name = !&"A";
+               base_arguments = [];
+               body =
+                 [
+                   +Statement.Define
+                      {
+                        signature =
+                          {
+                            name = !&"foo";
+                            parameters = [];
+                            decorators = [];
+                            return_annotation = None;
+                            async = false;
+                            generator = false;
+                            parent = Some !&"A";
+                            nesting_define = None;
+                          };
+                        captures = [];
+                        unbound_names = [];
+                        body = [+Statement.Pass];
+                      };
+                   +Statement.Class
+                      {
+                        Class.name = !&"B";
+                        base_arguments = [];
+                        body =
+                          [
+                            +Statement.Define
+                               {
+                                 signature =
+                                   {
+                                     name = !&"bar";
+                                     parameters = [];
+                                     decorators = [];
+                                     return_annotation = None;
+                                     async = false;
+                                     generator = false;
+                                     parent = Some !&"B";
+                                     nesting_define = None;
+                                   };
+                                 captures = [];
+                                 unbound_names = [];
+                                 body = [+Statement.Pass];
+                               };
+                          ];
+                        decorators = [];
+                        top_level_unbound_names = [];
                       };
                  ];
                decorators = [];

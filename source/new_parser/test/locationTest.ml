@@ -1018,7 +1018,7 @@ let test_class_locations _ =
                                 return_annotation = None;
                                 async = false;
                                 generator = false;
-                                parent = None;
+                                parent = Some !&"foo";
                                 nesting_define = None;
                               };
                             captures = [];
@@ -1115,7 +1115,7 @@ let test_class_locations _ =
                                            return_annotation = None;
                                            async = false;
                                            generator = false;
-                                           parent = None;
+                                           parent = Some !&"foo";
                                            nesting_define = None;
                                          };
                                        captures = [];
