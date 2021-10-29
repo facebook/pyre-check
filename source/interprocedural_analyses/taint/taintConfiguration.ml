@@ -84,8 +84,8 @@ type t = {
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list String.Map.Tree.t;
-  matching_sources: Sinks.Set.t Sources.Map.t;
-  matching_sinks: Sources.Set.t Sinks.Map.t;
+  matching_sources: Sources.Set.t Sinks.Map.t;
+  matching_sinks: Sinks.Set.t Sources.Map.t;
   find_missing_flows: missing_flows_kind option;
   dump_model_query_results_path: Path.t option;
   analysis_model_constraints: analysis_model_constraints;
@@ -102,8 +102,8 @@ let empty =
     implicit_sinks = empty_implicit_sinks;
     implicit_sources = empty_implicit_sources;
     partial_sink_labels = String.Map.Tree.empty;
-    matching_sources = Sources.Map.empty;
-    matching_sinks = Sinks.Map.empty;
+    matching_sources = Sinks.Map.empty;
+    matching_sinks = Sources.Map.empty;
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints = default_analysis_model_constraints;
@@ -143,27 +143,27 @@ let matching_kinds_from_rules rules =
   let add_rule (matching_sources, matching_sinks) { Rule.sources; sinks; _ } =
     let sinks_set = Sinks.Set.of_list sinks in
     let sources_set = Sources.Set.of_list sources in
-    let update_matching_sources matching_sources source =
-      Sources.Map.update
-        source
-        (function
-          | None -> Some sinks_set
-          | Some sinks -> Some (Sinks.Set.union sinks sinks_set))
-        matching_sources
-    in
-    let update_matching_sinks matching_sinks sink =
+    let update_matching_sources matching_sources sink =
       Sinks.Map.update
         sink
         (function
           | None -> Some sources_set
           | Some sources -> Some (Sources.Set.union sources sources_set))
+        matching_sources
+    in
+    let update_matching_sinks matching_sinks source =
+      Sources.Map.update
+        source
+        (function
+          | None -> Some sinks_set
+          | Some sinks -> Some (Sinks.Set.union sinks sinks_set))
         matching_sinks
     in
-    let matching_sources = List.fold ~f:update_matching_sources ~init:matching_sources sources in
-    let matching_sinks = List.fold ~f:update_matching_sinks ~init:matching_sinks sinks in
+    let matching_sources = List.fold ~f:update_matching_sources ~init:matching_sources sinks in
+    let matching_sinks = List.fold ~f:update_matching_sinks ~init:matching_sinks sources in
     matching_sources, matching_sinks
   in
-  List.fold ~f:add_rule ~init:(Sources.Map.empty, Sinks.Map.empty) rules
+  List.fold ~f:add_rule ~init:(Sinks.Map.empty, Sources.Map.empty) rules
 
 
 module PartialSinkConverter = struct

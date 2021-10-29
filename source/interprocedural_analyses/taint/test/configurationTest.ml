@@ -56,7 +56,7 @@ let test_simple _ =
     (Some 50);
   assert_equal
     (Sources.Map.of_alist_exn [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "D"]])
-    configuration.matching_sources
+    configuration.matching_sinks
 
 
 let test_invalid_source _ =
@@ -782,8 +782,8 @@ let test_matching_kinds _ =
     assert_equal
       ~printer:matching_sources_printer
       ~cmp:(Sources.Map.equal Sinks.Set.equal)
-      (Sources.Map.of_alist_exn matching_sources)
-      configuration.matching_sources;
+      (Sources.Map.of_alist_exn matching_sinks)
+      configuration.matching_sinks;
     let matching_sinks_printer matching =
       matching
       |> Sinks.Map.to_alist
@@ -795,8 +795,8 @@ let test_matching_kinds _ =
     assert_equal
       ~printer:matching_sinks_printer
       ~cmp:(Sinks.Map.equal Sources.Set.equal)
-      (Sinks.Map.of_alist_exn matching_sinks)
-      configuration.matching_sinks
+      (Sinks.Map.of_alist_exn matching_sources)
+      configuration.matching_sources
   in
   assert_matching
     ~configuration:
@@ -820,9 +820,9 @@ let test_matching_kinds _ =
           ]
         }
       |}
-    ~matching_sources:
-      [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "C"; Sinks.NamedSink "D"]]
     ~matching_sinks:
+      [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "C"; Sinks.NamedSink "D"]]
+    ~matching_sources:
       [
         Sinks.NamedSink "C", Sources.Set.of_list [Sources.NamedSource "A"];
         Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"];
@@ -849,12 +849,12 @@ let test_matching_kinds _ =
           ]
         }
       |}
-    ~matching_sources:
+    ~matching_sinks:
       [
         Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "D"];
         Sources.NamedSource "B", Sinks.Set.of_list [Sinks.NamedSink "D"];
       ]
-    ~matching_sinks:
+    ~matching_sources:
       [Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"; Sources.NamedSource "B"]];
   assert_matching
     ~configuration:
@@ -885,9 +885,9 @@ let test_matching_kinds _ =
           ]
         }
       |}
-    ~matching_sources:
-      [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "C"; Sinks.NamedSink "D"]]
     ~matching_sinks:
+      [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "C"; Sinks.NamedSink "D"]]
+    ~matching_sources:
       [
         Sinks.NamedSink "C", Sources.Set.of_list [Sources.NamedSource "A"];
         Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"];
