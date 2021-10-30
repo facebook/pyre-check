@@ -1917,7 +1917,7 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.source() -> TaintInTaintOut: ..."
-    ~expect:"Invalid model for `test.source`: Invalid return annotation: TaintInTaintOut"
+    ~expect:"Invalid model for `test.source`: Invalid return annotation `TaintInTaintOut`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintInTaintOut[Test]): ..."
