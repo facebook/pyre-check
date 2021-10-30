@@ -80,9 +80,24 @@ module T : sig
     | InvalidIdentifier of Expression.t
     | ClassBodyNotEllipsis of string
     | DefineBodyNotEllipsis of string
-    | UnclassifiedError of {
+    | UnsupportedCallee of Expression.t
+    | UnexpectedTaintAnnotation of string
+    | UnexpectedModelExpression of Expression.t
+    | UnsupportedFindClause of string
+    | InvalidFindClauseType of Expression.t
+    | InvalidReturnAnnotation of {
         model_name: string;
-        message: string;
+        annotation: string;
+      }
+    | UnsupportedConstraint of Expression.t
+    | InvalidModelForTaint of {
+        model_name: string;
+        error: string;
+      }
+    | NoCorrespondingCallable of string
+    | InvalidAnnotationForAttributeModel of {
+        name: Reference.t;
+        annotation: string;
       }
   [@@deriving sexp, compare, eq]
 

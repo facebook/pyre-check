@@ -212,10 +212,6 @@ let model_verification_error ~path ~location kind =
   { ModelVerificationError.T.kind; path; location }
 
 
-let invalid_model_error ~path ~location ~name message =
-  model_verification_error ~path ~location (UnclassifiedError { model_name = name; message })
-
-
 module ClassDefinitionsCache = ModelVerifier.ClassDefinitionsCache
 
 (* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
@@ -1132,19 +1128,8 @@ let parse_find_clause ~path ({ Node.value; location } as expression) =
       | "methods" -> Ok ModelQuery.MethodModel
       | "attributes" -> Ok ModelQuery.AttributeModel
       | unsupported ->
-          Error
-            (invalid_model_error
-               ~path
-               ~location
-               ~name:"model query"
-               (Format.sprintf "Unsupported find clause `%s`" unsupported)))
-  | _ ->
-      Error
-        (invalid_model_error
-           ~path
-           ~location
-           ~name:"model query"
-           (Format.sprintf "Find clauses must be strings, got: `%s`" (Expression.show expression)))
+          Error (model_verification_error ~path ~location (UnsupportedFindClause unsupported)))
+  | _ -> Error (model_verification_error ~path ~location (InvalidFindClauseType expression))
 
 
 let get_find_clause_as_string find_clause =
@@ -1561,19 +1546,10 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
                      ~location
                      (InvalidModelQueryClauseArguments { callee; arguments }))))
     | Expression.Call { Call.callee; arguments = _ } ->
-        Error
-          (invalid_model_error
-             ~path
-             ~location
-             ~name:"model query"
-             (Format.sprintf "Unsupported callee: %s" (Expression.show callee)))
+        Error (model_verification_error ~path ~location (UnsupportedCallee callee))
     | _ ->
         Error
-          (invalid_model_error
-             ~path
-             ~location
-             ~name:"model query"
-             (Format.sprintf "Unsupported constraint: %s" (Expression.show constraint_expression)))
+          (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression))
   in
   match value with
   | Expression.List items -> List.map items ~f:parse_constraint |> all
@@ -1676,11 +1652,7 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
              (InvalidModelQueryWhereClause { expression = callee; find_clause_kind = "parameters" }))
     | _ ->
         Error
-          (invalid_model_error
-             ~path
-             ~location
-             ~name:"model query"
-             (Format.sprintf "Unsupported constraint: %s" (Expression.show constraint_expression)))
+          (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression))
   in
   match value with
   | Expression.List items -> List.map items ~f:parse_constraint |> all
@@ -1736,11 +1708,10 @@ let parse_model_clause
                 Ok [ModelQuery.ParametricSinkFromAnnotation { sink_pattern = pattern; kind }]
             | _ ->
                 Error
-                  (invalid_model_error
+                  (model_verification_error
                      ~path
                      ~location
-                     ~name:"model query"
-                     (Format.sprintf "Unexpected taint annotation `%s`" parametric_annotation)))
+                     (UnexpectedTaintAnnotation parametric_annotation)))
         | _ ->
             parse_annotations
               ~path
@@ -1873,11 +1844,7 @@ let parse_model_clause
                  (InvalidModelQueryClauseArguments { callee; arguments })))
     | _ ->
         Error
-          (invalid_model_error
-             ~path
-             ~location
-             ~name:"model query"
-             (Format.sprintf "Unexpected model expression: `%s`" (Expression.show model_expression)))
+          (model_verification_error ~path ~location (UnexpectedModelExpression model_expression))
   in
   match value with
   | Expression.List items -> List.map items ~f:parse_model |> all
@@ -1967,7 +1934,12 @@ let add_taint_annotation_to_model
     annotation
   =
   let open Core.Result in
-  let annotation_error = invalid_model_error ~path ~location ~name:model_name in
+  let invalid_model_for_taint error_message =
+    model_verification_error
+      ~path
+      ~location
+      (InvalidModelForTaint { model_name; error = error_message })
+  in
   match annotation_kind with
   | ReturnAnnotation -> (
       let root = AccessPath.Root.LocalResult in
@@ -1984,7 +1956,7 @@ let add_taint_annotation_to_model
                model
                sink
                via_features
-          |> map_error ~f:annotation_error
+          |> map_error ~f:invalid_model_for_taint
       | Source { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
           List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
@@ -1997,10 +1969,19 @@ let add_taint_annotation_to_model
                model
                source
                via_features
-          |> map_error ~f:annotation_error
-      | Tito _ -> Error (annotation_error "Invalid return annotation: TaintInTaintOut")
+          |> map_error ~f:invalid_model_for_taint
+      | Tito _ ->
+          Error
+            (model_verification_error
+               ~path
+               ~location
+               (InvalidReturnAnnotation { model_name; annotation = "TaintInTaintOut" }))
       | AddFeatureToArgument _ ->
-          Error (annotation_error "Invalid return annotation: AddFeatureToArgument")
+          Error
+            (model_verification_error
+               ~path
+               ~location
+               (InvalidReturnAnnotation { model_name; annotation = "AddFeatureToArgument" }))
       | Sanitize annotations -> Ok (introduce_sanitize ~root model annotations))
   | ParameterAnnotation root -> (
       match annotation with
@@ -2016,7 +1997,7 @@ let add_taint_annotation_to_model
                model
                sink
                via_features
-          |> map_error ~f:annotation_error
+          |> map_error ~f:invalid_model_for_taint
       | Source { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
           List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
@@ -2029,7 +2010,7 @@ let add_taint_annotation_to_model
                model
                source
                via_features
-          |> map_error ~f:annotation_error
+          |> map_error ~f:invalid_model_for_taint
       | Tito { tito; breadcrumbs; via_features; path } ->
           (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
           List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
@@ -2039,7 +2020,7 @@ let add_taint_annotation_to_model
                AccessPath.Root.LocalResult
                ~callable_annotation
           |> introduce_taint_in_taint_out ~root ~path model tito via_features
-          |> map_error ~f:annotation_error
+          |> map_error ~f:invalid_model_for_taint
       | AddFeatureToArgument { breadcrumbs; via_features; path } ->
           List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
@@ -2052,7 +2033,7 @@ let add_taint_annotation_to_model
                model
                Sinks.AddFeatureToArgument
                via_features
-          |> map_error ~f:annotation_error
+          |> map_error ~f:invalid_model_for_taint
       | Sanitize annotations -> Ok (introduce_sanitize ~root model annotations))
 
 
@@ -2967,8 +2948,8 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stub
   }
 
 
-let invalid_model_query_error message =
-  invalid_model_error ~path:None ~location:Location.any ~name:"Model query" message
+let invalid_model_query_error error =
+  model_verification_error ~path:None ~location:Location.any error
 
 
 let create_callable_model_from_annotations
@@ -2983,10 +2964,7 @@ let create_callable_model_from_annotations
   let open ModelVerifier in
   let global_resolution = Resolution.global_resolution resolution in
   match Interprocedural.Target.get_module_and_definition ~resolution:global_resolution callable with
-  | None ->
-      Error
-        (invalid_model_query_error
-           (Format.sprintf "No callable corresponding to `%s` found." (Target.show callable)))
+  | None -> Error (invalid_model_query_error (NoCorrespondingCallable (Target.show callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       resolve_global_callable
         ~path:None
@@ -3052,10 +3030,8 @@ let create_attribute_model_from_annotations
         | _ ->
             Error
               (invalid_model_query_error
-                 (Format.sprintf
-                    "Invalid annotation for attribute model `%s`: `%s`."
-                    (Reference.show name)
-                    (show_taint_annotation annotation)))
+                 (InvalidAnnotationForAttributeModel
+                    { name; annotation = show_taint_annotation annotation }))
       in
       annotation_kind
       >>= fun annotation_kind ->
