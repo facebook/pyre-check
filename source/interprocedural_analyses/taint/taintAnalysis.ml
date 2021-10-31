@@ -378,7 +378,9 @@ include Taint.Result.Register (struct
             Sources.Set.to_sanitize_transforms_exn sanitized_sources
           in
           let sink_taint =
-            BackwardState.apply_sanitize_transforms sanitized_sources_transforms sink_taint
+            sink_taint
+            |> BackwardState.apply_sanitize_transforms sanitized_sources_transforms
+            |> BackwardState.transform BackwardTaint.kind Filter ~f:Flow.sink_can_match_rule
           in
           let taint_in_taint_out = sanitize_tito ~sources:sanitized_sources taint_in_taint_out in
           sink_taint, taint_in_taint_out
@@ -445,7 +447,9 @@ include Taint.Result.Register (struct
         | Some (Sanitize.SpecificSinks sanitized_sinks) ->
             let sanitized_sinks_transforms = Sinks.Set.to_sanitize_transforms_exn sanitized_sinks in
             let source_taint =
-              ForwardState.apply_sanitize_transforms sanitized_sinks_transforms source_taint
+              source_taint
+              |> ForwardState.apply_sanitize_transforms sanitized_sinks_transforms
+              |> ForwardState.transform ForwardTaint.kind Filter ~f:Flow.source_can_match_rule
             in
             let taint_in_taint_out = sanitize_tito ~sinks:sanitized_sinks taint_in_taint_out in
             source_taint, taint_in_taint_out
@@ -467,9 +471,12 @@ include Taint.Result.Register (struct
                   let sanitized_sources_transforms =
                     Sources.Set.to_sanitize_transforms_exn sanitized_sources
                   in
-                  BackwardState.Tree.apply_sanitize_transforms
-                    sanitized_sources_transforms
-                    taint_tree
+                  taint_tree
+                  |> BackwardState.Tree.apply_sanitize_transforms sanitized_sources_transforms
+                  |> BackwardState.Tree.transform
+                       BackwardTaint.kind
+                       Filter
+                       ~f:Flow.sink_can_match_rule
             in
             let sink_taint = BackwardState.update sink_taint parameter ~f:apply_taint_transforms in
             let taint_in_taint_out =

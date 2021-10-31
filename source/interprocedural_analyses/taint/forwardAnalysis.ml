@@ -320,6 +320,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   taint_to_propagate
                   |> ForwardState.Tree.sanitize sanitized_tito_sources
                   |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
+                  |> ForwardState.Tree.transform
+                       ForwardTaint.kind
+                       Filter
+                       ~f:Flow.source_can_match_rule
               | _ -> taint_to_propagate
             in
             let return_paths =
@@ -390,6 +394,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   obscure_tito
                   |> ForwardState.Tree.sanitize sanitized_tito_sources
                   |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
+                  |> ForwardState.Tree.transform
+                       ForwardTaint.kind
+                       Filter
+                       ~f:Flow.source_can_match_rule
               | None -> obscure_tito
             in
             let returned_tito =
@@ -1204,7 +1212,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match sanitizer.sinks with
         | Some (SpecificSinks sanitized_sinks) ->
             let sanitized_sinks_transforms = Sinks.Set.to_sanitize_transforms_exn sanitized_sinks in
-            ForwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms taint
+            taint
+            |> ForwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms
+            |> ForwardState.Tree.transform ForwardTaint.kind Filter ~f:Flow.source_can_match_rule
         | _ -> taint
       in
       taint

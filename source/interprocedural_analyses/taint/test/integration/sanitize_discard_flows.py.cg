@@ -1,0 +1,8 @@
+@generated
+Call dependencies
+sanitize_discard_flows.sanitize_a_sink_tito (fun) -> []
+sanitize_discard_flows.sanitize_a_source_tito (fun) -> []
+sanitize_discard_flows.sanitize_b_sink_tito (fun) -> []
+sanitize_discard_flows.test_sink_a_sanitize_a_discarded (fun) -> [sanitize_discard_flows.a_sink (fun) sanitize_discard_flows.sanitize_a_source_tito (fun)]
+sanitize_discard_flows.test_source_a_sanitize_a_b_discarded (fun) -> [sanitize_discard_flows.a_source (fun) sanitize_discard_flows.sanitize_a_sink_tito (fun) sanitize_discard_flows.sanitize_b_sink_tito (fun)]
+sanitize_discard_flows.test_source_a_sanitize_a_kept (fun) -> [sanitize_discard_flows.a_source (fun) sanitize_discard_flows.sanitize_a_sink_tito (fun)]

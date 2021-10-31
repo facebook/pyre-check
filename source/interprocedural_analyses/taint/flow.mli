@@ -70,3 +70,7 @@ val compute_triggered_sinks
   source_tree:ForwardState.Tree.t ->
   sink_tree:BackwardState.Tree.t ->
   Sinks.partial_sink list * candidate list
+
+val source_can_match_rule : Sources.t -> bool
+
+val sink_can_match_rule : Sinks.t -> bool
