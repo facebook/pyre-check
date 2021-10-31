@@ -177,6 +177,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       call_taint
       call_targets
     =
+    let return_annotation =
+      (* This can be a very expensive operation, let's make it lazy. *)
+      lazy
+        (Resolution.resolve_expression_to_type
+           resolution
+           { Node.value = call_expression; location })
+    in
     let analyze_call_target call_target =
       let triggered_taint =
         match Hashtbl.find FunctionContext.triggered_sinks location with
@@ -415,15 +422,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let obscure_taint =
         if TaintResult.ModeSet.contains Obscure modes then
-          let annotation =
-            Resolution.resolve_expression_to_type
-              resolution
-              { Node.value = call_expression; location }
-          in
+          let return_annotation = Lazy.force return_annotation in
           let breadcrumbs =
             Features.type_breadcrumbs
               ~resolution:(Resolution.global_resolution resolution)
-              (Some annotation)
+              (Some return_annotation)
             |> Features.BreadcrumbSet.add Features.obscure
           in
           BackwardState.Tree.collapse

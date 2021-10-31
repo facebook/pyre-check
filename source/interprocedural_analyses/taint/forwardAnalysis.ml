@@ -218,6 +218,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* We keep a table of kind -> set of triggered labels across all targets, and merge triggered
        sinks at the end. *)
     let triggered_sinks = String.Hash_set.create () in
+    let return_annotation =
+      (* This can be a very expensive operation, let's make it lazy. *)
+      lazy
+        (Resolution.resolve_expression_to_type
+           resolution
+           (Node.create_with_default_location (Expression.Call { Call.callee; arguments })))
+    in
     let apply_call_target state arguments_taint call_target =
       let ({ Model.model = { TaintResult.forward; backward; sanitizers; modes }; _ } as taint_model)
         =
@@ -500,15 +507,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let returned_taint =
         let joined = ForwardState.Tree.join result_taint tito in
         if TaintResult.ModeSet.contains Obscure modes then
-          let annotation =
-            Resolution.resolve_expression_to_type
-              resolution
-              (Node.create_with_default_location (Expression.Call { Call.callee; arguments }))
-          in
+          let return_annotation = Lazy.force return_annotation in
           let type_breadcrumbs =
             Features.type_breadcrumbs
               ~resolution:(Resolution.global_resolution resolution)
-              (Some annotation)
+              (Some return_annotation)
           in
           ForwardState.Tree.add_breadcrumbs type_breadcrumbs joined
         else
