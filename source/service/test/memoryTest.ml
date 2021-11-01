@@ -52,4 +52,35 @@ let test_reset _ =
   ()
 
 
-let () = "memory" >::: ["test_reset" >:: test_reset] |> Test.run
+let test_interner _ =
+  let module StringInterner = Memory.Interner (struct
+    include String
+
+    let to_string x = x
+
+    let unmarshall x = x
+
+    let prefix = Prefix.make ()
+
+    let description = "string"
+  end)
+  in
+  let foo = StringInterner.intern "foo" in
+  let bar = StringInterner.intern "bar" in
+  assert_equal (StringInterner.unintern foo) "foo";
+  assert_equal (StringInterner.unintern bar) "bar";
+  let second_foo = StringInterner.intern "foo" in
+  let second_bar = StringInterner.intern "bar" in
+  assert_equal foo second_foo;
+  assert_equal bar second_bar;
+
+  let words = List.init 1000 string_of_int in
+  let interned_words = List.map (fun word -> word, StringInterner.intern word) words in
+  List.iter (fun (word, id) -> assert_equal word (StringInterner.unintern id)) interned_words;
+  let module Int64Set = Set.Make (Int64) in
+  let size = interned_words |> List.map snd |> Int64Set.of_list |> Int64Set.cardinal in
+  assert_equal size 1000;
+  ()
+
+
+let () = "memory" >::: ["test_reset" >:: test_reset; "test_interner" >:: test_interner] |> Test.run

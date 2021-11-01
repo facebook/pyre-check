@@ -288,3 +288,38 @@ module Serializer (Value : SerializableValueType) = struct
     Table.remove_batch (Table.KeySet.singleton SingletonKey.key);
     table
 end
+
+module type InternerValueType = sig
+  include ValueType
+
+  val to_string : t -> string
+end
+
+(* Provide a unique integer for a given value. *)
+module Interner (Value : InternerValueType) = struct
+  module Table = SharedMemory.WithCache (Int64) (Value)
+
+  type t = Int64.t
+
+  let intern value =
+    (* The shared memory implementation uses the first 8 bytes of the md5 as a
+     * key to the hashtable. Since we already assume that there won't be
+     * collisions there, let's use the same strategy here.
+     *)
+    let id =
+      value
+      |> Value.to_string
+      |> Digest.string
+      |> Md5_lib.to_binary
+      |> Caml.Bytes.of_string
+      |> fun md5 -> Caml.Bytes.get_int64_ne md5 0
+    in
+    Table.write_through id value;
+    id
+
+
+  let unintern id =
+    match Table.get id with
+    | Some value -> value
+    | None -> Format.asprintf "Invalid intern key %a" Int64.pp id |> failwith
+end
