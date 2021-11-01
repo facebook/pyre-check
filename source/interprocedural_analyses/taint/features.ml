@@ -51,8 +51,6 @@ end
 module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)
 
 module LeafName = struct
-  let name = "leaf names"
-
   type t = {
     leaf: string;
     port: string option;
@@ -74,9 +72,30 @@ module LeafName = struct
       | None -> []
     in
     `Assoc (port_assoc @ ["kind", kind_json; "name", `String leaf])
+
+
+  let to_string = show
+
+  let prefix = Prefix.make ()
+
+  let description = "leaf name"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
-module LeafNameSet = Abstract.SetDomain.Make (LeafName)
+module LeafNameInterned = struct
+  include Memory.Interner (LeafName)
+
+  let name = "leaf names"
+
+  let compare = Int64.compare
+
+  let pp formatter id = id |> unintern |> LeafName.pp formatter
+
+  let show id = id |> unintern |> LeafName.show
+end
+
+module LeafNameSet = Abstract.SetDomain.Make (LeafNameInterned)
 
 module Breadcrumb = struct
   let name = "breadcrumbs"

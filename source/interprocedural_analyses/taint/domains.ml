@@ -397,6 +397,7 @@ end = struct
         let leaves =
           FlowDetails.get FlowDetails.Slots.LeafName features
           |> Features.LeafNameSet.elements
+          |> List.map ~f:Features.LeafNameInterned.unintern
           |> List.map ~f:(Features.LeafName.to_json ~kind_json)
         in
         let first_index_breadcrumbs =
@@ -569,6 +570,7 @@ end = struct
               let open Features in
               let make_leaf_name callee =
                 LeafName.{ leaf = Interprocedural.Target.external_target_name callee; port = None }
+                |> LeafNameInterned.intern
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
           in

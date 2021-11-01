@@ -44,10 +44,10 @@
               "length": 1
             },
             "leaves": [
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
               { "kind": "Test", "name": "multi_sink_ports.sinkA" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
               { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [
               { "via": "tito" },
@@ -122,10 +122,10 @@
               "length": 2
             },
             "leaves": [
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
               { "kind": "Test", "name": "multi_sink_ports.sinkA" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
               { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [
               { "via": "tito" },
@@ -206,9 +206,9 @@
               "length": 2
             },
             "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
               { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -288,9 +288,9 @@
               "length": 2
             },
             "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
               { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -398,9 +398,9 @@
               "length": 2
             },
             "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
               { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -737,9 +737,9 @@
               "length": 1
             },
             "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
               { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -837,9 +837,9 @@
               "length": 1
             },
             "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
               { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [
               { "via": "d_feature" },
@@ -946,9 +946,9 @@
               "length": 3
             },
             "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" },
+              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
               { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
+              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
             ],
             "features": [
               { "via": "d_feature" },

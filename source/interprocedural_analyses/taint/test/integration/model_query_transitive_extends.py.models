@@ -417,12 +417,12 @@
               {
                 "kind": "Test",
                 "name":
-                  "Obj{model_query_transitive_extends.Test1_C.attribute}"
+                  "Obj{model_query_transitive_extends.Test1_C1.attribute}"
               },
               {
                 "kind": "Test",
                 "name":
-                  "Obj{model_query_transitive_extends.Test1_C1.attribute}"
+                  "Obj{model_query_transitive_extends.Test1_C.attribute}"
               }
             ]
           }
@@ -575,12 +575,12 @@
               {
                 "kind": "Test",
                 "name":
-                  "Obj{model_query_transitive_extends.Test1_C.attribute}"
+                  "Obj{model_query_transitive_extends.Test1_C1.attribute}"
               },
               {
                 "kind": "Test",
                 "name":
-                  "Obj{model_query_transitive_extends.Test1_C1.attribute}"
+                  "Obj{model_query_transitive_extends.Test1_C.attribute}"
               },
               {
                 "kind": "Test",

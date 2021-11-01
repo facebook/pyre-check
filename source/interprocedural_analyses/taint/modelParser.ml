@@ -959,7 +959,11 @@ let introduce_sink_taint
             else
               taint
           in
-          let leaf_names = Features.LeafNameSet.of_list leaf_names in
+          let leaf_names =
+            leaf_names
+            |> List.map ~f:Features.LeafNameInterned.intern
+            |> Features.LeafNameSet.of_list
+          in
           let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
           let via_features = Features.ViaFeatureSet.of_list via_features in
           let leaf_taint =
@@ -1067,7 +1071,9 @@ let introduce_source_taint
       in
 
       let leaf_taint =
-        let leaf_names = Features.LeafNameSet.of_list leaf_names in
+        let leaf_names =
+          leaf_names |> List.map ~f:Features.LeafNameInterned.intern |> Features.LeafNameSet.of_list
+        in
         ForwardTaint.singleton taint_source_kind
         |> ForwardTaint.transform Features.LeafNameSet.Self Add ~f:leaf_names
         |> ForwardTaint.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
