@@ -19,30 +19,67 @@ let test_transform_ast _ =
   in
   assert_expand
     {|
+      from typing import NewType
+      T = NewType('T', int)
+    |}
+    {|
+      from typing import NewType
+      class T(int):
+        def __init__(self, input: int) -> None:
+          pass
+    |};
+  assert_expand
+    {|
+      import typing
       T = typing.NewType('T', int)
     |}
     {|
-      class qualifier.T(int):
-        def qualifier.T.__init__(self, input: int) -> None:
+      import typing
+      class T(int):
+        def __init__(self, input: int) -> None:
           pass
     |};
   assert_expand
     {|
+      import typing
       T = typing.NewType('T', typing.List[int])
     |}
     {|
-      class qualifier.T(typing.List[int]):
-        def qualifier.T.__init__(self, input: typing.List[int]) -> None:
+      import typing
+      class T(typing.List[int]):
+        def __init__(self, input: typing.List[int]) -> None:
           pass
     |};
   assert_expand
     {|
+      import typing
       T = typing.NewType('T', typing.Dict[str, typing.List[int]])
     |}
     {|
-      class qualifier.T(typing.Dict[str, typing.List[int]]):
-        def qualifier.T.__init__(self, input: typing.Dict[str, typing.List[int]]) -> None:
+      import typing
+      class T(typing.Dict[str, typing.List[int]]):
+        def __init__(self, input: typing.Dict[str, typing.List[int]]) -> None:
           pass
+    |};
+
+  (* Don't recognize arbitrary NewType definitions. *)
+  assert_expand
+    {|
+      class NewType: pass
+      T = NewType('T', int)
+    |}
+    {|
+      class NewType: pass
+      T = NewType('T', int)
+    |};
+  assert_expand
+    {|
+      from derp import NewType
+      T = NewType('T', int)
+    |}
+    {|
+      from derp import NewType
+      T = NewType('T', int)
     |};
 
   (* Don't transform non-toplevel statements. *)

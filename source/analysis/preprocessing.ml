@@ -2773,8 +2773,65 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map ~f:expand_named_tuples statements }
 
 
-let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
+let expand_new_types ({ Source.statements; _ } as source) =
+  let imported_newtype_from_typing =
+    lazy
+      (let open Scope in
+      let scopes = ScopeStack.create source in
+      match ScopeStack.lookup scopes "NewType" with
+      | Some
+          {
+            Access.binding = { Binding.kind = Binding.Kind.(ImportName (Import.From source)); _ };
+            _;
+          }
+        when Reference.equal source (Reference.create "typing") ->
+          true
+      | _ -> false)
+  in
+  let create_class_for_newtype
+      ~location
+      ~base_argument:
+        ({
+           (* TODO (T44209017): Error on invalid annotation expression *)
+           Call.Argument.value = base;
+           _;
+         } as base_argument)
+      name
+    =
+    let constructor =
+      Statement.Define
+        {
+          signature =
+            {
+              name = Reference.create "__init__";
+              parameters =
+                [
+                  Parameter.create ~location ~name:"self" ();
+                  Parameter.create ~location ~annotation:base ~name:"input" ();
+                ];
+              decorators = [];
+              return_annotation =
+                Some (Node.create ~location (Expression.Constant Constant.NoneLiteral));
+              async = false;
+              generator = false;
+              parent = Some name;
+              nesting_define = None;
+            };
+          captures = [];
+          unbound_names = [];
+          body = [Node.create Statement.Pass ~location];
+        }
+      |> Node.create ~location
+    in
+    Statement.Class
+      {
+        Class.name;
+        base_arguments = [base_argument];
+        body = [constructor];
+        decorators = [];
+        top_level_unbound_names = [];
+      }
+  in
   let expand_new_type ({ Node.location; value } as statement) =
     let value =
       match value with
@@ -2808,51 +2865,42 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                               };
                             _;
                           };
-                          ({
-                             (* TODO (T44209017): Error on invalid annotation expression *)
-                             Call.Argument.value = base;
-                             _;
-                           } as base_argument);
+                          base_argument;
                         ];
                     };
                 _;
               };
             _;
           } ->
-          let name = Reference.create ~prefix:qualifier name in
-          let constructor =
-            Statement.Define
+          create_class_for_newtype ~location ~base_argument (Reference.create name)
+      | Statement.Assign
+          {
+            Assign.value =
               {
-                signature =
-                  {
-                    name = Reference.create ~prefix:name "__init__";
-                    parameters =
-                      [
-                        Parameter.create ~location ~name:"self" ();
-                        Parameter.create ~location ~annotation:base ~name:"input" ();
-                      ];
-                    decorators = [];
-                    return_annotation =
-                      Some (Node.create ~location (Expression.Constant Constant.NoneLiteral));
-                    async = false;
-                    generator = false;
-                    parent = Some name;
-                    nesting_define = None;
-                  };
-                captures = [];
-                unbound_names = [];
-                body = [Node.create Statement.Pass ~location];
-              }
-            |> Node.create ~location
-          in
-          Statement.Class
-            {
-              Class.name;
-              base_arguments = [base_argument];
-              body = [constructor];
-              decorators = [];
-              top_level_unbound_names = [];
-            }
+                Node.value =
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier "NewType"); _ };
+                      arguments =
+                        [
+                          {
+                            Call.Argument.value =
+                              {
+                                Node.value =
+                                  Constant (Constant.String { StringLiteral.value = name; _ });
+                                _;
+                              };
+                            _;
+                          };
+                          base_argument;
+                        ];
+                    };
+                _;
+              };
+            _;
+          }
+        when Lazy.force imported_newtype_from_typing ->
+          create_class_for_newtype ~location ~base_argument (Reference.create name)
       | _ -> value
     in
     { statement with Node.value }
@@ -3189,7 +3237,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                 None
             | Scope.Kind.Define ({ Define.Signature.parent; _ } as signature) -> (
                 match binding_kind with
-                | Binding.Kind.(ClassName | ImportName) ->
+                | Binding.Kind.(ClassName | ImportName _) ->
                     (* Judgement call: these bindings are (supposedly) not useful for type checking *)
                     None
                 | Binding.Kind.(ParameterName { star = Some Star.Twice; annotation; _ }) ->
@@ -4175,6 +4223,7 @@ let preprocess_phase0 source =
 
 let preprocess_phase1 source =
   source
+  |> expand_new_types
   |> populate_unbound_names
   |> replace_union_shorthand
   |> mangle_private_attributes
@@ -4186,7 +4235,6 @@ let preprocess_phase1 source =
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
-  |> expand_new_types
   |> inline_six_metaclass
   |> expand_pytorch_register_buffer
   |> populate_nesting_defines

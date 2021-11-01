@@ -18,6 +18,13 @@ module Binding = struct
       [@@deriving sexp, compare, hash]
     end
 
+    module Import = struct
+      type t =
+        | From of Reference.t
+        | Module
+      [@@deriving sexp, compare, hash]
+    end
+
     type t =
       | AssignTarget of Expression.t option
       | ClassName
@@ -25,7 +32,7 @@ module Binding = struct
       | DefineName of Statement.Define.Signature.t
       | ExceptTarget of Expression.t option
       | ForTarget
-      | ImportName
+      | ImportName of Import.t
       | ParameterName of {
           index: int;
           annotation: Expression.t option;
@@ -182,17 +189,23 @@ module Binding = struct
         of_statements sofar orelse
     | Statement.Import { Import.imports; from } ->
         let binding_of_import sofar { Node.value = { Import.alias; name }; location } =
+          let import_status =
+            match from with
+            | Some from -> Kind.Import.From from
+            | None -> Kind.Import.Module
+          in
           match alias with
-          | Some alias -> { kind = Kind.ImportName; name = alias; location } :: sofar
+          | Some alias -> { kind = Kind.ImportName import_status; name = alias; location } :: sofar
           | None -> (
               match from with
               | Some _ ->
                   (* `name` must be a simple name *)
-                  { kind = Kind.ImportName; name = Reference.show name; location } :: sofar
+                  { kind = Kind.ImportName import_status; name = Reference.show name; location }
+                  :: sofar
               | None ->
                   (* `import a.b` actually binds name a *)
                   let name = Reference.as_list name |> List.hd_exn in
-                  { kind = Kind.ImportName; name; location } :: sofar)
+                  { kind = Kind.ImportName import_status; name; location } :: sofar)
         in
         List.fold imports ~init:sofar ~f:binding_of_import
     | Statement.Raise { Raise.expression; from } ->

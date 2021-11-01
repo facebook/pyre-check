@@ -18,6 +18,13 @@ module Binding : sig
       [@@deriving sexp, compare, hash]
     end
 
+    module Import : sig
+      type t =
+        | From of Reference.t
+        | Module
+      [@@deriving sexp, compare, hash]
+    end
+
     type t =
       | AssignTarget of Expression.t option
       | ClassName
@@ -25,7 +32,7 @@ module Binding : sig
       | DefineName of Statement.Define.Signature.t
       | ExceptTarget of Expression.t option
       | ForTarget
-      | ImportName
+      | ImportName of Import.t
       | ParameterName of {
           index: int;
           annotation: Expression.t option;
