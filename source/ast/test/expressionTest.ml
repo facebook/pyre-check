@@ -374,27 +374,39 @@ let test_delocalize _ =
     assert_equal
       ~printer:Expression.show
       ~cmp:location_insensitive_equal
-      (parse_single_expression expected)
-      (parse_single_expression source |> delocalize)
+      expected
+      (delocalize source)
   in
-  assert_delocalized "constant" "constant";
-  assert_delocalized "$local_qualifier$variable" "qualifier.variable";
-  assert_delocalized "$local_base64$b64encode" "base64.b64encode";
-  assert_delocalized "$local_module?qualifier$variable" "module.qualifier.variable";
+  assert_delocalized !"constant" !"constant";
+  assert_delocalized !"$local_qualifier$variable" !"qualifier.variable";
+  assert_delocalized !"$local_base64$b64encode" !"base64.b64encode";
+  assert_delocalized !"$local_module?qualifier$variable" !"module.qualifier.variable";
   assert_delocalized
-    "$local_module_hyphenated?qualifier$variable"
-    "module_hyphenated.qualifier.variable";
+    !"$local_module_hyphenated?qualifier$variable"
+    !"module_hyphenated.qualifier.variable";
 
   (* Don't attempt to delocalize qualified expressions. *)
-  assert_delocalized "qualifier.$local_qualifier$variable" "qualifier.$local_qualifier$variable";
+  assert_delocalized
+    (+Expression.Name
+        (Name.Attribute
+           { base = !"qualifier"; attribute = "$local_qualifier$variable"; special = true }))
+    (+Expression.Name
+        (Name.Attribute
+           { base = !"qualifier"; attribute = "$local_qualifier$variable"; special = true }));
+
   let assert_delocalize_qualified source expected =
     assert_equal
       ~printer:Expression.show
       ~cmp:location_insensitive_equal
-      (parse_single_expression expected)
-      (parse_single_expression source |> delocalize_qualified)
+      expected
+      (delocalize_qualified source)
   in
-  assert_delocalize_qualified "qualifier.$local_qualifier$variable" "qualifier.variable"
+  assert_delocalize_qualified
+    (+Expression.Name
+        (Name.Attribute
+           { base = !"qualifier"; attribute = "$local_qualifier$variable"; special = true }))
+    (+Expression.Name
+        (Name.Attribute { base = !"qualifier"; attribute = "variable"; special = true }))
 
 
 let test_comparison_operator_override _ =
@@ -467,7 +479,15 @@ let test_exists_in_list _ =
 
   (* Qualified *)
   assert_exists
-    [parse_single_expression "qualifier.$local_qualifier$property"]
+    [
+      +Expression.Name
+         (Name.Attribute
+            {
+              Name.Attribute.base = !"qualifier";
+              attribute = "$local_qualifier$property";
+              special = false;
+            });
+    ]
     ~match_prefix:false
     "qualifier.property"
 

@@ -326,7 +326,6 @@ let test_preamble _ =
       preambles
       (List.map handlers ~f:Try.preamble)
   in
-  assert_preamble "try: pass" [];
   assert_preamble
     {|
       try:

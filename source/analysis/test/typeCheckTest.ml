@@ -797,7 +797,6 @@ let test_forward_expression context =
 
   (* Starred expressions. *)
   assert_forward "*1" Type.Top;
-  assert_forward "**1" Type.Top;
   assert_forward "*undefined" Type.Top;
 
   (* String literals. *)
@@ -838,14 +837,13 @@ let test_forward_expression context =
   (* Unary expressions. *)
   assert_forward "not 1" Type.bool;
   assert_forward "not undefined" Type.bool;
-  assert_forward "-1" (Type.Literal (Integer (-1)));
   assert_forward "+1" Type.integer;
   assert_forward "~1" Type.integer;
   assert_forward "-undefined" Type.Any;
 
   (* Walrus operator. *)
   assert_forward
-    "x := True"
+    "(x := True)"
     (Type.Literal (Boolean true))
     ~postcondition:["x", Type.Literal (Boolean true)];
   (* Yield. *)

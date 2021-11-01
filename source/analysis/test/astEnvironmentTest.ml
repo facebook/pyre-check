@@ -635,28 +635,29 @@ let test_parse_repository context =
     in
     let printer (handle, source) = Format.sprintf "%s: %s" handle (Ast.Source.show source) in
     let expected =
-      List.map expected ~f:(fun (handle, parsed_source) -> handle, Test.parse parsed_source)
+      List.map expected ~f:(fun (handle, parsed_source) ->
+          handle, Test.parse ~handle parsed_source |> Preprocessing.qualify)
     in
     assert_equal ~cmp:(List.equal equal) ~printer:(List.to_string ~f:printer) expected actual
   in
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."]
-    ~expected:["a.py", "def a.foo() -> int: ..."];
+    ~expected:["a.py", "def foo() -> int: ..."];
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"]
-    ~expected:["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo as foo"];
+    ~expected:["a.py", "def foo() -> int: ..."; "b.pyi", "from a import foo as foo"];
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"; "c.py", "from b import *"]
     ~expected:
       [
-        "a.py", "def a.foo() -> int: ...";
+        "a.py", "def foo() -> int: ...";
         "b.pyi", "from a import foo as foo";
         "c.py", "from b import foo as foo";
       ];
   (* Unparsable source turns into getattr-any *)
   assert_repository_parses_to
     ["a.py", "def foo() -> int:"]
-    ~expected:["a.py", "import typing\ndef a.__getattr__($parameter$name: str) -> typing.Any: ..."];
+    ~expected:["a.py", "import typing\ndef __getattr__(name: str) -> typing.Any: ..."];
   ()
 
 
@@ -1010,35 +1011,69 @@ let test_ast_transformer context =
         AstEnvironment.UpdateResult.invalidated_modules ast_environment_update_result
         |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
-      List.map sources ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
-          relative, source)
+      List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; statements; _ } ->
+          relative, statements)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)
     in
-    let equal
-        (expected_handle, { Ast.Source.statements = expected_source; _ })
-        (handle, { Ast.Source.statements; _ })
-      =
+    let equal (expected_handle, expected_source) (handle, statements) =
       let equal left right = Statement.location_insensitive_compare left right = 0 in
       String.equal expected_handle handle && List.equal equal expected_source statements
     in
-    let printer (handle, source) = Format.sprintf "%s: %s" handle (Ast.Source.show source) in
-    let expected =
-      List.map expected ~f:(fun (handle, parsed_source) -> handle, Test.parse parsed_source)
+    let printer (handle, statements) =
+      Format.sprintf
+        "%s: %s"
+        handle
+        (List.map statements ~f:Statement.show |> String.concat ~sep:"; ")
     in
     assert_equal ~cmp:(List.equal equal) ~printer:(List.to_string ~f:printer) expected actual
   in
+  let open Statement in
+  let open Expression in
   assert_transformed
     ["a.py", "def foo() -> int: ..."]
     ~additional_preprocessing:None
-    ~expected:["a.py", "def a.foo() -> int: ..."];
+    ~expected:
+      [
+        ( "a.py",
+          [
+            +Statement.Define
+               {
+                 Define.signature =
+                   {
+                     Define.Signature.name = !&"a.foo";
+                     parameters = [];
+                     decorators = [];
+                     return_annotation = Some !"int";
+                     async = false;
+                     generator = false;
+                     parent = None;
+                     nesting_define = None;
+                   };
+                 captures = [];
+                 unbound_names = [];
+                 body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
+               };
+          ] );
+      ];
   let remove_first_statement ({ Source.statements; _ } as source) =
     { source with statements = List.tl_exn statements }
   in
   assert_transformed
-    ["a.py", "def a.foo() -> int: ...\na.bar: int = 1\n"]
+    ["a.py", "def foo() -> int: ...\nbar: int = 1\n"]
     ~additional_preprocessing:(Some remove_first_statement)
-    ~expected:["a.py", "a.bar: int = 1\n"];
+    ~expected:
+      [
+        ( "a.py",
+          [
+            +Statement.Assign
+               {
+                 Assign.target = !"$local_a$bar";
+                 value = +Expression.Constant (Constant.Integer 1);
+                 annotation = Some !"int";
+               };
+          ] );
+      ];
   ()
 
 

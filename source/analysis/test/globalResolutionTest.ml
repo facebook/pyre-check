@@ -1180,7 +1180,7 @@ let test_meet context =
       |> GlobalResolution.parse_annotation global_resolution
     in
     let actual = GlobalResolution.meet global_resolution (parse left) (parse right) in
-    assert_equal ~cmp:Type.equal ~printer:Type.show (parse expected) actual
+    assert_equal ~cmp:Type.equal ~printer:Type.show expected actual
   in
   assert_meet
     ~source:{|
@@ -1190,7 +1190,7 @@ let test_meet context =
     |}
     ~left:"typing.Type[test.C]"
     ~right:"typing.Callable[[int], test.C]"
-    "$bottom";
+    Type.Bottom;
   ()
 
 

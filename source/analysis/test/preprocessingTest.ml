@@ -312,14 +312,6 @@ let test_expand_type_alias_body _ =
     {|
       typing.TypeVar("T", int, A)
     |};
-  (* Type variables for builtins like `Mapping` are locally qualified in `typing`. *)
-  assert_expand
-    {|
-      $local_typing$TypeVar("_KT")
-    |}
-    {|
-      $local_typing$TypeVar("_KT")
-    |};
   ()
 
 
@@ -2803,7 +2795,7 @@ let test_expand_implicit_returns _ =
            if x:
              y = 5/0
          except ZeroDivisionError:
-           print "tried to divide by 0"
+           print ("tried to divide by 0")
          else:
            pass
        |}
@@ -2818,7 +2810,7 @@ let test_expand_implicit_returns _ =
            if x:
              y = 5/0
          except ZeroDivisionError:
-           print "tried to divide by 0"
+           print ("tried to divide by 0")
          else:
            return 2
          finally:

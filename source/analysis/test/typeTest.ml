@@ -36,9 +36,7 @@ let test_create _ =
   in
   assert_create "foo" (Type.Primitive "foo");
   assert_create "foo.bar" (Type.Primitive "foo.bar");
-  assert_create "foo.$local_qualifier$bar" (Type.Primitive "foo.bar");
   assert_create "object" (Type.Primitive "object");
-  assert_create "$unknown" Type.Top;
   assert_create "foo[bar]" (Type.parametric "foo" ![Type.Primitive "bar"]);
   assert_create
     "foo[bar, baz]"
@@ -80,7 +78,6 @@ let test_create _ =
   assert_create "typing.Set[int]" (Type.set Type.integer);
   assert_create "typing.Union[int, str]" (Type.union [Type.integer; Type.string]);
   assert_create "typing.Union[int, typing.Any]" (Type.union [Type.integer; Type.Any]);
-  assert_create "typing.Union[int, typing.Optional[$bottom]]" Type.integer;
   assert_create "typing.Union[int, None]" (Type.optional Type.integer);
   assert_create
     "typing.Union[int, None, str, typing.Tuple[int, str]]"
@@ -105,23 +102,21 @@ let test_create _ =
 
   (* Check variables. *)
   assert_create "typing.TypeVar('_T')" (Type.variable "_T");
+  assert_create "typing.TypeVar('_T', covariant=True)" (Type.variable ~variance:Covariant "_T");
+  assert_create "typing.TypeVar('_T', covariant=False)" (Type.variable "_T");
   assert_create
-    "typing.TypeVar('_T', $parameter$covariant=True)"
-    (Type.variable ~variance:Covariant "_T");
-  assert_create "typing.TypeVar('_T', $parameter$covariant=False)" (Type.variable "_T");
-  assert_create
-    "typing.TypeVar('_T', $parameter$contravariant=True)"
+    "typing.TypeVar('_T', contravariant=True)"
     (Type.variable ~variance:Contravariant "_T");
-  assert_create "typing.TypeVar('_T', $parameter$contravariant=False)" (Type.variable "_T");
+  assert_create "typing.TypeVar('_T', contravariant=False)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', int)"
     (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
   assert_create "typing.TypeVar('_T', name=int)" (Type.variable "_T");
   assert_create
-    "typing.TypeVar('_T', $parameter$bound=int)"
+    "typing.TypeVar('_T', bound=int)"
     (Type.variable ~constraints:(Type.Variable.Bound Type.integer) "_T");
   assert_create
-    "typing.TypeVar('_T', $parameter$bound='C')"
+    "typing.TypeVar('_T', bound='C')"
     (Type.variable ~constraints:(Type.Variable.Bound (Type.Primitive "C")) "_T");
   assert_create
     "typing.TypeVar('_T', 'C', X)"
@@ -293,10 +288,6 @@ let test_create _ =
          implementation = { default_overload with annotation = Type.integer };
          overloads = [];
        });
-  assert_create
-    "typing.Callable('foo')[..., $unknown]"
-    (Type.Callable
-       { kind = Type.Callable.Named !&"foo"; implementation = default_overload; overloads = [] });
   assert_create "typing.Other('name')[..., int]" Type.Top;
   assert_create
     "typing.Callable[[int, str], int]"
@@ -753,17 +744,6 @@ let test_create_type_operator _ =
       ]
     |}
     (Type.Primitive "int");
-  assert_create
-    ~aliases:(function
-      | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
-      | _ -> None)
-    {|
-      pyre_extensions.Product[
-        $bottom,
-        pyre_extensions.Unpack[Ts],
-      ]
-    |}
-    Type.Top;
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -1537,7 +1517,6 @@ let test_expression _ =
   assert_expression (Type.Primitive "foo") "foo";
   assert_expression (Type.Primitive "...") "...";
   assert_expression (Type.Primitive "foo.bar") "foo.bar";
-  assert_expression Type.Top "$unknown";
   assert_expression (Type.parametric "foo.bar" ![Type.Primitive "baz"]) "foo.bar.__getitem__(baz)";
   assert_expression
     (Type.Tuple (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
@@ -1595,18 +1574,6 @@ let test_expression _ =
        ~annotation:Type.integer
        ())
     "typing.Callable.__getitem__(([Named(a, int, default)], int))";
-  assert_expression
-    (Type.Callable.create
-       ~parameters:
-         (Defined
-            [
-              Parameter.Named { name = "$0"; annotation = Type.integer; default = false };
-              Parameter.Variable (Concrete Type.integer);
-              Parameter.Keywords Type.string;
-            ])
-       ~annotation:Type.integer
-       ())
-    ("typing.Callable.__getitem__(([Named($0, int), Variable(int), " ^ "Keywords(str)], int))");
   assert_expression
     (Type.parametric
        "G"
@@ -2359,7 +2326,6 @@ let test_from_overloads _ =
       (Type.create ~aliases (parse_single_expression expected))
       merged
   in
-  assert_create ["typing.Callable('foo')[..., int]"; "typing.Callable('bar')[..., int]"] "$unknown";
   assert_create
     ["typing.Callable('foo')[..., int]"; "typing.Callable('foo')[..., str]"]
     "typing.Callable('foo')[..., str]";
@@ -2370,13 +2336,7 @@ let test_from_overloads _ =
       "typing.Callable('foo')[[int, str, str], int]";
     ]
     "typing.Callable('foo')[[int, str, str], int]";
-  assert_create
-    [
-      "typing.Callable('foo')[..., $unknown][[[int], int]]";
-      "typing.Callable('foo')[[str], str]";
-      "typing.Callable('foo')[[int], int][[[str], str]]";
-    ]
-    "typing.Callable('foo')[[int], int][[[int], int][[str], str]]"
+  ()
 
 
 let test_with_return_annotation _ =
@@ -2421,9 +2381,9 @@ let test_overload_parameters _ =
     in
     assert_equal parameters expected
   in
-  assert_parameters "typing.Callable('foo')[..., $unknown][[[int], str]]" ["int"];
-  assert_parameters "typing.Callable('foo')[..., $unknown][[[int, str], str]]" ["int"; "str"];
-  assert_parameters "typing.Callable('foo')[..., $unknown][[[], str]]" []
+  assert_parameters "typing.Callable('foo')[..., Unknown][[[int], str]]" ["int"];
+  assert_parameters "typing.Callable('foo')[..., Unknown][[[int, str], str]]" ["int"; "str"];
+  assert_parameters "typing.Callable('foo')[..., Unknown][[[], str]]" []
 
 
 let test_variables _ =
@@ -3988,27 +3948,6 @@ let test_replace_all _ =
         int
       ]
     |};
-  let replace_with_concrete = function
-    | variable when Type.Variable.Variadic.Tuple.equal variable variadic ->
-        Some (Type.OrderedTypes.Concrete [Type.literal_integer 5; Type.string])
-    | _ -> None
-  in
-  assert_replaced
-    ~replace:replace_with_concrete
-    {|
-      typing.Callable[
-        [
-          pyre_extensions.Unpack[
-            pyre_extensions.Broadcast[
-              typing.Tuple[int, ...],
-              typing.Tuple[pyre_extensions.Unpack[Ts]],
-            ]
-          ]
-        ],
-        int
-      ]
-    |}
-    "typing.Callable[[$bottom], int]";
 
   let parse_string string =
     let aliases ?replace_unbound_parameters_with_any:_ = function
@@ -4290,19 +4229,6 @@ let test_product_replace_variadic _ =
         ]
       ]
     |};
-  let replace_with_bad given =
-    Option.some_if
-      (Type.Variable.Variadic.Tuple.equal given variadic)
-      (Type.OrderedTypes.Concrete [Type.literal_integer 2; Type.string])
-  in
-  assert_replaced
-    ~replace:replace_with_bad
-    {|
-        pyre_extensions.Product[
-          pyre_extensions.Unpack[Ts]
-        ]
-      |}
-    "$bottom";
   assert_replaced_type
     ~replace:replace_with_concrete
     {|

@@ -620,9 +620,9 @@ let test_transform_expression _ =
 
 
 let test_sanitize_statement _ =
-  let assert_sanitized source expected =
+  let assert_sanitized statements expected =
     let given_statement, expected_statement =
-      match parse source |> Source.statements, parse expected |> Source.statements with
+      match statements, parse expected |> Source.statements with
       | [{ Node.value = given_statement; _ }], [{ Node.value = expected_statement; _ }] ->
           given_statement, expected_statement
       | _ -> failwith "Expected defines"
@@ -634,12 +634,64 @@ let test_sanitize_statement _ =
       (Transform.sanitize_statement given_statement |> Node.create_with_default_location)
   in
   assert_sanitized
-    {|
-    def $local_test?foo$bar($parameter$a: int) -> int:
-      $local_test?foo?bar$my_kwargs = { "a":$parameter$a }
-      print($local_test?foo?bar$my_kwargs)
-      return $local_test?foo$baz($parameter$a)
-    |}
+    [
+      +Statement.Define
+         {
+           Define.signature =
+             {
+               Define.Signature.name = !&"$local_test?foo$bar";
+               parameters =
+                 [+{ Parameter.name = "$parameter$a"; value = None; annotation = Some !"int" }];
+               decorators = [];
+               return_annotation = Some !"int";
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           captures = [];
+           unbound_names = [];
+           body =
+             [
+               +Statement.Assign
+                  {
+                    Assign.target = !"$local_test?foo?bar$my_kwargs";
+                    annotation = None;
+                    value =
+                      +Expression.Dictionary
+                         {
+                           Dictionary.entries =
+                             [
+                               {
+                                 Dictionary.Entry.key =
+                                   +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                                 value = !"$parameter$a";
+                               };
+                             ];
+                           keywords = [];
+                         };
+                  };
+               +Statement.Expression
+                  (+Expression.Call
+                      {
+                        Call.callee = !"print";
+                        arguments =
+                          [{ Call.Argument.name = None; value = !"$local_test?foo?bar$my_kwargs" }];
+                      });
+               +Statement.Return
+                  {
+                    Return.is_implicit = false;
+                    expression =
+                      Some
+                        (+Expression.Call
+                            {
+                              Call.callee = !"$local_test?foo$baz";
+                              arguments = [{ Call.Argument.name = None; value = !"$parameter$a" }];
+                            });
+                  };
+             ];
+         };
+    ]
     {|
     def bar(a: int) -> int:
       my_kwargs = { "a":a }
@@ -647,12 +699,62 @@ let test_sanitize_statement _ =
       return baz(a)
     |};
   assert_sanitized
-    {|
-    def bar(a: int) -> int:
-      my_kwargs = { "a":a }
-      print(my_kwargs)
-      return baz(a)
-    |}
+    [
+      +Statement.Define
+         {
+           Define.signature =
+             {
+               Define.Signature.name = !&"bar";
+               parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"int" }];
+               decorators = [];
+               return_annotation = Some !"int";
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           captures = [];
+           unbound_names = [];
+           body =
+             [
+               +Statement.Assign
+                  {
+                    Assign.target = !"my_kwargs";
+                    annotation = None;
+                    value =
+                      +Expression.Dictionary
+                         {
+                           Dictionary.entries =
+                             [
+                               {
+                                 Dictionary.Entry.key =
+                                   +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                                 value = !"a";
+                               };
+                             ];
+                           keywords = [];
+                         };
+                  };
+               +Statement.Expression
+                  (+Expression.Call
+                      {
+                        Call.callee = !"print";
+                        arguments = [{ Call.Argument.name = None; value = !"my_kwargs" }];
+                      });
+               +Statement.Return
+                  {
+                    Return.is_implicit = false;
+                    expression =
+                      Some
+                        (+Expression.Call
+                            {
+                              Call.callee = !"baz";
+                              arguments = [{ Call.Argument.name = None; value = !"a" }];
+                            });
+                  };
+             ];
+         };
+    ]
     {|
     def bar(a: int) -> int:
       my_kwargs = { "a":a }

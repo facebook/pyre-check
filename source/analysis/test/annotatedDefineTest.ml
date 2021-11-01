@@ -80,7 +80,7 @@ let test_parent_definition context =
 
 
 let test_decorate context =
-  let assert_decorated source ~expected =
+  let assert_decorated source ~expected_parameters ~expected_return_annotation =
     let source, environment =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
@@ -105,19 +105,18 @@ let test_decorate context =
       |> Annotated.Define.define
       |> Node.value
     in
-    let expected = Test.parse_single_define expected in
     assert_equal
       ~printer:(List.to_string ~f:Expression.Parameter.show)
       ~cmp:
         (List.equal (fun left right ->
              Expression.Parameter.location_insensitive_compare left right = 0))
       define.signature.parameters
-      expected.signature.parameters;
+      expected_parameters;
     assert_equal
       ~printer:(fun x -> x >>| Expression.show |> Option.value ~default:"No anno")
       ~cmp:(Option.equal (fun left right -> Expression.location_insensitive_compare left right = 0))
       define.signature.return_annotation
-      expected.signature.return_annotation
+      expected_return_annotation
   in
   (* Syntactic decoration doesn't work for non-callable returns :( *)
   assert_decorated
@@ -126,10 +125,10 @@ let test_decorate context =
       def foo(x: int) -> None:
         ...
     |}
-    ~expected:{|
-      def foo($parameter$x: int) -> None:
-        ...
-    |}
+    ~expected_parameters:
+      [+{ Expression.Parameter.name = "$parameter$x"; value = None; annotation = Some !"int" }]
+    ~expected_return_annotation:
+      (Some (+Expression.Expression.Constant Expression.Constant.NoneLiteral))
 
 
 let () =

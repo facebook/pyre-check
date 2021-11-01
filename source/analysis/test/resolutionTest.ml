@@ -73,8 +73,7 @@ let test_parse_annotation context =
       ~cmp:Type.equal
       ~printer:Type.show
       (parse_single_expression expected |> Type.create ~aliases:Type.empty_aliases)
-      (parse_single_expression expression
-      |> GlobalResolution.parse_annotation ~validation resolution)
+      (GlobalResolution.parse_annotation ~validation resolution expression)
   in
   let resolution =
     let resolution =
@@ -89,22 +88,22 @@ let test_parse_annotation context =
     ~validation:ValidatePrimitivesAndTypeParameters
     ~resolution
     ~expected:"int"
-    "int";
+    !"int";
   assert_parse_annotation
     ~validation:NoValidation
     ~resolution
     ~expected:"qualifier.int"
-    "$local_qualifier$int";
+    !"$local_qualifier$int";
   assert_parse_annotation
     ~validation:ValidatePrimitivesAndTypeParameters
     ~resolution
     ~expected:"typing.Any"
-    "empty.stub.Annotation";
+    !"empty.stub.Annotation";
   assert_parse_annotation
     ~validation:ValidatePrimitivesAndTypeParameters
     ~resolution
     ~expected:"typing.Dict[str, typing.Any]"
-    "typing.Dict[str, empty.stub.Annotation]"
+    (parse_single_expression "typing.Dict[str, empty.stub.Annotation]")
 
 
 let make_resolution ~context source =

@@ -1122,11 +1122,6 @@ let test_less_or_equal context =
   assert_true
     (less_or_equal
        order
-       ~left:"typing.Callable[..., $bottom][[[int], int][[float], float]]"
-       ~right:"typing.Callable[[int], int]");
-  assert_true
-    (less_or_equal
-       order
        ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
        ~right:"typing.Callable[[object], object][[[int], str]]");
   assert_false
@@ -1828,18 +1823,9 @@ let test_less_or_equal_variance _ =
 
 let test_join context =
   let assert_join ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
-    let parse_annotation source =
-      let integer =
-        try
-          Int.of_string source |> ignore;
-          true
-        with
-        | _ -> false
-      in
-      if integer then
-        Type.Primitive source
-      else
-        parse_single_expression source |> Type.create ~aliases
+    let parse_annotation = function
+      | "$bottom" -> Type.Bottom
+      | _ as source -> parse_single_expression source |> Type.create ~aliases
     in
     let attributes annotation ~assumptions:_ =
       let parse_annotation =
@@ -1916,24 +1902,10 @@ let test_join context =
 
   (* Optionals. *)
   assert_join "str" "typing.Optional[str]" "typing.Optional[str]";
-  assert_join "str" "typing.Optional[$bottom]" "str";
-  assert_join "typing.Optional[$bottom]" "str" "str";
 
   (* Handles `[] or optional_list`. *)
-  assert_join
-    "typing.List[$bottom]"
-    "typing.Optional[typing.List[int]]"
-    "typing.Optional[typing.List[int]]";
-  assert_join
-    "typing.Optional[typing.List[int]]"
-    "typing.List[$bottom]"
-    "typing.Optional[typing.List[int]]";
   assert_join "typing.List[int]" "typing.List[typing.Any]" "typing.List[typing.Any]";
   assert_join "typing.List[typing.Any]" "typing.List[int]" "typing.List[typing.Any]";
-  assert_join
-    "typing.Optional[typing.Set[int]]"
-    "typing.Set[$bottom]"
-    "typing.Optional[typing.Set[int]]";
 
   (* Union types. *)
   assert_join
@@ -1941,7 +1913,6 @@ let test_join context =
     "typing.Union[int, typing.Optional[bool]]"
     "typing.Union[int, typing.Optional[bool]]";
   assert_join "typing.Union[int, str]" "typing.Union[int, bytes]" "typing.Union[int, str, bytes]";
-  assert_join "typing.Union[int, str]" "typing.Optional[$bottom]" "typing.Union[int, str]";
   assert_join "typing.Union[int, str]" "None" "typing.Union[int, str, None]";
   assert_join
     "typing.Dict[str, str]"
@@ -2017,18 +1988,6 @@ let test_join context =
       ~successor:"typing.Generic";
     handler order
   in
-  let aliases =
-    Identifier.Table.of_alist_exn
-      ["_1", Type.variable "_1"; "_2", Type.variable "_2"; "_T", Type.variable "_T"]
-    |> Identifier.Table.find
-  in
-  let aliases = create_type_alias_table aliases in
-  assert_join
-    ~order
-    ~aliases
-    "A[int, str]"
-    "C[$bottom]"
-    "C[typing.Union[float, typing.Tuple[int, str]]]";
   assert_join ~order:disconnected_order "A" "B" "typing.Union[A, B]";
   assert_join "typing.Type[int]" "typing.Type[str]" "typing.Type[typing.Union[int, str]]";
 
@@ -2037,10 +1996,6 @@ let test_join context =
     "typing.Callable[..., int]"
     "typing.Callable[..., str]"
     "typing.Callable[..., typing.Union[int, str]]";
-  assert_join
-    "typing.Callable[..., int]"
-    "typing.Callable[..., $bottom]"
-    "typing.Callable[..., int]";
   assert_join
     "typing.Callable('derp')[..., int]"
     "typing.Callable('derp')[..., int]"
@@ -2065,14 +2020,6 @@ let test_join context =
     "typing.Callable[[int], int]";
 
   (* Behavioral subtyping is preserved. *)
-  assert_join
-    "typing.Callable[[Named(a, str)], int]"
-    "typing.Callable[[Named(a, int)], int]"
-    "typing.Callable[[Named(a, $bottom)], int]";
-  assert_join
-    "typing.Callable[..., int]"
-    "typing.Callable[..., $bottom]"
-    "typing.Callable[..., int]";
   assert_join
     "typing.Callable[[int], int]"
     "typing.Callable[[Named(a, int)], int]"
@@ -2451,18 +2398,9 @@ let test_join context =
 
 let test_meet _ =
   let assert_meet ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
-    let parse_annotation source =
-      let integer =
-        try
-          Int.of_string source |> ignore;
-          true
-        with
-        | _ -> false
-      in
-      if integer then
-        Type.Primitive source
-      else
-        parse_single_expression source |> Type.create ~aliases
+    let parse_annotation = function
+      | "$bottom" -> Type.Bottom
+      | _ as source -> parse_single_expression source |> Type.create ~aliases
     in
     assert_type_equal
       (parse_annotation expected)
