@@ -52,14 +52,6 @@ let test_check_attributes context =
   assert_type_errors
     {|
       class Foo:
-        bar = 1 # type: int
-        def foo(self) -> int:
-          return self.bar
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo:
         def __init__(self) -> None:
             self.bar: int = None
         def f(self) -> str:

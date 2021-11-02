@@ -69,7 +69,7 @@ let test_check_with_qualification context =
       def len(s: str) -> int:
           return 1
       def assign() -> int:
-          global_number="a" # type: str
+          global_number: str = "a"
           return len(global_number)
     |}
     [];
@@ -92,7 +92,7 @@ let test_check_with_qualification context =
       global_number: int = 1
       def derp() -> int:
           def derp_inner() -> None:
-              global_number="a" # type: str
+              global_number: str = "a"
               pass
           return global_number
     |}

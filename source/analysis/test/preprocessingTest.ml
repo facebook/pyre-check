@@ -176,7 +176,7 @@ let test_expand_string_annotations _ =
   assert_expand
     {|
       def foo(
-        x,  # type: int
+        x: "int",
       ):
         return x
     |}
@@ -187,7 +187,7 @@ let test_expand_string_annotations _ =
   assert_expand
     {|
       def foo(
-        x,  # type: int,
+        x: "int,"
       ):
         return x
     |}

@@ -3013,7 +3013,7 @@ let test_fixpoint_threshold context =
       from typing import Set
       def foo() -> None:
         for _ in range(10000):
-          s = set() # type: Set[Missing]
+          s: "Set[Missing]" = set()
           reveal_type(s)
     |}
     [

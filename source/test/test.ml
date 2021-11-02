@@ -1306,7 +1306,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class Enum(metaclass=EnumMeta):
           def __new__(cls: typing.Type[_T], value: object) -> _T: ...
         class IntEnum(int, Enum):
-          value = ...  # type: int
+          value: int = ...
         if sys.version_info >= (3, 6):
           _auto_null: typing.Any
           class auto(IntFlag):
@@ -1356,7 +1356,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
 
         class defaultdict(Dict[_KT, _VT], Generic[_KT, _VT]):
-            default_factory = ...  # type: Optional[Callable[[], _VT]]
+            default_factory: Optional[Callable[[], _VT]] = ...
 
             @overload
             def __init__(self, **kwargs: _VT) -> None:
