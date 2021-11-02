@@ -255,7 +255,13 @@ let expression =
     |> Node.create ~location
   in
   let unary_op ~location ~op ~operand =
-    Expression.UnaryOperator { UnaryOperator.operator = op; operand } |> Node.create ~location
+    match op, operand with
+    | UnaryOperator.Positive, { Node.value = Expression.Constant (Constant.Integer literal); _ } ->
+        Expression.Constant (Constant.Integer literal) |> Node.create ~location
+    | UnaryOperator.Negative, { Node.value = Expression.Constant (Constant.Integer literal); _ } ->
+        Expression.Constant (Constant.Integer (-literal)) |> Node.create ~location
+    | _ ->
+        Expression.UnaryOperator { UnaryOperator.operator = op; operand } |> Node.create ~location
   in
   let lambda ~location ~args ~body =
     Expression.Lambda { Lambda.parameters = args; body } |> Node.create ~location

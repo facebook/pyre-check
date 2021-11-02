@@ -107,6 +107,7 @@ let test_constant _ =
     assert_parsed "..." ~expected:(+Expression.Constant Constant.Ellipsis);
 
     assert_parsed "1" ~expected:(+Expression.Constant (Constant.Integer 1));
+    assert_parsed "-1" ~expected:(+Expression.Constant (Constant.Integer (-1)));
     assert_parsed "0" ~expected:(+Expression.Constant (Constant.Integer 0));
     assert_parsed "00" ~expected:(+Expression.Constant (Constant.Integer 0));
     assert_parsed "00_0" ~expected:(+Expression.Constant (Constant.Integer 0));

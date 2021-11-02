@@ -2305,15 +2305,7 @@ let test_number_locations _ =
             ~start:(1, 0)
             ~stop:(1, 4)
             (Statement.Expression
-               (node
-                  ~start:(1, 0)
-                  ~stop:(1, 4)
-                  (Expression.UnaryOperator
-                     {
-                       UnaryOperator.operator = UnaryOperator.Negative;
-                       operand =
-                         node ~start:(1, 2) ~stop:(1, 3) (Expression.Constant (Constant.Integer 1));
-                     })));
+               (node ~start:(1, 0) ~stop:(1, 4) (Expression.Constant (Constant.Integer (-1)))));
         ]
   in
   PyreNewParser.with_context do_test
