@@ -28,6 +28,8 @@ module CheckConfiguration : sig
   [@@deriving sexp, compare, hash]
 
   val of_yojson : Yojson.Safe.t -> (t, string) Result.t
+
+  val analysis_configuration_of : t -> Configuration.Analysis.t
 end
 
 val command : Command.t
