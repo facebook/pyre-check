@@ -2070,6 +2070,18 @@ let test_lambda _ =
               body = !"x";
             });
     assert_parsed
+      "lambda *args, x: x"
+      ~expected:
+        (+Expression.Lambda
+            {
+              Lambda.parameters =
+                [
+                  +{ Parameter.name = "*args"; value = None; annotation = None };
+                  +{ Parameter.name = "x"; value = None; annotation = None };
+                ];
+              body = !"x";
+            });
+    assert_parsed
       "lambda x, /, y, z=1, *, w=2: x"
       ~expected:
         (+Expression.Lambda
@@ -2125,6 +2137,7 @@ let test_lambda _ =
             });
 
     assert_not_parsed "lambda x=1, y: x";
+    assert_not_parsed "lambda *x, *, y: x";
     ()
   in
   PyreNewParser.with_context do_test
