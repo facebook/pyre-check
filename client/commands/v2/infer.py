@@ -354,6 +354,7 @@ class StubGenerationOptions:
     use_future_annotations: bool = False
     quote_annotations: bool = False
     dequalify: bool = False
+    debug_infer: bool = False
 
     def __post__init__(self) -> None:
         if self.quote_annotations and (self.use_future_annotations or self.dequalify):
@@ -580,20 +581,6 @@ class ModuleAnnotations:
             )
         return classes
 
-    def _header_imports(self) -> List[str]:
-        return (
-            ["from __future__ import annotations"]
-            if self.options.use_future_annotations
-            else []
-        )
-
-    def _imports(self) -> str:
-        import_statements = self._header_imports()
-        imports_str = (
-            "" if import_statements == [] else "\n".join(import_statements) + "\n"
-        )
-        return imports_str
-
     def _class_stub(
         self,
         classname: str,
@@ -610,7 +597,6 @@ class ModuleAnnotations:
         """
         return "\n".join(
             [
-                self._imports(),
                 *(global_.to_stub() for global_ in self.globals_),
                 *(function.to_stub() for function in self.functions),
                 *(
@@ -634,17 +620,23 @@ class ModuleAnnotations:
 class AnnotateModuleInPlace:
     full_stub_path: str
     full_code_path: str
-    debug_infer: bool
+    options: StubGenerationOptions
 
     @staticmethod
-    def _annotated_code(stub: str, code: str) -> str:
+    def _annotated_code(
+        stub: str,
+        code: str,
+        options: StubGenerationOptions,
+    ) -> str:
         """
         Merge inferred annotations from stubs with source code to get
         annotated code.
         """
         context = CodemodContext()
         ApplyTypeAnnotationsVisitor.store_stub_in_context(
-            context, libcst.parse_module(stub)
+            context=context,
+            stub=libcst.parse_module(stub),
+            use_future_annotations=options.use_future_annotations,
         )
         modified_tree = ApplyTypeAnnotationsVisitor(context).transform_module(
             libcst.parse_module(code)
@@ -652,26 +644,34 @@ class AnnotateModuleInPlace:
         return modified_tree.code
 
     @staticmethod
-    def annotate_code(stub_path: str, code_path: str, debug_infer: bool) -> None:
+    def annotate_code(
+        stub_path: str,
+        code_path: str,
+        options: StubGenerationOptions,
+    ) -> None:
         "Merge a stub file of inferred annotations with a code file inplace."
         try:
             with open(stub_path) as stub_file, open(code_path) as code_file:
                 stub = stub_file.read()
                 code = code_file.read()
-                annotated_code = AnnotateModuleInPlace._annotated_code(stub, code)
+                annotated_code = AnnotateModuleInPlace._annotated_code(
+                    stub=stub,
+                    code=code,
+                    options=options,
+                )
             with open(code_path, "w") as code_file:
                 code_file.write(annotated_code)
             LOG.info(f"Annotated {code_path}")
         except Exception as error:
             LOG.warning(f"Failed to annotate {code_path}")
-            if debug_infer:
+            if options.debug_infer:
                 LOG.warning(f"\tError: {error}")
 
     def run(self) -> None:
         return self.annotate_code(
             stub_path=self.full_stub_path,
             code_path=self.full_code_path,
-            debug_infer=self.debug_infer,
+            options=self.options,
         )
 
     @staticmethod
@@ -919,7 +919,7 @@ def _annotate_in_place(
     working_directory: Path,
     type_directory: Path,
     paths_to_modify: Optional[Set[Path]],
-    debug_infer: bool,
+    options: StubGenerationOptions,
     number_of_workers: int,
 ) -> None:
     tasks: List[AnnotateModuleInPlace] = []
@@ -933,7 +933,7 @@ def _annotate_in_place(
                 AnnotateModuleInPlace(
                     full_stub_path=str(full_stub_path),
                     full_code_path=str(full_code_path),
-                    debug_infer=debug_infer,
+                    options=options,
                 )
             )
 
@@ -956,6 +956,13 @@ def run_infer(
     type_directory = _get_type_directory(Path(configuration.log_directory))
     in_place = infer_arguments.in_place
 
+    options = StubGenerationOptions(
+        annotate_attributes=infer_arguments.annotate_attributes,
+        use_future_annotations=infer_arguments.use_future_annotations,
+        dequalify=infer_arguments.dequalify,
+        quote_annotations=infer_arguments.quote_annotations,
+    )
+
     if infer_arguments.annotate_from_existing_stubs:
         if not in_place:
             raise ValueError(
@@ -966,7 +973,7 @@ def run_infer(
             working_directory=working_directory,
             type_directory=type_directory,
             paths_to_modify=infer_arguments.paths_to_modify,
-            debug_infer=infer_arguments.debug_infer,
+            options=options,
             number_of_workers=configuration.get_number_of_workers(),
         )
     else:
@@ -976,12 +983,7 @@ def run_infer(
         module_annotations = create_module_annotations(
             infer_output=infer_output,
             base_path=working_directory,
-            options=StubGenerationOptions(
-                annotate_attributes=infer_arguments.annotate_attributes,
-                use_future_annotations=infer_arguments.use_future_annotations,
-                dequalify=infer_arguments.dequalify,
-                quote_annotations=infer_arguments.quote_annotations,
-            ),
+            options=options,
         )
         if infer_arguments.print_only:
             _print_inferences(infer_output, module_annotations)
@@ -992,7 +994,7 @@ def run_infer(
                     working_directory=working_directory,
                     type_directory=type_directory,
                     paths_to_modify=infer_arguments.paths_to_modify,
-                    debug_infer=infer_arguments.debug_infer,
+                    options=options,
                     number_of_workers=configuration.get_number_of_workers(),
                 )
     return commands.ExitCode.SUCCESS

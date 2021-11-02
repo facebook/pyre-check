@@ -1276,36 +1276,3 @@ class StubGenerationTest(testslide.TestCase):
             """,
             quote_annotations=True,
         )
-
-    def test_stubs_use_future_annotations(self) -> None:
-        """
-        Test
-        """
-        self._assert_stubs(
-            {
-                "defines": [
-                    {
-                        "return": "Test",
-                        "name": "test.Test.f",
-                        "parent": "test.Test",
-                        "parameters": [
-                            {
-                                "name": "self",
-                                "annotation": None,
-                                "value": None,
-                                "index": 0,
-                            },
-                        ],
-                        "decorators": [],
-                        "async": False,
-                    }
-                ],
-            },
-            """\
-            from __future__ import annotations
-
-            class Test:
-                def f(self) -> Test: ...
-            """,
-            use_future_annotations=True,
-        )
