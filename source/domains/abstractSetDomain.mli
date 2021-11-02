@@ -13,6 +13,48 @@ module type ELEMENT = sig
   val compare : t -> t -> int
 end
 
+module type SET = sig
+  type t
+
+  type element
+
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val singleton : element -> t
+
+  val add : element -> t -> t
+
+  val remove : element -> t -> t
+
+  val mem : element -> t -> bool
+
+  val union : t -> t -> t
+
+  val inter : t -> t -> t
+
+  val subset : t -> t -> bool
+
+  val diff : t -> t -> t
+
+  val map : (element -> element) -> t -> t
+
+  val filter : (element -> bool) -> t -> t
+
+  val fold : (element -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val exists : (element -> bool) -> t -> bool
+
+  val of_list : element list -> t
+
+  val elements : t -> element list
+
+  val show_element : element -> string
+
+  val element_name : string
+end
+
 module type S = sig
   include AbstractDomainCore.S
 
@@ -32,5 +74,7 @@ module type S = sig
 
   val of_list : element list -> t
 end
+
+module MakeWithSet (Set : SET) : S with type element = Set.element
 
 module Make (Element : ELEMENT) : S with type element = Element.t
