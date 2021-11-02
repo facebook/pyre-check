@@ -4,17 +4,23 @@
 # LICENSE file in the root directory of this source tree
 #
 
-# VENDORED FROM Instagram/LibCST/libcst/codemod/visitors/_apply_type_annotations.py ON COMMIT 1e0d4841bfcfc2a399a826208c2d1b5419ca4c44
+# Changes vendored from LibCST. The current commit is this PR:
+# https://github.com/Instagram/LibCST/pull/542
+
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import libcst as cst
-from libcst import matchers as m
 from libcst.codemod._context import CodemodContext
 from libcst.codemod._visitor import ContextAwareTransformer
 from libcst.codemod.visitors._add_imports import AddImportsVisitor
 from libcst.codemod.visitors._gather_imports import GatherImportsVisitor
 from libcst.helpers import get_full_name_for_node
+from libcst.metadata import QualifiedNameProvider, PositionProvider
+
+
+NameOrAttribute = Union[cst.Name, cst.Attribute]
+NAME_OR_ATTRIBUTE = (cst.Name, cst.Attribute)
 
 
 def _get_import_alias_names(import_aliases: Sequence[cst.ImportAlias]) -> Set[str]:
@@ -51,6 +57,11 @@ class TypeCollector(cst.CSTVisitor):
     Collect type annotations from a stub module.
     """
 
+    METADATA_DEPENDENCIES = (
+        PositionProvider,
+        QualifiedNameProvider,
+    )
+
     def __init__(self, existing_imports: Set[str], context: CodemodContext) -> None:
         # Qualifier for storing the canonical name of the current function.
         self.qualifier: List[str] = []
@@ -63,7 +74,23 @@ class TypeCollector(cst.CSTVisitor):
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
-        self.class_definitions[node.name.value] = node
+        new_bases = []
+        for base in node.bases:
+            value = base.value
+            if isinstance(value, NAME_OR_ATTRIBUTE):
+                new_value = self._handle_NameOrAttribute(value)
+            elif isinstance(value, cst.Subscript):
+                new_value = self._handle_Subscript(value)
+            else:
+                start = self.get_metadata(PositionProvider, node).start
+                raise ValueError(
+                    "Invalid type used as base class in stub file at "
+                    + f"{start.line}:{start.column}. Only subscripts, names, and "
+                    + "attributes are valid base classes for static typing."
+                )
+            new_bases.append(base.with_changes(value=new_value))
+
+        self.class_definitions[node.name.value] = node.with_changes(bases=new_bases)
 
     def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
         self.qualifier.pop()
@@ -72,11 +99,9 @@ class TypeCollector(cst.CSTVisitor):
         self.qualifier.append(node.name.value)
         returns = node.returns
         return_annotation = (
-            self._create_import_from_annotation(returns)
-            if returns is not None
-            else None
+            self._handle_Annotation(annotation=returns) if returns is not None else None
         )
-        parameter_annotations = self._import_parameter_annotations(node.params)
+        parameter_annotations = self._handle_Parameters(node.params)
         self.function_annotations[".".join(self.qualifier)] = FunctionAnnotation(
             parameters=parameter_annotations, returns=return_annotation
         )
@@ -91,102 +116,142 @@ class TypeCollector(cst.CSTVisitor):
         name = get_full_name_for_node(node.target)
         if name is not None:
             self.qualifier.append(name)
-        annotation_value = self._create_import_from_annotation(node.annotation)
+        annotation_value = self._handle_Annotation(annotation=node.annotation)
         self.attribute_annotations[".".join(self.qualifier)] = annotation_value
         return True
 
     def leave_AnnAssign(self, original_node: cst.AnnAssign) -> None:
         self.qualifier.pop()
 
-    def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
-        module = node.module
-        names = node.names
+    def _get_unique_qualified_name(self, node: cst.CSTNode) -> str:
+        name = None
+        names = [q.name for q in self.get_metadata(QualifiedNameProvider, node)]
+        if len(names) == 0:
+            # we hit this branch if the stub is directly using a fully
+            # qualified name, which is not technically valid python but is
+            # convenient to allow.
+            name = get_full_name_for_node(node)
+        elif len(names) == 1 and isinstance(names[0], str):
+            name = names[0]
+        if name is None:
+            start = self.get_metadata(PositionProvider, node).start
+            raise ValueError(
+                "Could not resolve a unique qualified name for type "
+                + f"{get_full_name_for_node(node)} at {start.line}:{start.column}. "
+                + f"Candidate names were: {names!r}"
+            )
+        return name
 
-        # module is None for relative imports like `from .. import foo`.
-        # We ignore these for now.
-        if module is None or isinstance(names, cst.ImportStar):
-            return
-        module_name = get_full_name_for_node(module)
-        if module_name is not None:
-            for import_name in _get_import_alias_names(names):
-                AddImportsVisitor.add_needed_import(
-                    self.context, module_name, import_name
-                )
+    def _get_qualified_name_and_dequalified_node(
+        self,
+        node: Union[cst.Name, cst.Attribute],
+    ) -> Tuple[str, Union[cst.Name, cst.Attribute]]:
+        qualified_name = self._get_unique_qualified_name(node)
+        dequalified_node = node.attr if isinstance(node, cst.Attribute) else node
+        return qualified_name, dequalified_node
 
-    def _add_annotation_to_imports(
-        self, annotation: cst.Attribute
+    def _handle_qualification_and_should_qualify(self, qualified_name: str) -> bool:
+        """
+        Basd on a qualified name and the existing module imports, record that
+        we need to add an import if necessary and return whether or not we
+        should use the qualified name due to a preexisting import.
+        """
+        split_name = qualified_name.split(".")
+        if len(split_name) > 1 and qualified_name not in self.existing_imports:
+            module, target = ".".join(split_name[:-1]), split_name[-1]
+            if module == "builtins":
+                return False
+            elif module in self.existing_imports:
+                return True
+            else:
+                AddImportsVisitor.add_needed_import(self.context, module, target)
+                return False
+        return False
+
+    # Handler functions.
+    #
+    # Each of these does one of two things, possibly recursively, over some
+    # valid CST node for a static type:
+    #  - process the qualified name and ensure we will add necessary imports
+    #  - dequalify the node
+
+    def _handle_NameOrAttribute(
+        self,
+        node: NameOrAttribute,
     ) -> Union[cst.Name, cst.Attribute]:
-        key = get_full_name_for_node(annotation.value)
-        if key is not None:
-            # Don't attempt to re-import existing imports.
-            if key in self.existing_imports:
-                return annotation
-            import_name = get_full_name_for_node(annotation.attr)
-            if import_name is not None:
-                AddImportsVisitor.add_needed_import(self.context, key, import_name)
-        return annotation.attr
+        (
+            qualified_name,
+            dequalified_node,
+        ) = self._get_qualified_name_and_dequalified_node(node)
+        should_qualify = self._handle_qualification_and_should_qualify(qualified_name)
+        if should_qualify:
+            return node
+        else:
+            return dequalified_node
 
-    def _handle_Index(self, slice: cst.Index, node: cst.Subscript) -> cst.Subscript:
+    def _handle_Index(self, slice: cst.Index, node: cst.Subscript) -> cst.Index:
         value = slice.value
         if isinstance(value, cst.Subscript):
-            new_slice = slice.with_changes(value=self._handle_Subscript(value))
-            return node.with_changes(slice=new_slice)
+            return slice.with_changes(value=self._handle_Subscript(value))
         elif isinstance(value, cst.Attribute):
-            new_slice = slice.with_changes(value=self._add_annotation_to_imports(value))
-            return node.with_changes(slice=new_slice)
+            return slice.with_changes(value=self._handle_NameOrAttribute(value))
         else:
-            return node
+            return slice
 
     def _handle_Subscript(self, node: cst.Subscript) -> cst.Subscript:
+        value = node.value
+        if isinstance(value, NAME_OR_ATTRIBUTE):
+            new_node = node.with_changes(value=self._handle_NameOrAttribute(value))
+        else:
+            raise ValueError("Expected any indexed type to have")
+        if self._get_unique_qualified_name(node) in ("Type", "typing.Type"):
+            # Note: we are intentionally not handling qualification of
+            # anything inside `Type` because it's common to have nested
+            # classes, which we cannot currently distinguish from classes
+            # coming from other modules, appear here.
+            return new_node
         slice = node.slice
-        if m.matches(node.value, m.Name(value="Type")):
-            return node
-        if isinstance(slice, list):
+        if isinstance(slice, tuple):
             new_slice = []
             for item in slice:
                 value = item.slice.value
-                if isinstance(value, cst.Attribute):
-                    name = self._add_annotation_to_imports(item.slice.value)
+                if isinstance(value, NAME_OR_ATTRIBUTE):
+                    name = self._handle_NameOrAttribute(item.slice.value)
                     new_index = item.slice.with_changes(value=name)
                     new_slice.append(item.with_changes(slice=new_index))
                 else:
-                    if isinstance(item.slice, cst.Index) and not isinstance(
-                        item.slice.value, cst.Name
-                    ):
+                    if isinstance(item.slice, cst.Index):
                         new_index = item.slice.with_changes(
                             value=self._handle_Index(item.slice, item)
                         )
-                        item = item.with_changes(slice=new_index, comma=None)
+                        item = item.with_changes(slice=new_index)
                     new_slice.append(item)
-            return node.with_changes(slice=new_slice)
+            return new_node.with_changes(slice=tuple(new_slice))
         elif isinstance(slice, cst.Index):
-            return self._handle_Index(slice, node)
+            new_slice = self._handle_Index(slice)
+            return new_node.with_changes(slice=new_slice)
         else:
-            return node
+            return new_node
 
-    def _create_import_from_annotation(self, returns: cst.Annotation) -> cst.Annotation:
-        annotation = returns.annotation
-        if isinstance(annotation, cst.Attribute):
-            attr = self._add_annotation_to_imports(annotation)
-            return cst.Annotation(annotation=attr)
-        if isinstance(annotation, cst.Subscript):
-            value = annotation.value
-            if m.matches(value, m.Name(value="Type")):
-                return returns
-            return cst.Annotation(annotation=self._handle_Subscript(annotation))
+    def _handle_Annotation(self, annotation: cst.Annotation) -> cst.Annotation:
+        node = annotation.annotation
+        if isinstance(node, cst.SimpleString):
+            return annotation
+        elif isinstance(node, cst.Subscript):
+            return cst.Annotation(annotation=self._handle_Subscript(node))
+        elif isinstance(node, NAME_OR_ATTRIBUTE):
+            return cst.Annotation(annotation=self._handle_NameOrAttribute(node))
         else:
-            return returns
+            raise ValueError(f"Unexpected annotation node: {node}")
 
-    def _import_parameter_annotations(
-        self, parameters: cst.Parameters
-    ) -> cst.Parameters:
+    def _handle_Parameters(self, parameters: cst.Parameters) -> cst.Parameters:
         def update_annotations(parameters: Sequence[cst.Param]) -> List[cst.Param]:
             updated_parameters = []
             for parameter in list(parameters):
                 annotation = parameter.annotation
                 if annotation is not None:
                     parameter = parameter.with_changes(
-                        annotation=self._create_import_from_annotation(annotation)
+                        annotation=self._handle_Annotation(annotation=annotation)
                     )
                 updated_parameters.append(parameter)
             return updated_parameters
@@ -199,6 +264,24 @@ class Annotations:
     function_annotations: Dict[str, FunctionAnnotation] = field(default_factory=dict)
     attribute_annotations: Dict[str, cst.Annotation] = field(default_factory=dict)
     class_definitions: Dict[str, cst.ClassDef] = field(default_factory=dict)
+
+
+@dataclass
+class AnnotationCounts:
+    global_annotations: int = 0
+    attribute_annotations: int = 0
+    parameter_annotations: int = 0
+    return_annotations: int = 0
+    classes_added: int = 0
+
+    def any_changes_applied(self) -> bool:
+        return (
+            self.global_annotations
+            + self.attribute_annotations
+            + self.parameter_annotations
+            + self.return_annotations
+            + self.classes_added
+        ) > 0
 
 
 class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
@@ -243,6 +326,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         context: CodemodContext,
         annotations: Optional[Annotations] = None,
         overwrite_existing_annotations: bool = False,
+        use_future_annotations: bool = False,
     ) -> None:
         super().__init__(context)
         # Qualifier for storing the canonical name of the current function.
@@ -253,27 +337,23 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         self.toplevel_annotations: Dict[str, cst.Annotation] = {}
         self.visited_classes: Set[str] = set()
         self.overwrite_existing_annotations = overwrite_existing_annotations
+        self.use_future_annotations = use_future_annotations
 
         # We use this to determine the end of the import block so that we can
         # insert top-level annotations.
         self.import_statements: List[cst.ImportFrom] = []
 
-    @staticmethod
-    def store_stub_in_context(
-        context: CodemodContext,
-        stub: cst.Module,
-        overwrite_existing_annotations: bool = False,
-    ) -> None:
-        # deprecated, should be removed in 0.4 release.
-        ApplyTypeAnnotationsVisitor.store_stub_in_context(
-            context, stub, overwrite_existing_annotations
-        )
+        # We use this to report annotations added, as well as to determine
+        # whether to abandon the codemod in edge cases where we may have
+        # only made changes to the imports.
+        self.annotation_counts: AnnotationCounts = AnnotationCounts()
 
     @staticmethod
     def store_stub_in_context(
         context: CodemodContext,
         stub: cst.Module,
         overwrite_existing_annotations: bool = False,
+        use_future_annotations: bool = False,
     ) -> None:
         """
         Store a stub module in the :class:`~libcst.codemod.CodemodContext` so
@@ -289,6 +369,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         context.scratch[ApplyTypeAnnotationsVisitor.CONTEXT_KEY] = (
             stub,
             overwrite_existing_annotations,
+            use_future_annotations,
         )
 
     def transform_module_impl(self, tree: cst.Module) -> cst.Module:
@@ -305,18 +386,72 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
             ApplyTypeAnnotationsVisitor.CONTEXT_KEY
         )
         if context_contents is not None:
-            stub, overwrite_existing_annotations = context_contents
+            (
+                stub,
+                overwrite_existing_annotations,
+                use_future_annotations,
+            ) = context_contents
             self.overwrite_existing_annotations = (
                 self.overwrite_existing_annotations or overwrite_existing_annotations
             )
+            self.use_future_annotations = (
+                self.use_future_annotations or use_future_annotations
+            )
             visitor = TypeCollector(existing_import_names, self.context)
-            stub.visit(visitor)
+            cst.MetadataWrapper(stub).visit(visitor)
             self.annotations.function_annotations.update(visitor.function_annotations)
             self.annotations.attribute_annotations.update(visitor.attribute_annotations)
             self.annotations.class_definitions.update(visitor.class_definitions)
 
-        tree_with_imports = AddImportsVisitor(self.context).transform_module(tree)
-        return tree_with_imports.visit(self)
+        tree_with_imports = AddImportsVisitor(
+            context=self.context,
+            imports=(
+                [("__future__", "annotations", None)]
+                if self.use_future_annotations
+                else ()
+            ),
+        ).transform_module(tree)
+        tree_with_changes = tree_with_imports.visit(self)
+
+        # don't modify the imports if we didn't actually add any type information
+        if self.annotation_counts.any_changes_applied():
+            return tree_with_changes
+        else:
+            return tree
+
+    # smart constructors: all applied annotations happen via one of these
+
+    def _apply_annotation_to_attribute_or_global(
+        self,
+        name: str,
+        annotation: cst.Annotation,
+        value: Optional[cst.BaseExpression],
+    ) -> cst.AnnAssign:
+        if len(self.qualifier) == 0:
+            self.annotation_counts.global_annotations += 1
+        else:
+            self.annotation_counts.attribute_annotations += 1
+        return cst.AnnAssign(cst.Name(name), annotation, value)
+
+    def _apply_annotation_to_parameter(
+        self,
+        parameter: cst.Param,
+        annotation: cst.Annotation,
+    ) -> cst.Param:
+        self.annotation_counts.parameter_annotations += 1
+        return parameter.with_changes(
+            annotation=annotation,
+        )
+
+    def _apply_annotation_to_return(
+        self,
+        function_def: cst.FunctionDef,
+        annotation: cst.Annotation,
+    ) -> cst.FunctionDef:
+        self.annotation_counts.return_annotations += 1
+        return function_def.with_changes(returns=annotation)
+
+    # private methods used in the visit and leave methods
 
     def _qualifier_name(self) -> str:
         return ".".join(self.qualifier)
@@ -345,7 +480,11 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
                         self._qualifier_name()
                     ]
                     self.qualifier.pop()
-                    return cst.AnnAssign(cst.Name(name), annotation, node.value)
+                    return self._apply_annotation_to_attribute_or_global(
+                        name=name,
+                        annotation=annotation,
+                        value=node.value,
+                    )
                 else:
                     self.qualifier.pop()
         return updated_node
@@ -400,8 +539,9 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
                 if key in parameter_annotations and (
                     self.overwrite_existing_annotations or not parameter.annotation
                 ):
-                    parameter = parameter.with_changes(
-                        annotation=parameter_annotations[key]
+                    parameter = self._apply_annotation_to_parameter(
+                        parameter=parameter,
+                        annotation=parameter_annotations[key],
                     )
                 annotated_parameters.append(parameter)
             return annotated_parameters
@@ -443,6 +583,8 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
             *statements[1:],
         ]
 
+    # transform API methods
+
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
         self.visited_classes.add(node.name.value)
@@ -467,12 +609,13 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
             function_annotation = self.annotations.function_annotations[key]
             # Only add new annotation if explicitly told to overwrite existing
             # annotations or if one doesn't already exist.
-            set_return_annotation = not updated_node.returns or (
-                self.overwrite_existing_annotations and function_annotation.returns
+            set_return_annotation = (
+                self.overwrite_existing_annotations or updated_node.returns is None
             )
-            if set_return_annotation:
-                updated_node = updated_node.with_changes(
-                    returns=function_annotation.returns
+            if set_return_annotation and function_annotation.returns is not None:
+                updated_node = self._apply_annotation_to_return(
+                    function_def=updated_node,
+                    annotation=function_annotation.returns,
                 )
             # Don't override default values when annotating functions
             new_parameters = self._update_parameters(function_annotation, updated_node)
@@ -522,9 +665,14 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         statements_after_imports = self._insert_empty_line(statements_after_imports)
 
         for name, annotation in self.toplevel_annotations.items():
-            annotated_assign = cst.AnnAssign(cst.Name(name), annotation, None)
+            annotated_assign = self._apply_annotation_to_attribute_or_global(
+                name=name,
+                annotation=annotation,
+                value=None,
+            )
             toplevel_statements.append(cst.SimpleStatementLine([annotated_assign]))
 
+        self.annotation_counts.classes_added = len(fresh_class_definitions)
         toplevel_statements.extend(fresh_class_definitions)
 
         return updated_node.with_changes(
