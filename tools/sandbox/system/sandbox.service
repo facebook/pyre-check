@@ -6,8 +6,9 @@ After=network.target
 User=ubuntu
 Group=www-data
 WorkingDirectory=/home/ubuntu/sandbox
-Environment="PATH=/home/ubuntu/sandbox/venv/bin"
-ExecStart=/home/ubuntu/sandbox/venv/bin/uwsgi --ini sandbox.ini
+Environment="PATH=/home/ubuntu/venv/bin"
+Environment="PYSA_PLAYGROUND_STUBS=/home/ubuntu/venv/lib/pyre_check/stubs"
+ExecStart=/home/ubuntu/venv/bin/uwsgi --ini sandbox.ini
 
 [Install]
 WantedBy=multi-user.target
