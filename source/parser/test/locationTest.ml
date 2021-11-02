@@ -350,6 +350,56 @@ let test_call_locations _ =
                  })));
     ];
   assert_source_locations
+    "a[1, 2]"
+    [
+      node
+        ~start:(1, 0)
+        ~stop:(1, 7)
+        (Statement.Expression
+           (node
+              ~start:(1, 0)
+              ~stop:(1, 7)
+              (Expression.Call
+                 {
+                   callee =
+                     node
+                       ~start:(1, 0)
+                       ~stop:(1, 1)
+                       (Expression.Name
+                          (Name.Attribute
+                             {
+                               base =
+                                 node
+                                   ~start:(1, 0)
+                                   ~stop:(1, 1)
+                                   (Expression.Name (Name.Identifier "a"));
+                               attribute = "__getitem__";
+                               special = true;
+                             }));
+                   arguments =
+                     [
+                       {
+                         Call.Argument.name = None;
+                         value =
+                           node
+                             ~start:(1, 2)
+                             ~stop:(1, 6)
+                             (Expression.Tuple
+                                [
+                                  node
+                                    ~start:(1, 2)
+                                    ~stop:(1, 3)
+                                    (Expression.Constant (Constant.Integer 1));
+                                  node
+                                    ~start:(1, 5)
+                                    ~stop:(1, 6)
+                                    (Expression.Constant (Constant.Integer 2));
+                                ]);
+                       };
+                     ];
+                 })));
+    ];
+  assert_source_locations
     "a.__getitem__(argument)"
     [
       node

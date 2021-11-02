@@ -171,11 +171,15 @@
       (Expression.Constant AstExpression.Constant.Ellipsis)
       ~location:{ location with start = location.stop }
 
-  let subscript_argument ~subscripts ~location =
+  let subscript_argument subscripts =
     let value =
       match subscripts with
+      | [] -> failwith "subscript can never be empty"
       | [subscript] -> subscript
-      | subscripts -> { Node.location; value = Expression.Tuple subscripts }
+      | subscripts ->
+         let { Node.location = { Location.start; _ }; _ } = List.hd_exn subscripts  in
+         let { Node.location = { Location.stop; _ }; _ } = List.last_exn subscripts in
+         { Node.location = { Location.start; stop }; value = Expression.Tuple subscripts }
     in
     { Call.Argument.name = None; value }
 
@@ -184,9 +188,9 @@
     let location = Node.location head in
     let callee =
       Expression.Name (Name.Attribute { base = head; attribute = "__getitem__"; special = true })
-      |> Node.create ~location
+      |> Node.create ~location:(Node.location head)
     in
-    Expression.Call { callee; arguments = [subscript_argument ~subscripts ~location] }
+    Expression.Call { callee; arguments = [subscript_argument subscripts] }
     |> Node.create ~location:{ subscript_location with start = location.start }
 
   let subscript_mutation ~subscript ~value ~annotation:_ =
@@ -203,7 +207,7 @@
     in
     Expression.Call {
       callee;
-      arguments = [subscript_argument ~subscripts ~location; { Call.Argument.name = None; value }];
+      arguments = [subscript_argument subscripts; { Call.Argument.name = None; value }];
     }
     |> Node.create ~location
     |> fun expression -> Statement.Expression (convert expression)
