@@ -472,7 +472,7 @@
               "filename": "model_query_annotated.py",
               "line": 77,
               "start": 4,
-              "end": 5
+              "end": 32
             },
             "leaves": [
               {
@@ -555,7 +555,7 @@
               "filename": "model_query_annotated.py",
               "line": 83,
               "start": 42,
-              "end": 43
+              "end": 78
             },
             "leaves": [
               {

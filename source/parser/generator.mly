@@ -1053,14 +1053,26 @@ define_parameters:
     }
   }
   | name = name; annotation = annotation? {
+      let location =
+        let name_location = fst name in
+        match annotation with
+        | None -> name_location
+        | Some { Node.location = { Location.stop; _ }; _ } -> { name_location with stop }
+      in
       {
-        Node.location = fst name;
+        Node.location;
         value = { Parameter.name = snd name; value = None; annotation };
       }
     }
   | name = name; annotation = annotation?; EQUALS; value = test {
+      let location =
+        let name_location = fst name in
+        match annotation with
+        | None -> name_location
+        | Some { Node.location = { Location.stop; _ }; _ } -> { name_location with stop }
+      in
       {
-        Node.location = fst name;
+        Node.location;
         value = { Parameter.name = snd name; value = Some value; annotation };
       }
     }

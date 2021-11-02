@@ -383,7 +383,7 @@ let test_define_local_bindings _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-               (location (2, 8) (2, 9))) );
+               (location (2, 8) (2, 14))) );
       ];
   assert_bindings
     {|
@@ -398,14 +398,14 @@ let test_define_local_bindings _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-               (location (2, 8) (2, 9))) );
+               (location (2, 8) (2, 14))) );
         ( "y",
           Some
             (ExpectBinding.create
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 1; annotation = Some (str_annotation (2, 19) (2, 22)) })
-               (location (2, 16) (2, 17))) );
+               (location (2, 16) (2, 22))) );
       ];
   assert_bindings
     {|
@@ -424,7 +424,7 @@ let test_define_local_bindings _ =
                      index = 0;
                      annotation = Some (int_annotation (2, 16) (2, 19));
                    })
-               (location (2, 9) (2, 14))) );
+               (location (2, 9) (2, 19))) );
       ];
   assert_bindings
     {|
@@ -443,7 +443,7 @@ let test_define_local_bindings _ =
                      index = 0;
                      annotation = Some (int_annotation (2, 19) (2, 22));
                    })
-               (location (2, 9) (2, 17))) );
+               (location (2, 9) (2, 22))) );
       ];
   assert_bindings
     {|
@@ -458,14 +458,14 @@ let test_define_local_bindings _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-               (location (2, 8) (2, 9))) );
+               (location (2, 8) (2, 14))) );
         ( "y",
           Some
             (ExpectBinding.create
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 1; annotation = Some (str_annotation (2, 19) (2, 22)) })
-               (location (2, 16) (2, 17))) );
+               (location (2, 16) (2, 22))) );
       ];
   assert_bindings
     {|
@@ -1290,7 +1290,7 @@ let test_scope_stack_lookup _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (4, 13) (4, 16)) })
-               (location (4, 10) (4, 11))
+               (location (4, 10) (4, 16))
             |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 
@@ -1311,7 +1311,7 @@ let test_scope_stack_lookup _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-               (location (2, 8) (2, 9))
+               (location (2, 8) (2, 14))
             |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
         ( "y",
           Some
@@ -1319,7 +1319,7 @@ let test_scope_stack_lookup _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (3, 13) (3, 16)) })
-               (location (3, 10) (3, 11))
+               (location (3, 10) (3, 16))
             |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 

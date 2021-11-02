@@ -622,7 +622,7 @@
               "filename": "dataclass_taint.py",
               "line": 50,
               "start": 23,
-              "end": 26
+              "end": 31
             },
             "leaves": [
               {

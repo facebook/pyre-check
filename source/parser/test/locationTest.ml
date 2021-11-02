@@ -2849,7 +2849,7 @@ let test_stub_locations _ =
                    [
                      node
                        ~start:(2, 8)
-                       ~stop:(2, 9)
+                       ~stop:(2, 14)
                        {
                          Parameter.name = "a";
                          value =

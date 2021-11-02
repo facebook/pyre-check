@@ -413,10 +413,10 @@ let test_handle_query_basic context =
                            };
                          overloads = [];
                        } );
-                   2, 8, 2, 9, Type.integer;
+                   2, 8, 2, 14, Type.integer;
                    2, 11, 2, 14, Type.meta Type.integer;
                    2, 17, 2, 19, Type.literal_integer 10;
-                   2, 21, 2, 22, Type.string;
+                   2, 21, 2, 27, Type.string;
                    2, 24, 2, 27, Type.meta Type.string;
                    2, 30, 2, 35, Type.literal_string "bar";
                    2, 40, 2, 44, Type.none;
@@ -473,9 +473,9 @@ let test_handle_query_basic context =
                            };
                          overloads = [];
                        } );
-                   2, 8, 2, 9, Type.integer;
+                   2, 8, 2, 14, Type.integer;
                    2, 11, 2, 14, Type.meta Type.integer;
-                   2, 16, 2, 17, Type.string;
+                   2, 16, 2, 22, Type.string;
                    2, 19, 2, 22, Type.meta Type.string;
                    2, 27, 2, 30, Type.meta Type.string;
                    3, 1, 3, 2, Type.integer;
@@ -718,10 +718,10 @@ let test_handle_query_basic context =
                            };
                          overloads = [];
                        } );
-                   2, 8, 2, 9, Type.integer;
+                   2, 8, 2, 14, Type.integer;
                    2, 11, 2, 14, parse_annotation "typing.Type[int]";
                    2, 19, 2, 22, parse_annotation "typing.Type[str]";
-                   3, 10, 3, 11, Type.integer;
+                   3, 10, 3, 16, Type.integer;
                    3, 13, 3, 16, parse_annotation "typing.Type[int]";
                    3, 21, 3, 24, parse_annotation "typing.Type[str]";
                    4, 11, 4, 12, Type.integer;
@@ -768,7 +768,7 @@ let test_handle_query_basic context =
                            };
                          overloads = [];
                        } );
-                   2, 8, 2, 9, Type.list Type.integer;
+                   2, 8, 2, 27, Type.list Type.integer;
                    2, 11, 2, 27, Type.meta (Type.list Type.integer);
                    2, 32, 2, 36, Type.none;
                  ]

@@ -183,7 +183,7 @@
               "filename": "model_query_parameters_where.py",
               "line": 14,
               "start": 17,
-              "end": 18
+              "end": 23
             },
             "leaves": [
               {
@@ -291,7 +291,7 @@
               "filename": "model_query_parameters_where.py",
               "line": 18,
               "start": 25,
-              "end": 26
+              "end": 31
             },
             "leaves": [
               {
@@ -391,7 +391,7 @@
               "filename": "model_query_parameters_where.py",
               "line": 22,
               "start": 33,
-              "end": 34
+              "end": 37
             },
             "leaves": [
               {
@@ -620,7 +620,7 @@
               "filename": "model_query_parameters_where.py",
               "line": 46,
               "start": 33,
-              "end": 34
+              "end": 37
             },
             "leaves": [
               {
@@ -856,7 +856,7 @@
               "filename": "model_query_parameters_where.py",
               "line": 54,
               "start": 17,
-              "end": 18
+              "end": 29
             },
             "leaves": [
               {
@@ -935,7 +935,7 @@
               "filename": "model_query_parameters_where.py",
               "line": 62,
               "start": 33,
-              "end": 34
+              "end": 37
             },
             "leaves": [
               {

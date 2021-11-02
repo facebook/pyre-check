@@ -851,7 +851,7 @@
               "filename": "taint_in_taint_out.py",
               "line": 78,
               "start": 14,
-              "end": 15
+              "end": 28
             },
             "leaves": [
               { "kind": "Test", "name": "taint_in_taint_out.adds_tito" }
@@ -898,7 +898,7 @@
               "filename": "taint_in_taint_out.py",
               "line": 86,
               "start": 24,
-              "end": 25
+              "end": 43
             },
             "leaves": [
               {

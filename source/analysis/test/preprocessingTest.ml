@@ -4485,7 +4485,7 @@ let test_populate_captures _ =
                           value = None;
                           annotation = Some (int_annotation (3, 13) (3, 16));
                         }
-                        ~location:(location (3, 10) (3, 11));
+                        ~location:(location (3, 10) (3, 16));
                     ];
                   decorators = [];
                   return_annotation = Some (int_annotation (3, 21) (3, 24));
@@ -4804,7 +4804,7 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["args", Annotation (Some (tuple_int_annotation ((2, 9), (2, 14)) ((2, 16), (2, 19))))] );
+          ["args", Annotation (Some (tuple_int_annotation ((2, 9), (2, 19)) ((2, 16), (2, 19))))] );
       ];
   assert_captures
     {|
@@ -4815,7 +4815,7 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["derp", Annotation (Some (tuple_int_annotation ((2, 9), (2, 14)) ((2, 16), (2, 19))))] );
+          ["derp", Annotation (Some (tuple_int_annotation ((2, 9), (2, 19)) ((2, 16), (2, 19))))] );
       ];
   assert_captures
     {|
@@ -4842,7 +4842,7 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["kwargs", Annotation (Some (dict_int_annotation ((2, 9), (2, 17)) ((2, 19), (2, 22))))] );
+          ["kwargs", Annotation (Some (dict_int_annotation ((2, 9), (2, 22)) ((2, 19), (2, 22))))] );
       ];
   assert_captures
     {|

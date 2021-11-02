@@ -1387,7 +1387,7 @@ let test_updates context =
                 [
                   node
                     ~start:(4, 8)
-                    ~stop:(4, 9)
+                    ~stop:(4, 14)
                     {
                       Parameter.name = "$parameter$x";
                       value = None;
@@ -1447,7 +1447,7 @@ let test_updates context =
                 [
                   node
                     ~start:(8, 8)
-                    ~stop:(8, 9)
+                    ~stop:(8, 14)
                     {
                       Parameter.name = "$parameter$x";
                       value = None;
@@ -1626,7 +1626,7 @@ let test_updates context =
                                 };
                               node
                                 ~start:(6, 16)
-                                ~stop:(6, 21)
+                                ~stop:(6, 26)
                                 {
                                   Parameter.name = "$parameter$value";
                                   value = None;
