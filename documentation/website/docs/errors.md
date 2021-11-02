@@ -44,7 +44,7 @@ my_list: List[int] = [1]
 my_list = to_seconds(my_list) # Type checks!
 ```
 
-`typing.Iterable` is an immutable variant for lists that allows accessing the list without modifying it. Most commonly used generic containers have immutable variants, and I would encourage you to use them for function parameters whenever you don't need to modify a container in your function.
+Most commonly used generic containers have immutable variants, and I would encourage you to use them for function parameters whenever you don't need to modify a container in your function.
 Here are some immutable variants for commonly used containers:
 
 ```python
