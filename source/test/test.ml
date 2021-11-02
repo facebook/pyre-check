@@ -89,35 +89,24 @@ let run tests =
 
 
 let parse_untrimmed ?(handle = "") ?(silent = false) ?(coerce_special_methods = false) source =
-  let buffer = Lexing.from_string (source ^ "\n") in
-  buffer.Lexing.lex_curr_p <- { buffer.Lexing.lex_curr_p with Lexing.pos_fname = handle };
-  try
-    let source =
-      let state = Lexer.State.initial () in
+  match Parser.parse ~relative:handle (String.split source ~on:'\n') with
+  | Result.Ok statements ->
       let metadata =
         let qualifier = SourcePath.qualifier_of_relative handle in
         Source.Metadata.parse ~qualifier (String.split source ~on:'\n')
       in
-      Source.create ~metadata ~relative:handle (Generator.parse (Lexer.read state) buffer)
-    in
-    let coerce_special_methods =
-      if coerce_special_methods then coerce_special_methods_source else Fn.id
-    in
-    source |> coerce_special_methods
-  with
-  | Pyre.ParserError _
-  | Generator.Error ->
-      let location =
-        Location.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p
+      let source = Source.create ~metadata ~relative:handle statements in
+      let coerce_special_methods =
+        if coerce_special_methods then coerce_special_methods_source else Fn.id
       in
-      let line = location.Location.start.Location.line - 1
-      and column = location.Location.start.Location.column in
-      let header = Format.asprintf "\nCould not parse test at %a" Location.pp location in
-      let indicator = if column > 0 then String.make (column - 1) ' ' ^ "^" else "^" in
+      source |> coerce_special_methods
+  | Result.Error { Parser.Error.location = { Location.start = { Location.line; column }; _ }; _ } ->
       let error =
-        match List.nth (String.split source ~on:'\n') line with
-        | Some line -> Format.asprintf "%s:\n  %s\n  %s" header line indicator
-        | None -> header ^ "."
+        Format.asprintf
+          "Could not parse test source at line %d, column %d. Test input:\n%s"
+          line
+          column
+          source
       in
       if not silent then
         Printf.printf "%s" error;
