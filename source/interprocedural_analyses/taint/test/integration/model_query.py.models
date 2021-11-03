@@ -690,6 +690,18 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query.ClassTest3_Alarm1.method1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "SourceA" } ] } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query.NotBase.foo",
     "sources": [
       {

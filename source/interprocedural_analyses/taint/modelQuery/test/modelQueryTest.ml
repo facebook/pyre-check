@@ -819,6 +819,69 @@ let test_apply_rule context =
       }
     ~callable:(`Function "test.foo")
     ~expected:[];
+  (* All of. *)
+  assert_applied_rules
+    ~source:
+      {|
+       def foo(a: typing.Annotated[int, "annotation"])-> typing.Annotated[int, "annotation"]: ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            AllOf
+              [
+                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
+                ReturnConstraint IsAnnotatedTypeConstraint;
+              ];
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[Taint.Model.ReturnAnnotation, source "Test"];
+  (* Some cases where we don't match with "AllOf". *)
+  assert_applied_rules
+    ~source:{|
+       def foo(a: typing.Annotated[int, "annotation"]): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            AllOf
+              [
+                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
+                ReturnConstraint IsAnnotatedTypeConstraint;
+              ];
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
+  assert_applied_rules
+    ~source:{|
+       def foo(a) -> typing.Annotated[int, "annotation"]): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            AllOf
+              [
+                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
+                ReturnConstraint IsAnnotatedTypeConstraint;
+              ];
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = FunctionModel;
+      }
+    ~callable:(`Function "test.foo")
+    ~expected:[];
   (* Named parameters + parametric sources from annotation. *)
   assert_applied_rules
     ~source:{|

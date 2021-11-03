@@ -3703,6 +3703,52 @@ let test_query_parsing context =
         };
       ]
     ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+       name = "foo_finders",
+       find = "functions",
+       where = AllOf(
+         any_parameter.annotation.is_annotated_type(),
+         return_annotation.is_annotated_type(),
+       ),
+       model = [Returns([TaintSource[Test]])]
+    )
+    |}
+    ~expect:
+      [
+        {
+          name = Some "foo_finders";
+          query =
+            [
+              AllOf
+                [
+                  AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
+                  ReturnConstraint IsAnnotatedTypeConstraint;
+                ];
+            ];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (Model.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         via_features = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                       });
+                ];
+            ];
+        };
+      ]
+    ();
   (* All parameters. *)
   assert_queries
     ~context
