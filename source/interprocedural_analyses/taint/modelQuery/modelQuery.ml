@@ -196,6 +196,8 @@ let rec normalized_parameter_matches_constraint
       List.exists constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
       not (normalized_parameter_matches_constraint ~resolution ~parameter query_constraint)
+  | ModelQuery.ParameterConstraint.AllOf constraints ->
+      List.for_all constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
 
 
 let rec callable_matches_constraint query_constraint ~resolution ~callable =
@@ -255,6 +257,8 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
       | _ -> false)
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(callable_matches_constraint ~resolution ~callable)
+  | ModelQuery.AllOf constraints ->
+      List.for_all constraints ~f:(callable_matches_constraint ~resolution ~callable)
   | ModelQuery.Not query_constraint ->
       not (callable_matches_constraint ~resolution ~callable query_constraint)
   | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
@@ -529,6 +533,8 @@ let rec attribute_matches_constraint query_constraint ~resolution ~name ~annotat
       |> Option.value ~default:false
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(attribute_matches_constraint ~resolution ~name ~annotation)
+  | ModelQuery.AllOf constraints ->
+      List.for_all constraints ~f:(attribute_matches_constraint ~resolution ~name ~annotation)
   | ModelQuery.Not query_constraint ->
       not (attribute_matches_constraint ~resolution ~name ~annotation query_constraint)
   | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
