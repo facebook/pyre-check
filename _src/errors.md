@@ -972,7 +972,7 @@ Some situations where you might run into this:
  ```
  You can fix this by using the `List` type:
  ```python
- x: list[str] = ["a string"]
+ x: List[str] = ["a string"]
  ```
 
 + Using a constructor call rather than a bare class name:
