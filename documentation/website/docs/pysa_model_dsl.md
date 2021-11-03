@@ -237,6 +237,31 @@ ModelQuery(
 )
 ```
 
+### `AllOf` clauses
+
+There are cases when we want to model entities which match all of a set of clauses. The `AllOf` clause may be used in this case.
+
+Example:
+
+```python
+ModelQuery(
+  find = "methods",
+  where = [
+    AnyOf(
+      AllOf(
+        parent.extends("a.b"),
+        parent.matches("Foo"),
+      ),
+      AllOf(
+        parent.extends("c.d"),
+        parent.matches("Bar")
+      )
+    )
+  ],
+  model = ...
+)
+```
+
 ### `Decorator` clauses
 
 `Decorator` clauses are used to find callables decorated with decorators that match a pattern. The syntax for using this clause is `Decorator(<name clause>, [<arguments clause>])`.
@@ -542,9 +567,9 @@ ModelQuery(
 )
 ```
 
-#### `Not` and `AnyOf` clauses
+#### `Not`, `AllOf` and `AnyOf` clauses
 
-The `Not` and `AnyOf` clauses can be used in the same way as they are in the main `where` clause of the model query. `Not` can be used to negate any existing clause, and `AnyOf` can be used to match when any one of several supplied clauses match.
+The `Not`, `AllOf` and `AnyOf` clauses can be used in the same way as they are in the main `where` clause of the model query. `Not` can be used to negate any existing clause, `AnyOf` to match when all of several supplied clauses match, and `AnyOf` can be used to match when any one of several supplied clauses match.
 
 Example:
 
@@ -556,10 +581,18 @@ ModelQuery(
     Parameters(
       TaintSource[Test],
       where=[
-        Not(AnyOf(
-          name.equals("self"),
-          name.equals("cls")
-        ))
+        Not(
+          AnyOf(
+            AllOf(
+              parent.extends("a.b"),
+              parent.matches("Foo"),
+            ),
+            AllOf(
+              parent.extends("c.d"),
+              parent.matches("Bar")
+            )
+          )
+        )
       ]
     )
   ]
