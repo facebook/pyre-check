@@ -236,3 +236,11 @@ class ClassTest2_NoAlarm1(NoAlarmClass):
 
     def method2():
         return 0
+
+
+class ClassTest3_Alarm1:
+    def method1():
+        return 0
+
+    def method2():
+        return 0

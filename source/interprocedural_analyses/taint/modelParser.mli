@@ -90,6 +90,7 @@ module T : sig
         | NameConstraint of name_constraint
         | IndexConstraint of int
         | AnyOf of t list
+        | AllOf of t list
         | Not of t
       [@@deriving compare, show]
     end
@@ -115,6 +116,7 @@ module T : sig
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of ParameterConstraint.t
       | AnyOf of model_constraint list
+      | AllOf of model_constraint list
       | ParentConstraint of class_constraint
       | DecoratorConstraint of {
           name_constraint: name_constraint;

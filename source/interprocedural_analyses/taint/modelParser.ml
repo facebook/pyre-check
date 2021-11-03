@@ -112,6 +112,7 @@ module T = struct
         | NameConstraint of name_constraint
         | IndexConstraint of int
         | AnyOf of t list
+        | AllOf of t list
         | Not of t
       [@@deriving compare, show]
     end
@@ -140,6 +141,7 @@ module T = struct
       | ReturnConstraint of annotation_constraint
       | AnyParameterConstraint of ParameterConstraint.t
       | AnyOf of model_constraint list
+      | AllOf of model_constraint list
       | ParentConstraint of class_constraint
       | DecoratorConstraint of {
           name_constraint: name_constraint;
@@ -1438,6 +1440,14 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         >>| fun constraints -> ModelQuery.AnyOf constraints
     | Expression.Call
         {
+          Call.callee = { Node.value = Expression.Name (Name.Identifier "AllOf"); _ };
+          arguments = constraints;
+        } ->
+        List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
+        |> all
+        >>| fun constraints -> ModelQuery.AllOf constraints
+    | Expression.Call
+        {
           Call.callee = { Node.value = Expression.Name (Name.Identifier "Not"); _ };
           arguments = [{ Call.Argument.value; _ }];
         } ->
@@ -1596,6 +1606,14 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
         List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
         |> all
         >>| fun constraints -> ModelQuery.ParameterConstraint.AnyOf constraints
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Expression.Name (Name.Identifier "AllOf"); _ };
+          arguments = constraints;
+        } ->
+        List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
+        |> all
+        >>| fun constraints -> ModelQuery.ParameterConstraint.AllOf constraints
     | Expression.Call
         {
           Call.callee = { Node.value = Expression.Name (Name.Identifier "Not"); _ };
