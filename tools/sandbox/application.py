@@ -26,7 +26,7 @@ logging.basicConfig(
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-CUSTOM_PYSA_MODEL_FILE: str = "custom.py"
+CUSTOM_PYSA_MODEL_FILE: str = "custom.pysa"
 WATCHMAN_CONFIG_FILE: str = ".watchmanconfig"
 PYRE_CONFIG_FILE: str = ".pyre_configuration"
 INPUT_FILE: str = "input.py"
@@ -121,11 +121,11 @@ class Pysa:
                 "source_directories": ["."],
                 "taint_models_path": [
                     str(self._stubs),
-                    os.environ["PYSA_PLAYGROUND_STUBS"],
+                    os.environ["PYSA_PLAYGROUND_TAINT_MODELS"],
                 ]
                 if use_builtin_pysa_models
                 else str(self._stubs),
-                "search_path": [str(self._stubs)],
+                "search_path": [str(self._stubs), os.environ["PYSA_PLAYGROUND_STUBS"]],
             }
         )
         LOG.debug(f"Writing configuration:\n{pyre_configuration}")
