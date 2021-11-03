@@ -1049,7 +1049,7 @@ and Match : sig
 
   module Case : sig
     type t = {
-      pattern: Pattern.t Node.t;
+      pattern: Pattern.t;
       guard: Expression.t option;
       body: Statement.t list;
     }
@@ -1090,15 +1090,62 @@ end = struct
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     and t = pattern Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    let rec location_insensitive_equal_pattern left right =
+      let location_insensitive_equal_expression left right =
+        Int.equal (Expression.location_insensitive_compare left right) 0
+      in
+      match left, right with
+      | MatchAs left, MatchAs right ->
+          Option.equal location_insensitive_equal left.pattern right.pattern
+          && Identifier.equal left.name right.name
+      | MatchClass left, MatchClass right ->
+          Expression.Name.equal left.cls right.cls
+          && List.equal location_insensitive_equal left.patterns right.patterns
+          && List.equal Identifier.equal left.keyword_attributes right.keyword_attributes
+          && List.equal location_insensitive_equal left.keyword_patterns right.keyword_patterns
+      | MatchMapping left, MatchMapping right ->
+          List.equal location_insensitive_equal_expression left.keys right.keys
+          && List.equal location_insensitive_equal left.patterns right.patterns
+          && Option.equal Identifier.equal left.rest right.rest
+      | MatchOr left, MatchOr right
+      | MatchSequence left, MatchSequence right ->
+          List.equal location_insensitive_equal left right
+      | MatchSingleton left, MatchSingleton right ->
+          Int.equal (Expression.Constant.location_insensitive_compare left right) 0
+      | MatchStar left, MatchStar right -> Option.equal Identifier.equal left right
+      | MatchValue left, MatchValue right -> location_insensitive_equal_expression left right
+      | MatchWildcard, MatchWildcard -> true
+      | _, _ -> false
+
+
+    and location_insensitive_equal left right =
+      Node.location_insensitive_equal location_insensitive_equal_pattern left right
+
+
+    (* TODO(T104733576): This doesn't give a total order, but we use it for equality checks so it is
+       OK. Should be removed as part of removing broader usage of location_insensitive_compare. *)
+    let location_insensitive_compare left right =
+      match location_insensitive_equal left right with
+      | true -> 0
+      | false -> -1
   end
 
   module Case = struct
     type t = {
-      pattern: Pattern.t Node.t;
+      pattern: Pattern.t;
       guard: Expression.t option;
       body: Statement.t list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    let location_insensitive_compare left right =
+      match Pattern.location_insensitive_compare left.pattern right.pattern with
+      | x when not (Int.equal x 0) -> x
+      | _ -> (
+          match Option.compare Expression.location_insensitive_compare left.guard right.guard with
+          | x when not (Int.equal x 0) -> x
+          | _ -> List.compare Statement.location_insensitive_compare left.body right.body)
   end
 
   type t = {
@@ -1107,8 +1154,10 @@ end = struct
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  (* TODO(T102720335): Support match statement. *)
-  let location_insensitive_compare _ _ = 0
+  let location_insensitive_compare left right =
+    match Expression.location_insensitive_compare left.subject right.subject with
+    | x when not (Int.equal x 0) -> x
+    | _ -> List.compare Case.location_insensitive_compare left.cases right.cases
 end
 
 and Try : sig

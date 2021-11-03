@@ -336,7 +336,7 @@ and Match : sig
 
   module Case : sig
     type t = {
-      pattern: Pattern.t Node.t;
+      pattern: Pattern.t;
       guard: Expression.t option;
       body: Statement.t list;
     }

@@ -32,3 +32,9 @@ val location_insensitive_compare
   'node_type t ->
   'node_type t ->
   int
+
+val location_insensitive_equal
+  :  ('node_type -> 'node_type -> bool) ->
+  'node_type t ->
+  'node_type t ->
+  bool

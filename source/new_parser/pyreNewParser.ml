@@ -453,21 +453,63 @@ let build_exception_handlers ~context exception_handler_builders =
   List.map exception_handler_builders ~f:build_exception_handler
 
 
-(* TODO(T102720335): Support pattern matching *)
-let match_case ~pattern:_ ~guard:_ ~body:_ =
-  raise (InternalError { Error.line = -1; column = -1; message = "match_case not implemented yet" })
+let match_case ~pattern ~guard ~body ~context =
+  { Ast.Statement.Match.Case.pattern; guard; body = build_statements ~context body }
 
 
-(* TODO(T102720335): Support pattern matching *)
+let build_match_cases ~context match_cases =
+  let build_match_case builder = builder ~context in
+  List.map match_cases ~f:build_match_case
+
+
 let pattern =
-  let match_value ~location:_ ~value:_ = () in
-  let match_singleton ~location:_ ~value:_ = () in
-  let match_sequence ~location:_ ~patterns:_ = () in
-  let match_mapping ~location:_ ~keys:_ ~patterns:_ ~rest:_ = () in
-  let match_class ~location:_ ~cls:_ ~patterns:_ ~kwd_attrs:_ ~kwd_patterns:_ = () in
-  let match_star ~location:_ ~name:_ = () in
-  let match_as ~location:_ ~pattern:_ ~name:_ = () in
-  let match_or ~location:_ ~patterns:_ = () in
+  let open Ast.Expression in
+  let open Ast.Statement in
+  let module Node = Ast.Node in
+  let match_value ~location ~value = Match.Pattern.MatchValue value |> Node.create ~location in
+  let match_singleton ~location ~value =
+    Match.Pattern.MatchSingleton value |> Node.create ~location
+  in
+  let match_sequence ~location ~patterns =
+    Match.Pattern.MatchSequence patterns |> Node.create ~location
+  in
+  let match_mapping ~location ~keys ~patterns ~rest =
+    Match.Pattern.MatchMapping { keys; patterns; rest } |> Node.create ~location
+  in
+  let match_class ~location ~cls ~patterns ~kwd_attrs ~kwd_patterns =
+    let cls =
+      match Node.value cls with
+      | Expression.Name name -> name
+      | _ ->
+          let { Ast.Location.start = { line; column }; _ } = location in
+          raise
+            (InternalError
+               {
+                 Error.line;
+                 column;
+                 message = "class pattern expects simple identifier or attribute accesses only";
+               })
+    in
+    Match.Pattern.MatchClass
+      { cls; patterns; keyword_attributes = kwd_attrs; keyword_patterns = kwd_patterns }
+    |> Node.create ~location
+  in
+  let match_star ~location ~name = Match.Pattern.MatchStar name |> Node.create ~location in
+  let match_as ~location ~pattern ~name =
+    match name, pattern with
+    | None, Some _ ->
+        let { Ast.Location.start = { line; column }; _ } = location in
+        raise
+          (InternalError
+             {
+               Error.line;
+               column;
+               message = "as pattern expects non-wildcard pattern when name is `_`";
+             })
+    | None, None -> Node.create ~location Match.Pattern.MatchWildcard
+    | Some name, pattern -> Match.Pattern.MatchAs { name; pattern } |> Node.create ~location
+  in
+  let match_or ~location ~patterns = Match.Pattern.MatchOr patterns |> Node.create ~location in
   PyreAst.TaglessFinal.Pattern.make
     ~match_value
     ~match_singleton
@@ -690,10 +732,11 @@ let statement =
       |> Node.create ~location;
     ]
   in
-  let match_ ~location ~subject:_ ~cases:_ ~context:_ =
-    (* TODO(T102720335): Support pattern matching *)
-    let { Ast.Location.start = { Ast.Location.line; column }; _ } = location in
-    raise (InternalError { Error.line; column; message = "match statement not implemented yet" })
+  let match_ ~location ~subject ~cases ~context =
+    [
+      Statement.Match { Match.subject; cases = build_match_cases ~context cases }
+      |> Node.create ~location;
+    ]
   in
   let raise_ ~location ~exc ~cause ~context:_ =
     [Statement.Raise { Raise.expression = exc; from = cause } |> Node.create ~location]
