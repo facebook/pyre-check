@@ -1037,7 +1037,7 @@ let test_walrus context =
     ~context
     {|
       def sink_in_walrus(arg):
-          x := _test_sink(arg)
+          (x := _test_sink(arg))
 
       def tito_via_walrus(arg):
           return (x := arg)

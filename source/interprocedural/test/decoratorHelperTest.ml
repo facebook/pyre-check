@@ -726,60 +726,6 @@ let test_inline_decorators context =
 
       return _inlined_with_logging_source(y)
   |};
-  (* Decorator factory. *)
-  assert_inlined
-    {|
-    from typing import Callable
-    from builtins import _test_sink
-
-    def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
-
-      def _inner_decorator(f: Callable) -> Callable:
-
-        def inner( *args: object, **kwargs: object) -> None:
-          print(logger_name)
-          _test_sink(args)
-          f( *args, **kwargs)
-
-        return inner
-
-      return _inner_decorator
-
-    @with_named_logger("foo_logger")
-    def foo(x: str) -> None:
-      print(x)
-  |}
-    {|
-    from typing import Callable
-    from builtins import _test_sink
-
-    def with_named_logger(logger_name: str) -> Callable[[Callable], Callable]:
-
-      def _inner_decorator(f: Callable) -> Callable:
-
-        def inner( *args: object, **kwargs: object) -> None:
-          print(logger_name)
-          _test_sink(args)
-          f( *args, **kwargs)
-
-        return inner
-
-      return _inner_decorator
-
-    def foo(x: str) -> None:
-      def _original_function(x: str) -> None:
-        print(x)
-
-      def _inlined_with_named_logger(x: str) -> None:
-        _args = (x, )
-        _kwargs = {"x": x}
-
-        print($parameter$logger_name)
-        _test_sink(_args)
-        _original_function(x)
-
-      return _inlined_with_named_logger(x)
-  |};
   (* Decorator that uses helper functions. *)
   assert_inlined
     {|
@@ -1296,63 +1242,6 @@ let test_inline_decorators context =
         _inlined_identity(y)
 
       return _inlined_with_logging2(y)
-  |};
-  (* Decorator that passes in a local variable to the original function.
-
-     Note: This is a bit of a weird edge case because the `@wraps` says that the signature is the
-     same as the original function, but in reality it takes in one less parameter. I'm reconciling
-     this by keeping the original signature (for the sake of model-writing and typechecking) but
-     only storing the remaining parameters in `_args` and `_kwargs`. *)
-  assert_inlined
-    {|
-    from typing import Callable
-    from builtins import _test_sink
-    from functools import wraps
-
-    def with_logging(f: Callable) -> Callable:
-
-      @wraps(f)
-      def inner(request: str, *args, **kwargs) -> None:
-        _test_sink(args)
-        x = 42
-        f(request, x, *args, **kwargs)
-
-      return inner
-
-    @with_logging
-    def foo(request: str, x: int, y: int) -> None:
-      print(x)
-  |}
-    {|
-    from typing import Callable
-    from builtins import _test_sink
-    from functools import wraps
-
-    def with_logging(f: Callable) -> Callable:
-
-      @wraps(f)
-      def inner(request: str, *args, **kwargs) -> None:
-        _test_sink(args)
-        x = 42
-        f(request, x, *args, **kwargs)
-
-      return inner
-
-    def foo(request: str, x: int, y: int) -> None:
-
-      def _original_function(request: str, x: int, y: int) -> None:
-        print(x)
-
-      def _inlined_with_logging(request: str, x: int, y: int) -> None:
-        _args = (y, )
-        _kwargs = {"y": y}
-        _test_sink(_args)
-
-        # Need to explicitly qualify this local variable because `x` is also a parameter.
-        $local_test?foo?_inlined_with_logging$x = 42
-        _original_function(request, $local_test?foo?_inlined_with_logging$x, y)
-
-      return _inlined_with_logging(request, x, y)
   |};
   (* Decorator that passes in a local variable but doesn't use @wraps. We fall back to having *args,
      **kwargs in the outer signature. *)

@@ -117,11 +117,11 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
     | None ->
         {|
               unannotated_global = source()
-              def test.sink(parameter) -> None: pass
-              def test.sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
-              def test.source() -> None: pass
-              def test.taint(x, y) -> None: pass
-              def test.partial_sink(x, y) -> None: pass
+              def sink(parameter) -> None: pass
+              def sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
+              def source() -> None: pass
+              def taint(x, y) -> None: pass
+              def partial_sink(x, y) -> None: pass
               def function_with_args(normal_arg, __anonymous_arg, *args) -> None: pass
               def function_with_kwargs(normal_arg, **kwargs) -> None: pass
               def anonymous_only(__arg1, __arg2, __arg3) -> None: pass
@@ -1521,8 +1521,8 @@ let test_class_models context =
     ~source:
       {|
         class Sink:
-          def Sink.method(parameter): ...
-          def Sink.method_with_multiple_parameters(first, second): ...
+          def method(parameter): ...
+          def method_with_multiple_parameters(first, second): ...
       |}
     ~model_source:"class test.Sink(TaintSink[TestSink]): ..."
     ~expect:
@@ -1545,8 +1545,8 @@ let test_class_models context =
     ~source:
       {|
         class Sink:
-          def Sink.method(parameter): ...
-          def Sink.method_with_multiple_parameters(first, second): ...
+          def method(parameter): ...
+          def method_with_multiple_parameters(first, second): ...
       |}
     ~model_source:"class test.Sink(TaintSink[TestSink], TaintSink[OtherSink]): ..."
     ~expect:
@@ -1572,10 +1572,9 @@ let test_class_models context =
       ]
     ();
   assert_model
-    ~source:
-      {|
+    ~source:{|
         class SinkAndSource:
-          def SinkAndSource.method(parameter): ...
+          def method(parameter): ...
       |}
     ~model_source:"class test.SinkAndSource(TaintSink[TestSink], TaintSource[TestTest]): ..."
     ~expect:
@@ -1592,8 +1591,8 @@ let test_class_models context =
     ~source:
       {|
         class Source:
-          def Source.method(parameter): ...
-          def Source.method_with_multiple_parameters(first, second): ...
+          def method(parameter): ...
+          def method_with_multiple_parameters(first, second): ...
           Source.attribute = ...
       |}
     ~model_source:{|
@@ -1612,7 +1611,7 @@ let test_class_models context =
     ~source:
       {|
         class AnnotatedSink:
-          def AnnotatedSink.method(parameter: int) -> None: ...
+          def method(parameter: int) -> None: ...
       |}
     ~model_source:"class test.AnnotatedSink(TaintSink[TestSink]): ..."
     ~expect:
@@ -1627,7 +1626,7 @@ let test_class_models context =
     ~source:
       {|
          class AnnotatedSource:
-          def AnnotatedSource.method(parameter: int) -> None: ...
+          def method(parameter: int) -> None: ...
       |}
     ~model_source:"class test.AnnotatedSource(TaintSource[UserControlled]): ..."
     ~expect:
@@ -1642,7 +1641,7 @@ let test_class_models context =
     ~source:
       {|
          class SourceWithDefault:
-          def SourceWithDefault.method(parameter: int = 1) -> None: ...
+          def method(parameter: int = 1) -> None: ...
       |}
     ~model_source:"class test.SourceWithDefault(TaintSink[Test]): ..."
     ~expect:
@@ -1658,7 +1657,7 @@ let test_class_models context =
       {|
          class Source:
            @classmethod
-           def Source.method(cls, parameter: int) -> None: ...
+           def method(cls, parameter: int) -> None: ...
       |}
     ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
     ~expect:
@@ -1669,7 +1668,7 @@ let test_class_models context =
       {|
          class Source:
            @property
-           def Source.prop(self) -> int: ...
+           def prop(self) -> int: ...
       |}
     ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
     ~expect:
@@ -1679,8 +1678,8 @@ let test_class_models context =
     ~source:
       {|
         class SkipMe:
-          def SkipMe.method(parameter): ...
-          def SkipMe.method_with_multiple_parameters(first, second): ...
+          def method(parameter): ...
+          def method_with_multiple_parameters(first, second): ...
       |}
     ~model_source:"class test.SkipMe(SkipAnalysis): ..."
     ~expect:
@@ -1700,8 +1699,8 @@ let test_class_models context =
     ~source:
       {|
         class SkipMe:
-          def SkipMe.method(parameter): ...
-          def SkipMe.method_with_multiple_parameters(first, second): ...
+          def method(parameter): ...
+          def method_with_multiple_parameters(first, second): ...
       |}
     ~model_source:"class test.SkipMe(SkipOverrides): ..."
     ~expected_skipped_overrides:
