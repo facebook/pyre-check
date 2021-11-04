@@ -1478,10 +1478,118 @@ let test_final_type context =
     |} [];
   assert_type_errors
     {|
+      from typing import Final, List
+      x: List[Final[int]] = [3]
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `List[Final[int]]` but is used \
+       as type `List[int]`.";
+      "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be \
+       nested.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      def foo(x: Final[int]) -> None:
+        pass
+    |}
+    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
+  assert_type_errors
+    {|
       from typing import Final
       x: Final[str] = 3
     |}
-    ["Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`."]
+    ["Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`."];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      class Foo:
+        uninitialized_attribute: Final[int]
+        attribute: Final[int]
+
+        def __init__(self) -> None:
+          self.attribute = 1
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `uninitialized_attribute` is declared in class \
+       `Foo` to have type `int` but is never initialized.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      class Foo:
+        attribute: Final[int] = 1
+
+      class Bar(Foo):
+        attribute = 2
+
+      def test(foo: Foo) -> int:
+        foo.attribute = 2
+        return foo.attribute
+    |}
+    [
+      "Invalid assignment [41]: Cannot reassign final attribute `attribute`.";
+      "Invalid assignment [41]: Cannot reassign final attribute `foo.attribute`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      def foo() -> int:
+        x: Final[int] = 1
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      def foo() -> None:
+        x: Final[int] = 1
+        x = 2
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+  (* TODO(T84660869): Support final annotations for non-attributes. *)
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final[int] = 3
+
+      def foo() -> None:
+        global x
+        x = 2
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `Final[int]` but is used as type \
+       `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final, List
+      x: Final[List[int]] = 3
+
+      def foo() -> None:
+        global x
+        x.append(4)
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `List[int]` but is used as type \
+       `int`.";
+      "Undefined attribute [16]: `Final` has no attribute `append`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final[int] = 3
+
+      def foo() -> int:
+        return x
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `Final[int]`."];
+  ()
 
 
 let test_check_invalid_inheritance context =
