@@ -569,7 +569,7 @@ ModelQuery(
 
 #### `Not`, `AllOf` and `AnyOf` clauses
 
-The `Not`, `AllOf` and `AnyOf` clauses can be used in the same way as they are in the main `where` clause of the model query. `Not` can be used to negate any existing clause, `AnyOf` to match when all of several supplied clauses match, and `AnyOf` can be used to match when any one of several supplied clauses match.
+The `Not`, `AllOf` and `AnyOf` clauses can be used in the same way as they are in the main `where` clause of the model query. `Not` can be used to negate any existing clause, `AllOf` to match when all of several supplied clauses match, and `AnyOf` can be used to match when any one of several supplied clauses match.
 
 Example:
 
