@@ -1408,7 +1408,7 @@ let test_decorator context =
   assert_taint
     ~context
     {|
-      @$strip_first_parameter
+      @_strip_first_parameter_
       def decorated(self, into_sink):
         _test_sink(into_sink)
 

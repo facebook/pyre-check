@@ -9,7 +9,7 @@ open Core
 
 let apply ~argument ~name =
   match name, argument with
-  | "$strip_first_parameter", Type.Callable callable ->
+  | "_strip_first_parameter_", Type.Callable callable ->
       let { Type.Callable.implementation = old_implementation; overloads = old_overloads; _ } =
         callable
       in
@@ -33,4 +33,4 @@ let apply ~argument ~name =
   | _, argument -> argument
 
 
-let special_decorators = String.Set.singleton "$strip_first_parameter"
+let special_decorators = String.Set.singleton "_strip_first_parameter_"

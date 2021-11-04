@@ -80,7 +80,7 @@ let test_apply_decorators context =
   let create_parameter ~name = Parameter.create ~location:Location.any ~name () in
   (* Custom decorators. *)
   create_define
-    ~decorators:[!"$strip_first_parameter"]
+    ~decorators:[!"_strip_first_parameter_"]
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
     ~return_annotation:None
   |> (fun define ->
