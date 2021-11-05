@@ -301,23 +301,17 @@ module ResultArgument = struct
     let source_taint =
       source_taint
       |> ForwardState.transform FlowDetails.Self Map ~f:Domains.FlowDetails.strip_tito_positions
-      |> ForwardState.transform ForwardTaint.trace_info Map ~f:Domains.TraceInfo.strip_for_callsite
+      |> ForwardState.transform ForwardTaint.call_info Map ~f:Domains.CallInfo.strip_for_callsite
     in
     let sink_taint =
       sink_taint
       |> BackwardState.transform FlowDetails.Self Map ~f:Domains.FlowDetails.strip_tito_positions
-      |> BackwardState.transform
-           BackwardTaint.trace_info
-           Map
-           ~f:Domains.TraceInfo.strip_for_callsite
+      |> BackwardState.transform BackwardTaint.call_info Map ~f:Domains.CallInfo.strip_for_callsite
     in
     let taint_in_taint_out =
       taint_in_taint_out
       |> BackwardState.transform FlowDetails.Self Map ~f:Domains.FlowDetails.strip_tito_positions
-      |> BackwardState.transform
-           BackwardTaint.trace_info
-           Map
-           ~f:Domains.TraceInfo.strip_for_callsite
+      |> BackwardState.transform BackwardTaint.call_info Map ~f:Domains.CallInfo.strip_for_callsite
     in
     { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
 
@@ -424,4 +418,4 @@ let decorators_to_skip models =
   |> Ast.Reference.Set.of_list
 
 
-let () = TraceInfo.has_significant_summary := has_significant_summary
+let () = CallInfo.has_significant_summary := has_significant_summary

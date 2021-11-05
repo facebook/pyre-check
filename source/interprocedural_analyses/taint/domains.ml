@@ -39,8 +39,9 @@ let location_with_module_to_json ~filename_lookup location_with_module : Yojson.
   | _ -> failwith "unreachable"
 
 
-module TraceInfo = struct
-  let name = "trace"
+(* Represents the link between frames. *)
+module CallInfo = struct
+  let name = "call info"
 
   type t =
     (* User-specified taint on a model. *)
@@ -258,7 +259,7 @@ module type TAINT_DOMAIN = sig
 
   val kind : kind Abstract.Domain.part
 
-  val trace_info : TraceInfo.t Abstract.Domain.part
+  val call_info : CallInfo.t Abstract.Domain.part
 
   val add_breadcrumb : Features.Breadcrumb.t -> t -> t
 
@@ -343,21 +344,21 @@ module MakeTaint (Kind : KIND_ARG) : sig
 end = struct
   type kind = Kind.t [@@deriving compare, eq]
 
-  module Key = struct
-    include TraceInfo
+  module CallInfoKey = struct
+    include CallInfo
 
     let absence_implicitly_maps_to_bottom = true
   end
 
   module KindTaintDomain = KindTaint (Kind)
-  module Map = Abstract.MapDomain.Make (Key) (KindTaintDomain)
+  module Map = Abstract.MapDomain.Make (CallInfoKey) (KindTaintDomain)
   include Map
 
   let add ?location map kind =
     let trace =
       match location with
-      | None -> TraceInfo.Declaration { leaf_name_provided = false }
-      | Some location -> TraceInfo.Origin location
+      | None -> CallInfo.Declaration { leaf_name_provided = false }
+      | Some location -> CallInfo.Origin location
     in
     let kind_taint = KindTaintDomain.singleton kind in
     Map.update map trace ~f:(function
@@ -371,14 +372,14 @@ end = struct
 
   let kind = KindTaintDomain.Key
 
-  let trace_info = Map.Key
+  let call_info = Map.Key
 
   let kinds map =
     Map.fold kind ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Kind.compare
 
 
-  let create_json ~trace_info_to_json taint =
-    let leaf_to_json trace_info (kind, features) =
+  let create_json ~call_info_to_json taint =
+    let leaf_to_json call_info (kind, features) =
       let trace_length = FlowDetails.fold TraceLength.Self features ~f:min ~init:55555 in
       let kind_json = `String (Kind.show kind) in
       let breadcrumbs, leaf_json =
@@ -422,7 +423,7 @@ end = struct
         |> Features.TitoPositionSet.elements
         |> List.map ~f:location_to_json
       in
-      let trace_json = trace_info_to_json ~trace_length trace_info in
+      let trace_json = call_info_to_json ~trace_length call_info in
       let leaf_json =
         if List.is_empty leaf_json then
           [`Assoc ["kind", kind_json]]
@@ -443,19 +444,19 @@ end = struct
       in
       `Assoc (trace_json :: association)
     in
-    let trace_to_json (trace_info, kind_taint) =
-      KindTaintDomain.Map.to_alist kind_taint |> List.map ~f:(leaf_to_json trace_info)
+    let trace_to_json (call_info, kind_taint) =
+      KindTaintDomain.Map.to_alist kind_taint |> List.map ~f:(leaf_to_json call_info)
     in
     (* expand now do dedup possibly abstract targets that resolve to the same concrete ones *)
-    let taint = Map.transform Key Map ~f:TraceInfo.expand_call_site taint in
+    let taint = Map.transform Key Map ~f:CallInfo.expand_call_site taint in
     let elements = Map.to_alist taint |> List.concat_map ~f:trace_to_json in
     `List elements
 
 
-  let to_json = create_json ~trace_info_to_json:TraceInfo.to_json
+  let to_json = create_json ~call_info_to_json:CallInfo.to_json
 
   let to_external_json ~filename_lookup =
-    create_json ~trace_info_to_json:(TraceInfo.to_external_json ~filename_lookup)
+    create_json ~call_info_to_json:(CallInfo.to_external_json ~filename_lookup)
 
 
   let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
@@ -536,8 +537,7 @@ end = struct
 
 
   let apply_call location ~callees ~port ~path ~element:taint =
-    let apply (trace_info, kind_taint) =
-      let open TraceInfo in
+    let apply (call_info, kind_taint) =
       let apply_flow_details flow_details =
         flow_details
         |> FlowDetails.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
@@ -552,17 +552,17 @@ end = struct
         |> KindTaintDomain.transform KindTaintDomain.Key Map ~f:Kind.apply_call
         |> KindTaintDomain.transform FlowDetails.Self Map ~f:apply_flow_details
       in
-      match trace_info with
-      | Origin _
-      | CallSite _ ->
+      match call_info with
+      | CallInfo.Origin _
+      | CallInfo.CallSite _ ->
           let increase_length n = if n < max_int then n + 1 else n in
-          let trace_info = CallSite { location; callees; port; path } in
+          let call_info = CallInfo.CallSite { location; callees; port; path } in
           let kind_taint =
             kind_taint |> KindTaintDomain.transform TraceLength.Self Map ~f:increase_length
           in
-          trace_info, kind_taint
-      | Declaration { leaf_name_provided } ->
-          let trace_info = Origin location in
+          call_info, kind_taint
+      | CallInfo.Declaration { leaf_name_provided } ->
+          let call_info = CallInfo.Origin location in
           let new_leaf_names =
             if leaf_name_provided then
               Features.LeafNameSet.bottom
@@ -577,7 +577,7 @@ end = struct
           let kind_taint =
             KindTaintDomain.transform Features.LeafNameSet.Self Add ~f:new_leaf_names kind_taint
           in
-          trace_info, kind_taint
+          call_info, kind_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
 end
@@ -608,14 +608,14 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   let is_empty = is_bottom
 
   let compute_essential_features ~essential_return_access_paths tree =
-    let essential_trace_info = function
-      | _ -> TraceInfo.Declaration { leaf_name_provided = false }
+    let essential_call_info = function
+      | _ -> CallInfo.Declaration { leaf_name_provided = false }
     in
     let essential_breadcrumbs _ = Features.BreadcrumbSet.bottom in
     let essential_via_features _ = Features.ViaFeatureSet.bottom in
     let essential_tito_positions _ = Features.TitoPositionSet.bottom in
     let essential_leaf_names _ = Features.LeafNameSet.bottom in
-    transform Taint.trace_info Map ~f:essential_trace_info tree
+    transform Taint.call_info Map ~f:essential_call_info tree
     |> transform Features.ReturnAccessPathSet.Self Map ~f:essential_return_access_paths
     |> transform Features.BreadcrumbSet.Self Map ~f:essential_breadcrumbs
     |> transform Features.ViaFeatureSet.Self Map ~f:essential_via_features
@@ -826,7 +826,7 @@ module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 let local_return_taint =
   BackwardTaint.create
     [
-      Part (BackwardTaint.trace_info, TraceInfo.Declaration { leaf_name_provided = false });
+      Part (BackwardTaint.call_info, CallInfo.Declaration { leaf_name_provided = false });
       Part (BackwardTaint.kind, Sinks.LocalReturn);
       Part (TraceLength.Self, 0);
       Part (Features.ReturnAccessPathSet.Element, []);

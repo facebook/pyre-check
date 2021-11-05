@@ -949,14 +949,14 @@ let introduce_sink_taint
       match taint_sink_kind with
       | Sinks.LocalReturn -> Error "Invalid TaintSink annotation `LocalReturn`"
       | _ ->
-          let transform_trace_information taint =
+          let transform_call_information taint =
             if leaf_name_provided then
               BackwardTaint.transform
-                BackwardTaint.trace_info
+                BackwardTaint.call_info
                 Map
                 ~f:(function
-                  | TraceInfo.Declaration _ -> TraceInfo.Declaration { leaf_name_provided = true }
-                  | trace_info -> trace_info)
+                  | CallInfo.Declaration _ -> CallInfo.Declaration { leaf_name_provided = true }
+                  | call_info -> call_info)
                 taint
             else
               taint
@@ -973,7 +973,7 @@ let introduce_sink_taint
             |> BackwardTaint.transform Features.LeafNameSet.Self Add ~f:leaf_names
             |> BackwardTaint.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
             |> BackwardTaint.transform Features.ViaFeatureSet.Self Add ~f:via_features
-            |> transform_trace_information
+            |> transform_call_information
             |> BackwardState.Tree.create_leaf
           in
           let sink_taint = assign_backward_taint sink_taint leaf_taint in
@@ -1059,14 +1059,14 @@ let introduce_source_taint
     let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
     let via_features = Features.ViaFeatureSet.of_list via_features in
     let source_taint =
-      let transform_trace_information taint =
+      let transform_call_information taint =
         if leaf_name_provided then
           ForwardTaint.transform
-            ForwardTaint.trace_info
+            ForwardTaint.call_info
             Map
             ~f:(function
-              | TraceInfo.Declaration _ -> TraceInfo.Declaration { leaf_name_provided = true }
-              | trace_info -> trace_info)
+              | CallInfo.Declaration _ -> CallInfo.Declaration { leaf_name_provided = true }
+              | call_info -> call_info)
             taint
         else
           taint
@@ -1080,7 +1080,7 @@ let introduce_source_taint
         |> ForwardTaint.transform Features.LeafNameSet.Self Add ~f:leaf_names
         |> ForwardTaint.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
         |> ForwardTaint.transform Features.ViaFeatureSet.Self Add ~f:via_features
-        |> transform_trace_information
+        |> transform_call_information
         |> ForwardState.Tree.create_leaf
       in
       ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint
