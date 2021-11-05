@@ -172,9 +172,10 @@ module TraceLength = Abstract.SimpleDomain.Make (struct
   let show length = if Int.equal length max_int then "<bottom>" else string_of_int length
 end)
 
-module FlowDetails = struct
+(* Represents a frame, i.e a single hop between functions. *)
+module Frame = struct
   module Slots = struct
-    let name = "flow details"
+    let name = "frame"
 
     type 'a slot =
       | Breadcrumb : Features.BreadcrumbSet.t slot
@@ -236,7 +237,7 @@ module FlowDetails = struct
 
   let product_pp = pp (* shadow *)
 
-  let pp formatter = Format.fprintf formatter "FlowDetails(%a)" product_pp
+  let pp formatter = Format.fprintf formatter "Frame(%a)" product_pp
 
   let show = Format.asprintf "%a" pp
 
@@ -327,10 +328,10 @@ module KindTaint (Kind : KIND_ARG) = struct
     let absence_implicitly_maps_to_bottom = false
   end
 
-  module Map = Abstract.MapDomain.Make (Key) (FlowDetails)
+  module Map = Abstract.MapDomain.Make (Key) (Frame)
   include Map
 
-  let singleton kind = Map.set Map.bottom ~key:kind ~data:FlowDetails.initial
+  let singleton kind = Map.set Map.bottom ~key:kind ~data:Frame.initial
 end
 
 module MakeTaint (Kind : KIND_ARG) : sig
@@ -380,7 +381,7 @@ end = struct
 
   let create_json ~call_info_to_json taint =
     let leaf_to_json call_info (kind, features) =
-      let trace_length = FlowDetails.fold TraceLength.Self features ~f:min ~init:55555 in
+      let trace_length = Frame.fold TraceLength.Self features ~f:min ~init:55555 in
       let kind_json = `String (Kind.show kind) in
       let breadcrumbs, leaf_json =
         let gather_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
@@ -393,33 +394,33 @@ end = struct
           :: leaves
         in
         let breadcrumbs =
-          FlowDetails.fold Features.BreadcrumbSet.ElementAndUnder ~f:gather_json ~init:[] features
+          Frame.fold Features.BreadcrumbSet.ElementAndUnder ~f:gather_json ~init:[] features
         in
         let leaves =
-          FlowDetails.get FlowDetails.Slots.LeafName features
+          Frame.get Frame.Slots.LeafName features
           |> Features.LeafNameSet.elements
           |> List.map ~f:Features.LeafNameInterned.unintern
           |> List.map ~f:(Features.LeafName.to_json ~kind_json)
         in
         let first_index_breadcrumbs =
-          FlowDetails.get FlowDetails.Slots.FirstIndex features
+          Frame.get Frame.Slots.FirstIndex features
           |> Features.FirstIndexSet.elements
           |> Features.FirstIndex.to_json
         in
         let first_field_breadcrumbs =
-          FlowDetails.get FlowDetails.Slots.FirstField features
+          Frame.get Frame.Slots.FirstField features
           |> Features.FirstFieldSet.elements
           |> Features.FirstField.to_json
         in
         ( List.concat [first_index_breadcrumbs; first_field_breadcrumbs; breadcrumbs],
-          FlowDetails.fold
+          Frame.fold
             Features.ReturnAccessPathSet.Element
             ~f:gather_return_access_path
             ~init:leaves
             features )
       in
       let tito_positions =
-        FlowDetails.get FlowDetails.Slots.TitoPosition features
+        Frame.get Frame.Slots.TitoPosition features
         |> Features.TitoPositionSet.elements
         |> List.map ~f:location_to_json
       in
@@ -498,8 +499,8 @@ end = struct
 
 
   let prune_maximum_length maximum_length =
-    let filter_flow (_, flow_details) =
-      let length = FlowDetails.get FlowDetails.Slots.TraceLength flow_details in
+    let filter_flow (_, frame) =
+      let length = Frame.get Frame.Slots.TraceLength frame in
       TraceLength.is_bottom length || TraceLength.less_or_equal ~left:maximum_length ~right:length
     in
     transform KindTaintDomain.KeyValue Filter ~f:filter_flow
@@ -538,11 +539,11 @@ end = struct
 
   let apply_call location ~callees ~port ~path ~element:taint =
     let apply (call_info, kind_taint) =
-      let apply_flow_details flow_details =
-        flow_details
-        |> FlowDetails.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
+      let apply_frame frame =
+        frame
+        |> Frame.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
                Features.TitoPositionSet.bottom)
-        |> FlowDetails.transform Features.ViaFeatureSet.Self Map ~f:(fun _ ->
+        |> Frame.transform Features.ViaFeatureSet.Self Map ~f:(fun _ ->
                Features.ViaFeatureSet.bottom)
       in
       let kind_taint =
@@ -550,7 +551,7 @@ end = struct
         |> KindTaintDomain.transform KindTaintDomain.Key Filter ~f:(fun kind ->
                not (Kind.ignore_kind_at_call kind))
         |> KindTaintDomain.transform KindTaintDomain.Key Map ~f:Kind.apply_call
-        |> KindTaintDomain.transform FlowDetails.Self Map ~f:apply_flow_details
+        |> KindTaintDomain.transform Frame.Self Map ~f:apply_frame
       in
       match call_info with
       | CallInfo.Origin _

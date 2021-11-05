@@ -335,15 +335,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         let add_tito_feature_and_position leaf_taint =
           leaf_taint
-          |> FlowDetails.add_tito_position location
-          |> FlowDetails.add_breadcrumb Features.tito
+          |> Frame.add_tito_position location
+          |> Frame.add_breadcrumb Features.tito
         in
         BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
         |> BackwardState.Tree.fold
              BackwardState.Tree.Path
              ~f:translate_tito
              ~init:BackwardState.Tree.bottom
-        |> BackwardState.Tree.transform FlowDetails.Self Map ~f:add_tito_feature_and_position
+        |> BackwardState.Tree.transform Frame.Self Map ~f:add_tito_feature_and_position
         |> BackwardState.Tree.prepend actual_path
         |> BackwardState.Tree.join taint_tree
       in

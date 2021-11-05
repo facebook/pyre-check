@@ -294,19 +294,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             let add_features_and_position leaf_taint =
               leaf_taint
-              |> FlowDetails.add_tito_position argument.Node.location
-              |> FlowDetails.add_breadcrumbs breadcrumbs
+              |> Frame.add_tito_position argument.Node.location
+              |> Frame.add_breadcrumbs breadcrumbs
             in
             let taint_to_propagate =
               if collapse_tito then
                 ForwardState.Tree.read path argument_taint
                 |> ForwardState.Tree.collapse
                      ~transform:(ForwardTaint.add_breadcrumbs Features.tito_broadening)
-                |> ForwardTaint.transform FlowDetails.Self Map ~f:add_features_and_position
+                |> ForwardTaint.transform Frame.Self Map ~f:add_features_and_position
                 |> ForwardState.Tree.create_leaf
               else
                 ForwardState.Tree.read path argument_taint
-                |> ForwardState.Tree.transform FlowDetails.Self Map ~f:add_features_and_position
+                |> ForwardState.Tree.transform Frame.Self Map ~f:add_features_and_position
             in
             let taint_to_propagate =
               match kind with

@@ -125,8 +125,8 @@ let get_callsite_model ~resolution ~call_target ~arguments =
             modes;
           }
         =
-        let expand flow_details =
-          let transform via_feature flow_details =
+        let expand frame =
+          let transform via_feature frame =
             let match_all_arguments_to_parameter parameter =
               AccessPath.match_actuals_to_formals arguments [parameter]
               |> List.filter_map ~f:(fun (argument, matches) ->
@@ -143,9 +143,9 @@ let get_callsite_model ~resolution ~call_target ~arguments =
             match via_feature with
             | Features.ViaFeature.ViaValueOf { parameter; tag } ->
                 let arguments = match_all_arguments_to_parameter parameter in
-                FlowDetails.add_breadcrumb
+                Frame.add_breadcrumb
                   (Features.ViaFeature.via_value_of_breadcrumb ?tag ~arguments)
-                  flow_details
+                  frame
             | Features.ViaFeature.ViaTypeOf { parameter; tag } ->
                 let breadcrumb =
                   match call_target with
@@ -160,18 +160,14 @@ let get_callsite_model ~resolution ~call_target ~arguments =
                         ~resolution
                         ~argument:(match_argument_to_parameter parameter)
                 in
-                FlowDetails.add_breadcrumb breadcrumb flow_details
+                Frame.add_breadcrumb breadcrumb frame
           in
-          FlowDetails.fold
-            Features.ViaFeatureSet.Element
-            ~f:transform
-            ~init:flow_details
-            flow_details
+          Frame.fold Features.ViaFeatureSet.Element ~f:transform ~init:frame frame
         in
-        let source_taint = ForwardState.transform FlowDetails.Self Map ~f:expand source_taint in
-        let sink_taint = BackwardState.transform FlowDetails.Self Map ~f:expand sink_taint in
+        let source_taint = ForwardState.transform Frame.Self Map ~f:expand source_taint in
+        let sink_taint = BackwardState.transform Frame.Self Map ~f:expand sink_taint in
         let taint_in_taint_out =
-          BackwardState.transform FlowDetails.Self Map ~f:expand taint_in_taint_out
+          BackwardState.transform Frame.Self Map ~f:expand taint_in_taint_out
         in
         {
           forward = { source_taint };
