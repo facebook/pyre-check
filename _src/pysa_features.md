@@ -187,6 +187,18 @@ A standalone `ViaTypeOf` is also supported in this case, and is shorthand for `T
 my_module.MyClass.my_attribute: ViaTypeOf = ...
 ```
 
+Note that `ViaTypeOf` on `Annotated` types will not include the annotations after the first type specified.
+This is because Pyre does not store annotations as part of the type information. Consider the following code:
+```python
+from typing import Annotated
+
+class Foo:
+  x: Annotated[int, "foo"]
+```
+
+If there is a `ViaTypeOf` on `Foo.x` here, the feature shown on traces will be `via-type-of:typing.Annotated[int]`,
+**not** `via-type-of:typing.Annotated[int, "foo"]`.
+
 ### Supporting Features Dynamically Using `ViaDynamicFeature[]`
 
 In general, Pysa requires you to specify the list of features that are allowed. This encourages features
