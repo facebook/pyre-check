@@ -10,7 +10,6 @@ open OUnit2
 open Analysis
 open Ast
 open Pyre
-open PyreParser
 open Statement
 
 let initialize () =
@@ -89,26 +88,30 @@ let run tests =
 
 
 let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
-  match Parser.parse ~relative:handle (String.split source ~on:'\n') with
-  | Result.Ok statements ->
-      let metadata =
-        let qualifier = SourcePath.qualifier_of_relative handle in
-        Source.Metadata.parse ~qualifier (String.split source ~on:'\n')
-      in
-      let source = Source.create ~metadata ~relative:handle statements in
-      let coerce_special_methods =
-        if coerce_special_methods then coerce_special_methods_source else Fn.id
-      in
-      source |> coerce_special_methods
-  | Result.Error { Parser.Error.location = { Location.start = { Location.line; column }; _ }; _ } ->
-      let error =
-        Format.asprintf
-          "Could not parse test source at line %d, column %d. Test input:\n%s"
-          line
-          column
-          source
-      in
-      failwith error
+  let do_parse context =
+    match PyreNewParser.parse_module ~context ~filename:handle ~enable_type_comment:true source with
+    | Result.Ok statements ->
+        let metadata =
+          let qualifier = SourcePath.qualifier_of_relative handle in
+          Source.Metadata.parse ~qualifier (String.split source ~on:'\n')
+        in
+        let source = Source.create ~metadata ~relative:handle statements in
+        let coerce_special_methods =
+          if coerce_special_methods then coerce_special_methods_source else Fn.id
+        in
+        source |> coerce_special_methods
+    | Result.Error { PyreNewParser.Error.line; column; message } ->
+        let error =
+          Format.asprintf
+            "Could not parse test source at line %d, column %d.\nReason: %s. Test input:\n%s"
+            line
+            column
+            message
+            source
+        in
+        failwith error
+  in
+  PyreNewParser.with_context do_parse
 
 
 let parse ?(handle = "") ?(coerce_special_methods = false) source =
@@ -2747,6 +2750,7 @@ module ScratchProject = struct
         ~incremental_style
         ~show_error_traces
         ~parallel:false
+        ~use_new_parser:true
         ()
     in
     let external_sources =

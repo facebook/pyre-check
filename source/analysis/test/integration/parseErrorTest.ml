@@ -13,7 +13,7 @@ let test_basic context =
   assert_type_errors "def good_syntax() -> int: ..." [];
   assert_type_errors
     "def bad_syntax("
-    ["Parsing failure [404]: Could not parse file at test.py:2:0-2:0"];
+    ["Parsing failure [404]: Parse error on line 1, column 15: '(' was never closed"];
   assert_type_errors
     "def good_syntax() -> int: ..."
     ~update_environment_with:[{ Test.handle = "foo.py"; source = "def bad_syntax(" }]
@@ -31,7 +31,7 @@ let test_basic context =
       # pyre-ignore-all-errors[10]
       def bad_syntax(
     |}
-    ["Parsing failure [404]: Could not parse file at test.py:4:0-4:0"];
+    ["Parsing failure [404]: Parse error on line 3, column 15: '(' was never closed"];
   assert_type_errors {|
       # pyre-ignore-all-errors[404]
       def bad_syntax(
@@ -45,13 +45,13 @@ let test_basic context =
       # pyre-unsafe
       def bad_syntax(
     |}
-    ["Parsing failure [404]: Could not parse file at test.py:4:0-4:0"];
+    ["Parsing failure [404]: Parse error on line 3, column 15: '(' was never closed"];
   assert_type_errors
     {|
       # pyre-strict
       def bad_syntax(
     |}
-    ["Parsing failure [404]: Could not parse file at test.py:4:0-4:0"];
+    ["Parsing failure [404]: Parse error on line 3, column 15: '(' was never closed"];
   ()
 
 

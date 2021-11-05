@@ -108,15 +108,15 @@ let test_lookup_pick_narrowest context =
       "3:21-3:27/typing.Optional[bool]";
       "3:7-3:11/bool";
       (* TODO (T68817342): Should be `bool` *)
-      "3:7-3:28/typing.Optional[bool]";
+      "3:7-3:27/typing.Optional[bool]";
     ];
   let assert_annotation = assert_annotation ~lookup in
   assert_annotation
     ~position:{ Location.line = 3; column = 11 } (* TODO (T68817342): Should be `bool` *)
-    ~annotation:(Some "3:7-3:28/typing.Optional[bool]");
+    ~annotation:(Some "3:7-3:27/typing.Optional[bool]");
   assert_annotation
     ~position:{ Location.line = 3; column = 16 } (* TODO (T68817342): Should be `bool` *)
-    ~annotation:(Some "3:7-3:28/typing.Optional[bool]");
+    ~annotation:(Some "3:7-3:27/typing.Optional[bool]");
   assert_annotation ~position:{ Location.line = 3; column = 17 } ~annotation:(Some "3:17-3:27/bool");
   assert_annotation
     ~position:{ Location.line = 3; column = 21 }
@@ -568,7 +568,7 @@ let test_lookup_comprehensions context =
       "3:44-3:45/typing_extensions.Literal[1]";
       "3:47-3:48/typing_extensions.Literal[2]";
       "3:6-3:50/typing.List[typing.Tuple[float, int]]";
-      "3:8-3:12/typing.Tuple[float, int]";
+      "3:7-3:13/typing.Tuple[float, int]";
     ];
   let source = {|
        def foo() -> None:

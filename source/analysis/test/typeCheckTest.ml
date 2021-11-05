@@ -837,7 +837,7 @@ let test_forward_expression context =
   (* Unary expressions. *)
   assert_forward "not 1" Type.bool;
   assert_forward "not undefined" Type.bool;
-  assert_forward "+1" Type.integer;
+  assert_forward "+1" (Type.literal_integer 1);
   assert_forward "~1" Type.integer;
   assert_forward "-undefined" Type.Any;
 

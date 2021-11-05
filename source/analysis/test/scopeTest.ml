@@ -424,7 +424,7 @@ let test_define_local_bindings _ =
                      index = 0;
                      annotation = Some (int_annotation (2, 16) (2, 19));
                    })
-               (location (2, 9) (2, 19))) );
+               (location (2, 10) (2, 19))) );
       ];
   assert_bindings
     {|
@@ -443,7 +443,7 @@ let test_define_local_bindings _ =
                      index = 0;
                      annotation = Some (int_annotation (2, 19) (2, 22));
                    })
-               (location (2, 9) (2, 22))) );
+               (location (2, 11) (2, 22))) );
       ];
   assert_bindings
     {|
@@ -876,12 +876,12 @@ let test_expression_local_bindings _ =
           Some
             (ExpectBinding.create
                Binding.Kind.(ParameterName { star = Some Star.Once; index = 0; annotation = None })
-               (location (1, 7) (1, 12))) );
+               (location (1, 8) (1, 12))) );
         ( "kwargs",
           Some
             (ExpectBinding.create
                Binding.Kind.(ParameterName { star = Some Star.Twice; index = 1; annotation = None })
-               (location (1, 14) (1, 22))) );
+               (location (1, 16) (1, 22))) );
       ];
   assert_bindings
     "lambda: (x := 1)"

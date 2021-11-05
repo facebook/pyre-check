@@ -4806,7 +4806,7 @@ let test_populate_captures _ =
        def bar():
          return args[0]
   |}
-    ~expected:[!&"bar", ["args", Annotation (Some (tuple_any_annotation (2, 9) (2, 14)))]];
+    ~expected:[!&"bar", ["args", Annotation (Some (tuple_any_annotation (2, 10) (2, 14)))]];
   assert_captures
     {|
      def foo( *args: int):
@@ -4816,7 +4816,7 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["args", Annotation (Some (tuple_int_annotation ((2, 9), (2, 19)) ((2, 16), (2, 19))))] );
+          ["args", Annotation (Some (tuple_int_annotation ((2, 10), (2, 19)) ((2, 16), (2, 19))))] );
       ];
   assert_captures
     {|
@@ -4827,7 +4827,7 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["derp", Annotation (Some (tuple_int_annotation ((2, 9), (2, 19)) ((2, 16), (2, 19))))] );
+          ["derp", Annotation (Some (tuple_int_annotation ((2, 10), (2, 19)) ((2, 16), (2, 19))))] );
       ];
   assert_captures
     {|
@@ -4844,7 +4844,7 @@ let test_populate_captures _ =
        def bar():
          return kwargs["derp"]
   |}
-    ~expected:[!&"bar", ["kwargs", Annotation (Some (dict_any_annotation ((2, 9), (2, 17))))]];
+    ~expected:[!&"bar", ["kwargs", Annotation (Some (dict_any_annotation ((2, 11), (2, 17))))]];
   assert_captures
     {|
      def foo( **kwargs: int):
@@ -4854,7 +4854,8 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["kwargs", Annotation (Some (dict_int_annotation ((2, 9), (2, 22)) ((2, 19), (2, 22))))] );
+          ["kwargs", Annotation (Some (dict_int_annotation ((2, 11), (2, 22)) ((2, 19), (2, 22))))]
+        );
       ];
   assert_captures
     {|
@@ -4862,7 +4863,7 @@ let test_populate_captures _ =
        def bar():
          return durp["derp"]
   |}
-    ~expected:[!&"bar", ["durp", Annotation (Some (dict_any_annotation ((2, 9), (2, 15))))]];
+    ~expected:[!&"bar", ["durp", Annotation (Some (dict_any_annotation ((2, 11), (2, 15))))]];
   assert_captures
     {|
      def foo( **kwargs: int):
