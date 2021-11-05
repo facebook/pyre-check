@@ -88,7 +88,7 @@ let run tests =
   tests |> bracket |> run_test_tt_main
 
 
-let parse_untrimmed ?(handle = "") ?(silent = false) ?(coerce_special_methods = false) source =
+let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
   match Parser.parse ~relative:handle (String.split source ~on:'\n') with
   | Result.Ok statements ->
       let metadata =
@@ -108,9 +108,7 @@ let parse_untrimmed ?(handle = "") ?(silent = false) ?(coerce_special_methods = 
           column
           source
       in
-      if not silent then
-        Printf.printf "%s" error;
-      failwith "Could not parse test"
+      failwith error
 
 
 let parse ?(handle = "") ?(coerce_special_methods = false) source =

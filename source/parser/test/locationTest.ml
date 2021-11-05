@@ -12,6 +12,8 @@ open Expression
 open Statement
 open Test
 
+let parse source = Test.trim_extra_indentation source |> GeneratorTest.parse_untrimmed
+
 let assert_source_locations source statements =
   let parsed_source = parse source in
   let expected_source = { parsed_source with Source.statements } in

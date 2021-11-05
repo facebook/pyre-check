@@ -12,19 +12,45 @@ open Expression
 open Statement
 open Test
 
+let parse_untrimmed source =
+  let open PyreParser in
+  match Parser.parse (String.split source ~on:'\n') with
+  | Result.Ok statements -> Source.create statements
+  | Result.Error { Parser.Error.location = { Location.start = { Location.line; column }; _ }; _ } ->
+      let error =
+        Format.asprintf
+          "Could not parse test source at line %d, column %d. Test input:\n%s"
+          line
+          column
+          source
+      in
+      failwith error
+
+
 let assert_parsed_equal source statements =
-  let handle = "test.py" in
-  let parsed_source = parse_untrimmed ~handle source in
+  let parsed_source = parse_untrimmed source in
   let found_any =
     Visit.collect_locations parsed_source |> List.for_all ~f:(Location.equal Location.any)
   in
   if found_any then
     Printf.printf "\nLocation.any\n  found in parse of %s\n" source;
   assert_false found_any;
-  assert_source_equal
-    ~location_insensitive:true
-    (Source.create ~relative:handle statements)
-    parsed_source
+  assert_source_equal ~location_insensitive:true (Source.create statements) parsed_source
+
+
+let assert_not_parsed source =
+  let open PyreParser in
+  match Parser.parse (String.split source ~on:'\n') with
+  | Result.Error _ -> ()
+  | Result.Ok statements ->
+      let error =
+        Format.asprintf
+          "Unexpected parsing success for `%s`:\n%a"
+          source
+          Sexp.pp_hum
+          (List.sexp_of_t Statement.sexp_of_t statements)
+      in
+      assert_failure error
 
 
 let test_lexer _ =
@@ -229,10 +255,11 @@ let test_number _ =
   assert_parsed_equal "2j" [+Statement.Expression (+Expression.(Constant (Constant.Complex 2.0)))];
   assert_parsed_equal "2J" [+Statement.Expression (+Expression.(Constant (Constant.Complex 2.0)))];
   assert_parsed_equal "1L" [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
-  assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "0xZ");
-  assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "0_1");
-  assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "0o9");
-  assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "1a3");
+
+  assert_not_parsed "0xZ";
+  assert_not_parsed "0_1";
+  assert_not_parsed "0o9";
+  assert_not_parsed "1a3";
 
   (* Overflow. *)
   assert_parsed_equal
@@ -707,8 +734,7 @@ let test_name _ =
                  ];
              });
     ];
-  assert_raises (Failure "Could not parse test") (fun () ->
-      parse_untrimmed ~silent:true "a.((2, 3))")
+  assert_not_parsed "a.((2, 3))"
 
 
 let test_starred _ =
@@ -2980,8 +3006,7 @@ let test_dictionary _ =
                keywords = [];
              });
     ];
-  assert_raises (Failure "Could not parse test") (fun () ->
-      parse_untrimmed ~silent:true "{ a or lambda b: b + 1: c }")
+  assert_not_parsed "{ a or lambda b: b + 1: c }"
 
 
 let test_list _ =
@@ -5200,8 +5225,7 @@ let test_import _ =
              ];
          };
     ];
-  assert_raises (Failure "Could not parse test") (fun () ->
-      parse_untrimmed ~silent:true "from import x")
+  assert_not_parsed "from import x"
 
 
 let test_global _ =
@@ -6065,8 +6089,7 @@ let test_walrus_operator _ =
                     { target = !"b"; value = +Expression.Constant (Constant.Integer 1) };
              });
     ];
-  assert_raises (Failure "Could not parse test") (fun () ->
-      parse_untrimmed ~silent:true "(a := 1) := 2")
+  assert_not_parsed "(a := 1) := 2"
 
 
 let () =
