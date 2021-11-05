@@ -13,6 +13,29 @@ open Expression
 open Statement
 open Test
 
+(* This function is here for backward compatibility reason only. Please avoid using it and prefer
+   `Test.parse` instead. *)
+let legacy_parse ~handle source =
+  let open PyreParser in
+  let lines = String.split (Test.trim_extra_indentation source) ~on:'\n' in
+  match Parser.parse ~relative:handle lines with
+  | Result.Ok statements ->
+      let metadata =
+        let qualifier = SourcePath.qualifier_of_relative handle in
+        Source.Metadata.parse ~qualifier lines
+      in
+      Source.create ~metadata ~relative:handle statements
+  | Result.Error { Parser.Error.location = { Location.start = { Location.line; column }; _ }; _ } ->
+      let error =
+        Format.asprintf
+          "Could not parse test source at line %d, column %d. Test input:\n%s"
+          line
+          column
+          source
+      in
+      failwith error
+
+
 let test_expand_relative_imports _ =
   let assert_expand ~handle source expected =
     let parse = parse ~handle in
@@ -321,7 +344,7 @@ let test_expand_format_string _ =
     assert_source_equal
       ~location_insensitive:true
       (Source.create ~relative:handle [+Statement.Expression (+Expression.FormatString value)])
-      (Preprocessing.expand_format_string (parse_untrimmed ~handle source))
+      (Preprocessing.expand_format_string (legacy_parse ~handle source))
   in
   assert_format_string "f'foo'" [Substring.Literal (+"foo")];
   assert_format_string "f'{1}'" [Substring.Format (+Expression.Constant (Constant.Integer 1))];
@@ -435,7 +458,9 @@ let test_expand_format_string _ =
 
   (* Ensure we fix up locations. *)
   let assert_locations source statements =
-    let parsed_source = parse source |> Preprocessing.expand_format_string in
+    let parsed_source =
+      legacy_parse ~handle:"test.py" source |> Preprocessing.expand_format_string
+    in
     let expected_source = { parsed_source with Source.statements } in
     assert_source_equal_with_locations expected_source parsed_source
   in
@@ -546,16 +571,12 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse = parse ~handle in
-    assert_source_equal
-      ~location_insensitive:true
-      (parse expected)
-      (Preprocessing.qualify (parse source));
+    let parsed = parse ~handle source in
+    let processed = Preprocessing.qualify parsed in
+    let expected = legacy_parse ~handle expected in
+    assert_source_equal ~location_insensitive:true expected processed;
     (* Qualifying twice should not change the source. *)
-    assert_source_equal
-      ~location_insensitive:true
-      (parse expected)
-      (Preprocessing.qualify (Preprocessing.qualify (parse source)))
+    assert_source_equal ~location_insensitive:true expected (Preprocessing.qualify processed)
   in
   (* Base cases for aliasing. *)
   assert_qualify "from a import b; b" "from a import b; a.b";
@@ -593,7 +614,6 @@ let test_qualify _ =
   assert_qualify_statement "{b, b}" "{a, a}";
   assert_qualify_statement "{b for b in b}" "{$target$b for $target$b in a}";
   assert_qualify_statement "*b" "*a";
-  assert_qualify_statement "**b" "**a";
   assert_qualify_statement "b if b else b" "a if a else a";
   assert_qualify_statement "(b, b)" "(a, a)";
   assert_qualify_statement "-b" "-a";
@@ -682,11 +702,11 @@ let test_qualify _ =
   assert_qualify
     {|
       from module import constant
-      a := constant
+      (a := constant)
     |}
     {|
       from module import constant
-      a := module.constant
+      (a := module.constant)
     |};
 
   (* Qualify classes. *)
@@ -1830,14 +1850,6 @@ let test_qualify _ =
 
       $local_qualifier$Tree = typing.Union[int, \
         typing.Tuple["$local_qualifier$Tree", "$local_qualifier$Tree"]]
-    |};
-  (* Don't qualify a parameter that is already qualified. *)
-  assert_qualify
-    {|
-      def foo($parameter$x: int): ...
-    |}
-    {|
-      def qualifier.foo($parameter$x: int): ...
     |};
   assert_qualify
     {|
@@ -5756,8 +5768,8 @@ let test_six_metaclass_decorator _ =
 
 let test_expand_starred_type_variable_tuples _ =
   let assert_expand ?(handle = "test.py") source expected =
-    let expected = parse ~handle ~coerce_special_methods:true expected in
-    let actual = parse ~handle source |> Preprocessing.expand_starred_type_variable_tuple in
+    let expected = parse ~handle expected in
+    let actual = legacy_parse ~handle source |> Preprocessing.expand_starred_type_variable_tuple in
     assert_source_equal ~location_insensitive:true expected actual
   in
   assert_expand
@@ -5820,12 +5832,6 @@ let test_expand_starred_type_variable_tuples _ =
     {|
     def foo() -> None:
       def bar() -> Tuple[pyre_extensions.Unpack[Ts]]: ...
-  |};
-  (* We don't know if an assignment value is a value or a type, so we don't transform it here. *)
-  assert_expand {|
-    SomeAlias = Tuple[*Ts]
-  |} {|
-    SomeAlias = Tuple[*Ts]
   |};
   assert_expand
     {|
