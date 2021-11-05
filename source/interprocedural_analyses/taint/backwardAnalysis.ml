@@ -334,9 +334,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> Map.Poly.fold ~f:compute_parameter_tito ~init:argument_taint
         in
         let add_tito_feature_and_position leaf_taint =
-          leaf_taint
-          |> Frame.add_tito_position location
-          |> Frame.add_breadcrumb Features.tito
+          leaf_taint |> Frame.add_tito_position location |> Frame.add_breadcrumb Features.tito
         in
         BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
         |> BackwardState.Tree.fold
