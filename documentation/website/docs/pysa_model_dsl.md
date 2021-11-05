@@ -542,6 +542,49 @@ ModelQuery(
 )
 ```
 
+To match on the annotation portion of `Annotated` types, consider the following example. Suppose this code was in `test.py`:
+```python
+from enum import Enum
+from typing import Annotated, Option
+
+class Color(Enum):
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+
+class Foo:
+  x: Annotated[Optional[int], Color.RED]
+  y: Annotated[Optional[int], Color.BLUE]
+  z: Annotated[int, "z"]
+```
+
+Note that the type name that should be matched against is its fully qualified name, which also includes the fully qualified name of any other types referenced (for example, `typing.Optional` rather than just `Optional`). When multiple arguments are provided to the type they are implicitly treated as being in a tuple.
+
+Here are some examples of `where` clauses that can be used to specify models for the annotated attributes in this case:
+```python
+ModelQuery(
+  find = "attributes",
+  where = [
+    AnyOf(
+      type_annotation.equals("typing.Annotated[(typing.Optional[int], test.Color.RED)]"),
+      type_annotation.equals("typing.Annotated[(int, z)]"),
+      type_annotation.matches(".*Annotated\[.*Optional[int].*Color\..*\]")
+      type_annotation.is_annotated_type()
+    )
+  ],
+  model = [
+    AttributeModel(TaintSource[Test]),
+  ]
+)
+```
+
+This query should generate the following models:
+```
+test.Foo.x: TaintSource[Test]
+test.Foo.y: TaintSource[Test]
+test.Foo.z: TaintSource[Test]
+```
+
 #### `Not` and `AnyOf` clauses
 
 The `Not` and `AnyOf` clauses can be used in the same way as they are in the main `where` clause of the model query. `Not` can be used to negate any existing clause, and `AnyOf` can be used to match when any one of several supplied clauses match.
