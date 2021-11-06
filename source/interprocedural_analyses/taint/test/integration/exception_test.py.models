@@ -6,7 +6,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -19,7 +19,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -34,13 +34,18 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "BaseException.__str__" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "exception_test.py",
               "line": 20,
               "start": 15,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "BaseException.__str__" } ]
+            }
           }
         ]
       }
@@ -56,13 +61,18 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "BaseException.__str__" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "exception_test.py",
               "line": 13,
               "start": 11,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "BaseException.__str__" } ]
+            }
           }
         ]
       }
@@ -78,13 +88,18 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "BaseException.__str__" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "exception_test.py",
               "line": 8,
               "start": 11,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "BaseException.__str__" } ]
+            }
           }
         ]
       }
@@ -94,10 +109,15 @@
         "port": "formal(ex)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 8, "start": 15, "end": 17 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "decl": null
           }
         ]
       }

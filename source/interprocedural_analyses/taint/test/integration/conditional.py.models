@@ -15,16 +15,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-value": "my-data" } ],
+                "leaves": [ { "name": "conditional.some_source" } ],
+                "kind": "MySource"
+              }
+            ],
             "root": {
               "filename": "conditional.py",
               "line": 23,
               "start": 8,
               "end": 30
-            },
-            "leaves": [
-              { "kind": "MySource", "name": "conditional.some_source" }
-            ],
-            "features": [ { "always-via-value": "my-data" } ]
+            }
           }
         ]
       },
@@ -32,13 +35,13 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [ { "kind": "InTest" } ],
             "root": {
               "filename": "conditional.py",
               "line": 24,
               "start": 7,
               "end": 8
-            },
-            "leaves": [ { "kind": "InTest" } ]
+            }
           }
         ]
       }
@@ -62,16 +65,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-value": "other" } ],
+                "leaves": [ { "name": "conditional.some_source" } ],
+                "kind": "MySource"
+              }
+            ],
             "root": {
               "filename": "conditional.py",
               "line": 29,
               "start": 8,
               "end": 28
-            },
-            "leaves": [
-              { "kind": "MySource", "name": "conditional.some_source" }
-            ],
-            "features": [ { "always-via-value": "other" } ]
+            }
           }
         ]
       },
@@ -79,13 +85,13 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [ { "kind": "InTest" } ],
             "root": {
               "filename": "conditional.py",
               "line": 30,
               "start": 16,
               "end": 17
-            },
-            "leaves": [ { "kind": "InTest" } ]
+            }
           }
         ]
       }
@@ -100,7 +106,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "MySource" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = name; positional_only = false}"
+                  }
+                ],
+                "kind": "MySource"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }

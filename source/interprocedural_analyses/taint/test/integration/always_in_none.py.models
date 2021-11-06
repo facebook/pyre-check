@@ -6,7 +6,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "tito": [
@@ -14,9 +14,14 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_rhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_rhs" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -32,22 +37,27 @@
         "port": "formal(complicated_service)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "string_concat_rhs" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [
+              { "line": 21, "start": 17, "end": 36 },
+              { "line": 29, "start": 21, "end": 40 }
+            ],
             "root": {
               "filename": "always_in_none.py",
               "line": 33,
               "start": 15,
               "end": 21
-            },
-            "tito": [
-              { "line": 21, "start": 17, "end": 36 },
-              { "line": 29, "start": 21, "end": 40 }
-            ],
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -70,34 +80,42 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "always_in_none.ComplicatedService.serve_tainted_request"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "always_in_none.py",
               "line": 21,
               "start": 17,
               "end": 60
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "always_in_none.ComplicatedService.serve_tainted_request"
-              }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "always_in_none.ComplicatedService.serve_tainted_request"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "always_in_none.py",
               "line": 29,
               "start": 21,
               "end": 64
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "always_in_none.ComplicatedService.serve_tainted_request"
-              }
-            ]
+            }
           }
         ]
       },
@@ -105,14 +123,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "always_in_none.py",
               "line": 33,
               "start": 15,
               "end": 21
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }

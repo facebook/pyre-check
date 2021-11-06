@@ -15,14 +15,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 15,
               "start": 13,
               "end": 27
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -30,19 +35,21 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-type": "str" } ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.test1_f1" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 16,
               "start": 13,
               "end": 14
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.test1_f1"
-              }
-            ],
-            "features": [ { "always-via-type": "str" } ]
+            }
           }
         ]
       }
@@ -69,14 +76,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 20,
               "start": 31,
               "end": 45
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -84,19 +96,23 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via-type": "typing.Annotated[str]" }
+                ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.test1_f1" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 21,
               "start": 18,
               "end": 19
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.test1_f1"
-              }
-            ],
-            "features": [ { "always-via-type": "typing.Annotated[str]" } ]
+            }
           }
         ]
       }
@@ -123,14 +139,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 25,
               "start": 13,
               "end": 27
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -138,19 +159,21 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-type": "int" } ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.test1_f1" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 26,
               "start": 23,
               "end": 24
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.test1_f1"
-              }
-            ],
-            "features": [ { "always-via-type": "int" } ]
+            }
           }
         ]
       }
@@ -177,14 +200,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 46,
               "start": 13,
               "end": 27
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -192,19 +220,21 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-type": "str" } ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.Test2_C.f1" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 47,
               "start": 9,
               "end": 10
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.Test2_C.f1"
-              }
-            ],
-            "features": [ { "always-via-type": "str" } ]
+            }
           }
         ]
       }
@@ -231,14 +261,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 51,
               "start": 24,
               "end": 38
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -246,19 +281,23 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via-type": "typing.Dict[str, int]" }
+                ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.Test2_C.f1" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 52,
               "start": 14,
               "end": 15
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.Test2_C.f1"
-              }
-            ],
-            "features": [ { "always-via-type": "typing.Dict[str, int]" } ]
+            }
           }
         ]
       }
@@ -285,14 +324,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 56,
               "start": 17,
               "end": 31
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -300,23 +344,26 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  {
+                    "always-via-type":
+                      "model_query_parameters_viatypeof.Test2_T"
+                  }
+                ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.Test2_C.f1" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 57,
               "start": 19,
               "end": 20
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.Test2_C.f1"
-              }
-            ],
-            "features": [
-              {
-                "always-via-type": "model_query_parameters_viatypeof.Test2_T"
-              }
-            ]
+            }
           }
         ]
       }
@@ -343,14 +390,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 61,
               "start": 13,
               "end": 27
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -358,19 +410,21 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-type": "int" } ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.Test2_C.f2" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 62,
               "start": 9,
               "end": 10
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.Test2_C.f2"
-              }
-            ],
-            "features": [ { "always-via-type": "int" } ]
+            }
           }
         ]
       }
@@ -397,14 +451,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 66,
               "start": 29,
               "end": 43
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -412,24 +471,26 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  {
+                    "always-via-type":
+                      "typing.List[typing.List[model_query_parameters_viatypeof.Test2_T]]"
+                  }
+                ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.Test2_C.f2" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 67,
               "start": 14,
               "end": 15
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.Test2_C.f2"
-              }
-            ],
-            "features": [
-              {
-                "always-via-type":
-                  "typing.List[typing.List[model_query_parameters_viatypeof.Test2_T]]"
-              }
-            ]
+            }
           }
         ]
       }
@@ -459,14 +520,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 71,
               "start": 15,
               "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -474,19 +540,21 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-type": "float" } ],
+                "leaves": [
+                  { "name": "model_query_parameters_viatypeof.Test2_C.f2" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 72,
               "start": 19,
               "end": 20
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_parameters_viatypeof.Test2_C.f2"
-              }
-            ],
-            "features": [ { "always-via-type": "float" } ]
+            }
           }
         ]
       }
@@ -504,15 +572,63 @@
     "sinks": [
       {
         "port": "formal(c)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 3; name = c; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       },
       {
         "port": "formal(b)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 2; name = b; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = a; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }
@@ -524,15 +640,63 @@
     "sinks": [
       {
         "port": "formal(c)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 3; name = c; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       },
       {
         "port": "formal(b)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 2; name = b; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = a; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }
@@ -544,15 +708,63 @@
     "sinks": [
       {
         "port": "formal(c)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 2; name = c; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       },
       {
         "port": "formal(b)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = b; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = a; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }

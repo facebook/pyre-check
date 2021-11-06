@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -19,7 +19,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -32,7 +32,7 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -47,14 +47,13 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
+            "kinds": [
               {
-                "kind": "NotSink[TestA]@LocalReturn",
-                "name": "",
-                "depth": 0
+                "return_paths": [ "" ],
+                "kind": "NotSink[TestA]@LocalReturn"
               }
-            ]
+            ],
+            "decl": null
           }
         ]
       }
@@ -71,14 +70,13 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
+            "kinds": [
               {
-                "kind": "NotSource[TestA]@LocalReturn",
-                "name": "",
-                "depth": 0
+                "return_paths": [ "" ],
+                "kind": "NotSource[TestA]@LocalReturn"
               }
-            ]
+            ],
+            "decl": null
           }
         ]
       }
@@ -95,14 +93,13 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
+            "kinds": [
               {
-                "kind": "NotSink[TestB]@LocalReturn",
-                "name": "",
-                "depth": 0
+                "return_paths": [ "" ],
+                "kind": "NotSink[TestB]@LocalReturn"
               }
-            ]
+            ],
+            "decl": null
           }
         ]
       }
@@ -119,20 +116,20 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "leaves": [ { "name": "sanitize_discard_flows.a_source" } ],
+                "kind": "NotSink[TestA]@TestA"
+              }
+            ],
+            "tito": [ { "line": 34, "start": 32, "end": 42 } ],
             "root": {
               "filename": "sanitize_discard_flows.py",
               "line": 34,
               "start": 32,
               "end": 42
-            },
-            "tito": [ { "line": 34, "start": 32, "end": 42 } ],
-            "leaves": [
-              {
-                "kind": "NotSink[TestA]@TestA",
-                "name": "sanitize_discard_flows.a_source"
-              }
-            ],
-            "features": [ { "always-via": "tito" } ]
+            }
           }
         ]
       }

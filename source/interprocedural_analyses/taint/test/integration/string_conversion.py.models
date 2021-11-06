@@ -16,6 +16,17 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "string_conversion.py",
@@ -24,19 +35,8 @@
                 "end": 16
               },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -44,13 +44,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "root": {
               "filename": "string_conversion.py",
               "line": 29,
               "start": 9,
               "end": 16
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            }
           }
         ]
       }
@@ -75,6 +80,17 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "string_conversion.py",
@@ -83,19 +99,8 @@
                 "end": 15
               },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -103,13 +108,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "root": {
               "filename": "string_conversion.py",
               "line": 34,
               "start": 9,
               "end": 15
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            }
           }
         ]
       }
@@ -134,6 +144,17 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "string_conversion.py",
@@ -142,19 +163,8 @@
                 "end": 15
               },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -162,13 +172,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "root": {
               "filename": "string_conversion.py",
               "line": 24,
               "start": 9,
               "end": 15
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            }
           }
         ]
       }
@@ -184,7 +199,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
         ]
       }
     ]
@@ -199,22 +214,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+            }
           }
         ]
       }
@@ -230,22 +245,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+            }
           }
         ]
       }
@@ -261,22 +276,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+            }
           }
         ]
       }
@@ -292,22 +307,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+            }
           }
         ]
       }
@@ -323,22 +338,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "string_conversion.py",
               "line": 19,
               "start": 15,
               "end": 26
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+            }
           }
         ]
       }
@@ -354,22 +369,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "string_conversion.py",
               "line": 14,
               "start": 15,
               "end": 26
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" }
-            ]
+            }
           }
         ]
       }

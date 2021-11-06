@@ -15,15 +15,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 65,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -31,15 +34,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 67,
               "start": 9,
               "end": 11
-            },
-            "leaves": [
-              { "kind": "SinkA[KindB]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -63,15 +69,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 65,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -79,15 +88,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 67,
               "start": 9,
               "end": 11
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -111,15 +123,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 71,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -127,15 +142,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 73,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindB]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -159,15 +177,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 71,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -175,15 +196,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 73,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -207,15 +231,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 77,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -223,15 +250,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 80,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -255,15 +285,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 84,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -271,15 +304,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 87,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindB]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -303,15 +339,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 84,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -319,15 +358,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 87,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -351,26 +393,22 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              },
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 91,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
-            ]
-          },
-          {
-            "root": {
-              "filename": "lineage_analysis.py",
-              "line": 91,
-              "start": 9,
-              "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -378,15 +416,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 94,
               "start": 9,
               "end": 11
-            },
-            "leaves": [
-              { "kind": "SinkA[KindB]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -410,15 +451,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 91,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -426,15 +470,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 94,
               "start": 9,
               "end": 11
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -458,15 +505,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 98,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -474,15 +524,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 101,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -506,26 +559,22 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              },
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 105,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
-            ]
-          },
-          {
-            "root": {
-              "filename": "lineage_analysis.py",
-              "line": 105,
-              "start": 9,
-              "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -533,15 +582,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 108,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -565,26 +617,22 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              },
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 112,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
-            ]
-          },
-          {
-            "root": {
-              "filename": "lineage_analysis.py",
-              "line": 112,
-              "start": 9,
-              "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -592,15 +640,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 115,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -624,26 +675,22 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              },
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 119,
               "start": 9,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "lineage_analysis.source" }
-            ]
-          },
-          {
-            "root": {
-              "filename": "lineage_analysis.py",
-              "line": 119,
-              "start": 9,
-              "end": 17
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "lineage_analysis.source" }
-            ]
+            }
           }
         ]
       },
@@ -651,15 +698,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 122,
               "start": 9,
               "end": 12
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "lineage_analysis.sink" }
-            ]
+            }
           }
         ]
       }
@@ -676,8 +726,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -693,8 +743,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -710,8 +760,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -727,8 +777,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -744,8 +794,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -760,13 +810,13 @@
       {
         "port": "formal(arg)[a]",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "SinkA[KindA]" } ] }
+          { "kinds": [ { "kind": "SinkA[KindA]" } ], "decl": null }
         ]
       },
       {
         "port": "formal(arg)[b]",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "SinkA[KindB]" } ] }
+          { "kinds": [ { "kind": "SinkA[KindB]" } ], "decl": null }
         ]
       }
     ]
@@ -780,13 +830,13 @@
       {
         "port": "result[a]",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "SourceA[KindA]" } ] }
+          { "kinds": [ { "kind": "SourceA[KindA]" } ], "decl": null }
         ]
       },
       {
         "port": "result[b]",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "SourceA[KindB]" } ] }
+          { "kinds": [ { "kind": "SourceA[KindB]" } ], "decl": null }
         ]
       }
     ]

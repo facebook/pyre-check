@@ -15,14 +15,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "constructor_inheritance.py",
               "line": 21,
               "start": 29,
               "end": 43
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -30,6 +35,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "constructor_inheritance.py",
@@ -40,11 +53,8 @@
               "resolves_to": [
                 "constructor_inheritance.MyBaseClass.__init__"
               ],
-              "port": "formal(argument)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(argument)"
+            }
           }
         ]
       }
@@ -64,14 +74,19 @@
         "port": "formal(argument)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -81,8 +96,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -98,14 +113,19 @@
         "port": "formal(argument)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -115,8 +135,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -132,14 +152,19 @@
         "port": "formal(argument)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "constructor_inheritance.py",
               "line": 12,
               "start": 19,
               "end": 27
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -149,8 +174,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }

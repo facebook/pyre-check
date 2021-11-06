@@ -15,17 +15,22 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "format-string" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "implicit_sinks.py",
               "line": 16,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "format-string" }
-            ]
+            }
           }
         ]
       },
@@ -33,13 +38,13 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [ { "kind": "Test" } ],
             "root": {
               "filename": "implicit_sinks.py",
               "line": 17,
               "start": 4,
               "end": 12
-            },
-            "leaves": [ { "kind": "Test" } ]
+            }
           }
         ]
       }
@@ -59,14 +64,18 @@
         "port": "formal(a)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "format-string" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "implicit_sinks.py",
               "line": 12,
               "start": 4,
               "end": 12
-            },
-            "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-via": "format-string" } ]
+            }
           }
         ]
       }

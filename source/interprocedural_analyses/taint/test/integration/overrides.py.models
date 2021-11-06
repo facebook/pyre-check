@@ -15,6 +15,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -23,11 +31,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -35,6 +40,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -43,11 +56,8 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -74,6 +84,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -82,11 +100,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -94,6 +109,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -102,11 +125,8 @@
                 "end": 21
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -133,6 +153,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -141,11 +169,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -153,6 +178,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -161,11 +194,8 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -192,6 +222,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -200,11 +238,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -212,6 +247,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -220,11 +263,8 @@
                 "end": 21
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -251,6 +291,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -259,13 +307,18 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -274,11 +327,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -286,6 +336,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -294,11 +352,8 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -325,6 +380,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -333,11 +396,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -345,6 +405,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -353,11 +421,8 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -384,6 +449,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -392,11 +465,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -404,6 +474,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "overrides.py",
@@ -412,11 +490,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -436,11 +511,14 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 0 }
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "via": "tito" } ]
+            "decl": null
           }
         ]
       },
@@ -448,9 +526,14 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -466,11 +549,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 1 }
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "decl": null
           }
         ]
       },
@@ -478,9 +565,14 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -496,14 +588,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -519,11 +616,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 1 }
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "decl": null
           }
         ]
       },
@@ -531,9 +632,14 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -549,14 +655,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -572,14 +683,19 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       }
@@ -595,11 +711,14 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 0 }
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "via": "tito" } ]
+            "decl": null
           }
         ]
       },
@@ -607,9 +726,14 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -625,14 +749,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -648,14 +777,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -665,8 +799,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -682,14 +816,19 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       }
@@ -705,11 +844,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 2 }
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "length": 2,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "decl": null
           }
         ]
       },
@@ -717,9 +860,14 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -735,14 +883,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -752,8 +905,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -769,11 +922,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 3 }
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "length": 3,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "decl": null
           }
         ]
       },
@@ -781,9 +938,14 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -799,14 +961,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -816,8 +983,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -833,14 +1000,19 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
               "end": -1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       }
@@ -856,8 +1028,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -873,12 +1045,16 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 32, "start": 35, "end": 38 } ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 1 }
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "tito": [ { "line": 32, "start": 35, "end": 38 } ],
+            "decl": null
           }
         ]
       },
@@ -886,10 +1062,15 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 32, "start": 8, "end": 25 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "decl": null
           }
         ]
       }
@@ -905,14 +1086,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "overrides.py",
               "line": 35,
               "start": 19,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -928,12 +1114,16 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 42, "start": 35, "end": 38 } ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 1 }
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "tito": [ { "line": 42, "start": 35, "end": 38 } ],
+            "decl": null
           }
         ]
       },
@@ -941,10 +1131,15 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 42, "start": 8, "end": 25 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "decl": null
           }
         ]
       }
@@ -960,14 +1155,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "overrides.py",
               "line": 49,
               "start": 19,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -983,14 +1183,19 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "overrides.py",
               "line": 45,
               "start": 15,
               "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       }
@@ -1006,10 +1211,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[r]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -1017,8 +1220,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -1034,12 +1237,16 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 56, "start": 32, "end": 35 } ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 2 }
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "length": 2,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "tito": [ { "line": 56, "start": 32, "end": 35 } ],
+            "decl": null
           }
         ]
       },
@@ -1047,10 +1254,15 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 56, "start": 8, "end": 22 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "decl": null
           }
         ]
       }
@@ -1066,12 +1278,16 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 68, "start": 32, "end": 35 } ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[r]", "depth": 3 }
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "[r]" ],
+                "length": 3,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "tito": [ { "line": 68, "start": 32, "end": 35 } ],
+            "decl": null
           }
         ]
       },
@@ -1079,10 +1295,15 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "via": "tito" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 68, "start": 8, "end": 22 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "decl": null
           }
         ]
       }
@@ -1098,14 +1319,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "overrides.py",
               "line": 71,
               "start": 19,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -1121,14 +1347,19 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "overrides.py",
               "line": 74,
               "start": 15,
               "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       }
@@ -1144,14 +1375,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "overrides.py",
               "line": 181,
               "start": 19,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -1167,8 +1403,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -1184,8 +1420,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -1202,18 +1438,23 @@
         "port": "result[r]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 158, "start": 15, "end": 29 } ],
             "root": {
               "filename": "overrides.py",
               "line": 158,
               "start": 15,
               "end": 29
-            },
-            "tito": [ { "line": 158, "start": 15, "end": 29 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -1223,10 +1464,16 @@
         "port": "formal(cls)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "return_paths": [ "" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 158, "start": 11, "end": 14 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [ { "always-via": "tito" } ]
+            "decl": null
           }
         ]
       }

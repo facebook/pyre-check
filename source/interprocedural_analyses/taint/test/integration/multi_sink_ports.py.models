@@ -15,16 +15,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "multi_sink_ports.py",
               "line": 41,
               "start": 8,
               "end": 16
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.source" }
-            ],
-            "features": [ { "always-via": "a_feature" } ]
+            }
           }
         ]
       },
@@ -32,6 +35,26 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "tito" },
+                  { "via": "split" },
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" },
+                  { "via": "a_feature" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkA" },
+                  { "name": "multi_sink_ports.sinkC" },
+                  { "name": "multi_sink_ports.sinkB" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -40,23 +63,8 @@
                 "end": 13
               },
               "resolves_to": [ "multi_sink_ports.wrapper" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkA" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [
-              { "via": "tito" },
-              { "via": "split" },
-              { "via": "d_feature" },
-              { "via": "c_feature" },
-              { "via": "b_feature" },
-              { "via": "a_feature" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -87,22 +95,25 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "issue-broadening" },
+                  { "always-via": "broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "a_feature" }
+                ],
+                "leaves": [ { "name": "multi_sink_ports.source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 82, "start": 27, "end": 32 } ],
             "root": {
               "filename": "multi_sink_ports.py",
               "line": 81,
               "start": 12,
               "end": 20
-            },
-            "tito": [ { "line": 82, "start": 27, "end": 32 } ],
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.source" }
-            ],
-            "features": [
-              { "always-via": "issue-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "tito" },
-              { "always-via": "a_feature" }
-            ]
+            }
           }
         ]
       },
@@ -110,6 +121,26 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "tito" },
+                  { "via": "split" },
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" },
+                  { "via": "a_feature" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkA" },
+                  { "name": "multi_sink_ports.sinkC" },
+                  { "name": "multi_sink_ports.sinkB" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -118,23 +149,8 @@
                 "end": 18
               },
               "resolves_to": [ "multi_sink_ports.wrapper2" ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkA" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [
-              { "via": "tito" },
-              { "via": "split" },
-              { "via": "d_feature" },
-              { "via": "c_feature" },
-              { "via": "b_feature" },
-              { "via": "a_feature" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -160,6 +176,34 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "length": 2,
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "length": 2,
+                "kind": "GetAttr"
+              },
+              {
+                "features": [
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkC" },
+                  { "name": "multi_sink_ports.sinkB" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "builtins.pyi",
@@ -168,53 +212,8 @@
                 "end": -1
               },
               "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
-            ],
-            "features": [ { "always-via": "c_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
-              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [ { "always-via": "b_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
-              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [
-              { "via": "d_feature" },
-              { "via": "c_feature" },
-              { "via": "b_feature" }
-            ]
+              "port": "formal(x)[_params]"
+            }
           }
         ]
       }
@@ -224,9 +223,15 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
-            "features": [ { "always-via": "tito" }, { "via": "split" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" }, { "via": "split" } ],
+                "return_paths": [ "" ],
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -242,6 +247,34 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "length": 2,
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "length": 2,
+                "kind": "GetAttr"
+              },
+              {
+                "features": [
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkC" },
+                  { "name": "multi_sink_ports.sinkB" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "builtins.pyi",
@@ -250,53 +283,8 @@
                 "end": -1
               },
               "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
-            ],
-            "features": [ { "always-via": "c_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
-              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [ { "always-via": "b_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
-              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [
-              { "via": "d_feature" },
-              { "via": "c_feature" },
-              { "via": "b_feature" }
-            ]
+              "port": "formal(x)[_params]"
+            }
           }
         ]
       }
@@ -306,9 +294,15 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
-            "features": [ { "always-via": "tito" }, { "via": "split" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" }, { "via": "split" } ],
+                "return_paths": [ "" ],
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -324,10 +318,10 @@
         "port": "formal(data)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[_params]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[_params]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -335,8 +329,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -352,6 +346,34 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "length": 2,
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "length": 2,
+                "kind": "GetAttr"
+              },
+              {
+                "features": [
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkC" },
+                  { "name": "multi_sink_ports.sinkB" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -360,53 +382,8 @@
                 "end": 32
               },
               "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
-            ],
-            "features": [ { "always-via": "c_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 58,
-                "start": 28,
-                "end": 32
-              },
-              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [ { "always-via": "b_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 58,
-                "start": 28,
-                "end": 32
-              },
-              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]",
-              "length": 2
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [
-              { "via": "d_feature" },
-              { "via": "c_feature" },
-              { "via": "b_feature" }
-            ]
+              "port": "formal(x)[_params]"
+            }
           }
         ]
       }
@@ -416,10 +393,16 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" }, { "via": "split" } ],
+                "return_paths": [ "" ],
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 58, "start": 28, "end": 32 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
-            "features": [ { "always-via": "tito" }, { "via": "split" } ]
+            "decl": null
           }
         ]
       }
@@ -435,28 +418,24 @@
         "port": "formal(response)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "multi_sink_ports.py",
               "line": 67,
               "start": 10,
               "end": 18
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
-            ],
-            "features": [ { "always-via": "a_feature" } ]
-          },
-          {
-            "root": {
-              "filename": "multi_sink_ports.py",
-              "line": 67,
-              "start": 10,
-              "end": 18
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
-            ],
-            "features": [ { "always-via": "a_feature" } ]
+            }
           }
         ]
       },
@@ -464,28 +443,24 @@
         "port": "formal(params)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "multi_sink_ports.py",
               "line": 66,
               "start": 10,
               "end": 16
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
-            ],
-            "features": [ { "always-via": "a_feature" } ]
-          },
-          {
-            "root": {
-              "filename": "multi_sink_ports.py",
-              "line": 66,
-              "start": 10,
-              "end": 16
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
-            ],
-            "features": [ { "always-via": "a_feature" } ]
+            }
           }
         ]
       }
@@ -501,14 +476,17 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Demo" } ],
-            "features": [ { "always-via": "a_feature" } ]
-          },
-          {
-            "decl": null,
-            "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-via": "a_feature" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -524,14 +502,17 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "GetAttr" } ],
-            "features": [ { "always-via": "b_feature" } ]
-          },
-          {
-            "decl": null,
-            "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-via": "b_feature" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "kind": "GetAttr"
+              },
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -547,14 +528,17 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Demo" } ],
-            "features": [ { "always-via": "c_feature" } ]
-          },
-          {
-            "decl": null,
-            "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-via": "c_feature" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -570,9 +554,13 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-via": "d_feature" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "d_feature" } ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -588,9 +576,13 @@
         "port": "result",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-via": "a_feature" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -606,64 +598,59 @@
         "port": "formal(x)[_params]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "kind": "GetAttr"
+              },
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "multi_sink_ports.py",
               "line": 29,
               "start": 10,
               "end": 11
-            },
-            "leaves": [
-              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [ { "always-via": "b_feature" } ]
+            }
           },
           {
-            "root": {
-              "filename": "multi_sink_ports.py",
-              "line": 29,
-              "start": 10,
-              "end": 11
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "kind": "Test"
+              }
             ],
-            "features": [ { "always-via": "b_feature" } ]
-          },
-          {
             "root": {
               "filename": "multi_sink_ports.py",
               "line": 30,
               "start": 10,
               "end": 11
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
-            ],
-            "features": [ { "always-via": "c_feature" } ]
+            }
           },
           {
-            "root": {
-              "filename": "multi_sink_ports.py",
-              "line": 30,
-              "start": 10,
-              "end": 11
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" }
+            "kinds": [
+              {
+                "features": [ { "always-via": "d_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkD" } ],
+                "kind": "Test"
+              }
             ],
-            "features": [ { "always-via": "c_feature" } ]
-          },
-          {
             "root": {
               "filename": "multi_sink_ports.py",
               "line": 31,
               "start": 10,
               "end": 11
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" }
-            ],
-            "features": [ { "always-via": "d_feature" } ]
+            }
           }
         ]
       }
@@ -673,9 +660,14 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "split" } ]
+            "kinds": [
+              {
+                "features": [ { "via": "split" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -691,6 +683,34 @@
         "port": "formal(x)[_params]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "length": 1,
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "length": 1,
+                "kind": "GetAttr"
+              },
+              {
+                "features": [
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkC" },
+                  { "name": "multi_sink_ports.sinkB" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -699,53 +719,8 @@
                 "end": 18
               },
               "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
-            ],
-            "features": [ { "always-via": "c_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 46,
-                "start": 17,
-                "end": 18
-              },
-              "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [ { "always-via": "b_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 46,
-                "start": 17,
-                "end": 18
-              },
-              "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [
-              { "via": "d_feature" },
-              { "via": "c_feature" },
-              { "via": "b_feature" }
-            ]
+              "port": "formal(x)[_params]"
+            }
           }
         ]
       }
@@ -755,10 +730,16 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" }, { "via": "split" } ],
+                "return_paths": [ "" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 46, "start": 17, "end": 18 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [ { "always-via": "tito" }, { "via": "split" } ]
+            "decl": null
           }
         ]
       }
@@ -774,40 +755,57 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "via": "split" },
+                  { "always-via": "a_feature" }
+                ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "kind": "Demo"
+              },
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "via": "split" },
+                  { "always-via": "a_feature" }
+                ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 36, "start": 14, "end": 15 } ],
             "root": {
               "filename": "multi_sink_ports.py",
               "line": 37,
               "start": 10,
               "end": 11
-            },
-            "tito": [ { "line": 36, "start": 14, "end": 15 } ],
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
-            ],
-            "features": [
-              { "always-via": "tito" },
-              { "via": "split" },
-              { "always-via": "a_feature" }
-            ]
+            }
           },
           {
-            "root": {
-              "filename": "multi_sink_ports.py",
-              "line": 37,
-              "start": 10,
-              "end": 11
-            },
-            "tito": [ { "line": 36, "start": 14, "end": 15 } ],
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "length": 1,
+                "kind": "Demo"
+              },
+              {
+                "features": [
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkC" },
+                  { "name": "multi_sink_ports.sinkB" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
             ],
-            "features": [
-              { "always-via": "tito" },
-              { "via": "split" },
-              { "always-via": "a_feature" }
-            ]
-          },
-          {
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -816,36 +814,8 @@
                 "end": 15
               },
               "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
-            ],
-            "features": [ { "always-via": "c_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 36,
-                "start": 14,
-                "end": 15
-              },
-              "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [
-              { "via": "d_feature" },
-              { "via": "c_feature" },
-              { "via": "b_feature" }
-            ]
+              "port": "formal(x)[_params]"
+            }
           }
         ]
       },
@@ -853,6 +823,14 @@
         "port": "formal(x)[_params]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -861,13 +839,8 @@
                 "end": 15
               },
               "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [ { "always-via": "b_feature" } ]
+              "port": "formal(x)[_params]"
+            }
           }
         ]
       }
@@ -883,6 +856,20 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "length": 1,
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -891,49 +878,32 @@
                 "end": 19
               },
               "resolves_to": [ "multi_sink_ports.log_call" ],
-              "port": "formal(params)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
-            ],
-            "features": [ { "always-via": "a_feature" } ]
+              "port": "formal(params)"
+            }
           },
           {
-            "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 77,
-                "start": 13,
-                "end": 19
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "length": 3,
+                "kind": "Demo"
               },
-              "resolves_to": [ "multi_sink_ports.log_call" ],
-              "port": "formal(params)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
+              {
+                "features": [
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkC" },
+                  { "name": "multi_sink_ports.sinkB" }
+                ],
+                "length": 3,
+                "kind": "Test"
+              }
             ],
-            "features": [ { "always-via": "a_feature" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 74,
-                "start": 19,
-                "end": 20
-              },
-              "resolves_to": [ "multi_sink_ports.Query.send" ],
-              "port": "formal(self)[_params]",
-              "length": 3
-            },
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkC" }
-            ],
-            "features": [ { "always-via": "c_feature" } ]
-          },
-          {
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -942,21 +912,33 @@
                 "end": 20
               },
               "resolves_to": [ "multi_sink_ports.Query.send" ],
-              "port": "formal(self)[_params]",
-              "length": 3
-            },
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkD" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkC" },
-              { "kind": "Test", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [
-              { "via": "d_feature" },
-              { "via": "c_feature" },
-              { "via": "b_feature" }
-            ]
+              "port": "formal(self)[_params]"
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "via": "split" },
+                  { "always-via": "a_feature" }
+                ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "length": 1,
+                "kind": "Demo"
+              },
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "via": "split" },
+                  { "always-via": "a_feature" }
+                ],
+                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 74, "start": 19, "end": 20 } ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -965,40 +947,8 @@
                 "end": 29
               },
               "resolves_to": [ "multi_sink_ports.log_call" ],
-              "port": "formal(response)",
-              "length": 1
-            },
-            "tito": [ { "line": 74, "start": 19, "end": 20 } ],
-            "leaves": [
-              { "kind": "Demo", "name": "multi_sink_ports.sinkA" }
-            ],
-            "features": [
-              { "always-via": "tito" },
-              { "via": "split" },
-              { "always-via": "a_feature" }
-            ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 77,
-                "start": 21,
-                "end": 29
-              },
-              "resolves_to": [ "multi_sink_ports.log_call" ],
-              "port": "formal(response)",
-              "length": 1
-            },
-            "tito": [ { "line": 74, "start": 19, "end": 20 } ],
-            "leaves": [
-              { "kind": "Test", "name": "multi_sink_ports.sinkA" }
-            ],
-            "features": [
-              { "always-via": "tito" },
-              { "via": "split" },
-              { "always-via": "a_feature" }
-            ]
+              "port": "formal(response)"
+            }
           }
         ]
       },
@@ -1006,6 +956,14 @@
         "port": "formal(x)[_params]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "length": 3,
+                "kind": "GetAttr"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",
@@ -1014,13 +972,8 @@
                 "end": 20
               },
               "resolves_to": [ "multi_sink_ports.Query.send" ],
-              "port": "formal(self)[_params]",
-              "length": 3
-            },
-            "leaves": [
-              { "kind": "GetAttr", "name": "multi_sink_ports.sinkB" }
-            ],
-            "features": [ { "always-via": "b_feature" } ]
+              "port": "formal(self)[_params]"
+            }
           }
         ]
       }

@@ -6,7 +6,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -18,7 +18,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -30,7 +30,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -42,7 +42,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -54,7 +54,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -66,7 +66,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -78,11 +78,11 @@
     "sources": [
       {
         "port": "formal(taint_2)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "formal(taint_1)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -94,7 +94,7 @@
     "sources": [
       {
         "port": "formal(taint_1)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -106,7 +106,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -118,7 +118,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -132,26 +132,31 @@
         "port": "formal(taint_3)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-type": "scalar" } ]
+            "kinds": [
+              { "features": [ { "always-type": "scalar" } ], "kind": "Test" }
+            ],
+            "decl": null
           }
         ]
       },
       {
         "port": "formal(taint_2)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "formal(taint_1)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Test" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "integer" }
-            ]
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "integer" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -167,18 +172,22 @@
         "port": "formal(taint_2)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Test" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "integer" }
-            ]
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "integer" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
           }
         ]
       },
       {
         "port": "formal(taint_1)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -190,7 +199,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -202,7 +211,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -214,7 +223,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }

@@ -15,13 +15,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "rule.source" } ],
+                "kind": "MyTestSource"
+              }
+            ],
             "root": {
               "filename": "rule.py",
               "line": 16,
               "start": 8,
               "end": 16
-            },
-            "leaves": [ { "kind": "MyTestSource", "name": "rule.source" } ]
+            }
           }
         ]
       },
@@ -29,13 +34,15 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              { "leaves": [ { "name": "rule.sink" } ], "kind": "MyTestSink" }
+            ],
             "root": {
               "filename": "rule.py",
               "line": 17,
               "start": 9,
               "end": 10
-            },
-            "leaves": [ { "kind": "MyTestSink", "name": "rule.sink" } ]
+            }
           }
         ]
       }
@@ -50,7 +57,7 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "MyTestSink" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "MyTestSink" } ], "decl": null } ]
       }
     ]
   }
@@ -63,7 +70,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "MyTestSource" } ] }
+          { "kinds": [ { "kind": "MyTestSource" } ], "decl": null }
         ]
       }
     ]

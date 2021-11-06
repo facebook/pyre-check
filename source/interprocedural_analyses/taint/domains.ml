@@ -98,7 +98,7 @@ module CallInfo = struct
     | _ -> trace
 
 
-  let create_json ~filename_lookup ~trace_length trace : string * Yojson.Safe.json =
+  let create_json ~filename_lookup trace : string * Yojson.Safe.json =
     match trace with
     | Declaration _ -> "decl", `Null
     | Origin location ->
@@ -113,13 +113,7 @@ module CallInfo = struct
         let location_json = location_with_module_to_json ~filename_lookup location in
         let port_json = AccessPath.create port path |> AccessPath.to_json in
         let call_json =
-          `Assoc
-            [
-              "position", location_json;
-              "resolves_to", `List callee_json;
-              "port", port_json;
-              "length", `Int trace_length;
-            ]
+          `Assoc ["position", location_json; "resolves_to", `List callee_json; "port", port_json]
         in
         "call", call_json
 
@@ -380,77 +374,88 @@ end = struct
 
 
   let create_json ~call_info_to_json taint =
-    let leaf_to_json call_info (kind, features) =
-      let trace_length = Frame.fold TraceLength.Self features ~f:min ~init:55555 in
-      let kind_json = `String (Kind.show kind) in
-      let breadcrumbs, leaf_json =
-        let gather_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
-          let breadcrumb_json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
-          breadcrumb_json :: breadcrumbs
-        in
-        let gather_return_access_path path leaves =
-          let path_name = Abstract.TreeDomain.Label.show_path path in
-          `Assoc ["kind", kind_json; "name", `String path_name; "depth", `Int trace_length]
-          :: leaves
-        in
-        let breadcrumbs =
-          Frame.fold Features.BreadcrumbSet.ElementAndUnder ~f:gather_json ~init:[] features
-        in
-        let leaves =
-          Frame.get Frame.Slots.LeafName features
-          |> Features.LeafNameSet.elements
-          |> List.map ~f:Features.LeafNameInterned.unintern
-          |> List.map ~f:(Features.LeafName.to_json ~kind_json)
-        in
-        let first_index_breadcrumbs =
-          Frame.get Frame.Slots.FirstIndex features
-          |> Features.FirstIndexSet.elements
-          |> Features.FirstIndex.to_json
-        in
-        let first_field_breadcrumbs =
-          Frame.get Frame.Slots.FirstField features
-          |> Features.FirstFieldSet.elements
-          |> Features.FirstField.to_json
-        in
-        ( List.concat [first_index_breadcrumbs; first_field_breadcrumbs; breadcrumbs],
-          Frame.fold
-            Features.ReturnAccessPathSet.Element
-            ~f:gather_return_access_path
-            ~init:leaves
-            features )
-      in
+    let cons_if_non_empty key list assoc =
+      if List.is_empty list then
+        assoc
+      else
+        (key, `List list) :: assoc
+    in
+    let trace_to_json (trace_info, kind_taint) =
+      let open Features in
+      let json = [call_info_to_json trace_info] in
+
       let tito_positions =
-        Frame.get Frame.Slots.TitoPosition features
-        |> Features.TitoPositionSet.elements
+        KindTaintDomain.fold
+          TitoPositionSet.Self
+          kind_taint
+          ~f:TitoPositionSet.join
+          ~init:TitoPositionSet.bottom
+        |> TitoPositionSet.elements
         |> List.map ~f:location_to_json
       in
-      let trace_json = call_info_to_json ~trace_length call_info in
-      let leaf_json =
-        if List.is_empty leaf_json then
-          [`Assoc ["kind", kind_json]]
-        else
-          leaf_json
-      in
-      let association =
-        let cons_if_non_empty key list assoc =
-          if List.is_empty list then
-            assoc
+      let json = cons_if_non_empty "tito" tito_positions json in
+
+      let add_kind (kind, frame) =
+        let json = ["kind", `String (Kind.show kind)] in
+
+        let trace_length = Frame.get Frame.Slots.TraceLength frame in
+        let json =
+          if trace_length = 0 then
+            json
           else
-            (key, `List list) :: assoc
+            ("length", `Int trace_length) :: json
         in
-        []
-        |> cons_if_non_empty "features" breadcrumbs
-        |> cons_if_non_empty "leaves" leaf_json
-        |> cons_if_non_empty "tito" tito_positions
+
+        let leaves =
+          Frame.get Frame.Slots.LeafName frame
+          |> LeafNameSet.elements
+          |> List.map ~f:LeafNameInterned.unintern
+          |> List.map ~f:LeafName.to_json
+        in
+        let json = cons_if_non_empty "leaves" leaves json in
+
+        let return_paths =
+          Frame.get Frame.Slots.ReturnAccessPath frame
+          |> ReturnAccessPathSet.elements
+          |> List.map ~f:ReturnAccessPath.to_json
+        in
+        let json = cons_if_non_empty "return_paths" return_paths json in
+
+        let via_features =
+          Frame.get Frame.Slots.ViaFeature frame
+          |> ViaFeatureSet.elements
+          |> List.map ~f:ViaFeature.to_json
+        in
+        let json = cons_if_non_empty "via_features" via_features json in
+
+        let gather_breadcrumb_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
+          let json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
+          json :: breadcrumbs
+        in
+        let breadcrumbs =
+          Frame.fold BreadcrumbSet.ElementAndUnder frame ~f:gather_breadcrumb_json ~init:[]
+        in
+        let first_index_breadcrumbs =
+          Frame.get Frame.Slots.FirstIndex frame |> FirstIndexSet.elements |> FirstIndex.to_json
+        in
+        let first_field_breadcrumbs =
+          Frame.get Frame.Slots.FirstField frame |> FirstFieldSet.elements |> FirstField.to_json
+        in
+        let breadcrumbs =
+          List.concat [first_index_breadcrumbs; first_field_breadcrumbs; breadcrumbs]
+        in
+        let json = cons_if_non_empty "features" breadcrumbs json in
+
+        `Assoc json
       in
-      `Assoc (trace_json :: association)
+      let kinds = KindTaintDomain.to_alist kind_taint |> List.map ~f:add_kind in
+      let json = cons_if_non_empty "kinds" kinds json in
+
+      `Assoc json
     in
-    let trace_to_json (call_info, kind_taint) =
-      KindTaintDomain.Map.to_alist kind_taint |> List.map ~f:(leaf_to_json call_info)
-    in
-    (* expand now do dedup possibly abstract targets that resolve to the same concrete ones *)
+    (* Expand overrides into actual callables and dedup *)
     let taint = Map.transform Key Map ~f:CallInfo.expand_call_site taint in
-    let elements = Map.to_alist taint |> List.concat_map ~f:trace_to_json in
+    let elements = Map.to_alist taint |> List.map ~f:trace_to_json in
     `List elements
 
 

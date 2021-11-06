@@ -105,7 +105,7 @@ let save_results_to_directory
     let out_buffer = Bi_outbuf.create_channel_writer out_channel in
     let array_emitter = emit_json_array_elements out_buffer in
     let header_with_version =
-      `Assoc ["file_version", `Int 2; "config", `Assoc ["repo", `String root]]
+      `Assoc ["file_version", `Int 3; "config", `Assoc ["repo", `String root]]
     in
     Json.to_outbuf out_buffer header_with_version;
     Bi_outbuf.add_string out_buffer "\n";

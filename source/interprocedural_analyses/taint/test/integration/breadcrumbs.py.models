@@ -8,18 +8,23 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "bool" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "breadcrumbs.py",
               "line": 30,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "bool" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -35,18 +40,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "bool" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "breadcrumbs.py",
               "line": 18,
               "start": 11,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "bool" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -62,17 +72,22 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "breadcrumbs.py",
               "line": 26,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -88,17 +103,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "breadcrumbs.py",
               "line": 14,
               "start": 11,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -114,18 +134,23 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "integer" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "breadcrumbs.py",
               "line": 22,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "integer" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -141,18 +166,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "integer" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "breadcrumbs.py",
               "line": 10,
               "start": 11,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "integer" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }

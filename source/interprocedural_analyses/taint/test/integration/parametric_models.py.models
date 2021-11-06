@@ -15,26 +15,32 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "parametric_models.f" } ],
+                "kind": "WithSubkind[A]"
+              }
+            ],
             "root": {
               "filename": "parametric_models.py",
               "line": 26,
               "start": 12,
               "end": 15
-            },
-            "leaves": [
-              { "kind": "WithSubkind[A]", "name": "parametric_models.f" }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "parametric_models.g" } ],
+                "kind": "WithSubkind[B]"
+              }
+            ],
             "root": {
               "filename": "parametric_models.py",
               "line": 28,
               "start": 12,
               "end": 15
-            },
-            "leaves": [
-              { "kind": "WithSubkind[B]", "name": "parametric_models.g" }
-            ]
+            }
           }
         ]
       },
@@ -42,15 +48,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "parametric_models.sink" } ],
+                "kind": "ExpectsSubkind"
+              }
+            ],
             "root": {
               "filename": "parametric_models.py",
               "line": 30,
               "start": 9,
               "end": 10
-            },
-            "leaves": [
-              { "kind": "ExpectsSubkind", "name": "parametric_models.sink" }
-            ]
+            }
           }
         ]
       }
@@ -75,14 +84,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "parametric_models.py",
               "line": 49,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -90,6 +104,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "parametric_models.sink_subkind_a" } ],
+                "length": 1,
+                "kind": "SinkWithSubkind[SinkA]"
+              },
+              {
+                "leaves": [ { "name": "parametric_models.sink_subkind_b" } ],
+                "length": 1,
+                "kind": "SinkWithSubkind[SinkB]"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "parametric_models.py",
@@ -98,34 +124,8 @@
                 "end": 19
               },
               "resolves_to": [ "parametric_models.inferred_sink" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "SinkWithSubkind[SinkA]",
-                "name": "parametric_models.sink_subkind_a"
-              }
-            ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "parametric_models.py",
-                "line": 50,
-                "start": 18,
-                "end": 19
-              },
-              "resolves_to": [ "parametric_models.inferred_sink" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "SinkWithSubkind[SinkB]",
-                "name": "parametric_models.sink_subkind_b"
-              }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -141,7 +141,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "WithSubkind[A]" } ] }
+          { "kinds": [ { "kind": "WithSubkind[A]" } ], "decl": null }
         ]
       }
     ],
@@ -156,7 +156,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "WithSubkind[B]" } ] }
+          { "kinds": [ { "kind": "WithSubkind[B]" } ], "decl": null }
         ]
       }
     ],
@@ -172,32 +172,32 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "parametric_models.sink_subkind_a" } ],
+                "kind": "SinkWithSubkind[SinkA]"
+              }
+            ],
             "root": {
               "filename": "parametric_models.py",
               "line": 43,
               "start": 23,
               "end": 24
-            },
-            "leaves": [
-              {
-                "kind": "SinkWithSubkind[SinkA]",
-                "name": "parametric_models.sink_subkind_a"
-              }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "parametric_models.sink_subkind_b" } ],
+                "kind": "SinkWithSubkind[SinkB]"
+              }
+            ],
             "root": {
               "filename": "parametric_models.py",
               "line": 45,
               "start": 23,
               "end": 24
-            },
-            "leaves": [
-              {
-                "kind": "SinkWithSubkind[SinkB]",
-                "name": "parametric_models.sink_subkind_b"
-              }
-            ]
+            }
           }
         ]
       }
@@ -212,7 +212,7 @@
       {
         "port": "formal(x)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ExpectsSubkind" } ] }
+          { "kinds": [ { "kind": "ExpectsSubkind" } ], "decl": null }
         ]
       }
     ],
@@ -227,10 +227,7 @@
       {
         "port": "formal(x)",
         "taint": [
-          {
-            "decl": null,
-            "leaves": [ { "kind": "SinkWithSubkind[SinkA]" } ]
-          }
+          { "kinds": [ { "kind": "SinkWithSubkind[SinkA]" } ], "decl": null }
         ]
       }
     ],
@@ -245,10 +242,7 @@
       {
         "port": "formal(x)",
         "taint": [
-          {
-            "decl": null,
-            "leaves": [ { "kind": "SinkWithSubkind[SinkB]" } ]
-          }
+          { "kinds": [ { "kind": "SinkWithSubkind[SinkB]" } ], "decl": null }
         ]
       }
     ],

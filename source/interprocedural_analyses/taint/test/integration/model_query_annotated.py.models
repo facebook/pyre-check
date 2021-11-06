@@ -15,23 +15,26 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  {
+                    "always-via-type":
+                      "typing.Annotated[typing.Optional[float]]"
+                  }
+                ],
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test1_C.a}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 28,
               "start": 15,
               "end": 18
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{model_query_annotated.Test1_C.a}"
-              }
-            ],
-            "features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
-            ]
+            }
           }
         ]
       },
@@ -39,14 +42,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 28,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -73,23 +81,26 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  {
+                    "always-via-type":
+                      "typing.Annotated[typing.Optional[float]]"
+                  }
+                ],
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test1_C.b}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 34,
               "start": 15,
               "end": 18
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{model_query_annotated.Test1_C.b}"
-              }
-            ],
-            "features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
-            ]
+            }
           }
         ]
       },
@@ -97,14 +108,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 34,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -131,23 +147,26 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  {
+                    "always-via-type":
+                      "typing.Annotated[typing.Optional[float]]"
+                  }
+                ],
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test1_C.x}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 39,
               "start": 15,
               "end": 18
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{model_query_annotated.Test1_C.x}"
-              }
-            ],
-            "features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
-            ]
+            }
           }
         ]
       },
@@ -155,14 +174,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 39,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -189,23 +213,26 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  {
+                    "always-via-type":
+                      "typing.Annotated[typing.Optional[float]]"
+                  }
+                ],
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test1_C.y}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 44,
               "start": 15,
               "end": 18
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{model_query_annotated.Test1_C.y}"
-              }
-            ],
-            "features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
-            ]
+            }
           }
         ]
       },
@@ -213,14 +240,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 44,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -247,23 +279,26 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  {
+                    "always-via-type":
+                      "typing.Annotated[typing.Optional[float]]"
+                  }
+                ],
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test2_C.a}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 55,
               "start": 15,
               "end": 18
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{model_query_annotated.Test2_C.a}"
-              }
-            ],
-            "features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
-            ]
+            }
           }
         ]
       },
@@ -271,14 +306,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 55,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -305,23 +345,26 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  {
+                    "always-via-type":
+                      "typing.Annotated[typing.Optional[float]]"
+                  }
+                ],
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test2_C.x}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 60,
               "start": 15,
               "end": 18
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{model_query_annotated.Test2_C.x}"
-              }
-            ],
-            "features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
-            ]
+            }
           }
         ]
       },
@@ -329,14 +372,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 60,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -354,7 +402,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }
@@ -366,7 +430,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }
@@ -378,7 +458,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }
@@ -390,7 +486,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }
@@ -402,7 +514,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }
@@ -414,7 +542,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ]
   }
@@ -426,11 +570,11 @@
     "sources": [
       {
         "port": "formal(c)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "sinks": [
@@ -438,14 +582,19 @@
         "port": "formal(a)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 79,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -468,18 +617,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query_annotated.test3_alarm1" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 77,
               "start": 4,
               "end": 32
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_annotated.test3_alarm1"
-              }
-            ]
+            }
           }
         ]
       },
@@ -487,14 +638,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 79,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -509,11 +665,11 @@
     "sources": [
       {
         "port": "formal(c)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "sinks": [
@@ -521,14 +677,19 @@
         "port": "formal(c)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 85,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -551,18 +712,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query_annotated.test3_alarm2" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 83,
               "start": 42,
               "end": 78
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_annotated.test3_alarm2"
-              }
-            ]
+            }
           }
         ]
       },
@@ -570,14 +733,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 85,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -594,14 +762,19 @@
         "port": "formal(a)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 69,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -617,18 +790,23 @@
         "port": "formal(b)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "integer" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 73,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "integer" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -642,11 +820,11 @@
     "sources": [
       {
         "port": "formal(c)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "sinks": [
@@ -654,14 +832,19 @@
         "port": "formal(b)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_annotated.py",
               "line": 91,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }

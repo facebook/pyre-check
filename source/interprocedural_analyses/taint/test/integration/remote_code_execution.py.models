@@ -16,15 +16,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_user_controlled" } ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "remote_code_execution.py",
               "line": 10,
               "start": 8,
               "end": 26
-            },
-            "leaves": [
-              { "kind": "UserControlled", "name": "_user_controlled" }
-            ]
+            }
           }
         ]
       },
@@ -32,13 +35,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "root": {
               "filename": "remote_code_execution.py",
               "line": 11,
               "start": 9,
               "end": 10
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            }
           }
         ]
       }

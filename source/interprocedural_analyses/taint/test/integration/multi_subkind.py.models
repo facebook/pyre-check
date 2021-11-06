@@ -15,15 +15,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "multi_subkind.source_b" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
             "root": {
               "filename": "multi_subkind.py",
               "line": 31,
               "start": 13,
               "end": 23
-            },
-            "leaves": [
-              { "kind": "SourceA[KindB]", "name": "multi_subkind.source_b" }
-            ]
+            }
           }
         ]
       },
@@ -31,6 +34,17 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "b" }
+                ],
+                "leaves": [ { "name": "multi_subkind.sink_b" } ],
+                "length": 1,
+                "kind": "SinkA[KindB]"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_subkind.py",
@@ -39,13 +53,8 @@
                 "end": 16
               },
               "resolves_to": [ "multi_subkind.multi_sink" ],
-              "port": "formal(d)[b]",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "SinkA[KindB]", "name": "multi_subkind.sink_b" }
-            ],
-            "features": [ { "has": "first-index" }, { "first-index": "b" } ]
+              "port": "formal(d)[b]"
+            }
           }
         ]
       }
@@ -69,15 +78,18 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "multi_subkind.source_a" } ],
+                "kind": "SourceA[KindA]"
+              }
+            ],
             "root": {
               "filename": "multi_subkind.py",
               "line": 30,
               "start": 13,
               "end": 23
-            },
-            "leaves": [
-              { "kind": "SourceA[KindA]", "name": "multi_subkind.source_a" }
-            ]
+            }
           }
         ]
       },
@@ -85,6 +97,17 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "a" }
+                ],
+                "leaves": [ { "name": "multi_subkind.sink_a" } ],
+                "length": 1,
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multi_subkind.py",
@@ -93,13 +116,8 @@
                 "end": 16
               },
               "resolves_to": [ "multi_subkind.multi_sink" ],
-              "port": "formal(d)[a]",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "multi_subkind.sink_a" }
-            ],
-            "features": [ { "has": "first-index" }, { "first-index": "a" } ]
+              "port": "formal(d)[a]"
+            }
           }
         ]
       }
@@ -116,16 +134,22 @@
         "port": "formal(d)[a]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "a" }
+                ],
+                "leaves": [ { "name": "multi_subkind.sink_a" } ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
             "root": {
               "filename": "multi_subkind.py",
               "line": 24,
               "start": 11,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SinkA[KindA]", "name": "multi_subkind.sink_a" }
-            ],
-            "features": [ { "has": "first-index" }, { "first-index": "a" } ]
+            }
           }
         ]
       },
@@ -133,16 +157,22 @@
         "port": "formal(d)[b]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "b" }
+                ],
+                "leaves": [ { "name": "multi_subkind.sink_b" } ],
+                "kind": "SinkA[KindB]"
+              }
+            ],
             "root": {
               "filename": "multi_subkind.py",
               "line": 25,
               "start": 11,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "SinkA[KindB]", "name": "multi_subkind.sink_b" }
-            ],
-            "features": [ { "has": "first-index" }, { "first-index": "b" } ]
+            }
           }
         ]
       }
@@ -157,7 +187,7 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "SinkA[KindA]" } ] }
+          { "kinds": [ { "kind": "SinkA[KindA]" } ], "decl": null }
         ]
       }
     ]
@@ -171,7 +201,7 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "SinkA[KindB]" } ] }
+          { "kinds": [ { "kind": "SinkA[KindB]" } ], "decl": null }
         ]
       }
     ]
@@ -185,7 +215,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "SourceA[KindA]" } ] }
+          { "kinds": [ { "kind": "SourceA[KindA]" } ], "decl": null }
         ]
       }
     ]
@@ -199,7 +229,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "SourceA[KindB]" } ] }
+          { "kinds": [ { "kind": "SourceA[KindB]" } ], "decl": null }
         ]
       }
     ]

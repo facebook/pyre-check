@@ -8,10 +8,8 @@
         "port": "formal(wrapper)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[x]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[x]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -19,10 +17,8 @@
         "port": "formal(wrapper)[b]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[y]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[y]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -30,8 +26,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -47,10 +43,8 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[b]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -58,10 +52,8 @@
         "port": "formal(a)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -69,8 +61,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -86,10 +78,8 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[b]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -97,10 +87,8 @@
         "port": "formal(wrapper)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[x]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[x]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -108,10 +96,8 @@
         "port": "formal(wrapper)[b]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[y]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[y]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -119,10 +105,8 @@
         "port": "formal(a)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -130,8 +114,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -147,10 +131,8 @@
         "port": "formal(wrapper)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[x]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[x]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -158,10 +140,8 @@
         "port": "formal(wrapper)[b]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[y]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[y]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -169,8 +149,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -186,10 +166,8 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[b]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -197,10 +175,8 @@
         "port": "formal(a)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -208,8 +184,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }

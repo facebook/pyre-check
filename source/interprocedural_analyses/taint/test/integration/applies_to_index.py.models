@@ -15,19 +15,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "a" }
+                ],
+                "leaves": [
+                  { "name": "applies_to_index.only_applies_to_a_key" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 49,
               "start": 8,
               "end": 31
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "applies_to_index.only_applies_to_a_key"
-              }
-            ],
-            "features": [ { "has": "first-index" }, { "first-index": "a" } ]
+            }
           }
         ]
       },
@@ -35,14 +40,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 50,
               "start": 15,
               "end": 21
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -70,18 +80,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "applies_to_index.only_applies_to_first" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 22,
               "start": 22,
               "end": 45
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "applies_to_index.only_applies_to_first"
-              }
-            ]
+            }
           }
         ]
       },
@@ -89,14 +101,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 23,
               "start": 15,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -120,18 +137,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "applies_to_index.only_applies_to_second" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 28,
               "start": 22,
               "end": 46
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "applies_to_index.only_applies_to_second"
-              }
-            ]
+            }
           }
         ]
       },
@@ -139,14 +158,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 30,
               "start": 15,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -170,19 +194,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-field" },
+                  { "first-field": "a" }
+                ],
+                "leaves": [
+                  { "name": "applies_to_index.only_applies_to_a_member" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 59,
               "start": 8,
               "end": 34
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "applies_to_index.only_applies_to_a_member"
-              }
-            ],
-            "features": [ { "has": "first-field" }, { "first-field": "a" } ]
+            }
           }
         ]
       },
@@ -190,14 +219,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 60,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -218,18 +252,20 @@
         "port": "result[0][1]",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "applies_to_index.only_applies_to_nested" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 41,
               "start": 11,
               "end": 35
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "applies_to_index.only_applies_to_nested"
-              }
-            ]
+            }
           }
         ]
       }
@@ -252,18 +288,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "applies_to_index.only_applies_to_nested" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 34,
               "start": 20,
               "end": 44
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "applies_to_index.only_applies_to_nested"
-              }
-            ]
+            }
           }
         ]
       },
@@ -271,14 +309,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "applies_to_index.py",
               "line": 37,
               "start": 15,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -293,7 +336,7 @@
     "sources": [
       {
         "port": "result[a]",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -305,7 +348,7 @@
     "sources": [
       {
         "port": "result[a]",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -318,7 +361,7 @@
     "sources": [
       {
         "port": "result[0]",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -330,7 +373,7 @@
     "sources": [
       {
         "port": "result[0][1]",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -342,7 +385,7 @@
     "sources": [
       {
         "port": "result[1]",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }

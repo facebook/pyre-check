@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
       }
     ]
   }
@@ -18,7 +18,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
       }
     ]
   }
@@ -30,7 +30,7 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
       }
     ]
   }
@@ -42,7 +42,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
       }
     ]
   }
@@ -56,17 +56,20 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "leaves": [ { "name": "sanitize_obscure.b_sink" } ],
+                "kind": "TestB"
+              }
+            ],
+            "tito": [ { "line": 86, "start": 29, "end": 30 } ],
             "root": {
               "filename": "sanitize_obscure.py",
               "line": 87,
               "start": 11,
               "end": 12
-            },
-            "tito": [ { "line": 86, "start": 29, "end": 30 } ],
-            "leaves": [
-              { "kind": "TestB", "name": "sanitize_obscure.b_sink" }
-            ],
-            "features": [ { "always-via": "obscure" } ]
+            }
           }
         ]
       }
@@ -82,17 +85,20 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "leaves": [ { "name": "sanitize_obscure.b_source" } ],
+                "kind": "TestB"
+              }
+            ],
+            "tito": [ { "line": 101, "start": 34, "end": 35 } ],
             "root": {
               "filename": "sanitize_obscure.py",
               "line": 100,
               "start": 8,
               "end": 18
-            },
-            "tito": [ { "line": 101, "start": 34, "end": 35 } ],
-            "leaves": [
-              { "kind": "TestB", "name": "sanitize_obscure.b_source" }
-            ],
-            "features": [ { "always-via": "obscure" } ]
+            }
           }
         ]
       }
@@ -108,17 +114,20 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "leaves": [ { "name": "sanitize_obscure.b_source" } ],
+                "kind": "TestB"
+              }
+            ],
+            "tito": [ { "line": 72, "start": 27, "end": 28 } ],
             "root": {
               "filename": "sanitize_obscure.py",
               "line": 71,
               "start": 8,
               "end": 18
-            },
-            "tito": [ { "line": 72, "start": 27, "end": 28 } ],
-            "leaves": [
-              { "kind": "TestB", "name": "sanitize_obscure.b_source" }
-            ],
-            "features": [ { "always-via": "obscure" } ]
+            }
           }
         ]
       }

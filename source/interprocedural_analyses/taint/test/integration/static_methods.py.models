@@ -15,14 +15,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "static_methods.py",
               "line": 20,
               "start": 9,
               "end": 23
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -30,6 +35,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "static_methods.py",
@@ -38,11 +51,8 @@
                 "end": 23
               },
               "resolves_to": [ "static_methods.test" ],
-              "port": "formal(source)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(source)"
+            }
           }
         ]
       }
@@ -62,14 +72,19 @@
         "port": "formal(oops)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "static_methods.py",
               "line": 12,
               "start": 19,
               "end": 23
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -85,6 +100,14 @@
         "port": "formal(source)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "static_methods.py",
@@ -93,11 +116,8 @@
                 "end": 34
               },
               "resolves_to": [ "static_methods.StaticClass.sink" ],
-              "port": "formal(oops)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(oops)"
+            }
           }
         ]
       }

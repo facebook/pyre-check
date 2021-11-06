@@ -15,19 +15,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 45,
               "start": 15,
               "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -35,14 +40,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 47,
               "start": 15,
               "end": 19
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -66,32 +76,39 @@
         "port": "formal(parameter)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  { "name": "add_feature_to_argument.add_feature_to_first" }
+                ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 51,
               "start": 54,
               "end": 63
-            },
-            "leaves": [
-              {
-                "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first"
-              }
-            ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 52,
               "start": 15,
               "end": 24
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -107,9 +124,13 @@
         "port": "formal(first)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "AddFeatureToArgument" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -124,7 +145,21 @@
       {
         "port": "formal(first)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "AddFeatureToArgument" } ] }
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = second; positional_only = false}"
+                  }
+                ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
+            "decl": null
+          }
         ]
       }
     ]
@@ -139,17 +174,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 14,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -165,17 +205,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via-value": "second" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 34,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "via-value": "second" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -191,19 +236,21 @@
         "port": "formal(parameter)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  { "name": "add_feature_to_argument.add_feature_to_first" }
+                ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 20,
               "start": 32,
               "end": 41
-            },
-            "leaves": [
-              {
-                "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first"
-              }
-            ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            }
           }
         ]
       }
@@ -219,32 +266,39 @@
         "port": "formal(parameter)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  { "name": "add_feature_to_argument.add_feature_to_first" }
+                ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 40,
               "start": 25,
               "end": 34
-            },
-            "leaves": [
-              {
-                "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first"
-              }
-            ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 41,
               "start": 15,
               "end": 24
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -260,17 +314,22 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via-value": "second" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 28,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via-value": "second" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }

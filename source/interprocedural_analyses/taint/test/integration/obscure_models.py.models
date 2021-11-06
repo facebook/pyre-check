@@ -8,8 +8,8 @@
         "port": "formal(y)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -26,8 +26,8 @@
         "port": "formal(y)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -42,7 +42,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
         ]
       }
     ],
@@ -58,18 +58,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 33, "start": 24, "end": 38 } ],
             "root": {
               "filename": "obscure_models.py",
               "line": 33,
               "start": 24,
               "end": 38
-            },
-            "tito": [ { "line": 33, "start": 24, "end": 38 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -79,10 +84,15 @@
         "port": "formal(c)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 33, "start": 11, "end": 12 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -98,18 +108,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 57, "start": 45, "end": 59 } ],
             "root": {
               "filename": "obscure_models.py",
               "line": 57,
               "start": 45,
               "end": 59
-            },
-            "tito": [ { "line": 57, "start": 45, "end": 59 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -119,10 +134,15 @@
         "port": "formal(c)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 57, "start": 11, "end": 12 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -138,18 +158,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 41, "start": 43, "end": 57 } ],
             "root": {
               "filename": "obscure_models.py",
               "line": 41,
               "start": 43,
               "end": 57
-            },
-            "tito": [ { "line": 41, "start": 43, "end": 57 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -159,10 +184,15 @@
         "port": "formal(c)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 41, "start": 11, "end": 12 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -178,18 +208,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 53, "start": 51, "end": 65 } ],
             "root": {
               "filename": "obscure_models.py",
               "line": 53,
               "start": 51,
               "end": 65
-            },
-            "tito": [ { "line": 53, "start": 51, "end": 65 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -205,18 +240,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 37, "start": 44, "end": 58 } ],
             "root": {
               "filename": "obscure_models.py",
               "line": 37,
               "start": 44,
               "end": 58
-            },
-            "tito": [ { "line": 37, "start": 44, "end": 58 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -226,10 +266,15 @@
         "port": "formal(c)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 37, "start": 11, "end": 12 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -245,32 +290,39 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "obscure_models.C.obscure_with_source" }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "obscure_models.py",
               "line": 45,
               "start": 11,
               "end": 51
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "obscure_models.C.obscure_with_source"
-              }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 45, "start": 36, "end": 50 } ],
             "root": {
               "filename": "obscure_models.py",
               "line": 45,
               "start": 36,
               "end": 50
-            },
-            "tito": [ { "line": 45, "start": 36, "end": 50 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -280,10 +332,15 @@
         "port": "formal(c)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 45, "start": 11, "end": 12 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "decl": null
           }
         ]
       }

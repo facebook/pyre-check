@@ -65,13 +65,13 @@ module LeafName = struct
 
   let show = Format.asprintf "%a" pp
 
-  let to_json ~kind_json { leaf; port } =
+  let to_json { leaf; port } =
     let port_assoc =
       match port with
       | Some port -> ["port", `String port]
       | None -> []
     in
-    `Assoc (port_assoc @ ["kind", kind_json; "name", `String leaf])
+    `Assoc (port_assoc @ ["name", `String leaf])
 
 
   let to_string = show
@@ -255,6 +255,21 @@ module ViaFeature = struct
       |> Type.show
     in
     Breadcrumb.ViaType { value = feature; tag }
+
+
+  let to_json via =
+    let to_json_via_value_or_type kind parameter tag =
+      let json = ["kind", `String kind; "parameter", `String (AccessPath.Root.show parameter)] in
+      let json =
+        match tag with
+        | Some tag -> ("tag", `String tag) :: json
+        | None -> json
+      in
+      `Assoc json
+    in
+    match via with
+    | ViaValueOf { parameter; tag } -> to_json_via_value_or_type "ViaValueOf" parameter tag
+    | ViaTypeOf { parameter; tag } -> to_json_via_value_or_type "ViaTypeOf" parameter tag
 end
 
 module ViaFeatureSet = Abstract.SetDomain.Make (ViaFeature)
@@ -281,6 +296,9 @@ module ReturnAccessPath = struct
         | x -> x
       in
       List.map ~f:truncate set
+
+
+  let to_json path = `String (Abstract.TreeDomain.Label.show_path path)
 end
 
 module ReturnAccessPathSet = struct

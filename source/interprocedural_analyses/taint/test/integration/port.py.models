@@ -15,6 +15,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -23,11 +31,8 @@
                 "end": 22
               },
               "resolves_to": [ "port.source_field" ],
-              "port": "result[a]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result[a]"
+            }
           }
         ]
       },
@@ -35,6 +40,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -43,11 +56,8 @@
                 "end": 16
               },
               "resolves_to": [ "port.sink_field" ],
-              "port": "formal(arg)[a]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)[a]"
+            }
           }
         ]
       }
@@ -74,6 +84,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -82,11 +100,8 @@
                 "end": 45
               },
               "resolves_to": [ "port.source_field" ],
-              "port": "result[a]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result[a]"
+            }
           }
         ]
       },
@@ -94,6 +109,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -102,15 +129,8 @@
                 "end": 45
               },
               "resolves_to": [ "port.star_arg_wrapper" ],
-              "port": "formal(*rest1)[1][a]",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(*rest1)[1][a]"
+            }
           }
         ]
       }
@@ -139,6 +159,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -147,11 +175,8 @@
                 "end": 29
               },
               "resolves_to": [ "port.source_field" ],
-              "port": "result[a]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result[a]"
+            }
           }
         ]
       },
@@ -159,6 +184,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -167,15 +204,8 @@
                 "end": 31
               },
               "resolves_to": [ "port.star_arg_wrapper" ],
-              "port": "formal(*rest1)[1][a]",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(*rest1)[1][a]"
+            }
           }
         ]
       }
@@ -204,6 +234,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -212,11 +250,8 @@
                 "end": 54
               },
               "resolves_to": [ "port.source_field" ],
-              "port": "result[a]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result[a]"
+            }
           }
         ]
       },
@@ -224,6 +259,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "arg" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -232,15 +279,8 @@
                 "end": 54
               },
               "resolves_to": [ "port.star_star_arg_wrapper" ],
-              "port": "formal(**kw)[arg][a]",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "arg" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(**kw)[arg][a]"
+            }
           }
         ]
       }
@@ -269,6 +309,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -277,11 +325,8 @@
                 "end": 41
               },
               "resolves_to": [ "port.source_field" ],
-              "port": "result[a]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result[a]"
+            }
           }
         ]
       },
@@ -289,6 +334,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "arg" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -297,15 +354,8 @@
                 "end": 37
               },
               "resolves_to": [ "port.star_star_arg_wrapper" ],
-              "port": "formal(**kw)[arg][a]",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "arg" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(**kw)[arg][a]"
+            }
           }
         ]
       }
@@ -334,6 +384,14 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -342,11 +400,8 @@
                 "end": 27
               },
               "resolves_to": [ "port.Foo.some_source" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+              "port": "result"
+            }
           }
         ]
       },
@@ -354,14 +409,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "port.py",
               "line": 67,
               "start": 15,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -381,14 +441,19 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "port.py",
               "line": 61,
               "start": 15,
               "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       }
@@ -404,14 +469,19 @@
         "port": "formal(arg)[a]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "port.py",
               "line": 16,
               "start": 15,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -427,14 +497,19 @@
         "port": "result[a]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "port.py",
               "line": 11,
               "start": 15,
               "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       }
@@ -450,6 +525,18 @@
         "port": "formal(*rest1)[1][a]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -458,15 +545,8 @@
                 "end": 22
               },
               "resolves_to": [ "port.sink_field" ],
-              "port": "formal(arg)[a]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(arg)[a]"
+            }
           }
         ]
       }
@@ -482,6 +562,18 @@
         "port": "formal(*rest1)[1][a]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -490,15 +582,8 @@
                 "end": 21
               },
               "resolves_to": [ "port.star_arg" ],
-              "port": "formal(*rest1)[1][a]",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(*rest1)[1][a]"
+            }
           }
         ]
       }
@@ -514,6 +599,18 @@
         "port": "formal(**kw)[arg][a]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "arg" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -522,15 +619,8 @@
                 "end": 28
               },
               "resolves_to": [ "port.sink_field" ],
-              "port": "formal(arg)[a]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "arg" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(arg)[a]"
+            }
           }
         ]
       }
@@ -546,6 +636,18 @@
         "port": "formal(**kw)[arg][a]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "arg" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "port.py",
@@ -554,15 +656,8 @@
                 "end": 29
               },
               "resolves_to": [ "port.star_star_arg" ],
-              "port": "formal(**kw)[arg][a]",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "arg" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(**kw)[arg][a]"
+            }
           }
         ]
       }

@@ -15,18 +15,23 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 45, "start": 46, "end": 60 } ],
             "root": {
               "filename": "builder_pattern.py",
               "line": 45,
               "start": 46,
               "end": 60
-            },
-            "tito": [ { "line": 45, "start": 46, "end": 60 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -34,6 +39,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "builder_pattern.py",
@@ -42,11 +55,8 @@
                 "end": 61
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
-              "port": "formal(self)[_saved]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(self)[_saved]"
+            }
           }
         ]
       }
@@ -74,18 +84,23 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 76, "start": 8, "end": 22 } ],
             "root": {
               "filename": "builder_pattern.py",
               "line": 76,
               "start": 8,
               "end": 22
-            },
-            "tito": [ { "line": 76, "start": 8, "end": 22 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -93,6 +108,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "builder_pattern.py",
@@ -101,11 +124,8 @@
                 "end": 4
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
-              "port": "formal(self)[_saved]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(self)[_saved]"
+            }
           }
         ]
       }
@@ -133,18 +153,23 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 58, "start": 8, "end": 22 } ],
             "root": {
               "filename": "builder_pattern.py",
               "line": 58,
               "start": 8,
               "end": 22
-            },
-            "tito": [ { "line": 58, "start": 8, "end": 22 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -152,6 +177,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "builder_pattern.py",
@@ -160,11 +193,8 @@
                 "end": 4
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
-              "port": "formal(self)[_saved]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(self)[_saved]"
+            }
           }
         ]
       }
@@ -185,8 +215,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -202,8 +232,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -219,8 +249,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -236,14 +266,19 @@
         "port": "formal(self)[_saved]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "builder_pattern.py",
               "line": 27,
               "start": 19,
               "end": 30
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -259,10 +294,10 @@
         "port": "formal(not_saved)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[_not_saved]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[_not_saved]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -270,8 +305,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -287,10 +322,10 @@
         "port": "formal(not_saved)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[_not_saved]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[_not_saved]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -298,8 +333,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -315,10 +350,10 @@
         "port": "formal(saved)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[_saved]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[_saved]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -326,8 +361,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -343,10 +378,10 @@
         "port": "formal(saved)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[_saved]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[_saved]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -354,8 +389,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }

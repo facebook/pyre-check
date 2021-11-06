@@ -6,7 +6,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = arg; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -19,7 +35,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = arg; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -32,7 +64,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = arg; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -45,7 +93,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = arg; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -58,7 +122,23 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = arg; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -73,19 +153,21 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-value": "b" } ],
+                "leaves": [
+                  { "name": "callable_classes.CallableProtocol.__call__" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "callable_classes.py",
               "line": 36,
               "start": 11,
               "end": 17
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "callable_classes.CallableProtocol.__call__"
-              }
-            ],
-            "features": [ { "always-via-value": "b" } ]
+            }
           }
         ]
       }
@@ -101,16 +183,19 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via-value": "a" } ],
+                "leaves": [ { "name": "callable_classes.P.__call__" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "callable_classes.py",
               "line": 22,
               "start": 11,
               "end": 17
-            },
-            "leaves": [
-              { "kind": "Test", "name": "callable_classes.P.__call__" }
-            ],
-            "features": [ { "always-via-value": "a" } ]
+            }
           }
         ]
       }

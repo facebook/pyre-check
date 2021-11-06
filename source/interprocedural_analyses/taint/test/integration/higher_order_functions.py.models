@@ -15,20 +15,25 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "issue-broadening" },
+                  { "always-via": "broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 78, "start": 17, "end": 31 } ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 78,
               "start": 17,
               "end": 31
-            },
-            "tito": [ { "line": 78, "start": 17, "end": 31 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "issue-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -36,14 +41,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 80,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -73,18 +83,23 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "issue-broadening" },
+                  { "always-via": "broadening" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 22,
               "start": 40,
               "end": 54
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "issue-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -92,6 +107,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -100,11 +123,8 @@
                 "end": 38
               },
               "resolves_to": [ "higher_order_functions.goes_to_sink" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -133,14 +153,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 52,
               "start": 49,
               "end": 63
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -148,6 +173,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -158,11 +191,8 @@
               "resolves_to": [
                 "higher_order_functions.higher_order_function_and_sink"
               ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -189,18 +219,23 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "issue-broadening" },
+                  { "always-via": "broadening" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 52,
               "start": 49,
               "end": 63
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "issue-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -208,6 +243,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -216,11 +259,8 @@
                 "end": 47
               },
               "resolves_to": [ "higher_order_functions.goes_to_sink" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -249,14 +289,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 38,
               "start": 29,
               "end": 43
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -264,6 +309,17 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "lambda" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -272,14 +328,8 @@
                 "end": 43
               },
               "resolves_to": [ "higher_order_functions.higher_order_method" ],
-              "port": "formal(arg)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "special_sink" },
-              { "always-via": "lambda" }
-            ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -307,14 +357,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 42,
               "start": 11,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -322,6 +377,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -330,11 +393,8 @@
                 "end": 27
               },
               "resolves_to": [ "higher_order_functions.C.self_to_sink" ],
-              "port": "formal(self)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(self)"
+            }
           }
         ]
       }
@@ -354,10 +414,10 @@
         "port": "formal(value)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[value]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[value]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -365,8 +425,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -382,10 +442,10 @@
         "port": "formal(value)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[value]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[value]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -393,8 +453,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -410,14 +470,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 27,
               "start": 19,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -433,14 +498,19 @@
         "port": "formal(self)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 30,
               "start": 19,
               "end": 23
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -456,10 +526,10 @@
         "port": "formal(value)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[value]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[value]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -467,8 +537,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -484,10 +554,15 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 60, "start": 13, "end": 14 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "decl": null
           }
         ]
       },
@@ -495,9 +570,14 @@
         "port": "formal(f)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "obscure" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -513,14 +593,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 10,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -536,8 +621,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -553,14 +638,19 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 48,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -576,6 +666,17 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "lambda" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -584,14 +685,8 @@
                 "end": 42
               },
               "resolves_to": [ "higher_order_functions.C.method_to_sink" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "special_sink" },
-              { "always-via": "lambda" }
-            ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -607,14 +702,19 @@
         "port": "formal(*rest0)[*]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 85,
               "start": 19,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -630,25 +730,30 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "tito-broadening" },
+                  { "via": "broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" },
+                  { "via": "lambda" },
+                  { "always-via": "obscure" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [
+              { "line": 65, "start": 14, "end": 22 },
+              { "line": 65, "start": 24, "end": 25 }
+            ],
             "root": {
               "filename": "higher_order_functions.py",
               "line": 64,
               "start": 8,
               "end": 22
-            },
-            "tito": [
-              { "line": 65, "start": 14, "end": 22 },
-              { "line": 65, "start": 24, "end": 25 }
-            ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "via": "tito-broadening" },
-              { "via": "broadening" },
-              { "always-via": "tito" },
-              { "always-via": "special_source" },
-              { "via": "lambda" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -664,10 +769,15 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "via": "tito" }, { "always-via": "lambda" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": [ { "line": 56, "start": 33, "end": 41 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" }, { "always-via": "lambda" } ]
+            "decl": null
           }
         ]
       }
@@ -683,6 +793,18 @@
         "port": "formal(z)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "integer" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -691,15 +813,8 @@
                 "end": 21
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
-              "port": "formal(*rest0)[*]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "integer" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(*rest0)[*]"
+            }
           }
         ]
       },
@@ -707,6 +822,14 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -715,11 +838,8 @@
                 "end": 18
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
-              "port": "formal(*rest0)[*]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(*rest0)[*]"
+            }
           }
         ]
       },
@@ -727,6 +847,18 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "scalar" },
+                  { "always-type": "integer" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
@@ -735,15 +867,8 @@
                 "end": 15
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
-              "port": "formal(*rest0)[*]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-type": "integer" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(*rest0)[*]"
+            }
           }
         ]
       }
