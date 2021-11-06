@@ -3287,6 +3287,50 @@ module State (Context : Context) = struct
         }
     | Constant (Constant.Float _) ->
         { resolution; errors = []; resolved = Type.float; resolved_annotation = None; base = None }
+    | Constant (Constant.Integer literal) ->
+        {
+          resolution;
+          errors = [];
+          resolved = Type.literal_integer literal;
+          resolved_annotation = None;
+          base = None;
+        }
+    | Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
+        {
+          resolution;
+          errors = [];
+          resolved = Type.literal_bytes value;
+          resolved_annotation = None;
+          base = None;
+        }
+    | Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
+        {
+          resolution;
+          errors = [];
+          resolved = Type.literal_string value;
+          resolved_annotation = None;
+          base = None;
+        }
+    | Constant Constant.True ->
+        {
+          resolution;
+          errors = [];
+          resolved = Type.Literal (Type.Boolean true);
+          resolved_annotation = None;
+          base = None;
+        }
+    | FormatString substrings ->
+        let forward_substring ((resolution, errors) as sofar) = function
+          | Substring.Literal _
+          | Substring.RawFormat _ ->
+              sofar
+          | Substring.Format expression ->
+              forward_expression ~resolution ~expression
+              |> fun { resolution; errors = new_errors; _ } ->
+              resolution, List.append new_errors errors
+        in
+        let resolution, errors = List.fold substrings ~f:forward_substring ~init:(resolution, []) in
+        { resolution; errors; resolved = Type.string; resolved_annotation = None; base = None }
     | Generator { Comprehension.element; generators } ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_comprehension ~resolution ~errors:[] ~element ~generators
@@ -3295,14 +3339,6 @@ module State (Context : Context) = struct
           resolution;
           errors;
           resolved = Type.generator resolved;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Constant (Constant.Integer literal) ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.literal_integer literal;
           resolved_annotation = None;
           base = None;
         }
@@ -3664,34 +3700,6 @@ module State (Context : Context) = struct
               forward_expression ~resolution ~expression
         in
         { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
-    | FormatString substrings ->
-        let forward_substring ((resolution, errors) as sofar) = function
-          | Substring.Literal _
-          | Substring.RawFormat _ ->
-              sofar
-          | Substring.Format expression ->
-              forward_expression ~resolution ~expression
-              |> fun { resolution; errors = new_errors; _ } ->
-              resolution, List.append new_errors errors
-        in
-        let resolution, errors = List.fold substrings ~f:forward_substring ~init:(resolution, []) in
-        { resolution; errors; resolved = Type.string; resolved_annotation = None; base = None }
-    | Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.literal_bytes value;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.literal_string value;
-          resolved_annotation = None;
-          base = None;
-        }
     | Ternary { Ternary.target; test; alternative } ->
         let target_resolved, target_errors =
           forward_statement ~resolution ~statement:(Statement.assume test)
@@ -3728,14 +3736,6 @@ module State (Context : Context) = struct
         let errors = List.append target_errors alternative_errors in
         (* The resolution is local to the ternary expression and should not be propagated out. *)
         { resolution; errors; resolved; resolved_annotation = None; base = None }
-    | Constant Constant.True ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.Literal (Type.Boolean true);
-          resolved_annotation = None;
-          base = None;
-        }
     | Tuple elements ->
         let resolution, errors, resolved_elements =
           let forward_element (resolution, errors, resolved) expression =
