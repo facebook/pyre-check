@@ -264,6 +264,17 @@ async def _publish_diagnostics(
     )
 
 
+@connection.asynccontextmanager
+async def _read_server_response(
+    server_input_channel: connection.TextReader,
+) -> AsyncIterator[str]:
+    try:
+        raw_response = await server_input_channel.read_until(separator="\n")
+        yield raw_response
+    except incremental.InvalidServerResponse as error:
+        LOG.error(f"Pyre server returns invalid response: {error}")
+
+
 TypeInfo = str
 
 LocationTypeLookup = lsp.IntervalTree[lsp.Position, TypeInfo]
@@ -813,16 +824,6 @@ class PyreServerHandler(connection.BackgroundTask):
                     self.client_output_channel, path, diagnostics
                 )
 
-    @connection.asynccontextmanager
-    async def _read_server_response(
-        self, server_input_channel: connection.TextReader
-    ) -> AsyncIterator[str]:
-        try:
-            raw_response = await server_input_channel.read_until(separator="\n")
-            yield raw_response
-        except incremental.InvalidServerResponse as error:
-            LOG.error(f"Pyre server returns invalid response: {error}")
-
     async def _subscribe_to_type_error(
         self,
         server_input_channel: connection.TextReader,
@@ -833,13 +834,13 @@ class PyreServerHandler(connection.BackgroundTask):
             f'["SubscribeToTypeErrors", "{subscription_name}"]\n'
         )
 
-        async with self._read_server_response(server_input_channel) as first_response:
+        async with _read_server_response(server_input_channel) as first_response:
             initial_type_errors = incremental.parse_type_error_response(first_response)
             self.update_type_errors(initial_type_errors)
             await self.show_type_errors_to_client()
 
         while True:
-            async with self._read_server_response(
+            async with _read_server_response(
                 server_input_channel
             ) as raw_subscription_response:
                 subscription_response = parse_subscription_response(
