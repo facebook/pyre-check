@@ -83,6 +83,7 @@ class CommandArguments:
     shared_memory_dependency_table_power: Optional[int] = None
     shared_memory_hash_table_power: Optional[int] = None
     number_of_workers: Optional[int] = None
+    enable_hover: Optional[bool] = None
 
 
 @dataclass(frozen=True)

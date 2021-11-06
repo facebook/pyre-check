@@ -118,6 +118,26 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=42))
         self.assertEqual(configuration.number_of_workers, 43)
 
+    def test_create_from_command_arguments__ide_features(self) -> None:
+        configuration = PartialConfiguration.from_command_arguments(
+            command_arguments.CommandArguments(
+                enable_hover=True,
+            )
+        )
+        assert configuration.ide_features is not None
+        self.assertTrue(configuration.ide_features.is_hover_enabled())
+        configuration = PartialConfiguration.from_command_arguments(
+            command_arguments.CommandArguments(
+                enable_hover=False,
+            )
+        )
+        assert configuration.ide_features is not None
+        self.assertFalse(configuration.ide_features.is_hover_enabled())
+        configuration = PartialConfiguration.from_command_arguments(
+            command_arguments.CommandArguments()
+        )
+        self.assertEqual(configuration.ide_features, None)
+
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
             PartialConfiguration.from_string(

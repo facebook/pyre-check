@@ -460,6 +460,11 @@ class PartialConfiguration:
             arguments.targets if len(arguments.targets) > 0 else None
         )
         python_version_string = arguments.python_version
+        ide_features = (
+            IdeFeatures(hover_enabled=arguments.enable_hover)
+            if arguments.enable_hover is not None
+            else None
+        )
         return PartialConfiguration(
             autocomplete=None,
             binary=arguments.binary,
@@ -471,7 +476,7 @@ class PartialConfiguration:
             excludes=arguments.exclude,
             extensions=[],
             file_hash=None,
-            ide_features=None,
+            ide_features=ide_features,
             ignore_all_errors=[],
             ignore_infer=[],
             isolation_prefix=arguments.isolation_prefix,
