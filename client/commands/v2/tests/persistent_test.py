@@ -486,6 +486,63 @@ class PersistentTest(testslide.TestCase):
             server.state.query_state.paths_to_be_queried.get_nowait(), test_path
         )
 
+    @setup.async_test
+    async def test_hover_always_responds(self) -> None:
+        def assert_hover_response(expected_hover_contents: str) -> None:
+            expected_response = json_rpc.SuccessResponse(
+                id=42,
+                # pyre-ignore[16]: Pyre does not understand
+                # `dataclasses_json`.
+                result=lsp.HoverResponse(contents=expected_hover_contents).to_dict(),
+            )
+            response_string = json.dumps(expected_response.json())
+            client_messages = memory_bytes_writer.items()
+            self.assertEqual(
+                client_messages[-1].decode(),
+                f"Content-Length: {len(response_string)}\r\n\r\n" + response_string,
+            )
+
+        test_path = Path("/foo.py")
+        not_tracked_path = Path("/not_tracked.py")
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
+        server = PyreServer(
+            input_channel=create_memory_text_reader(""),
+            output_channel=TextWriter(memory_bytes_writer),
+            state=ServerState(opened_documents={test_path}),
+            pyre_manager=fake_task_manager,
+        )
+
+        await fake_task_manager.ensure_task_running()
+
+        await server.process_hover_request(
+            lsp.HoverTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=3, character=4),
+            ),
+            request_id=42,
+        )
+        await asyncio.sleep(0)
+
+        assert_hover_response("Hello world!")
+        self.assertTrue(fake_task_manager.is_task_running())
+
+        await server.process_hover_request(
+            lsp.HoverTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(not_tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=3, character=4),
+            ),
+            request_id=42,
+        )
+        await asyncio.sleep(0)
+
+        self.assertTrue(fake_task_manager.is_task_running())
+        assert_hover_response("")
+
     def test_diagnostics(self) -> None:
         self.assertEqual(
             type_error_to_diagnostic(

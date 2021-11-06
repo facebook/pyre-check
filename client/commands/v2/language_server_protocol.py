@@ -199,6 +199,18 @@ class Position:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
+class LspPosition:
+    """LSP uses 0-indexing for lines whereas Pyre uses 1-indexing."""
+
+    line: int
+    character: int
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
 class Range:
     start: Position
     end: Position
@@ -460,6 +472,37 @@ class WorkspaceDidChangeConfigurationParameters:
         return _parse_parameters(
             parameters, target=WorkspaceDidChangeConfigurationParameters
         )
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class HoverTextDocumentParameters:
+    text_document: TextDocumentIdentifier
+    position: LspPosition
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "HoverTextDocumentParameters":
+        return _parse_parameters(parameters, target=HoverTextDocumentParameters)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class HoverResponse:
+    """Contains the Markdown response to be shown in the hover card."""
+
+    contents: str
+
+    @staticmethod
+    def empty() -> "HoverResponse":
+        return HoverResponse(contents="")
 
 
 class IntervalTree(Generic[Point, Value]):

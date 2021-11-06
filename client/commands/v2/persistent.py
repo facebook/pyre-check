@@ -280,6 +280,12 @@ class PyreQueryState:
         default_factory=asyncio.Queue
     )
 
+    def hover_response_for_position(
+        self, path: Path, position: lsp.LspPosition
+    ) -> lsp.HoverResponse:
+        # TODO(T103574623): Look up the type.
+        return lsp.HoverResponse(contents="Hello world!")
+
 
 @dataclasses.dataclass
 class ServerState:
@@ -390,6 +396,43 @@ class PyreServer:
         if not self.pyre_manager.is_task_running():
             await self._try_restart_pyre_server()
 
+    def _hover_response(
+        self,
+        parameters: lsp.HoverTextDocumentParameters,
+        request_id: Union[int, str, None],
+    ) -> lsp.HoverResponse:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        if document_path not in self.state.opened_documents:
+            return lsp.HoverResponse.empty()
+        return self.state.query_state.hover_response_for_position(
+            Path(document_path), parameters.position
+        )
+
+    async def process_hover_request(
+        self,
+        parameters: lsp.HoverTextDocumentParameters,
+        request_id: Union[int, str, None],
+    ) -> None:
+        """Always respond to a hover request even for non-tracked paths.
+
+        Otherwise, VS Code hover will wait for Pyre until it times out, meaning
+        that messages from other hover providers will be delayed."""
+
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                # pyre-ignore[16]: Pyre does not understand
+                # `dataclasses_json`.
+                result=self._hover_response(parameters, request_id).to_dict(),
+            ),
+        )
+
     async def _run(self) -> int:
         while True:
             async with _read_lsp_request(
@@ -437,6 +480,18 @@ class PyreServer:
                         lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
                             parameters
                         )
+                    )
+                elif request.method == "textDocument/hover":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for hover method"
+                        )
+                    await self.process_hover_request(
+                        lsp.HoverTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
                     )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")
