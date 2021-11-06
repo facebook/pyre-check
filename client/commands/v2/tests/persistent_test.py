@@ -10,7 +10,7 @@ from typing import Iterable
 
 import testslide
 
-from .... import json_rpc, error
+from .... import json_rpc, error, configuration as configuration_module
 from ....tests import setup
 from .. import language_server_protocol as lsp, start, backend_arguments
 from ..async_server_connection import (
@@ -603,6 +603,7 @@ class PersistentTest(testslide.TestCase):
                         global_root="/global/root",
                     )
                 ),
+                ide_features=configuration_module.IdeFeatures(),
             ),
             client_output_channel=TextWriter(bytes_writer),
             server_state=server_state,
@@ -649,6 +650,7 @@ class PersistentTest(testslide.TestCase):
                         global_root="/global/root",
                     )
                 ),
+                ide_features=configuration_module.IdeFeatures(),
             ),
             client_output_channel=TextWriter(bytes_writer),
             server_state=ServerState(

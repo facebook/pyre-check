@@ -79,6 +79,7 @@ def _log_lsp_event(
 
 def process_initialize_request(
     parameters: lsp.InitializeParameters,
+    ide_features: Optional[configuration_module.IdeFeatures],
 ) -> lsp.InitializeResult:
     LOG.info(
         f"Received initialization request from {parameters.client_info} "
@@ -91,7 +92,12 @@ def process_initialize_request(
             open_close=True,
             change=lsp.TextDocumentSyncKind.NONE,
             save=lsp.SaveOptions(include_text=False),
-        )
+        ),
+        **(
+            {"hover_provider": ide_features.is_hover_enabled()}
+            if ide_features is not None
+            else {}
+        ),
     )
     return lsp.InitializeResult(
         capabilities=server_capabilities, server_info=server_info
@@ -118,6 +124,7 @@ class InitializationExit:
 async def try_initialize(
     input_channel: connection.TextReader,
     output_channel: connection.TextWriter,
+    ide_features: Optional[configuration_module.IdeFeatures] = None,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
     Read an LSP message from the input channel and try to initialize an LSP
@@ -156,7 +163,7 @@ async def try_initialize(
         initialize_parameters = lsp.InitializeParameters.from_json_rpc_parameters(
             request_parameters
         )
-        result = process_initialize_request(initialize_parameters)
+        result = process_initialize_request(initialize_parameters, ide_features)
         await lsp.write_json_rpc(
             output_channel,
             # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
@@ -566,6 +573,7 @@ class PyreServerStartOptions:
     binary: str
     server_identifier: str
     start_arguments: start.Arguments
+    ide_features: Optional[configuration_module.IdeFeatures]
 
     @staticmethod
     def read_from(
@@ -612,10 +620,29 @@ class PyreServerStartOptions:
             binary=binary_location,
             server_identifier=start.get_server_identifier(configuration),
             start_arguments=start_arguments,
+            ide_features=configuration.ide_features,
         )
 
 
 PyreServerStartOptionsReader = Callable[[], PyreServerStartOptions]
+
+
+def read_server_start_options(
+    server_start_options_reader: PyreServerStartOptionsReader,
+    remote_logging: Optional[backend_arguments.RemoteLogging],
+) -> "PyreServerStartOptions":
+    try:
+        LOG.info("Reading Pyre server configurations...")
+        return server_start_options_reader()
+    except Exception:
+        _log_lsp_event(
+            remote_logging=remote_logging,
+            event=LSPEvent.NOT_CONFIGURED,
+            normals={
+                "exception": traceback.format_exc(),
+            },
+        )
+        raise
 
 
 class PyreServerHandler(connection.BackgroundTask):
@@ -892,24 +919,12 @@ class PyreServerHandler(connection.BackgroundTask):
             else:
                 raise RuntimeError("Impossible type for `start_status`")
 
-    def read_server_start_options(self) -> PyreServerStartOptions:
-        try:
-            LOG.info("Reading Pyre server configurations...")
-            return self.server_start_options_reader()
-        except Exception:
-            _log_lsp_event(
-                remote_logging=self.remote_logging,
-                event=LSPEvent.NOT_CONFIGURED,
-                normals={
-                    "exception": traceback.format_exc(),
-                },
-            )
-            raise
-
     async def run(self) -> None:
         # Re-read server start options on every run, to make sure the server
         # start options are always up-to-date.
-        server_start_options = self.read_server_start_options()
+        server_start_options = read_server_start_options(
+            self.server_start_options_reader, self.remote_logging
+        )
         try:
             LOG.info(f"Starting Pyre server from configuration: {server_start_options}")
             await self._run(server_start_options)
@@ -931,7 +946,10 @@ async def run_persistent(
 ) -> int:
     stdin, stdout = await connection.create_async_stdin_stdout()
     while True:
-        initialize_result = await try_initialize(stdin, stdout)
+        ide_features = read_server_start_options(
+            server_start_options_reader, remote_logging
+        ).ide_features
+        initialize_result = await try_initialize(stdin, stdout, ide_features)
         if isinstance(initialize_result, InitializationExit):
             LOG.info("Received exit request before initialization.")
             return 0

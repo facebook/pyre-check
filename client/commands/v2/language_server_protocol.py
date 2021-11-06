@@ -323,6 +323,7 @@ class TextDocumentSyncOptions:
 @dataclasses.dataclass(frozen=True)
 class ServerCapabilities:
     text_document_sync: Optional[TextDocumentSyncOptions] = None
+    hover_provider: Optional[bool] = None
 
 
 @dataclasses_json.dataclass_json(

@@ -24,6 +24,7 @@ from logging import Logger
 from pathlib import Path
 from typing import (
     Any,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -381,6 +382,7 @@ class SharedMemory:
 @dataclass(frozen=True)
 class IdeFeatures:
     hover_enabled: Optional[bool] = None
+    DEFAULT_HOVER_ENABLED: ClassVar[bool] = False
 
     def to_json(self) -> Dict[str, int]:
         return {
@@ -390,6 +392,13 @@ class IdeFeatures:
                 else {}
             ),
         }
+
+    def is_hover_enabled(self) -> bool:
+        return (
+            self.hover_enabled
+            if self.hover_enabled is not None
+            else self.DEFAULT_HOVER_ENABLED
+        )
 
 
 @dataclass(frozen=True)
@@ -1241,14 +1250,9 @@ class Configuration:
         return default_number_of_workers
 
     def is_hover_enabled(self) -> bool:
-        default_hover_enabled = False
         if self.ide_features is None:
-            return default_hover_enabled
-        return (
-            self.ide_features.hover_enabled
-            if self.ide_features.hover_enabled is not None
-            else default_hover_enabled
-        )
+            return IdeFeatures.DEFAULT_HOVER_ENABLED
+        return self.ide_features.is_hover_enabled()
 
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []
