@@ -3765,8 +3765,13 @@ let replace_union_shorthand source =
 
 
 let mangle_private_attributes source =
-  let module Transform = Transform.Make (struct
-    type t = Identifier.t list
+  let module PrivateAttributeTransformer = struct
+    type class_data = {
+      mangling_prefix: Identifier.t;
+      metadata: Ast.Statement.Class.t;
+    }
+
+    type t = class_data list
 
     let mangle_identifier class_name identifier = "_" ^ class_name ^ identifier
 
@@ -3795,59 +3800,65 @@ let mangle_private_attributes source =
 
     let transform_children state statement =
       match state, Node.value statement with
-      | _, Statement.Class { name; _ } ->
+      | _, Statement.Class ({ name; _ } as class_statement) ->
           let mangling_prefix =
             name
             |> Reference.last
             |> String.lstrip ~drop:(fun character -> Char.equal character '_')
           in
-          mangling_prefix :: state, true
+          let class_data =
+            { mangling_prefix; metadata = { class_statement with Ast.Statement.Class.body = [] } }
+          in
+          class_data :: state, true
       | _, _ -> state, true
 
 
     let statement state ({ Node.value; _ } as statement) =
-      let state =
-        (* Ensure identifiers following class body are not mangled. *)
+      let state, statement =
         match state, value with
-        | _ :: tail, Statement.Class _ -> tail
-        | _, _ -> state
-      in
-      let statement =
-        let mangle_parent_name parent =
-          (* Update if the parent of this statement is a class that itself is private and will be
-             mangled. *)
-          match state with
-          | _ :: parent_prefix :: _ when should_mangle (Reference.last parent) ->
-              mangle_reference parent_prefix parent
-          | _ -> parent
-        in
-        match state, value with
-        | class_name :: _, Statement.Class ({ name; _ } as class_value)
+        | ( { metadata; _ } :: ({ mangling_prefix; _ } :: _ as tail),
+            Statement.Class { name; body; _ } )
           when should_mangle (Reference.last name) ->
-            {
-              statement with
-              value = Statement.Class { class_value with name = mangle_reference class_name name };
-            }
-        | ( class_name :: _,
+            ( tail,
+              {
+                statement with
+                value =
+                  Statement.Class
+                    { metadata with name = mangle_reference mangling_prefix name; body };
+              } )
+        | { metadata; _ } :: tail, Statement.Class { body; _ } ->
+            (* Ensure identifiers following class body are not mangled. *)
+            tail, { statement with value = Statement.Class { metadata with body } }
+        | ( { mangling_prefix; _ } :: _,
             Statement.Define
               ({ Define.signature = { Define.Signature.name; parent; _ } as signature; _ } as
               define) )
           when should_mangle (Reference.last name) ->
-            {
-              statement with
-              value =
-                Statement.Define
-                  {
-                    define with
-                    signature =
-                      {
-                        signature with
-                        name = mangle_reference class_name name;
-                        parent = parent >>| mangle_parent_name;
-                      };
-                  };
-            }
-        | _ -> statement
+            let mangle_parent_name parent =
+              (* Update if the parent of this statement is a class that itself is private and will
+                 be mangled. *)
+              match state with
+              | _ :: { mangling_prefix = parent_prefix; _ } :: _
+                when should_mangle (Reference.last parent) ->
+                  mangle_reference parent_prefix parent
+              | _ -> parent
+            in
+            ( state,
+              {
+                statement with
+                value =
+                  Statement.Define
+                    {
+                      define with
+                      signature =
+                        {
+                          signature with
+                          name = mangle_reference mangling_prefix name;
+                          parent = parent >>| mangle_parent_name;
+                        };
+                    };
+              } )
+        | _ -> state, statement
       in
       state, [statement]
 
@@ -3856,16 +3867,19 @@ let mangle_private_attributes source =
       let open Expression in
       let transformed_expression =
         match state, value with
-        | class_name :: _, Name (Name.Identifier identifier) when should_mangle identifier ->
-            Name (Name.Identifier (mangle_identifier class_name identifier))
-        | class_name :: _, Name (Name.Attribute ({ attribute; _ } as name))
+        | { mangling_prefix; _ } :: _, Name (Name.Identifier identifier)
+          when should_mangle identifier ->
+            Name (Name.Identifier (mangle_identifier mangling_prefix identifier))
+        | { mangling_prefix; _ } :: _, Name (Name.Attribute ({ attribute; _ } as name))
           when should_mangle attribute ->
-            Name (Name.Attribute { name with attribute = mangle_identifier class_name attribute })
+            Name
+              (Name.Attribute { name with attribute = mangle_identifier mangling_prefix attribute })
         | _ -> value
       in
       { expression with Node.value = transformed_expression }
-  end)
+  end
   in
+  let module Transform = Transform.Make (PrivateAttributeTransformer) in
   Transform.transform [] source |> Transform.source
 
 

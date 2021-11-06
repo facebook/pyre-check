@@ -5663,7 +5663,6 @@ let test_mangle_private_attributes _ =
           def _C__bar(self):
             pass
     |};
-  ();
   assert_replace
     {|
       class Foo:
@@ -5678,6 +5677,21 @@ let test_mangle_private_attributes _ =
         _Foo__y = 1
         def test(self) -> str:
           return f"{self.x}" + f"{self._Foo__y}" + "{self.__y}"
+    |};
+  assert_replace
+    {|
+      class __A:
+        pass
+      class __B(__A):
+        def __bar(self):
+          pass
+    |}
+    {|
+      class __A:
+        pass
+      class __B(__A):
+        def _B__bar(self):
+          pass
     |};
   ()
 
