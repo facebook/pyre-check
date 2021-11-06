@@ -333,6 +333,7 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         self.state.opened_documents.add(document_path)
+        self.state.query_state.paths_to_be_queried.put_nowait(document_path)
         LOG.info(f"File opened: {document_path}")
 
         # Attempt to trigger a background Pyre server start on each file open

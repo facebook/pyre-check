@@ -263,6 +263,14 @@ class PersistentTest(testslide.TestCase):
             )
         )
         self.assertIn(test_path0, server_state.opened_documents)
+        self.assertEqual(
+            server.state.query_state.paths_to_be_queried.qsize(),
+            1,
+        )
+        self.assertEqual(
+            server.state.query_state.paths_to_be_queried.get_nowait(),
+            test_path0,
+        )
 
         await server.process_open_request(
             lsp.DidOpenTextDocumentParameters(
@@ -275,6 +283,14 @@ class PersistentTest(testslide.TestCase):
             )
         )
         self.assertIn(test_path1, server_state.opened_documents)
+        self.assertEqual(
+            server.state.query_state.paths_to_be_queried.qsize(),
+            1,
+        )
+        self.assertEqual(
+            server.state.query_state.paths_to_be_queried.get_nowait(),
+            test_path1,
+        )
 
         await server.process_close_request(
             lsp.DidCloseTextDocumentParameters(
@@ -284,6 +300,10 @@ class PersistentTest(testslide.TestCase):
             )
         )
         self.assertNotIn(test_path0, server_state.opened_documents)
+        self.assertEqual(
+            server.state.query_state.paths_to_be_queried.qsize(),
+            0,
+        )
 
     @setup.async_test
     async def test_open_close_with_diagnostics(self) -> None:
