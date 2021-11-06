@@ -188,7 +188,7 @@ class DocumentUri:
     letter_case=dataclasses_json.LetterCase.CAMEL,
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, order=True)
 class Position:
     line: int
     character: int
@@ -204,6 +204,9 @@ class LspPosition:
 
     line: int
     character: int
+
+    def to_pyre_position(self) -> "Position":
+        return Position(self.line + 1, self.character)
 
 
 @dataclasses_json.dataclass_json(

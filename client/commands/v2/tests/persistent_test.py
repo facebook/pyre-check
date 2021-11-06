@@ -29,8 +29,10 @@ from ..persistent import (
     InitializationSuccess,
     InitializationFailure,
     InitializationExit,
+    LocationTypeLookup,
     PyreServer,
     PyreServerStartOptions,
+    PyreQueryState,
     ServerState,
     parse_subscription_response,
     SubscriptionResponse,
@@ -509,7 +511,18 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(memory_bytes_writer),
-            state=ServerState(opened_documents={test_path}),
+            state=ServerState(
+                opened_documents={test_path},
+                query_state=PyreQueryState(
+                    path_to_location_type_lookup={
+                        test_path: LocationTypeLookup(
+                            [
+                                (lsp.Position(4, 4), lsp.Position(4, 15), "str"),
+                            ]
+                        ),
+                    }
+                ),
+            ),
             pyre_manager=fake_task_manager,
         )
 
@@ -526,7 +539,7 @@ class PersistentTest(testslide.TestCase):
         )
         await asyncio.sleep(0)
 
-        assert_hover_response("Hello world!")
+        assert_hover_response("```str```")
         self.assertTrue(fake_task_manager.is_task_running())
 
         await server.process_hover_request(
@@ -733,4 +746,43 @@ class PersistentTest(testslide.TestCase):
                 id=0,
                 parameters=json_rpc.ByNameParameters({"type": 2, "message": "derp"}),
             ),
+        )
+
+
+class PyreQueryStateTest(testslide.TestCase):
+    def test_hover_response_for_position(self) -> None:
+        pyre_query_state = PyreQueryState(
+            {
+                Path("test.py"): LocationTypeLookup(
+                    [
+                        (lsp.Position(4, 4), lsp.Position(4, 15), "str"),
+                        (lsp.Position(8, 16), lsp.Position(8, 17), "int"),
+                    ]
+                ),
+            }
+        )
+
+        self.assertEqual(
+            pyre_query_state.hover_response_for_position(
+                Path("test.py"), lsp.LspPosition(3, 5)
+            ),
+            lsp.HoverResponse(contents="```str```"),
+        )
+        self.assertEqual(
+            pyre_query_state.hover_response_for_position(
+                Path("test.py"), lsp.LspPosition(7, 16)
+            ),
+            lsp.HoverResponse(contents="```int```"),
+        )
+        self.assertEqual(
+            pyre_query_state.hover_response_for_position(
+                Path("test.py"), lsp.LspPosition(99, 99)
+            ),
+            lsp.HoverResponse(contents=""),
+        )
+        self.assertEqual(
+            pyre_query_state.hover_response_for_position(
+                Path("non_existent.py"), lsp.LspPosition(3, 4)
+            ),
+            lsp.HoverResponse(contents=""),
         )

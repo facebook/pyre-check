@@ -281,10 +281,22 @@ class PyreQueryState:
     )
 
     def hover_response_for_position(
-        self, path: Path, position: lsp.LspPosition
+        self, path: Path, lsp_position: lsp.LspPosition
     ) -> lsp.HoverResponse:
-        # TODO(T103574623): Look up the type.
-        return lsp.HoverResponse(contents="Hello world!")
+        pyre_position = lsp_position.to_pyre_position()
+        LOG.info(f"Looking up type for path {path} and position {pyre_position}...")
+
+        location_type_lookup = self.path_to_location_type_lookup.get(path)
+        if location_type_lookup is None:
+            LOG.info(f"Did not find any type info for path {path}.")
+            return lsp.HoverResponse.empty()
+
+        type_info = location_type_lookup[pyre_position]
+        if type_info is None:
+            LOG.info(f"Did not find a type for position {pyre_position}.")
+            return lsp.HoverResponse.empty()
+
+        return lsp.HoverResponse(contents=f"```{type_info}```")
 
 
 @dataclasses.dataclass
