@@ -257,6 +257,23 @@ async def _publish_diagnostics(
     )
 
 
+TypeInfo = str
+
+LocationTypeLookup = lsp.IntervalTree[lsp.Position, TypeInfo]
+
+
+@dataclasses.dataclass
+class PyreQueryState:
+    # Shared mutable state.
+    path_to_location_type_lookup: Dict[Path, LocationTypeLookup] = dataclasses.field(
+        default_factory=dict
+    )
+    # Queue of paths that the background query manager will look up types for.
+    paths_to_be_queried: "asyncio.Queue[Path]" = dataclasses.field(
+        default_factory=asyncio.Queue
+    )
+
+
 @dataclasses.dataclass
 class ServerState:
     # Immutable States
@@ -268,6 +285,7 @@ class ServerState:
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
+    query_state: PyreQueryState = PyreQueryState()
 
 
 class PyreServer:
@@ -355,11 +373,13 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
+        if document_path not in self.state.opened_documents:
+            return
+
+        self.state.query_state.paths_to_be_queried.put_nowait(document_path)
+
         # Attempt to trigger a background Pyre server start on each file save
-        if (
-            not self.pyre_manager.is_task_running()
-            and document_path in self.state.opened_documents
-        ):
+        if not self.pyre_manager.is_task_running():
             await self._try_restart_pyre_server()
 
     async def _run(self) -> int:

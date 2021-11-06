@@ -439,6 +439,33 @@ class PersistentTest(testslide.TestCase):
         await asyncio.sleep(0)
         self.assertFalse(fake_task_manager.is_task_running())
 
+    @setup.async_test
+    async def test_save_adds_path_to_queue(self) -> None:
+        test_path = Path("/root/test.py")
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        server = PyreServer(
+            input_channel=create_memory_text_reader(""),
+            output_channel=create_memory_text_writer(),
+            state=ServerState(opened_documents={test_path}),
+            pyre_manager=fake_task_manager,
+        )
+
+        # Save should add path to query even if the server is already running.
+        await fake_task_manager.ensure_task_running()
+
+        await server.process_did_save_request(
+            lsp.DidSaveTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                )
+            )
+        )
+        await asyncio.sleep(0)
+        self.assertEqual(server.state.query_state.paths_to_be_queried.qsize(), 1)
+        self.assertEqual(
+            server.state.query_state.paths_to_be_queried.get_nowait(), test_path
+        )
+
     def test_diagnostics(self) -> None:
         self.assertEqual(
             type_error_to_diagnostic(
