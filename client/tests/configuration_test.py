@@ -13,6 +13,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Optional
 
 import testslide
 
@@ -23,6 +24,7 @@ from .. import (
 )
 from ..configuration import (
     PythonVersion,
+    IdeFeatures,
     InvalidPythonVersion,
     SharedMemory,
     Configuration,
@@ -415,6 +417,27 @@ class PartialConfigurationTest(unittest.TestCase):
             hashlib.sha1(file_content.encode("utf-8")).hexdigest(),
         )
 
+    def test_create_from_string_ide_features(self) -> None:
+        def assert_ide_features_equal(input: object, expected: object) -> None:
+            self.assertEqual(
+                PartialConfiguration.from_string(json.dumps(input)).ide_features,
+                expected,
+            )
+
+        def assert_ide_features_raises(input: object) -> None:
+            with self.assertRaises(InvalidConfiguration):
+                PartialConfiguration.from_string(json.dumps(input))
+
+        assert_ide_features_equal({}, None)
+        assert_ide_features_equal({"ide_features": {}}, IdeFeatures())
+        assert_ide_features_equal(
+            {"ide_features": {"hover_enabled": True}}, IdeFeatures(hover_enabled=True)
+        )
+        assert_ide_features_equal(
+            {"ide_features": {"hover_enabled": False}}, IdeFeatures(hover_enabled=False)
+        )
+        assert_ide_features_raises({"ide_features": {"hover_enabled": 42}})
+
     def test_create_from_string_failure(self) -> None:
         def assert_raises(content: str) -> None:
             with self.assertRaises(InvalidConfiguration):
@@ -565,6 +588,38 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_overwritten("use_command_v2")
         assert_overwritten("version_hash")
 
+    def test_merge__ide_features(self) -> None:
+        def assert_merged(
+            base_ide_features: Optional[IdeFeatures],
+            override_ide_features: Optional[IdeFeatures],
+            expected: Optional[IdeFeatures],
+        ) -> None:
+            self.assertEqual(
+                merge_partial_configurations(
+                    base=PartialConfiguration(ide_features=base_ide_features),
+                    override=PartialConfiguration(ide_features=override_ide_features),
+                ).ide_features,
+                expected,
+            )
+
+        assert_merged(None, None, None)
+        assert_merged(
+            IdeFeatures(hover_enabled=True), None, IdeFeatures(hover_enabled=True)
+        )
+        assert_merged(
+            None, IdeFeatures(hover_enabled=True), IdeFeatures(hover_enabled=True)
+        )
+        assert_merged(
+            IdeFeatures(hover_enabled=False),
+            IdeFeatures(hover_enabled=True),
+            IdeFeatures(hover_enabled=True),
+        )
+        assert_merged(
+            IdeFeatures(hover_enabled=True),
+            IdeFeatures(hover_enabled=False),
+            IdeFeatures(hover_enabled=False),
+        )
+
     def test_expand_relative_paths(self) -> None:
         self.assertEqual(
             PartialConfiguration(binary="foo").expand_relative_paths("bar").binary,
@@ -666,6 +721,7 @@ class ConfigurationTest(testslide.TestCase):
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
                 file_hash="abc",
+                ide_features=IdeFeatures(hover_enabled=True),
                 ignore_all_errors=["bar"],
                 ignore_infer=["baz"],
                 logger="logger",
@@ -699,6 +755,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
         self.assertEqual(configuration.file_hash, "abc")
+        self.assertEqual(configuration.ide_features, IdeFeatures(hover_enabled=True))
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
         self.assertListEqual(list(configuration.ignore_infer), ["baz"])
         self.assertEqual(configuration.logger, "logger")
@@ -1164,6 +1221,21 @@ class ConfigurationTest(testslide.TestCase):
                 ],
             ).get_valid_extension_suffixes(),
             [".bar"],
+        )
+
+    def test_is_hover_enabled(self) -> None:
+        self.assertFalse(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+            ).is_hover_enabled(),
+        )
+        self.assertTrue(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                ide_features=IdeFeatures(hover_enabled=True),
+            ).is_hover_enabled(),
         )
 
     def test_create_from_command_arguments_only(self) -> None:

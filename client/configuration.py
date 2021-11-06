@@ -379,6 +379,20 @@ class SharedMemory:
 
 
 @dataclass(frozen=True)
+class IdeFeatures:
+    hover_enabled: Optional[bool] = None
+
+    def to_json(self) -> Dict[str, int]:
+        return {
+            **(
+                {"hover_enabled": self.hover_enabled}
+                if self.hover_enabled is not None
+                else {}
+            ),
+        }
+
+
+@dataclass(frozen=True)
 class PartialConfiguration:
     autocomplete: Optional[bool] = None
     binary: Optional[str] = None
@@ -390,6 +404,7 @@ class PartialConfiguration:
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
+    ide_features: Optional[IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -447,6 +462,7 @@ class PartialConfiguration:
             excludes=arguments.exclude,
             extensions=[],
             file_hash=None,
+            ide_features=None,
             ignore_all_errors=[],
             ignore_infer=[],
             isolation_prefix=arguments.isolation_prefix,
@@ -601,6 +617,20 @@ class PartialConfiguration:
             else:
                 source_directories = None
 
+            ide_features_json = ensure_option_type(
+                configuration_json, "ide_features", dict
+            )
+            if ide_features_json is None:
+                ide_features = None
+            else:
+                ide_features = IdeFeatures(
+                    hover_enabled=ensure_option_type(
+                        ide_features_json, "hover_enabled", bool
+                    ),
+                )
+                for unrecognized_key in ide_features_json:
+                    LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
+
             partial_configuration = PartialConfiguration(
                 autocomplete=ensure_option_type(
                     configuration_json, "autocomplete", bool
@@ -625,6 +655,7 @@ class PartialConfiguration:
                     for json in ensure_list(configuration_json, "extensions")
                 ],
                 file_hash=file_hash,
+                ide_features=ide_features,
                 ignore_all_errors=ensure_string_list(
                     configuration_json, "ignore_all_errors"
                 ),
@@ -722,6 +753,7 @@ class PartialConfiguration:
             excludes=self.excludes,
             extensions=self.extensions,
             file_hash=self.file_hash,
+            ide_features=self.ide_features,
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
@@ -758,6 +790,17 @@ def merge_partial_configurations(
     def overwrite_base(base: Optional[T], override: Optional[T]) -> Optional[T]:
         return base if override is None else override
 
+    def overwrite_base_ide_features(
+        base: Optional[IdeFeatures], override: Optional[IdeFeatures]
+    ) -> Optional[IdeFeatures]:
+        if override is None:
+            return base
+        if base is None:
+            return override
+        return IdeFeatures(
+            hover_enabled=overwrite_base(base.hover_enabled, override.hover_enabled)
+        )
+
     def prepend_base(base: Sequence[T], override: Sequence[T]) -> Sequence[T]:
         return list(override) + list(base)
 
@@ -790,6 +833,9 @@ def merge_partial_configurations(
         excludes=prepend_base(base.excludes, override.excludes),
         extensions=prepend_base(base.extensions, override.extensions),
         file_hash=overwrite_base(base.file_hash, override.file_hash),
+        ide_features=overwrite_base_ide_features(
+            base.ide_features, override.ide_features
+        ),
         ignore_all_errors=prepend_base(
             base.ignore_all_errors, override.ignore_all_errors
         ),
@@ -856,6 +902,7 @@ class Configuration:
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
+    ide_features: Optional[IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -905,6 +952,7 @@ class Configuration:
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             file_hash=partial_configuration.file_hash,
+            ide_features=partial_configuration.ide_features,
             ignore_all_errors=partial_configuration.ignore_all_errors,
             ignore_infer=partial_configuration.ignore_infer,
             isolation_prefix=partial_configuration.isolation_prefix,
@@ -1062,6 +1110,7 @@ class Configuration:
             excludes=self.excludes,
             extensions=self.extensions,
             file_hash=self.file_hash,
+            ide_features=self.ide_features,
             ignore_all_errors=self.ignore_all_errors,
             ignore_infer=self.ignore_infer,
             isolation_prefix=self.isolation_prefix,
@@ -1190,6 +1239,16 @@ class Configuration:
             f"Auto-set the value to {default_number_of_workers}."
         )
         return default_number_of_workers
+
+    def is_hover_enabled(self) -> bool:
+        default_hover_enabled = False
+        if self.ide_features is None:
+            return default_hover_enabled
+        return (
+            self.ide_features.hover_enabled
+            if self.ide_features.hover_enabled is not None
+            else default_hover_enabled
+        )
 
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []
