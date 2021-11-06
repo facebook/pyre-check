@@ -915,6 +915,13 @@ class PyreQueryHandler(connection.BackgroundTask):
         # Re-read server start options on every run, to make sure the server
         # start options are always up-to-date.
         server_start_options = self.read_server_start_options()
+
+        if (
+            server_start_options.ide_features is None
+            or not server_start_options.ide_features.is_hover_enabled()
+        ):
+            return
+
         try:
             LOG.info(
                 "Running Pyre query manager using"

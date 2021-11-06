@@ -913,3 +913,67 @@ class PyreQueryHandlerTest(testslide.TestCase):
         )
 
         self.assertEqual(result, None)
+
+    @setup.async_test
+    async def test_does_not_run_when_hover_is_disabled(self) -> None:
+        pyre_query_handler = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=lambda: PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=configuration_module.IdeFeatures(hover_enabled=False),
+            ),
+        )
+
+        # Should complete right away.
+        await pyre_query_handler.run()
+        await asyncio.sleep(0)
+
+        pyre_query_handler = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=lambda: PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=None,
+            ),
+        )
+
+        # Should complete right away.
+        await pyre_query_handler.run()
+        await asyncio.sleep(0)
+
+        pyre_query_handler = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=lambda: PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+            ),
+        )
+        pyre_query_manager = BackgroundTaskManager(pyre_query_handler)
+        await pyre_query_manager.ensure_task_running()
+        await asyncio.sleep(0)
+
+        self.assertTrue(pyre_query_manager.is_task_running())
+        await pyre_query_manager.ensure_task_stop()
