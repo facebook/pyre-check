@@ -425,8 +425,18 @@ let expression =
     ()
 
 
+module FunctionSignature = struct
+  type t = {
+    parameter_annotations: Ast.Expression.t list;
+    return_annotation: Ast.Expression.t;
+  }
+end
+
 module StatementContext = struct
   type t = {
+    (* [parse_function_signature] takes function type comment as string and parse it into a
+       [FunctionSignature.t]. *)
+    parse_function_signature: string -> (FunctionSignature.t, Error.t) Result.t;
     (* [parent] holds the name of the immediate containing class of a statement. *)
     parent: Ast.Identifier.t option;
   }
@@ -576,7 +586,7 @@ let statement =
       ~decorator_list
       ~returns
       ~type_comment:_
-      ~context:({ StatementContext.parent } as context)
+      ~context:({ StatementContext.parent; _ } as context)
     =
     let body = build_statements ~context:{ context with parent = None } body in
     let signature =
@@ -604,7 +614,7 @@ let statement =
       ~decorator_list
       ~returns
       ~type_comment:_
-      ~context:({ StatementContext.parent } as context)
+      ~context:({ StatementContext.parent; _ } as context)
     =
     let body = build_statements ~context:{ context with parent = None } body in
     let signature =
@@ -829,7 +839,9 @@ let type_ignore ~lineno:_ ~tag:_ = ()
 
 let module_ ~body ~type_ignores:_ ~context = build_statements ~context body
 
-let function_type ~argtypes:_ ~returns:_ = ()
+let function_type ~argtypes ~returns =
+  { FunctionSignature.parameter_annotations = argtypes; return_annotation = returns }
+
 
 let specification =
   PyreAst.TaglessFinal.make
@@ -864,13 +876,17 @@ let with_context ?on_failure = PyreAst.Parser.with_context ?on_init_failure:on_f
 let parse_module ?filename ?enable_type_comment ~context text =
   try
     let open Result in
+    let parse_function_signature text =
+      PyreAst.Parser.TaglessFinal.parse_function_type ~context ~spec:specification text
+    in
     PyreAst.Parser.TaglessFinal.parse_module
       ?filename
       ?enable_type_comment
       ~context
       ~spec:specification
       text
-    >>= fun module_builder -> Ok (module_builder ~context:{ StatementContext.parent = None })
+    >>= fun module_builder ->
+    Ok (module_builder ~context:{ StatementContext.parse_function_signature; parent = None })
   with
   | InternalError error -> Result.Error error
 
