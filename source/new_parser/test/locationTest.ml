@@ -19,7 +19,7 @@ let statements_print_to_sexp statements =
 
 
 let assert_parsed ~context ~expected text =
-  match PyreNewParser.parse_module ~context text with
+  match PyreNewParser.parse_module ~context ~enable_type_comment:true text with
   | Result.Error { PyreNewParser.Error.message; _ } ->
       let message = Format.sprintf "Unexpected parsing failure: %s" message in
       assert_failure message
@@ -159,6 +159,26 @@ let test_assign_locations _ =
                  annotation =
                    Some (node ~start:(1, 3) ~stop:(1, 6) (Expression.Name (Name.Identifier "int")));
                  value = node ~start:(1, 9) ~stop:(1, 10) (Expression.Constant (Constant.Integer 1));
+               });
+        ];
+    assert_parsed
+      "a = 1  # type: int"
+      ~expected:
+        [
+          node
+            ~start:(1, 0)
+            ~stop:(1, 18)
+            (Statement.Assign
+               {
+                 Assign.target =
+                   node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+                 annotation =
+                   Some
+                     (node
+                        ~start:(1, 6)
+                        ~stop:(1, 18)
+                        (Expression.Constant (Constant.String (StringLiteral.create "int"))));
+                 value = node ~start:(1, 4) ~stop:(1, 5) (Expression.Constant (Constant.Integer 1));
                });
         ];
     assert_parsed

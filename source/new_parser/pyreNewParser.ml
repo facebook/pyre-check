@@ -646,15 +646,36 @@ let statement =
     [Statement.Return { Return.expression = value; is_implicit = false } |> Node.create ~location]
   in
   let delete ~location ~targets ~context:_ = [Statement.Delete targets |> Node.create ~location] in
-  let assign ~location ~targets ~value ~type_comment:_ ~context:_ =
+  let assign ~location ~targets ~value ~type_comment ~context:_ =
     (* Eagerly turn chained assignments `a = b = c` into `a = c; b = c`. *)
-    List.map targets ~f:(fun target ->
-        let location =
-          let open Ast.Location in
-          let { start; _ } = Node.location target in
-          { location with start }
-        in
-        create_assign ~location ~target ~annotation:None ~value:(Some value) ())
+    let create_assign_for_target target =
+      let location =
+        let open Ast.Location in
+        let { start; _ } = Node.location target in
+        { location with start }
+      in
+      let annotation =
+        match type_comment, target with
+        | Some comment, { Node.value = Expression.Name _; _ } ->
+            let annotation = Expression.Constant (Constant.String (StringLiteral.create comment)) in
+            let location =
+              (* Type comments do not have locations attached in CPython. This is just a rough
+                 guess.*)
+              let open Ast.Location in
+              let { stop = { line = start_line; column = start_column }; _ } =
+                Node.location value
+              in
+              let { stop; _ } = location in
+              { start = { line = start_line; column = start_column + 1 }; stop }
+            in
+            Some (Node.create ~location annotation)
+        | _ ->
+            (* TODO (T104971233): Support type comments when the LHS of assign is a list/tuple. *)
+            None
+      in
+      create_assign ~location ~target ~annotation ~value:(Some value) ()
+    in
+    List.map targets ~f:create_assign_for_target
   in
   let aug_assign ~location ~target ~op ~value ~context:_ =
     let callee =

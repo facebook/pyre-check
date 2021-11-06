@@ -20,7 +20,7 @@ let statements_print_to_sexp statements =
 
 
 let assert_parsed ~context ~expected text =
-  match PyreNewParser.parse_module ~context text with
+  match PyreNewParser.parse_module ~context ~enable_type_comment:true text with
   | Result.Error { PyreNewParser.Error.message; _ } ->
       let message = Format.sprintf "Unexpected parsing failure: %s" message in
       assert_failure message
@@ -1702,6 +1702,18 @@ let test_assign _ =
       "a = b"
       ~expected:[+Statement.Assign { Assign.target = !"a"; annotation = None; value = !"b" }];
     assert_parsed
+      "a = b  # type: int"
+      ~expected:
+        [
+          +Statement.Assign
+             {
+               Assign.target = !"a";
+               annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
+               value = !"b";
+             };
+        ];
+    assert_parsed
       "a = b or c"
       ~expected:
         [
@@ -1733,6 +1745,43 @@ let test_assign _ =
              {
                Assign.target = !"a";
                annotation = Some !"int";
+               value = +Expression.Constant (Constant.Integer 1);
+             };
+        ];
+    assert_parsed
+      "a.b = 1"
+      ~expected:
+        [
+          +Statement.Assign
+             {
+               Assign.target =
+                 +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+               annotation = None;
+               value = +Expression.Constant (Constant.Integer 1);
+             };
+        ];
+    assert_parsed
+      "a.b: int = 1"
+      ~expected:
+        [
+          +Statement.Assign
+             {
+               Assign.target =
+                 +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+               annotation = Some !"int";
+               value = +Expression.Constant (Constant.Integer 1);
+             };
+        ];
+    assert_parsed
+      "a.b = 1  # type: int"
+      ~expected:
+        [
+          +Statement.Assign
+             {
+               Assign.target =
+                 +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+               annotation =
+                 Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                value = +Expression.Constant (Constant.Integer 1);
              };
         ];
@@ -1846,6 +1895,46 @@ let test_assign _ =
         ];
     assert_parsed
       "i[j] = 3"
+      ~expected:
+        [
+          +Statement.Expression
+             (+Expression.Call
+                 {
+                   callee =
+                     +Expression.Name
+                        (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                   arguments =
+                     [
+                       { Call.Argument.name = None; value = !"j" };
+                       {
+                         Call.Argument.name = None;
+                         value = +Expression.Constant (Constant.Integer 3);
+                       };
+                     ];
+                 });
+        ];
+    assert_parsed
+      "i[j]: int = 3"
+      ~expected:
+        [
+          +Statement.Expression
+             (+Expression.Call
+                 {
+                   callee =
+                     +Expression.Name
+                        (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                   arguments =
+                     [
+                       { Call.Argument.name = None; value = !"j" };
+                       {
+                         Call.Argument.name = None;
+                         value = +Expression.Constant (Constant.Integer 3);
+                       };
+                     ];
+                 });
+        ];
+    assert_parsed
+      "i[j] = 3  # type: int"
       ~expected:
         [
           +Statement.Expression
