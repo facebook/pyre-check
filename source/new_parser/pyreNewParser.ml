@@ -574,6 +574,64 @@ let create_assign ~location ~target ~annotation ~value () =
       Statement.Assign { target; annotation; value } |> Node.create ~location
 
 
+let process_function_type_comment
+    ~context:{ StatementContext.parse_function_signature; parent }
+    ~parameters
+    ~returns
+  = function
+  | None -> Result.Ok (parameters, returns)
+  | Some type_comment -> (
+      match parse_function_signature type_comment with
+      | Result.Error _ -> Result.Error "Syntax error in function signature type comment"
+      | Result.Ok { FunctionSignature.parameter_annotations; return_annotation } -> (
+          let open Ast.Expression in
+          let module Node = Ast.Node in
+          let parameter_annotations =
+            let parameter_count = List.length parameters in
+            match parameter_annotations with
+            | [{ Node.value = Expression.Constant Constant.Ellipsis; _ }] ->
+                List.init parameter_count ~f:(fun _ -> None)
+            | _ ->
+                let annotations = List.map parameter_annotations ~f:Option.some in
+                let annotation_count = List.length annotations in
+                (* For methods, it is allowed to have one extra `self` and `cls` parameter without
+                   annotation. *)
+                if Option.is_some parent && annotation_count == parameter_count - 1 then
+                  None :: annotations
+                else
+                  annotations
+          in
+          match List.zip parameters parameter_annotations with
+          | List.Or_unequal_lengths.Unequal_lengths ->
+              let message =
+                Format.sprintf
+                  "Function signature type comment has %d parameter types, while the corresponding \
+                   function contains %d parameters"
+                  (List.length parameter_annotations)
+                  (List.length parameters)
+              in
+              Result.Error message
+          | List.Or_unequal_lengths.Ok pairs ->
+              let override_annotation old_annotation new_annotation =
+                (* NOTE(grievejia): Currently we let inline annotations take precedence over comment
+                   annotations. *)
+                match old_annotation with
+                | None -> new_annotation
+                | Some _ -> old_annotation
+              in
+              let override_parameter ({ Node.value = parameter; location }, new_annotation) =
+                let { Parameter.annotation; _ } = parameter in
+                {
+                  Node.location;
+                  value =
+                    { parameter with annotation = override_annotation annotation new_annotation };
+                }
+              in
+              Result.Ok
+                ( List.map pairs ~f:override_parameter,
+                  override_annotation returns (Some return_annotation) )))
+
+
 let statement =
   let open Ast.Expression in
   let open Ast.Statement in
@@ -585,26 +643,31 @@ let statement =
       ~body
       ~decorator_list
       ~returns
-      ~type_comment:_
+      ~type_comment
       ~context:({ StatementContext.parent; _ } as context)
     =
     let body = build_statements ~context:{ context with parent = None } body in
-    let signature =
-      {
-        Define.Signature.name = Ast.Reference.create name;
-        parameters = args;
-        decorators = decorator_list;
-        return_annotation = returns;
-        async = false;
-        generator = is_generator body;
-        parent = Option.map parent ~f:Ast.Reference.create;
-        nesting_define = None;
-      }
-    in
-    [
-      Statement.Define { Define.signature; captures = []; unbound_names = []; body }
-      |> Node.create ~location;
-    ]
+    match process_function_type_comment ~context ~parameters:args ~returns type_comment with
+    | Result.Error message ->
+        let { Ast.Location.start = { line; column }; _ } = location in
+        raise (InternalError { Error.line; column; message })
+    | Result.Ok (parameters, return_annotation) ->
+        let signature =
+          {
+            Define.Signature.name = Ast.Reference.create name;
+            parameters;
+            decorators = decorator_list;
+            return_annotation;
+            async = false;
+            generator = is_generator body;
+            parent = Option.map parent ~f:Ast.Reference.create;
+            nesting_define = None;
+          }
+        in
+        [
+          Statement.Define { Define.signature; captures = []; unbound_names = []; body }
+          |> Node.create ~location;
+        ]
   in
   let async_function_def
       ~location
@@ -613,26 +676,31 @@ let statement =
       ~body
       ~decorator_list
       ~returns
-      ~type_comment:_
+      ~type_comment
       ~context:({ StatementContext.parent; _ } as context)
     =
     let body = build_statements ~context:{ context with parent = None } body in
-    let signature =
-      {
-        Define.Signature.name = Ast.Reference.create name;
-        parameters = args;
-        decorators = decorator_list;
-        return_annotation = returns;
-        async = true;
-        generator = is_generator body;
-        parent = Option.map parent ~f:Ast.Reference.create;
-        nesting_define = None;
-      }
-    in
-    [
-      Statement.Define { Define.signature; captures = []; unbound_names = []; body }
-      |> Node.create ~location;
-    ]
+    match process_function_type_comment ~context ~parameters:args ~returns type_comment with
+    | Result.Error message ->
+        let { Ast.Location.start = { line; column }; _ } = location in
+        raise (InternalError { Error.line; column; message })
+    | Result.Ok (parameters, return_annotation) ->
+        let signature =
+          {
+            Define.Signature.name = Ast.Reference.create name;
+            parameters;
+            decorators = decorator_list;
+            return_annotation;
+            async = true;
+            generator = is_generator body;
+            parent = Option.map parent ~f:Ast.Reference.create;
+            nesting_define = None;
+          }
+        in
+        [
+          Statement.Define { Define.signature; captures = []; unbound_names = []; body }
+          |> Node.create ~location;
+        ]
   in
   let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~context =
     let base_arguments =
