@@ -46,6 +46,7 @@ from . import (
     incremental,
     query,
     server_event,
+    query,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -439,6 +440,7 @@ class PyreServer:
     # `pyre_manager` is responsible for handling all interactions with background
     # Pyre server.
     pyre_manager: connection.BackgroundTaskManager
+    pyre_query_manager: connection.BackgroundTaskManager
     # NOTE: `state` is mutable and can be changed on `pyre_manager` side.
     state: ServerState
 
@@ -448,11 +450,13 @@ class PyreServer:
         output_channel: connection.TextWriter,
         state: ServerState,
         pyre_manager: connection.BackgroundTaskManager,
+        pyre_query_manager: connection.BackgroundTaskManager,
     ) -> None:
         self.input_channel = input_channel
         self.output_channel = output_channel
         self.state = state
         self.pyre_manager = pyre_manager
+        self.pyre_query_manager = pyre_query_manager
 
     async def wait_for_exit(self) -> int:
         await _wait_for_exit(self.input_channel, self.output_channel)
@@ -629,9 +633,11 @@ class PyreServer:
     async def run(self) -> int:
         try:
             await self.pyre_manager.ensure_task_running()
+            await self.pyre_query_manager.ensure_task_running()
             return await self._run()
         finally:
             await self.pyre_manager.ensure_task_stop()
+            await self.pyre_query_manager.ensure_task_stop()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -830,7 +836,7 @@ def read_server_start_options(
         raise
 
 
-class PyreQueryHandler:
+class PyreQueryHandler(connection.BackgroundTask):
     def __init__(
         self,
         state: PyreQueryState,
@@ -862,17 +868,62 @@ class PyreQueryHandler:
     async def _update_types_for_paths(
         self,
         paths: List[Path],
-        input_channel: connection.TextReader,
-        output_channel: connection.TextWriter,
+        server_start_options: "PyreServerStartOptions",
     ) -> None:
-        new_path_to_location_type_dict = await self._query_types(
-            paths, input_channel, output_channel
+        server_identifier = server_start_options.server_identifier
+        start_arguments = server_start_options.start_arguments
+        local_root = start_arguments.base_arguments.relative_local_root
+        socket_path = server_connection.get_default_socket_path(
+            project_root=Path(start_arguments.base_arguments.global_root),
+            relative_local_root=Path(local_root) if local_root else None,
         )
+        try:
+            async with connection.connect_in_text_mode(socket_path) as (
+                input_channel,
+                output_channel,
+            ):
+                new_path_to_location_type_dict = await self._query_types(
+                    paths, input_channel, output_channel
+                )
+        except connection.ConnectionFailure:
+            LOG.error(
+                "Could not establish connection with an existing Pyre server."
+                f" Exiting the Pyre query handler: `{server_identifier}`.",
+            )
+            return None
+
         if new_path_to_location_type_dict is None:
             return
 
         for path, location_type_lookup in new_path_to_location_type_dict.items():
             self.state.path_to_location_type_lookup[path] = location_type_lookup
+
+    async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
+        while True:
+            path = await self.state.paths_to_be_queried.get()
+            await self._update_types_for_paths([path], server_start_options)
+
+    def read_server_start_options(self) -> "PyreServerStartOptions":
+        try:
+            LOG.info("Reading Pyre server configurations...")
+            return self.server_start_options_reader()
+        except Exception:
+            LOG.error("Pyre query handler failed to read server configuration")
+            raise
+
+    async def run(self) -> None:
+        # Re-read server start options on every run, to make sure the server
+        # start options are always up-to-date.
+        server_start_options = self.read_server_start_options()
+        try:
+            LOG.info(
+                "Running Pyre query manager using"
+                f" configuration: {server_start_options}"
+            )
+            await self._run(server_start_options)
+        except Exception:
+            LOG.error("Failed to run the Pyre query handler")
+            raise
 
 
 class PyreServerHandler(connection.BackgroundTask):
@@ -1192,6 +1243,10 @@ async def run_persistent(
             client_capabilities = initialize_result.client_capabilities
             LOG.debug(f"Client capabilities: {client_capabilities}")
             initial_server_state = ServerState(client_capabilities=client_capabilities)
+            pyre_query_handler = PyreQueryHandler(
+                state=initial_server_state.query_state,
+                server_start_options_reader=server_start_options_reader,
+            )
             server = PyreServer(
                 input_channel=stdin,
                 output_channel=stdout,
@@ -1204,6 +1259,7 @@ async def run_persistent(
                         server_state=initial_server_state,
                     )
                 ),
+                pyre_query_manager=connection.BackgroundTaskManager(pyre_query_handler),
             )
             return await server.run()
         elif isinstance(initialize_result, InitializationFailure):

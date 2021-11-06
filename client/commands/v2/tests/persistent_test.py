@@ -246,11 +246,13 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = ServerState()
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             state=server_state,
             pyre_manager=BackgroundTaskManager(NoOpBackgroundTask()),
+            pyre_query_manager=fake_task_manager,
         )
         test_path0 = Path("/foo/bar")
         test_path1 = Path("/foo/baz")
@@ -329,11 +331,13 @@ class PersistentTest(testslide.TestCase):
         )
         bytes_writer = MemoryBytesWriter()
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(bytes_writer),
             state=server_state,
             pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
         )
 
         # Ensure the background task is running
@@ -366,11 +370,13 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             state=ServerState(),
             pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -391,6 +397,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_open_triggers_pyre_restart__limit_reached(self) -> None:
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
@@ -398,6 +405,7 @@ class PersistentTest(testslide.TestCase):
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD
             ),
             pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -419,11 +427,13 @@ class PersistentTest(testslide.TestCase):
     async def test_save_triggers_pyre_restart(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             state=ServerState(opened_documents={test_path}),
             pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -441,6 +451,7 @@ class PersistentTest(testslide.TestCase):
     async def test_save_triggers_pyre_restart__limit_reached(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
@@ -449,6 +460,7 @@ class PersistentTest(testslide.TestCase):
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
             pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -466,11 +478,13 @@ class PersistentTest(testslide.TestCase):
     async def test_save_adds_path_to_queue(self) -> None:
         test_path = Path("/root/test.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             state=ServerState(opened_documents={test_path}),
             pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
         )
 
         # Save should add path to query even if the server is already running.
@@ -508,6 +522,7 @@ class PersistentTest(testslide.TestCase):
         test_path = Path("/foo.py")
         not_tracked_path = Path("/not_tracked.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
         memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
@@ -525,6 +540,7 @@ class PersistentTest(testslide.TestCase):
                 ),
             ),
             pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
         )
 
         await fake_task_manager.ensure_task_running()

@@ -538,3 +538,13 @@ class IntervalTree(Generic[Point, Value]):
 
         # pyre-ignore[16]: No type stubs for intervaltree.
         return self._interval_tree.items() == other._interval_tree.items()
+
+    def __str__(self) -> str:
+        items = ", ".join(
+            [
+                f"({point1}, {point2}): {value}"
+                # pyre-ignore[16]: No type stubs for intervaltree.
+                for (point1, point2, value) in self._interval_tree.items()
+            ]
+        )
+        return f"{{{items}}}"
