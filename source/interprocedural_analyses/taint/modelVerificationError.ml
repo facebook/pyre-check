@@ -82,10 +82,24 @@ module T = struct
     | InvalidIdentifier of Expression.t
     | ClassBodyNotEllipsis of string
     | DefineBodyNotEllipsis of string
-    (* TODO(T81363867): Remove this variant. *)
-    | UnclassifiedError of {
+    | UnsupportedCallee of Expression.t
+    | UnexpectedTaintAnnotation of string
+    | UnexpectedModelExpression of Expression.t
+    | UnsupportedFindClause of string
+    | InvalidFindClauseType of Expression.t
+    | InvalidReturnAnnotation of {
         model_name: string;
-        message: string;
+        annotation: string;
+      }
+    | UnsupportedConstraint of Expression.t
+    | InvalidModelForTaint of {
+        model_name: string;
+        error: string;
+      }
+    | NoCorrespondingCallable of string
+    | InvalidAnnotationForAttributeModel of {
+        name: Reference.t;
+        annotation: string;
       }
   [@@deriving sexp, compare, eq, show]
 
@@ -186,16 +200,18 @@ let description error =
         name
         (String.concat decorators ~sep:", ")
         property_decorator_message
+  | InvalidFindClauseType clause_type ->
+      Format.sprintf "Find clauses must be strings, got: `%s`" (Expression.show clause_type)
   | InvalidIdentifier expression ->
       Format.sprintf
         "Invalid identifier: `%s`. Expected a fully-qualified name."
         (Expression.show expression)
+  | InvalidReturnAnnotation { model_name; annotation } ->
+      Format.sprintf "Invalid model for `%s`: Invalid return annotation `%s`." model_name annotation
   | ClassBodyNotEllipsis class_name ->
       Format.sprintf "Class model for `%s` must have a body of `...`." class_name
   | DefineBodyNotEllipsis model_name ->
       Format.sprintf "Callable model for `%s` must have a body of `...`." model_name
-  | UnclassifiedError { model_name; message } ->
-      Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
       Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name
   | MissingSymbol { module_name; symbol_name } ->
@@ -230,11 +246,27 @@ let description error =
         "`%s` is not part of the environment, no module `%s` in search path."
         name
         module_name
+  | UnexpectedTaintAnnotation taint_annotation ->
+      Format.sprintf "Unexpected taint annotation `%s`" taint_annotation
+  | UnsupportedConstraint constraint_name ->
+      Format.sprintf "Unsupported constraint: %s" (Expression.show constraint_name)
+  | UnsupportedCallee callee -> Format.sprintf "Unsupported callee: %s" (Expression.show callee)
+  | UnsupportedFindClause clause -> Format.sprintf "Unsupported find clause `%s`" clause
+  | UnexpectedModelExpression expression ->
+      Format.sprintf "Unexpected model expression: `%s`" (Expression.show expression)
+  | InvalidModelForTaint { model_name; error } ->
+      Format.sprintf "Invalid model for `%s`: %s" model_name error
+  | NoCorrespondingCallable callable ->
+      Format.sprintf "No callable corresponding to `%s` found." callable
+  | InvalidAnnotationForAttributeModel { name; annotation } ->
+      Format.sprintf
+        "Invalid annotation for attribute model `%s`: `%s`."
+        (Reference.show name)
+        annotation
 
 
 let code { kind; _ } =
   match kind with
-  | UnclassifiedError _ -> -1
   | InvalidDefaultValue _ -> 1
   | IncompatibleModelError _ -> 2
   | ImportedFunctionModel _ -> 3
@@ -263,6 +295,16 @@ let code { kind; _ } =
   | InvalidArgumentsClause _ -> 26
   | InvalidTypeAnnotationClause _ -> 27
   | MissingSymbol _ -> 28
+  | UnsupportedCallee _ -> 29
+  | UnexpectedTaintAnnotation _ -> 30
+  | UnexpectedModelExpression _ -> 31
+  | UnsupportedFindClause _ -> 32
+  | UnsupportedConstraint _ -> 33
+  | InvalidFindClauseType _ -> 34
+  | InvalidReturnAnnotation _ -> 35
+  | InvalidModelForTaint _ -> 36
+  | NoCorrespondingCallable _ -> 37
+  | InvalidAnnotationForAttributeModel _ -> 38
 
 
 let display { kind = error; path; location } =
