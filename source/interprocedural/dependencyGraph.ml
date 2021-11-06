@@ -216,21 +216,14 @@ let from_overrides overrides =
 
 
 let create_overrides ~environment ~source =
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let resolution =
-    TypeCheck.resolution
-      global_resolution
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module TypeCheck.DummyContext)
-  in
-  let resolution = Resolution.global_resolution resolution in
+  let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   if GlobalResolution.source_is_unit_test resolution ~source then
     Reference.Map.empty
   else
-    let class_method_overrides { Node.value = { Class.body; name; _ }; _ } =
-      let get_method_overrides class_ child_method =
+    let class_method_overrides { Node.value = { Class.body; name = class_name; _ }; _ } =
+      let get_method_overrides child_method =
         let method_name = Define.unqualified_name child_method in
-        GlobalResolution.overrides (Reference.show class_) ~name:method_name ~resolution
+        GlobalResolution.overrides (Reference.show class_name) ~name:method_name ~resolution
         >>= fun ancestor ->
         let parent_annotation = Annotated.Attribute.parent ancestor in
         let ancestor_parent =
@@ -239,7 +232,7 @@ let create_overrides ~environment ~source =
         (* This special case exists only for `type`. Our override lookup for a class C first looks
            at the regular MRO. If that fails, it looks for Type[C]'s MRO. However, when C is type,
            this causes a cycle to get registered. *)
-        if Reference.equal ancestor_parent class_ then
+        if Reference.equal ancestor_parent class_name then
           None
         else
           let method_name =
@@ -248,15 +241,13 @@ let create_overrides ~environment ~source =
             else
               method_name
           in
-          Some (Reference.create ~prefix:ancestor_parent method_name, class_)
+          Some (Reference.create ~prefix:ancestor_parent method_name, class_name)
       in
       let extract_define = function
         | { Node.value = Statement.Define define; _ } -> Some define
         | _ -> None
       in
-      let methods = List.filter_map ~f:extract_define body in
-      let class_name = name in
-      List.filter_map methods ~f:(get_method_overrides class_name)
+      body |> List.filter_map ~f:extract_define |> List.filter_map ~f:get_method_overrides
     in
     let record_overrides map (ancestor_method, overriding_type) =
       let update_types = function
