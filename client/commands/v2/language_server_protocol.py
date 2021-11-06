@@ -6,17 +6,30 @@
 import asyncio
 import dataclasses
 import enum
+import logging
 import urllib
 from pathlib import Path
-from typing import List, Iterable, Optional, Type, TypeVar
+from typing import (
+    Generic,
+    Iterable,
+    Optional,
+    List,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
 import dataclasses_json
+import intervaltree
 
 from ... import json_rpc
 from . import async_server_connection
 
+LOG: logging.Logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+Point = TypeVar("Point")
+Value = TypeVar("Value")
 
 
 class ServerNotInitializedError(json_rpc.JSONRPCException):
@@ -446,3 +459,28 @@ class WorkspaceDidChangeConfigurationParameters:
         return _parse_parameters(
             parameters, target=WorkspaceDidChangeConfigurationParameters
         )
+
+
+class IntervalTree(Generic[Point, Value]):
+    """Interval tree to store a `Value` for each interval of `(Point, Point)`.
+
+    The intervals are left-inclusive, right-exclusive.
+
+    This class is a typed wrapper around `intervaltree.IntervalTree`."""
+
+    def __init__(self, intervals: Iterable[Tuple[Point, Point, Value]]) -> None:
+        self._interval_tree: object = intervaltree.IntervalTree.from_tuples(intervals)
+
+    def __getitem__(self, point: Point) -> Optional[Value]:
+        """Returns the value from the first matching interval, if any.
+
+        Pyre query returns disjoint intervals, so picking the first interval
+        will lead to correct results."""
+
+        # pyre-ignore[16]: No type stubs for intervaltree.
+        intervals = self._interval_tree.__getitem__(point)
+        if len(intervals) == 0:
+            return None
+
+        _, _, value = list(intervals)[0]
+        return value

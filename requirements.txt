@@ -2,6 +2,7 @@ dataclasses; python_version < "3.7"
 async-generator
 click
 dataclasses-json
+intervaltree
 libcst
 psutil
 pyre-extensions
