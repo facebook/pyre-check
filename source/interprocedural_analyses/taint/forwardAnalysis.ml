@@ -219,8 +219,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        sinks at the end. *)
     let triggered_sinks = String.Hash_set.create () in
     let call_expression =
-      Expression.Call { Call.callee; arguments }
-      |> Node.create ~location:(Location.strip_module call_location)
+      Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
     in
     let return_annotation =
       (* This can be a very expensive operation, let's make it lazy. *)
@@ -448,7 +447,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let result_taint =
         ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
         |> ForwardState.Tree.apply_call
-             call_location
+             (Location.with_module ~qualifier:FunctionContext.qualifier call_location)
              ~callees:[call_target]
              ~port:AccessPath.Root.LocalResult
       in
@@ -476,8 +475,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          let triggered_sinks =
            BackwardState.fold BackwardState.KeyValue backward.sink_taint ~init:[] ~f:add_sink
          in
-         let { Location.WithModule.start; stop; _ } = call_location in
-         add_triggered_sinks ~location:{ Location.start; stop } ~triggered_sinks);
+         add_triggered_sinks ~location:call_location ~triggered_sinks);
       let apply_tito_side_effects tito_effects state =
         (* We also have to consider the cases when the updated parameter has a global model, in
            which case we need to capture the flow. *)
@@ -532,7 +530,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match call_targets with
       | [] when TaintConfiguration.is_missing_flow_analysis Type ->
           let callable =
-            Model.unknown_callee ~location:call_location ~call:(Node.value call_expression)
+            Model.unknown_callee
+              ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
+              ~call:(Node.value call_expression)
           in
           if not (Interprocedural.FixpointState.has_model callable) then
             Model.register_unknown_callee_model callable;
@@ -904,9 +904,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body is
              tainted. *)
-          match
-            get_callees ~location:(Location.strip_module location) ~call:{ Call.callee; arguments }
-          with
+          match get_callees ~location ~call:{ Call.callee; arguments } with
           | Some (RegularTargets targets) ->
               analyze_regular_targets ~state ~callee ~arguments targets
           | _ -> taint, state)
@@ -1074,11 +1072,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             Interprocedural.CallGraph.redirect_special_calls ~resolution call
           in
           let taint, state =
-            match
-              get_callees
-                ~location:(Location.strip_module location)
-                ~call:{ Call.callee; arguments }
-            with
+            match get_callees ~location ~call:{ Call.callee; arguments } with
             | Some (RegularTargets targets) ->
                 analyze_regular_targets ~state ~callee ~arguments targets
             | Some
@@ -1190,7 +1184,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       Node.create_with_default_location
         (Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special = false }))
     in
-    let global_model = Model.get_global_model ~resolution ~location ~expression in
+    let global_model =
+      Model.get_global_model
+        ~resolution
+        ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+        ~expression
+    in
     let attribute_taint = Model.GlobalModel.get_source global_model in
     let add_tito_features taint =
       let attribute_breadcrumbs =
@@ -1231,6 +1230,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_string_literal ~resolution ~state ~location ~nested_expressions value =
+    let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
     let value_taint =
       let literal_string_regular_expressions = TaintConfiguration.literal_string_sources () in
       if List.is_empty literal_string_regular_expressions then
@@ -1285,7 +1285,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
-    let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
     let taint, state =
       match expression.Node.value with
       | Await expression -> analyze_expression ~resolution ~state ~expression
@@ -1294,9 +1293,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
           ForwardState.Tree.join left_taint right_taint, state
       | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-          match
-            ComparisonOperator.override ~location:(Location.strip_module location) comparison
-          with
+          match ComparisonOperator.override ~location comparison with
           | Some override -> analyze_expression ~resolution ~state ~expression:override
           | None ->
               let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
@@ -1336,7 +1333,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
       | Name _ when AccessPath.is_global ~resolution expression ->
           let taint =
-            Model.get_global_model ~resolution ~location ~expression |> Model.GlobalModel.get_source
+            Model.get_global_model
+              ~resolution
+              ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+              ~expression
+            |> Model.GlobalModel.get_source
           in
           taint, state
       | Name (Name.Identifier identifier) ->
@@ -1346,7 +1347,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
           analyze_expression ~resolution ~state ~expression:base
       | Name (Name.Attribute { base; attribute; _ }) -> (
-          match get_property_callees ~location:(Location.strip_module location) ~attribute with
+          match get_property_callees ~location ~attribute with
           | Some (RegularTargets { targets; _ }) ->
               let arguments = [{ Call.Argument.name = None; value = base }] in
               apply_call_targets ~resolution ~callee:expression location arguments state targets
@@ -1489,15 +1490,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               state
         | _ -> state)
     | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
-        let location_with_module =
-          Location.with_module ~qualifier:FunctionContext.qualifier location
-        in
         let target_is_sanitized =
           (* Optimization: We only view names as being sanitizable to avoid unnecessary type
              checking. *)
           match Node.value target with
           | Name (Name.Attribute _) ->
-              Model.get_global_model ~resolution ~location:location_with_module ~expression:target
+              Model.get_global_model
+                ~resolution
+                ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+                ~expression:target
               |> Model.GlobalModel.is_sanitized
           | _ -> false
         in
@@ -1513,13 +1514,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     [{ Call.Argument.name = None; value = base }; { name = None; value }]
                   in
                   let taint, state =
-                    apply_call_targets
-                      ~resolution
-                      ~callee:target
-                      location_with_module
-                      arguments
-                      state
-                      targets
+                    apply_call_targets ~resolution ~callee:target location arguments state targets
                   in
                   store_taint_option (AccessPath.of_expression ~resolution base) taint state
               | _ ->
