@@ -218,12 +218,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* We keep a table of kind -> set of triggered labels across all targets, and merge triggered
        sinks at the end. *)
     let triggered_sinks = String.Hash_set.create () in
+    let call_expression =
+      Expression.Call { Call.callee; arguments }
+      |> Node.create ~location:(Location.strip_module call_location)
+    in
     let return_annotation =
       (* This can be a very expensive operation, let's make it lazy. *)
-      lazy
-        (Resolution.resolve_expression_to_type
-           resolution
-           (Node.create_with_default_location (Expression.Call { Call.callee; arguments })))
+      lazy (Resolution.resolve_expression_to_type resolution call_expression)
     in
     let apply_call_target state arguments_taint call_target =
       let ({ Model.model = { TaintResult.forward; backward; sanitizers; modes }; _ } as taint_model)
@@ -237,7 +238,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       log
         "Forward analysis of call: %a@,Call site model:@,%a"
         Expression.pp
-        (Expression.Call { Call.callee; arguments } |> Node.create_with_default_location)
+        call_expression
         Model.pp
         taint_model;
       let sink_argument_matches =
@@ -531,9 +532,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match call_targets with
       | [] when TaintConfiguration.is_missing_flow_analysis Type ->
           let callable =
-            Model.unknown_callee
-              ~location:call_location
-              ~call:(Expression.Call { callee; arguments })
+            Model.unknown_callee ~location:call_location ~call:(Node.value call_expression)
           in
           if not (Interprocedural.FixpointState.has_model callable) then
             Model.register_unknown_callee_model callable;

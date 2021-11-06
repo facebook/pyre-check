@@ -170,23 +170,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let rec apply_call_targets
       ~resolution
-      ~call_expression
-      location
+      ~callee
+      call_location
       arguments
       initial_state
       call_taint
       call_targets
     =
+    let call_expression =
+      Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
+    in
     let return_annotation =
       (* This can be a very expensive operation, let's make it lazy. *)
-      lazy
-        (Resolution.resolve_expression_to_type
-           resolution
-           { Node.value = call_expression; location })
+      lazy (Resolution.resolve_expression_to_type resolution call_expression)
     in
     let analyze_call_target call_target =
       let triggered_taint =
-        match Hashtbl.find FunctionContext.triggered_sinks location with
+        match Hashtbl.find FunctionContext.triggered_sinks call_location with
         | Some items ->
             List.fold
               items
@@ -206,7 +206,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       log
         "Backward analysis of call: %a@,Call site model:@,%a"
         Expression.pp
-        (Node.create_with_default_location call_expression)
+        call_expression
         Model.pp
         taint_model;
       let { TaintResult.backward; sanitizers; modes; _ } = taint_model.model in
@@ -452,8 +452,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Create a symbolic callable, using the location as the name *)
           let callable =
             Model.unknown_callee
-              ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
-              ~call:call_expression
+              ~location:(Location.with_module call_location ~qualifier:FunctionContext.qualifier)
+              ~call:(Node.value call_expression)
           in
           if not (Interprocedural.FixpointState.has_model callable) then
             Model.register_unknown_callee_model callable;
@@ -461,7 +461,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> call_targets
     in
     match call_targets with
-    | [] -> (
+    | [] ->
         (* If we don't have a call target: propagate argument taint. *)
         let analyze_argument ~resolution taint { Call.Argument.value = argument; _ } state =
           let taint =
@@ -486,10 +486,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             arguments
             ~init:initial_state
         in
-        match call_expression with
-        | Expression.Call { callee; _ } ->
-            analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
-        | _ -> state)
+        analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
     | call_targets ->
         let arguments_taint, state =
           List.map call_targets ~f:analyze_call_target
@@ -522,7 +519,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let apply_call_targets state targets =
       apply_call_targets
         ~resolution
-        ~call_expression:(Expression.Call { Call.callee; arguments })
+        ~callee
         location
         ({ Call.Argument.name = None; value = callee } :: arguments)
         state
@@ -600,14 +597,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match targets with
       | None ->
           (* Obscure. *)
-          apply_call_targets
-            ~call_expression:(Expression.Call { Call.callee; arguments })
-            ~resolution
-            location
-            arguments
-            state
-            taint
-            []
+          apply_call_targets ~callee ~resolution location arguments state taint []
       | Some { Interprocedural.CallGraph.implicit_self; targets; _ } ->
           let arguments =
             if implicit_self then
@@ -666,14 +656,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   targets, taint
             | _ -> targets, taint
           in
-          apply_call_targets
-            ~call_expression:(Expression.Call { Call.callee; arguments })
-            ~resolution
-            location
-            arguments
-            state
-            taint
-            targets
+          apply_call_targets ~callee ~resolution location arguments state taint targets
     in
     let analyze_lambda_call
         ~lambda_argument
@@ -1103,15 +1086,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~init:state
 
 
-  and analyze_expression ~resolution ~taint ~state ~expression =
+  and analyze_expression ~resolution ~taint ~state ~expression:({ Node.location; _ } as expression) =
     log
       "Backward analysis of expression: `%a` with backward taint: %a"
       Expression.pp
       expression
       BackwardState.Tree.pp
       taint;
-    let { Node.location; value = expression } = expression in
-    match expression with
+    match expression.Node.value with
     | Await expression -> analyze_expression ~resolution ~taint ~state ~expression
     | BooleanOperator { left; operator = _; right } ->
         analyze_expression ~resolution ~taint ~state ~expression:right
@@ -1159,7 +1141,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         List.rev list
         |> List.foldi ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
     | ListComprehension comprehension -> analyze_comprehension ~resolution taint comprehension state
-    | Name _ when AccessPath.is_global ~resolution { Node.location; value = expression } -> state
+    | Name _ when AccessPath.is_global ~resolution expression -> state
     | Name (Name.Identifier identifier) ->
         store_weak_taint ~root:(Root.Variable identifier) ~path:[] taint state
     | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
@@ -1168,14 +1150,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match get_property_callees ~location ~attribute with
         | Some (RegularTargets { targets; _ }) ->
             let arguments = [{ Call.Argument.name = None; value = base }] in
-            apply_call_targets
-              ~resolution
-              ~call_expression:expression
-              location
-              arguments
-              state
-              taint
-              targets
+            apply_call_targets ~resolution ~callee:expression location arguments state taint targets
         | _ ->
             let field = Abstract.TreeDomain.Label.Index attribute in
             let expression =
@@ -1377,7 +1352,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   in
                   apply_call_targets
                     ~resolution
-                    ~call_expression:(Expression.Call { Call.callee = target; arguments })
+                    ~callee:target
                     location
                     arguments
                     state
