@@ -531,3 +531,10 @@ class IntervalTree(Generic[Point, Value]):
 
         _, _, value = list(intervals)[0]
         return value
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IntervalTree):
+            return False
+
+        # pyre-ignore[16]: No type stubs for intervaltree.
+        return self._interval_tree.items() == other._interval_tree.items()

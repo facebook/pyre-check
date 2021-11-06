@@ -13,7 +13,19 @@ import subprocess
 import tempfile
 import traceback
 from pathlib import Path
-from typing import Union, Optional, AsyncIterator, Set, List, Sequence, Dict, Callable
+from sys import stderr
+from typing import (
+    Union,
+    Optional,
+    AsyncIterator,
+    Set,
+    List,
+    Sequence,
+    Dict,
+    Callable,
+)
+
+import dataclasses_json
 
 from ... import (
     log,
@@ -32,6 +44,7 @@ from . import (
     async_server_connection as connection,
     start,
     incremental,
+    query,
     server_event,
 )
 
@@ -308,6 +321,100 @@ class PyreQueryState:
             return lsp.HoverResponse.empty()
 
         return lsp.HoverResponse(contents=f"```{type_info}```")
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class LineColumn:
+    line: int
+    column: int
+
+    def to_position(self) -> lsp.Position:
+        return lsp.Position(line=self.line, character=self.column)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class LocationInfo:
+    start: LineColumn
+    stop: LineColumn
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class LocationAnnotation:
+    location: LocationInfo
+    annotation: str
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class PathTypeInfo:
+    path: str
+    types: List[LocationAnnotation]
+
+    def get_location_type_lookup(self) -> LocationTypeLookup:
+        return LocationTypeLookup(
+            [
+                (
+                    location_annotation.location.start.to_position(),
+                    location_annotation.location.stop.to_position(),
+                    location_annotation.annotation,
+                )
+                for location_annotation in self.types
+            ]
+        )
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class QueryTypesResponse:
+    response: List[PathTypeInfo]
+
+
+async def _send_query_request(
+    output_channel: connection.TextWriter, query_text: str
+) -> None:
+    query_message = json.dumps(["Query", query_text])
+    LOG.debug(f"Sending `{log.truncate(query_message, 400)}`")
+    await output_channel.write(f"{query_message}\n")
+
+
+async def _receive_query_types_response(
+    input_channel: connection.TextReader,
+) -> Optional[QueryTypesResponse]:
+    async with _read_server_response(input_channel) as raw_response:
+        LOG.debug(f"Received `{log.truncate(raw_response, 400)}`")
+        try:
+            payload = query.parse_query_response(raw_response).payload
+            # pyre-ignore[16]: Pyre does not understand dataclasses-json.
+            return QueryTypesResponse.from_dict(payload)
+        except (
+            KeyError,
+            ValueError,
+            query.InvalidQueryResponse,
+            dataclasses_json.mm.ValidationError,
+        ) as exception:
+            LOG.info(
+                f"Failed to parse json {raw_response} due to exception: {exception}\n"
+                f"stderr: {stderr}"
+            )
+            return None
 
 
 @dataclasses.dataclass
@@ -721,6 +828,51 @@ def read_server_start_options(
             },
         )
         raise
+
+
+class PyreQueryHandler:
+    def __init__(
+        self,
+        state: PyreQueryState,
+        server_start_options_reader: PyreServerStartOptionsReader,
+    ) -> None:
+        self.state = state
+        self.server_start_options_reader = server_start_options_reader
+
+    async def _query_types(
+        self,
+        paths: List[Path],
+        input_channel: connection.TextReader,
+        output_channel: connection.TextWriter,
+    ) -> Optional[Dict[Path, LocationTypeLookup]]:
+        path_string = ", ".join(f"'{path}'" for path in paths)
+        query_text = f"types({path_string})"
+        LOG.info(f"Querying for `{query_text}`")
+        await _send_query_request(output_channel, query_text)
+        query_types_response = await _receive_query_types_response(input_channel)
+
+        if query_types_response is None:
+            return None
+
+        return {
+            Path(path_type_info.path): path_type_info.get_location_type_lookup()
+            for path_type_info in query_types_response.response
+        }
+
+    async def _update_types_for_paths(
+        self,
+        paths: List[Path],
+        input_channel: connection.TextReader,
+        output_channel: connection.TextWriter,
+    ) -> None:
+        new_path_to_location_type_dict = await self._query_types(
+            paths, input_channel, output_channel
+        )
+        if new_path_to_location_type_dict is None:
+            return
+
+        for path, location_type_lookup in new_path_to_location_type_dict.items():
+            self.state.path_to_location_type_lookup[path] = location_type_lookup
 
 
 class PyreServerHandler(connection.BackgroundTask):

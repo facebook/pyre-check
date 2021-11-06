@@ -32,6 +32,7 @@ from ..persistent import (
     LocationTypeLookup,
     PyreServer,
     PyreServerStartOptions,
+    PyreQueryHandler,
     PyreQueryState,
     ServerState,
     parse_subscription_response,
@@ -786,3 +787,113 @@ class PyreQueryStateTest(testslide.TestCase):
             ),
             lsp.HoverResponse(contents=""),
         )
+
+
+class PyreQueryHandlerTest(testslide.TestCase):
+    @setup.async_test
+    async def test_query_types(self) -> None:
+        json_output = """
+        {
+            "response": [
+                {
+                    "path": "test.py",
+                    "types": [
+                        {
+                            "location": {
+                                "start": {"line": 4, "column": 4},
+                                "stop": {"line": 4, "column": 15}
+                            },
+                            "annotation": "str"
+                        },
+                        {
+                            "location": {
+                                "start": {"line": 8, "column": 16},
+                                "stop": {"line": 8, "column": 17}
+                            },
+                            "annotation": "int"
+                        }
+                    ]
+                },
+                {
+                    "path": "test2.py",
+                    "types": [
+                        {
+                            "location": {
+                                "start": {"line": 5, "column": 4},
+                                "stop": {"line": 5, "column": 15}
+                            },
+                            "annotation": "str"
+                        }
+                    ]
+                }
+            ]
+        }
+        """
+        pyre_query_manager = PyreQueryHandler(
+            state=PyreQueryState(path_to_location_type_lookup={}),
+            server_start_options_reader=lambda: PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+            ),
+        )
+        memory_bytes_writer = MemoryBytesWriter()
+        flat_json = "".join(json_output.splitlines())
+        input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
+        output_channel = TextWriter(memory_bytes_writer)
+
+        result = await pyre_query_manager._query_types(
+            [Path("test.py")], input_channel, output_channel
+        )
+
+        self.assertEqual(
+            result,
+            {
+                Path("test.py"): LocationTypeLookup(
+                    [
+                        (lsp.Position(4, 4), lsp.Position(4, 15), "str"),
+                        (lsp.Position(8, 16), lsp.Position(8, 17), "int"),
+                    ]
+                ),
+                Path("test2.py"): LocationTypeLookup(
+                    [(lsp.Position(5, 4), lsp.Position(5, 15), "str")]
+                ),
+            },
+        )
+        self.assertEqual(
+            memory_bytes_writer.items(), [b'["Query", "types(\'test.py\')"]\n']
+        )
+
+    @setup.async_test
+    async def test_query_types__bad_json(self) -> None:
+        pyre_query_manager = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=lambda: PyreServerStartOptions(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+            ),
+        )
+
+        input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
+        memory_bytes_writer = MemoryBytesWriter()
+        output_channel = TextWriter(memory_bytes_writer)
+        result = await pyre_query_manager._query_types(
+            [Path("test.py")], input_channel, output_channel
+        )
+
+        self.assertEqual(result, None)
