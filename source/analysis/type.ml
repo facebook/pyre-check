@@ -1931,11 +1931,15 @@ let is_variable = function
   | _ -> false
 
 
-let is_falsy = function
+let rec is_falsy = function
   | NoneType
   | Literal (Boolean false)
-  | Literal (Integer 0) ->
+  | Literal (Integer 0)
+  | Literal (String (LiteralValue ""))
+  | Literal (Bytes "") ->
       true
+  | Annotated annotated -> is_falsy annotated
+  | Union types -> List.for_all types ~f:is_falsy
   | _ -> false
 
 

@@ -537,6 +537,16 @@ let test_forward_expression context =
     "None or y"
     Type.string;
   assert_forward
+    ~precondition:["y", Type.integer]
+    ~postcondition:["y", Type.integer]
+    "'' or y"
+    Type.integer;
+  assert_forward
+    ~precondition:["y", Type.integer]
+    ~postcondition:["y", Type.integer]
+    "b'' or y"
+    Type.integer;
+  assert_forward
     ~precondition:["x", Type.NoneType; "y", Type.integer]
     ~postcondition:["x", Type.NoneType; "y", Type.integer]
     "x or y"
@@ -556,6 +566,11 @@ let test_forward_expression context =
     ~postcondition:["x", Type.union [Type.NoneType; Type.integer; Type.string]]
     "x or 1"
     (Type.Union [Type.integer; Type.string]);
+  assert_forward
+    ~precondition:["x", Type.union [Type.NoneType; Type.literal_integer 0]; "y", Type.string]
+    ~postcondition:["x", Type.union [Type.NoneType; Type.literal_integer 0]; "y", Type.string]
+    "x or y"
+    Type.string;
   let assert_optional_forward ?(postcondition = ["x", Type.optional Type.integer]) =
     assert_forward ~precondition:["x", Type.optional Type.integer] ~postcondition
   in
