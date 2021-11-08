@@ -1337,6 +1337,15 @@ let test_forward_statement context =
     ["x", Type.integer];
   assert_forward ~bottom:false ["x", Type.Bottom] "assert not isinstance(x, int)" ["x", Type.Bottom];
   assert_forward ~bottom:true [] "assert False" [];
+  assert_forward ~bottom:true [] "assert None" [];
+  assert_forward ~bottom:true [] "assert 0" [];
+  assert_forward ~bottom:true [] "assert 0.0" [];
+  assert_forward ~bottom:true [] "assert 0.0j" [];
+  assert_forward ~bottom:true [] "assert ''" [];
+  assert_forward ~bottom:true [] "assert b''" [];
+  assert_forward ~bottom:true [] "assert []" [];
+  assert_forward ~bottom:true [] "assert ()" [];
+  assert_forward ~bottom:true [] "assert {}" [];
   assert_forward ~bottom:false [] "assert (not True)" [];
 
   (* Raise. *)

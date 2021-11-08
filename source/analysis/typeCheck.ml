@@ -4001,8 +4001,15 @@ module State (Context : Context) = struct
         ~annotation
     in
     match Node.value test with
-    | Expression.Constant Constant.False ->
-        (* Explicit bottom. *)
+    | Expression.Constant Constant.(False | NoneLiteral)
+    | Expression.Constant (Constant.Integer 0)
+    | Expression.Constant (Constant.Float 0.0)
+    | Expression.Constant (Constant.Complex 0.0)
+    | Expression.Constant (Constant.String { StringLiteral.value = ""; _ })
+    | Expression.List []
+    | Expression.Tuple []
+    | Expression.Dictionary { Dictionary.entries = []; keywords = [] } ->
+        (* Explicit asserting falsy values. *)
         Unreachable
     | ComparisonOperator
         {
