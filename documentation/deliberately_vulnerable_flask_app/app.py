@@ -10,6 +10,7 @@ import flask
 import requests
 from flask import Flask, render_template
 from lxml import etree
+import sh.sh as sh
 
 app = Flask(__name__)
 
@@ -57,3 +58,28 @@ def definite_ssrf(payload: str) -> None:
 @app.route("/xxe/<string:payload>")
 def definite_xxe(payload: str) -> None:
     etree.fromstring(payload)
+
+
+@app.route("/rce/<string:payload>") # picked
+def potential_rce_3(payload: str) -> None:
+    sh.Command(path=payload, search_paths=[payload])
+
+
+@app.route("/rce/<string:payload>") # picked
+def potential_rce_4(payload: str) -> None:
+    sh.RunningCommand(payload, call_args=[payload])
+
+
+@app.route("/rce/<string:payload>") # picked
+def potential_rce_5(payload: str) -> None:
+    sh.OProc(command=payload, cmd=[payload])
+
+
+@app.route("/rce/<string:payload>") # picked
+def potential_rce_6(payload: str) -> None:
+    sh.which(payload, paths=[payload])
+
+
+@app.route("/rce/<string:payload>")
+def potential_rce_7(payload: str) -> None:
+    sh.ls(payload, payload)
