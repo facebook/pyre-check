@@ -5480,7 +5480,73 @@ module State (Context : Context) = struct
         Value resolution, errors
 
 
-  and forward_statement ~resolution ~statement:{ Node.location; value } =
+  and resolve_expression ~resolution expression =
+    forward_expression ~resolution ~expression
+    |> fun { Resolved.resolved; resolved_annotation; _ } ->
+    resolved_annotation |> Option.value ~default:(Annotation.create resolved)
+
+
+  and resolve_expression_type ~resolution expression =
+    resolve_expression ~resolution expression |> Annotation.annotation
+
+
+  and resolve_expression_type_with_locals ~resolution ~locals expression =
+    let add_local resolution (reference, annotation) =
+      Resolution.set_local resolution ~reference ~annotation
+    in
+    let resolution_with_locals = List.fold ~init:resolution ~f:add_local locals in
+    resolve_expression ~resolution:resolution_with_locals expression |> Annotation.annotation
+
+
+  and resolve_reference_type ~resolution reference =
+    from_reference ~location:Location.any reference |> resolve_expression_type ~resolution
+
+
+  and emit_invalid_enumeration_literal_errors ~resolution ~location ~errors annotation =
+    let invalid_enumeration_literals =
+      let is_invalid_enumeration_member = function
+        | Type.Literal (Type.EnumerationMember { enumeration_type; member_name }) ->
+            let global_resolution = Resolution.global_resolution resolution in
+            let is_enumeration =
+              GlobalResolution.class_exists global_resolution (Type.show enumeration_type)
+              && GlobalResolution.less_or_equal
+                   global_resolution
+                   ~left:enumeration_type
+                   ~right:Type.enumeration
+            in
+            let is_member_of_enumeration =
+              let literal_expression =
+                Node.create
+                  ~location
+                  (Expression.Name
+                     (Attribute
+                        {
+                          base = Type.expression enumeration_type;
+                          attribute = member_name;
+                          special = false;
+                        }))
+              in
+              let { Resolved.resolved = resolved_member_type; _ } =
+                forward_expression ~resolution ~expression:literal_expression
+              in
+              GlobalResolution.less_or_equal
+                global_resolution
+                ~left:resolved_member_type
+                ~right:enumeration_type
+            in
+            not (is_enumeration && is_member_of_enumeration)
+        | _ -> false
+      in
+      Type.collect annotation ~predicate:is_invalid_enumeration_member
+    in
+    List.fold invalid_enumeration_literals ~init:errors ~f:(fun errors annotation ->
+        emit_error
+          ~errors
+          ~location
+          ~kind:(Error.InvalidType (InvalidType { annotation; expected = "an Enum member" })))
+
+
+  let forward_statement ~resolution ~statement:{ Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
     let {
       Node.location = define_location;
@@ -5865,72 +5931,6 @@ module State (Context : Context) = struct
     | Nonlocal _
     | Pass ->
         Value resolution, []
-
-
-  and resolve_expression ~resolution expression =
-    forward_expression ~resolution ~expression
-    |> fun { Resolved.resolved; resolved_annotation; _ } ->
-    resolved_annotation |> Option.value ~default:(Annotation.create resolved)
-
-
-  and resolve_expression_type ~resolution expression =
-    resolve_expression ~resolution expression |> Annotation.annotation
-
-
-  and resolve_expression_type_with_locals ~resolution ~locals expression =
-    let add_local resolution (reference, annotation) =
-      Resolution.set_local resolution ~reference ~annotation
-    in
-    let resolution_with_locals = List.fold ~init:resolution ~f:add_local locals in
-    resolve_expression ~resolution:resolution_with_locals expression |> Annotation.annotation
-
-
-  and resolve_reference_type ~resolution reference =
-    from_reference ~location:Location.any reference |> resolve_expression_type ~resolution
-
-
-  and emit_invalid_enumeration_literal_errors ~resolution ~location ~errors annotation =
-    let invalid_enumeration_literals =
-      let is_invalid_enumeration_member = function
-        | Type.Literal (Type.EnumerationMember { enumeration_type; member_name }) ->
-            let global_resolution = Resolution.global_resolution resolution in
-            let is_enumeration =
-              GlobalResolution.class_exists global_resolution (Type.show enumeration_type)
-              && GlobalResolution.less_or_equal
-                   global_resolution
-                   ~left:enumeration_type
-                   ~right:Type.enumeration
-            in
-            let is_member_of_enumeration =
-              let literal_expression =
-                Node.create
-                  ~location
-                  (Expression.Name
-                     (Attribute
-                        {
-                          base = Type.expression enumeration_type;
-                          attribute = member_name;
-                          special = false;
-                        }))
-              in
-              let { Resolved.resolved = resolved_member_type; _ } =
-                forward_expression ~resolution ~expression:literal_expression
-              in
-              GlobalResolution.less_or_equal
-                global_resolution
-                ~left:resolved_member_type
-                ~right:enumeration_type
-            in
-            not (is_enumeration && is_member_of_enumeration)
-        | _ -> false
-      in
-      Type.collect annotation ~predicate:is_invalid_enumeration_member
-    in
-    List.fold invalid_enumeration_literals ~init:errors ~f:(fun errors annotation ->
-        emit_error
-          ~errors
-          ~location
-          ~kind:(Error.InvalidType (InvalidType { annotation; expected = "an Enum member" })))
 
 
   let forward ~statement_key state ~statement =
