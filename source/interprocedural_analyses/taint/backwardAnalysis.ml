@@ -168,11 +168,274 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let analyze_definition ~define:_ state = state
 
-  let rec apply_call_targets
+  let rec apply_call_target
+      ~resolution
+      ~call_location
+      ~arguments
+      ~return_type_breadcrumbs
+      initial_state
+      call_taint
+      call_target
+    =
+    let triggered_taint =
+      match Hashtbl.find FunctionContext.triggered_sinks call_location with
+      | Some items ->
+          List.fold
+            items
+            ~f:(fun state (root, sink) ->
+              let new_taint = BackwardState.Tree.create_leaf (BackwardTaint.singleton sink) in
+              BackwardState.assign ~root ~path:[] new_taint state)
+            ~init:BackwardState.bottom
+      | None -> BackwardState.bottom
+    in
+    let taint_model =
+      TaintProfiler.track_model_fetch
+        ~profiler
+        ~analysis:TaintProfiler.Backward
+        ~call_target
+        ~f:(fun () -> Model.get_callsite_model ~resolution ~call_target ~arguments)
+    in
+    log
+      "Backward analysis of call to `%a` with arguments %a@,Call site model:@,%a"
+      Interprocedural.Target.pretty_print
+      call_target
+      Ast.Expression.pp_expression_argument_list
+      arguments
+      Model.pp
+      taint_model;
+    let { TaintResult.backward; sanitizers; modes; _ } = taint_model.model in
+    let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
+    let sink_argument_matches =
+      BackwardState.roots sink_taint
+      |> AccessPath.match_actuals_to_formals arguments
+      |> List.map ~f:(fun (argument, argument_match) ->
+             argument.Call.Argument.value, argument_match)
+    in
+    let tito_argument_matches =
+      BackwardState.roots backward.taint_in_taint_out
+      |> AccessPath.match_actuals_to_formals arguments
+      |> List.map ~f:(fun (argument, argument_match) ->
+             argument.Call.Argument.value, argument_match)
+    in
+    let sanitize_argument_matches =
+      SanitizeRootMap.roots sanitizers.roots
+      |> AccessPath.match_actuals_to_formals arguments
+      |> List.map ~f:(fun (argument, argument_match) ->
+             argument.Call.Argument.value, argument_match)
+    in
+    let combined_matches =
+      List.zip_exn tito_argument_matches sanitize_argument_matches
+      |> List.zip_exn sink_argument_matches
+    in
+    let combine_sink_taint location taint_tree { root; actual_path; formal_path } =
+      BackwardState.read ~transform_non_leaves ~root ~path:[] sink_taint
+      |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
+      |> read_tree formal_path
+      |> BackwardState.Tree.prepend actual_path
+      |> BackwardState.Tree.join taint_tree
+    in
+    let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } =
+      let global_sink =
+        Model.get_global_model
+          ~resolution
+          ~location:
+            (Location.with_module ~qualifier:FunctionContext.qualifier (Node.location argument))
+          ~expression:argument
+        |> Model.GlobalModel.get_sink
+      in
+      let access_path = of_expression ~resolution argument in
+      get_taint access_path initial_state |> BackwardState.Tree.join global_sink
+    in
+    let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
+      let translate_tito (tito_path, element) argument_taint =
+        let compute_parameter_tito ~key:kind ~data:element argument_taint =
+          let extra_paths =
+            match Sinks.discard_transforms kind with
+            | Sinks.LocalReturn ->
+                BackwardTaint.fold
+                  Features.ReturnAccessPathSet.Element
+                  element
+                  ~f:List.cons
+                  ~init:[]
+            | _ ->
+                (* No special path handling for side effect taint *)
+                [[]]
+          in
+          let breadcrumbs = BackwardTaint.breadcrumbs element in
+          let tito_depth =
+            BackwardTaint.fold TraceLength.Self element ~f:TraceLength.join ~init:TraceLength.bottom
+          in
+          let taint_to_propagate =
+            match Sinks.discard_transforms kind with
+            | Sinks.LocalReturn -> call_taint
+            (* Attach nodes shouldn't affect analysis. *)
+            | Sinks.Attach -> BackwardState.Tree.empty
+            | Sinks.ParameterUpdate n -> (
+                match List.nth arguments n with
+                | None -> BackwardState.Tree.empty
+                | Some argument -> get_argument_taint ~resolution ~argument)
+            | _ -> failwith "unexpected tito sink"
+          in
+          let taint_to_propagate =
+            match kind with
+            | Sinks.Transform { sanitize_local; sanitize_global; _ } ->
+                (* Apply source- and sink-specific tito sanitizers. *)
+                let transforms = SanitizeTransform.Set.union sanitize_local sanitize_global in
+                let sanitized_tito_sinks =
+                  Sinks.extract_sanitized_sinks_from_transforms transforms
+                in
+                let sanitized_tito_sources = SanitizeTransform.Set.filter_sources transforms in
+                let sanitized_tito_sinks_transforms =
+                  SanitizeTransform.Set.filter_sinks transforms
+                in
+                taint_to_propagate
+                |> BackwardState.Tree.sanitize sanitized_tito_sinks
+                |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
+                |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
+                |> BackwardState.Tree.transform
+                     BackwardTaint.kind
+                     Filter
+                     ~f:Flow.sink_can_match_rule
+            | _ -> taint_to_propagate
+          in
+          let compute_tito_depth kind depth =
+            match Sinks.discard_transforms kind with
+            | Sinks.LocalReturn -> max depth (1 + tito_depth)
+            | _ -> depth
+          in
+          List.fold
+            extra_paths
+            ~f:(fun taint extra_path ->
+              read_tree extra_path taint_to_propagate
+              |> BackwardState.Tree.collapse
+                   ~transform:(BackwardTaint.add_breadcrumbs Features.tito_broadening)
+              |> BackwardTaint.add_breadcrumbs breadcrumbs
+              |> BackwardTaint.transform
+                   TraceLength.Self
+                   (Context (BackwardTaint.kind, Map))
+                   ~f:compute_tito_depth
+              |> BackwardState.Tree.create_leaf
+              |> BackwardState.Tree.prepend tito_path
+              |> BackwardState.Tree.join taint)
+            ~init:argument_taint
+        in
+        BackwardTaint.partition BackwardTaint.kind By ~f:Fn.id element
+        |> Map.Poly.fold ~f:compute_parameter_tito ~init:argument_taint
+      in
+      let add_tito_feature_and_position leaf_taint =
+        leaf_taint |> Frame.add_tito_position location |> Frame.add_breadcrumb Features.tito
+      in
+      BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
+      |> BackwardState.Tree.fold
+           BackwardState.Tree.Path
+           ~f:translate_tito
+           ~init:BackwardState.Tree.bottom
+      |> BackwardState.Tree.transform Frame.Self Map ~f:add_tito_feature_and_position
+      |> BackwardState.Tree.prepend actual_path
+      |> BackwardState.Tree.join taint_tree
+    in
+    let analyze_argument
+        ~obscure_taint
+        (arguments_taint, state)
+        ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches)))
+      =
+      let location =
+        Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
+      in
+      let sink_taint =
+        List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
+      in
+      let taint_in_taint_out =
+        List.fold
+          tito_matches
+          ~f:(combine_tito argument.Node.location)
+          ~init:BackwardState.Tree.empty
+      in
+      let taint_in_taint_out =
+        if not (BackwardState.Tree.is_bottom obscure_taint) then
+          let obscure_sanitize =
+            List.map
+              ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
+              sanitize_matches
+            |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
+            |> Sanitize.join sanitizers.global
+            |> Sanitize.join sanitizers.parameters
+          in
+          (* Apply source- and sink- specific tito sanitizers for obscure models,
+           * since the tito is not materialized in `backward.taint_in_taint_out`. *)
+          let obscure_taint =
+            match obscure_sanitize.tito with
+            | Some AllTito -> BackwardState.Tree.bottom
+            | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
+                let sanitized_tito_sources =
+                  Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources
+                in
+                let sanitized_tito_sinks_transforms =
+                  Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
+                in
+                obscure_taint
+                |> BackwardState.Tree.sanitize sanitized_tito_sinks
+                |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
+                |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
+                |> BackwardState.Tree.transform
+                     BackwardTaint.kind
+                     Filter
+                     ~f:Flow.sink_can_match_rule
+            | None -> obscure_taint
+          in
+          let obscure_taint =
+            BackwardState.Tree.transform
+              Features.TitoPositionSet.Element
+              Add
+              ~f:argument.Node.location
+              obscure_taint
+          in
+          BackwardState.Tree.join taint_in_taint_out obscure_taint
+        else
+          taint_in_taint_out
+      in
+      let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
+      let state =
+        match AccessPath.of_expression ~resolution argument with
+        | Some { AccessPath.root; path } ->
+            let breadcrumbs_to_add =
+              BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
+              |> BackwardTaint.breadcrumbs
+            in
+            if Features.BreadcrumbSet.is_bottom breadcrumbs_to_add then
+              state
+            else
+              let taint =
+                BackwardState.read state.taint ~root ~path
+                |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_add
+              in
+              { taint = BackwardState.assign ~root ~path taint state.taint }
+        | None -> state
+      in
+      taint :: arguments_taint, state
+    in
+    let obscure_taint =
+      if TaintResult.ModeSet.contains Obscure modes then
+        let breadcrumbs =
+          Lazy.force return_type_breadcrumbs |> Features.BreadcrumbSet.add Features.obscure
+        in
+        BackwardState.Tree.collapse
+          ~transform:(BackwardTaint.add_breadcrumbs Features.tito_broadening)
+          call_taint
+        |> BackwardTaint.add_breadcrumbs breadcrumbs
+        |> BackwardState.Tree.create_leaf
+      else
+        BackwardState.Tree.bottom
+    in
+    List.rev combined_matches
+    |> List.fold ~f:(analyze_argument ~obscure_taint) ~init:([], initial_state)
+
+
+  and apply_call_targets
       ~resolution
       ~callee
-      call_location
-      arguments
+      ~call_location
+      ~arguments
       initial_state
       call_taint
       call_targets
@@ -180,271 +443,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let call_expression =
       Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
     in
-    let return_annotation =
-      (* This can be a very expensive operation, let's make it lazy. *)
-      lazy (Resolution.resolve_expression_to_type resolution call_expression)
-    in
-    let analyze_call_target call_target =
-      let triggered_taint =
-        match Hashtbl.find FunctionContext.triggered_sinks call_location with
-        | Some items ->
-            List.fold
-              items
-              ~f:(fun state (root, sink) ->
-                let new_taint = BackwardState.Tree.create_leaf (BackwardTaint.singleton sink) in
-                BackwardState.assign ~root ~path:[] new_taint state)
-              ~init:BackwardState.bottom
-        | None -> BackwardState.bottom
-      in
-      let taint_model =
-        TaintProfiler.track_model_fetch
-          ~profiler
-          ~analysis:TaintProfiler.Backward
-          ~call_target
-          ~f:(fun () -> Model.get_callsite_model ~resolution ~call_target ~arguments)
-      in
-      log
-        "Backward analysis of call: %a@,Call site model:@,%a"
-        Expression.pp
-        call_expression
-        Model.pp
-        taint_model;
-      let { TaintResult.backward; sanitizers; modes; _ } = taint_model.model in
-      let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
-      let sink_argument_matches =
-        BackwardState.roots sink_taint
-        |> AccessPath.match_actuals_to_formals arguments
-        |> List.map ~f:(fun (argument, argument_match) ->
-               argument.Call.Argument.value, argument_match)
-      in
-      let tito_argument_matches =
-        BackwardState.roots backward.taint_in_taint_out
-        |> AccessPath.match_actuals_to_formals arguments
-        |> List.map ~f:(fun (argument, argument_match) ->
-               argument.Call.Argument.value, argument_match)
-      in
-      let sanitize_argument_matches =
-        SanitizeRootMap.roots sanitizers.roots
-        |> AccessPath.match_actuals_to_formals arguments
-        |> List.map ~f:(fun (argument, argument_match) ->
-               argument.Call.Argument.value, argument_match)
-      in
-      let combined_matches =
-        List.zip_exn tito_argument_matches sanitize_argument_matches
-        |> List.zip_exn sink_argument_matches
-      in
-      let combine_sink_taint location taint_tree { root; actual_path; formal_path } =
-        BackwardState.read ~transform_non_leaves ~root ~path:[] sink_taint
-        |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
-        |> read_tree formal_path
-        |> BackwardState.Tree.prepend actual_path
-        |> BackwardState.Tree.join taint_tree
-      in
-      let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } =
-        let global_sink =
-          Model.get_global_model
-            ~resolution
-            ~location:
-              (Location.with_module ~qualifier:FunctionContext.qualifier (Node.location argument))
-            ~expression:argument
-          |> Model.GlobalModel.get_sink
-        in
-        let access_path = of_expression ~resolution argument in
-        get_taint access_path initial_state |> BackwardState.Tree.join global_sink
-      in
-      let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
-        let translate_tito (tito_path, element) argument_taint =
-          let compute_parameter_tito ~key:kind ~data:element argument_taint =
-            let extra_paths =
-              match Sinks.discard_transforms kind with
-              | Sinks.LocalReturn ->
-                  BackwardTaint.fold
-                    Features.ReturnAccessPathSet.Element
-                    element
-                    ~f:List.cons
-                    ~init:[]
-              | _ ->
-                  (* No special path handling for side effect taint *)
-                  [[]]
-            in
-            let breadcrumbs = BackwardTaint.breadcrumbs element in
-            let tito_depth =
-              BackwardTaint.fold
-                TraceLength.Self
-                element
-                ~f:TraceLength.join
-                ~init:TraceLength.bottom
-            in
-            let taint_to_propagate =
-              match Sinks.discard_transforms kind with
-              | Sinks.LocalReturn -> call_taint
-              (* Attach nodes shouldn't affect analysis. *)
-              | Sinks.Attach -> BackwardState.Tree.empty
-              | Sinks.ParameterUpdate n -> (
-                  match List.nth arguments n with
-                  | None -> BackwardState.Tree.empty
-                  | Some argument -> get_argument_taint ~resolution ~argument)
-              | _ -> failwith "unexpected tito sink"
-            in
-            let taint_to_propagate =
-              match kind with
-              | Sinks.Transform { sanitize_local; sanitize_global; _ } ->
-                  (* Apply source- and sink-specific tito sanitizers. *)
-                  let transforms = SanitizeTransform.Set.union sanitize_local sanitize_global in
-                  let sanitized_tito_sinks =
-                    Sinks.extract_sanitized_sinks_from_transforms transforms
-                  in
-                  let sanitized_tito_sources = SanitizeTransform.Set.filter_sources transforms in
-                  let sanitized_tito_sinks_transforms =
-                    SanitizeTransform.Set.filter_sinks transforms
-                  in
-                  taint_to_propagate
-                  |> BackwardState.Tree.sanitize sanitized_tito_sinks
-                  |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
-                  |> BackwardState.Tree.apply_sanitize_sink_transforms
-                       sanitized_tito_sinks_transforms
-                  |> BackwardState.Tree.transform
-                       BackwardTaint.kind
-                       Filter
-                       ~f:Flow.sink_can_match_rule
-              | _ -> taint_to_propagate
-            in
-            let compute_tito_depth kind depth =
-              match Sinks.discard_transforms kind with
-              | Sinks.LocalReturn -> max depth (1 + tito_depth)
-              | _ -> depth
-            in
-            List.fold
-              extra_paths
-              ~f:(fun taint extra_path ->
-                read_tree extra_path taint_to_propagate
-                |> BackwardState.Tree.collapse
-                     ~transform:(BackwardTaint.add_breadcrumbs Features.tito_broadening)
-                |> BackwardTaint.add_breadcrumbs breadcrumbs
-                |> BackwardTaint.transform
-                     TraceLength.Self
-                     (Context (BackwardTaint.kind, Map))
-                     ~f:compute_tito_depth
-                |> BackwardState.Tree.create_leaf
-                |> BackwardState.Tree.prepend tito_path
-                |> BackwardState.Tree.join taint)
-              ~init:argument_taint
-          in
-          BackwardTaint.partition BackwardTaint.kind By ~f:Fn.id element
-          |> Map.Poly.fold ~f:compute_parameter_tito ~init:argument_taint
-        in
-        let add_tito_feature_and_position leaf_taint =
-          leaf_taint |> Frame.add_tito_position location |> Frame.add_breadcrumb Features.tito
-        in
-        BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
-        |> BackwardState.Tree.fold
-             BackwardState.Tree.Path
-             ~f:translate_tito
-             ~init:BackwardState.Tree.bottom
-        |> BackwardState.Tree.transform Frame.Self Map ~f:add_tito_feature_and_position
-        |> BackwardState.Tree.prepend actual_path
-        |> BackwardState.Tree.join taint_tree
-      in
-      let analyze_argument
-          ~obscure_taint
-          (arguments_taint, state)
-          ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches)))
-        =
-        let location =
-          Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
-        in
-        let sink_taint =
-          List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
-        in
-        let taint_in_taint_out =
-          List.fold
-            tito_matches
-            ~f:(combine_tito argument.Node.location)
-            ~init:BackwardState.Tree.empty
-        in
-        let taint_in_taint_out =
-          if not (BackwardState.Tree.is_bottom obscure_taint) then
-            let obscure_sanitize =
-              List.map
-                ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
-                sanitize_matches
-              |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
-              |> Sanitize.join sanitizers.global
-              |> Sanitize.join sanitizers.parameters
-            in
-            (* Apply source- and sink- specific tito sanitizers for obscure models,
-             * since the tito is not materialized in `backward.taint_in_taint_out`. *)
-            let obscure_taint =
-              match obscure_sanitize.tito with
-              | Some AllTito -> BackwardState.Tree.bottom
-              | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-                  let sanitized_tito_sources =
-                    Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources
-                  in
-                  let sanitized_tito_sinks_transforms =
-                    Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
-                  in
-                  obscure_taint
-                  |> BackwardState.Tree.sanitize sanitized_tito_sinks
-                  |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
-                  |> BackwardState.Tree.apply_sanitize_sink_transforms
-                       sanitized_tito_sinks_transforms
-                  |> BackwardState.Tree.transform
-                       BackwardTaint.kind
-                       Filter
-                       ~f:Flow.sink_can_match_rule
-              | None -> obscure_taint
-            in
-            let obscure_taint =
-              BackwardState.Tree.transform
-                Features.TitoPositionSet.Element
-                Add
-                ~f:argument.Node.location
-                obscure_taint
-            in
-            BackwardState.Tree.join taint_in_taint_out obscure_taint
-          else
-            taint_in_taint_out
-        in
-        let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
-        let state =
-          match AccessPath.of_expression ~resolution argument with
-          | Some { AccessPath.root; path } ->
-              let breadcrumbs_to_add =
-                BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
-                |> BackwardTaint.breadcrumbs
-              in
-              if Features.BreadcrumbSet.is_bottom breadcrumbs_to_add then
-                state
-              else
-                let taint =
-                  BackwardState.read state.taint ~root ~path
-                  |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_add
-                in
-                { taint = BackwardState.assign ~root ~path taint state.taint }
-          | None -> state
-        in
-        taint :: arguments_taint, state
-      in
-      let obscure_taint =
-        if TaintResult.ModeSet.contains Obscure modes then
-          let return_annotation = Lazy.force return_annotation in
-          let breadcrumbs =
-            Features.type_breadcrumbs
-              ~resolution:(Resolution.global_resolution resolution)
-              (Some return_annotation)
-            |> Features.BreadcrumbSet.add Features.obscure
-          in
-          BackwardState.Tree.collapse
-            ~transform:(BackwardTaint.add_breadcrumbs Features.tito_broadening)
-            call_taint
-          |> BackwardTaint.add_breadcrumbs breadcrumbs
-          |> BackwardState.Tree.create_leaf
-        else
-          BackwardState.Tree.bottom
-      in
-      List.rev combined_matches
-      |> List.fold ~f:(analyze_argument ~obscure_taint) ~init:([], initial_state)
+    (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
+    let return_type_breadcrumbs =
+      lazy
+        (let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
+         Features.type_breadcrumbs
+           ~resolution:(Resolution.global_resolution resolution)
+           (Some return_annotation))
     in
     let call_targets =
       match call_targets with
@@ -489,7 +494,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
     | call_targets ->
         let arguments_taint, state =
-          List.map call_targets ~f:analyze_call_target
+          List.map
+            call_targets
+            ~f:
+              (apply_call_target
+                 ~resolution
+                 ~call_location
+                 ~arguments
+                 ~return_type_breadcrumbs
+                 initial_state
+                 call_taint)
           |> List.fold
                ~f:(fun (arguments_taint, state) (new_arguments_taint, new_state) ->
                  ( List.map2_exn arguments_taint new_arguments_taint ~f:BackwardState.Tree.join,
@@ -520,8 +534,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       apply_call_targets
         ~resolution
         ~callee
-        location
-        ({ Call.Argument.name = None; value = callee } :: arguments)
+        ~call_location:location
+        ~arguments:({ Call.Argument.name = None; value = callee } :: arguments)
         state
         taint
         targets
@@ -597,7 +611,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match targets with
       | None ->
           (* Obscure. *)
-          apply_call_targets ~callee ~resolution location arguments state taint []
+          apply_call_targets ~callee ~resolution ~call_location:location ~arguments state taint []
       | Some { Interprocedural.CallGraph.implicit_self; targets; _ } ->
           let arguments =
             if implicit_self then
@@ -656,7 +670,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   targets, taint
             | _ -> targets, taint
           in
-          apply_call_targets ~callee ~resolution location arguments state taint targets
+          apply_call_targets
+            ~callee
+            ~resolution
+            ~call_location:location
+            ~arguments
+            state
+            taint
+            targets
     in
     let analyze_lambda_call
         ~lambda_argument
@@ -1150,7 +1171,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match get_property_callees ~location ~attribute with
         | Some (RegularTargets { targets; _ }) ->
             let arguments = [{ Call.Argument.name = None; value = base }] in
-            apply_call_targets ~resolution ~callee:expression location arguments state taint targets
+            apply_call_targets
+              ~resolution
+              ~callee:expression
+              ~call_location:location
+              ~arguments
+              state
+              taint
+              targets
         | _ ->
             let field = Abstract.TreeDomain.Label.Index attribute in
             let expression =
@@ -1353,8 +1381,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   apply_call_targets
                     ~resolution
                     ~callee:target
-                    location
-                    arguments
+                    ~call_location:location
+                    ~arguments
                     state
                     taint
                     targets
