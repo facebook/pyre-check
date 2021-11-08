@@ -14,31 +14,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install cython
-          python -m pip install flask flask_cors graphql-core typing_inspect
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install cython flask flask_cors graphql-core typing_inspect
           VERSION=$(grep "version" .pyre_configuration | sed -n -e 's/.*\(0\.0\.[0-9]*\).*/\1/p')
-          python -m pip install pyre-check-nightly==$VERSION
+          pip install pyre-check-nightly==$VERSION
 
       - name: Run Pyre
         continue-on-error: true
         run: |
-          pyre --output=json check > errors.json
-
-      - name: Expose Pyre Results
-        uses: actions/upload-artifact@v2
-        with:
-          name: Pyre Results
-          path: errors.json
-
-      - name: Convert to SARIF
-        run: |
-          cat errors.json | ./scripts/convert_results_to_sarif.py > sarif.json
+          pyre --output=sarif check > sarif.json
 
       - name: Expose SARIF Results
         uses: actions/upload-artifact@v2
@@ -53,4 +42,4 @@ jobs:
 
       - name: Fail Command On Errors
         run: |
-          if [ "$(cat errors.json)" != "[]" ]; then exit 1; fi
+          if [ "$(cat sarif.json | grep 'PYRE-ERROR')" != "" ]; then exit 1; fi
