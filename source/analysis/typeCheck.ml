@@ -1953,13 +1953,12 @@ module State (Context : Context) = struct
            away generator-local variables there. *)
         iterator_resolution, List.append iterator_errors errors
       in
-      List.map conditions ~f:Statement.assume
-      |> List.fold ~init:(resolution, errors) ~f:(fun (resolution, errors) statement ->
-             let resolution, new_errors =
-               let post_resolution, errors = forward_statement ~resolution ~statement in
-               resolution_or_default post_resolution ~default:resolution, errors
-             in
-             resolution, List.append new_errors errors)
+      List.fold conditions ~init:(resolution, errors) ~f:(fun (resolution, errors) condition ->
+          let resolution, new_errors =
+            let post_resolution, errors = forward_assert ~resolution condition in
+            resolution_or_default post_resolution ~default:resolution, errors
+          in
+          resolution, List.append new_errors errors)
     in
     let forward_comprehension ~resolution ~errors ~element ~generators =
       let resolved, errors =
@@ -2453,19 +2452,16 @@ module State (Context : Context) = struct
             ))
     | BooleanOperator { BooleanOperator.left; operator; right } ->
         let assume =
-          let assume =
-            match operator with
-            | BooleanOperator.And -> left
-            | BooleanOperator.Or -> normalize (negate left)
-          in
-          Statement.assume assume
+          match operator with
+          | BooleanOperator.And -> left
+          | BooleanOperator.Or -> normalize (negate left)
         in
         let { Resolved.resolution = resolution_left; resolved = resolved_left; _ } =
           forward_expression ~resolution ~expression:left
         in
         let resolution_right, resolved_right, errors =
           let resolution, errors_left =
-            let post_resolution, errors = forward_statement ~resolution ~statement:assume in
+            let post_resolution, errors = forward_assert ~resolution assume in
             resolution_or_default post_resolution ~default:resolution, errors
           in
           let { Resolved.resolution; resolved; errors = errors_right; _ } =
@@ -2745,9 +2741,7 @@ module State (Context : Context) = struct
         } ->
         let resolution, resolved_callee, errors, resolved_base =
           let resolution, assume_errors =
-            let post_resolution, errors =
-              forward_statement ~resolution ~statement:(Statement.assume expression)
-            in
+            let post_resolution, errors = forward_assert ~resolution expression in
             resolution_or_default post_resolution ~default:resolution, errors
           in
           let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
@@ -2786,9 +2780,7 @@ module State (Context : Context) = struct
         } ->
         let resolution, resolved_callee, errors, resolved_base =
           let resolution, assume_errors =
-            let post_resolution, errors =
-              forward_statement ~resolution ~statement:(Statement.assume (negate expression))
-            in
+            let post_resolution, errors = forward_assert ~resolution (negate expression) in
             resolution_or_default post_resolution ~default:resolution, errors
           in
           let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
@@ -3702,7 +3694,7 @@ module State (Context : Context) = struct
         { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
     | Ternary { Ternary.target; test; alternative } ->
         let target_resolved, target_errors =
-          forward_statement ~resolution ~statement:(Statement.assume test)
+          forward_assert ~resolution test
           |> fun (post_resolution, test_errors) ->
           let resolution = resolution_or_default post_resolution ~default:resolution in
           let { Resolved.resolved; errors; _ } =
@@ -3711,7 +3703,7 @@ module State (Context : Context) = struct
           resolved, List.append test_errors errors
         in
         let alternative_resolved, alternative_errors =
-          forward_statement ~resolution ~statement:(Statement.assume (negate test))
+          forward_assert ~resolution (negate test)
           |> fun (post_resolution, test_errors) ->
           let resolution = resolution_or_default post_resolution ~default:resolution in
           let { Resolved.resolved; errors; _ } =
@@ -3861,6 +3853,578 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
+
+
+  and forward_assert ?(origin = Assert.Origin.Assertion) ~resolution test =
+    let global_resolution = Resolution.global_resolution resolution in
+    let resolution, errors =
+      let resolution, errors =
+        forward_expression ~resolution ~expression:test
+        |> fun { Resolved.resolution; errors; _ } -> resolution, errors
+      in
+      let parse_refinement_annotation annotation =
+        let parse_meta annotation =
+          match parse_and_check_annotation ~resolution annotation |> snd with
+          | Type.Top -> (
+              (* Try to resolve meta-types given as expressions. *)
+              match resolve_expression_type ~resolution annotation with
+              | annotation when Type.is_meta annotation -> Type.single_parameter annotation
+              | Type.Tuple (Concrete elements) when List.for_all ~f:Type.is_meta elements ->
+                  List.map ~f:Type.single_parameter elements |> Type.union
+              | Type.Tuple (Concatenation concatenation) ->
+                  Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+                  >>= (fun element ->
+                        if Type.is_meta element then
+                          Some (Type.single_parameter element)
+                        else
+                          None)
+                  |> Option.value ~default:Type.Top
+              | _ -> Type.Top)
+          | annotation -> annotation
+        in
+        match annotation with
+        | { Node.value = Expression.Tuple elements; _ } ->
+            List.map ~f:parse_meta elements |> fun elements -> Type.Union elements
+        | _ -> parse_meta annotation
+      in
+      let partition annotation ~boundary =
+        let consistent_with_boundary, not_consistent_with_boundary =
+          let unfolded_annotation =
+            match annotation with
+            | Type.RecursiveType recursive_type ->
+                Type.RecursiveType.unfold_recursive_type recursive_type
+            | _ -> annotation
+          in
+          let extract_union_members = function
+            | Type.Union parameters -> parameters
+            | annotation -> [annotation]
+          in
+          extract_union_members unfolded_annotation
+          |> List.partition_tf ~f:(fun left ->
+                 Resolution.is_consistent_with resolution left boundary ~expression:None)
+        in
+        let not_consistent_with_boundary =
+          if List.is_empty not_consistent_with_boundary then
+            None
+          else
+            Some (Type.union not_consistent_with_boundary)
+        in
+        let consistent_with_boundary = Type.union consistent_with_boundary in
+        { consistent_with_boundary; not_consistent_with_boundary }
+      in
+      let is_temporary_refinement name =
+        let rec refinable_annotation name =
+          match
+            Resolution.get_local_with_attributes ~global_fallback:false ~name resolution, name
+          with
+          | Some local_annotation, _ -> Some local_annotation
+          | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
+              let attribute =
+                refinable_annotation base
+                >>| Annotation.annotation
+                >>= fun parent ->
+                Type.split parent
+                |> fst
+                |> Type.primitive_name
+                >>= GlobalResolution.attribute_from_class_name
+                      ~resolution:global_resolution
+                      ~name:attribute
+                      ~instantiated:parent
+                      ~transitive:true
+              in
+              match
+                ( attribute >>| AnnotatedAttribute.visibility,
+                  attribute >>| AnnotatedAttribute.defined,
+                  attribute >>| AnnotatedAttribute.annotation )
+              with
+              | Some (ReadOnly (Refinable _)), Some true, Some annotation -> Some annotation
+              | _ -> None)
+          | _ -> None
+        in
+        Option.is_none (refinable_annotation name)
+      in
+      let rec existing_annotation name =
+        match Resolution.get_local_with_attributes ~global_fallback:true ~name resolution, name with
+        | Some annotation, _ -> Some annotation
+        | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
+            let attribute =
+              existing_annotation base
+              >>| Annotation.annotation
+              >>= fun parent ->
+              Type.split parent
+              |> fst
+              |> Type.primitive_name
+              >>= GlobalResolution.attribute_from_class_name
+                    ~resolution:global_resolution
+                    ~name:attribute
+                    ~instantiated:parent
+                    ~transitive:true
+            in
+            match attribute with
+            | Some attribute when AnnotatedAttribute.defined attribute ->
+                Some (AnnotatedAttribute.annotation attribute)
+            | _ -> None)
+        | _ -> None
+      in
+      let set_local ~name annotation =
+        Resolution.set_local_with_attributes
+          ~temporary:(is_temporary_refinement name)
+          resolution
+          ~name
+          ~annotation
+      in
+      match Node.value test with
+      | Constant Constant.False ->
+          (* Explicit bottom. *)
+          Unreachable, errors
+      | ComparisonOperator
+          {
+            left =
+              {
+                Node.value =
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier "type"); _ };
+                      arguments =
+                        [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+                    };
+                _;
+              };
+            operator = ComparisonOperator.Is;
+            right = annotation;
+          }
+      | ComparisonOperator
+          {
+            left =
+              {
+                Node.value =
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier "type"); _ };
+                      arguments =
+                        [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+                    };
+                _;
+              };
+            operator = ComparisonOperator.Equals;
+            right = annotation;
+          }
+      | Call
+          {
+            callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
+            arguments =
+              [
+                { Call.Argument.name = None; value = { Node.value = Name name; _ } };
+                { Call.Argument.name = None; value = annotation };
+              ];
+          }
+        when is_simple_name name ->
+          let annotation = parse_refinement_annotation annotation in
+          let resolution =
+            let refinement_unnecessary existing_annotation =
+              RefinementUnit.less_or_equal
+                ~global_resolution
+                (RefinementUnit.create ~base:existing_annotation ())
+                (RefinementUnit.create ~base:(Annotation.create annotation) ())
+              && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
+              && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
+            in
+            match existing_annotation name with
+            (* Allow Anys [especially from placeholder stubs] to clobber *)
+            | Some _ when Type.is_any annotation ->
+                Value (Annotation.create annotation |> set_local ~name)
+            | Some existing_annotation when refinement_unnecessary existing_annotation ->
+                Value (set_local ~name existing_annotation)
+            (* Clarify Anys if possible *)
+            | Some existing_annotation
+              when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
+                Value (Annotation.create annotation |> set_local ~name)
+            | None -> Value resolution
+            | Some existing_annotation ->
+                let existing_type = Annotation.annotation existing_annotation in
+                let { consistent_with_boundary; _ } =
+                  partition existing_type ~boundary:annotation
+                in
+                if not (Type.is_unbound consistent_with_boundary) then
+                  Value (Annotation.create consistent_with_boundary |> set_local ~name)
+                else if
+                  GlobalResolution.less_or_equal
+                    global_resolution
+                    ~left:existing_type
+                    ~right:annotation
+                  || GlobalResolution.less_or_equal
+                       global_resolution
+                       ~left:annotation
+                       ~right:existing_type
+                then
+                  Value (Annotation.create annotation |> set_local ~name)
+                else
+                  Unreachable
+          in
+          resolution, errors
+      | ComparisonOperator
+          {
+            left =
+              {
+                Node.value =
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier "type"); _ };
+                      arguments = [{ Call.Argument.name = None; value }];
+                    };
+                _;
+              };
+            operator = ComparisonOperator.IsNot;
+            right = annotation_expression;
+          }
+      | ComparisonOperator
+          {
+            left =
+              {
+                Node.value =
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier "type"); _ };
+                      arguments = [{ Call.Argument.name = None; value }];
+                    };
+                _;
+              };
+            operator = ComparisonOperator.NotEquals;
+            right = annotation_expression;
+          }
+      | UnaryOperator
+          {
+            UnaryOperator.operator = UnaryOperator.Not;
+            operand =
+              {
+                Node.value =
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
+                      arguments =
+                        [
+                          { Call.Argument.name = None; value };
+                          { Call.Argument.name = None; value = annotation_expression };
+                        ];
+                    };
+                _;
+              };
+          } -> (
+          let expected = parse_refinement_annotation annotation_expression in
+          let contradiction =
+            if Type.contains_unknown expected || Type.is_any expected then
+              false
+            else
+              let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:value in
+              (not (Type.is_unbound resolved))
+              && (not (Type.contains_unknown resolved))
+              && (not (Type.is_any resolved))
+              && GlobalResolution.less_or_equal global_resolution ~left:resolved ~right:expected
+          in
+          let resolve ~name =
+            match Resolution.get_local_with_attributes resolution ~name with
+            | Some { annotation = previous_annotation; _ } ->
+                let { not_consistent_with_boundary; _ } =
+                  partition previous_annotation ~boundary:expected
+                in
+                not_consistent_with_boundary
+                >>| Annotation.create
+                >>| set_local ~name
+                |> Option.value ~default:resolution
+            | _ -> resolution
+          in
+          match contradiction, value with
+          | true, _ -> Unreachable, errors
+          | _, { Node.value = Name name; _ } when is_simple_name name ->
+              Value (resolve ~name), errors
+          | _ -> Value resolution, errors)
+      | Call
+          {
+            callee = { Node.value = Name (Name.Identifier "callable"); _ };
+            arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+          }
+        when is_simple_name name ->
+          let resolution =
+            match existing_annotation name with
+            | Some existing_annotation ->
+                let undefined =
+                  Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
+                in
+                let { consistent_with_boundary; _ } =
+                  partition (Annotation.annotation existing_annotation) ~boundary:undefined
+                in
+                if Type.equal consistent_with_boundary Type.Bottom then
+                  Annotation.create undefined |> set_local ~name
+                else
+                  Annotation.create consistent_with_boundary |> set_local ~name
+            | _ -> resolution
+          in
+          Value resolution, errors
+      | UnaryOperator
+          {
+            UnaryOperator.operator = UnaryOperator.Not;
+            operand =
+              {
+                Node.value =
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier "callable"); _ };
+                      arguments =
+                        [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+                    };
+                _;
+              };
+          }
+        when is_simple_name name ->
+          let resolution =
+            match existing_annotation name with
+            | Some existing_annotation ->
+                let { not_consistent_with_boundary; _ } =
+                  partition
+                    (Annotation.annotation existing_annotation)
+                    ~boundary:
+                      (Type.Callable.create
+                         ~parameters:Undefined
+                         ~annotation:Type.object_primitive
+                         ())
+                in
+                not_consistent_with_boundary
+                >>| Annotation.create
+                >>| set_local ~name
+                |> Option.value ~default:resolution
+            | _ -> resolution
+          in
+          Value resolution, errors
+      | Call
+          {
+            callee = { Node.value = Name (Name.Identifier "all"); _ };
+            arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+          }
+        when is_simple_name name ->
+          let resolution =
+            match Resolution.get_local_with_attributes resolution ~name with
+            | Some
+                {
+                  Annotation.annotation =
+                    Type.Parametric
+                      { name = parametric_name; parameters = [Single (Type.Union parameters)] };
+                  _;
+                } ->
+                let parameters =
+                  List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+                in
+                set_local
+                  ~name
+                  (Annotation.create
+                     (Type.parametric parametric_name [Single (Type.union parameters)]))
+            | _ -> resolution
+          in
+          Value resolution, errors
+      | Name name when is_simple_name name -> (
+          match existing_annotation name with
+          | Some { Annotation.annotation = Type.NoneType; _ } -> Unreachable, errors
+          | Some ({ Annotation.annotation = Type.Union parameters; _ } as annotation) ->
+              let refined_annotation =
+                List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+              in
+              let resolution =
+                set_local
+                  ~name
+                  { annotation with Annotation.annotation = Type.union refined_annotation }
+              in
+              Value resolution, errors
+          | _ -> Value resolution, errors)
+      | BooleanOperator { BooleanOperator.left; operator; right } -> (
+          let update resolution expression =
+            forward_assert ~resolution expression
+            |> function
+            | Value post_resolution, _ -> post_resolution
+            | Unreachable, _ -> resolution
+          in
+          match operator with
+          | BooleanOperator.And ->
+              let left_state, _ = forward_assert ~resolution left in
+              let right_state =
+                left_state
+                |> function
+                | Unreachable -> Unreachable
+                | Value resolution -> forward_assert ~resolution right |> fst
+              in
+              let merge_resolutions left_resolution right_resolution =
+                let {
+                  Resolution.annotations = left_annotations;
+                  temporary_annotations = left_temporary_annotations;
+                }
+                  =
+                  Resolution.annotation_store left_resolution
+                in
+                let {
+                  Resolution.annotations = right_annotations;
+                  temporary_annotations = right_temporary_annotations;
+                }
+                  =
+                  Resolution.annotation_store right_resolution
+                in
+                let merge ~key:_ = function
+                  | `Both (left, right) -> Some (RefinementUnit.meet ~global_resolution left right)
+                  | `Left left -> Some left
+                  | `Right right -> Some right
+                in
+                let annotations = Map.merge ~f:merge left_annotations right_annotations in
+                let temporary_annotations =
+                  Map.merge ~f:merge left_temporary_annotations right_temporary_annotations
+                in
+                let annotation_store = { Resolution.annotations; temporary_annotations } in
+                Resolution.with_annotation_store left_resolution ~annotation_store
+              in
+              let state =
+                match left_state, right_state with
+                | Unreachable, _ -> Unreachable
+                | _, Unreachable -> Unreachable
+                | Value left_resolution, Value right_resolution ->
+                    Value (merge_resolutions left_resolution right_resolution)
+              in
+              state, errors
+          | BooleanOperator.Or ->
+              let left_resolution = update resolution left in
+              let right_resolution =
+                update resolution (normalize (negate left))
+                |> fun resolution -> update resolution right
+              in
+              Value (join_resolutions left_resolution right_resolution), errors)
+      | ComparisonOperator
+          {
+            ComparisonOperator.left;
+            operator = ComparisonOperator.IsNot;
+            right = { Node.value = Constant Constant.NoneLiteral; _ };
+          } ->
+          forward_assert ~resolution left
+      | ComparisonOperator
+          {
+            ComparisonOperator.left = { Node.value = Name name; _ };
+            operator = ComparisonOperator.Is;
+            right;
+          }
+        when is_simple_name name -> (
+          let { Resolved.resolved = refined; _ } =
+            forward_expression ~resolution ~expression:right
+          in
+          let refined = Annotation.create refined in
+          match existing_annotation name with
+          | Some previous ->
+              if
+                RefinementUnit.less_or_equal
+                  ~global_resolution
+                  (RefinementUnit.create ~base:refined ())
+                  (RefinementUnit.create ~base:previous ())
+              then
+                Value (set_local ~name refined), errors
+              else
+                (* Keeping previous state, since it is more refined. *)
+                (* TODO: once T38750424 is done, we should really return bottom if previous is not
+                   <= refined and refined is not <= previous, as this is an obvious contradiction. *)
+                Value resolution, errors
+          | None -> Value resolution, errors)
+      | ComparisonOperator
+          {
+            ComparisonOperator.left = { Node.value = Name name; _ };
+            operator = ComparisonOperator.In;
+            right;
+          }
+        when is_simple_name name -> (
+          let reference = name_to_reference_exn name in
+          let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:right in
+          match
+            GlobalResolution.extract_type_parameters
+              global_resolution
+              ~target:"typing.Iterable"
+              ~source:resolved
+          with
+          | Some [element_type] -> (
+              let annotation =
+                Resolution.get_local_with_attributes ~global_fallback:false ~name resolution
+              in
+              match annotation with
+              | Some previous ->
+                  let refined =
+                    if Annotation.is_immutable previous then
+                      Annotation.create_immutable
+                        ~original:(Some (Annotation.original previous))
+                        element_type
+                    else
+                      Annotation.create element_type
+                  in
+                  if
+                    RefinementUnit.less_or_equal
+                      ~global_resolution
+                      (RefinementUnit.create ~base:refined ())
+                      (RefinementUnit.create ~base:previous ())
+                  then
+                    Value (set_local ~name refined), errors
+                  else (* Keeping previous state, since it is more refined. *)
+                    Value resolution, errors
+              | None when not (Resolution.is_global resolution ~reference) ->
+                  let resolution = set_local ~name (Annotation.create element_type) in
+                  Value resolution, errors
+              | _ -> Value resolution, errors)
+          | _ -> Value resolution, errors)
+      | ComparisonOperator
+          {
+            ComparisonOperator.left = { Node.value = Constant Constant.NoneLiteral; _ };
+            operator = ComparisonOperator.NotIn;
+            right = { Node.value = Name name; _ };
+          }
+        when is_simple_name name -> (
+          let annotation =
+            Resolution.get_local_with_attributes ~global_fallback:false ~name resolution
+          in
+          match annotation with
+          | Some annotation -> (
+              match Annotation.annotation annotation with
+              | Type.Parametric
+                  {
+                    name = "list";
+                    parameters =
+                      [
+                        Single (Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]));
+                      ];
+                  } ->
+                  let resolution =
+                    set_local ~name { annotation with Annotation.annotation = Type.list parameter }
+                  in
+                  Value resolution, errors
+              | _ -> Value resolution, errors)
+          | _ -> Value resolution, errors)
+      | WalrusOperator { target; _ } ->
+          let resolution, _ = forward_assert ~resolution target in
+          resolution, errors
+      | Call
+          {
+            arguments = { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _;
+            _;
+          }
+        when is_simple_name name -> (
+          let { Annotation.annotation = callee_type; _ } = resolve_expression ~resolution test in
+          match Type.typeguard_annotation callee_type with
+          | Some guard_type ->
+              let resolution = set_local ~name (Annotation.create guard_type) in
+              Value resolution, errors
+          | None -> Value resolution, errors)
+      | _ -> Value resolution, errors
+    in
+    (* Ignore type errors from the [assert (not foo)] in the else-branch because it's the same [foo]
+       as in the true-branch. This duplication of errors is normally ok because the errors get
+       deduplicated in the error map and give one final error. However, it leads to two separate
+       errors for [a < b] and [a >= b] (negation of <) since their error messages are different. So,
+       ignore all else-branch assertion errors. *)
+    let errors =
+      match origin with
+      | Assert.Origin.If { true_branch = false; _ }
+      | Assert.Origin.While { true_branch = false; _ } ->
+          []
+      | _ -> errors
+    in
+    resolution, errors
 
 
   and forward_statement ~resolution ~statement:{ Node.location; value } =
@@ -5093,594 +5657,7 @@ module State (Context : Context) = struct
                 ~expression:(Some value)
             in
             Value resolution, errors)
-    | Assert { Assert.test; origin; _ } ->
-        let resolution, errors =
-          let resolution, errors =
-            forward_expression ~resolution ~expression:test
-            |> fun { Resolved.resolution; errors; _ } -> resolution, errors
-          in
-          let parse_refinement_annotation annotation =
-            let parse_meta annotation =
-              match parse_and_check_annotation ~resolution annotation |> snd with
-              | Type.Top -> (
-                  (* Try to resolve meta-types given as expressions. *)
-                  match resolve_expression_type ~resolution annotation with
-                  | annotation when Type.is_meta annotation -> Type.single_parameter annotation
-                  | Type.Tuple (Concrete elements) when List.for_all ~f:Type.is_meta elements ->
-                      List.map ~f:Type.single_parameter elements |> Type.union
-                  | Type.Tuple (Concatenation concatenation) ->
-                      Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
-                        concatenation
-                      >>= (fun element ->
-                            if Type.is_meta element then
-                              Some (Type.single_parameter element)
-                            else
-                              None)
-                      |> Option.value ~default:Type.Top
-                  | _ -> Type.Top)
-              | annotation -> annotation
-            in
-            match annotation with
-            | { Node.value = Expression.Tuple elements; _ } ->
-                List.map ~f:parse_meta elements |> fun elements -> Type.Union elements
-            | _ -> parse_meta annotation
-          in
-          let partition annotation ~boundary =
-            let consistent_with_boundary, not_consistent_with_boundary =
-              let unfolded_annotation =
-                match annotation with
-                | Type.RecursiveType recursive_type ->
-                    Type.RecursiveType.unfold_recursive_type recursive_type
-                | _ -> annotation
-              in
-              let extract_union_members = function
-                | Type.Union parameters -> parameters
-                | annotation -> [annotation]
-              in
-              extract_union_members unfolded_annotation
-              |> List.partition_tf ~f:(fun left ->
-                     Resolution.is_consistent_with resolution left boundary ~expression:None)
-            in
-            let not_consistent_with_boundary =
-              if List.is_empty not_consistent_with_boundary then
-                None
-              else
-                Some (Type.union not_consistent_with_boundary)
-            in
-            let consistent_with_boundary = Type.union consistent_with_boundary in
-            { consistent_with_boundary; not_consistent_with_boundary }
-          in
-          let is_temporary_refinement name =
-            let rec refinable_annotation name =
-              match
-                Resolution.get_local_with_attributes ~global_fallback:false ~name resolution, name
-              with
-              | Some local_annotation, _ -> Some local_annotation
-              | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
-                  let attribute =
-                    refinable_annotation base
-                    >>| Annotation.annotation
-                    >>= fun parent ->
-                    Type.split parent
-                    |> fst
-                    |> Type.primitive_name
-                    >>= GlobalResolution.attribute_from_class_name
-                          ~resolution:global_resolution
-                          ~name:attribute
-                          ~instantiated:parent
-                          ~transitive:true
-                  in
-                  match
-                    ( attribute >>| AnnotatedAttribute.visibility,
-                      attribute >>| AnnotatedAttribute.defined,
-                      attribute >>| AnnotatedAttribute.annotation )
-                  with
-                  | Some (ReadOnly (Refinable _)), Some true, Some annotation -> Some annotation
-                  | _ -> None)
-              | _ -> None
-            in
-            Option.is_none (refinable_annotation name)
-          in
-          let rec existing_annotation name =
-            match
-              Resolution.get_local_with_attributes ~global_fallback:true ~name resolution, name
-            with
-            | Some annotation, _ -> Some annotation
-            | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
-                let attribute =
-                  existing_annotation base
-                  >>| Annotation.annotation
-                  >>= fun parent ->
-                  Type.split parent
-                  |> fst
-                  |> Type.primitive_name
-                  >>= GlobalResolution.attribute_from_class_name
-                        ~resolution:global_resolution
-                        ~name:attribute
-                        ~instantiated:parent
-                        ~transitive:true
-                in
-                match attribute with
-                | Some attribute when AnnotatedAttribute.defined attribute ->
-                    Some (AnnotatedAttribute.annotation attribute)
-                | _ -> None)
-            | _ -> None
-          in
-          let set_local ~name annotation =
-            Resolution.set_local_with_attributes
-              ~temporary:(is_temporary_refinement name)
-              resolution
-              ~name
-              ~annotation
-          in
-          match Node.value test with
-          | Constant Constant.False ->
-              (* Explicit bottom. *)
-              Unreachable, errors
-          | ComparisonOperator
-              {
-                left =
-                  {
-                    Node.value =
-                      Call
-                        {
-                          callee = { Node.value = Name (Name.Identifier "type"); _ };
-                          arguments =
-                            [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-                        };
-                    _;
-                  };
-                operator = ComparisonOperator.Is;
-                right = annotation;
-              }
-          | ComparisonOperator
-              {
-                left =
-                  {
-                    Node.value =
-                      Call
-                        {
-                          callee = { Node.value = Name (Name.Identifier "type"); _ };
-                          arguments =
-                            [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-                        };
-                    _;
-                  };
-                operator = ComparisonOperator.Equals;
-                right = annotation;
-              }
-          | Call
-              {
-                callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
-                arguments =
-                  [
-                    { Call.Argument.name = None; value = { Node.value = Name name; _ } };
-                    { Call.Argument.name = None; value = annotation };
-                  ];
-              }
-            when is_simple_name name ->
-              let annotation = parse_refinement_annotation annotation in
-              let resolution =
-                let refinement_unnecessary existing_annotation =
-                  RefinementUnit.less_or_equal
-                    ~global_resolution
-                    (RefinementUnit.create ~base:existing_annotation ())
-                    (RefinementUnit.create ~base:(Annotation.create annotation) ())
-                  && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
-                  && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
-                in
-                match existing_annotation name with
-                (* Allow Anys [especially from placeholder stubs] to clobber *)
-                | Some _ when Type.is_any annotation ->
-                    Value (Annotation.create annotation |> set_local ~name)
-                | Some existing_annotation when refinement_unnecessary existing_annotation ->
-                    Value (set_local ~name existing_annotation)
-                (* Clarify Anys if possible *)
-                | Some existing_annotation
-                  when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
-                    Value (Annotation.create annotation |> set_local ~name)
-                | None -> Value resolution
-                | Some existing_annotation ->
-                    let existing_type = Annotation.annotation existing_annotation in
-                    let { consistent_with_boundary; _ } =
-                      partition existing_type ~boundary:annotation
-                    in
-                    if not (Type.is_unbound consistent_with_boundary) then
-                      Value (Annotation.create consistent_with_boundary |> set_local ~name)
-                    else if
-                      GlobalResolution.less_or_equal
-                        global_resolution
-                        ~left:existing_type
-                        ~right:annotation
-                      || GlobalResolution.less_or_equal
-                           global_resolution
-                           ~left:annotation
-                           ~right:existing_type
-                    then
-                      Value (Annotation.create annotation |> set_local ~name)
-                    else
-                      Unreachable
-              in
-              resolution, errors
-          | ComparisonOperator
-              {
-                left =
-                  {
-                    Node.value =
-                      Call
-                        {
-                          callee = { Node.value = Name (Name.Identifier "type"); _ };
-                          arguments = [{ Call.Argument.name = None; value }];
-                        };
-                    _;
-                  };
-                operator = ComparisonOperator.IsNot;
-                right = annotation_expression;
-              }
-          | ComparisonOperator
-              {
-                left =
-                  {
-                    Node.value =
-                      Call
-                        {
-                          callee = { Node.value = Name (Name.Identifier "type"); _ };
-                          arguments = [{ Call.Argument.name = None; value }];
-                        };
-                    _;
-                  };
-                operator = ComparisonOperator.NotEquals;
-                right = annotation_expression;
-              }
-          | UnaryOperator
-              {
-                UnaryOperator.operator = UnaryOperator.Not;
-                operand =
-                  {
-                    Node.value =
-                      Call
-                        {
-                          callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
-                          arguments =
-                            [
-                              { Call.Argument.name = None; value };
-                              { Call.Argument.name = None; value = annotation_expression };
-                            ];
-                        };
-                    _;
-                  };
-              } -> (
-              let expected = parse_refinement_annotation annotation_expression in
-              let contradiction =
-                if Type.contains_unknown expected || Type.is_any expected then
-                  false
-                else
-                  let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:value in
-                  (not (Type.is_unbound resolved))
-                  && (not (Type.contains_unknown resolved))
-                  && (not (Type.is_any resolved))
-                  && GlobalResolution.less_or_equal global_resolution ~left:resolved ~right:expected
-              in
-              let resolve ~name =
-                match Resolution.get_local_with_attributes resolution ~name with
-                | Some { annotation = previous_annotation; _ } ->
-                    let { not_consistent_with_boundary; _ } =
-                      partition previous_annotation ~boundary:expected
-                    in
-                    not_consistent_with_boundary
-                    >>| Annotation.create
-                    >>| set_local ~name
-                    |> Option.value ~default:resolution
-                | _ -> resolution
-              in
-              match contradiction, value with
-              | true, _ -> Unreachable, errors
-              | _, { Node.value = Name name; _ } when is_simple_name name ->
-                  Value (resolve ~name), errors
-              | _ -> Value resolution, errors)
-          | Call
-              {
-                callee = { Node.value = Name (Name.Identifier "callable"); _ };
-                arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-              }
-            when is_simple_name name ->
-              let resolution =
-                match existing_annotation name with
-                | Some existing_annotation ->
-                    let undefined =
-                      Type.Callable.create
-                        ~parameters:Undefined
-                        ~annotation:Type.object_primitive
-                        ()
-                    in
-                    let { consistent_with_boundary; _ } =
-                      partition (Annotation.annotation existing_annotation) ~boundary:undefined
-                    in
-                    if Type.equal consistent_with_boundary Type.Bottom then
-                      Annotation.create undefined |> set_local ~name
-                    else
-                      Annotation.create consistent_with_boundary |> set_local ~name
-                | _ -> resolution
-              in
-              Value resolution, errors
-          | UnaryOperator
-              {
-                UnaryOperator.operator = UnaryOperator.Not;
-                operand =
-                  {
-                    Node.value =
-                      Call
-                        {
-                          callee = { Node.value = Name (Name.Identifier "callable"); _ };
-                          arguments =
-                            [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-                        };
-                    _;
-                  };
-              }
-            when is_simple_name name ->
-              let resolution =
-                match existing_annotation name with
-                | Some existing_annotation ->
-                    let { not_consistent_with_boundary; _ } =
-                      partition
-                        (Annotation.annotation existing_annotation)
-                        ~boundary:
-                          (Type.Callable.create
-                             ~parameters:Undefined
-                             ~annotation:Type.object_primitive
-                             ())
-                    in
-                    not_consistent_with_boundary
-                    >>| Annotation.create
-                    >>| set_local ~name
-                    |> Option.value ~default:resolution
-                | _ -> resolution
-              in
-              Value resolution, errors
-          | Call
-              {
-                callee = { Node.value = Name (Name.Identifier "all"); _ };
-                arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-              }
-            when is_simple_name name ->
-              let resolution =
-                match Resolution.get_local_with_attributes resolution ~name with
-                | Some
-                    {
-                      Annotation.annotation =
-                        Type.Parametric
-                          { name = parametric_name; parameters = [Single (Type.Union parameters)] };
-                      _;
-                    } ->
-                    let parameters =
-                      List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
-                    in
-                    set_local
-                      ~name
-                      (Annotation.create
-                         (Type.parametric parametric_name [Single (Type.union parameters)]))
-                | _ -> resolution
-              in
-              Value resolution, errors
-          | Name name when is_simple_name name -> (
-              match existing_annotation name with
-              | Some { Annotation.annotation = Type.NoneType; _ } -> Unreachable, errors
-              | Some ({ Annotation.annotation = Type.Union parameters; _ } as annotation) ->
-                  let refined_annotation =
-                    List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
-                  in
-                  let resolution =
-                    set_local
-                      ~name
-                      { annotation with Annotation.annotation = Type.union refined_annotation }
-                  in
-                  Value resolution, errors
-              | _ -> Value resolution, errors)
-          | BooleanOperator { BooleanOperator.left; operator; right } -> (
-              let update resolution expression =
-                forward_statement ~resolution ~statement:(Statement.assume expression)
-                |> function
-                | Value post_resolution, _ -> post_resolution
-                | Unreachable, _ -> resolution
-              in
-              match operator with
-              | BooleanOperator.And ->
-                  let left_state =
-                    forward_statement ~resolution ~statement:(Statement.assume left) |> fst
-                  in
-                  let right_state =
-                    left_state
-                    |> function
-                    | Unreachable -> Unreachable
-                    | Value resolution ->
-                        forward_statement ~resolution ~statement:(Statement.assume right) |> fst
-                  in
-                  let merge_resolutions left_resolution right_resolution =
-                    let {
-                      Resolution.annotations = left_annotations;
-                      temporary_annotations = left_temporary_annotations;
-                    }
-                      =
-                      Resolution.annotation_store left_resolution
-                    in
-                    let {
-                      Resolution.annotations = right_annotations;
-                      temporary_annotations = right_temporary_annotations;
-                    }
-                      =
-                      Resolution.annotation_store right_resolution
-                    in
-                    let merge ~key:_ = function
-                      | `Both (left, right) ->
-                          Some (RefinementUnit.meet ~global_resolution left right)
-                      | `Left left -> Some left
-                      | `Right right -> Some right
-                    in
-                    let annotations = Map.merge ~f:merge left_annotations right_annotations in
-                    let temporary_annotations =
-                      Map.merge ~f:merge left_temporary_annotations right_temporary_annotations
-                    in
-                    let annotation_store = { Resolution.annotations; temporary_annotations } in
-                    Resolution.with_annotation_store left_resolution ~annotation_store
-                  in
-                  let state =
-                    match left_state, right_state with
-                    | Unreachable, _ -> Unreachable
-                    | _, Unreachable -> Unreachable
-                    | Value left_resolution, Value right_resolution ->
-                        Value (merge_resolutions left_resolution right_resolution)
-                  in
-                  state, errors
-              | BooleanOperator.Or ->
-                  let left_resolution = update resolution left in
-                  let right_resolution =
-                    update resolution (normalize (negate left))
-                    |> fun resolution -> update resolution right
-                  in
-                  Value (join_resolutions left_resolution right_resolution), errors)
-          | ComparisonOperator
-              {
-                ComparisonOperator.left;
-                operator = ComparisonOperator.IsNot;
-                right = { Node.value = Constant Constant.NoneLiteral; _ };
-              } ->
-              forward_statement ~resolution ~statement:(Statement.assume left)
-          | ComparisonOperator
-              {
-                ComparisonOperator.left = { Node.value = Name name; _ };
-                operator = ComparisonOperator.Is;
-                right;
-              }
-            when is_simple_name name -> (
-              let { Resolved.resolved = refined; _ } =
-                forward_expression ~resolution ~expression:right
-              in
-              let refined = Annotation.create refined in
-              match existing_annotation name with
-              | Some previous ->
-                  if
-                    RefinementUnit.less_or_equal
-                      ~global_resolution
-                      (RefinementUnit.create ~base:refined ())
-                      (RefinementUnit.create ~base:previous ())
-                  then
-                    Value (set_local ~name refined), errors
-                  else
-                    (* Keeping previous state, since it is more refined. *)
-                    (* TODO: once T38750424 is done, we should really return bottom if previous is
-                       not <= refined and refined is not <= previous, as this is an obvious
-                       contradiction. *)
-                    Value resolution, errors
-              | None -> Value resolution, errors)
-          | ComparisonOperator
-              {
-                ComparisonOperator.left = { Node.value = Name name; _ };
-                operator = ComparisonOperator.In;
-                right;
-              }
-            when is_simple_name name -> (
-              let reference = name_to_reference_exn name in
-              let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:right in
-              match
-                GlobalResolution.extract_type_parameters
-                  global_resolution
-                  ~target:"typing.Iterable"
-                  ~source:resolved
-              with
-              | Some [element_type] -> (
-                  let annotation =
-                    Resolution.get_local_with_attributes ~global_fallback:false ~name resolution
-                  in
-                  match annotation with
-                  | Some previous ->
-                      let refined =
-                        if Annotation.is_immutable previous then
-                          Annotation.create_immutable
-                            ~original:(Some (Annotation.original previous))
-                            element_type
-                        else
-                          Annotation.create element_type
-                      in
-                      if
-                        RefinementUnit.less_or_equal
-                          ~global_resolution
-                          (RefinementUnit.create ~base:refined ())
-                          (RefinementUnit.create ~base:previous ())
-                      then
-                        Value (set_local ~name refined), errors
-                      else (* Keeping previous state, since it is more refined. *)
-                        Value resolution, errors
-                  | None when not (Resolution.is_global resolution ~reference) ->
-                      let resolution = set_local ~name (Annotation.create element_type) in
-                      Value resolution, errors
-                  | _ -> Value resolution, errors)
-              | _ -> Value resolution, errors)
-          | ComparisonOperator
-              {
-                ComparisonOperator.left = { Node.value = Constant Constant.NoneLiteral; _ };
-                operator = ComparisonOperator.NotIn;
-                right = { Node.value = Name name; _ };
-              }
-            when is_simple_name name -> (
-              let annotation =
-                Resolution.get_local_with_attributes ~global_fallback:false ~name resolution
-              in
-              match annotation with
-              | Some annotation -> (
-                  match Annotation.annotation annotation with
-                  | Type.Parametric
-                      {
-                        name = "list";
-                        parameters =
-                          [
-                            Single
-                              (Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]));
-                          ];
-                      } ->
-                      let resolution =
-                        set_local
-                          ~name
-                          { annotation with Annotation.annotation = Type.list parameter }
-                      in
-                      Value resolution, errors
-                  | _ -> Value resolution, errors)
-              | _ -> Value resolution, errors)
-          | WalrusOperator { target; _ } ->
-              let resolution, _ =
-                forward_statement ~resolution ~statement:(Statement.assume target)
-              in
-              resolution, errors
-          | Call
-              {
-                arguments =
-                  { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _;
-                _;
-              }
-            when is_simple_name name -> (
-              let { Annotation.annotation = callee_type; _ } =
-                resolve_expression ~resolution test
-              in
-              match Type.typeguard_annotation callee_type with
-              | Some guard_type ->
-                  let resolution = set_local ~name (Annotation.create guard_type) in
-                  Value resolution, errors
-              | None -> Value resolution, errors)
-          | _ -> Value resolution, errors
-        in
-        (* Ignore type errors from the [assert (not foo)] in the else-branch because it's the same
-           [foo] as in the true-branch. This duplication of errors is normally ok because the errors
-           get deduplicated in the error map and give one final error. However, it leads to two
-           separate errors for [a < b] and [a >= b] (negation of <) since their error messages are
-           different. So, ignore all else-branch assertion errors. *)
-        let errors =
-          match origin with
-          | Assert.Origin.If { true_branch = false; _ }
-          | Assert.Origin.While { true_branch = false; _ } ->
-              []
-          | _ -> errors
-        in
-        resolution, errors
+    | Assert { Assert.test; origin; _ } -> forward_assert ~resolution ~origin test
     | Delete expressions ->
         let process_expression (resolution, errors_sofar) expression =
           let { Resolved.resolution; errors; _ } = forward_expression ~resolution ~expression in
@@ -5699,7 +5676,7 @@ module State (Context : Context) = struct
     | Expression
         { Node.value = Call { callee; arguments = { Call.Argument.value = test; _ } :: _ }; _ }
       when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->
-        forward_statement ~resolution ~statement:(Statement.assume test)
+        forward_assert ~resolution test
     | Expression expression -> (
         match expression with
         | { Node.value = Expression.Yield yielded; _ } ->
