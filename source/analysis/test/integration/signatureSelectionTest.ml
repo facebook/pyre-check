@@ -634,10 +634,8 @@ let test_check_function_parameter_errors context =
         optional_str_to_int(input and input.attribute)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[str]` for 1st positional only parameter to call \
-         `optional_str_to_int` "
-      ^ "but got `typing.Optional[int]`.";
+      "Incompatible parameter type [6]: Expected `typing.Optional[str]` for 1st positional only \
+       parameter to call `optional_str_to_int` but got `typing.Union[None, Foo, int]`.";
     ];
   assert_type_errors
     {|

@@ -2490,19 +2490,6 @@ module State (Context : Context) = struct
                   (List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter)))
               in
               GlobalResolution.join global_resolution refined_left resolved_right
-          | Type.Union [Type.NoneType; integer], resolved_right, BooleanOperator.And
-            when Type.equal integer Type.integer ->
-              (* Zero is falsy. *)
-              Type.optional
-                (GlobalResolution.join global_resolution (Type.literal_integer 0) resolved_right)
-          | Type.Union [integer; Type.NoneType], resolved_right, BooleanOperator.And
-            when Type.equal integer Type.integer ->
-              Type.optional
-                (GlobalResolution.join global_resolution (Type.literal_integer 0) resolved_right)
-          | ( Type.Union ([Type.NoneType; _] | [_; Type.NoneType]),
-              resolved_right,
-              BooleanOperator.And ) ->
-              Type.optional resolved_right
           | resolved_left, resolved_right, _ ->
               GlobalResolution.join global_resolution resolved_left resolved_right
         in
