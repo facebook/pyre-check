@@ -1125,7 +1125,8 @@ let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filen
   let number_of_lines = location.stop.line - location.start.line + 1 in
   Statistics.performance
     ~flush:false
-    ~randomly_log_every:1
+    ~randomly_log_every:1000
+    ~always_log_time_threshold:0.050 (* 20 milliseconds *)
     ~section:`Infer
     ~name:"SingleDefineInfer"
     ~timer
