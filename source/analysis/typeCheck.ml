@@ -2458,43 +2458,77 @@ module State (Context : Context) = struct
                 in
                 { resolution; resolved = Type.Any; errors; resolved_annotation = None; base = None }
             ))
-    | BooleanOperator { BooleanOperator.left; operator; right } ->
-        let assume =
+    | BooleanOperator { BooleanOperator.left; operator; right } -> (
+        let {
+          Resolved.resolution = resolution_left;
+          resolved = resolved_left;
+          errors = errors_left;
+          _;
+        }
+          =
+          forward_expression ~resolution ~expression:left
+        in
+        let left_assume =
           match operator with
           | BooleanOperator.And -> left
           | BooleanOperator.Or -> normalize (negate left)
         in
-        let { Resolved.resolution = resolution_left; resolved = resolved_left; _ } =
-          forward_expression ~resolution ~expression:left
-        in
-        let resolution_right, resolved_right, errors =
-          let resolution, errors_left =
-            let post_resolution, errors = forward_assert ~resolution assume in
-            resolution_or_default post_resolution ~default:resolution, errors
-          in
-          let { Resolved.resolution; resolved; errors = errors_right; _ } =
-            forward_expression ~resolution ~expression:right
-          in
-          resolution, resolved, List.append errors_left errors_right
-        in
-        let resolved =
-          match resolved_left, resolved_right, operator with
-          | resolved_left, resolved_right, BooleanOperator.Or when Type.is_falsy resolved_left ->
-              (* Left side is falsy *)
-              resolved_right
-          | Type.Union parameters, resolved_right, BooleanOperator.Or
-            when List.exists parameters ~f:Type.is_none ->
-              (* None can be refined with `or` *)
-              let refined_left =
-                Type.union
-                  (List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter)))
+        match refine_resolution_for_assert ~resolution:resolution_left left_assume with
+        | Unreachable ->
+            {
+              Resolved.resolution = resolution_left;
+              resolved = resolved_left;
+              errors = errors_left;
+              resolved_annotation = None;
+              base = None;
+            }
+        | Value refined_resolution -> (
+            let forward_right resolved_left =
+              let {
+                Resolved.resolution = resolution_right;
+                resolved = resolved_right;
+                errors = errors_right;
+                _;
+              }
+                =
+                forward_expression ~resolution:refined_resolution ~expression:right
               in
-              GlobalResolution.join global_resolution refined_left resolved_right
-          | resolved_left, resolved_right, _ ->
-              GlobalResolution.join global_resolution resolved_left resolved_right
-        in
-        let resolution = join_resolutions resolution_left resolution_right in
-        { resolution; errors; resolved; resolved_annotation = None; base = None }
+              let resolved =
+                match resolved_left with
+                | None -> resolved_right
+                | Some resolved_left ->
+                    GlobalResolution.join global_resolution resolved_left resolved_right
+              in
+              {
+                Resolved.resolution = join_resolutions resolution_left resolution_right;
+                errors = List.append errors_left errors_right;
+                resolved;
+                resolved_annotation = None;
+                base = None;
+              }
+            in
+            match resolved_left, operator with
+            | resolved_left, BooleanOperator.And when Type.is_falsy resolved_left ->
+                (* false_expression and b has the same type as false_expression *)
+                {
+                  resolution = resolution_left;
+                  errors = errors_left;
+                  resolved = resolved_left;
+                  resolved_annotation = None;
+                  base = None;
+                }
+            | resolved_left, BooleanOperator.Or when Type.is_falsy resolved_left ->
+                (* false_expression or b has the same type as b *)
+                forward_right None
+            | Type.Union parameters, BooleanOperator.Or ->
+                (* If type_of(a) = Union[A, None], then type_of(a or b) = Union[A, type_of(b) under
+                   assumption type_of(a) = None] *)
+                let not_none_left =
+                  Type.union
+                    (List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter)))
+                in
+                forward_right (Some not_none_left)
+            | _, _ -> forward_right (Some resolved_left)))
     | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments } -> (
         let metadata =
           Resolution.parent resolution
