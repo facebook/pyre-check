@@ -779,7 +779,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        *   $result = fn( *all, **all)
        * else:
        *   $result = fn
-       * hof(q, fn, x, y)
+       * hof(q, $result, x, y)
        *)
       let ( lambda_index,
             {
