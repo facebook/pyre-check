@@ -3722,23 +3722,27 @@ module State (Context : Context) = struct
         in
         { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
     | Ternary { Ternary.target; test; alternative } ->
+        let test_errors =
+          let { Resolved.errors; _ } = forward_expression ~resolution ~expression:test in
+          errors
+        in
         let target_resolved, target_errors =
-          forward_assert ~resolution test
-          |> fun (post_resolution, test_errors) ->
+          let post_resolution = refine_resolution_for_assert ~resolution test in
           let resolution = resolution_or_default post_resolution ~default:resolution in
           let { Resolved.resolved; errors; _ } =
             forward_expression ~resolution ~expression:target
           in
-          resolved, List.append test_errors errors
+          resolved, errors
         in
         let alternative_resolved, alternative_errors =
-          forward_assert ~resolution (negate test)
-          |> fun (post_resolution, test_errors) ->
+          let post_resolution =
+            refine_resolution_for_assert ~resolution (normalize (negate test))
+          in
           let resolution = resolution_or_default post_resolution ~default:resolution in
           let { Resolved.resolved; errors; _ } =
             forward_expression ~resolution ~expression:alternative
           in
-          resolved, List.append test_errors errors
+          resolved, errors
         in
         let resolved =
           (* Joining Literals as their union is currently too expensive, so we do it only for
@@ -3754,7 +3758,7 @@ module State (Context : Context) = struct
               Type.union [target_resolved; alternative_resolved]
           | _ -> GlobalResolution.join global_resolution target_resolved alternative_resolved
         in
-        let errors = List.append target_errors alternative_errors in
+        let errors = List.concat [test_errors; target_errors; alternative_errors] in
         (* The resolution is local to the ternary expression and should not be propagated out. *)
         { resolution; errors; resolved; resolved_annotation = None; base = None }
     | Tuple elements ->
