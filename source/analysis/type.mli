@@ -713,6 +713,8 @@ val is_union : t -> bool
 
 val is_falsy : t -> bool
 
+val is_truthy : t -> bool
+
 val contains_any : t -> bool
 
 val contains_unknown : t -> bool

@@ -1943,6 +1943,20 @@ let rec is_falsy = function
   | _ -> false
 
 
+let rec is_truthy = function
+  | Literal (Boolean true)
+  | Callable _ ->
+      true
+  | Literal (Integer i) when not (Int.equal i 0) -> true
+  | Literal (String (LiteralValue value))
+  | Literal (Bytes value)
+    when not (String.is_empty value) ->
+      true
+  | Annotated annotated -> is_truthy annotated
+  | Union types -> List.for_all types ~f:is_truthy
+  | _ -> false
+
+
 let reverse_substitute name =
   match name with
   | "collections.defaultdict" -> "typing.DefaultDict"

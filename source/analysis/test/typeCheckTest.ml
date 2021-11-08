@@ -516,10 +516,10 @@ let test_forward_expression context =
   assert_forward "await undefined" Type.Any;
 
   (* Boolean operator. *)
-  assert_forward "1 or 'string'" (Type.union [Type.integer; Type.string]);
-  assert_forward "1 and 'string'" (Type.union [Type.integer; Type.string]);
+  assert_forward "1 or 'string'" (Type.literal_integer 1);
+  assert_forward "1 and 'string'" (Type.literal_string "string");
   assert_forward "undefined or 1" Type.Top;
-  assert_forward "1 or undefined" Type.Top;
+  assert_forward "1 or undefined" (Type.literal_integer 1);
   assert_forward "undefined and undefined" Type.Top;
   assert_forward
     ~precondition:["y", Type.string]
@@ -571,11 +571,37 @@ let test_forward_expression context =
     ~postcondition:["x", Type.union [Type.NoneType; Type.literal_integer 0]; "y", Type.string]
     "x or y"
     Type.string;
+  assert_forward
+    ~precondition:["y", Type.string]
+    ~postcondition:["y", Type.string]
+    "1 and y"
+    Type.string;
+  assert_forward
+    ~precondition:["y", Type.string]
+    ~postcondition:["y", Type.string]
+    "1 and y"
+    Type.string;
+  assert_forward
+    ~precondition:["y", Type.integer]
+    ~postcondition:["y", Type.integer]
+    "'foo' and y"
+    Type.integer;
+  assert_forward
+    ~precondition:["y", Type.integer]
+    ~postcondition:["y", Type.integer]
+    "b'foo' and y"
+    Type.integer;
+  assert_forward
+    ~precondition:
+      ["x", Type.union [Type.literal_integer 1; Type.literal_integer 2]; "y", Type.string]
+    ~postcondition:
+      ["x", Type.union [Type.literal_integer 1; Type.literal_integer 2]; "y", Type.string]
+    "x and y"
+    Type.string;
   let assert_optional_forward ?(postcondition = ["x", Type.optional Type.integer]) =
     assert_forward ~precondition:["x", Type.optional Type.integer] ~postcondition
   in
   assert_optional_forward "x or 1" Type.integer;
-  assert_optional_forward "1 or x" (Type.optional Type.integer);
   assert_optional_forward "x or x" (Type.optional Type.integer);
   assert_optional_forward "x and 1" (Type.optional Type.integer);
   assert_optional_forward "1 and x" (Type.optional Type.integer);

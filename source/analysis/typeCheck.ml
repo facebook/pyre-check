@@ -2517,8 +2517,20 @@ module State (Context : Context) = struct
                   resolved_annotation = None;
                   base = None;
                 }
+            | resolved_left, BooleanOperator.Or when Type.is_truthy resolved_left ->
+                (* true_expression or b has the same type as true_expression *)
+                {
+                  resolution = resolution_left;
+                  errors = errors_left;
+                  resolved = resolved_left;
+                  resolved_annotation = None;
+                  base = None;
+                }
             | resolved_left, BooleanOperator.Or when Type.is_falsy resolved_left ->
                 (* false_expression or b has the same type as b *)
+                forward_right None
+            | resolved_left, BooleanOperator.And when Type.is_truthy resolved_left ->
+                (* true_expression and b has the same type as b *)
                 forward_right None
             | Type.Union parameters, BooleanOperator.Or ->
                 (* If type_of(a) = Union[A, None], then type_of(a or b) = Union[A, type_of(b) under
