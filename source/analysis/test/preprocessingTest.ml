@@ -569,7 +569,7 @@ let test_expand_format_string _ =
     ]
 
 
-let test_qualify _ =
+let test_qualify_source _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
     let parsed = parse ~handle source in
     let processed = Preprocessing.qualify parsed in
@@ -1864,6 +1864,63 @@ let test_qualify _ =
     |} {|
       class qualifier.qualifier: ...
     |};
+  ()
+
+
+let test_qualify_ast _ =
+  let module Context = struct
+    let source_relative = "relative"
+
+    let source_qualifier = Reference.create "source_qualifier"
+  end
+  in
+  let module Qualify = Preprocessing.Qualify (Context) in
+  let scope =
+    {
+      Qualify.qualifier = Reference.create "qualifier";
+      aliases = Reference.Map.empty;
+      locals = Reference.Set.empty;
+      immutables = Reference.Set.empty;
+      use_forward_references = true;
+      is_top_level = true;
+      skip = Location.Set.empty;
+      is_in_function = false;
+      is_in_class = false;
+    }
+  in
+  let assert_qualify_statement statement expected =
+    let qualify = Qualify.qualify_statement ~qualify_assign:false ~scope in
+    let _, processed = qualify statement in
+    assert_equal
+      ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
+      ~printer:Statement.show
+      expected
+      processed;
+    (* Qualifying twice should not change the source. *)
+    assert_equal
+      ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
+      ~printer:Statement.show
+      expected
+      (qualify processed |> snd)
+  in
+  assert_qualify_statement (+Statement.Pass) (+Statement.Pass);
+  assert_qualify_statement
+    (+Statement.Class
+        {
+          Class.name = Reference.create "a";
+          base_arguments = [];
+          top_level_unbound_names = [];
+          body = [];
+          decorators = [];
+        })
+    (+Statement.Class
+        {
+          Class.name = Reference.create "qualifier.a";
+          base_arguments = [];
+          top_level_unbound_names = [];
+          body = [];
+          decorators = [];
+        });
   ()
 
 
@@ -6038,7 +6095,8 @@ let () =
          "expand_string_annotations" >:: test_expand_string_annotations;
          "expand_type_alias_body" >:: test_expand_type_alias_body;
          "expand_format_string" >:: test_expand_format_string;
-         "qualify" >:: test_qualify;
+         "qualify_source" >:: test_qualify_source;
+         "quality_ast" >:: test_qualify_ast;
          "replace_version_specific_code" >:: test_replace_version_specific_code;
          "replace_platform_specific_code" >:: test_replace_platform_specific_code;
          "expand_type_checking_imports" >:: test_expand_type_checking_imports;

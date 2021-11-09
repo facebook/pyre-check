@@ -96,3 +96,33 @@ val preprocess_phase1 : Source.t -> Source.t
 
 (* Phase0 followed by Phase1 *)
 val preprocess : Source.t -> Source.t
+
+(* Following are exposed for testing only *)
+
+module type QualifyContext = sig
+  val source_relative : string
+
+  val source_qualifier : Reference.t
+end
+
+module Qualify (Context : QualifyContext) : sig
+  type alias = {
+    name: Reference.t;
+    qualifier: Reference.t;
+    is_forward_reference: bool;
+  }
+
+  type scope = {
+    qualifier: Reference.t;
+    aliases: alias Reference.Map.t;
+    immutables: Reference.Set.t;
+    locals: Reference.Set.t;
+    use_forward_references: bool;
+    is_top_level: bool;
+    skip: Location.Set.t;
+    is_in_function: bool;
+    is_in_class: bool;
+  }
+
+  val qualify_statement : qualify_assign:bool -> scope:scope -> Statement.t -> scope * Statement.t
+end
