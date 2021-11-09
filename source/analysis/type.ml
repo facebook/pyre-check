@@ -1837,11 +1837,6 @@ let is_final = function
   | _ -> false
 
 
-let is_generator = function
-  | Parametric { name = "typing.Generator" | "typing.AsyncGenerator"; _ } -> true
-  | _ -> false
-
-
 let is_generic_primitive = function
   | Primitive "typing.Generic" -> true
   | _ -> false

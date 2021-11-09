@@ -1968,12 +1968,6 @@ let test_is_iterator _ =
   assert_false (Type.is_iterator (Type.Primitive "typing.Iterator"))
 
 
-let test_is_generator _ =
-  assert_true (Type.is_generator (Type.generator Type.string));
-  assert_false (Type.is_generator Type.string);
-  assert_true (Type.is_generator (Type.generator ~async:true Type.string))
-
-
 let test_contains_callable _ =
   assert_true (Type.contains_callable (Type.Callable.create ~annotation:Type.integer ()));
   assert_true
@@ -6251,7 +6245,6 @@ let () =
          "primitives" >:: test_primitives;
          "elements" >:: test_elements;
          "exists" >:: test_exists;
-         "is_async_generator" >:: test_is_generator;
          "contains_callable" >:: test_contains_callable;
          "contains_any" >:: test_contains_any;
          "expression_contains_any" >:: test_expression_contains_any;

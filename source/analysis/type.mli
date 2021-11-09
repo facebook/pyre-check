@@ -677,8 +677,6 @@ val is_ellipsis : t -> bool
 
 val is_final : t -> bool
 
-val is_generator : t -> bool
-
 val is_generic_primitive : t -> bool
 
 val is_iterable : t -> bool
