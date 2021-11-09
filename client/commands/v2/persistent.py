@@ -46,7 +46,6 @@ from . import (
     incremental,
     query,
     server_event,
-    query,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
