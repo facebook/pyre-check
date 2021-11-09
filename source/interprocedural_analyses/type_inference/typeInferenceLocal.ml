@@ -470,22 +470,13 @@ module State (Context : Context) = struct
                   | None -> Type.generator ~async Type.none
                 in
                 Value (validate_return ~expression:None ~actual)
-            | { Node.value = Expression.YieldFrom yielded_from; location } ->
+            | { Node.value = Expression.YieldFrom yielded_from; _ } ->
                 let actual =
-                  let call =
-                    let callee =
-                      Expression.Name
-                        (Name.Attribute
-                           { base = yielded_from; attribute = "__iter__"; special = true })
-                      |> Node.create ~location
-                    in
-                    Expression.Call { callee; arguments = [] } |> Node.create ~location
-                  in
-                  let resolved = Resolution.resolve_expression_to_type resolution call in
+                  let resolved = Resolution.resolve_expression_to_type resolution yielded_from in
                   match
                     GlobalResolution.extract_type_parameters
                       global_resolution
-                      ~target:"typing.Iterator"
+                      ~target:"typing.Iterable"
                       ~source:resolved
                   with
                   | Some [parameter] -> Type.generator parameter

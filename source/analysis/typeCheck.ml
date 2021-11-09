@@ -4573,23 +4573,15 @@ module State (Context : Context) = struct
             in
             ( Value resolution,
               validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
-        | { Node.value = Expression.YieldFrom yielded_from; location } ->
-            let call =
-              let callee =
-                Expression.Name
-                  (Name.Attribute { base = yielded_from; attribute = "__iter__"; special = true })
-                |> Node.create ~location
-              in
-              Expression.Call { callee; arguments = [] } |> Node.create ~location
-            in
+        | { Node.value = Expression.YieldFrom yielded_from; _ } ->
             let { Resolved.resolution; resolved; errors; _ } =
-              forward_expression ~resolution ~expression:call
+              forward_expression ~resolution ~expression:yielded_from
             in
             let actual =
               match
                 GlobalResolution.extract_type_parameters
                   global_resolution
-                  ~target:"typing.Iterator"
+                  ~target:"typing.Iterable"
                   ~source:resolved
               with
               | Some [parameter] -> Type.generator parameter
@@ -4788,6 +4780,7 @@ module State (Context : Context) = struct
     | Nonlocal _
     | Pass ->
         Value resolution, []
+
 
   let initial ~resolution =
     let global_resolution = Resolution.global_resolution resolution in
