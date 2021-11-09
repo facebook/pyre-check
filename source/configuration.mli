@@ -105,7 +105,6 @@ module Analysis : sig
     python_minor_version: int;
     python_micro_version: int;
     shared_memory: shared_memory;
-    use_new_parser: bool;
     enable_type_comments: bool;
   }
   [@@deriving show]
@@ -134,7 +133,6 @@ module Analysis : sig
     ?shared_memory_heap_size:int ->
     ?shared_memory_dependency_table_power:int ->
     ?shared_memory_hash_table_power:int ->
-    ?use_new_parser:bool ->
     ?enable_type_comments:bool ->
     source_path:SearchPath.t list ->
     unit ->

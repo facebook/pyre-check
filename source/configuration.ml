@@ -243,7 +243,6 @@ module Analysis = struct
     python_minor_version: int;
     python_micro_version: int;
     shared_memory: shared_memory;
-    use_new_parser: bool;
     enable_type_comments: bool;
   }
   [@@deriving show]
@@ -272,8 +271,7 @@ module Analysis = struct
       ?(shared_memory_heap_size = default_shared_memory_heap_size)
       ?(shared_memory_dependency_table_power = default_shared_memory_dependency_table_power)
       ?(shared_memory_hash_table_power = default_shared_memory_hash_table_power)
-      ?(use_new_parser = false)
-      ?(enable_type_comments = false)
+      ?(enable_type_comments = true)
       ~source_path
       ()
     =
@@ -314,7 +312,6 @@ module Analysis = struct
           dependency_table_power = shared_memory_dependency_table_power;
           hash_table_power = shared_memory_hash_table_power;
         };
-      use_new_parser;
       enable_type_comments;
     }
 

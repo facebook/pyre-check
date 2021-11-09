@@ -2750,7 +2750,6 @@ module ScratchProject = struct
         ~incremental_style
         ~show_error_traces
         ~parallel:false
-        ~use_new_parser:true
         ()
     in
     let external_sources =
