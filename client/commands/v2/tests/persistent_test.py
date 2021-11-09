@@ -504,6 +504,40 @@ class PersistentTest(testslide.TestCase):
         )
 
     @setup.async_test
+    async def test_close_clears_hover_data(self) -> None:
+        test_path = Path("/root/test.py")
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        server = PyreServer(
+            input_channel=create_memory_text_reader(""),
+            output_channel=create_memory_text_writer(),
+            state=ServerState(
+                opened_documents={test_path},
+                query_state=PyreQueryState(
+                    path_to_location_type_lookup={
+                        test_path: LocationTypeLookup(
+                            [
+                                (lsp.Position(4, 4), lsp.Position(4, 15), "str"),
+                            ]
+                        ),
+                    }
+                ),
+            ),
+            pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
+        )
+
+        await server.process_close_request(
+            lsp.DidCloseTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse()
+                )
+            )
+        )
+        await asyncio.sleep(0)
+        self.assertEqual(server.state.query_state.path_to_location_type_lookup, {})
+
+    @setup.async_test
     async def test_hover_always_responds(self) -> None:
         def assert_hover_response(expected_hover_contents: str) -> None:
             expected_response = json_rpc.SuccessResponse(

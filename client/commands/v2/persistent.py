@@ -502,6 +502,7 @@ class PyreServer:
             )
         try:
             self.state.opened_documents.remove(document_path)
+            self.state.query_state.path_to_location_type_lookup.pop(document_path, None)
             LOG.info(f"File closed: {document_path}")
 
             if document_path in self.state.diagnostics:
