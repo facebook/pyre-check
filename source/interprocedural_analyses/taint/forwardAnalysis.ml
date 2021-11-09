@@ -225,7 +225,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~f:(fun () -> Model.get_callsite_model ~resolution ~call_target ~arguments)
     in
     log
-      "Forward analysis of call to `%a` with arguments %a@,Call site model:@,%a"
+      "Forward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
       Interprocedural.Target.pretty_print
       call_target
       Ast.Expression.pp_expression_argument_list
