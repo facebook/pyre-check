@@ -2237,15 +2237,6 @@ let test_optional_value _ =
     (Option.is_none (Type.optional_value (Type.parametric "foo" ![Type.integer; Type.Top])))
 
 
-let test_async_generator_value _ =
-  assert_equal
-    ~printer:(Format.asprintf "%a" Type.pp)
-    (Option.value_exn
-       (Type.async_generator_value
-          (Type.parametric "typing.AsyncGenerator" ![Type.integer; Type.NoneType])))
-    (Type.parametric "typing.Generator" ![Type.integer; Type.NoneType; Type.NoneType])
-
-
 let test_dequalify _ =
   let map =
     {|
@@ -6261,7 +6252,6 @@ let () =
          "is_iterator" >:: test_is_iterator;
          "class_name" >:: test_class_name;
          "optional_value" >:: test_optional_value;
-         "async_generator_value" >:: test_async_generator_value;
          "dequalify" >:: test_dequalify;
          "variables" >:: test_variables;
          "lambda" >:: test_lambda;

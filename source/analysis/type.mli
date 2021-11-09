@@ -746,8 +746,6 @@ val contains_variable : t -> bool
 
 val optional_value : t -> t option
 
-val async_generator_value : t -> t option
-
 val awaitable_value : t -> t option
 
 val coroutine_value : t -> t option

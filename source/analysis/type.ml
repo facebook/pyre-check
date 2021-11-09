@@ -4366,12 +4366,6 @@ let optional_value = function
   | _ -> None
 
 
-let async_generator_value = function
-  | Parametric { name = "typing.AsyncGenerator"; parameters = [Single parameter; _] } ->
-      Some (generator parameter)
-  | _ -> None
-
-
 let awaitable_value = function
   | Parametric { name = "typing.Awaitable"; parameters = [Single parameter] } -> Some parameter
   | _ -> None
