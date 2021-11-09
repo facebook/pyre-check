@@ -599,24 +599,76 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~new_targets
       ~init_targets
     =
-    (* Since we're searching for ClassType.__new/init__(), Pyre will correctly not insert an
-       implicit type there. However, since the actual call was ClassType(), insert the implicit
-       receiver here ourselves and ignore the value from get_indirect_targets. *)
-    let apply_call_targets state targets =
-      apply_call_targets
+    (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
+    let return_type_breadcrumbs =
+      lazy
+        (let call_expression =
+           Expression.Call { Call.callee; arguments } |> Node.create_with_default_location
+         in
+         let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
+         Features.type_breadcrumbs
+           ~resolution:(Resolution.global_resolution resolution)
+           (Some return_annotation))
+    in
+
+    (* Call `__init__`. Add the `self` implicit argument. *)
+    let call_expression = Expression.Call { Call.callee; arguments } |> Node.create ~location in
+    let init_arguments = { Call.Argument.name = None; value = call_expression } :: arguments in
+    let { arguments_taint = init_arguments_taint; callee_taint = _; state } =
+      apply_call_targets_and_return_arguments_taint
         ~resolution
         ~callee
         ~call_location:location
-        ~arguments:({ Call.Argument.name = None; value = callee } :: arguments)
+        ~arguments:init_arguments
+        ~return_type_breadcrumbs
         state
         taint
-        targets
+        init_targets
     in
-    let state = apply_call_targets state init_targets in
-    match new_targets with
-    | [] -> state
-    | [`Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" }] -> state
-    | targets -> apply_call_targets state targets
+    let self_taint, init_arguments_taint =
+      match init_arguments_taint with
+      | self_taint :: init_arguments_taint -> self_taint, init_arguments_taint
+      | [] -> failwith "unreachable"
+    in
+
+    (* Call `__new__`. *)
+    let arguments_taint, state =
+      match new_targets with
+      | []
+      | [`Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" }] ->
+          init_arguments_taint, state
+      | new_targets ->
+          (* Add the `cls` implicit argument. *)
+          let new_arguments = { Call.Argument.name = None; value = callee } :: arguments in
+          let { arguments_taint = new_arguments_taint; callee_taint = _; state } =
+            apply_call_targets_and_return_arguments_taint
+              ~resolution
+              ~callee
+              ~call_location:location
+              ~arguments:new_arguments
+              ~return_type_breadcrumbs
+              state
+              self_taint
+              new_targets
+          in
+          let callee_taint, new_arguments_taint =
+            match new_arguments_taint with
+            | callee_taint :: new_arguments_taint -> callee_taint, new_arguments_taint
+            | [] -> failwith "unreachable"
+          in
+          let state = analyze_unstarred_expression ~resolution callee_taint callee state in
+          let arguments_taint =
+            List.map2_exn init_arguments_taint new_arguments_taint ~f:BackwardState.Tree.join
+          in
+          arguments_taint, state
+    in
+
+    (* Propagate the taint to the arguments. *)
+    List.zip_exn arguments arguments_taint
+    |> List.fold
+         ~init:state
+         ~f:(fun state ({ Call.Argument.value = argument; _ }, argument_taint) ->
+           analyze_unstarred_expression ~resolution argument_taint argument state)
 
 
   and analyze_dictionary_entry ~resolution taint state { Dictionary.Entry.key; value } =

@@ -1458,25 +1458,6 @@
           }
         ]
       }
-    ],
-    "tito": [
-      {
-        "port": "formal(cls)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": [ { "line": 158, "start": 11, "end": 14 } ],
-            "decl": null
-          }
-        ]
-      }
     ]
   }
 }

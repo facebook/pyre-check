@@ -1,8 +1,8 @@
 @generated
 Call dependencies
 constructors.BaseConstructor::__init__ (method) -> [_test_source (fun)]
-constructors.BothNewAndInit::__init__ (method) -> []
-constructors.BothNewAndInit::__new__ (method) -> []
+constructors.BothNewAndInit::__init__ (method) -> [_test_sink (fun)]
+constructors.BothNewAndInit::__new__ (method) -> [_test_source (fun) object::__new__ (method) super::__init__ (method)]
 constructors.ChildWithNew::__new__ (method) -> [_test_sink (fun) object::__new__ (method)]
 constructors.DerivedConstructor::__init__ (method) -> [constructors.BaseConstructor::__init__ (method) object::__new__ (method) super::__init__ (method)]
 constructors.ParentWithInit::__init__ (method) -> []

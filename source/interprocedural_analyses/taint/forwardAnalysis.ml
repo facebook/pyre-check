@@ -735,26 +735,68 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~location
       ~state
     =
-    (* Since we're searching for ClassType.__new/init__(), Pyre will correctly not insert an
-       implicit type there. However, since the actual call was ClassType(), insert the implicit
-       receiver here ourselves and ignore the value from get_indirect_targets. *)
-    let apply_call_targets state targets =
-      let arguments = { Call.Argument.name = None; value = callee } :: arguments in
-      apply_call_targets
-        ~resolution
-        ~callee
-        ~collapse_tito:true
-        ~call_location:location
-        ~arguments
-        state
-        targets
+    (* Analyze arguments first. *)
+    let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
+    let arguments_taint, state =
+      let compute_argument_taint (arguments_taint, state) argument =
+        let taint, state =
+          analyze_unstarred_expression ~resolution argument.Call.Argument.value state
+        in
+        taint :: arguments_taint, state
+      in
+      List.rev arguments |> List.fold ~init:([], state) ~f:compute_argument_taint
     in
-    let state =
+
+    (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
+    let return_type_breadcrumbs =
+      lazy
+        (let call_expression =
+           Expression.Call { Call.callee; arguments } |> Node.create_with_default_location
+         in
+         let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
+         Features.type_breadcrumbs
+           ~resolution:(Resolution.global_resolution resolution)
+           (Some return_annotation))
+    in
+
+    (* Call `__new__`. *)
+    let new_return_taint, state =
       match new_targets with
-      | [] -> state
-      | targets -> apply_call_targets state targets |> snd
+      | [] -> ForwardState.Tree.bottom, state
+      | [`Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" }] ->
+          ForwardState.Tree.bottom, state
+      | new_targets ->
+          (* Add the `cls` implicit argument. *)
+          let new_arguments = { Call.Argument.name = None; value = callee } :: arguments in
+          let new_arguments_taint = callee_taint :: arguments_taint in
+          apply_call_targets_with_arguments_taint
+            ~resolution
+            ~callee
+            ~collapse_tito:true
+            ~call_location:location
+            ~arguments:new_arguments
+            ~callee_taint:(lazy ForwardState.Tree.bottom)
+            ~arguments_taint:new_arguments_taint
+            ~return_type_breadcrumbs
+            state
+            new_targets
     in
-    apply_call_targets state init_targets
+
+    (* Call `__init__`. Add the `self` implicit argument. *)
+    let call_expression = Expression.Call { Call.callee; arguments } |> Node.create ~location in
+    let init_arguments = { Call.Argument.name = None; value = call_expression } :: arguments in
+    let init_arguments_taint = new_return_taint :: arguments_taint in
+    apply_call_targets_with_arguments_taint
+      ~resolution
+      ~callee
+      ~collapse_tito:true
+      ~call_location:location
+      ~arguments:init_arguments
+      ~callee_taint:(lazy ForwardState.Tree.bottom)
+      ~arguments_taint:init_arguments_taint
+      ~return_type_breadcrumbs
+      state
+      init_targets
 
 
   and analyze_call ~resolution ~location ~state ~callee ~arguments =

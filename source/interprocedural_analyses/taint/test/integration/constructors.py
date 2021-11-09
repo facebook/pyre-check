@@ -63,10 +63,12 @@ def test_new_thing():
 
 class BothNewAndInit:
     def __new__(cls):
-        pass
+        obj = super(BothNewAndInit, cls).__new__()
+        obj.foo = _test_source()
+        return obj
 
     def __init__(self):
-        return
+        _test_sink(self.foo)
 
 
 def test_both_new_and_init_callgraph():

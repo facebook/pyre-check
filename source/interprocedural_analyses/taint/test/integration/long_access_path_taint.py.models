@@ -307,23 +307,6 @@
             "decl": null
           }
         ]
-      },
-      {
-        "port": "formal(cls)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": [ { "line": 31, "start": 15, "end": 18 } ],
-            "decl": null
-          }
-        ]
       }
     ]
   }

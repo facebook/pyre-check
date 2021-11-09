@@ -171,8 +171,6 @@
               }
             ],
             "tito": [
-              { "line": 49, "start": 15, "end": 24 },
-              { "line": 49, "start": 20, "end": 23 },
               { "line": 49, "start": 25, "end": 87 },
               { "line": 49, "start": 42, "end": 85 },
               { "line": 49, "start": 56, "end": 57 }
@@ -368,7 +366,10 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": [ { "line": 79, "start": 16, "end": 19 } ],
+            "tito": [
+              { "line": 79, "start": 11, "end": 20 },
+              { "line": 79, "start": 16, "end": 19 }
+            ],
             "decl": null
           }
         ]

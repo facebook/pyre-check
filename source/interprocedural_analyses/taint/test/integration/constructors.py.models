@@ -2,6 +2,75 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "constructors.test_both_new_and_init_callgraph",
+    "callable_line": 74,
+    "code": 5002,
+    "line": 75,
+    "start": 4,
+    "end": 20,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "constructors.py",
+                "line": 75,
+                "start": 4,
+                "end": 20
+              },
+              "resolves_to": [ "constructors.BothNewAndInit.__new__" ],
+              "port": "result[foo]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "constructors.py",
+                "line": 75,
+                "start": 4,
+                "end": 20
+              },
+              "resolves_to": [ "constructors.BothNewAndInit.__init__" ],
+              "port": "formal(self)[foo]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "constructors.test_new_thing",
     "callable_line": 60,
     "code": 5002,
@@ -220,6 +289,28 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{constructors.BothNewAndInit::__init__}",
+    "sinks": [
+      {
+        "port": "formal(self)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(self)",
@@ -227,6 +318,34 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{constructors.BothNewAndInit::__new__}",
+    "sources": [
+      {
+        "port": "result[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
           }
         ]
       }
@@ -490,6 +609,28 @@
         ]
       }
     ],
+    "sinks": [
+      {
+        "port": "formal(self)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(oauth_token_secret)",
@@ -546,6 +687,34 @@
               }
             ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__new__}",
+    "sources": [
+      {
+        "port": "result[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
           }
         ]
       }
@@ -615,7 +784,7 @@
             ],
             "root": {
               "filename": "constructors.py",
-              "line": 78,
+              "line": 80,
               "start": 17,
               "end": 31
             }
@@ -640,6 +809,28 @@
   "kind": "model",
   "data": {
     "callable": "constructors.BothNewAndInit.__init__",
+    "sinks": [
+      {
+        "port": "formal(self)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "constructors.py",
+              "line": 71,
+              "start": 19,
+              "end": 27
+            }
+          }
+        ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(self)",
@@ -647,6 +838,34 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.BothNewAndInit.__new__",
+    "sources": [
+      {
+        "port": "result[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "constructors.py",
+              "line": 67,
+              "start": 18,
+              "end": 32
+            }
           }
         ]
       }
@@ -719,7 +938,7 @@
             "call": {
               "position": {
                 "filename": "constructors.py",
-                "line": 83,
+                "line": 85,
                 "start": 8,
                 "end": 26
               },
@@ -760,7 +979,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": [ { "line": 83, "start": 8, "end": 15 } ],
+            "tito": [ { "line": 85, "start": 8, "end": 15 } ],
             "decl": null
           }
         ]
@@ -889,23 +1108,6 @@
               }
             ],
             "tito": [ { "line": 20, "start": 19, "end": 30 } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(cls)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": [ { "line": 20, "start": 15, "end": 18 } ],
             "decl": null
           }
         ]
