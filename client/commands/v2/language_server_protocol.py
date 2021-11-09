@@ -10,7 +10,6 @@ import logging
 import urllib
 from pathlib import Path
 from typing import (
-    Generic,
     Iterable,
     Optional,
     List,
@@ -20,7 +19,6 @@ from typing import (
 )
 
 import dataclasses_json
-import intervaltree
 
 from ... import json_rpc
 from . import async_server_connection
