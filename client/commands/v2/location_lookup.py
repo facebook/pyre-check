@@ -34,7 +34,12 @@ class LocationLookup(Generic[Value]):
     This class is implemented using `intervaltree.IntervalTree`."""
 
     def __init__(self, intervals: Iterable[Tuple[Position, Position, Value]]) -> None:
-        self._interval_tree: object = intervaltree.IntervalTree.from_tuples(intervals)
+        non_null_intervals = [
+            interval for interval in intervals if interval[1] > interval[0]
+        ]
+        self._interval_tree: object = intervaltree.IntervalTree.from_tuples(
+            non_null_intervals
+        )
 
     def __getitem__(self, position: Position) -> Optional[Value]:
         """Returns the value from the first matching interval, if any.

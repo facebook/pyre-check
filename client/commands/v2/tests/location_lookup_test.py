@@ -62,3 +62,14 @@ class IntervalTreeTest(testslide.TestCase):
         # This interval is "smaller" than the other interval because it spans only
         # one line.
         self.assertEqual(location_lookup[Position(3, 1)], "(3, 1), (3, 10000)")
+
+    def test_ignores_null_intervals(self) -> None:
+        interval_tree: LocationLookup[str] = LocationLookup[str](
+            [
+                (Position(1, 11), Position(1, 11), "(1, 11), (1, 11)"),
+                # End is before the beginning.
+                (Position(1, 11), Position(1, 0), "(1, 11), (1, 0)"),
+            ]
+        )
+        self.assertEqual(interval_tree[Position(1, 11)], None)
+        self.assertEqual(interval_tree[Position(1, 0)], None)
