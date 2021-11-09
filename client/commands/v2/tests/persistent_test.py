@@ -558,6 +558,10 @@ class PersistentTest(testslide.TestCase):
 
         assert_hover_response("```str```")
         self.assertTrue(fake_task_manager.is_task_running())
+        self.assertEqual(server.state.query_state.paths_to_be_queried.qsize(), 1)
+        self.assertEqual(
+            server.state.query_state.paths_to_be_queried.get_nowait(), test_path
+        )
 
         await server.process_hover_request(
             lsp.HoverTextDocumentParameters(
@@ -572,6 +576,7 @@ class PersistentTest(testslide.TestCase):
 
         self.assertTrue(fake_task_manager.is_task_running())
         assert_hover_response("")
+        self.assertEqual(server.state.query_state.paths_to_be_queried.qsize(), 0)
 
     def test_diagnostics(self) -> None:
         self.assertEqual(
