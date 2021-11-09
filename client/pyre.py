@@ -829,6 +829,15 @@ def incremental(
     ),
 )
 @click.option(
+    "--simple-annotations",
+    is_flag=True,
+    default=False,
+    help=(
+        "Only infer the simplest annotations that are guaranteed to "
+        "codemod with --in-place cleanly."
+    ),
+)
+@click.option(
     "--dequalify",
     is_flag=True,
     default=False,
@@ -852,6 +861,7 @@ def infer(
     annotate_attributes: bool,
     use_future_annotations: bool,
     quote_annotations: bool,
+    simple_annotations: bool,
     dequalify: bool,
 ) -> int:
     """
@@ -881,6 +891,7 @@ def infer(
             enable_profiling=command_argument.enable_profiling,
             debug_infer=debug_infer,
             quote_annotations=quote_annotations,
+            simple_annotations=simple_annotations,
             dequalify=dequalify,
             log_identifier=command_argument.log_identifier,
             logging_sections=command_argument.logging_sections,

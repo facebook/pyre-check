@@ -353,6 +353,7 @@ class StubGenerationOptions:
     annotate_attributes: bool = False
     use_future_annotations: bool = False
     quote_annotations: bool = False
+    simple_annotations: bool = False
     dequalify: bool = False
     debug_infer: bool = False
 
@@ -961,6 +962,7 @@ def run_infer(
         use_future_annotations=infer_arguments.use_future_annotations,
         dequalify=infer_arguments.dequalify,
         quote_annotations=infer_arguments.quote_annotations,
+        simple_annotations=infer_arguments.simple_annotations,
     )
 
     if infer_arguments.annotate_from_existing_stubs:

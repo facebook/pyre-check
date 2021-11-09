@@ -141,6 +141,7 @@ class InferArguments:
     logging_sections: Optional[str] = None
     use_future_annotations: bool = False
     in_place: bool = False
+    simple_annotations: bool = False
     paths_to_modify: Optional[Set[Path]] = None
     print_only: bool = False
     read_stdin: bool = False
