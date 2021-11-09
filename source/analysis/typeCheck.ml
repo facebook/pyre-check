@@ -824,14 +824,9 @@ module State (Context : Context) = struct
               forward_expression ~resolution ~expression
             in
             let parameter =
-              match
-                GlobalResolution.extract_type_parameters
-                  global_resolution
-                  ~target:"typing.Iterable"
-                  ~source:new_resolved
-              with
-              | Some [element_type] -> element_type
-              | _ -> Type.Any
+              new_resolved
+              |> GlobalResolution.type_of_iteration_value ~global_resolution
+              |> Option.value ~default:Type.Any
             in
             {
               Resolved.resolution;
@@ -2615,15 +2610,14 @@ module State (Context : Context) = struct
                         new_errors, Type.OrderedTypes.create_unbounded_concatenation Type.Any
                     | _ -> (
                         match
-                          GlobalResolution.extract_type_parameters
-                            global_resolution
-                            ~target:"typing.Iterable"
-                            ~source:resolved_element
+                          GlobalResolution.type_of_iteration_value
+                            ~global_resolution
+                            resolved_element
                         with
-                        | Some [element_type] ->
+                        | Some element_type ->
                             ( new_errors,
                               Type.OrderedTypes.create_unbounded_concatenation element_type )
-                        | _ ->
+                        | None ->
                             ( emit_error
                                 ~errors:new_errors
                                 ~location
@@ -3484,10 +3478,7 @@ module State (Context : Context) = struct
             | _ ->
                 (not (NamedTuple.is_named_tuple ~global_resolution ~annotation))
                 && Option.is_some
-                     (GlobalResolution.extract_type_parameters
-                        global_resolution
-                        ~target:"typing.Iterable"
-                        ~source:annotation)
+                     (GlobalResolution.type_of_iteration_value ~global_resolution annotation)
           in
           match target_value with
           | Expression.Name name -> (
@@ -4578,14 +4569,10 @@ module State (Context : Context) = struct
               forward_expression ~resolution ~expression:yielded_from
             in
             let actual =
-              match
-                GlobalResolution.extract_type_parameters
-                  global_resolution
-                  ~target:"typing.Iterable"
-                  ~source:resolved
-              with
-              | Some [parameter] -> Type.generator parameter
-              | _ -> Type.generator Type.Any
+              resolved
+              |> GlobalResolution.type_of_iteration_value ~global_resolution
+              |> Option.value ~default:Type.Any
+              |> Type.generator
             in
             ( Value resolution,
               validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )

@@ -472,15 +472,9 @@ module State (Context : Context) = struct
                 Value (validate_return ~expression:None ~actual)
             | { Node.value = Expression.YieldFrom yielded_from; _ } ->
                 let actual =
-                  let resolved = Resolution.resolve_expression_to_type resolution yielded_from in
-                  match
-                    GlobalResolution.extract_type_parameters
-                      global_resolution
-                      ~target:"typing.Iterable"
-                      ~source:resolved
-                  with
-                  | Some [parameter] -> Type.generator parameter
-                  | _ -> Type.generator Type.Any
+                  Resolution.resolve_expression_to_type resolution yielded_from
+                  |> GlobalResolution.type_of_iteration_value ~global_resolution
+                  |> Option.value ~default:Type.Any
                 in
                 Value (validate_return ~expression:None ~actual)
             | _ -> Value { state with resolution })

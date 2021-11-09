@@ -483,6 +483,14 @@ let extract_type_parameters resolution ~source ~target =
       |> Option.all
 
 
+let type_of_iteration_value ~global_resolution iterator_type =
+  match
+    extract_type_parameters global_resolution ~target:"typing.Iterable" ~source:iterator_type
+  with
+  | Some [iteration_type] -> Some iteration_type
+  | _ -> None
+
+
 let parse_annotation ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.parse_annotation ?dependency (attribute_resolution resolution)
 

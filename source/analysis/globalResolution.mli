@@ -251,4 +251,6 @@ val overrides
 (* If the given type is a subtype of generic type `AsName[X]`, return X *)
 val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list option
 
+val type_of_iteration_value : global_resolution:t -> Type.t -> Type.t option
+
 val define : t -> Reference.t -> Define.t option
