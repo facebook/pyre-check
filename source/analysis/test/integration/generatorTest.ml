@@ -384,6 +384,76 @@ let test_check_generator_edge_cases context =
   ()
 
 
+let test_check_generator_known_failures context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* send type handling for yield *)
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Generator[None, int, None]:
+        x = yield
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Generator[None, None, None]`."];
+  (* send type handling for yield from. The first example ought to be okay and the second ought to
+     fail since the send types need to be (contravariantly) compatible *)
+  assert_type_errors
+    {|
+      import typing
+
+      generator: typing.Generator[int, object, None]
+
+      def foo() -> typing.Generator[int, str, None]:
+        yield from generator
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, str, None]` but got \
+       `typing.Generator[int, None, None]`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+
+      generator: typing.Generator[int, float, None]
+
+      def foo() -> typing.Generator[int, str, None]:
+        yield from generator
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, str, None]` but got \
+       `typing.Generator[int, None, None]`.";
+    ];
+  (* return type handling for yield *)
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Generator[int, None, str]:
+        yield 1
+        return "str"
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got \
+       `typing.Generator[int, None, None]`.";
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got `str`.";
+    ];
+  (* return type handling for yield from *)
+  assert_type_errors
+    {|
+      import typing
+
+      generator: typing.Generator[int, None, str]
+
+      def foo() -> typing.Generator[int, None, str]:
+        x = yield from generator
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Generator[typing.Iterator[int], None, \
+       None]`.";
+    ];
+  ()
+
+
 let () =
   "generator"
   >::: [
@@ -391,5 +461,6 @@ let () =
          "check_yield" >:: test_check_yield;
          "check_yield_from" >:: test_check_yield_from;
          "check_generator_edge_cases" >:: test_check_generator_edge_cases;
+         "check_generator_known_failures" >:: test_check_generator_known_failures;
        ]
   |> Test.run
