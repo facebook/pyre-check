@@ -168,6 +168,38 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let analyze_definition ~define:_ state = state
 
+  type call_target_result = {
+    arguments_taint: BackwardState.Tree.t list;
+    callee_taint: BackwardState.Tree.t option;
+    state: t;
+  }
+
+  let join_call_target_results
+      {
+        arguments_taint = left_arguments_taint;
+        callee_taint = left_callee_taint;
+        state = left_state;
+      }
+      {
+        arguments_taint = right_arguments_taint;
+        callee_taint = right_callee_taint;
+        state = right_state;
+      }
+    =
+    let arguments_taint =
+      List.map2_exn left_arguments_taint right_arguments_taint ~f:BackwardState.Tree.join
+    in
+    let callee_taint =
+      match left_callee_taint, right_callee_taint with
+      | Some left, Some right -> Some (BackwardState.Tree.join left right)
+      | Some left, None -> Some left
+      | None, Some right -> Some right
+      | None, None -> None
+    in
+    let state = join left_state right_state in
+    { arguments_taint; callee_taint; state }
+
+
   let rec apply_call_target
       ~resolution
       ~call_location
@@ -427,8 +459,87 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         BackwardState.Tree.bottom
     in
-    List.rev combined_matches
-    |> List.fold ~f:(analyze_argument ~obscure_taint) ~init:([], initial_state)
+    let arguments_taint, state =
+      List.rev combined_matches
+      |> List.fold ~f:(analyze_argument ~obscure_taint) ~init:([], initial_state)
+    in
+    { arguments_taint; callee_taint = None; state }
+
+
+  and apply_call_targets_and_return_arguments_taint
+      ~resolution
+      ~callee
+      ~call_location
+      ~arguments
+      ~return_type_breadcrumbs
+      initial_state
+      call_taint
+      call_targets
+    =
+    let call_targets =
+      (* Special handling for the missing-flow analysis. *)
+      match call_targets with
+      | [] when TaintConfiguration.is_missing_flow_analysis Type ->
+          let callable =
+            Model.unknown_callee
+              ~location:(Location.with_module call_location ~qualifier:FunctionContext.qualifier)
+              ~call:(Expression.Call { Call.callee; arguments })
+          in
+          if not (Interprocedural.FixpointState.has_model callable) then
+            Model.register_unknown_callee_model callable;
+          [callable]
+      | _ -> call_targets
+    in
+
+    match call_targets with
+    | [] ->
+        (* If we don't have a call target: propagate argument taint. *)
+        let obscure_taint =
+          BackwardState.Tree.collapse
+            ~transform:(BackwardTaint.add_breadcrumbs Features.tito_broadening)
+            call_taint
+          |> BackwardTaint.add_breadcrumb Features.obscure
+          |> BackwardState.Tree.create_leaf
+        in
+        let compute_argument_taint { Call.Argument.value = argument; _ } =
+          let taint = obscure_taint in
+          let taint =
+            match argument.Node.value with
+            | Starred (Starred.Once _)
+            | Starred (Starred.Twice _) ->
+                BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] taint
+            | _ -> taint
+          in
+          let taint =
+            BackwardState.Tree.transform
+              Features.TitoPositionSet.Element
+              Add
+              ~f:argument.Node.location
+              taint
+          in
+          taint
+        in
+        let arguments_taint = List.map ~f:compute_argument_taint arguments in
+        { arguments_taint; callee_taint = Some obscure_taint; state = initial_state }
+    | call_targets ->
+        List.map
+          call_targets
+          ~f:
+            (apply_call_target
+               ~resolution
+               ~call_location
+               ~arguments
+               ~return_type_breadcrumbs
+               initial_state
+               call_taint)
+        |> List.fold
+             ~f:join_call_target_results
+             ~init:
+               {
+                 arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
+                 callee_taint = None;
+                 state = create ();
+               }
 
 
   and apply_call_targets
@@ -440,81 +551,42 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       call_taint
       call_targets
     =
-    let call_expression =
-      Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
-    in
     (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
     let return_type_breadcrumbs =
       lazy
-        (let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
+        (let call_expression =
+           Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
+         in
+         let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
          Features.type_breadcrumbs
            ~resolution:(Resolution.global_resolution resolution)
            (Some return_annotation))
     in
-    let call_targets =
-      match call_targets with
-      | [] when TaintConfiguration.is_missing_flow_analysis Type ->
-          (* Create a symbolic callable, using the location as the name *)
-          let callable =
-            Model.unknown_callee
-              ~location:(Location.with_module call_location ~qualifier:FunctionContext.qualifier)
-              ~call:(Node.value call_expression)
-          in
-          if not (Interprocedural.FixpointState.has_model callable) then
-            Model.register_unknown_callee_model callable;
-          [callable]
-      | _ -> call_targets
+
+    let { arguments_taint; callee_taint; state } =
+      apply_call_targets_and_return_arguments_taint
+        ~resolution
+        ~callee
+        ~call_location
+        ~arguments
+        ~return_type_breadcrumbs
+        initial_state
+        call_taint
+        call_targets
     in
-    match call_targets with
-    | [] ->
-        (* If we don't have a call target: propagate argument taint. *)
-        let analyze_argument ~resolution taint { Call.Argument.value = argument; _ } state =
-          let taint =
-            BackwardState.Tree.transform
-              Features.TitoPositionSet.Element
-              Add
-              ~f:argument.Node.location
-              taint
-          in
-          analyze_expression ~resolution ~taint ~state ~expression:argument
-        in
-        let obscure_taint =
-          BackwardState.Tree.collapse
-            ~transform:(BackwardTaint.add_breadcrumbs Features.tito_broadening)
-            call_taint
-          |> BackwardTaint.add_breadcrumb Features.obscure
-          |> BackwardState.Tree.create_leaf
-        in
-        let state =
-          List.fold_right
-            ~f:(analyze_argument ~resolution obscure_taint)
-            arguments
-            ~init:initial_state
-        in
-        analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
-    | call_targets ->
-        let arguments_taint, state =
-          List.map
-            call_targets
-            ~f:
-              (apply_call_target
-                 ~resolution
-                 ~call_location
-                 ~arguments
-                 ~return_type_breadcrumbs
-                 initial_state
-                 call_taint)
-          |> List.fold
-               ~f:(fun (arguments_taint, state) (new_arguments_taint, new_state) ->
-                 ( List.map2_exn arguments_taint new_arguments_taint ~f:BackwardState.Tree.join,
-                   join state new_state ))
-               ~init:(List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom), create ())
-        in
-        List.zip_exn arguments arguments_taint
-        |> List.fold
-             ~init:state
-             ~f:(fun state ({ Call.Argument.value = argument; _ }, argument_taint) ->
-               analyze_unstarred_expression ~resolution argument_taint argument state)
+
+    let state =
+      match callee_taint with
+      | Some callee_taint ->
+          analyze_expression ~resolution ~taint:callee_taint ~state ~expression:callee
+      | _ -> state
+    in
+
+    List.zip_exn arguments arguments_taint
+    |> List.fold
+         ~init:state
+         ~f:(fun state ({ Call.Argument.value = argument; _ }, argument_taint) ->
+           analyze_unstarred_expression ~resolution argument_taint argument state)
 
 
   and analyze_constructor_call
