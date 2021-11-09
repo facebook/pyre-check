@@ -373,57 +373,81 @@ let infer_class_models ~environment =
       leaf
       existing_state
   in
-  let attributes class_summary =
+  let attributes class_name =
     GlobalResolution.attributes
       ~resolution:global_resolution
       ~transitive:false
       ~accessed_through_class:false
       ~include_generated_attributes:false
-      class_summary
+      class_name
   in
 
-  let compute_dataclass_model class_summary =
+  let compute_dataclass_models class_name =
     let attributes =
-      attributes class_summary >>| List.map ~f:Annotated.Attribute.name |> Option.value ~default:[]
+      attributes class_name >>| List.map ~f:Annotated.Attribute.name |> Option.value ~default:[]
     in
-    {
-      TaintResult.forward = Forward.empty;
-      backward =
+    [
+      ( `Method { Target.class_name; method_name = "__init__" },
         {
-          TaintResult.Backward.taint_in_taint_out =
-            List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
-          sink_taint = BackwardState.empty;
-        };
-      sanitizers = Sanitizers.empty;
-      modes = ModeSet.empty;
-    }
+          TaintResult.forward = Forward.empty;
+          backward =
+            {
+              TaintResult.Backward.taint_in_taint_out =
+                List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
+              sink_taint = BackwardState.empty;
+            };
+          sanitizers = Sanitizers.empty;
+          modes = ModeSet.empty;
+        } );
+    ]
   in
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
      field names. *)
-  let compute_named_tuple_model class_summary =
-    let attributes = attributes class_summary |> Option.value ~default:[] in
-    (* If a user-specified constructor exists, don't override it. *)
-    if
+  let compute_named_tuple_models class_name =
+    let attributes = attributes class_name |> Option.value ~default:[] in
+    let has_attribute name =
       List.exists attributes ~f:(fun attribute ->
-          String.equal (Annotated.Attribute.name attribute) "__init__")
-    then
-      None
-    else
-      GlobalResolution.class_definition global_resolution (Primitive class_summary)
-      >>| Node.value
-      >>= ClassSummary.fields_tuple_value
-      >>| fun attributes ->
-      {
-        TaintResult.forward = Forward.empty;
-        backward =
+          String.equal (Annotated.Attribute.name attribute) name)
+    in
+    (* If a user-specified __new__ or __init__ exist, don't override it. *)
+    let models =
+      if has_attribute "__init__" then
+        []
+      else
+        GlobalResolution.class_definition global_resolution (Primitive class_name)
+        >>| Node.value
+        >>= ClassSummary.fields_tuple_value
+        >>| (fun attributes ->
+              [
+                ( `Method { Target.class_name; method_name = "__init__" },
+                  {
+                    TaintResult.forward = Forward.empty;
+                    backward =
+                      {
+                        TaintResult.Backward.taint_in_taint_out =
+                          List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
+                        sink_taint = BackwardState.empty;
+                      };
+                    sanitizers = Sanitizers.empty;
+                    modes = ModeSet.empty;
+                  } );
+              ])
+        |> Option.value ~default:[]
+    in
+    let models =
+      if has_attribute "__new__" then
+        models
+      else
+        ( `Method { Target.class_name; method_name = "__new__" },
           {
-            TaintResult.Backward.taint_in_taint_out =
-              List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
-            sink_taint = BackwardState.empty;
-          };
-        sanitizers = Sanitizers.empty;
-        modes = ModeSet.empty;
-      }
+            TaintResult.forward = Forward.empty;
+            backward = Backward.empty;
+            sanitizers = Sanitizers.empty;
+            modes = ModeSet.empty;
+          } )
+        :: models
+    in
+    models
   in
   let compute_models class_name class_summary =
     let is_dataclass =
@@ -434,21 +458,21 @@ let infer_class_models ~environment =
       |> fun decorators -> not (List.is_empty decorators)
     in
     if is_dataclass then
-      Some (compute_dataclass_model class_name)
+      compute_dataclass_models class_name
     else if
       GlobalResolution.is_transitive_successor
         global_resolution
         ~predecessor:class_name
         ~successor:"typing.NamedTuple"
     then
-      compute_named_tuple_model class_name
+      compute_named_tuple_models class_name
     else
-      None
+      []
   in
   let inferred_models class_name =
     GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
-    >>= compute_models class_name
-    >>| fun model -> `Method { Target.class_name; method_name = "__init__" }, model
+    >>| compute_models class_name
+    |> Option.value ~default:[]
   in
   let all_classes =
     TypeEnvironment.ReadOnly.global_resolution environment
@@ -456,7 +480,7 @@ let infer_class_models ~environment =
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
   let models =
-    List.filter_map all_classes ~f:inferred_models
+    List.concat_map all_classes ~f:inferred_models
     |> Target.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)
   in
   Statistics.performance
