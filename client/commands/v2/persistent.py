@@ -13,7 +13,6 @@ import subprocess
 import tempfile
 import traceback
 from pathlib import Path
-from sys import stderr
 from typing import (
     Union,
     Optional,
@@ -412,8 +411,7 @@ async def _receive_query_types_response(
             dataclasses_json.mm.ValidationError,
         ) as exception:
             LOG.info(
-                f"Failed to parse json {raw_response} due to exception: {exception}\n"
-                f"stderr: {stderr}"
+                f"Failed to parse json {raw_response} due to exception: {exception}"
             )
             return None
 
