@@ -44,9 +44,9 @@ from . import (
     async_server_connection as connection,
     start,
     incremental,
+    interval_tree,
     query,
     server_event,
-    query,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -291,7 +291,7 @@ async def _read_server_response(
 
 TypeInfo = str
 
-LocationTypeLookup = lsp.IntervalTree[lsp.Position, TypeInfo]
+LocationTypeLookup = interval_tree.IntervalTree[lsp.Position, TypeInfo]
 
 
 @dataclasses.dataclass
