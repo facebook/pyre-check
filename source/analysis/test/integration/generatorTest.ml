@@ -190,64 +190,8 @@ let test_check_comprehensions context =
     []
 
 
-let test_check_generators context =
+let test_check_yield context =
   let assert_type_errors = assert_type_errors ~context in
-  assert_type_errors
-    {|
-      import typing
-      x: typing.Generator[typing.Any, typing.Any, typing.Any]
-      def foo() -> typing.Generator:
-        return x
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `x` must be specified "
-      ^ "as type that does not contain `Any`.";
-      "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters.";
-    ];
-  assert_type_errors
-    {|
-      import typing
-      x: typing.Generator[int, int, int]
-      def foo() -> typing.Generator:
-        return x
-    |}
-    ["Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters."];
-  assert_type_errors
-    {|
-      import typing
-      def foo(l: typing.List[int])->typing.Generator[int, None, None]:
-        return (x for x in l)
-    |}
-    [];
-  assert_type_errors
-    {|
-      import typing
-      def foo(l: typing.List[typing.Optional[int]])->typing.Generator[int, None, None]:
-        return (x for x in l if x)
-    |}
-    [];
-  assert_type_errors
-    {|
-      import typing
-      def foo(l: typing.List[typing.Optional[int]])->typing.Generator[str, None, None]:
-        return (x for x in l if x is not None)
-    |}
-    [
-      "Incompatible return type [7]: Expected `typing.Generator[str, None, None]` "
-      ^ "but got `typing.Generator[int, None, None]`.";
-    ];
-  assert_type_errors
-    {|
-      import typing
-      def foo(l: typing.Iterable[typing.Any])->typing.Generator[typing.Any, None, None]:
-        return (x for x in l)
-    |}
-    [
-      "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`.";
-      "Missing parameter annotation [2]: Parameter `l` must have a type "
-      ^ "that does not contain `Any`.";
-    ];
   assert_type_errors
     {|
       import typing
@@ -275,32 +219,6 @@ let test_check_generators context =
       "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
       ^ "but got `typing.Generator[float, None, None]`.";
     ];
-  assert_type_errors
-    {|
-      import typing
-      def foo() -> typing.Generator[int, None, None]:
-        yield from [1]
-    |}
-    [];
-  assert_type_errors
-    {|
-      import typing
-      def foo() -> typing.Generator[int, None, None]:
-        yield from [""]
-    |}
-    [
-      "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
-      ^ "but got `typing.Generator[str, None, None]`.";
-    ];
-  assert_type_errors
-    {|
-      import typing
-      def generator() -> typing.Generator[int, None, None]:
-        yield 1
-      def wrapper() -> typing.Generator[int, None, None]:
-        yield from generator()
-    |}
-    [];
   assert_type_errors
     {|
       import typing
@@ -374,10 +292,104 @@ let test_check_generators context =
     ]
 
 
+let test_check_yield_from context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Generator[int, None, None]:
+        yield from [1]
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Generator[int, None, None]:
+        yield from [""]
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
+      ^ "but got `typing.Generator[str, None, None]`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      def generator() -> typing.Generator[int, None, None]:
+        yield 1
+      def wrapper() -> typing.Generator[int, None, None]:
+        yield from generator()
+    |}
+    [];
+  ()
+
+
+let test_check_generator_edge_cases context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      import typing
+      x: typing.Generator[typing.Any, typing.Any, typing.Any]
+      def foo() -> typing.Generator:
+        return x
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` must be specified "
+      ^ "as type that does not contain `Any`.";
+      "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      x: typing.Generator[int, int, int]
+      def foo() -> typing.Generator:
+        return x
+    |}
+    ["Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters."];
+  assert_type_errors
+    {|
+      import typing
+      def foo(l: typing.List[int])->typing.Generator[int, None, None]:
+        return (x for x in l)
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      def foo(l: typing.List[typing.Optional[int]])->typing.Generator[int, None, None]:
+        return (x for x in l if x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      def foo(l: typing.List[typing.Optional[int]])->typing.Generator[str, None, None]:
+        return (x for x in l if x is not None)
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[str, None, None]` "
+      ^ "but got `typing.Generator[int, None, None]`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      def foo(l: typing.Iterable[typing.Any])->typing.Generator[typing.Any, None, None]:
+        return (x for x in l)
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type "
+      ^ "that does not contain `Any`.";
+      "Missing parameter annotation [2]: Parameter `l` must have a type "
+      ^ "that does not contain `Any`.";
+    ];
+  ()
+
+
 let () =
   "generator"
   >::: [
          "check_comprehensions" >:: test_check_comprehensions;
-         "check_yield" >:: test_check_generators;
+         "check_yield" >:: test_check_yield;
+         "check_yield_from" >:: test_check_yield_from;
+         "check_generator_edge_cases" >:: test_check_generator_edge_cases;
        ]
   |> Test.run
