@@ -727,179 +727,188 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ -> analyze_expression ~resolution ~taint ~state ~expression
 
 
-  and analyze_call ~resolution location ~taint ~state ~callee ~arguments =
-    let analyze_regular_targets ~state ~callee ~arguments ~taint targets =
-      let { Call.callee; arguments } =
-        Interprocedural.CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
-      in
-      match targets with
-      | None ->
-          (* Obscure. *)
-          apply_call_targets ~callee ~resolution ~call_location:location ~arguments state taint []
-      | Some { Interprocedural.CallGraph.implicit_self; targets; _ } ->
-          let arguments =
-            if implicit_self then
-              let receiver =
-                match Node.value callee with
-                | Expression.Name (Name.Attribute { base; _ }) -> base
-                | _ ->
-                    (* Default to a benign self if we don't understand/retain information of what
-                       self is. *)
-                    Node.create_with_default_location (Expression.Constant Constant.NoneLiteral)
-              in
-              { Call.Argument.name = None; value = receiver } :: arguments
-            else
-              arguments
-          in
-          let targets, taint =
-            match Node.value callee with
-            | Name (Name.Attribute { base; attribute; _ }) ->
-                (* Add index breadcrumb if appropriate. *)
-                let taint =
-                  if not (String.equal attribute "get") then
-                    taint
-                  else
-                    match arguments with
-                    | _ :: index :: _ ->
-                        let label = get_index index.value in
-                        BackwardState.Tree.transform
-                          Features.FirstIndexSet.Self
-                          Map
-                          ~f:(add_first_index label)
-                          taint
-                    | _ -> taint
-                in
-                (* Specially handle super.__init__ calls and explicit calls to superclass'
-                   `__init__` in constructors for tito. *)
-                if
-                  is_constructor ()
-                  && String.equal attribute "__init__"
-                  && Interprocedural.CallResolution.is_super
-                       ~resolution
-                       ~define:FunctionContext.definition
-                       base
-                then
-                  (* If the super call is `object.__init__`, this is likely due to a lack of type
-                     information for that constructor - we treat that case as obscure to not lose
-                     argument taint for these calls. *)
-                  let targets =
-                    match targets with
-                    | [`Method { class_name = "object"; method_name = "__init__" }] -> []
-                    | _ -> targets
-                  in
-                  ( targets,
-                    BackwardState.Tree.create_leaf Domains.local_return_taint
-                    |> BackwardState.Tree.join taint )
-                else
-                  targets, taint
-            | _ -> targets, taint
-          in
-          apply_call_targets
-            ~callee
-            ~resolution
-            ~call_location:location
-            ~arguments
-            state
-            taint
-            targets
+  and analyze_regular_targets_call ~resolution ~location ~callee ~arguments ~taint ~state targets =
+    let { Call.callee; arguments } =
+      Interprocedural.CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
     in
-    let analyze_lambda_call
-        ~lambda_argument
-        ~non_lambda_arguments
-        ~higher_order_function
-        ~callable_argument
+    match targets with
+    | None ->
+        (* Obscure. *)
+        apply_call_targets ~callee ~resolution ~call_location:location ~arguments state taint []
+    | Some { Interprocedural.CallGraph.implicit_self; targets; _ } ->
+        let arguments =
+          if implicit_self then
+            let receiver =
+              match Node.value callee with
+              | Expression.Name (Name.Attribute { base; _ }) -> base
+              | _ ->
+                  (* Default to a benign self if we don't understand/retain information of what self
+                     is. *)
+                  Node.create_with_default_location (Expression.Constant Constant.NoneLiteral)
+            in
+            { Call.Argument.name = None; value = receiver } :: arguments
+          else
+            arguments
+        in
+        let targets, taint =
+          match Node.value callee with
+          | Name (Name.Attribute { base; attribute; _ }) ->
+              (* Add index breadcrumb if appropriate. *)
+              let taint =
+                if not (String.equal attribute "get") then
+                  taint
+                else
+                  match arguments with
+                  | _ :: index :: _ ->
+                      let label = get_index index.value in
+                      BackwardState.Tree.transform
+                        Features.FirstIndexSet.Self
+                        Map
+                        ~f:(add_first_index label)
+                        taint
+                  | _ -> taint
+              in
+              (* Specially handle super.__init__ calls and explicit calls to superclass' `__init__`
+                 in constructors for tito. *)
+              if
+                is_constructor ()
+                && String.equal attribute "__init__"
+                && Interprocedural.CallResolution.is_super
+                     ~resolution
+                     ~define:FunctionContext.definition
+                     base
+              then
+                (* If the super call is `object.__init__`, this is likely due to a lack of type
+                   information for that constructor - we treat that case as obscure to not lose
+                   argument taint for these calls. *)
+                let targets =
+                  match targets with
+                  | [`Method { class_name = "object"; method_name = "__init__" }] -> []
+                  | _ -> targets
+                in
+                ( targets,
+                  BackwardState.Tree.create_leaf Domains.local_return_taint
+                  |> BackwardState.Tree.join taint )
+              else
+                targets, taint
+          | _ -> targets, taint
+        in
+        apply_call_targets
+          ~callee
+          ~resolution
+          ~call_location:location
+          ~arguments
+          state
+          taint
+          targets
+
+
+  and analyze_lambda_call
+      ~resolution
+      ~location
+      ~callee
+      ~lambda_argument
+      ~non_lambda_arguments
+      ~higher_order_function
+      ~callable_argument
+      ~taint
+      ~state
+    =
+    let ( lambda_index,
+          {
+            Call.Argument.value = { location = lambda_location; _ } as lambda_callee;
+            name = lambda_name;
+          } )
       =
-      let ( lambda_index,
-            {
-              Call.Argument.value = { location = lambda_location; _ } as lambda_callee;
-              name = lambda_name;
-            } )
-        =
-        lambda_argument
+      lambda_argument
+    in
+    (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
+     * hof(q, fn, x, y) gets translated into (analyzed backwards)
+     * if rand():
+     *   $all = {q, x, y}
+     *   $result = fn( *all, **all)
+     * else:
+     *   $result = fn
+     * hof(q, $result, x, y)
+     *)
+    (* Simulate hof(q, $result, x, y). *)
+    let result = "$result" in
+    let higher_order_function_arguments =
+      let lambda_argument_with_index =
+        ( lambda_index,
+          {
+            Call.Argument.value =
+              Node.create ~location:lambda_location (Expression.Name (Name.Identifier result));
+            name = lambda_name;
+          } )
       in
-      (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
-       * hof(q, fn, x, y) gets translated into (analyzed backwards)
-       * if rand():
-       *   $all = {q, x, y}
-       *   $result = fn( *all, **all)
-       * else:
-       *   $result = fn
-       * hof(q, $result, x, y)
-       *)
-      (* Simulate hof(q, $result, x, y). *)
-      let result = "$result" in
-      let higher_order_function_arguments =
-        let lambda_argument_with_index =
-          ( lambda_index,
-            {
-              Call.Argument.value =
-                Node.create ~location:lambda_location (Expression.Name (Name.Identifier result));
-              name = lambda_name;
-            } )
-        in
-        let compare_by_index (left_index, _) (right_index, _) =
-          Int.compare left_index right_index
-        in
-        lambda_argument_with_index :: non_lambda_arguments
-        |> List.sort ~compare:compare_by_index
-        |> List.map ~f:snd
+      let compare_by_index (left_index, _) (right_index, _) = Int.compare left_index right_index in
+      lambda_argument_with_index :: non_lambda_arguments
+      |> List.sort ~compare:compare_by_index
+      |> List.map ~f:snd
+    in
+    let state =
+      analyze_regular_targets_call
+        ~resolution
+        ~location:lambda_location
+        ~state
+        ~taint
+        ~callee
+        ~arguments:higher_order_function_arguments
+        (Some higher_order_function)
+    in
+    let result_taint =
+      BackwardState.Tree.join
+        taint
+        (get_taint (Some (AccessPath.create (Root.Variable result) [])) state)
+    in
+
+    (* Simulate else branch. *)
+    let else_branch_state =
+      (* Simulate $result = fn. *)
+      analyze_expression ~resolution ~taint:result_taint ~state ~expression:lambda_callee
+    in
+
+    (* Simulate if branch. *)
+    let if_branch_state =
+      (* Simulate $result = fn( all, all). *)
+      let all_argument =
+        Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$all"))
+      in
+      let arguments_with_all_value =
+        List.map non_lambda_arguments ~f:snd
+        |> List.map ~f:(fun argument -> { argument with Call.Argument.value = all_argument })
       in
       let state =
-        analyze_regular_targets
+        analyze_regular_targets_call
+          ~resolution
+          ~location
           ~state
-          ~taint
-          ~callee
-          ~arguments:higher_order_function_arguments
-          (Some higher_order_function)
+          ~taint:result_taint
+          ~callee:lambda_callee
+          ~arguments:arguments_with_all_value
+          (Some callable_argument)
       in
-      let result_taint =
+
+      (* Simulate `$all = {q, x, y}`. *)
+      let all_taint =
         BackwardState.Tree.join
           taint
-          (get_taint (Some (AccessPath.create (Root.Variable result) [])) state)
+          (get_taint (Some (AccessPath.create (Root.Variable "$all") [])) state)
+        |> BackwardState.Tree.add_breadcrumb Features.lambda
       in
-
-      (* Simulate else branch. *)
-      let else_branch_state =
-        (* Simulate $result = fn. *)
-        analyze_expression ~resolution ~taint:result_taint ~state ~expression:lambda_callee
+      let all_assignee =
+        Node.create
+          ~location:lambda_location
+          (Expression.Set
+             (List.map non_lambda_arguments ~f:(fun (_, argument) -> argument.Call.Argument.value)))
       in
-
-      (* Simulate if branch. *)
-      let if_branch_state =
-        (* Simulate $result = fn( all, all). *)
-        let all_argument =
-          Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$all"))
-        in
-        let arguments_with_all_value =
-          List.map non_lambda_arguments ~f:snd
-          |> List.map ~f:(fun argument -> { argument with Call.Argument.value = all_argument })
-        in
-        let state =
-          analyze_regular_targets
-            ~state
-            ~taint:result_taint
-            ~callee:lambda_callee
-            ~arguments:arguments_with_all_value
-            (Some callable_argument)
-        in
-
-        (* Simulate `$all = {q, x, y}`. *)
-        let all_taint =
-          BackwardState.Tree.join
-            taint
-            (get_taint (Some (AccessPath.create (Root.Variable "$all") [])) state)
-          |> BackwardState.Tree.add_breadcrumb Features.lambda
-        in
-        let all_assignee =
-          Node.create
-            ~location
-            (Expression.Set
-               (List.map non_lambda_arguments ~f:(fun (_, argument) -> argument.Call.Argument.value)))
-        in
-        analyze_expression ~resolution ~taint:all_taint ~state ~expression:all_assignee
-      in
-      join if_branch_state else_branch_state
+      analyze_expression ~resolution ~taint:all_taint ~state ~expression:all_assignee
     in
+    join if_branch_state else_branch_state
+
+
+  and analyze_call ~resolution ~location ~taint ~state ~callee ~arguments =
     match { Call.callee; arguments } with
     | {
      callee =
@@ -910,7 +919,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let state =
           match get_callees ~location ~call:{ Call.callee; arguments } with
           | Some (RegularTargets targets) ->
-              analyze_regular_targets ~state ~callee ~arguments ~taint (Some targets)
+              analyze_regular_targets_call
+                ~resolution
+                ~location
+                ~state
+                ~callee
+                ~arguments
+                ~taint
+                (Some targets)
           | _ -> state
         in
         (* Handle base[index] = value. *)
@@ -1156,7 +1172,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         match get_callees ~location ~call:{ Call.callee; arguments } with
         | Some (RegularTargets targets) ->
-            analyze_regular_targets ~state ~callee ~arguments ~taint (Some targets)
+            analyze_regular_targets_call
+              ~resolution
+              ~location
+              ~state
+              ~callee
+              ~arguments
+              ~taint
+              (Some targets)
         | Some
             (HigherOrderTargets
               { higher_order_function; callable_argument = index, callable_argument }) -> (
@@ -1170,12 +1193,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       (List.drop arguments (index + 1))
                 in
                 analyze_lambda_call
+                  ~resolution
+                  ~location
+                  ~callee
                   ~lambda_argument:(index, lambda_argument)
                   ~non_lambda_arguments
                   ~higher_order_function
                   ~callable_argument
+                  ~taint
+                  ~state
             | _ ->
-                analyze_regular_targets
+                analyze_regular_targets_call
+                  ~resolution
+                  ~location
                   ~state
                   ~callee
                   ~arguments
@@ -1191,7 +1221,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~taint
               ~callee
               ~arguments
-        | None -> analyze_regular_targets ~state ~callee ~arguments ~taint None)
+        | None ->
+            analyze_regular_targets_call ~resolution ~location ~state ~callee ~arguments ~taint None
+        )
 
 
   and analyze_joined_string ~resolution ~taint ~state ~location substrings =
@@ -1251,7 +1283,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~taint ~state ~expression:right
             |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left)
     | Call { callee; arguments } ->
-        analyze_call ~resolution location ~taint ~state ~callee ~arguments
+        analyze_call ~resolution ~location ~taint ~state ~callee ~arguments
     | Constant _ -> state
     | Dictionary { Dictionary.entries; keywords } ->
         let state = List.fold ~f:(analyze_dictionary_entry ~resolution taint) entries ~init:state in

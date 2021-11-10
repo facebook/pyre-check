@@ -728,11 +728,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and analyze_constructor_call
       ~resolution
+      ~location
       ~callee
       ~arguments
       ~new_targets
       ~init_targets
-      ~location
       ~state
     =
     (* Analyze arguments first. *)
@@ -799,145 +799,155 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       init_targets
 
 
-  and analyze_call ~resolution ~location ~state ~callee ~arguments =
-    let analyze_regular_targets
-        ~state
-        ~callee
-        ~arguments
-        { Interprocedural.CallGraph.implicit_self; targets; collapse_tito }
-      =
-      let arguments =
-        if implicit_self then
-          let receiver =
-            match Node.value callee with
-            | Expression.Name (Name.Attribute { base; _ }) -> base
-            | _ ->
-                (* Default to a benign self if we don't understand/retain information of what self
-                   is. *)
-                Node.create_with_default_location (Expression.Constant Constant.NoneLiteral)
-          in
-          { Call.Argument.name = None; value = receiver } :: arguments
-        else
-          arguments
-      in
-      let add_index_breadcrumb_if_necessary taint =
-        let is_get_method =
+  and analyze_regular_targets_call
+      ~resolution
+      ~location
+      ~callee
+      ~arguments
+      ~state
+      { Interprocedural.CallGraph.implicit_self; targets; collapse_tito }
+    =
+    let arguments =
+      if implicit_self then
+        let receiver =
           match Node.value callee with
-          | Expression.Name (Name.Attribute { attribute = "get"; _ }) -> true
-          | _ -> false
+          | Expression.Name (Name.Attribute { base; _ }) -> base
+          | _ ->
+              (* Default to a benign self if we don't understand/retain information of what self is. *)
+              Node.create_with_default_location (Expression.Constant Constant.NoneLiteral)
         in
-        if not is_get_method then
-          taint
-        else
-          match arguments with
-          | _receiver :: index :: _ ->
-              let label = get_index index.value in
-              ForwardState.Tree.transform
-                Features.FirstIndexSet.Self
-                Map
-                ~f:(add_first_index label)
-                taint
-          | _ -> taint
-      in
-      apply_call_targets
-        ~resolution
-        ~callee
-        ~collapse_tito
-        ~call_location:location
-        ~arguments
-        state
-        targets
-      |>> add_index_breadcrumb_if_necessary
+        { Call.Argument.name = None; value = receiver } :: arguments
+      else
+        arguments
     in
+    let add_index_breadcrumb_if_necessary taint =
+      let is_get_method =
+        match Node.value callee with
+        | Expression.Name (Name.Attribute { attribute = "get"; _ }) -> true
+        | _ -> false
+      in
+      if not is_get_method then
+        taint
+      else
+        match arguments with
+        | _receiver :: index :: _ ->
+            let label = get_index index.value in
+            ForwardState.Tree.transform
+              Features.FirstIndexSet.Self
+              Map
+              ~f:(add_first_index label)
+              taint
+        | _ -> taint
+    in
+    apply_call_targets
+      ~resolution
+      ~callee
+      ~collapse_tito
+      ~call_location:location
+      ~arguments
+      state
+      targets
+    |>> add_index_breadcrumb_if_necessary
 
-    let analyze_lambda_call
-        ~callee
-        ~lambda_argument
-        ~non_lambda_arguments
-        ~higher_order_function
-        ~callable_argument
+
+  and analyze_lambda_call
+      ~resolution
+      ~location
+      ~callee
+      ~lambda_argument
+      ~non_lambda_arguments
+      ~higher_order_function
+      ~callable_argument
+      ~state
+    =
+    (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
+     * hof(q, fn, x, y) gets translated into the following block: (analyzed forwards)
+     * if rand():
+     *   $all = {q, x, y}
+     *   $result = fn( *all, **all)
+     * else:
+     *   $result = fn
+     * hof(q, $result, x, y)
+     *)
+    let ( lambda_index,
+          {
+            Call.Argument.value = { location = lambda_location; _ } as lambda_callee;
+            name = lambda_name;
+          } )
       =
-      (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
-       * hof(q, fn, x, y) gets translated into the following block: (analyzed backwards)
-       * if rand():
-       *   $all = {q, x, y}
-       *   $result = fn( *all, **all)
-       * else:
-       *   $result = fn
-       * hof(q, $result, x, y)
-       *)
-      let ( lambda_index,
-            {
-              Call.Argument.value = { location = lambda_location; _ } as lambda_callee;
-              name = lambda_name;
-            } )
-        =
-        lambda_argument
-      in
-      let location = lambda_callee.Node.location in
-      let result =
-        Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$result"))
-      in
-
-      (* Simulate if branch. *)
-      let if_branch_state =
-        (* Simulate `$all = {q, x, y}`. *)
-        let all_argument =
-          Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$all"))
-        in
-        let state =
-          let all_assignee =
-            Node.create
-              ~location
-              (Expression.Set
-                 (List.map non_lambda_arguments ~f:(fun (_, argument) ->
-                      argument.Call.Argument.value)))
-          in
-          let taint, state = analyze_expression ~resolution ~state ~expression:all_assignee in
-          analyze_assignment ~resolution all_argument taint taint state
-        in
-
-        (* Simulate `$result = fn( *all, **all)`. *)
-        let arguments =
-          List.map non_lambda_arguments ~f:(fun (_, argument) ->
-              { argument with Call.Argument.value = all_argument })
-        in
-        let { Call.callee; arguments } =
-          Interprocedural.CallGraph.redirect_special_calls
-            ~resolution
-            { Call.callee = lambda_callee; arguments }
-        in
-        let taint, state = analyze_regular_targets ~state ~callee ~arguments callable_argument in
-        let taint = ForwardState.Tree.add_breadcrumb Features.lambda taint in
-        analyze_assignment ~resolution result taint taint state
-      in
-
-      (* Simulate else branch. *)
-      let else_branch_state =
-        let taint, state = analyze_expression ~resolution ~state ~expression:lambda_callee in
-        analyze_assignment ~resolution result taint taint state
-      in
-      let state = join if_branch_state else_branch_state in
-
-      (* Simulate `hof(q, $result, x, y)`. *)
-      let higher_order_function_arguments =
-        let lambda_argument_with_index =
-          lambda_index, { Call.Argument.value = result; name = lambda_name }
-        in
-        let compare_by_index (left_index, _) (right_index, _) =
-          Int.compare left_index right_index
-        in
-        lambda_argument_with_index :: non_lambda_arguments
-        |> List.sort ~compare:compare_by_index
-        |> List.map ~f:snd
-      in
-      analyze_regular_targets
-        ~state
-        ~callee
-        ~arguments:higher_order_function_arguments
-        higher_order_function
+      lambda_argument
+    in
+    let result =
+      Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$result"))
     in
 
+    (* Simulate if branch. *)
+    let if_branch_state =
+      (* Simulate `$all = {q, x, y}`. *)
+      let all_argument =
+        Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$all"))
+      in
+      let state =
+        let all_assignee =
+          Node.create
+            ~location:lambda_location
+            (Expression.Set
+               (List.map non_lambda_arguments ~f:(fun (_, argument) -> argument.Call.Argument.value)))
+        in
+        let taint, state = analyze_expression ~resolution ~state ~expression:all_assignee in
+        analyze_assignment ~resolution all_argument taint taint state
+      in
+
+      (* Simulate `$result = fn( *all, **all)`. *)
+      let arguments =
+        List.map non_lambda_arguments ~f:(fun (_, argument) ->
+            { argument with Call.Argument.value = all_argument })
+      in
+      let { Call.callee; arguments } =
+        Interprocedural.CallGraph.redirect_special_calls
+          ~resolution
+          { Call.callee = lambda_callee; arguments }
+      in
+      let taint, state =
+        analyze_regular_targets_call
+          ~resolution
+          ~location:lambda_location
+          ~callee
+          ~arguments
+          ~state
+          callable_argument
+      in
+      let taint = ForwardState.Tree.add_breadcrumb Features.lambda taint in
+      analyze_assignment ~resolution result taint taint state
+    in
+
+    (* Simulate else branch. *)
+    let else_branch_state =
+      let taint, state = analyze_expression ~resolution ~state ~expression:lambda_callee in
+      analyze_assignment ~resolution result taint taint state
+    in
+    let state = join if_branch_state else_branch_state in
+
+    (* Simulate `hof(q, $result, x, y)`. *)
+    let higher_order_function_arguments =
+      let lambda_argument_with_index =
+        lambda_index, { Call.Argument.value = result; name = lambda_name }
+      in
+      let compare_by_index (left_index, _) (right_index, _) = Int.compare left_index right_index in
+      lambda_argument_with_index :: non_lambda_arguments
+      |> List.sort ~compare:compare_by_index
+      |> List.map ~f:snd
+    in
+    analyze_regular_targets_call
+      ~resolution
+      ~location
+      ~callee
+      ~arguments:higher_order_function_arguments
+      ~state
+      higher_order_function
+
+
+  and analyze_call ~resolution ~location ~state ~callee ~arguments =
     let assign_super_constructor_taint_to_self_if_necessary taint state =
       match Node.value callee, FunctionContext.definition with
       | ( Expression.Name (Name.Attribute { base; attribute = "__init__"; _ }),
@@ -1024,7 +1034,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              tainted. *)
           match get_callees ~location ~call:{ Call.callee; arguments } with
           | Some (RegularTargets targets) ->
-              analyze_regular_targets ~state ~callee ~arguments targets
+              analyze_regular_targets_call ~resolution ~location ~callee ~arguments ~state targets
           | _ -> taint, state)
       (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
          being frozen post-initialization. *)
@@ -1192,7 +1202,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint, state =
             match get_callees ~location ~call:{ Call.callee; arguments } with
             | Some (RegularTargets targets) ->
-                analyze_regular_targets ~state ~callee ~arguments targets
+                analyze_regular_targets_call ~resolution ~location ~callee ~arguments ~state targets
             | Some
                 (HigherOrderTargets
                   { higher_order_function; callable_argument = index, callable_argument }) -> (
@@ -1206,20 +1216,30 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                           (List.drop arguments (index + 1))
                     in
                     analyze_lambda_call
+                      ~resolution
+                      ~location
                       ~callee
                       ~lambda_argument:(index, lambda_argument)
                       ~non_lambda_arguments
                       ~higher_order_function
                       ~callable_argument
-                | _ -> analyze_regular_targets ~state ~callee ~arguments higher_order_function)
+                      ~state
+                | _ ->
+                    analyze_regular_targets_call
+                      ~resolution
+                      ~location
+                      ~callee
+                      ~arguments
+                      ~state
+                      higher_order_function)
             | Some (ConstructorTargets { new_targets; init_targets }) ->
                 analyze_constructor_call
                   ~resolution
+                  ~location
                   ~callee
                   ~arguments
                   ~new_targets
                   ~init_targets
-                  ~location
                   ~state
             | None ->
                 (* No target, treat call as obscure *)
