@@ -21,7 +21,7 @@ from . import (
     log,
     recently_used_configurations,
 )
-from .commands import v2
+from . import commands
 from .version import __version__
 
 
@@ -66,7 +66,9 @@ def _start_logging_to_directory(log_directory: str) -> None:
     log.enable_file_logging(log_directory_path / "pyre.stderr")
 
 
-def _run_check_command(arguments: command_arguments.CommandArguments) -> v2.ExitCode:
+def _run_check_command(
+    arguments: command_arguments.CommandArguments,
+) -> commands.ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
     _check_configuration(configuration)
     _start_logging_to_directory(configuration.log_directory)
@@ -81,7 +83,7 @@ def _run_check_command(arguments: command_arguments.CommandArguments) -> v2.Exit
         sequential=arguments.sequential,
         show_error_traces=arguments.show_error_traces,
     )
-    return v2.check.run(configuration, check_arguments)
+    return commands.check.run(configuration, check_arguments)
 
 
 def _run_incremental_command(
@@ -90,7 +92,7 @@ def _run_incremental_command(
     incremental_style: command_arguments.IncrementalStyle,
     no_start_server: bool,
     no_watchman: bool,
-) -> v2.ExitCode:
+) -> commands.ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
     _check_configuration(configuration)
     _start_logging_to_directory(configuration.log_directory)
@@ -113,7 +115,7 @@ def _run_incremental_command(
         terminal=False,
         wait_on_initialization=True,
     )
-    return v2.incremental.run(
+    return commands.incremental.run(
         configuration,
         command_arguments.IncrementalArguments(
             output=arguments.output,
@@ -123,7 +125,9 @@ def _run_incremental_command(
     )
 
 
-def _run_default_command(arguments: command_arguments.CommandArguments) -> v2.ExitCode:
+def _run_default_command(
+    arguments: command_arguments.CommandArguments,
+) -> commands.ExitCode:
     if shutil.which("watchman"):
         return _run_incremental_command(
             arguments=arguments,
@@ -448,7 +452,7 @@ def pyre(
     )
     if arguments.version:
         _show_pyre_version(arguments)
-        return v2.ExitCode.SUCCESS
+        return commands.ExitCode.SUCCESS
 
     context.ensure_object(dict)
     context.obj["arguments"] = arguments
@@ -457,7 +461,7 @@ def pyre(
         return _run_default_command(arguments)
 
     # This return value is not used anywhere.
-    return v2.ExitCode.SUCCESS
+    return commands.ExitCode.SUCCESS
 
 
 @pyre.command()
@@ -549,7 +553,7 @@ def analyze(
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     _check_configuration(configuration)
     _start_logging_to_directory(configuration.log_directory)
-    return v2.analyze.run(
+    return commands.analyze.run(
         configuration,
         command_arguments.AnalyzeArguments(
             debug=command_argument.debug,
@@ -764,7 +768,7 @@ def infer(
         if len(paths_to_modify) == 0
         else {working_directory / Path(path) for path in paths_to_modify}
     )
-    return v2.infer.run(
+    return commands.infer.run(
         configuration,
         command_arguments.InferArguments(
             working_directory=working_directory,
@@ -800,7 +804,7 @@ def init(context: click.Context, local: bool) -> int:
     """
     Create a pyre configuration file at the current directory.
     """
-    return v2.initialize.run()
+    return commands.initialize.run()
 
 
 @pyre.command()
@@ -809,9 +813,9 @@ def init_pysa(context: click.Context) -> int:
     """
     Creates a suitable environment for running pyre analyze.
     """
-    create_configuration_return_code: int = v2.initialize.run()
-    if create_configuration_return_code == v2.ExitCode.SUCCESS:
-        return v2.initialize_pysa.run()
+    create_configuration_return_code: int = commands.initialize.run()
+    if create_configuration_return_code == commands.ExitCode.SUCCESS:
+        return commands.initialize_pysa.run()
     else:
         return create_configuration_return_code
 
@@ -829,7 +833,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    return v2.kill.run(configuration, with_fire)
+    return commands.kill.run(configuration, with_fire)
 
 
 @pyre.command()
@@ -848,10 +852,10 @@ def persistent(context: click.Context) -> int:
     _start_logging_to_directory(
         configuration.log_directory,
     )
-    return v2.persistent.run(
+    return commands.persistent.run(
         command_argument,
         base_directory,
-        v2.backend_arguments.RemoteLogging.create(
+        commands.backend_arguments.RemoteLogging.create(
             configuration.logger, command_argument.log_identifier
         ),
     )
@@ -873,7 +877,7 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
     _start_logging_to_directory(
         configuration.log_directory,
     )
-    return v2.pysa_server.run(
+    return commands.pysa_server.run(
         configuration,
         command_arguments.StartArguments(
             changed_files_path=command_argument.changed_files_path,
@@ -918,7 +922,7 @@ def profile(context: click.Context, profile_output: str) -> int:
 
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return v2.profile.run(configuration, get_profile_output(profile_output))
+    return commands.profile.run(configuration, get_profile_output(profile_output))
 
 
 @pyre.command()
@@ -936,7 +940,7 @@ def query(context: click.Context, query: str) -> int:
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     _start_logging_to_directory(configuration.log_directory)
-    return v2.query.run(configuration, query)
+    return commands.query.run(configuration, query)
 
 
 @pyre.command()
@@ -965,7 +969,7 @@ def rage(
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    return v2.rage.run(
+    return commands.rage.run(
         configuration,
         command_arguments.RageArguments(
             output=Path(output_file) if output_file is not None else None,
@@ -1035,7 +1039,7 @@ def restart(
         terminal=terminal,
         wait_on_initialization=True,
     )
-    return v2.restart.run(
+    return commands.restart.run(
         configuration,
         command_arguments.IncrementalArguments(
             output=command_argument.output,
@@ -1055,9 +1059,9 @@ def servers(context: click.Context) -> int:
     """
     if context.invoked_subcommand is None:
         arguments: command_arguments.CommandArguments = context.obj["arguments"]
-        return v2.servers.run_list(arguments.output)
+        return commands.servers.run_list(arguments.output)
     # This return value is not used anywhere.
-    return v2.ExitCode.SUCCESS
+    return commands.ExitCode.SUCCESS
 
 
 @servers.command(name="list")
@@ -1067,7 +1071,7 @@ def servers_list(context: click.Context) -> int:
     List all running servers.
     """
     arguments: command_arguments.CommandArguments = context.obj["arguments"]
-    return v2.servers.run_list(arguments.output)
+    return commands.servers.run_list(arguments.output)
 
 
 @servers.command(name="stop")
@@ -1076,7 +1080,7 @@ def servers_stop(context: click.Context) -> int:
     """
     Stop all running servers.
     """
-    return v2.servers.run_stop()
+    return commands.servers.run_stop()
 
 
 @pyre.command()
@@ -1128,7 +1132,7 @@ def start(
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     _check_configuration(configuration)
     _start_logging_to_directory(configuration.log_directory)
-    return v2.start.run(
+    return commands.start.run(
         configuration,
         command_arguments.StartArguments(
             changed_files_path=command_argument.changed_files_path,
@@ -1178,7 +1182,7 @@ def statistics(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return v2.statistics.run(
+    return commands.statistics.run(
         configuration,
         command_arguments.StatisticsArguments(
             filter_paths=list(filter_paths),
@@ -1214,7 +1218,7 @@ def coverage(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return v2.coverage.run(configuration, working_directory, list(roots))
+    return commands.coverage.run(configuration, working_directory, list(roots))
 
 
 @pyre.command()
@@ -1228,7 +1232,7 @@ def stop(context: click.Context) -> int:
         command_argument, Path(".")
     )
     _start_logging_to_directory(configuration.log_directory)
-    return v2.stop.run(configuration)
+    return commands.stop.run(configuration)
 
 
 @pyre.command()
@@ -1240,7 +1244,7 @@ def validate_models(context: click.Context) -> int:
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     _start_logging_to_directory(configuration.log_directory)
-    return v2.validate_models.run(configuration, output=command_argument.output)
+    return commands.validate_models.run(configuration, output=command_argument.output)
 
 
 # Need the default argument here since this is our entry point in setup.py
@@ -1251,16 +1255,16 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
             return_code = pyre(argv, auto_envvar_prefix="PYRE", standalone_mode=False)
         except configuration_module.InvalidConfiguration as error:
             LOG.error(str(error))
-            return v2.ExitCode.CONFIGURATION_ERROR
+            return commands.ExitCode.CONFIGURATION_ERROR
         except click.ClickException as error:
             error.show()
-            return_code = v2.ExitCode.FAILURE
-        except v2.ClientException as error:
+            return_code = commands.ExitCode.FAILURE
+        except commands.ClientException as error:
             LOG.error(str(error))
             return_code = error.exit_code
         except Exception as error:
             LOG.error(str(error))
-            return_code = v2.ExitCode.FAILURE
+            return_code = commands.ExitCode.FAILURE
     return return_code
 
 
@@ -1272,5 +1276,5 @@ if __name__ == "__main__":
             "Pyre could not determine the current working directory. "
             "Has it been removed?\nExiting."
         )
-        sys.exit(v2.ExitCode.FAILURE)
+        sys.exit(commands.ExitCode.FAILURE)
     sys.exit(main(sys.argv[1:]))
