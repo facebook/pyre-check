@@ -767,7 +767,103 @@ module State (Context : Context) = struct
     Type.Variable.mark_all_variables_as_bound annotation
 
 
-  let rec forward_expression ~resolution ~expression:{ Node.location; value } =
+  let rec validate_return ~expression ~resolution ~errors ~location ~actual ~is_implicit =
+    let global_resolution = Resolution.global_resolution resolution in
+    let { Node.location = define_location; value = define } = Context.define in
+    let { Define.Signature.generator; return_annotation = return_annotation_expression; _ } =
+      define.signature
+    in
+    let return_annotation = return_annotation ~global_resolution in
+    (* We weaken type inference of mutable literals for assignments and returns to get around the
+       invariance of containers when we can prove that casting to a supertype is safe. *)
+    let actual =
+      GlobalResolution.resolve_mutable_literals
+        global_resolution
+        ~resolve:(resolve_expression_type ~resolution)
+        ~expression
+        ~resolved:actual
+        ~expected:return_annotation
+    in
+    let check_incompatible_return actual errors =
+      if
+        Define.has_return_annotation define
+        && (not
+              (GlobalResolution.constraints_solution_exists
+                 global_resolution
+                 ~left:actual
+                 ~right:return_annotation))
+        && (not (Define.is_abstract_method define))
+        && (not (Define.is_overloaded_function define))
+        && (not (Type.is_none actual && generator))
+        && not (Type.is_none actual && Type.is_noreturn return_annotation)
+      then
+        let rec check_unimplemented = function
+          | [
+              { Node.value = Statement.Pass; _ };
+              { Node.value = Statement.Return { Return.expression = None; _ }; _ };
+            ] ->
+              true
+          | {
+              Node.value =
+                Statement.Expression { Node.value = Expression.Constant (Constant.String _); _ };
+              _;
+            }
+            :: tail ->
+              check_unimplemented tail
+          | _ -> false
+        in
+        emit_error
+          ~errors
+          ~location
+          ~kind:
+            (Error.IncompatibleReturnType
+               {
+                 mismatch =
+                   Error.create_mismatch
+                     ~resolution:global_resolution
+                     ~actual
+                     ~expected:return_annotation
+                     ~covariant:true;
+                 is_implicit;
+                 is_unimplemented = check_unimplemented define.body;
+                 define_location;
+               })
+      else
+        errors
+    in
+    let check_missing_return actual errors =
+      let contains_literal_any =
+        return_annotation_expression >>| Type.expression_contains_any |> Option.value ~default:false
+      in
+      if
+        (not (Define.has_return_annotation define))
+        || (contains_literal_any && Type.contains_prohibited_any return_annotation)
+      then
+        let given_annotation =
+          Option.some_if (Define.has_return_annotation define) return_annotation
+        in
+        emit_error
+          ~errors
+          ~location:define_location
+          ~kind:
+            (Error.MissingReturnAnnotation
+               {
+                 name = Reference.create "$return_annotation";
+                 annotation = Some actual;
+                 given_annotation;
+                 evidence_locations = [instantiate_path ~global_resolution location];
+                 thrown_at_source = true;
+               })
+      else
+        errors
+    in
+    match actual with
+    | { resolved = actual; typed_dictionary_errors = [] } ->
+        check_incompatible_return actual errors |> check_missing_return actual
+    | { typed_dictionary_errors; _ } -> emit_typed_dictionary_errors ~errors typed_dictionary_errors
+
+
+  and forward_expression ~resolution ~expression:{ Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
     let forward_entry ~resolution ~errors ~entry:{ Dictionary.Entry.key; value } =
       let { Resolved.resolution; resolved = key_resolved; errors = key_errors; _ } =
@@ -4394,112 +4490,8 @@ module State (Context : Context) = struct
 
   let forward_statement ~resolution ~statement:{ Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
-    let {
-      Node.location = define_location;
-      value =
-        {
-          Define.signature =
-            { async; return_annotation = return_annotation_expression; generator; _ };
-          body;
-          _;
-        } as define;
-    }
-      =
-      Context.define
-    in
-    (* We weaken type inference of mutable literals for assignments and returns to get around the
-       invariance of containers when we can prove that casting to a supertype is safe. *)
-    let validate_return ~expression ~resolution ~errors ~actual ~is_implicit =
-      let return_annotation = return_annotation ~global_resolution in
-      let actual =
-        GlobalResolution.resolve_mutable_literals
-          global_resolution
-          ~resolve:(resolve_expression_type ~resolution)
-          ~expression
-          ~resolved:actual
-          ~expected:return_annotation
-      in
-      let check_incompatible_return actual errors =
-        if
-          Define.has_return_annotation define
-          && (not
-                (GlobalResolution.constraints_solution_exists
-                   global_resolution
-                   ~left:actual
-                   ~right:return_annotation))
-          && (not (Define.is_abstract_method define))
-          && (not (Define.is_overloaded_function define))
-          && (not (Type.is_none actual && generator))
-          && not (Type.is_none actual && Type.is_noreturn return_annotation)
-        then
-          let rec check_unimplemented = function
-            | [
-                { Node.value = Statement.Pass; _ };
-                { Node.value = Statement.Return { Return.expression = None; _ }; _ };
-              ] ->
-                true
-            | {
-                Node.value =
-                  Statement.Expression { Node.value = Expression.Constant (Constant.String _); _ };
-                _;
-              }
-              :: tail ->
-                check_unimplemented tail
-            | _ -> false
-          in
-          emit_error
-            ~errors
-            ~location
-            ~kind:
-              (Error.IncompatibleReturnType
-                 {
-                   mismatch =
-                     Error.create_mismatch
-                       ~resolution:global_resolution
-                       ~actual
-                       ~expected:return_annotation
-                       ~covariant:true;
-                   is_implicit;
-                   is_unimplemented = check_unimplemented body;
-                   define_location;
-                 })
-        else
-          errors
-      in
-      let check_missing_return actual errors =
-        let contains_literal_any =
-          return_annotation_expression
-          >>| Type.expression_contains_any
-          |> Option.value ~default:false
-        in
-        if
-          (not (Define.has_return_annotation define))
-          || (contains_literal_any && Type.contains_prohibited_any return_annotation)
-        then
-          let given_annotation =
-            Option.some_if (Define.has_return_annotation define) return_annotation
-          in
-          emit_error
-            ~errors
-            ~location:define_location
-            ~kind:
-              (Error.MissingReturnAnnotation
-                 {
-                   name = Reference.create "$return_annotation";
-                   annotation = Some actual;
-                   given_annotation;
-                   evidence_locations = [instantiate_path ~global_resolution location];
-                   thrown_at_source = true;
-                 })
-        else
-          errors
-      in
-      match actual with
-      | { resolved = actual; typed_dictionary_errors = [] } ->
-          check_incompatible_return actual errors |> check_missing_return actual
-      | { typed_dictionary_errors; _ } ->
-          emit_typed_dictionary_errors ~errors typed_dictionary_errors
-    in
+    let { Define.Signature.async; _ } = define_signature in
+    let validate_return = validate_return ~location in
     match value with
     | Statement.Assign { Assign.target; annotation; value } ->
         forward_assignment ~resolution ~location ~target ~annotation ~value
