@@ -17,6 +17,7 @@ from typing import IO, List
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
@@ -111,7 +112,9 @@ class Pyre:
 
 
 class Pysa:
-    def __init__(self, model: str = "", use_builtin_pysa_models: bool = False) -> None:
+    def __init__(
+        self, input: str, model: str = "", use_builtin_pysa_models: bool = False
+    ) -> None:
         self._directory: Path = Path(tempfile.mkdtemp())
         self._stubs: Path = Path(tempfile.mkdtemp())
 
@@ -135,12 +138,11 @@ class Pysa:
             LOG.debug("Writing custom model to pysa file")
             model_path = self._stubs / CUSTOM_PYSA_MODEL_FILE
             model_path.write_text(model)
-
-    def analyze(self, input: str) -> str:
         LOG.debug(f"Writing code:\n{input}")
         code_path = self._directory / INPUT_FILE
         code_path.write_text(input)
 
+    def analyze(self) -> None:
         LOG.debug("Running pysa")
         with subprocess.Popen(
             ["pyre", "-n", "analyze"],
@@ -149,28 +151,46 @@ class Pysa:
             cwd=self._directory,
             text=True,
         ) as process:
-            process_stderr = process.stderr
-            stderr = ""
-            if process_stderr is not None:
-                stderr = _consume(process_stderr)
-            process_stdout = process.stdout
-            stdout = ""
-            if process_stdout is not None:
-                stdout = _consume(process_stdout)
+            model_verification_errors = []
+            model_verification_errors_found = False
+            for line in iter(process.stderr.readline, b""):
+                line = line.rstrip()
+                if line == "":
+                    break
+                elif "DEBUG" in line:
+                    continue
+                elif "ERROR" in line and "is not part of the environment" in line:
+                    model_verification_errors.append(line)
+                    model_verification_errors_found = True
+                    continue
+                elif model_verification_errors_found:
+                    # Emit all model verification lines together to prevent
+                    # network overhead.
+                    emit(
+                        "pysa_results_channel",
+                        {
+                            "type": "output",
+                            "line": "\n".join(model_verification_errors),
+                        },
+                    )
+                    LOG.debug("\n".join(model_verification_errors))
+                LOG.debug(line)
+                emit("pysa_results_channel", {"type": "output", "line": line})
+
             return_code = process.wait()
-
             if return_code != 0:
-                LOG.error(f"Returning error: {stderr}")
-                result = jsonify(errors=[stderr])
+                result = {"type": "finished", "result": "error"}
             else:
-                errors = json.loads(stdout)
-                result = jsonify(data={"errors": errors, "stderr": stderr})
+                result = {"type": "finished", "result": "ok"}
 
-            return result
+            emit("pysa_results_channel", result)
 
 
 application = Flask(__name__)
+# You may need to modify the origin to the pyre-check website
+# before deployment.
 CORS(application)
+socketio = SocketIO(application, cors_allowed_origins="*")
 
 
 @application.route("/check", methods=["GET", "POST"])
@@ -188,33 +208,29 @@ def check() -> str:
     return pyre.check(input)
 
 
-@application.route("/analyze", methods=["POST"])
-def analyze() -> str:
-    input = (
-        request.args.get("input")
-        or request.form.get("input")
-        or request.json.get("input")
-    )
-    use_builtin_pysa_models = bool(
-        request.args.get("use_builtin_pysa_models")
-        or request.form.get("use_builtin_pysa_models")
-        or request.json.get("use_builtin_pysa_models")
-    )
-    model = (
-        request.args.get("model")
-        or request.form.get("model")
-        or request.json.get("model")
-    )
+@socketio.on("analyze", namespace="/analyze")
+def analyze(json) -> None:
+    input = json.get("input", None)
+    use_builtin_pysa_models = json.get("use_builtin_pysa_models", False)
+    model = json.get("model", "")
     if input is None:
-        return jsonify(errors=["Input not provided"])
-    pysa = Pysa(model, use_builtin_pysa_models)
-    LOG.info(f"Checking `{input}`...")
-    return pysa.analyze(input)
+        emit(
+            "pysa_results_channel",
+            {
+                "type": "finished",
+                "result": "error",
+                "reason": "No code given to analyze.",
+            },
+        )
+    else:
+        pysa = Pysa(input, model, use_builtin_pysa_models)
+        LOG.info(f"Checking `{input}`...")
+        pysa.analyze()
 
 
 @application.route("/")
 def index() -> str:
-    return "index"
+    return "404"
 
 
 if __name__ == "__main__":
@@ -222,5 +238,4 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true")
     arguments: argparse.Namespace = parser.parse_args()
 
-    application.debug = arguments.debug
-    application.run()
+    socketio.run(application, debug=arguments.debug)
