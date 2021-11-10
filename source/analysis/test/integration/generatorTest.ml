@@ -294,14 +294,6 @@ let test_check_yield context =
   assert_type_errors
     {|
       import typing
-      def foo() -> typing.Generator[str, int, None]:
-        x = yield "hello"
-        reveal_type(x)
-    |}
-    ["Revealed type [-1]: Revealed type for `x` is `int`."];
-  assert_type_errors
-    {|
-      import typing
       def foo() -> typing.Iterator[str]:
         x = yield "hello"
         reveal_type(x)
@@ -338,29 +330,6 @@ let test_check_yield_from context =
         yield from generator()
     |}
     [];
-  (* return type handling for yield from *)
-  assert_type_errors
-    {|
-      import typing
-
-      yielded_from: typing.Generator[int, None, str]
-
-      def foo() -> typing.Generator[int, None, str]:
-        x = yield from yielded_from
-        reveal_type(x)
-    |}
-    ["Revealed type [-1]: Revealed type for `x` is `str`."];
-  assert_type_errors
-    {|
-      import typing
-
-      yielded_from: typing.Iterator[int]
-
-      def foo() -> typing.Generator[int, None, str]:
-        x = yield from yielded_from
-        reveal_type(x)
-    |}
-    ["Revealed type [-1]: Revealed type for `x` is `None`."];
   ()
 
 
@@ -467,6 +436,50 @@ let test_check_generator_known_failures context =
       "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got \
        `typing.Generator[int, None, None]`.";
       "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got `str`.";
+    ];
+  (* Make sure the send type is handled correctly *)
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Generator[str, int, None]:
+        x = yield "hello"
+        reveal_type(x)
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[str, int, None]` but got \
+       `typing.Generator[str, None, None]`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
+  (* return type handling for yield from *)
+  assert_type_errors
+    {|
+      import typing
+
+      yielded_from: typing.Generator[int, None, str]
+
+      def foo() -> typing.Generator[int, None, str]:
+        x = yield from yielded_from
+        reveal_type(x)
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got \
+       `typing.Generator[int, None, None]`.";
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+
+      yielded_from: typing.Iterator[int]
+
+      def foo() -> typing.Generator[int, None, str]:
+        x = yield from yielded_from
+        reveal_type(x)
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got \
+       `typing.Generator[int, None, None]`.";
+      "Revealed type [-1]: Revealed type for `x` is `None`.";
     ];
   ()
 

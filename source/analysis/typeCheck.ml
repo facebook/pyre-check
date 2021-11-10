@@ -2797,20 +2797,61 @@ module State (Context : Context) = struct
         in
         let resolved = forward_expression ~resolution ~expression:value in
         { resolved with errors = List.append errors resolved.errors }
-    | Expression.Yield _ ->
+    | Expression.Yield yielded ->
+        let { Define.Signature.async; _ } = define_signature in
+        let { Resolved.resolution; resolved = actual; errors; _ } =
+          match yielded with
+          | Some expression ->
+              let { Resolved.resolution; resolved; errors; _ } =
+                forward_expression ~resolution ~expression
+              in
+              {
+                resolution;
+                errors;
+                resolved = Type.generator ~async resolved;
+                resolved_annotation = None;
+                base = None;
+              }
+          | None ->
+              {
+                resolution;
+                errors = [];
+                resolved = Type.generator ~async Type.none;
+                resolved_annotation = None;
+                base = None;
+              }
+        in
+        let errors =
+          validate_return ~location ~expression:None ~resolution ~errors ~actual ~is_implicit:false
+        in
         let send_type, _ =
           return_annotation ~global_resolution
           |> GlobalResolution.type_of_generator_send_and_return ~global_resolution
         in
-        { resolution; errors = []; resolved = send_type; resolved_annotation = None; base = None }
+        { resolution; errors; resolved = send_type; resolved_annotation = None; base = None }
     | Expression.YieldFrom yielded_from ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_expression ~resolution ~expression:yielded_from
         in
-        let _, returned_type =
+        let actual =
+          resolved
+          |> GlobalResolution.type_of_iteration_value ~global_resolution
+          |> Option.value ~default:Type.Any
+          |> Type.generator
+        in
+        let errors =
+          validate_return ~location ~expression:None ~resolution ~errors ~actual ~is_implicit:false
+        in
+        let _, subgenerator_return_type =
           GlobalResolution.type_of_generator_send_and_return ~global_resolution resolved
         in
-        { resolution; errors; resolved = returned_type; resolved_annotation = None; base = None }
+        {
+          resolution;
+          errors;
+          resolved = subgenerator_return_type;
+          resolved_annotation = None;
+          base = None;
+        }
 
 
   and refine_resolution_for_assert ~resolution test =
@@ -4490,7 +4531,6 @@ module State (Context : Context) = struct
 
   let forward_statement ~resolution ~statement:{ Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
-    let { Define.Signature.async; _ } = define_signature in
     let validate_return = validate_return ~location in
     match value with
     | Statement.Assign { Assign.target; annotation; value } ->
@@ -4515,53 +4555,14 @@ module State (Context : Context) = struct
         { Node.value = Call { callee; arguments = { Call.Argument.value = test; _ } :: _ }; _ }
       when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->
         forward_assert ~resolution test
-    | Expression expression -> (
-        match expression with
-        | { Node.value = Expression.Yield yielded; _ } ->
-            let { Resolved.resolution; resolved = actual; errors; _ } =
-              match yielded with
-              | Some expression ->
-                  let { Resolved.resolution; resolved; errors; _ } =
-                    forward_expression ~resolution ~expression
-                  in
-                  {
-                    resolution;
-                    errors;
-                    resolved = Type.generator ~async resolved;
-                    resolved_annotation = None;
-                    base = None;
-                  }
-              | None ->
-                  {
-                    resolution;
-                    errors = [];
-                    resolved = Type.generator ~async Type.none;
-                    resolved_annotation = None;
-                    base = None;
-                  }
-            in
-            ( Value resolution,
-              validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
-        | { Node.value = Expression.YieldFrom yielded_from; _ } ->
-            let { Resolved.resolution; resolved; errors; _ } =
-              forward_expression ~resolution ~expression:yielded_from
-            in
-            let actual =
-              resolved
-              |> GlobalResolution.type_of_iteration_value ~global_resolution
-              |> Option.value ~default:Type.Any
-              |> Type.generator
-            in
-            ( Value resolution,
-              validate_return ~expression:None ~resolution ~errors ~actual ~is_implicit:false )
-        | expression ->
-            let { Resolved.resolution; resolved; errors; _ } =
-              forward_expression ~resolution ~expression
-            in
-            if Type.is_noreturn resolved then
-              Unreachable, errors
-            else
-              Value resolution, errors)
+    | Expression expression ->
+        let { Resolved.resolution; resolved; errors; _ } =
+          forward_expression ~resolution ~expression
+        in
+        if Type.is_noreturn resolved then
+          Unreachable, errors
+        else
+          Value resolution, errors
     | Raise { Raise.expression = Some expression; _ } ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_expression ~resolution ~expression
