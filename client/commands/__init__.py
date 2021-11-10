@@ -5,7 +5,6 @@
 
 from typing import List, Type
 
-from .analyze import Analyze as Analyze
 from .command import (  # noqa; noqa; noqa
     ClientException as ClientException,
     Command as Command,
@@ -15,6 +14,5 @@ from .command import (  # noqa; noqa; noqa
 from .reporting import Reporting as Reporting
 
 COMMANDS: List[Type[CommandParser]] = [
-    Analyze,
     Reporting,
 ]
