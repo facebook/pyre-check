@@ -2569,6 +2569,52 @@ let test_extract_type_parameter context =
   ()
 
 
+let test_type_of_iteration_value context =
+  let global_resolution =
+    ScratchProject.setup
+      ~context
+      [
+        ( "test.py",
+          {|
+         from typing import Iterable, Iterator, Generic, TypeVar
+         T = TypeVar('T')
+
+         class IntIterable(Iterable[int]): ...
+
+         class GenericIterator(Iterator[T], Generic[T]): ...
+       |}
+        );
+      ]
+    |> ScratchProject.build_global_resolution
+  in
+  let parse_annotation annotation =
+    annotation
+    |> parse_single_expression ~preprocess:true
+    |> GlobalResolution.parse_annotation global_resolution
+  in
+  let assert_type_of_iteration_value ~annotation ~expected =
+    let type_ = parse_annotation annotation in
+    let actual = GlobalResolution.type_of_iteration_value ~global_resolution type_ in
+    assert_equal
+      ~cmp:[%equal: Type.t option]
+      ~printer:(function
+        | Some type_ -> Type.show type_
+        | None -> "EXTRACTION FAILED")
+      expected
+      actual
+  in
+  assert_type_of_iteration_value ~annotation:"typing.Iterable[int]" ~expected:(Some Type.integer);
+  assert_type_of_iteration_value ~annotation:"typing.Iterator[str]" ~expected:(Some Type.string);
+  assert_type_of_iteration_value
+    ~annotation:"typing.Generator[int, str, None]"
+    ~expected:(Some Type.integer);
+  assert_type_of_iteration_value ~annotation:"test.IntIterable" ~expected:(Some Type.integer);
+  assert_type_of_iteration_value
+    ~annotation:"test.GenericIterator[str]"
+    ~expected:(Some Type.string);
+  ()
+
+
 let test_define context =
   let assert_define ?expected_define_source ~define_name ~source =
     let expected_source =
@@ -2710,6 +2756,7 @@ let () =
          "superclasses" >:: test_superclasses;
          "overrides" >:: test_overrides;
          "extract_type_parameter" >:: test_extract_type_parameter;
+         "type_of_iteration_value" >:: test_type_of_iteration_value;
          "test_attribute_from_annotation" >:: test_attribute_type;
          "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;
