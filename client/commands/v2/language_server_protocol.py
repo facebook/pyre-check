@@ -13,7 +13,6 @@ from typing import (
     Iterable,
     Optional,
     List,
-    Tuple,
     Type,
     TypeVar,
 )
