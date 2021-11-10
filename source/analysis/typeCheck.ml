@@ -2701,44 +2701,20 @@ module State (Context : Context) = struct
         in
         let resolved = forward_expression ~resolution ~expression:value in
         { resolved with errors = List.append errors resolved.errors }
-    | Expression.Yield (Some yielded) ->
-        let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution ~expression:yielded
+    | Expression.Yield _ ->
+        let send_type, _ =
+          return_annotation ~global_resolution
+          |> GlobalResolution.type_of_generator_send_and_return ~global_resolution
         in
-        {
-          resolution;
-          errors;
-          resolved = Type.generator resolved;
-          resolved_annotation = None;
-          base = None;
-        }
-    | Expression.Yield None ->
-        {
-          resolution;
-          errors = [];
-          resolved = Type.generator Type.none;
-          resolved_annotation = None;
-          base = None;
-        }
+        { resolution; errors = []; resolved = send_type; resolved_annotation = None; base = None }
     | Expression.YieldFrom yielded_from ->
-        let call =
-          let callee =
-            Expression.Name
-              (Name.Attribute { base = yielded_from; attribute = "__iter__"; special = true })
-            |> Node.create ~location
-          in
-          Expression.Call { callee; arguments = [] } |> Node.create ~location
-        in
         let { Resolved.resolution; resolved; errors; _ } =
-          forward_expression ~resolution ~expression:call
+          forward_expression ~resolution ~expression:yielded_from
         in
-        {
-          resolution;
-          errors;
-          resolved = Type.generator resolved;
-          resolved_annotation = None;
-          base = None;
-        }
+        let _, returned_type =
+          GlobalResolution.type_of_generator_send_and_return ~global_resolution resolved
+        in
+        { resolution; errors; resolved = returned_type; resolved_annotation = None; base = None }
 
 
   and refine_resolution_for_assert ~resolution test =

@@ -289,7 +289,25 @@ let test_check_yield context =
     [
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `takes_int` but got `str`.";
-    ]
+    ];
+  (* Make sure the send type is handled correctly *)
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Generator[str, int, None]:
+        x = yield "hello"
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Iterator[str]:
+        x = yield "hello"
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `None`."];
+  ()
 
 
 let test_check_yield_from context =
@@ -320,6 +338,29 @@ let test_check_yield_from context =
         yield from generator()
     |}
     [];
+  (* return type handling for yield from *)
+  assert_type_errors
+    {|
+      import typing
+
+      yielded_from: typing.Generator[int, None, str]
+
+      def foo() -> typing.Generator[int, None, str]:
+        x = yield from yielded_from
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `str`."];
+  assert_type_errors
+    {|
+      import typing
+
+      yielded_from: typing.Iterator[int]
+
+      def foo() -> typing.Generator[int, None, str]:
+        x = yield from yielded_from
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `None`."];
   ()
 
 
@@ -386,15 +427,6 @@ let test_check_generator_edge_cases context =
 
 let test_check_generator_known_failures context =
   let assert_type_errors = assert_type_errors ~context in
-  (* send type handling for yield *)
-  assert_type_errors
-    {|
-      import typing
-      def foo() -> typing.Generator[None, int, None]:
-        x = yield
-        reveal_type(x)
-    |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Generator[None, None, None]`."];
   (* send type handling for yield from. The first example ought to be okay and the second ought to
      fail since the send types need to be (contravariantly) compatible *)
   assert_type_errors
@@ -435,21 +467,6 @@ let test_check_generator_known_failures context =
       "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got \
        `typing.Generator[int, None, None]`.";
       "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got `str`.";
-    ];
-  (* return type handling for yield from *)
-  assert_type_errors
-    {|
-      import typing
-
-      generator: typing.Generator[int, None, str]
-
-      def foo() -> typing.Generator[int, None, str]:
-        x = yield from generator
-        reveal_type(x)
-    |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `typing.Generator[typing.Iterator[int], None, \
-       None]`.";
     ];
   ()
 

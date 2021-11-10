@@ -887,10 +887,6 @@ let test_forward_expression context =
     "(x := True)"
     (Type.Literal (Boolean true))
     ~postcondition:["x", Type.Literal (Boolean true)];
-  (* Yield. *)
-  assert_forward "yield 1" (Type.generator (Type.literal_integer 1));
-  assert_forward "yield undefined" (Type.generator Type.Top);
-  assert_forward "yield" (Type.generator Type.none);
 
   (* Broadcasts *)
   assert_forward
