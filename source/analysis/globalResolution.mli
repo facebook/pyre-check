@@ -253,6 +253,6 @@ val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list
 
 val type_of_iteration_value : global_resolution:t -> Type.t -> Type.t option
 
-val type_of_generator_send_value : global_resolution:t -> Type.t -> Type.t
+val type_of_generator_send_and_return : global_resolution:t -> Type.t -> Type.t * Type.t
 
 val define : t -> Reference.t -> Define.t option

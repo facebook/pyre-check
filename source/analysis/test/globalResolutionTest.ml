@@ -2615,7 +2615,7 @@ let test_type_of_iteration_value context =
   ()
 
 
-let test_type_of_generator_send_value context =
+let test_type_of_generator_send_and_return context =
   let global_resolution =
     ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
   in
@@ -2624,22 +2624,35 @@ let test_type_of_generator_send_value context =
     |> parse_single_expression ~preprocess:true
     |> GlobalResolution.parse_annotation global_resolution
   in
-  let assert_type_of_generator_send_value ~annotation ~expected =
+  let assert_type_of_generator_send_and_return ~annotation ~expected_send ~expected_return =
     let type_ = parse_annotation annotation in
-    let actual = GlobalResolution.type_of_generator_send_value ~global_resolution type_ in
-    assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected actual
+    let actual_send, actual_return =
+      GlobalResolution.type_of_generator_send_and_return ~global_resolution type_
+    in
+    assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected_send actual_send;
+    assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected_return actual_return;
+    ()
   in
-  assert_type_of_generator_send_value ~annotation:"typing.Iterator[int]" ~expected:Type.none;
-  assert_type_of_generator_send_value ~annotation:"typing.Iterable[int]" ~expected:Type.none;
-  assert_type_of_generator_send_value
-    ~annotation:"typing.Generator[int, None, str]"
-    ~expected:Type.none;
-  assert_type_of_generator_send_value
-    ~annotation:"typing.Generator[int, str, None]"
-    ~expected:Type.string;
-  assert_type_of_generator_send_value
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.Iterator[int]"
+    ~expected_send:Type.none
+    ~expected_return:Type.none;
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.Iterable[int]"
+    ~expected_send:Type.none
+    ~expected_return:Type.none;
+  assert_type_of_generator_send_and_return
     ~annotation:"typing.AsyncGenerator[int, str]"
-    ~expected:Type.string;
+    ~expected_send:Type.string
+    ~expected_return:Type.none;
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.Generator[int, None, str]"
+    ~expected_send:Type.none
+    ~expected_return:Type.string;
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.Generator[int, str, None]"
+    ~expected_send:Type.string
+    ~expected_return:Type.none;
   ()
 
 
@@ -2785,7 +2798,7 @@ let () =
          "overrides" >:: test_overrides;
          "extract_type_parameter" >:: test_extract_type_parameter;
          "type_of_iteration_value" >:: test_type_of_iteration_value;
-         "type_of_generator_send_value" >:: test_type_of_generator_send_value;
+         "type_of_generator_send_and_return" >:: test_type_of_generator_send_and_return;
          "test_attribute_from_annotation" >:: test_attribute_type;
          "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;

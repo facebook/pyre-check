@@ -493,12 +493,12 @@ let type_of_iteration_value ~global_resolution iterator_type =
 
 (* Determine the appropriate type for `yield` expressions in a generator function, based on the
    return annotation. *)
-let type_of_generator_send_value ~global_resolution generator_type =
+let type_of_generator_send_and_return ~global_resolution generator_type =
   (* First match against Generator *)
   match
     extract_type_parameters global_resolution ~target:"typing.Generator" ~source:generator_type
   with
-  | Some [_yield_type; send_type; _return_type] -> send_type
+  | Some [_yield_type; send_type; return_type] -> send_type, return_type
   | _ -> (
       (* Fall back to match against AsyncGenerator. We fall back instead of using an explicit flag
          because, if the user mixes these types up we still ought to resolve their yield expressions
@@ -509,11 +509,11 @@ let type_of_generator_send_value ~global_resolution generator_type =
           ~target:"typing.AsyncGenerator"
           ~source:generator_type
       with
-      | Some [_yield_type; send_type] -> send_type
+      | Some [_yield_type; send_type] -> send_type, Type.none
       | _ ->
           (* Fall back to Type.none because it's legal to use other annotations like `object` or
              `Iterator` on a generator function, but in those cases the send type is always NoneType *)
-          Type.none)
+          Type.none, Type.none)
 
 
 let parse_annotation ({ dependency; _ } as resolution) =
