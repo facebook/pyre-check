@@ -15,14 +15,13 @@ from typing import Any, Callable, Dict, Mapping, Iterable, Optional, Union
 import libcst as cst
 
 from ... import (
-    commands,
     command_arguments,
     configuration as configuration_module,
     statistics_collectors as collectors,
     statistics_logger,
     log,
 )
-from . import remote_logging
+from . import commands, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

@@ -10,11 +10,10 @@ from typing import List
 
 from ... import (
     command_arguments,
-    commands,
     configuration as configuration_module,
     error,
 )
-from . import server_connection, server_event, start, remote_logging
+from . import commands, server_connection, server_event, start, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

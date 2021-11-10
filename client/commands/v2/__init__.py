@@ -23,3 +23,7 @@ from . import start  # noqa F401
 from . import statistics  # noqa F401
 from . import stop  # noqa F401
 from . import validate_models  # noqa F401
+from .commands import (  # noqa; noqa; noqa
+    ClientException as ClientException,
+    ExitCode as ExitCode,
+)

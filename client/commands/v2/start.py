@@ -27,12 +27,18 @@ from typing import (
 
 from ... import (
     command_arguments,
-    commands,
     configuration as configuration_module,
     find_directories,
     log,
 )
-from . import backend_arguments, server_connection, server_event, stop, remote_logging
+from . import (
+    backend_arguments,
+    commands,
+    server_connection,
+    server_event,
+    stop,
+    remote_logging,
+)
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

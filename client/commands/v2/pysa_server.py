@@ -15,10 +15,10 @@ import logging
 from ... import (
     json_rpc,
     command_arguments,
-    commands,
     configuration as configuration_module,
 )
 from . import (
+    commands,
     language_server_protocol as lsp,
     async_server_connection as connection,
     start,

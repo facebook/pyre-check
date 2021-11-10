@@ -12,12 +12,11 @@ from pathlib import Path
 import psutil
 
 from ... import (
-    commands,
     configuration as configuration_module,
     find_directories,
     recently_used_configurations,
 )
-from . import remote_logging, servers, server_connection
+from . import commands, remote_logging, servers, server_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

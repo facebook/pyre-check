@@ -14,13 +14,12 @@ from pathlib import Path
 from typing import Optional, TextIO, Sequence, List, Tuple
 
 from ... import (
-    commands,
     command_arguments,
     configuration as configuration_module,
     log,
     version,
 )
-from . import start, remote_logging
+from . import commands, start, remote_logging
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

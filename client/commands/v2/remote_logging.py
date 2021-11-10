@@ -14,11 +14,11 @@ from pyre_extensions.type_variable_operators import Concatenate
 from typing_extensions import Protocol
 
 from ... import (
-    commands,
     configuration as configuration_module,
     statistics_logger,
     version,
 )
+from . import commands
 
 TParams = ParameterSpecification("TParams")
 

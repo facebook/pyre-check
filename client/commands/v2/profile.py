@@ -13,8 +13,8 @@ from typing import Dict, List, Tuple, Any, Optional, Sequence
 
 from typing_extensions import Final
 
-from ... import commands, command_arguments, configuration as configuration_module
-from . import remote_logging, backend_arguments
+from ... import command_arguments, configuration as configuration_module
+from . import commands, remote_logging, backend_arguments
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

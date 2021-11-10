@@ -8,8 +8,6 @@ import logging
 import os
 import shutil
 import sys
-import time
-import traceback
 from dataclasses import replace
 from pathlib import Path
 from typing import Iterable, List, Optional
@@ -17,17 +15,13 @@ from typing import Iterable, List, Optional
 import click
 
 from . import (
-    buck,
     command_arguments,
-    commands,
     configuration as configuration_module,
     filesystem,
     log,
     recently_used_configurations,
-    statistics_logger,
 )
-from .commands import ExitCode, v2
-from .exceptions import EnvironmentException
+from .commands import v2
 from .version import __version__
 
 
@@ -72,7 +66,7 @@ def _start_logging_to_directory(log_directory: str) -> None:
     log.enable_file_logging(log_directory_path / "pyre.stderr")
 
 
-def _run_check_command(arguments: command_arguments.CommandArguments) -> ExitCode:
+def _run_check_command(arguments: command_arguments.CommandArguments) -> v2.ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
     _check_configuration(configuration)
     _start_logging_to_directory(configuration.log_directory)
@@ -96,7 +90,7 @@ def _run_incremental_command(
     incremental_style: command_arguments.IncrementalStyle,
     no_start_server: bool,
     no_watchman: bool,
-) -> ExitCode:
+) -> v2.ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
     _check_configuration(configuration)
     _start_logging_to_directory(configuration.log_directory)
@@ -129,7 +123,7 @@ def _run_incremental_command(
     )
 
 
-def _run_default_command(arguments: command_arguments.CommandArguments) -> ExitCode:
+def _run_default_command(arguments: command_arguments.CommandArguments) -> v2.ExitCode:
     if shutil.which("watchman"):
         return _run_incremental_command(
             arguments=arguments,
@@ -454,7 +448,7 @@ def pyre(
     )
     if arguments.version:
         _show_pyre_version(arguments)
-        return ExitCode.SUCCESS
+        return v2.ExitCode.SUCCESS
 
     context.ensure_object(dict)
     context.obj["arguments"] = arguments
@@ -463,7 +457,7 @@ def pyre(
         return _run_default_command(arguments)
 
     # This return value is not used anywhere.
-    return ExitCode.SUCCESS
+    return v2.ExitCode.SUCCESS
 
 
 @pyre.command()
@@ -816,7 +810,7 @@ def init_pysa(context: click.Context) -> int:
     Creates a suitable environment for running pyre analyze.
     """
     create_configuration_return_code: int = v2.initialize.run()
-    if create_configuration_return_code == ExitCode.SUCCESS:
+    if create_configuration_return_code == v2.ExitCode.SUCCESS:
         return v2.initialize_pysa.run()
     else:
         return create_configuration_return_code
@@ -1063,7 +1057,7 @@ def servers(context: click.Context) -> int:
         arguments: command_arguments.CommandArguments = context.obj["arguments"]
         return v2.servers.run_list(arguments.output)
     # This return value is not used anywhere.
-    return ExitCode.SUCCESS
+    return v2.ExitCode.SUCCESS
 
 
 @servers.command(name="list")
@@ -1257,16 +1251,16 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
             return_code = pyre(argv, auto_envvar_prefix="PYRE", standalone_mode=False)
         except configuration_module.InvalidConfiguration as error:
             LOG.error(str(error))
-            return ExitCode.CONFIGURATION_ERROR
+            return v2.ExitCode.CONFIGURATION_ERROR
         except click.ClickException as error:
             error.show()
-            return_code = ExitCode.FAILURE
-        except commands.ClientException as error:
+            return_code = v2.ExitCode.FAILURE
+        except v2.ClientException as error:
             LOG.error(str(error))
             return_code = error.exit_code
         except Exception as error:
             LOG.error(str(error))
-            return_code = ExitCode.FAILURE
+            return_code = v2.ExitCode.FAILURE
     return return_code
 
 
@@ -1278,5 +1272,5 @@ if __name__ == "__main__":
             "Pyre could not determine the current working directory. "
             "Has it been removed?\nExiting."
         )
-        sys.exit(ExitCode.FAILURE)
+        sys.exit(v2.ExitCode.FAILURE)
     sys.exit(main(sys.argv[1:]))

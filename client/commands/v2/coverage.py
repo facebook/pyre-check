@@ -11,12 +11,11 @@ from pathlib import Path
 from typing import Optional, Iterable, List
 
 from ... import (
-    commands,
     configuration as configuration_module,
     coverage_collector as collector,
     log,
 )
-from . import remote_logging, statistics
+from . import commands, remote_logging, statistics
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

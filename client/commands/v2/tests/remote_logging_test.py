@@ -8,7 +8,8 @@ from typing import Optional, Dict, Callable, TypeVar
 
 import testslide
 
-from .... import statistics_logger, commands, configuration as configuration_module
+from .... import statistics_logger, configuration as configuration_module
+from .. import commands
 from ..remote_logging import (
     log_usage,
     log_usage_with_additional_info,

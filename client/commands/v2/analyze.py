@@ -12,13 +12,12 @@ from pathlib import Path
 from typing import Optional, Sequence, Dict, Any, Iterator, List
 
 from ... import (
-    commands,
     command_arguments,
     configuration as configuration_module,
     error,
     log,
 )
-from . import backend_arguments, remote_logging, start, validate_models
+from . import backend_arguments, commands, remote_logging, start, validate_models
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

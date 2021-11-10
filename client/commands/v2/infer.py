@@ -21,9 +21,9 @@ import dataclasses_json
 import libcst
 from libcst.codemod import CodemodContext
 
-from ... import commands, command_arguments, configuration as configuration_module, log
+from ... import command_arguments, configuration as configuration_module, log
 from ...libcst_vendored_visitors import ApplyTypeAnnotationsVisitor
-from . import remote_logging, backend_arguments, start
+from . import commands, remote_logging, backend_arguments, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

@@ -12,8 +12,8 @@ from typing import Optional, List, Dict, Iterable, Sequence, Any
 import tabulate
 from typing_extensions import TypedDict
 
-from ... import commands, log, command_arguments
-from . import server_connection, stop
+from ... import log, command_arguments
+from . import commands, server_connection, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

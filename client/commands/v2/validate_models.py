@@ -9,8 +9,8 @@ import os
 from pathlib import Path
 from typing import List, Dict
 
-from ... import commands, configuration as configuration_module, error as error_module
-from . import query, server_connection, remote_logging
+from ... import configuration as configuration_module, error as error_module
+from . import commands, query, server_connection, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

@@ -13,7 +13,6 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-from ... import commands
 from ... import log
 from ...find_directories import (
     BINARY_NAME,
@@ -24,6 +23,7 @@ from ...find_directories import (
     find_taint_models_directory,
     find_typeshed,
 )
+from . import commands
 
 LOG: Logger = logging.getLogger(__name__)
 

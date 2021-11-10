@@ -9,8 +9,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from ... import log, commands
+from ... import log
 from ...find_directories import find_taint_models_directory
+from . import commands
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

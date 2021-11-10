@@ -6,8 +6,8 @@
 import logging
 from pathlib import Path
 
-from ... import commands, configuration as configuration_module
-from . import server_connection, start, remote_logging
+from ... import configuration as configuration_module
+from . import commands, server_connection, start, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

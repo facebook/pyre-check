@@ -32,12 +32,12 @@ from ... import (
     error,
     version,
     command_arguments,
-    commands,
     configuration as configuration_module,
     statistics_logger,
 )
 from . import (
     backend_arguments,
+    commands,
     language_server_protocol as lsp,
     server_connection,
     async_server_connection as connection,
