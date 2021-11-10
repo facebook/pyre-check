@@ -745,6 +745,28 @@ module State (Context : Context) = struct
       location
 
 
+  let define_signature =
+    let { Node.value = { Define.signature; _ }; _ } = Context.define in
+    signature
+
+
+  let return_annotation ~global_resolution =
+    let signature = define_signature in
+    let annotation : Type.t =
+      let parser = GlobalResolution.annotation_parser global_resolution in
+      Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+    in
+    let annotation =
+      match annotation with
+      | Type.Parametric { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; _ } ->
+          Type.bool
+      | _ when signature.async && not signature.generator ->
+          Type.coroutine_value annotation |> Option.value ~default:Type.Top
+      | _ -> annotation
+    in
+    Type.Variable.mark_all_variables_as_bound annotation
+
+
   let rec forward_expression ~resolution ~expression:{ Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
     let forward_entry ~resolution ~errors ~entry:{ Dictionary.Entry.key; value } =
@@ -4401,7 +4423,7 @@ module State (Context : Context) = struct
       value =
         {
           Define.signature =
-            { async; return_annotation = return_annotation_expression; generator; _ } as signature;
+            { async; return_annotation = return_annotation_expression; generator; _ };
           body;
           _;
         } as define;
@@ -4412,19 +4434,7 @@ module State (Context : Context) = struct
     (* We weaken type inference of mutable literals for assignments and returns to get around the
        invariance of containers when we can prove that casting to a supertype is safe. *)
     let validate_return ~expression ~resolution ~errors ~actual ~is_implicit =
-      let return_annotation =
-        let annotation =
-          let parser = GlobalResolution.annotation_parser global_resolution in
-          Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
-        in
-        match annotation with
-        | Type.Parametric { name = "typing.TypeGuard" | "typing_extensions.TypeGuard"; _ } ->
-            Type.bool
-        | _ when async && not generator ->
-            Type.coroutine_value annotation |> Option.value ~default:Type.Top
-        | _ -> annotation
-      in
-      let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
+      let return_annotation = return_annotation ~global_resolution in
       let actual =
         GlobalResolution.resolve_mutable_literals
           global_resolution
