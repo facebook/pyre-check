@@ -2615,6 +2615,34 @@ let test_type_of_iteration_value context =
   ()
 
 
+let test_type_of_generator_send_value context =
+  let global_resolution =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+  in
+  let parse_annotation annotation =
+    annotation
+    |> parse_single_expression ~preprocess:true
+    |> GlobalResolution.parse_annotation global_resolution
+  in
+  let assert_type_of_generator_send_value ~annotation ~expected =
+    let type_ = parse_annotation annotation in
+    let actual = GlobalResolution.type_of_generator_send_value ~global_resolution type_ in
+    assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected actual
+  in
+  assert_type_of_generator_send_value ~annotation:"typing.Iterator[int]" ~expected:Type.none;
+  assert_type_of_generator_send_value ~annotation:"typing.Iterable[int]" ~expected:Type.none;
+  assert_type_of_generator_send_value
+    ~annotation:"typing.Generator[int, None, str]"
+    ~expected:Type.none;
+  assert_type_of_generator_send_value
+    ~annotation:"typing.Generator[int, str, None]"
+    ~expected:Type.string;
+  assert_type_of_generator_send_value
+    ~annotation:"typing.AsyncGenerator[int, str]"
+    ~expected:Type.string;
+  ()
+
+
 let test_define context =
   let assert_define ?expected_define_source ~define_name ~source =
     let expected_source =
@@ -2757,6 +2785,7 @@ let () =
          "overrides" >:: test_overrides;
          "extract_type_parameter" >:: test_extract_type_parameter;
          "type_of_iteration_value" >:: test_type_of_iteration_value;
+         "type_of_generator_send_value" >:: test_type_of_generator_send_value;
          "test_attribute_from_annotation" >:: test_attribute_type;
          "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;
