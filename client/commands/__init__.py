@@ -5,7 +5,5 @@
 
 from .command import (  # noqa; noqa; noqa
     ClientException as ClientException,
-    Command as Command,
-    CommandParser as CommandParser,
     ExitCode as ExitCode,
 )

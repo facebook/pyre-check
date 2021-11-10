@@ -26,39 +26,12 @@ from . import (
     recently_used_configurations,
     statistics_logger,
 )
-from .commands import Command, ExitCode, v2
+from .commands import ExitCode, v2
 from .exceptions import EnvironmentException
 from .version import __version__
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-def _log_statistics(
-    command: Command,
-    start_time: float,
-    client_exception_message: str,
-    error_message: Optional[str],
-    exit_code: int,
-) -> None:
-    configuration = command.configuration
-    if configuration is not None:
-        statistics_logger.log_with_configuration(
-            category=statistics_logger.LoggerCategory.USAGE,
-            configuration=configuration,
-            integers={
-                "exit_code": exit_code,
-                "runtime": int((time.time() - start_time) * 1000),
-            },
-            normals={
-                "cwd": os.getcwd(),
-                "client_version": __version__,
-                "command_line": " ".join(sys.argv),
-                "command": command.NAME,
-                "client_exception": client_exception_message,
-                "error_message": error_message,
-            },
-        )
 
 
 def _show_pyre_version_as_text(
@@ -97,58 +70,6 @@ def _start_logging_to_directory(log_directory: str) -> None:
     log_directory_path = Path(log_directory)
     log_directory_path.mkdir(parents=True, exist_ok=True)
     log.enable_file_logging(log_directory_path / "pyre.stderr")
-
-
-def run_pyre_command(
-    command: Command,
-    configuration: configuration_module.Configuration,
-    noninteractive: bool,
-) -> ExitCode:
-    start_time = time.time()
-
-    client_exception_message = ""
-    # Having this as a fails-by-default helps flag unexpected exit
-    # from exception flows.
-    exit_code = ExitCode.FAILURE
-    try:
-        _check_configuration(configuration)
-        _start_logging_to_directory(configuration.log_directory)
-        LOG.debug(f"Running cli command `{' '.join(sys.argv)}`...")
-        exit_code = command.run().exit_code()
-    except (buck.BuckException, EnvironmentException) as error:
-        client_exception_message = str(error)
-        exit_code = ExitCode.FAILURE
-        if isinstance(error, buck.BuckUserError):
-            exit_code = ExitCode.BUCK_USER_ERROR
-        elif isinstance(error, buck.BuckException):
-            exit_code = ExitCode.BUCK_INTERNAL_ERROR
-    except (configuration_module.InvalidConfiguration) as error:
-        client_exception_message = str(error)
-        exit_code = ExitCode.CONFIGURATION_ERROR
-    except commands.ClientException as error:
-        client_exception_message = str(error)
-        exit_code = error.exit_code
-    except Exception:
-        client_exception_message = traceback.format_exc()
-        exit_code = ExitCode.FAILURE
-    except KeyboardInterrupt:
-        LOG.warning("Interrupted by user")
-        LOG.debug(traceback.format_exc())
-        exit_code = ExitCode.SUCCESS
-    finally:
-        if len(client_exception_message) > 0:
-            LOG.error(client_exception_message)
-        result = command.result()
-        error_message = result.error if result else None
-        command.cleanup()
-        _log_statistics(
-            command,
-            start_time,
-            client_exception_message,
-            error_message,
-            exit_code,
-        )
-    return exit_code
 
 
 def _run_check_command(arguments: command_arguments.CommandArguments) -> ExitCode:
