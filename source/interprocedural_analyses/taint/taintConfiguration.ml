@@ -223,14 +223,35 @@ let parse source_jsons =
     | `String "parametric" -> AnnotationParser.Parametric
     | unexpected -> failwith (Format.sprintf "Unexpected kind %s" (Json.Util.to_string unexpected))
   in
+  let check_keys ~required_keys ~valid_keys ~current_keys ~section =
+    let valid_keys_hash_set = String.Hash_set.of_list valid_keys in
+    let current_keys_hash_set = String.Hash_set.of_list current_keys in
+    let check_required_key_present key =
+      if not (Hash_set.mem current_keys_hash_set key) then
+        failwith (Format.sprintf "Required key `%s` is not found in section `%s`" key section)
+    in
+    let check_key_is_valid key =
+      if not (Hash_set.mem valid_keys_hash_set key) then
+        Log.error "Unknown key `%s` encountered in section `%s`" key section
+    in
+    List.iter current_keys ~f:check_key_is_valid;
+    List.iter required_keys ~f:check_required_key_present
+  in
   let parse_lineage_analysis json = json_bool_member "lineage_analysis" json ~default:false in
   let parse_string_list json = Json.Util.to_list json |> List.map ~f:Json.Util.to_string in
-  let parse_source_or_sink json =
+  let parse_source_or_sink section json =
+    check_keys
+      ~required_keys:["name"]
+      ~current_keys:(Json.Util.keys json)
+      ~valid_keys:["name"; "comment"]
+      ~section;
     let name = Json.Util.member "name" json |> Json.Util.to_string in
     { AnnotationParser.name; kind = kind json }
   in
-  let parse_sources json = array_member "sources" json |> List.map ~f:parse_source_or_sink in
-  let parse_sinks json = array_member "sinks" json |> List.map ~f:parse_source_or_sink in
+  let parse_sources json =
+    array_member "sources" json |> List.map ~f:(parse_source_or_sink "sources")
+  in
+  let parse_sinks json = array_member "sinks" json |> List.map ~f:(parse_source_or_sink "sinks") in
   let parse_features json =
     let parse_feature json = Json.Util.member "name" json |> Json.Util.to_string in
     array_member "features" json |> List.map ~f:parse_feature
@@ -243,6 +264,12 @@ let parse source_jsons =
   in
   let parse_rules ~allowed_sources ~allowed_sinks json =
     let parse_rule json =
+      let required_keys = ["name"; "code"; "sources"; "sinks"; "message_format"] in
+      check_keys
+        ~required_keys
+        ~valid_keys:required_keys
+        ~current_keys:(Json.Util.keys json)
+        ~section:"rules";
       let sources =
         Json.Util.member "sources" json
         |> parse_string_list
@@ -363,6 +390,11 @@ let parse source_jsons =
     match member "implicit_sinks" json with
     | `Null -> empty_implicit_sinks
     | implicit_sinks ->
+        check_keys
+          ~required_keys:[]
+          ~valid_keys:["conditional_test"; "literal_strings"]
+          ~current_keys:(Json.Util.keys implicit_sinks)
+          ~section:"implicit_sinks";
         let conditional_test =
           match member "conditional_test" implicit_sinks with
           | `Null -> []
@@ -396,6 +428,11 @@ let parse source_jsons =
     match member "implicit_sources" json with
     | `Null -> { literal_strings = [] }
     | implicit_sources ->
+        check_keys
+          ~required_keys:[]
+          ~valid_keys:["conditional_test"; "literal_strings"]
+          ~current_keys:(Json.Util.keys implicit_sources)
+          ~section:"implicit_sources";
         let literal_strings =
           array_member "literal_strings" implicit_sources
           |> List.map ~f:(fun json ->
@@ -412,7 +449,6 @@ let parse source_jsons =
         in
         { literal_strings }
   in
-
   let sources = List.concat_map source_jsons ~f:parse_sources in
   let sinks = List.concat_map source_jsons ~f:parse_sinks in
   let features = List.concat_map source_jsons ~f:parse_features in
