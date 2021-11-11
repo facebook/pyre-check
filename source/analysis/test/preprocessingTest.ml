@@ -1878,7 +1878,14 @@ let test_qualify_ast _ =
   let scope =
     {
       Qualify.qualifier = Reference.create "qualifier";
-      aliases = Reference.Map.empty;
+      aliases =
+        Reference.Map.singleton
+          (Reference.create "a")
+          {
+            Qualify.name = Reference.create "b";
+            qualifier = Reference.empty;
+            is_forward_reference = false;
+          };
       locals = Reference.Set.empty;
       immutables = Reference.Set.empty;
       use_forward_references = true;
@@ -1921,6 +1928,9 @@ let test_qualify_ast _ =
           body = [];
           decorators = [];
         });
+  assert_qualify_statement
+    (+Statement.Match { subject = +Expression.Name (Name.Identifier "a"); cases = [] })
+    (+Statement.Match { subject = +Expression.Name (Name.Identifier "b"); cases = [] });
   ()
 
 

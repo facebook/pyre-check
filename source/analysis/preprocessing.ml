@@ -950,6 +950,14 @@ module Qualify (Context : QualifyContext) = struct
             | None -> aliases
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
+      | Match { Match.subject; cases } ->
+          let case_scopes, cases = List.map cases ~f:(qualify_match_case ~scope) |> List.unzip in
+          ( List.fold case_scopes ~init:scope ~f:join_scopes,
+            Match
+              {
+                Match.subject = qualify_expression ~qualify_strings:DoNotQualify ~scope subject;
+                cases;
+              } )
       | Nonlocal identifiers -> scope, Nonlocal identifiers
       | Raise { Raise.expression; from } ->
           ( scope,
@@ -1025,12 +1033,15 @@ module Qualify (Context : QualifyContext) = struct
       | Break
       | Continue
       | Import _
-      (* TODO(T102720335): Support match statement. *)
-      | Match _
       | Pass ->
           scope, value
     in
     scope, { statement with Node.value }
+
+
+  and qualify_match_case ~scope case =
+    (* TODO(T102720335): Support match statement. *)
+    scope, case
 
 
   and qualify_target ?(in_comprehension = false) ~scope target =
