@@ -1097,6 +1097,107 @@ let test_call_graph_of_define context =
                }) );
       ];
   ();
+  (* TODO(T105570363): Properly merge calls with different implicit_self values. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class Foo:
+        def bar(self) -> None:
+          pass
+
+      def baz(self) -> None:
+        pass
+
+      def f(foo: Foo):
+        for g in [foo.bar, baz]:
+          g()
+  |}
+    ~define_name:"test.f"
+    ~expected:
+      [
+        ( "10:6-10:7",
+          CallGraph.SyntheticCallees
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__iter__",
+                   CallGraph.RegularTargets
+                     {
+                       CallGraph.implicit_self = true;
+                       collapse_tito = true;
+                       targets = [`Method { Target.class_name = "list"; method_name = "__iter__" }];
+                     } );
+                 ( "__next__",
+                   CallGraph.RegularTargets
+                     {
+                       CallGraph.implicit_self = true;
+                       collapse_tito = true;
+                       targets =
+                         [
+                           `Method
+                             { Target.class_name = "typing.Iterator"; method_name = "__next__" };
+                         ];
+                     } );
+               ]) );
+        ( "11:4-11:7",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "test.baz"];
+               }) );
+      ];
+  ();
+  (* TODO(T105570363): Properly merge constructor and regular targets. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class Foo:
+        pass
+
+      def bar(self) -> None:
+        pass
+
+      def f():
+        for g in [Foo, bar]:
+          g()
+  |}
+    ~define_name:"test.f"
+    ~expected:
+      [
+        ( "9:6-9:7",
+          CallGraph.SyntheticCallees
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__iter__",
+                   CallGraph.RegularTargets
+                     {
+                       CallGraph.implicit_self = true;
+                       collapse_tito = true;
+                       targets = [`Method { Target.class_name = "list"; method_name = "__iter__" }];
+                     } );
+                 ( "__next__",
+                   CallGraph.RegularTargets
+                     {
+                       CallGraph.implicit_self = true;
+                       collapse_tito = true;
+                       targets =
+                         [
+                           `Method
+                             { Target.class_name = "typing.Iterator"; method_name = "__next__" };
+                         ];
+                     } );
+               ]) );
+        ( "10:4-10:7",
+          CallGraph.Callees
+            (CallGraph.RegularTargets
+               {
+                 CallGraph.implicit_self = false;
+                 collapse_tito = true;
+                 targets = [`Function "test.bar"];
+               }) );
+      ];
+  ();
   (* Well-typed decorators are 'safely' ignored (when not inlined). *)
   assert_call_graph_of_define
     ~source:
