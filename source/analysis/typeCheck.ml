@@ -2837,17 +2837,17 @@ module State (Context : Context) = struct
           |> GlobalResolution.type_of_iteration_value ~global_resolution
           |> Option.value ~default:Type.Any
         in
+        let send_type, subgenerator_return_type =
+          GlobalResolution.type_of_generator_send_and_return ~global_resolution resolved
+        in
         let actual =
           if define_signature.async then
-            Type.async_generator ~yield_type ()
+            Type.async_generator ~yield_type ~send_type ()
           else
-            Type.generator ~yield_type ()
+            Type.generator ~yield_type ~send_type ()
         in
         let errors =
           validate_return ~location ~expression:None ~resolution ~errors ~actual ~is_implicit:false
-        in
-        let _, subgenerator_return_type =
-          GlobalResolution.type_of_generator_send_and_return ~global_resolution resolved
         in
         {
           resolution;

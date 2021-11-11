@@ -327,7 +327,7 @@ let test_check_yield_from context =
     |}
     [
       "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
-      ^ "but got `typing.Generator[str, typing.Any, typing.Any]`.";
+      ^ "but got `typing.Generator[str, None, typing.Any]`.";
     ];
   assert_type_errors
     {|
@@ -422,23 +422,7 @@ let test_check_generator_edge_cases context =
       "Missing parameter annotation [2]: Parameter `l` must have a type "
       ^ "that does not contain `Any`.";
     ];
-  ()
-
-
-let test_check_generator_known_failures context =
-  let assert_type_errors = assert_type_errors ~context in
-  (* send type handling for yield from. The first example ought to be okay and the second ought to
-     fail since the send types need to be (contravariantly) compatible *)
-  assert_type_errors
-    {|
-      import typing
-
-      generator: typing.Generator[int, object, None]
-
-      def foo() -> typing.Generator[int, str, None]:
-        yield from generator
-    |}
-    [];
+  (* send type handling for yield from. The send type is contravariant *)
   assert_type_errors
     {|
       import typing
@@ -448,7 +432,28 @@ let test_check_generator_known_failures context =
       def foo() -> typing.Generator[int, str, None]:
         yield from generator
     |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, str, None]` but got \
+       `typing.Generator[int, float, typing.Any]`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+
+      class A: pass
+      class B(A): pass
+
+      generator: typing.Generator[int, A, None]
+
+      def foo() -> typing.Generator[int, B, None]:
+        yield from generator
+    |}
     [];
+  ()
+
+
+let test_check_generator_known_failures context =
+  let assert_type_errors = assert_type_errors ~context in
   (* return type handling for yield *)
   assert_type_errors
     {|
