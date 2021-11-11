@@ -17,10 +17,8 @@ from contextlib import contextmanager
 from unittest.mock import MagicMock, Mock, call, patch
 
 from .. import (
-    buck,
     filesystem,
 )
-from ..analysis_directory import SharedAnalysisDirectory
 from ..filesystem import (
     __name__ as filesystem_name,
     _delete_symbolic_link,
@@ -166,106 +164,6 @@ class FilesystemTest(unittest.TestCase):
             filesystem._lock_command(blocking=False, is_shared_reader=False),
             fcntl.LOCK_EX | fcntl.LOCK_NB,
         )
-
-    @patch.object(filesystem, "acquire_lock")
-    def test_acquire_lock_if_needed(self, acquire_lock: MagicMock) -> None:
-        acquire_lock_if_needed("/some/path", blocking=True, needed=True)
-        acquire_lock.assert_called_once()
-
-    @patch.object(filesystem, "acquire_lock")
-    def test_acquire_lock_if_needed__not_needed(self, acquire_lock: MagicMock) -> None:
-        acquire_lock_if_needed("/some/path", blocking=True, needed=False)
-        acquire_lock.assert_not_called()
-
-    @patch.object(filesystem, "_compute_symbolic_link_mapping")
-    @patch("os.getcwd")
-    @patch.object(subprocess, "check_output")
-    def test_get_scratch_directory(self, check_output, getcwd, compute_symbolic_links):
-        # No scratch, no local configuration
-        check_output.side_effect = FileNotFoundError
-        getcwd.return_value = "default"
-        shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], [], project_root="default"
-        )
-
-        directory = shared_analysis_directory.get_scratch_directory()
-        self.assertEqual(directory, "default/.pyre")
-
-        root = shared_analysis_directory.get_root()
-        self.assertEqual(root, "default/.pyre/shared_analysis_directory")
-
-        # Scratch, no local configuration
-        check_output.side_effect = None
-        check_output.return_value = "/scratch\n".encode("utf-8")
-        shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], [], project_root="default"
-        )
-        directory = shared_analysis_directory.get_scratch_directory()
-        self.assertEqual(directory, "/scratch")
-
-        root = shared_analysis_directory.get_root()
-        self.assertEqual(root, "/scratch/shared_analysis_directory")
-
-        # No scratch, using local configuration
-        check_output.side_effect = FileNotFoundError
-        getcwd.return_value = "default"
-        shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"],
-            [],
-            project_root="default",
-            filter_paths={"path/to/local"},
-            local_configuration_root="path/to/local",
-        )
-
-        directory = shared_analysis_directory.get_scratch_directory()
-        self.assertEqual(directory, "default/.pyre")
-
-        root = shared_analysis_directory.get_root()
-        self.assertEqual(root, "default/.pyre/path/to/local")
-
-        # Scratch, using local configuration
-        check_output.side_effect = None
-        check_output.return_value = "/scratch\n".encode("utf-8")
-        shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"],
-            [],
-            project_root="default",
-            filter_paths={"path/to/local"},
-            local_configuration_root="path/to/local",
-        )
-        directory = shared_analysis_directory.get_scratch_directory()
-        self.assertEqual(directory, "/scratch")
-
-        root = shared_analysis_directory.get_root()
-        self.assertEqual(root, "/scratch/path/to/local")
-
-    @patch.object(tempfile, "mkdtemp", return_value="/tmp/pyre_tmp_xyz")
-    @patch.object(buck, "find_buck_root", return_value="/buck_root")
-    @patch("os.makedirs")
-    @patch(filesystem_name + ".acquire_lock")
-    @patch.object(SharedAnalysisDirectory, "get_root", return_value="/analysis_root")
-    def test_prepare(
-        self,
-        get_root,
-        acquire_lock,
-        makedirs,
-        find_parent_directory_containing_file,
-        mkdtemp,
-    ):
-        @contextmanager
-        def acquire(*args, **kwargs):
-            yield
-
-        with patch.object(SharedAnalysisDirectory, "_clear") as clear, patch.object(
-            SharedAnalysisDirectory, "_merge"
-        ) as merge:
-            shared_analysis_directory = SharedAnalysisDirectory(
-                ["first", "second"], [], project_root="/"
-            )
-            acquire_lock.side_effect = acquire
-            shared_analysis_directory.prepare()
-            merge.assert_has_calls([call()])
-            clear.assert_has_calls([call()])
 
     @patch("os.unlink")
     def test_delete_symbolic_link(self, unlink):
