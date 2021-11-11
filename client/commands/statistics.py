@@ -106,51 +106,41 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
 
 
 def _collect_statistics_for_module(
-    path: Path,
     module: Union[cst.Module, cst.MetadataWrapper],
     collector_factory: Callable[[], collectors.StatisticsCollector],
 ) -> Dict[str, int]:
     collector = collector_factory()
-    result: Dict[str, int] = {}
-    try:
-        module.visit(collector)
-        result = collector.build_json()
-    except RecursionError:
-        LOG.warning(f"LibCST encountered recursion error in `{path}`")
-    return result
+    module.visit(collector)
+    return collector.build_json()
 
 
-def _collect_annotation_statistics(path: Path, module: cst.Module) -> Dict[str, int]:
+def _collect_annotation_statistics(module: cst.Module) -> Dict[str, int]:
     return _collect_statistics_for_module(
-        path,
         cst.MetadataWrapper(module),
         collectors.AnnotationCountCollector,
     )
 
 
 def _collect_fixme_statistics(
-    path: Path,
     module: cst.Module,
 ) -> Dict[str, int]:
-    return _collect_statistics_for_module(path, module, collectors.FixmeCountCollector)
+    return _collect_statistics_for_module(module, collectors.FixmeCountCollector)
 
 
 def _collect_ignore_statistics(
-    path: Path,
     module: cst.Module,
 ) -> Dict[str, int]:
-    return _collect_statistics_for_module(path, module, collectors.IgnoreCountCollector)
+    return _collect_statistics_for_module(module, collectors.IgnoreCountCollector)
 
 
 def _collect_strict_file_statistics(
-    path: Path,
     module: cst.Module,
     strict_default: bool,
 ) -> Dict[str, int]:
     def collector_factory() -> collectors.StrictCountCollector:
         return collectors.StrictCountCollector(strict_default)
 
-    return _collect_statistics_for_module(path, module, collector_factory)
+    return _collect_statistics_for_module(module, collector_factory)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -169,19 +159,22 @@ def collect_statistics(
         module = parse_path_to_module(path)
         if module is None:
             continue
-        annotation_statistics = _collect_annotation_statistics(path, module)
-        fixme_statistics = _collect_fixme_statistics(path, module)
-        ignore_statistics = _collect_ignore_statistics(path, module)
-        strict_file_statistics = _collect_strict_file_statistics(
-            path, module, strict_default
-        )
-        statistics_data = StatisticsData(
-            annotation_statistics,
-            fixme_statistics,
-            ignore_statistics,
-            strict_file_statistics,
-        )
-        data[str(path)] = statistics_data
+        try:
+            annotation_statistics = _collect_annotation_statistics(module)
+            fixme_statistics = _collect_fixme_statistics(module)
+            ignore_statistics = _collect_ignore_statistics(module)
+            strict_file_statistics = _collect_strict_file_statistics(
+                module, strict_default
+            )
+            statistics_data = StatisticsData(
+                annotation_statistics,
+                fixme_statistics,
+                ignore_statistics,
+                strict_file_statistics,
+            )
+            data[str(path)] = statistics_data
+        except RecursionError:
+            LOG.warning(f"LibCST encountered recursion error in `{path}`")
     return data
 
 
