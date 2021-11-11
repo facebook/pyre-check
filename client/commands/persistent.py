@@ -704,23 +704,67 @@ async def _start_pyre_server(
 
 
 @dataclasses.dataclass(frozen=True)
+class TypeErrorSubscription:
+    errors: List[error.Error] = dataclasses.field(default_factory=list)
+
+
+def _parse_type_error_subscription(response: object) -> TypeErrorSubscription:
+    return TypeErrorSubscription(
+        errors=incremental.parse_type_error_response_json(["TypeErrors", response])
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class StatusUpdateSubscription:
+    message: str
+
+
+def _parse_status_update_subscription(response: object) -> StatusUpdateSubscription:
+    if not isinstance(response, dict):
+        raise incremental.InvalidServerResponse(
+            f"Status update subscription must be a dict. Got {response}"
+        )
+    message = response.get("message", None)
+    if message is None:
+        raise incremental.InvalidServerResponse(
+            f"Missing `message` field from status update subscription: {response}"
+        )
+    return StatusUpdateSubscription(message=message)
+
+
+SubscriptionBody = Union[TypeErrorSubscription, StatusUpdateSubscription]
+
+
+@dataclasses.dataclass(frozen=True)
 class SubscriptionResponse:
     name: str
-    body: List[error.Error] = dataclasses.field(default_factory=list)
+    body: SubscriptionBody
 
 
 def parse_subscription_response(response: str) -> SubscriptionResponse:
     try:
         response_json = json.loads(response)
-        # The response JSON is expected to have the following form:
+        # The response JSON is expected to have the following forms:
         # `{"name": "foo", "body": ["TypeErrors", [error_json, ...]]}`
+        # `{"name": "foo", "body": ["StatusUpdate", { "message": ... }]}`
         if isinstance(response_json, dict):
             name = response_json.get("name", None)
             body = response_json.get("body", None)
-            if name is not None and body is not None:
-                return SubscriptionResponse(
-                    name=name, body=incremental.parse_type_error_response_json(body)
-                )
+            if (
+                name is not None
+                and body is not None
+                and isinstance(body, list)
+                and len(body) > 1
+            ):
+                tag = body[0]
+                if tag == "TypeErrors":
+                    return SubscriptionResponse(
+                        name=name, body=_parse_type_error_subscription(body[1])
+                    )
+                elif tag == "StatusUpdate":
+                    return SubscriptionResponse(
+                        name=name, body=_parse_status_update_subscription(body[1])
+                    )
         raise incremental.InvalidServerResponse(
             f"Unexpected JSON subscription from server: {response_json}"
         )
@@ -1030,6 +1074,14 @@ class PyreServerHandler(connection.BackgroundTask):
                     self.client_output_channel, path, diagnostics
                 )
 
+    async def _handle_subscription_body(
+        self, subscription_body: SubscriptionBody
+    ) -> None:
+        if isinstance(subscription_body, TypeErrorSubscription):
+            self.update_type_errors(subscription_body.errors)
+            await self.show_type_errors_to_client()
+        # TODO(T103746869): Surface status update from server to LSP client
+
     async def _subscribe_to_type_error(
         self,
         server_input_channel: connection.TextReader,
@@ -1053,8 +1105,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     raw_subscription_response
                 )
                 if subscription_name == subscription_response.name:
-                    self.update_type_errors(subscription_response.body)
-                    await self.show_type_errors_to_client()
+                    await self._handle_subscription_body(subscription_response.body)
 
     async def subscribe_to_type_error(
         self,

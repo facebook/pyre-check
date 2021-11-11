@@ -36,6 +36,8 @@ from ..persistent import (
     PyreQueryState,
     ServerState,
     parse_subscription_response,
+    TypeErrorSubscription,
+    StatusUpdateSubscription,
     SubscriptionResponse,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
@@ -200,10 +202,16 @@ class PersistentTest(testslide.TestCase):
         assert_not_parsed('["Error"]')
         assert_not_parsed('{"name": "foo", "no_body": []}')
         assert_not_parsed('{"body": [], "no_name": "foo"}')
+        assert_not_parsed('{"name": "foo", "body": ["Malformed"]}')
+        assert_not_parsed('{"name": "foo", "body": ["TypeErrors", {}]}')
+        assert_not_parsed('{"name": "foo", "body": ["StatusUpdate", []]}')
+        assert_not_parsed(
+            '{"name": "foo", "body": ["StatusUpdate", { "no_messsage": 42 }]}'
+        )
 
         assert_parsed(
             json.dumps({"name": "foo", "body": ["TypeErrors", []]}),
-            expected=SubscriptionResponse(name="foo"),
+            expected=SubscriptionResponse(name="foo", body=TypeErrorSubscription()),
         )
         assert_parsed(
             json.dumps(
@@ -228,18 +236,35 @@ class PersistentTest(testslide.TestCase):
             ),
             expected=SubscriptionResponse(
                 name="foo",
-                body=[
-                    error.Error(
-                        line=1,
-                        column=1,
-                        stop_line=2,
-                        stop_column=2,
-                        path=Path("test.py"),
-                        code=42,
-                        name="Fake name",
-                        description="Fake description",
-                    ),
-                ],
+                body=TypeErrorSubscription(
+                    [
+                        error.Error(
+                            line=1,
+                            column=1,
+                            stop_line=2,
+                            stop_column=2,
+                            path=Path("test.py"),
+                            code=42,
+                            name="Fake name",
+                            description="Fake description",
+                        ),
+                    ]
+                ),
+            ),
+        )
+        assert_parsed(
+            json.dumps(
+                {
+                    "name": "foo",
+                    "body": [
+                        "StatusUpdate",
+                        {"message": "derp"},
+                    ],
+                }
+            ),
+            expected=SubscriptionResponse(
+                name="foo",
+                body=StatusUpdateSubscription(message="derp"),
             ),
         )
 
