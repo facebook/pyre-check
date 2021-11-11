@@ -1736,7 +1736,14 @@ class base class_metadata_environment dependency =
                       ];
                 }
               in
-              let overloads = List.mapi ~f:overload members @ overloads in
+              let overloads =
+                List.mapi ~f:overload members
+                @ List.map2_exn
+                    ~f:overload
+                    (List.init ~f:(fun x -> -x - 1) (List.length members))
+                    (List.rev members)
+                @ overloads
+              in
               Type.Callable { callable with overloads }
           | ( Parametric { name = "type"; parameters = [Single (Type.Primitive name)] },
               "__getitem__",

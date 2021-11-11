@@ -438,9 +438,31 @@ let test_tuple_literal_access context =
   assert_type_errors
     {|
       def foo() -> int:
+        x = (0, "one", 2)
+        return x[-1]
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        x = (0, "one", 2)
+        return x[-2]
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
+  assert_type_errors
+    {|
+      def foo() -> int:
         i = 0
         x = (0, "one", 2)
         return x[i]
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        i = -2
+        x = (0, "one", 2.)
+        return x[-3]
     |}
     [];
 
