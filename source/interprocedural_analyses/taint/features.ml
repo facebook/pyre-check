@@ -10,6 +10,39 @@ open Ast
 open Analysis
 open Pyre
 
+module MakeInterner (T : sig
+  type t
+
+  val name : string
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+end) =
+struct
+  module Value = struct
+    include T
+
+    let to_string = T.show
+
+    let prefix = Prefix.make ()
+
+    let description = T.name
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  include Memory.Interner (Value)
+
+  let name = T.name
+
+  let compare = Int64.compare
+
+  let pp formatter id = id |> unintern |> T.pp formatter
+
+  let show id = id |> unintern |> T.show
+end
+
 module First (Kind : sig
   val kind : string
 end) =
@@ -51,6 +84,8 @@ end
 module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)
 
 module LeafName = struct
+  let name = "leaf names"
+
   type t = {
     leaf: string;
     port: string option;
@@ -72,29 +107,9 @@ module LeafName = struct
       | None -> []
     in
     `Assoc (port_assoc @ ["name", `String leaf])
-
-
-  let to_string = show
-
-  let prefix = Prefix.make ()
-
-  let description = "leaf name"
-
-  let unmarshall value = Marshal.from_string value 0
 end
 
-module LeafNameInterned = struct
-  include Memory.Interner (LeafName)
-
-  let name = "leaf names"
-
-  let compare = Int64.compare
-
-  let pp formatter id = id |> unintern |> LeafName.pp formatter
-
-  let show id = id |> unintern |> LeafName.show
-end
-
+module LeafNameInterned = MakeInterner (LeafName)
 module LeafNameSet = Abstract.SetDomain.Make (LeafNameInterned)
 
 module Breadcrumb = struct
