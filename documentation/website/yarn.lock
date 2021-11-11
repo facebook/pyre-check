@@ -1660,6 +1660,11 @@
     url "^0.11.0"
     webpack-sources "^1.4.3"
 
+"@socket.io/component-emitter@~3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@socket.io/component-emitter/-/component-emitter-3.0.0.tgz#8863915676f837d9dad7b76f50cb500c1e9422e9"
+  integrity sha512-2pTGuibAXJswAPJjaKisthqS/NOK5ypG4LYT6tEAV0S/mxW0zOIvYvGK0V8w8+SHxAm6vRMSjqSalFXeBAqs+Q==
+
 "@svgr/babel-plugin-add-jsx-attribute@^5.4.0":
   version "5.4.0"
   resolved "https://registry.yarnpkg.com/@svgr/babel-plugin-add-jsx-attribute/-/babel-plugin-add-jsx-attribute-5.4.0.tgz#81ef61947bb268eb9d50523446f9c638fb355906"
@@ -2393,6 +2398,11 @@ babel-plugin-polyfill-regenerator@^0.2.0:
   dependencies:
     "@babel/helper-define-polyfill-provider" "^0.2.2"
 
+backo2@~1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/backo2/-/backo2-1.0.2.tgz#31ab1ac8b129363463e35b3ebb69f4dfcfba7947"
+  integrity sha1-MasayLEpNjRj41s+u2n038+6eUc=
+
 bail@^1.0.0:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/bail/-/bail-1.0.5.tgz#b6fa133404a392cbc1f8c4bf63f5953351e7a776"
@@ -2407,6 +2417,11 @@ base16@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/base16/-/base16-1.0.0.tgz#e297f60d7ec1014a7a971a39ebc8a98c0b681e70"
   integrity sha1-4pf2DX7BAUp6lxo568ipjAtoHnA=
+
+base64-arraybuffer@~1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/base64-arraybuffer/-/base64-arraybuffer-1.0.1.tgz#87bd13525626db4a9838e00a508c2b73efcf348c"
+  integrity sha512-vFIUq7FdLtjZMhATwDul5RZWv2jpXQ09Pd6jcVEOvIsqCWTRFD/ONHNfyOS8dA/Ippi5dsIgpyKWKZaAKZltbA==
 
 base64-js@^1.3.1:
   version "1.5.1"
@@ -3374,7 +3389,7 @@ debug@^3.1.1, debug@^3.2.6:
   dependencies:
     ms "^2.1.1"
 
-debug@^4.0.0:
+debug@^4.0.0, debug@~4.3.1, debug@~4.3.2:
   version "4.3.2"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.2.tgz#f0a49c18ac8779e31d4a0c6029dfb76873c7428b"
   integrity sha512-mOp8wKcvj7XxC78zLgw/ZA+6TSgkoE2C/ienthhRD298T7UNwAg9diBpLRxC0mOezLl4B0xV7M0cCO6P/O0Xhw==
@@ -3749,6 +3764,28 @@ end-of-stream@^1.1.0:
   integrity sha512-+uw1inIHVPQoaVuHzRyXd21icM+cnt4CzD5rW+NC1wjOUSTOs+Te7FOv7AhN7vS9x/oIyhLP5PR1H+phQAHu5Q==
   dependencies:
     once "^1.4.0"
+
+engine.io-client@~6.0.1:
+  version "6.0.2"
+  resolved "https://registry.yarnpkg.com/engine.io-client/-/engine.io-client-6.0.2.tgz#ccfc059051e65ca63845e65929184757754cc34e"
+  integrity sha512-cAep9lhZV6Q8jMXx3TNSU5cydMzMed8/O7Tz5uzyqZvpNPtQ3WQXrLYGADxlsuaFmOLN7wZLmT7ImiFhUOku8g==
+  dependencies:
+    "@socket.io/component-emitter" "~3.0.0"
+    debug "~4.3.1"
+    engine.io-parser "~5.0.0"
+    has-cors "1.1.0"
+    parseqs "0.0.6"
+    parseuri "0.0.6"
+    ws "~8.2.3"
+    xmlhttprequest-ssl "~2.0.0"
+    yeast "0.1.2"
+
+engine.io-parser@~5.0.0:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/engine.io-parser/-/engine.io-parser-5.0.1.tgz#6695fc0f1e6d76ad4a48300ff80db5f6b3654939"
+  integrity sha512-j4p3WwJrG2k92VISM0op7wiq60vO92MlF3CRGxhKHy9ywG1/Dkc72g0dXeDQ+//hrcDn8gqQzoEkdO9FN0d9AA==
+  dependencies:
+    base64-arraybuffer "~1.0.1"
 
 enhanced-resolve@^5.8.0:
   version "5.8.2"
@@ -4563,6 +4600,11 @@ has-bigints@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/has-bigints/-/has-bigints-1.0.1.tgz#64fe6acb020673e3b78db035a5af69aa9d07b113"
   integrity sha512-LSBS2LjbNBTf6287JEbEzvJgftkF5qFkmCo9hDRpAzKhUOlJ+hx8dd4USs00SgsUNwc4617J9ki5YtEClM2ffA==
+
+has-cors@1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/has-cors/-/has-cors-1.1.0.tgz#5e474793f7ea9843d1bb99c23eef49ff126fff39"
+  integrity sha1-XkdHk/fqmEPRu5nCPu9J/xJv/zk=
 
 has-flag@^3.0.0:
   version "3.0.0"
@@ -6654,6 +6696,16 @@ parse5@^6.0.0:
   resolved "https://registry.yarnpkg.com/parse5/-/parse5-6.0.1.tgz#e1a1c085c569b3dc08321184f19a39cc27f7c30b"
   integrity sha512-Ofn/CTFzRGTTxwpNEs9PP93gXShHcTq255nzRYSKe8AkVpZY7e1fpmTfOyoIvjP5HG7Z2ZM7VS9PPhQGW2pOpw==
 
+parseqs@0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/parseqs/-/parseqs-0.0.6.tgz#8e4bb5a19d1cdc844a08ac974d34e273afa670d5"
+  integrity sha512-jeAGzMDbfSHHA091hr0r31eYfTig+29g3GKKE/PPbEQ65X0lmMwlEoqmhzu0iztID5uJpZsFlUPDP8ThPL7M8w==
+
+parseuri@0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/parseuri/-/parseuri-0.0.6.tgz#e1496e829e3ac2ff47f39a4dd044b32823c4a25a"
+  integrity sha512-AUjen8sAkGgao7UyCX6Ahv0gIK2fABKmYjvP4xmy5JaKvcbTRueIqIPHLAfq30xJddqSE033IOMUSOMCcK3Sow==
+
 parseurl@~1.3.2, parseurl@~1.3.3:
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/parseurl/-/parseurl-1.3.3.tgz#9da19e7bee8d12dff0513ed5b76957793bc2e8d4"
@@ -8238,6 +8290,26 @@ snapdragon@^0.8.1:
     source-map-resolve "^0.5.0"
     use "^3.1.0"
 
+socket.io-client@^4.3.2:
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/socket.io-client/-/socket.io-client-4.3.2.tgz#9cfdb8fecac8a24d5723daf8c8749e70c8fdeb25"
+  integrity sha512-2B9LqSunN60yV8F7S84CCEEcgbYNfrn7ejIInZtLZ7ppWtiX8rGZAjvdCvbnC8bqo/9RlCNOUsORLyskxSFP1g==
+  dependencies:
+    "@socket.io/component-emitter" "~3.0.0"
+    backo2 "~1.0.2"
+    debug "~4.3.2"
+    engine.io-client "~6.0.1"
+    parseuri "0.0.6"
+    socket.io-parser "~4.1.1"
+
+socket.io-parser@~4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/socket.io-parser/-/socket.io-parser-4.1.1.tgz#0ad53d980781cab1eabe320417d8480c0133e62d"
+  integrity sha512-USQVLSkDWE5nbcY760ExdKaJxCE65kcsG/8k5FDGZVVxpD1pA7hABYXYkCUvxUuYYh/+uQw0N/fvBzfT8o07KA==
+  dependencies:
+    "@socket.io/component-emitter" "~3.0.0"
+    debug "~4.3.1"
+
 sockjs-client@^1.5.0:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/sockjs-client/-/sockjs-client-1.5.1.tgz#256908f6d5adfb94dabbdbd02c66362cca0f9ea6"
@@ -9476,6 +9548,11 @@ ws@^7.3.1:
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.6.tgz#5654ca8ecdeee47c33a9a4bf6d28e2be2980377c"
   integrity sha512-YmhHDO4MzaDLB+M9ym/mDA5z0naX8j7SIlT8f8z+I0VtzsRbekxEutHSme7NPS2qE8StCYQNUnfWdXta/Yu85A==
 
+ws@~8.2.3:
+  version "8.2.3"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.2.3.tgz#63a56456db1b04367d0b721a0b80cae6d8becbba"
+  integrity sha512-wBuoj1BDpC6ZQ1B7DWQBYVLphPWkm8i9Y0/3YdHjHKHiohOJ1ws+3OccDWtH+PoC9DZD5WOTrJvNbWvjS6JWaA==
+
 xdg-basedir@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/xdg-basedir/-/xdg-basedir-4.0.0.tgz#4bc8d9984403696225ef83a1573cbbcb4e79db13"
@@ -9487,6 +9564,11 @@ xml-js@^1.6.11:
   integrity sha512-7rVi2KMfwfWFl+GpPg6m80IVMWXLRjO+PxTq7V2CDhoGak0wzYzFgUY2m4XJ47OGdXd8eLE8EmwfAmdjw7lC1g==
   dependencies:
     sax "^1.2.4"
+
+xmlhttprequest-ssl@~2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/xmlhttprequest-ssl/-/xmlhttprequest-ssl-2.0.0.tgz#91360c86b914e67f44dce769180027c0da618c67"
+  integrity sha512-QKxVRxiRACQcVuQEYFsI1hhkrMlrXHPegbbd1yn9UHOmRxY+si12nQYzri3vbzt8VdTTRviqcKxcyllFas5z2A==
 
 xtend@^4.0.0, xtend@^4.0.1:
   version "4.0.2"
@@ -9531,6 +9613,11 @@ yargs@^13.3.2:
     which-module "^2.0.0"
     y18n "^4.0.0"
     yargs-parser "^13.1.2"
+
+yeast@0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/yeast/-/yeast-0.1.2.tgz#008e06d8094320c372dbc2f8ed76a0ca6c8ac419"
+  integrity sha1-AI4G2AlDIMNy28L47XagymyKxBk=
 
 yocto-queue@^0.1.0:
   version "0.1.0"

@@ -22,6 +22,7 @@
     "internaldocs-fb-helpers": "^1.2.0",
     "react": "^17.0.1",
     "react-codemirror2": "^7.2.1",
-    "react-dom": "^16.10.2"
+    "react-dom": "^16.10.2",
+    "socket.io-client": "^4.3.2"
   }
 }

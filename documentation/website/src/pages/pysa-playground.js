@@ -16,8 +16,11 @@ import {Controlled as CodeMirror} from 'react-codemirror2';
 import 'codemirror/lib/codemirror.css';
 import styles from './styles.module.css';
 
+let socketIOClient = () => {};
+
 if (ExecutionEnvironment.canUseDOM) {
   require('codemirror/mode/python/python.js');
+  socketIOClient = require('socket.io-client')
 }
 
 const default_code = `import subprocess
@@ -85,9 +88,7 @@ function Results(props) {
     if (results.errors !== undefined) {
       content = results.errors.join('\n');
     } else {
-      content = (results.data.errors
-        .map(error => `${error.line}:${error.column}: ${error.description}`)
-        .join('\n')) || "No issues were detected by Pysa.";
+      content = results.data.join('\n');
     }
   }
 
@@ -133,37 +134,44 @@ function Sandbox() {
   const [model, setModel] = useState(getStorageValue("model", default_model));
   const [useOSModels, setUseOSModels] = useState(true);
 
+  const socket = socketIOClient("ws://127.0.0.1:5000/analyze");
+  let synchronous_results = [];
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem("code", code);
       localStorage.setItem("model", model);
     }
-  })
+    socket.on("pysa_results_channel", data => {
+      if (data["type"] === undefined) {
+        setResults({errors: ["Invalid data received from the server."]});
+        setBusy(false);
+      } else if(data["type"] === "finished") {
+        setBusy(false);
+      } else if(data["type"] === "output") {
+        if(data["line"] === undefined){
+          setResults({errors: ["Invalid data received from the server."]});
+          setBusy(false);
+        } else {
+          synchronous_results.push(data["line"]);
+        }
+        setResults({data: synchronous_results});
+      }
+    });
+    socket.on("connect_error", () => {
+      setBusy(false);
+      setResults({errors: ["Error establishing a connection to the server."]})
+    });
+  }, [results]);
 
   const check = () => {
     setBusy(true);
-    setTimeout(() => {
-      if (results === null) {
-        setBusy(false);
-        setResults({errors: ["Cannot reach server - request timed out"]})
-      }
-    }, 2000);
-    fetch('http://localhost:5000/analyze', {
-      method: 'POST',
-      mode: 'cors',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        input: code,
-        model: model,
-        use_builtin_pysa_models: useOSModels,
-      }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        setResults(data);
-        setBusy(false);
-      })
-      .catch(error => console.error(error));
+    synchronous_results = [];
+    socket.emit("analyze", {
+      input: code,
+      model: model,
+      use_builtin_pysa_models: useOSModels,
+    });
   };
 
   return (
