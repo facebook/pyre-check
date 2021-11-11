@@ -155,27 +155,16 @@ def _collect_strict_file_statistics(
 
 @dataclasses.dataclass(frozen=True)
 class StatisticsData:
-    annotations: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
-    fixmes: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
-    ignores: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
-    strict: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
-
-    def append(
-        self,
-        path: str,
-        annotations: Dict[str, int],
-        fixmes: Dict[str, int],
-        ignores: Dict[str, int],
-        strict: Dict[str, int],
-    ) -> None:
-        self.annotations[path] = annotations
-        self.fixmes[path] = fixmes
-        self.ignores[path] = ignores
-        self.strict[path] = strict
+    annotations: Dict[str, int] = dataclasses.field(default_factory=dict)
+    fixmes: Dict[str, int] = dataclasses.field(default_factory=dict)
+    ignores: Dict[str, int] = dataclasses.field(default_factory=dict)
+    strict: Dict[str, int] = dataclasses.field(default_factory=dict)
 
 
-def collect_statistics(sources: Iterable[Path], strict_default: bool) -> StatisticsData:
-    data: StatisticsData = StatisticsData()
+def collect_statistics(
+    sources: Iterable[Path], strict_default: bool
+) -> Dict[str, StatisticsData]:
+    data: Dict[str, StatisticsData] = {}
     for path in sources:
         module = parse_path_to_module(path)
         if module is None:
@@ -186,13 +175,13 @@ def collect_statistics(sources: Iterable[Path], strict_default: bool) -> Statist
         strict_file_statistics = _collect_strict_file_statistics(
             path, module, strict_default
         )
-        data.append(
-            str(path),
+        statistics_data = StatisticsData(
             annotation_statistics,
             fixme_statistics,
             ignore_statistics,
             strict_file_statistics,
         )
+        data[str(path)] = statistics_data
     return data
 
 
@@ -205,7 +194,7 @@ class AggregatedStatisticsData:
     unsafe: int = 0
 
 
-def aggregate_statistics(data: StatisticsData) -> AggregatedStatisticsData:
+def aggregate_statistics(data: Dict[str, StatisticsData]) -> AggregatedStatisticsData:
     aggregate_annotations = {
         "return_count": 0,
         "annotated_return_count": 0,
@@ -219,16 +208,35 @@ def aggregate_statistics(data: StatisticsData) -> AggregatedStatisticsData:
         "fully_annotated_function_count": 0,
         "line_count": 0,
     }
-    for annotation_data in data.annotations.values():
+
+    for statistics_data in data.values():
         for key in aggregate_annotations.keys():
-            aggregate_annotations[key] += annotation_data[key]
+            aggregate_annotations[key] += statistics_data.annotations[key]
 
     return AggregatedStatisticsData(
         annotations=aggregate_annotations,
-        fixmes=sum(len(fixmes) for fixmes in data.fixmes.values()),
-        ignores=sum(len(ignores) for ignores in data.ignores.values()),
-        strict=sum(strictness["strict_count"] for strictness in data.strict.values()),
-        unsafe=sum(strictness["unsafe_count"] for strictness in data.strict.values()),
+        fixmes=sum(
+            len(fixmes)
+            for fixmes in [statistics_data.fixmes for statistics_data in data.values()]
+        ),
+        ignores=sum(
+            len(ignores)
+            for ignores in [
+                statistics_data.ignores for statistics_data in data.values()
+            ]
+        ),
+        strict=sum(
+            strictness["strict_count"]
+            for strictness in [
+                statistics_data.strict for statistics_data in data.values()
+            ]
+        ),
+        unsafe=sum(
+            strictness["unsafe_count"]
+            for strictness in [
+                statistics_data.strict for statistics_data in data.values()
+            ]
+        ),
     )
 
 
@@ -237,6 +245,11 @@ def log_to_remote(
     run_id: str,
     data: Dict[str, Dict[str, Dict[str, int]]],
 ) -> None:
+    def path_to_data(category: str) -> Dict[str, Dict[str, int]]:
+        return {
+            path: statistics_data[category] for (path, statistics_data) in data.items()
+        }
+
     def _log_fixmes(fixme_type: str, data: Dict[str, int], path: str) -> None:
         for error_code, count in data.items():
             statistics_logger.log_with_configuration(
@@ -251,18 +264,18 @@ def log_to_remote(
                 },
             )
 
-    for path, counts in data["annotations"].items():
+    for path, counts in path_to_data("annotations").items():
         statistics_logger.log_with_configuration(
             statistics_logger.LoggerCategory.ANNOTATION_COUNTS,
             configuration,
             integers=counts,
             normals={"run_id": run_id, "path": path},
         )
-    for path, counts in data["fixmes"].items():
+    for path, counts in path_to_data("fixmes").items():
         _log_fixmes("fixme", counts, path)
-    for path, counts in data["ignores"].items():
+    for path, counts in path_to_data("ignores").items():
         _log_fixmes("ignore", counts, path)
-    for path, counts in data["strict"].items():
+    for path, counts in path_to_data("strict").items():
         statistics_logger.log_with_configuration(
             statistics_logger.LoggerCategory.STRICT_ADOPTION,
             configuration,
@@ -286,7 +299,11 @@ def run_statistics(
         aggregated_data = aggregate_statistics(data)
         log.stdout.write(json.dumps(dataclasses.asdict(aggregated_data), indent=4))
     else:
-        log.stdout.write(json.dumps(dataclasses.asdict(data), indent=4))
+        path_to_dictionary_statistics = {
+            path: dataclasses.asdict(statistics_data)
+            for (path, statistics_data) in data.items()
+        }
+        log.stdout.write(json.dumps(path_to_dictionary_statistics))
         if statistics_arguments.log_results:
             logger = configuration.logger
             if logger is None:
@@ -298,7 +315,7 @@ def run_statistics(
                     if log_identifier is not None
                     else str(time.time_ns())
                 )
-                log_to_remote(configuration, run_id, dataclasses.asdict(data))
+                log_to_remote(configuration, run_id, path_to_dictionary_statistics)
 
     return commands.ExitCode.SUCCESS
 

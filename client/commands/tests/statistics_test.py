@@ -186,14 +186,8 @@ class StatisticsTest(testslide.TestCase):
             bar_path = root_path / "bar.py"
 
             data = collect_statistics([foo_path, bar_path], strict_default=False)
-            self.assertIn(str(foo_path), data.annotations)
-            self.assertIn(str(foo_path), data.fixmes)
-            self.assertIn(str(foo_path), data.ignores)
-            self.assertIn(str(foo_path), data.strict)
-            self.assertIn(str(bar_path), data.annotations)
-            self.assertIn(str(bar_path), data.fixmes)
-            self.assertIn(str(bar_path), data.ignores)
-            self.assertIn(str(bar_path), data.strict)
+            self.assertIn(str(foo_path), data)
+            self.assertIn(str(bar_path), data)
 
     def test_aggregate_statistics__single_file(self) -> None:
         with tempfile.TemporaryDirectory() as root:
