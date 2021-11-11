@@ -108,8 +108,8 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
 def _collect_statistics_for_modules(
     modules: Mapping[Path, Union[cst.Module, cst.MetadataWrapper]],
     collector_factory: Callable[[], collectors.StatisticsCollector],
-) -> Dict[str, Any]:
-    result: Dict[str, Any] = {}
+) -> Dict[str, Dict[str, int]]:
+    result: Dict[str, Dict[str, int]] = {}
     for path, module in modules.items():
         collector = collector_factory()
         try:
@@ -122,24 +122,28 @@ def _collect_statistics_for_modules(
 
 def _collect_annotation_statistics(
     modules: Mapping[Path, cst.Module]
-) -> Dict[str, Any]:
+) -> Dict[str, Dict[str, int]]:
     return _collect_statistics_for_modules(
         {path: cst.MetadataWrapper(module) for path, module in modules.items()},
         collectors.AnnotationCountCollector,
     )
 
 
-def _collect_fixme_statistics(modules: Mapping[Path, cst.Module]) -> Dict[str, Any]:
+def _collect_fixme_statistics(
+    modules: Mapping[Path, cst.Module]
+) -> Dict[str, Dict[str, int]]:
     return _collect_statistics_for_modules(modules, collectors.FixmeCountCollector)
 
 
-def _collect_ignore_statistics(modules: Mapping[Path, cst.Module]) -> Dict[str, Any]:
+def _collect_ignore_statistics(
+    modules: Mapping[Path, cst.Module]
+) -> Dict[str, Dict[str, int]]:
     return _collect_statistics_for_modules(modules, collectors.IgnoreCountCollector)
 
 
 def _collect_strict_file_statistics(
     modules: Mapping[Path, cst.Module], strict_default: bool
-) -> Dict[str, Any]:
+) -> Dict[str, Dict[str, int]]:
     def collector_factory() -> collectors.StrictCountCollector:
         return collectors.StrictCountCollector(strict_default)
 
@@ -148,10 +152,10 @@ def _collect_strict_file_statistics(
 
 @dataclasses.dataclass(frozen=True)
 class StatisticsData:
-    annotations: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    fixmes: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    ignores: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    strict: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    annotations: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
+    fixmes: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
+    ignores: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
+    strict: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
 
 
 def collect_statistics(sources: Iterable[Path], strict_default: bool) -> StatisticsData:
@@ -210,7 +214,9 @@ def aggregate_statistics(data: StatisticsData) -> AggregatedStatisticsData:
 
 
 def log_to_remote(
-    configuration: configuration_module.Configuration, run_id: str, data: Dict[str, Any]
+    configuration: configuration_module.Configuration,
+    run_id: str,
+    data: Dict[str, Dict[str, Dict[str, int]]],
 ) -> None:
     def _log_fixmes(fixme_type: str, data: Dict[str, int], path: str) -> None:
         for error_code, count in data.items():
