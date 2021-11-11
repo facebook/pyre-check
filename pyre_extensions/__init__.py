@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-ignore-all-errors
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Callable, Optional, Protocol, Type, TypeVar
 
 # Surfacing `tests` is important for importers to be able to run our tests
 # in their own environment
@@ -28,6 +28,7 @@ __all__ = [
 
 
 _T = TypeVar("_T")
+_R = TypeVar("_R")
 
 
 def none_throws(optional: Optional[_T], message: str = "Unexpected `None`") -> _T:
@@ -103,6 +104,14 @@ _B = TypeVar("_B", bound=int)
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 _Ts = ListVariadic("_Ts")
+_P = ParameterSpecification("_P")
+
+
+class DecoratorFactory(Protocol):
+    """Usable as a return type for simple decorator factories"""
+
+    def __call__(self, __f: Callable[_P, _R]) -> Callable[_P, _R]:
+        ...
 
 
 class Add(Generic[_A, _B], int):
