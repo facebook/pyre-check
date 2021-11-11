@@ -7,7 +7,6 @@
 
 import json
 import unittest
-from io import BytesIO
 from typing import Type
 
 from ..json_rpc import (

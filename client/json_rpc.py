@@ -9,7 +9,7 @@ import dataclasses
 import json
 from enum import Enum
 from json.decoder import JSONDecodeError
-from typing import Any, BinaryIO, Dict, Optional, Union, Sequence, Mapping
+from typing import Any, Dict, Optional, Union, Sequence, Mapping
 
 
 JSON = Dict[str, Any]

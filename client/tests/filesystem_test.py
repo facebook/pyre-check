@@ -10,20 +10,16 @@ import errno
 import fcntl
 import os
 import pathlib  # noqa
-import subprocess
 import tempfile
 import unittest
-from contextlib import contextmanager
 from unittest.mock import MagicMock, Mock, call, patch
 
 from .. import (
     filesystem,
 )
 from ..filesystem import (
-    __name__ as filesystem_name,
     _delete_symbolic_link,
     acquire_lock,
-    acquire_lock_if_needed,
     add_symbolic_link,
     expand_relative_path,
     find_python_paths,
