@@ -10,7 +10,7 @@ import logging
 import re
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, Mapping, Iterable, Optional, Union
+from typing import Callable, Dict, Iterable, Optional, Union
 
 import libcst as cst
 
@@ -105,49 +105,52 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
         return None
 
 
-def _collect_statistics_for_modules(
-    modules: Mapping[Path, Union[cst.Module, cst.MetadataWrapper]],
+def _collect_statistics_for_module(
+    path: Path,
+    module: Union[cst.Module, cst.MetadataWrapper],
     collector_factory: Callable[[], collectors.StatisticsCollector],
-) -> Dict[str, Dict[str, int]]:
-    result: Dict[str, Dict[str, int]] = {}
-    for path, module in modules.items():
-        collector = collector_factory()
-        try:
-            module.visit(collector)
-            result[str(path)] = collector.build_json()
-        except RecursionError:
-            LOG.warning(f"LibCST encountered recursion error in `{path}`")
+) -> Dict[str, int]:
+    collector = collector_factory()
+    result: Dict[str, int] = {}
+    try:
+        module.visit(collector)
+        result = collector.build_json()
+    except RecursionError:
+        LOG.warning(f"LibCST encountered recursion error in `{path}`")
     return result
 
 
-def _collect_annotation_statistics(
-    modules: Mapping[Path, cst.Module]
-) -> Dict[str, Dict[str, int]]:
-    return _collect_statistics_for_modules(
-        {path: cst.MetadataWrapper(module) for path, module in modules.items()},
+def _collect_annotation_statistics(path: Path, module: cst.Module) -> Dict[str, int]:
+    return _collect_statistics_for_module(
+        path,
+        cst.MetadataWrapper(module),
         collectors.AnnotationCountCollector,
     )
 
 
 def _collect_fixme_statistics(
-    modules: Mapping[Path, cst.Module]
-) -> Dict[str, Dict[str, int]]:
-    return _collect_statistics_for_modules(modules, collectors.FixmeCountCollector)
+    path: Path,
+    module: cst.Module,
+) -> Dict[str, int]:
+    return _collect_statistics_for_module(path, module, collectors.FixmeCountCollector)
 
 
 def _collect_ignore_statistics(
-    modules: Mapping[Path, cst.Module]
-) -> Dict[str, Dict[str, int]]:
-    return _collect_statistics_for_modules(modules, collectors.IgnoreCountCollector)
+    path: Path,
+    module: cst.Module,
+) -> Dict[str, int]:
+    return _collect_statistics_for_module(path, module, collectors.IgnoreCountCollector)
 
 
 def _collect_strict_file_statistics(
-    modules: Mapping[Path, cst.Module], strict_default: bool
-) -> Dict[str, Dict[str, int]]:
+    path: Path,
+    module: cst.Module,
+    strict_default: bool,
+) -> Dict[str, int]:
     def collector_factory() -> collectors.StrictCountCollector:
         return collectors.StrictCountCollector(strict_default)
 
-    return _collect_statistics_for_modules(modules, collector_factory)
+    return _collect_statistics_for_module(path, module, collector_factory)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -157,24 +160,40 @@ class StatisticsData:
     ignores: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
     strict: Dict[str, Dict[str, int]] = dataclasses.field(default_factory=dict)
 
+    def append(
+        self,
+        path: str,
+        annotations: Dict[str, int],
+        fixmes: Dict[str, int],
+        ignores: Dict[str, int],
+        strict: Dict[str, int],
+    ) -> None:
+        self.annotations[path] = annotations
+        self.fixmes[path] = fixmes
+        self.ignores[path] = ignores
+        self.strict[path] = strict
+
 
 def collect_statistics(sources: Iterable[Path], strict_default: bool) -> StatisticsData:
-    modules: Dict[Path, cst.Module] = {}
+    data: StatisticsData = StatisticsData()
     for path in sources:
         module = parse_path_to_module(path)
-        if module is not None:
-            modules[path] = module
-
-    annotation_statistics = _collect_annotation_statistics(modules)
-    fixme_statistics = _collect_fixme_statistics(modules)
-    ignore_statistics = _collect_ignore_statistics(modules)
-    strict_file_statistics = _collect_strict_file_statistics(modules, strict_default)
-    return StatisticsData(
-        annotations=annotation_statistics,
-        fixmes=fixme_statistics,
-        ignores=ignore_statistics,
-        strict=strict_file_statistics,
-    )
+        if module is None:
+            continue
+        annotation_statistics = _collect_annotation_statistics(path, module)
+        fixme_statistics = _collect_fixme_statistics(path, module)
+        ignore_statistics = _collect_ignore_statistics(path, module)
+        strict_file_statistics = _collect_strict_file_statistics(
+            path, module, strict_default
+        )
+        data.append(
+            str(path),
+            annotation_statistics,
+            fixme_statistics,
+            ignore_statistics,
+            strict_file_statistics,
+        )
+    return data
 
 
 @dataclasses.dataclass(frozen=True)
