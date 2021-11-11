@@ -12,7 +12,7 @@ module Component = struct
     id: int;
     kind: kind;
   }
-  [@@deriving eq, sexp]
+  [@@deriving compare, sexp]
 
   and kind =
     | Node of Cfg.Node.t
@@ -20,10 +20,10 @@ module Component = struct
         head: Cfg.Node.t;
         components: t list;
       }
-  [@@deriving eq, sexp]
+  [@@deriving compare, sexp]
 end
 
-type t = Component.t list [@@deriving eq, sexp]
+type t = Component.t list [@@deriving compare, sexp]
 
 let create ~cfg ~entry_index ~successors =
   (* The construction of weak topological orderings is based on F. Bourdoncle's

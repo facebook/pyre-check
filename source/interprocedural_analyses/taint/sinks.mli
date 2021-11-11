@@ -9,7 +9,7 @@ type partial_sink = {
   kind: string;
   label: string;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, show]
 
 type t =
   | Attach
@@ -30,7 +30,9 @@ type t =
       (* Invariant: not a transform. *)
       base: t;
     }
-[@@deriving compare, eq, show]
+[@@deriving compare, show]
+
+val equal : t -> t -> bool
 
 val name : string
 

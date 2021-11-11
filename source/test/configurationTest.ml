@@ -47,7 +47,7 @@ let test_extensions _ =
   let assert_extensions ~extensions expected =
     let extensions = List.map ~f:Configuration.Extension.create_extension extensions in
     assert_equal
-      ~cmp:(List.equal Configuration.Extension.equal)
+      ~cmp:(List.equal [%compare.equal: Configuration.Extension.t])
       ~printer:(List.to_string ~f:Configuration.Extension.show)
       expected
       extensions

@@ -31,7 +31,7 @@ let variable_r, escaped_variable_r =
 
 let compare_sig_t left right =
   let open SignatureSelectionTypes in
-  let default = equal_sig_t left right in
+  let default = [%compare.equal: sig_t] left right in
   match left, right with
   | ( NotFound { reason = Some left_reason; closest_return_annotation = left_closest },
       NotFound { reason = Some right_reason; closest_return_annotation = right_closest } )
@@ -47,8 +47,8 @@ let compare_sig_t left right =
       | Mismatches left, Mismatches right ->
           let equal_single_mismatch left right =
             match left, right with
-            | Mismatch left, Mismatch right -> equal_mismatch left.value right.value
-            | _, _ -> equal_mismatch_reason left right
+            | Mismatch left, Mismatch right -> [%compare.equal: mismatch] left.value right.value
+            | _, _ -> [%compare.equal: mismatch_reason] left right
           in
           List.equal equal_single_mismatch left right
       | _ -> default)

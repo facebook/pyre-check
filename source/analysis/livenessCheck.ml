@@ -18,7 +18,7 @@ module ErrorMap = struct
     location: Location.t;
     identifier: string;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   include Hashable.Make (struct
     type nonrec t = key
@@ -38,7 +38,7 @@ module ErrorMap = struct
 end
 
 module NestedDefineLookup = struct
-  type key = Reference.t [@@deriving compare, eq, sexp, show, hash]
+  type key = Reference.t [@@deriving compare, sexp, show, hash]
 
   include Hashable.Make (struct
     type nonrec t = key

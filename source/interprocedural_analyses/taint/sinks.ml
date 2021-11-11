@@ -14,7 +14,7 @@ module T = struct
     kind: string;
     label: string;
   }
-  [@@deriving compare, eq, show]
+  [@@deriving compare, show]
 
   type t =
     | Attach
@@ -36,7 +36,7 @@ module T = struct
         (* Invariant: not a transform. *)
         base: t;
       }
-  [@@deriving compare, eq]
+  [@@deriving compare]
 
   let rec pp formatter = function
     | Attach -> Format.fprintf formatter "Attach"
@@ -56,6 +56,8 @@ module T = struct
           ~global:sanitize_global
           ~base
 
+
+  let equal = [%compare.equal: t]
 
   let show = Format.asprintf "%a" pp
 end

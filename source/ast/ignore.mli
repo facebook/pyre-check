@@ -9,7 +9,7 @@ type kind =
   | TypeIgnore
   | PyreFixme
   | PyreIgnore
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 type t = {
   ignored_line: int;
@@ -17,7 +17,7 @@ type t = {
   location: Location.t;
   kind: kind;
 }
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 val create : ignored_line:int -> codes:int list -> location:Location.t -> kind:kind -> t
 

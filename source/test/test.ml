@@ -244,10 +244,14 @@ let assert_source_equal ?(location_insensitive = false) left right =
     if location_insensitive then
       fun left right -> Source.location_insensitive_compare left right = 0
     else
-      Source.equal
+      [%compare.equal: Source.t]
   in
   let print_difference format (left, right) =
-    if Source.equal { left with Source.statements = [] } { right with Source.statements = [] } then
+    if
+      [%compare.equal: Source.t]
+        { left with Source.statements = [] }
+        { right with Source.statements = [] }
+    then
       diff ~print:Source.pp format (left, right)
     else
       diff ~print:Source.pp_all format (left, right)
@@ -2887,7 +2891,7 @@ type test_update_environment_with_t = {
   handle: string;
   source: string;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, show]
 
 let assert_errors
     ?(debug = true)
@@ -2944,7 +2948,9 @@ let assert_errors
     let errors_with_any_location =
       List.filter_map errors ~f:(fun error ->
           let location = AnalysisError.Instantiated.location error in
-          Option.some_if (Location.WithPath.equal location Location.WithPath.any) location)
+          Option.some_if
+            ([%compare.equal: Location.WithPath.t] location Location.WithPath.any)
+            location)
     in
     let show_description ~concise error =
       if concise then

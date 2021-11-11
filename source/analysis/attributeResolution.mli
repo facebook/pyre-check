@@ -16,7 +16,7 @@ module Global : sig
     undecorated_signature: Type.Callable.t option;
     problem: AnnotatedAttribute.problem option;
   }
-  [@@deriving eq, show, compare, sexp]
+  [@@deriving show, compare, sexp]
 end
 
 type resolved_define = {
@@ -38,13 +38,13 @@ type generic_type_problems =
       actual: Type.Parameter.t;
       expected: Type.Variable.t;
     }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type type_parameters_mismatch = {
   name: string;
   kind: generic_type_problems;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 module Argument : sig
   type t = {

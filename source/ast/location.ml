@@ -14,7 +14,7 @@ module T = struct
     line: int;
     column: int;
   }
-  [@@deriving compare, eq, sexp, hash, to_yojson]
+  [@@deriving compare, sexp, hash, to_yojson]
 
   (* These are not filtered: our backend is broken if any locations appear in errors. *)
   let any_position = { line = -1; column = -1 }
@@ -27,11 +27,13 @@ module T = struct
     start: position;
     stop: position;
   }
-  [@@deriving compare, eq, sexp, hash, to_yojson]
+  [@@deriving compare, sexp, hash, to_yojson]
 
   let pp format { start; stop } =
     Format.fprintf format "%d:%d-%d:%d" start.line start.column stop.line stop.column
 
+
+  let equal = [%compare.equal: t]
 
   let show location = Format.asprintf "%a" pp location
 
@@ -75,7 +77,7 @@ module WithPath = struct
     start: position;
     stop: position;
   }
-  [@@deriving compare, eq, sexp, hash, to_yojson]
+  [@@deriving compare, sexp, hash, to_yojson]
 
   let line { start = { line; _ }; _ } = line
 
@@ -102,7 +104,7 @@ module WithModule = struct
       start: position;
       stop: position;
     }
-    [@@deriving compare, eq, sexp, hash, to_yojson]
+    [@@deriving compare, sexp, hash, to_yojson]
 
     let any = { path = Reference.empty; start = any_position; stop = any_position }
 

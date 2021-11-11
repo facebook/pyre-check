@@ -18,7 +18,7 @@ module Rule = struct
     name: string;
     message_format: string; (* format *)
   }
-  [@@deriving eq, show]
+  [@@deriving compare, show]
 end
 
 type literal_string_sink = {
@@ -67,7 +67,7 @@ type missing_flows_kind =
   | Obscure
   (* Find missing flows due to missing type information. *)
   | Type
-[@@deriving eq, show]
+[@@deriving compare, show]
 
 let missing_flows_kind_from_string = function
   | "obscure" -> Some Obscure
@@ -761,7 +761,7 @@ let get_triggered_sink ~partial_sink ~source =
 let is_missing_flow_analysis kind =
   match get () with
   | { find_missing_flows; _ } ->
-      Option.equal equal_missing_flows_kind (Some kind) find_missing_flows
+      Option.equal [%compare.equal: missing_flows_kind] (Some kind) find_missing_flows
 
 
 let get_maximum_model_width () =

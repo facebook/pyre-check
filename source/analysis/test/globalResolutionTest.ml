@@ -947,7 +947,7 @@ let test_invalid_type_parameters context =
       expected_transformed_type
       actual_transformed_type;
     assert_equal
-      ~cmp:[%equal: type_parameters_mismatch list]
+      ~cmp:[%compare.equal: type_parameters_mismatch list]
       ~printer:[%show: type_parameters_mismatch list]
       expected_mismatches
       actual_mismatches

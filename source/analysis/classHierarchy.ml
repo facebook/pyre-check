@@ -24,7 +24,7 @@ module Target = struct
     target: IndexTracker.t;
     parameters: Type.Parameter.t list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, sexp, show]
 
   module type ListOrSet = sig
     type record
@@ -68,7 +68,7 @@ module Target = struct
 
   let target { target; _ } = target
 
-  let target_equal = equal
+  let target_equal = [%compare.equal: t]
 
   module List = struct
     type record = t list
@@ -195,14 +195,15 @@ let variables ?(default = None) (module Handler : Handler) = function
       let generic_index = index_of generic_primitive in
       let primitive_index = index_of primitive_name in
       Handler.edges primitive_index
-      >>= List.find ~f:(fun { Target.target; _ } -> IndexTracker.equal target generic_index)
+      >>= List.find ~f:(fun { Target.target; _ } ->
+              [%compare.equal: IndexTracker.t] target generic_index)
       >>| (fun { Target.parameters; _ } -> parameters_to_variables parameters)
       |> Option.value ~default
 
 
 let get_generic_parameters ~generic_index edges =
   let generic_parameters { Target.target; parameters } =
-    Option.some_if (IndexTracker.equal generic_index target) parameters
+    Option.some_if ([%compare.equal: IndexTracker.t] generic_index target) parameters
   in
   List.find_map ~f:generic_parameters edges
 
@@ -274,7 +275,7 @@ let is_transitive_successor
         | Error _ -> iterate worklist
         | Ok () ->
             if
-              IndexTracker.equal current (index_of target)
+              [%compare.equal: IndexTracker.t] current (index_of target)
               || (placeholder_subclass_extends_all && Handler.extends_placeholder_stub current)
             then
               true
@@ -371,7 +372,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                 Handler.edges target_index
                 >>| get_instantiated_successors ~generic_index ~parameters
               in
-              if IndexTracker.equal target_index (index_of target) then
+              if [%compare.equal: IndexTracker.t] target_index (index_of target) then
                 match target with
                 | "typing.Callable" -> Some parameters
                 | _ -> instantiated_successors >>= get_generic_parameters ~generic_index
@@ -402,7 +403,7 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
   let find_cycle start =
     if not (Set.mem !started_from start) then
       let rec visit reverse_visited index =
-        if List.mem ~equal:IndexTracker.equal reverse_visited index then (
+        if List.mem ~equal:[%compare.equal: IndexTracker.t] reverse_visited index then (
           let trace = List.rev_map ~f:IndexTracker.annotation (index :: reverse_visited) in
           Log.error "Order is cyclic:\nTrace: %s" (String.concat ~sep:" -> " trace);
           raise (Cyclic (String.Hash_set.of_list trace)))

@@ -47,7 +47,7 @@ let test_all_decorators context =
     in
     let _, environment = setup ~additional_sources ~context ~handle:"test.py" source in
     assert_equal
-      ~cmp:[%equal: DecoratorHelper.decorator_reference_and_module list]
+      ~cmp:[%compare.equal: DecoratorHelper.decorator_reference_and_module list]
       ~printer:[%show: DecoratorHelper.decorator_reference_and_module list]
       (List.map expected ~f:(fun (decorator, module_reference) ->
            { DecoratorHelper.decorator; module_reference }))
@@ -1652,7 +1652,7 @@ let test_requalify_name _ =
   let open Expression in
   let assert_requalified ~old_qualifier ~new_qualifier name expected =
     assert_equal
-      ~cmp:[%equal: Name.t]
+      ~cmp:[%compare.equal: Name.t]
       ~printer:[%show: Name.t]
       expected
       (DecoratorHelper.requalify_name ~old_qualifier ~new_qualifier name)

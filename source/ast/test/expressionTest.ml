@@ -345,7 +345,7 @@ let test_equality _ =
     let expression_left = Node.create ~location:left value in
     let expression_right = Node.create ~location:right value in
     let assert_bool_equal = assert_equal ~cmp:Bool.equal ~printer:Bool.to_string in
-    assert_bool_equal (Expression.equal expression_left expression_right) equal;
+    assert_bool_equal ([%compare.equal: Expression.t] expression_left expression_right) equal;
     assert_bool_equal (Expression.compare expression_left expression_right = 0) compare_equal;
     assert_bool_equal
       (Expression.hash expression_left = Expression.hash expression_right)

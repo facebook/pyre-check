@@ -16,7 +16,7 @@ module T = struct
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
-  [@@deriving sexp, compare, eq, show]
+  [@@deriving sexp, compare, show]
 
   type kind =
     | ParseError
@@ -101,14 +101,14 @@ module T = struct
         name: Reference.t;
         annotation: string;
       }
-  [@@deriving sexp, compare, eq, show]
+  [@@deriving sexp, compare, show]
 
   type t = {
     kind: kind;
     path: Path.t option;
     location: Location.t;
   }
-  [@@deriving sexp, compare, eq, show]
+  [@@deriving sexp, compare, show]
 end
 
 include T

@@ -12,14 +12,14 @@ type mode =
   | Strict
   | Unsafe
   | Declare
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 type local_mode =
   | Strict
   | Unsafe
   | Declare
   | PlaceholderStub
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 module Metadata : sig
   type t = {
@@ -29,7 +29,7 @@ module Metadata : sig
     ignore_lines: Ignore.t list;
     raw_hash: int;
   }
-  [@@deriving compare, eq, show, hash, sexp]
+  [@@deriving compare, show, hash, sexp]
 
   val is_placeholder_stub : local_mode Node.t option -> bool
 
@@ -51,7 +51,7 @@ type t = {
   top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
 }
-[@@deriving compare, eq, hash, show, sexp]
+[@@deriving compare, hash, show, sexp]
 
 val ignored_lines_including_format_strings
   :  ?collect_format_strings_with_ignores:

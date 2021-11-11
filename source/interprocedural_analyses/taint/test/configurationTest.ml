@@ -157,7 +157,7 @@ let test_combined_source_rules _ =
   assert_equal configuration.sinks [];
   assert_equal
     ~printer:(List.to_string ~f:Taint.TaintConfiguration.Rule.show)
-    ~cmp:(List.equal Taint.TaintConfiguration.Rule.equal)
+    ~cmp:(List.equal [%compare.equal: Taint.TaintConfiguration.Rule.t])
     configuration.rules
     [
       {
@@ -205,7 +205,7 @@ let test_combined_source_rules _ =
     ["CombinedSink", ["a"; "b"]];
   assert_equal
     ~printer:(List.to_string ~f:Taint.TaintConfiguration.Rule.show)
-    ~cmp:(List.equal Taint.TaintConfiguration.Rule.equal)
+    ~cmp:(List.equal [%compare.equal: Taint.TaintConfiguration.Rule.t])
     configuration.rules
     [
       {

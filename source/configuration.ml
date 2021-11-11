@@ -172,7 +172,7 @@ module Extension = struct
     suffix: string;
     include_suffix_in_module_qualifier: bool;
   }
-  [@@deriving show, eq, sexp, compare, hash]
+  [@@deriving show, sexp, compare, hash]
 
   let to_yojson { suffix; include_suffix_in_module_qualifier } =
     `Assoc

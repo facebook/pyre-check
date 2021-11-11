@@ -24,9 +24,9 @@ module Node : sig
     | With of With.t
     | While of While.t
     | Yield
-  [@@deriving compare, eq, show, sexp]
+  [@@deriving compare, show, sexp]
 
-  type t [@@deriving compare, eq, sexp]
+  type t [@@deriving compare, sexp]
 
   val location_insensitive_equal : t -> t -> bool
 
@@ -44,7 +44,7 @@ module Node : sig
 end
 
 (* Control flow graph of a define body. *)
-type t = Node.t Int.Table.t [@@deriving eq, show]
+type t = Node.t Int.Table.t [@@deriving show]
 
 val entry_index : int
 

@@ -62,7 +62,7 @@ module Extension : sig
     suffix: string;
     include_suffix_in_module_qualifier: bool;
   }
-  [@@deriving show, eq, sexp, compare, hash, yojson]
+  [@@deriving show, sexp, compare, hash, yojson]
 
   val create_extension : string -> t
 

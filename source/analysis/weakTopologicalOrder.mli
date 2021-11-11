@@ -12,7 +12,7 @@ module Component : sig
     id: int;
     kind: kind;
   }
-  [@@deriving eq, sexp]
+  [@@deriving compare, sexp]
 
   and kind =
     | Node of Cfg.Node.t
@@ -20,10 +20,10 @@ module Component : sig
         head: Cfg.Node.t;
         components: t list;
       }
-  [@@deriving eq, sexp]
+  [@@deriving compare, sexp]
 end
 
 (* Weak topological order of a control flow graph. *)
-type t = Component.t list [@@deriving eq, sexp]
+type t = Component.t list [@@deriving compare, sexp]
 
 val create : cfg:Cfg.t -> entry_index:int -> successors:(Cfg.Node.t -> Int.Set.t) -> t

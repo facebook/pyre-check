@@ -274,7 +274,7 @@ let test_expand_relative_import _ =
 let test_ignored_lines _ =
   let assert_ignores source expected =
     assert_equal
-      ~cmp:[%equal: Ignore.t list]
+      ~cmp:[%compare.equal: Ignore.t list]
       ~printer:[%show: Ignore.t list]
       expected
       (Source.ignored_lines_including_format_strings

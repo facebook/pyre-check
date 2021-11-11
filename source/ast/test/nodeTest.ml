@@ -9,7 +9,7 @@ open OUnit2
 open Ast
 open Core
 
-type test_node = string Ast.Node.t [@@deriving compare, eq, sexp, hash]
+type test_node = string Ast.Node.t [@@deriving compare, sexp, hash]
 
 let test_equality _ =
   let compare_two_locations left right equal compare_equal hashes_equal =
@@ -17,7 +17,7 @@ let test_equality _ =
     let node_left = Node.create ~location:left value in
     let node_right = Node.create ~location:right value in
     let assert_bool_equal = assert_equal ~cmp:Bool.equal ~printer:Bool.to_string in
-    assert_bool_equal (equal_test_node node_left node_right) equal;
+    assert_bool_equal ([%compare.equal: test_node] node_left node_right) equal;
     assert_bool_equal (compare_test_node node_left node_right = 0) compare_equal;
     assert_bool_equal (hash_test_node node_left = hash_test_node node_right) hashes_equal
   in

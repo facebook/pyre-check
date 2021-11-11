@@ -7,7 +7,7 @@
 
 open Core
 
-type t [@@deriving compare, eq, sexp, show]
+type t [@@deriving compare, sexp, show]
 
 module IndexKey : Memory.KeyType with type t = t and type out = t
 

@@ -14,7 +14,7 @@ module T : sig
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
-  [@@deriving sexp, compare, eq]
+  [@@deriving sexp, compare]
 
   type kind =
     | ParseError
@@ -99,14 +99,14 @@ module T : sig
         name: Reference.t;
         annotation: string;
       }
-  [@@deriving sexp, compare, eq]
+  [@@deriving sexp, compare]
 
   type t = {
     kind: kind;
     path: Pyre.Path.t option;
     location: Location.t;
   }
-  [@@deriving sexp, compare, eq, show]
+  [@@deriving sexp, compare, show]
 end
 
 type t = T.t

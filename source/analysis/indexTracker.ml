@@ -7,7 +7,7 @@
 
 open Core
 
-type t = int [@@deriving eq, compare, show, sexp, hash]
+type t = int [@@deriving compare, show, sexp, hash]
 
 module IndexKey = struct
   type nonrec t = t

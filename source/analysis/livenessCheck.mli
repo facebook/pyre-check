@@ -15,7 +15,7 @@ module ErrorMap : sig
     location: Location.t;
     identifier: string;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   include Hashable with type t := key
 
@@ -23,7 +23,7 @@ module ErrorMap : sig
 end
 
 module NestedDefineLookup : sig
-  type key = Reference.t [@@deriving compare, eq, sexp, show, hash]
+  type key = Reference.t [@@deriving compare, sexp, show, hash]
 
   include Hashable with type t := key
 

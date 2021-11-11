@@ -3680,7 +3680,8 @@ module State (Context : Context) = struct
                         | Some (attribute, _)
                           when AnnotatedAttribute.property attribute
                                && AnnotatedAttribute.(
-                                    equal_visibility (visibility attribute) ReadWrite) ->
+                                    [%compare.equal: visibility] (visibility attribute) ReadWrite)
+                          ->
                             Context.Builder.add_property_setter_callees
                               ~attribute
                               ~instantiated_parent:parent

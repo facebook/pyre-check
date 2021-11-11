@@ -7,7 +7,7 @@
 
 open Core
 
-type t = string [@@deriving compare, eq, sexp, hash, to_yojson]
+type t = string [@@deriving compare, sexp, hash, to_yojson]
 
 module Map : Map.S with type Key.t = t
 
@@ -22,6 +22,8 @@ val sanitized : t -> t
 val is_sanitized : t -> bool
 
 val equal_sanitized : t -> t -> bool
+
+val equal : t -> t -> bool
 
 val pp : Format.formatter -> t -> unit
 

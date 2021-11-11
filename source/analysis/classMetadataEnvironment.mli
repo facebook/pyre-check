@@ -16,7 +16,7 @@ type class_metadata = {
   is_protocol: bool;
   is_typed_dictionary: bool;
 }
-[@@deriving eq, compare, show]
+[@@deriving compare, show]
 
 module MetadataReadOnly : sig
   include Environment.ReadOnly

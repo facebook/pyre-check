@@ -54,7 +54,7 @@ module LocalResult : sig
 end
 
 module GlobalResult : sig
-  type t [@@deriving show, eq, to_yojson]
+  type t [@@deriving show, to_yojson]
 
   val inference_count : t -> int
 

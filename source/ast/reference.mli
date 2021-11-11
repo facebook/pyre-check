@@ -7,7 +7,7 @@
 
 open Core
 
-type t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+type t [@@deriving compare, sexp, show, hash, to_yojson]
 
 val local_qualifier_pattern : Str.regexp
 
@@ -36,6 +36,8 @@ val is_local : t -> bool
 val sanitized : t -> t
 
 val sanitize_qualified : t -> t
+
+val equal : t -> t -> bool
 
 val equal_sanitized : t -> t -> bool
 

@@ -18,7 +18,7 @@ module Global = struct
     undecorated_signature: Type.Callable.t option;
     problem: AnnotatedAttribute.problem option;
   }
-  [@@deriving eq, show, compare, sexp]
+  [@@deriving show, compare, sexp]
 end
 
 module UninstantiatedAnnotation = struct
@@ -170,13 +170,13 @@ module TypeParameterValidationTypes = struct
         actual: Type.Parameter.t;
         expected: Type.Variable.t;
       }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type type_parameters_mismatch = {
     name: string;
     kind: generic_type_problems;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 end
 
 let class_hierarchy_environment class_metadata_environment =
@@ -1897,7 +1897,7 @@ class base class_metadata_environment dependency =
             match special with
             | Some special -> special
             | None
-              when AnnotatedAttribute.equal_initialized
+              when [%compare.equal: AnnotatedAttribute.initialized]
                      (AnnotatedAttribute.initialized attribute)
                      OnClass
                    && apply_descriptors -> (
@@ -2322,7 +2322,7 @@ class base class_metadata_environment dependency =
               |> List.map ~f:base_to_class
               |> List.filter_map ~f:(class_definition class_metadata_environment ~dependency)
               |> List.filter ~f:(fun base_class ->
-                     not (Node.equal ClassSummary.equal base_class original))
+                     not ([%compare.equal: ClassSummary.t Node.t] base_class original))
             in
             let filter_generic_meta base_metaclasses =
               (* We only want a class directly inheriting from Generic to have a metaclass of
@@ -4406,7 +4406,7 @@ module GlobalAnnotationCache = struct
       | None -> "None"
 
 
-    let equal_value = Option.equal Global.equal
+    let equal_value = Option.equal [%compare.equal: Global.t]
   end)
 
   include Cache

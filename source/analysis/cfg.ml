@@ -25,7 +25,7 @@ module Node = struct
     | With of With.t
     | While of While.t
     | Yield
-  [@@deriving compare, show, sexp, eq]
+  [@@deriving compare, show, sexp]
 
   type t = {
     id: int;
@@ -33,7 +33,7 @@ module Node = struct
     mutable predecessors: Int.Set.t;
     mutable successors: Int.Set.t;
   }
-  [@@deriving compare, eq, sexp]
+  [@@deriving compare, sexp]
 
   let location_insensitive_equal left right =
     let equal_kind left right =
@@ -46,7 +46,7 @@ module Node = struct
       | Try left, Try right -> compare_equal Try.location_insensitive_compare left right
       | With left, With right -> compare_equal With.location_insensitive_compare left right
       | While left, While right -> compare_equal While.location_insensitive_compare left right
-      | _ -> equal_kind left right
+      | _ -> [%compare.equal: kind] left right
     in
 
     Int.equal left.id right.id
@@ -141,8 +141,6 @@ type jumps = {
   normal: Node.t;
   yield: Node.t;
 }
-
-let equal left right = Core.Hashtbl.equal Node.equal left right
 
 let pp format graph =
   let print_node index = Format.fprintf format "%a\n" Node.pp (Hashtbl.find_exn graph index) in

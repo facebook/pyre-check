@@ -15,14 +15,14 @@ type missing_annotation = {
   evidence_locations: Location.WithPath.t list;
   thrown_at_source: bool;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type class_kind =
   | Class
   | Enumeration
   | Protocol of Reference.t
   | Abstract of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type invalid_class_instantiation =
   | AbstractClassInstantiation of {
@@ -30,12 +30,12 @@ type invalid_class_instantiation =
       abstract_methods: string list;
     }
   | ProtocolInstantiation of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type module_reference =
   | ExplicitModule of SourcePath.t
   | ImplicitModule of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type origin =
   | Class of {
@@ -224,7 +224,7 @@ and illegal_annotation_target_kind =
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }
   | UnpackingNonIterable of { annotation: Type.t }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type invalid_decoration =
   | CouldNotResolve of Expression.t
@@ -424,17 +424,17 @@ and kind =
       left: Type.t;
       right: Type.t;
     }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type t = {
   location: Location.WithModule.t;
   kind: kind;
   signature: Statement.Define.Signature.t Node.t;
 }
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 module Instantiated : sig
-  type t [@@deriving sexp, compare, eq, show, hash, yojson { strict = false }]
+  type t [@@deriving sexp, compare, show, hash, yojson { strict = false }]
 
   val location : t -> Location.WithPath.t
 

@@ -777,7 +777,9 @@ let test_resolve_mutable_literals_typed_dictionary context =
         { Node.value = expected_mismatch; _ }
         { Node.value = actual_mismatch; _ }
       =
-      WeakenMutableLiterals.equal_typed_dictionary_mismatch expected_mismatch actual_mismatch
+      [%compare.equal: WeakenMutableLiterals.typed_dictionary_mismatch]
+        expected_mismatch
+        actual_mismatch
     in
     let location_insensitive_equal_weakened_type
         { WeakenMutableLiterals.resolved = expected_resolved; typed_dictionary_errors = expected }

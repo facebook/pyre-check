@@ -14,24 +14,24 @@ type mismatch = {
   name: Identifier.t option;
   position: int;
 }
-[@@deriving eq, show, sexp, compare]
+[@@deriving show, sexp, compare]
 
 type invalid_argument = {
   expression: Expression.t option;
   annotation: Type.t;
 }
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 type missing_argument =
   | Named of Identifier.t
   | PositionalOnly of int
-[@@deriving eq, show, compare, sexp, hash]
+[@@deriving show, compare, sexp, hash]
 
 type mismatch_with_tuple_variadic_type_variable =
   | NotBoundedTuple of invalid_argument
   | CannotConcatenate of Type.OrderedTypes.t list
   | ConstraintFailure of Type.OrderedTypes.t
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 type mismatch_reason =
   | Mismatch of mismatch Node.t
@@ -39,7 +39,7 @@ type mismatch_reason =
       variable: Type.OrderedTypes.t;
       mismatch: mismatch_with_tuple_variadic_type_variable;
     }
-[@@deriving eq, show, sexp, compare]
+[@@deriving show, sexp, compare]
 
 type reason =
   | AbstractClassInstantiation of {
@@ -60,21 +60,23 @@ type reason =
   | TypedDictionaryInitializationError of
       WeakenMutableLiterals.typed_dictionary_mismatch Node.t list
   | UnexpectedKeyword of Identifier.t
-[@@deriving eq, show, sexp, compare]
+[@@deriving show, sexp, compare]
+
+let equal_reason = [%compare.equal: reason]
 
 type closest = {
   closest_return_annotation: Type.t;
   reason: reason option;
 }
-[@@deriving show, sexp]
+[@@deriving show, sexp, compare]
 
 let equal_closest (left : closest) (right : closest) =
   (* Ignore rank. *)
   Type.equal left.closest_return_annotation right.closest_return_annotation
-  && Option.equal equal_reason left.reason right.reason
+  && Option.equal [%compare.equal: reason] left.reason right.reason
 
 
 type sig_t =
   | Found of { selected_return_annotation: Type.t }
   | NotFound of closest
-[@@deriving eq, show, sexp]
+[@@deriving show, sexp, compare]

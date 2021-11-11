@@ -12,7 +12,7 @@ open Statement
 module Callable = AnnotatedCallable
 module Class = AnnotatedClass
 
-type t = Define.t Node.t [@@deriving compare, eq, sexp, show, hash]
+type t = Define.t Node.t [@@deriving compare, sexp, show, hash]
 
 let create definition = definition
 

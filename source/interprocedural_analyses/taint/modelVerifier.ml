@@ -209,7 +209,7 @@ let model_compatible
       | { Parameter.value = Some expression; name; _ } ->
           if
             not
-              (Expression.equal_expression
+              ([%compare.equal: Expression.expression]
                  (Node.value expression)
                  (Expression.Constant Constant.Ellipsis))
           then

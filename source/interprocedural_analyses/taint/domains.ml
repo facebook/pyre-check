@@ -134,7 +134,7 @@ module CallInfo = struct
             port = port_right;
             callees = callees_right;
           } ) ->
-        AccessPath.Root.equal port_left port_right
+        [%compare.equal: AccessPath.Root.t] port_left port_right
         && Location.WithModule.compare location_left location_right = 0
         && [%compare.equal: Interprocedural.Target.t list] callees_left callees_right
         && Abstract.TreeDomain.Label.compare_path path_right path_left = 0

@@ -610,7 +610,7 @@ let test_populate context =
     in
     assert_equal
       ~printer:show_targets
-      ~cmp:(Option.equal (List.equal ClassHierarchy.Target.equal))
+      ~cmp:(Option.equal (List.equal [%compare.equal: ClassHierarchy.Target.t]))
       (Some (List.map superclasses ~f:to_target))
       targets
   in

@@ -2925,7 +2925,7 @@ let test_defines _ =
     let printer defines = List.map defines ~f:Define.show |> String.concat ~sep:"\n" in
     let source = Source.create statements in
     assert_equal
-      ~cmp:(List.equal Define.equal)
+      ~cmp:(List.equal [%compare.equal: Define.t])
       ~printer
       defines
       (Preprocessing.defines ~include_toplevels:true source |> List.map ~f:Node.value);
@@ -3065,7 +3065,7 @@ let test_defines _ =
 let test_classes _ =
   let assert_classes statements class_defines =
     assert_equal
-      ~cmp:(List.equal Class.equal)
+      ~cmp:(List.equal [%compare.equal: Class.t])
       (Preprocessing.classes (Source.create statements) |> List.map ~f:Node.value)
       class_defines
   in

@@ -24,14 +24,14 @@ type missing_annotation = {
   evidence_locations: Location.WithPath.t list;
   thrown_at_source: bool;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type class_kind =
   | Class
   | Enumeration
   | Protocol of Reference.t
   | Abstract of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type invalid_class_instantiation =
   | AbstractClassInstantiation of {
@@ -39,12 +39,12 @@ type invalid_class_instantiation =
       abstract_methods: string list;
     }
   | ProtocolInstantiation of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type module_reference =
   | ExplicitModule of SourcePath.t
   | ImplicitModule of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type origin =
   | Class of {
@@ -233,7 +233,7 @@ and illegal_annotation_target_kind =
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }
   | UnpackingNonIterable of { annotation: Type.t }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type invalid_decoration =
   | CouldNotResolve of Expression.t
@@ -434,7 +434,7 @@ and kind =
       left: Type.t;
       right: Type.t;
     }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 let code_of_kind = function
   | RevealedType _ -> -1
@@ -995,7 +995,7 @@ let rec messages ~concise ~signature location kind =
         | WeakenedPostcondition { actual; expected; due_to_invariance; _ } ->
             if due_to_invariance then
               invariance_message
-            else if equal_override_kind override_kind Attribute then
+            else if [%compare.equal: override_kind] override_kind Attribute then
               Format.asprintf
                 "Type `%a` is not a subtype of the overridden attribute `%a`."
                 pp_type
@@ -2364,7 +2364,7 @@ module T = struct
     kind: kind;
     signature: Define.Signature.t Node.t;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 end
 
 include T
@@ -2398,8 +2398,6 @@ module Instantiated = struct
     define: string;
   }
   [@@deriving sexp, compare, show, hash, yojson { strict = false }]
-
-  let equal = [%compare.equal: t]
 
   let location { line; column; stop_line; stop_column; path; _ } =
     { Location.start = { line; column }; stop = { line = stop_line; column = stop_column } }
@@ -2570,22 +2568,22 @@ let less_or_equal ~resolution left right =
   [%compare.equal: Location.WithModule.t] left.location right.location
   &&
   match left.kind, right.kind with
-  | AnalysisFailure left, AnalysisFailure right -> [%equal: analysis_failure] left right
+  | AnalysisFailure left, AnalysisFailure right -> [%compare.equal: analysis_failure] left right
   | ( BroadcastError { expression = left_expression; left = first_left; right = first_right },
       BroadcastError { expression = right_expression; left = second_left; right = second_right } )
-    when Expression.equal left_expression right_expression ->
+    when [%compare.equal: Expression.t] left_expression right_expression ->
       GlobalResolution.less_or_equal resolution ~left:first_left ~right:first_right
       && GlobalResolution.less_or_equal resolution ~left:second_left ~right:second_right
   | ParserFailure left_message, ParserFailure right_message ->
       String.equal left_message right_message
   | DeadStore left, DeadStore right -> Identifier.equal left right
-  | Deobfuscation left, Deobfuscation right -> Source.equal left right
+  | Deobfuscation left, Deobfuscation right -> [%compare.equal: Source.t] left right
   | ( IllegalAnnotationTarget { target = left_target; kind = left_kind },
       IllegalAnnotationTarget { target = right_target; kind = right_kind } ) -> (
       match left_kind, right_kind with
       | InvalidExpression, InvalidExpression
       | Reassignment, Reassignment ->
-          Expression.equal left_target right_target
+          [%compare.equal: Expression.t] left_target right_target
       | _, _ -> false)
   | IncompatibleAsyncGeneratorReturnType left, IncompatibleAsyncGeneratorReturnType right ->
       GlobalResolution.less_or_equal resolution ~left ~right
@@ -2610,8 +2608,10 @@ let less_or_equal ~resolution left right =
         { target = left_target; annotation = left; attempted_action = left_attempted_action },
       IncompleteType
         { target = right_target; annotation = right; attempted_action = right_attempted_action } )
-    when Expression.equal left_target right_target
-         && equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action ->
+    when [%compare.equal: Expression.t] left_target right_target
+         && [%compare.equal: illegal_action_on_incomplete_type]
+              left_attempted_action
+              right_attempted_action ->
       GlobalResolution.less_or_equal resolution ~left ~right
   | IncompatibleAttributeType left, IncompatibleAttributeType right
     when Type.equal left.parent right.parent
@@ -2632,10 +2632,10 @@ let less_or_equal ~resolution left right =
           less_or_equal_mismatch left_mismatch right_mismatch
       | _ -> false)
   | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
-    when Option.equal Expression.equal left.expression right.expression ->
+    when Option.equal [%compare.equal: Expression.t] left.expression right.expression ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
-    when Option.equal Expression.equal left.expression right.expression ->
+    when Option.equal [%compare.equal: Expression.t] left.expression right.expression ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidMethodSignature left, InvalidMethodSignature right -> (
       match left.annotation, right.annotation with
@@ -2650,14 +2650,15 @@ let less_or_equal ~resolution left right =
   | InvalidType (FinalNested left), InvalidType (FinalNested right) ->
       GlobalResolution.less_or_equal resolution ~left ~right
   | InvalidTypeParameters left, InvalidTypeParameters right ->
-      AttributeResolution.equal_type_parameters_mismatch left right
+      [%compare.equal: AttributeResolution.type_parameters_mismatch] left right
   | ( InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ) ->
-      Type.Variable.equal left right && equal_type_variable_origin left_origin right_origin
+      Type.Variable.equal left right
+      && [%compare.equal: type_variable_origin] left_origin right_origin
   | ( InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin } ) ->
       GlobalResolution.less_or_equal resolution ~left ~right
-      && equal_type_variance_origin left_origin right_origin
+      && [%compare.equal: type_variance_origin] left_origin right_origin
   | InvalidInheritance left, InvalidInheritance right -> (
       match left, right with
       | ClassName left, ClassName right
@@ -2690,7 +2691,8 @@ let less_or_equal ~resolution left right =
       Option.equal Reference.equal_sanitized left_callee right_callee && left_index = right_index
   | MissingCaptureAnnotation left_name, MissingCaptureAnnotation right_name ->
       Identifier.equal_sanitized left_name right_name
-  | InvalidDecoration left, InvalidDecoration right -> equal_invalid_decoration left right
+  | InvalidDecoration left, InvalidDecoration right ->
+      [%compare.equal: invalid_decoration] left right
   | InvalidException left, InvalidException right ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidClassInstantiation left, InvalidClassInstantiation right -> (
@@ -2721,10 +2723,10 @@ let less_or_equal ~resolution left right =
           { Annotation.annotation = left_annotation; mutability = left_mutability; _ }
           { Annotation.annotation = right_annotation; mutability = right_mutability; _ }
         =
-        Annotation.equal_mutability left_mutability right_mutability
+        [%compare.equal: Annotation.mutability] left_mutability right_mutability
         && GlobalResolution.less_or_equal resolution ~left:left_annotation ~right:right_annotation
       in
-      Expression.equal left.expression right.expression
+      [%compare.equal: Expression.t] left.expression right.expression
       && less_or_equal_annotation left.annotation right.annotation
   | TooManyArguments left, TooManyArguments right ->
       Option.equal Reference.equal_sanitized left.callee right.callee
@@ -2756,7 +2758,8 @@ let less_or_equal ~resolution left right =
   | UninitializedAttribute left, UninitializedAttribute right when String.equal left.name right.name
     ->
       less_or_equal_mismatch left.mismatch right.mismatch
-  | UnawaitedAwaitable left, UnawaitedAwaitable right -> equal_unawaited_awaitable left right
+  | UnawaitedAwaitable left, UnawaitedAwaitable right ->
+      [%compare.equal: unawaited_awaitable] left right
   | UnboundName left_name, UnboundName right_name
   | UninitializedLocal left_name, UninitializedLocal right_name ->
       Identifier.equal_sanitized left_name right_name
@@ -2813,8 +2816,10 @@ let less_or_equal ~resolution left right =
       IntSet.is_subset (IntSet.of_list left) ~of_:(IntSet.of_list right)
   | ( UnusedLocalMode { unused_mode = left_unused_mode; actual_mode = left_actual_mode },
       UnusedLocalMode { unused_mode = right_unused_mode; actual_mode = right_actual_mode } ) ->
-      Source.equal_local_mode left_unused_mode.Node.value right_unused_mode.Node.value
-      && Source.equal_local_mode left_actual_mode.Node.value right_actual_mode.Node.value
+      [%compare.equal: Source.local_mode] left_unused_mode.Node.value right_unused_mode.Node.value
+      && [%compare.equal: Source.local_mode]
+           left_actual_mode.Node.value
+           right_actual_mode.Node.value
   | ( Unpack { expected_count = left_count; unpack_problem = left_problem },
       Unpack { expected_count = right_count; unpack_problem = right_problem } ) -> (
       left_count = right_count
@@ -2918,11 +2923,12 @@ let join ~resolution left right =
   in
   let kind =
     match left.kind, right.kind with
-    | AnalysisFailure left, AnalysisFailure right when [%equal: analysis_failure] left right ->
+    | AnalysisFailure left, AnalysisFailure right when [%compare.equal: analysis_failure] left right
+      ->
         AnalysisFailure left
     | ( BroadcastError { expression = left_expression; left = first_left; right = first_right },
         BroadcastError { expression = right_expression; left = second_left; right = second_right } )
-      when Expression.equal left_expression right_expression ->
+      when [%compare.equal: Expression.t] left_expression right_expression ->
         BroadcastError
           {
             expression = left_expression;
@@ -2933,14 +2939,15 @@ let join ~resolution left right =
       when String.equal left_message right_message ->
         ParserFailure left_message
     | DeadStore left, DeadStore right when Identifier.equal left right -> DeadStore left
-    | Deobfuscation left, Deobfuscation right when Source.equal left right -> Deobfuscation left
+    | Deobfuscation left, Deobfuscation right when [%compare.equal: Source.t] left right ->
+        Deobfuscation left
     | ( IllegalAnnotationTarget { target = left; kind = InvalidExpression },
         IllegalAnnotationTarget { target = right; kind = InvalidExpression } )
-      when Expression.equal left right ->
+      when [%compare.equal: Expression.t] left right ->
         IllegalAnnotationTarget { target = left; kind = InvalidExpression }
     | ( IllegalAnnotationTarget { target = left; kind = Reassignment },
         IllegalAnnotationTarget { target = right; kind = Reassignment } )
-      when Expression.equal left right ->
+      when [%compare.equal: Expression.t] left right ->
         IllegalAnnotationTarget { target = left; kind = Reassignment }
     | IncompatibleAsyncGeneratorReturnType left, IncompatibleAsyncGeneratorReturnType right ->
         IncompatibleAsyncGeneratorReturnType (GlobalResolution.join resolution left right)
@@ -2950,9 +2957,10 @@ let join ~resolution left right =
           { target = left_target; annotation = left; attempted_action = left_attempted_action },
         IncompleteType
           { target = right_target; annotation = right; attempted_action = right_attempted_action } )
-      when Expression.equal left_target right_target
-           && equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action
-      ->
+      when [%compare.equal: Expression.t] left_target right_target
+           && [%compare.equal: illegal_action_on_incomplete_type]
+                left_attempted_action
+                right_attempted_action ->
         IncompleteType
           {
             target = left_target;
@@ -2960,7 +2968,7 @@ let join ~resolution left right =
             attempted_action = left_attempted_action;
           }
     | InvalidTypeParameters left, InvalidTypeParameters right
-      when AttributeResolution.equal_type_parameters_mismatch left right ->
+      when [%compare.equal: AttributeResolution.type_parameters_mismatch] left right ->
         InvalidTypeParameters left
     | ( MissingArgument { callee = left_callee; parameter = Named left_name },
         MissingArgument { callee = right_callee; parameter = Named right_name } )
@@ -3019,8 +3027,8 @@ let join ~resolution left right =
             expression = right_expression;
             qualify = right_qualify;
           } )
-      when Expression.equal left_expression right_expression
-           && Annotation.equal_mutability left_mutability right_mutability ->
+      when [%compare.equal: Expression.t] left_expression right_expression
+           && [%compare.equal: Annotation.mutability] left_mutability right_mutability ->
         RevealedType
           {
             expression = left_expression;
@@ -3082,7 +3090,7 @@ let join ~resolution left right =
         let mismatch = join_mismatch left_mismatch right_mismatch in
         InconsistentOverride { left with override = WeakenedPostcondition mismatch }
     | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
-      when Option.equal Expression.equal left.expression right.expression ->
+      when Option.equal [%compare.equal: Expression.t] left.expression right.expression ->
         InvalidArgument
           (Keyword
              {
@@ -3090,20 +3098,21 @@ let join ~resolution left right =
                annotation = GlobalResolution.join resolution left.annotation right.annotation;
              })
     | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
-      when Option.equal Expression.equal left.expression right.expression ->
+      when Option.equal [%compare.equal: Expression.t] left.expression right.expression ->
         InvalidArgument
           (ConcreteVariable
              {
                left with
                annotation = GlobalResolution.join resolution left.annotation right.annotation;
              })
-    | InvalidAssignment left, InvalidAssignment right when equal_invalid_assignment_kind left right
-      ->
+    | InvalidAssignment left, InvalidAssignment right
+      when [%compare.equal: invalid_assignment_kind] left right ->
         InvalidAssignment left
-    | InvalidDecoration left, InvalidDecoration right when equal_invalid_decoration left right ->
+    | InvalidDecoration left, InvalidDecoration right
+      when [%compare.equal: invalid_decoration] left right ->
         InvalidDecoration left
     | InvalidException left, InvalidException right
-      when Expression.equal left.expression right.expression ->
+      when [%compare.equal: Expression.t] left.expression right.expression ->
         InvalidException
           {
             expression = left.expression;
@@ -3123,11 +3132,13 @@ let join ~resolution left right =
         InvalidType (InvalidType { annotation = left; expected })
     | ( InvalidTypeVariable { annotation = left; origin = left_origin },
         InvalidTypeVariable { annotation = right; origin = right_origin } )
-      when Type.Variable.equal left right && equal_type_variable_origin left_origin right_origin ->
+      when Type.Variable.equal left right
+           && [%compare.equal: type_variable_origin] left_origin right_origin ->
         InvalidTypeVariable { annotation = left; origin = left_origin }
     | ( InvalidTypeVariance { annotation = left; origin = left_origin },
         InvalidTypeVariance { annotation = right; origin = right_origin } )
-      when Type.equal left right && equal_type_variance_origin left_origin right_origin ->
+      when Type.equal left right && [%compare.equal: type_variance_origin] left_origin right_origin
+      ->
         InvalidTypeVariance { annotation = left; origin = left_origin }
     | TooManyArguments left, TooManyArguments right
       when Option.equal Reference.equal_sanitized left.callee right.callee
@@ -3137,7 +3148,8 @@ let join ~resolution left right =
     | UninitializedAttribute left, UninitializedAttribute right
       when String.equal left.name right.name && Type.equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
-    | UnawaitedAwaitable left, UnawaitedAwaitable right when equal_unawaited_awaitable left right ->
+    | UnawaitedAwaitable left, UnawaitedAwaitable right
+      when [%compare.equal: unawaited_awaitable] left right ->
         UnawaitedAwaitable left
     | UnboundName left_name, UnboundName right_name
       when Identifier.equal_sanitized left_name right_name ->
@@ -3380,7 +3392,7 @@ let join_at_define ~resolution errors =
         | None -> error
         | Some existing_error ->
             let joined_error = join ~resolution existing_error error in
-            if not (equal_kind joined_error.kind Top) then
+            if not ([%compare.equal: kind] joined_error.kind Top) then
               joined_error
             else
               existing_error
@@ -3436,7 +3448,7 @@ let join_at_source ~resolution errors =
     | Some { kind = UndefinedType _; _ }, UnboundName _ -> Map.set ~key ~data:error errors
     | Some existing_error, _ ->
         let joined_error = join ~resolution existing_error error in
-        if not (equal_kind joined_error.kind Top) then
+        if not ([%compare.equal: kind] joined_error.kind Top) then
           Map.set ~key ~data:joined_error errors
         else
           errors

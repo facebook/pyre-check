@@ -22,7 +22,7 @@ module Root : sig
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-  [@@deriving compare, eq, show]
+  [@@deriving compare, show]
 
   val normalize_parameters : Parameter.t list -> (t * Identifier.t * Parameter.t) list
 
@@ -33,7 +33,7 @@ type t = {
   root: Root.t;
   path: Abstract.TreeDomain.Label.path;
 }
-[@@deriving show, eq]
+[@@deriving show, compare]
 
 val create : Root.t -> Abstract.TreeDomain.Label.path -> t
 

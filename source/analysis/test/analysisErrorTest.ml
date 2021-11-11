@@ -347,7 +347,7 @@ let test_join context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
   let assert_join left right expected =
     let result = Error.join ~resolution left right in
-    assert_equal ~printer:Error.show ~cmp:Error.equal expected result
+    assert_equal ~printer:Error.show ~cmp:[%compare.equal: Error.t] expected result
   in
   assert_join
     (error
@@ -691,7 +691,7 @@ let test_filter context =
   in
   let assert_unfiltered ?qualifier ?(location = Location.any) ?(signature = mock_signature) kind =
     let errors = [error ?qualifier ~signature ~location kind] in
-    assert_equal ~cmp:(List.equal equal) errors (filter ~resolution errors)
+    assert_equal ~cmp:(List.equal [%compare.equal: t]) errors (filter ~resolution errors)
   in
   (* Suppress stub errors. *)
   assert_unfiltered

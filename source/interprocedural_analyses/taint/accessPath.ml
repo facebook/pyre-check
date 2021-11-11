@@ -24,7 +24,7 @@ module Root = struct
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-  [@@deriving compare, eq, show { with_path = false }, hash]
+  [@@deriving compare, show { with_path = false }, hash]
 
   let chop_parameter_prefix name =
     match String.chop_prefix ~prefix:"$parameter$" name with
@@ -232,7 +232,7 @@ type t = {
   root: Root.t;
   path: Abstract.TreeDomain.Label.path;
 }
-[@@deriving eq]
+[@@deriving compare]
 
 let pp formatter { root; path } =
   Format.fprintf formatter "%a%a" Root.pp root Abstract.TreeDomain.Label.pp_path path

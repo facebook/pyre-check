@@ -11,7 +11,7 @@ open Statement
 module Callable = AnnotatedCallable
 module Class = AnnotatedClass
 
-type t [@@deriving compare, eq, sexp, show, hash]
+type t [@@deriving compare, sexp, show, hash]
 
 val create : Define.t Node.t -> t
 

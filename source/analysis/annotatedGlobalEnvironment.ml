@@ -111,7 +111,7 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
     | None -> "None"
 
 
-  let equal_value = Option.equal Location.WithModule.equal
+  let equal_value = Option.equal [%compare.equal: Location.WithModule.t]
 end)
 
 include GlobalLocationTable

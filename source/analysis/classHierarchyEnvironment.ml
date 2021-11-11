@@ -23,7 +23,7 @@ type edges = {
   parents: ClassHierarchy.Target.t list;
   has_placeholder_stub_parent: bool;
 }
-[@@deriving eq, compare]
+[@@deriving compare]
 
 module EdgesValue = struct
   type t = edges option
@@ -98,7 +98,7 @@ let get_parents alias_environment name ~dependency =
   in
   let remove_extra_edges_to_object targets =
     let not_object_edge { ClassHierarchy.Target.target; _ } =
-      not (IndexTracker.equal target object_index)
+      not ([%compare.equal: IndexTracker.t] target object_index)
     in
     match List.filter targets ~f:not_object_edge with
     | [] -> targets
@@ -185,7 +185,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = IndexTracker.annotation
 
-  let equal_value = Option.equal equal_edges
+  let equal_value = Option.equal [%compare.equal: edges]
 end)
 
 module ReadOnly = struct

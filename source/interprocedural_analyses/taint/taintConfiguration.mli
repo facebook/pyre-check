@@ -16,7 +16,7 @@ module Rule : sig
     name: string;
     message_format: string; (* format *)
   }
-  [@@deriving eq, show]
+  [@@deriving compare, show]
 end
 
 type literal_string_sink = {
@@ -49,7 +49,7 @@ type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 type missing_flows_kind =
   | Obscure
   | Type
-[@@deriving eq, show]
+[@@deriving compare, show]
 
 val missing_flows_kind_from_string : string -> missing_flows_kind option
 

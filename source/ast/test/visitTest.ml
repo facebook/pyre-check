@@ -42,8 +42,8 @@ let test_collect _ =
       expressions, statements
     in
     let equal left right =
-      List.equal Expression.equal (fst left) (fst right)
-      && List.equal Statement.equal (snd left) (snd right)
+      List.equal [%compare.equal: Expression.t] (fst left) (fst right)
+      && List.equal [%compare.equal: Statement.t] (snd left) (snd right)
     in
     let printer (expressions, statements) =
       Format.asprintf
@@ -231,7 +231,7 @@ let test_collect_format_strings_with_ignores _ =
              (List.map ~f:(fun { Ignore.codes; ignored_line; kind; _ } -> ignored_line, kind, codes))
     in
     assert_equal
-      ~cmp:[%equal: (int * Ignore.kind * int list) list list]
+      ~cmp:[%compare.equal: (int * Ignore.kind * int list) list list]
       ~printer:[%show: (int * Ignore.kind * int list) list list]
       expected
       format_strings_with_ignores

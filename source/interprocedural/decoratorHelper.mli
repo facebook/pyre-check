@@ -13,13 +13,13 @@ type decorator_reference_and_module = {
   decorator: Reference.t;
   module_reference: Reference.t option;
 }
-[@@deriving compare, hash, sexp, eq, show]
+[@@deriving compare, hash, sexp, show]
 
 type define_and_originating_module = {
   decorator_define: Define.t;
   module_reference: Reference.t option;
 }
-[@@deriving compare, hash, sexp, eq, show]
+[@@deriving compare, hash, sexp, show]
 
 val uniquify_names
   :  get_reference:('a -> Reference.t) ->

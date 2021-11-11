@@ -7,10 +7,10 @@
 
 open Core
 
-type path = string [@@deriving compare, eq, show, sexp, hash]
+type path = string [@@deriving compare, show, sexp, hash]
 
 module AbsolutePath = struct
-  type t = path [@@deriving compare, eq, show, sexp, hash]
+  type t = path [@@deriving compare, show, sexp, hash]
 end
 
 module RelativePath = struct
@@ -18,7 +18,7 @@ module RelativePath = struct
     root: path;
     relative: path;
   }
-  [@@deriving compare, eq, show, sexp, hash]
+  [@@deriving compare, show, sexp, hash]
 
   let relative { relative; _ } = relative
 end

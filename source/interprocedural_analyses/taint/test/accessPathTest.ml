@@ -14,7 +14,7 @@ let test_of_expression context =
   let ( !+ ) expression = Test.parse_single_expression expression in
   let assert_of_expression ~resolution expression expected =
     assert_equal
-      ~cmp:(Option.equal AccessPath.equal)
+      ~cmp:(Option.equal [%compare.equal: AccessPath.t])
       ~printer:(function
         | None -> "None"
         | Some access_path -> AccessPath.show access_path)

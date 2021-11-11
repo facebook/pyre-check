@@ -11,7 +11,7 @@ type kind =
   | TypeIgnore
   | PyreFixme
   | PyreIgnore
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 type t = {
   ignored_line: int;
@@ -28,8 +28,6 @@ let compare left right =
     (left.ignored_line, left.codes, left_start, left.kind)
     (right.ignored_line, right.codes, right_start, right.kind)
 
-
-let equal = [%compare.equal: t]
 
 let hash_fold_t state { ignored_line; codes; location; kind; _ } =
   let { Location.start; _ } = location in

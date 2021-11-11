@@ -13,7 +13,7 @@ module T = struct
     path: Path.t;
     content: string option;
   }
-  [@@deriving compare, eq, show, sexp, hash]
+  [@@deriving compare, show, sexp, hash]
 
   let create ?content path = { path; content }
 

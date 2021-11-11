@@ -18,7 +18,7 @@ module Target : sig
     target: IndexTracker.t;
     parameters: Type.Parameter.t list;
   }
-  [@@deriving compare, eq, sexp, show]
+  [@@deriving compare, sexp, show]
 
   module type ListOrSet = sig
     type record

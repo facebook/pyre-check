@@ -17,7 +17,7 @@ let type_to_reference type_ = type_ |> type_to_string |> Reference.create
 let expression_to_json expression = `String (expression |> Expression.sanitized |> Expression.show)
 
 module SerializableReference = struct
-  type t = Reference.t [@@deriving compare, eq, sexp, hash, show]
+  type t = Reference.t [@@deriving compare, sexp, hash, show]
 
   let to_yojson reference = `String (Reference.show_sanitized reference)
 
@@ -26,14 +26,14 @@ module SerializableReference = struct
 end
 
 module SerializableDecorator = struct
-  type t = Expression.t [@@deriving compare, eq, sexp, hash, show]
+  type t = Expression.t [@@deriving compare, sexp, hash, show]
 
   let to_yojson decorator =
     Expression.sanitized decorator |> Expression.show |> fun shown -> `String shown
 end
 
 module DefaultValue = struct
-  type t = Expression.t option [@@deriving show, eq]
+  type t = Expression.t option [@@deriving show]
 
   let to_yojson value = value >>| expression_to_json |> Option.value ~default:`Null
 end
@@ -44,7 +44,7 @@ module AnnotationLocation = struct
     path: string;
     line: int;
   }
-  [@@deriving show, eq, compare, to_yojson]
+  [@@deriving show, compare, to_yojson]
 
   let create ~lookup ~qualifier ~line =
     { qualifier; path = lookup qualifier |> Option.value ~default:"*"; line }
@@ -62,7 +62,7 @@ module AnnotationLocation = struct
 end
 
 module SerializableType = struct
-  type t = Type.t [@@deriving show, eq]
+  type t = Type.t [@@deriving show]
 
   let to_yojson type_ = `String (type_to_string type_)
 end
@@ -72,7 +72,7 @@ module TypeAnnotation = struct
     | Inferred of SerializableType.t
     | Given of Expression.t
     | Missing
-  [@@deriving show, eq]
+  [@@deriving show]
 
   let is_inferred = function
     | Inferred _ -> true
@@ -115,7 +115,7 @@ end
 module AnnotationsByName = struct
   module Base = struct
     module type S = sig
-      type t [@@deriving show, eq, compare, to_yojson]
+      type t [@@deriving show, compare, to_yojson]
 
       val identifying_name : t -> SerializableReference.t
     end
@@ -132,8 +132,6 @@ module AnnotationsByName = struct
       let show map =
         map |> data |> List.map ~f:Value.show |> String.concat ~sep:"," |> Format.asprintf "[%s]"
 
-
-      let equal = SerializableReference.Map.equal Value.equal
 
       let to_yojson map = `List (map |> data |> List.map ~f:Value.to_yojson)
 
@@ -209,7 +207,7 @@ module GlobalAnnotation = struct
       location: AnnotationLocation.t;
       annotation: SerializableType.t;
     }
-    [@@deriving show, eq, to_yojson]
+    [@@deriving show, to_yojson]
 
     let compare { location = left; _ } { location = right; _ } =
       AnnotationLocation.compare left right
@@ -242,7 +240,7 @@ module AttributeAnnotation = struct
       location: AnnotationLocation.t;
       annotation: SerializableType.t;
     }
-    [@@deriving show, eq, to_yojson]
+    [@@deriving show, to_yojson]
 
     let compare { location = left; _ } { location = right; _ } =
       AnnotationLocation.compare left right
@@ -276,7 +274,7 @@ module DefineAnnotation = struct
         value: DefaultValue.t;
         index: int;
       }
-      [@@deriving show, eq, to_yojson]
+      [@@deriving show, to_yojson]
 
       (* Assumption: we never have two parameters with the same index *)
       let compare { index = left; _ } { index = right; _ } = Int.compare left right
@@ -305,7 +303,7 @@ module DefineAnnotation = struct
     location: AnnotationLocation.t;
     async: bool;
   }
-  [@@deriving show, eq, compare, to_yojson]
+  [@@deriving show, compare, to_yojson]
 
   let is_inferred { return; parameters; _ } =
     TypeAnnotation.is_inferred return || Parameters.any_inferred parameters
@@ -486,7 +484,7 @@ end
 module GlobalResult = struct
   module DefineAnnotationsByName = struct
     module Value = struct
-      type t = DefineAnnotation.t [@@deriving show, eq, compare, to_yojson]
+      type t = DefineAnnotation.t [@@deriving show, compare, to_yojson]
 
       let identifying_name { DefineAnnotation.name; _ } = name
     end
@@ -499,7 +497,7 @@ module GlobalResult = struct
     attributes: AttributeAnnotation.ByName.t;
     defines: DefineAnnotationsByName.t;
   }
-  [@@deriving show, eq, to_yojson]
+  [@@deriving show, to_yojson]
 
   let inference_count { globals; attributes; defines } =
     GlobalAnnotation.ByName.length globals

@@ -7,14 +7,14 @@
 
 open Core
 
-type path = string [@@deriving compare, eq, show, sexp, hash]
+type path = string [@@deriving compare, show, sexp, hash]
 
 module AbsolutePath : sig
-  type t [@@deriving compare, eq, show, sexp, hash]
+  type t [@@deriving compare, show, sexp, hash]
 end
 
 module RelativePath : sig
-  type t [@@deriving compare, eq, show, sexp, hash]
+  type t [@@deriving compare, show, sexp, hash]
 
   val relative : t -> path
 end
@@ -22,7 +22,9 @@ end
 type t =
   | Absolute of AbsolutePath.t
   | Relative of RelativePath.t
-[@@deriving compare, eq, show, sexp, hash, to_yojson]
+[@@deriving compare, show, sexp, hash, to_yojson]
+
+val equal : t -> t -> bool
 
 val absolute : t -> path
 

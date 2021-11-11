@@ -9,7 +9,7 @@ open Core
 open Sexplib.Conv
 
 module T = struct
-  type t = string [@@deriving compare, eq, sexp, hash, to_yojson, show]
+  type t = string [@@deriving compare, sexp, hash, to_yojson, show]
 end
 
 include T
@@ -40,6 +40,8 @@ let sanitized name =
 
 
 let is_sanitized name = String.is_prefix ~prefix:"$" name
+
+let equal = [%compare.equal: t]
 
 let equal_sanitized left right = equal (sanitized left) (sanitized right)
 

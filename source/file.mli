@@ -8,7 +8,7 @@
 open Core
 open Pyre
 
-type t [@@deriving eq, show, hash]
+type t [@@deriving show, hash]
 
 val create : ?content:string -> Path.t -> t
 

@@ -13,14 +13,14 @@ type mode =
   | Strict
   | Unsafe
   | Declare
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 type local_mode =
   | Strict
   | Unsafe
   | Declare
   | PlaceholderStub
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 module Metadata = struct
   type t = {
@@ -30,7 +30,7 @@ module Metadata = struct
     ignore_lines: Ignore.t list;
     raw_hash: int; [@compare.ignore]
   }
-  [@@deriving compare, eq, show, hash, sexp]
+  [@@deriving compare, show, hash, sexp]
 
   let is_placeholder_stub local_mode =
     match local_mode with
@@ -197,7 +197,7 @@ type t = {
   top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
 }
-[@@deriving compare, eq, hash, sexp]
+[@@deriving compare, hash, sexp]
 
 let pp format { statements; _ } =
   let print_statement statement = Format.fprintf format "%a\n" Statement.pp statement in
