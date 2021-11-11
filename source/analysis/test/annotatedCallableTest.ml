@@ -59,10 +59,10 @@ let test_return_annotation context =
     ~generator:true
     Type.integer;
   assert_return_annotation
-    ~return_annotation:(Some (Type.expression (Type.generator ~async:true Type.integer)))
+    ~return_annotation:(Some (Type.expression (Type.async_generator ~yield_type:Type.integer ())))
     ~async:true
     ~generator:true
-    (Type.generator ~async:true Type.integer);
+    (Type.async_generator ~yield_type:Type.integer ());
   ()
 
 

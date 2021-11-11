@@ -462,12 +462,16 @@ module State (Context : Context) = struct
             let { Node.value = { Define.signature = { async; _ }; _ }; _ } = Context.define in
             match expression with
             | { Node.value = Expression.Yield yielded; _ } ->
-                let actual =
+                let yield_type =
                   match yielded with
-                  | Some expression ->
-                      let resolved = Resolution.resolve_expression_to_type resolution expression in
-                      Type.generator ~async resolved
-                  | None -> Type.generator ~async Type.none
+                  | Some expression -> Resolution.resolve_expression_to_type resolution expression
+                  | None -> Type.none
+                in
+                let actual =
+                  if async then
+                    Type.async_generator ~yield_type ()
+                  else
+                    Type.generator ~yield_type ()
                 in
                 Value (validate_return ~expression:None ~actual)
             | { Node.value = Expression.YieldFrom yielded_from; _ } ->

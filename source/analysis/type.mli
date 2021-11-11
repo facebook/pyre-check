@@ -454,7 +454,11 @@ val enumeration : t
 
 val float : t
 
-val generator : ?async:bool -> t -> t
+val generator : ?yield_type:t -> ?send_type:t -> ?return_type:t -> unit -> t
+
+val async_generator : ?yield_type:t -> ?send_type:t -> unit -> t
+
+val generator_expression : t -> t
 
 val generic_primitive : t
 

@@ -337,25 +337,6 @@ let test_check_missing_return context =
       "Missing return annotation [3]: Returning `typing.Union[None, bool, int]` but type `Any` is \
        specified.";
     ];
-  assert_type_errors
-    {|
-      import typing
-      def foo() -> typing.Any:
-        yield
-    |}
-    [
-      "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` "
-      ^ "but type `Any` is specified.";
-    ];
-  assert_type_errors
-    {|
-      def foo():
-        yield
-    |}
-    [
-      "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` "
-      ^ "but no return type is specified.";
-    ];
 
   (* Joining. *)
   assert_type_errors

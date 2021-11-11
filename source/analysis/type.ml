@@ -2218,15 +2218,20 @@ let float = Primitive "float"
 
 let number = Primitive "numbers.Number"
 
-let generator ?(async = false) parameter =
-  if async then
-    Parametric { name = "typing.AsyncGenerator"; parameters = [Single parameter; Single NoneType] }
-  else
-    Parametric
-      {
-        name = "typing.Generator";
-        parameters = [Single parameter; Single NoneType; Single NoneType];
-      }
+let generator ?(yield_type = Any) ?(send_type = Any) ?(return_type = Any) () =
+  Parametric
+    {
+      name = "typing.Generator";
+      parameters = [Single yield_type; Single send_type; Single return_type];
+    }
+
+
+let generator_expression yield_type =
+  generator ~yield_type ~send_type:NoneType ~return_type:NoneType ()
+
+
+let async_generator ?(yield_type = Any) ?(send_type = Any) () =
+  Parametric { name = "typing.AsyncGenerator"; parameters = [Single yield_type; Single send_type] }
 
 
 let generic_primitive = Primitive "typing.Generic"

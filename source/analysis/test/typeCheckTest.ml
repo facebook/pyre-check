@@ -739,15 +739,17 @@ let test_forward_expression context =
   (* Float literal. *)
   assert_forward "1.0" Type.float;
 
-  (* Generators. *)
-  assert_forward "(element for element in [1])" (Type.generator Type.integer);
-  assert_forward "(element for element in [])" (Type.generator Type.Any);
+  (* Generator expressions. *)
+  assert_forward "(element for element in [1])" (Type.generator_expression Type.integer);
+  assert_forward "(element for element in [])" (Type.generator_expression Type.Any);
   assert_forward
     "((element, independent) for element in [1] for independent in ['string'])"
-    (Type.generator (Type.tuple [Type.integer; Type.string]));
-  assert_forward "(nested for element in [[1]] for nested in element)" (Type.generator Type.integer);
-  assert_forward "(undefined for element in [1])" (Type.generator Type.Top);
-  assert_forward "(element for element in undefined)" (Type.generator Type.Any);
+    (Type.generator_expression (Type.tuple [Type.integer; Type.string]));
+  assert_forward
+    "(nested for element in [[1]] for nested in element)"
+    (Type.generator_expression Type.integer);
+  assert_forward "(undefined for element in [1])" (Type.generator_expression Type.Top);
+  assert_forward "(element for element in undefined)" (Type.generator_expression Type.Any);
 
   (* Lambda. *)
   let callable ~parameters ~annotation =

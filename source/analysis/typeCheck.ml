@@ -2310,7 +2310,7 @@ module State (Context : Context) = struct
         {
           resolution;
           errors;
-          resolved = Type.generator resolved;
+          resolved = Type.generator_expression resolved;
           resolved_annotation = None;
           base = None;
         }
@@ -2798,28 +2798,27 @@ module State (Context : Context) = struct
         let resolved = forward_expression ~resolution ~expression:value in
         { resolved with errors = List.append errors resolved.errors }
     | Expression.Yield yielded ->
-        let { Define.Signature.async; _ } = define_signature in
-        let { Resolved.resolution; resolved = actual; errors; _ } =
+        let { Resolved.resolution; resolved = yield_type; errors; _ } =
           match yielded with
           | Some expression ->
               let { Resolved.resolution; resolved; errors; _ } =
                 forward_expression ~resolution ~expression
               in
-              {
-                resolution;
-                errors;
-                resolved = Type.generator ~async resolved;
-                resolved_annotation = None;
-                base = None;
-              }
+              { resolution; errors; resolved; resolved_annotation = None; base = None }
           | None ->
               {
                 resolution;
                 errors = [];
-                resolved = Type.generator ~async Type.none;
+                resolved = Type.none;
                 resolved_annotation = None;
                 base = None;
               }
+        in
+        let actual =
+          if define_signature.async then
+            Type.async_generator ~yield_type ()
+          else
+            Type.generator ~yield_type ()
         in
         let errors =
           validate_return ~location ~expression:None ~resolution ~errors ~actual ~is_implicit:false
@@ -2833,11 +2832,16 @@ module State (Context : Context) = struct
         let { Resolved.resolution; resolved; errors; _ } =
           forward_expression ~resolution ~expression:yielded_from
         in
-        let actual =
+        let yield_type =
           resolved
           |> GlobalResolution.type_of_iteration_value ~global_resolution
           |> Option.value ~default:Type.Any
-          |> Type.generator
+        in
+        let actual =
+          if define_signature.async then
+            Type.async_generator ~yield_type ()
+          else
+            Type.generator ~yield_type ()
         in
         let errors =
           validate_return ~location ~expression:None ~resolution ~errors ~actual ~is_implicit:false

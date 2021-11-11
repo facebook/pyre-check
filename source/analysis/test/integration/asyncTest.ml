@@ -233,7 +233,8 @@ let test_check_async context =
       "Incompatible async generator return type [57]: Expected return annotation to be"
       ^ " AsyncGenerator or a superclass "
       ^ "but got `Iterable[str]`.";
-      "Incompatible return type [7]: Expected `Iterable[str]` but got `AsyncGenerator[str, None]`.";
+      "Incompatible return type [7]: Expected `Iterable[str]` but got `AsyncGenerator[str, \
+       typing.Any]`.";
     ];
   assert_type_errors
     {|
@@ -248,10 +249,7 @@ let test_check_async context =
       async def foo() -> AsyncGenerator[str, str]:
         yield "a"
     |}
-    [
-      "Incompatible return type [7]: Expected `AsyncGenerator[str, str]` but got \
-       `AsyncGenerator[str, None]`.";
-    ];
+    [];
   assert_type_errors
     {|
       from typing import Iterable, AsyncGenerator
@@ -272,7 +270,7 @@ let test_check_async context =
       ^ " AsyncGenerator or a superclass "
       ^ "but got `MyExtendedAsyncGenerator`.";
       "Incompatible return type [7]: Expected `MyExtendedAsyncGenerator` but got \
-       `AsyncGenerator[str, None]`.";
+       `AsyncGenerator[str, typing.Any]`.";
     ];
   assert_type_errors
     {|
@@ -282,7 +280,7 @@ let test_check_async context =
     |}
     [
       "Incompatible return type [7]: Expected `AsyncIterator[str]` but got \
-       `typing.AsyncGenerator[int, None]`.";
+       `typing.AsyncGenerator[int, typing.Any]`.";
     ];
   assert_type_errors
     {|
