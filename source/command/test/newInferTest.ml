@@ -36,7 +36,7 @@ let test_json_parsing context =
     ~expected:
       {
         InferConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
-        paths_to_modify = Some ["my/module.py"];
+        paths_to_modify = Some [PyrePath.create_absolute "my/module.py"];
       };
   ()
 

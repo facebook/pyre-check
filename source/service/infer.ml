@@ -61,6 +61,11 @@ let build_environment_data
   { global_environment; qualifiers }
 
 
+let should_analyze_file ~paths_to_modify path =
+  let matches item = PyrePath.equal item path || PyrePath.directory_contains ~directory:item path in
+  List.exists paths_to_modify ~f:matches
+
+
 let run_infer
     ~configuration
     ~scheduler
@@ -72,18 +77,18 @@ let run_infer
   let timer = Timer.start () in
   let global_resolution = GlobalResolution.create global_environment in
   let ast_environment = GlobalResolution.ast_environment global_resolution in
-  let should_analyze =
+  let should_analyze_qualifier =
     match paths_to_modify with
     | None -> fun _qualifier -> true
     | Some paths_to_modify ->
-        let paths_to_modify = String.Set.of_list paths_to_modify in
         fun qualifier ->
           qualifier
           |> filename_lookup
-          >>| String.Set.mem paths_to_modify
+          >>| PyrePath.create_absolute
+          >>| should_analyze_file ~paths_to_modify
           |> Option.value ~default:false
   in
-  let qualifiers = qualifiers |> List.filter ~f:should_analyze in
+  let qualifiers = qualifiers |> List.filter ~f:should_analyze_qualifier in
   let map _ qualifiers =
     let analyze_qualifier qualifier =
       let analyze_source source =

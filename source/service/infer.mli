@@ -16,10 +16,12 @@ val build_environment_data
   unit ->
   environment_data
 
+val should_analyze_file : paths_to_modify:PyrePath.t list -> PyrePath.t -> bool
+
 val run_infer
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
-  paths_to_modify:string list option ->
+  paths_to_modify:PyrePath.t list option ->
   environment_data ->
   TypeInference.Data.GlobalResult.t

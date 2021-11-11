@@ -6,17 +6,19 @@
  *)
 
 open Core
-module Path = PyrePath
+open Pyre
 
 (* Infer command uses the same exit code scheme as check command. *)
 module ExitStatus = NewCheckCommand.ExitStatus
 
 module InferConfiguration = struct
-  type file_list = string list option [@@deriving yojson, sexp, compare, hash]
+  type path_list = PyrePath.t list [@@deriving sexp, compare, hash]
+
+  let path_list_of_raw raw_paths = List.map raw_paths ~f:PyrePath.create_absolute
 
   type t = {
     base: NewCommandStartup.BaseConfiguration.t;
-    paths_to_modify: file_list;
+    paths_to_modify: path_list option;
   }
   [@@deriving sexp, compare, hash]
 
@@ -28,7 +30,11 @@ module InferConfiguration = struct
       | Result.Error _ as error -> error
       | Result.Ok base ->
           let paths_to_modify =
-            json |> member "paths_to_modify" |> file_list_of_yojson |> Result.ok_or_failwith
+            json
+            |> member "paths_to_modify"
+            |> [%of_yojson: string list option]
+            |> Result.ok_or_failwith
+            >>| path_list_of_raw
           in
           Result.Ok { base; paths_to_modify }
     with
@@ -85,7 +91,7 @@ module InferConfiguration = struct
       ~excludes
       ~extensions
       ~incremental_style:Configuration.Analysis.Shallow
-      ~log_directory:(Path.absolute log_path)
+      ~log_directory:(PyrePath.absolute log_path)
       ~python_major_version:major
       ~python_minor_version:minor
       ~python_micro_version:micro
