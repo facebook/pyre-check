@@ -264,7 +264,7 @@ class AnnotationFixer(libcst.CSTTransformer):
         Note: in order to avoid complex reverse-name-matching, we're
         effectively operating at the top level of attributes, by using only
         the `original_node`. This means the transform we're performing cannot
-        be donce concurrently with a transform that has to be done
+        be done concurrently with a transform that has to be done
         incrementally.
         """
         value = code_for_node(original_node.value)
@@ -384,16 +384,29 @@ class TypeAnnotation:
             options=options,
         )
 
+    @staticmethod
+    def is_simple(sanitized_annotation: str) -> bool:
+        """
+        This is a flexible definition that should expand if/when our ability to
+        handle annotations or imports without manual adjustment improves.
+        """
+        return len(sanitized_annotation.split(".")) == 1
+
     def to_stub(self, prefix: str = "") -> str:
         if self.annotation is None:
             return ""
         else:
-            return prefix + AnnotationFixer.sanitize(
+            sanitized = AnnotationFixer.sanitize(
                 annotation=self.annotation,
                 qualifier=self.qualifier,
                 quote_annotations=self.options.quote_annotations,
                 dequalify_all=self.options.dequalify,
             )
+            if self.options.simple_annotations and not TypeAnnotation.is_simple(
+                sanitized
+            ):
+                return ""
+            return prefix + sanitized
 
     @property
     def missing(self) -> bool:

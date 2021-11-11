@@ -810,6 +810,7 @@ class StubGenerationTest(testslide.TestCase):
         annotate_attributes: bool = False,
         use_future_annotations: bool = False,
         quote_annotations: bool = False,
+        simple_annotations: bool = False,
     ) -> None:
         test_path = "/root/test.py"
         infer_output = RawInferOutput.create_from_json(
@@ -835,6 +836,7 @@ class StubGenerationTest(testslide.TestCase):
                 annotate_attributes=annotate_attributes,
                 use_future_annotations=use_future_annotations,
                 quote_annotations=quote_annotations,
+                simple_annotations=simple_annotations,
             ),
         )
         if len(module_annotations) != 1:
@@ -1275,4 +1277,46 @@ class StubGenerationTest(testslide.TestCase):
             def with_params(y=7, x: "typing.List[int]" = [5]) -> "Union[int, str]": ...
             """,
             quote_annotations=True,
+        )
+
+    def test_stubs_simple(self) -> None:
+        """
+        Test generating stubs while omitting annotations that aren't guaranteed landable
+        """
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "None",
+                        "name": "test.with_params",
+                        "parent": None,
+                        "parameters": [
+                            {
+                                "name": "x",
+                                "annotation": "int",
+                                "value": None,
+                                "index": 0,
+                            },
+                            {
+                                "name": "y",
+                                "annotation": "typing.List[int]",
+                                "value": None,
+                                "index": 1,
+                            },
+                            {
+                                "name": "z",
+                                "annotation": "Union[int, str]",
+                                "value": None,
+                                "index": 2,
+                            },
+                        ],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ]
+            },
+            """\
+            def with_params(x: int, y, z: Union[int, str]) -> None: ...
+            """,
+            simple_annotations=True,
         )
