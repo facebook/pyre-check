@@ -476,6 +476,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       call_taint
       call_targets
     =
+    let call_taint =
+      (* Add index breadcrumb if appropriate. *)
+      match callee.Node.value, arguments with
+      | Expression.Name (Name.Attribute { attribute = "get"; _ }), _self :: index :: _ ->
+          let label = get_index index.Call.Argument.value in
+          BackwardState.Tree.transform
+            Features.FirstIndexSet.Self
+            Map
+            ~f:(add_first_index label)
+            call_taint
+      | _ -> call_taint
+    in
+
     let call_targets =
       (* Special handling for the missing-flow analysis. *)
       match call_targets with
@@ -753,21 +766,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let targets, taint =
           match Node.value callee with
           | Name (Name.Attribute { base; attribute; _ }) ->
-              (* Add index breadcrumb if appropriate. *)
-              let taint =
-                if not (String.equal attribute "get") then
-                  taint
-                else
-                  match arguments with
-                  | _ :: index :: _ ->
-                      let label = get_index index.value in
-                      BackwardState.Tree.transform
-                        Features.FirstIndexSet.Self
-                        Map
-                        ~f:(add_first_index label)
-                        taint
-                  | _ -> taint
-              in
               (* Specially handle super.__init__ calls and explicit calls to superclass' `__init__`
                  in constructors for tito. *)
               if

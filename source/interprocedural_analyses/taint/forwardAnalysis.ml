@@ -542,57 +542,74 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> call_targets
     in
 
-    match call_targets with
-    | [] ->
-        (* If we don't have a call target: propagate argument taint. *)
-        let callee_taint =
-          ForwardState.Tree.transform
-            Features.TitoPositionSet.Element
-            Add
-            ~f:callee.Node.location
-            (Lazy.force callee_taint)
-        in
-        let analyze_argument
-            taint_accumulator
-            ({ Call.Argument.value = argument; _ }, argument_taint)
-          =
-          let argument_taint =
-            match argument.Node.value with
-            | Starred (Starred.Once _)
-            | Starred (Starred.Twice _) ->
-                ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] argument_taint
-            | _ -> argument_taint
+    let taint, state =
+      match call_targets with
+      | [] ->
+          (* If we don't have a call target: propagate argument taint. *)
+          let callee_taint =
+            ForwardState.Tree.transform
+              Features.TitoPositionSet.Element
+              Add
+              ~f:callee.Node.location
+              (Lazy.force callee_taint)
           in
-          argument_taint
-          |> ForwardState.Tree.transform
-               Features.TitoPositionSet.Element
-               Add
-               ~f:argument.Node.location
-          |> ForwardState.Tree.join taint_accumulator
-        in
-        let taint =
-          List.zip_exn arguments arguments_taint
-          |> List.fold ~f:analyze_argument ~init:callee_taint
-          |> ForwardState.Tree.add_breadcrumb Features.obscure
-        in
-        taint, initial_state
-    | call_targets ->
-        List.map
-          call_targets
-          ~f:
-            (apply_call_target
-               ~resolution
-               ~triggered_sinks
-               ~call_location
-               ~collapse_tito
-               ~arguments
-               ~arguments_taint
-               ~return_type_breadcrumbs
-               initial_state)
-        |> List.fold
-             ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
-             ~f:(fun (taint, state) (new_taint, new_state) ->
-               ForwardState.Tree.join taint new_taint, join state new_state)
+          let analyze_argument
+              taint_accumulator
+              ({ Call.Argument.value = argument; _ }, argument_taint)
+            =
+            let argument_taint =
+              match argument.Node.value with
+              | Starred (Starred.Once _)
+              | Starred (Starred.Twice _) ->
+                  ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] argument_taint
+              | _ -> argument_taint
+            in
+            argument_taint
+            |> ForwardState.Tree.transform
+                 Features.TitoPositionSet.Element
+                 Add
+                 ~f:argument.Node.location
+            |> ForwardState.Tree.join taint_accumulator
+          in
+          let taint =
+            List.zip_exn arguments arguments_taint
+            |> List.fold ~f:analyze_argument ~init:callee_taint
+            |> ForwardState.Tree.add_breadcrumb Features.obscure
+          in
+          taint, initial_state
+      | call_targets ->
+          List.map
+            call_targets
+            ~f:
+              (apply_call_target
+                 ~resolution
+                 ~triggered_sinks
+                 ~call_location
+                 ~collapse_tito
+                 ~arguments
+                 ~arguments_taint
+                 ~return_type_breadcrumbs
+                 initial_state)
+          |> List.fold
+               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
+               ~f:(fun (taint, state) (new_taint, new_state) ->
+                 ForwardState.Tree.join taint new_taint, join state new_state)
+    in
+
+    let taint =
+      (* Add index breadcrumb if appropriate. *)
+      match Node.value callee, arguments with
+      | Expression.Name (Name.Attribute { attribute = "get"; _ }), _self :: index :: _ ->
+          let label = get_index index.value in
+          ForwardState.Tree.transform
+            Features.FirstIndexSet.Self
+            Map
+            ~f:(add_first_index label)
+            taint
+      | _ -> taint
+    in
+
+    taint, state
 
 
   and apply_call_targets
@@ -820,25 +837,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         arguments
     in
-    let add_index_breadcrumb_if_necessary taint =
-      let is_get_method =
-        match Node.value callee with
-        | Expression.Name (Name.Attribute { attribute = "get"; _ }) -> true
-        | _ -> false
-      in
-      if not is_get_method then
-        taint
-      else
-        match arguments with
-        | _receiver :: index :: _ ->
-            let label = get_index index.value in
-            ForwardState.Tree.transform
-              Features.FirstIndexSet.Self
-              Map
-              ~f:(add_first_index label)
-              taint
-        | _ -> taint
-    in
     apply_call_targets
       ~resolution
       ~callee
@@ -847,7 +845,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments
       state
       targets
-    |>> add_index_breadcrumb_if_necessary
 
 
   and analyze_lambda_call
