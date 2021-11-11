@@ -612,6 +612,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     taint, state
 
 
+  and return_type_breadcrumbs_for_call ~resolution callee arguments () =
+    (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
+    lazy
+      (let call_expression =
+         Expression.Call { Call.callee; arguments } |> Node.create_with_default_location
+       in
+       let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
+       let resolution = Resolution.global_resolution resolution in
+       Features.type_breadcrumbs ~resolution (Some return_annotation))
+
+
   and apply_call_targets
       ~resolution
       ~callee
@@ -636,14 +647,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
     let return_type_breadcrumbs =
-      lazy
-        (let call_expression =
-           Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
-         in
-         let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
-         Features.type_breadcrumbs
-           ~resolution:(Resolution.global_resolution resolution)
-           (Some return_annotation))
+      return_type_breadcrumbs_for_call ~resolution callee arguments ()
     in
 
     apply_call_targets_with_arguments_taint
@@ -764,16 +768,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       List.rev arguments |> List.fold ~init:([], state) ~f:compute_argument_taint
     in
 
-    (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
     let return_type_breadcrumbs =
-      lazy
-        (let call_expression =
-           Expression.Call { Call.callee; arguments } |> Node.create_with_default_location
-         in
-         let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
-         Features.type_breadcrumbs
-           ~resolution:(Resolution.global_resolution resolution)
-           (Some return_annotation))
+      return_type_breadcrumbs_for_call ~resolution callee arguments ()
     in
 
     (* Call `__new__`. *)
