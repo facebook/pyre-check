@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.callable_class",
-    "callable_line": 77,
+    "callable_line": 82,
     "code": 5002,
-    "line": 80,
+    "line": 85,
     "start": 15,
     "end": 16,
     "filename": "higher_order_functions.py",
@@ -27,10 +27,10 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 78, "start": 17, "end": 31 } ],
+            "tito": [ { "line": 83, "start": 17, "end": 31 } ],
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 78,
+              "line": 83,
               "start": 17,
               "end": 31
             }
@@ -50,7 +50,7 @@
             ],
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 80,
+              "line": 85,
               "start": 15,
               "end": 16
             }
@@ -85,11 +85,7 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
@@ -130,8 +126,6 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
-      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -221,11 +215,7 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
@@ -266,8 +256,6 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
-      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -561,7 +549,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": [ { "line": 60, "start": 13, "end": 14 } ],
+            "tito": [ { "line": 61, "start": 13, "end": 14 } ],
             "decl": null
           }
         ]
@@ -711,7 +699,7 @@
             ],
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 85,
+              "line": 90,
               "start": 19,
               "end": 22
             }
@@ -733,8 +721,6 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "tito-broadening" },
-                  { "via": "broadening" },
                   { "always-via": "tito" },
                   { "always-via": "special_source" },
                   { "via": "lambda" },
@@ -745,12 +731,12 @@
               }
             ],
             "tito": [
-              { "line": 65, "start": 14, "end": 22 },
-              { "line": 65, "start": 24, "end": 25 }
+              { "line": 70, "start": 14, "end": 22 },
+              { "line": 70, "start": 24, "end": 25 }
             ],
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 64,
+              "line": 69,
               "start": 8,
               "end": 22
             }
@@ -763,7 +749,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "higher_order_functions.test_higher_order_tito",
+    "callable": "higher_order_functions.test_apply_tito",
     "tito": [
       {
         "port": "formal(x)",
@@ -771,12 +757,20 @@
           {
             "kinds": [
               {
-                "features": [ { "via": "tito" }, { "always-via": "lambda" } ],
+                "features": [
+                  { "always-via": "tito" },
+                  { "via": "lambda" },
+                  { "always-via": "obscure" }
+                ],
                 "return_paths": [ "" ],
+                "length": 1,
                 "kind": "LocalReturn"
               }
             ],
-            "tito": [ { "line": 56, "start": 33, "end": 41 } ],
+            "tito": [
+              { "line": 65, "start": 17, "end": 25 },
+              { "line": 65, "start": 27, "end": 28 }
+            ],
             "decl": null
           }
         ]
@@ -808,7 +802,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 89,
+                "line": 94,
                 "start": 20,
                 "end": 21
               },
@@ -833,7 +827,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 89,
+                "line": 94,
                 "start": 17,
                 "end": 18
               },
@@ -862,7 +856,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 89,
+                "line": 94,
                 "start": 14,
                 "end": 15
               },

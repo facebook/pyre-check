@@ -847,7 +847,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~resolution
       ~location
       ~callee
-      ~lambda_argument
+      ~lambda_argument:
+        (( lambda_index,
+           { Call.Argument.value = { location = lambda_location; _ } as lambda_callee; _ } ) as
+        lambda_argument)
       ~non_lambda_arguments
       ~higher_order_function
       ~callable_argument
@@ -862,80 +865,133 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      *   $result = fn
      * hof(q, $result, x, y)
      *)
-    let ( lambda_index,
-          {
-            Call.Argument.value = { location = lambda_location; _ } as lambda_callee;
-            name = lambda_name;
-          } )
-      =
-      lambda_argument
+
+    (* Analyze all arguments once. *)
+    let lambda_taint, state = analyze_expression ~resolution ~state ~expression:lambda_callee in
+    let non_lambda_arguments_taint, state =
+      let compute_argument_taint (arguments_taint, state) (index, argument) =
+        let taint, state =
+          analyze_unstarred_expression ~resolution argument.Call.Argument.value state
+        in
+        (index, taint) :: arguments_taint, state
+      in
+      List.rev non_lambda_arguments |> List.fold ~init:([], state) ~f:compute_argument_taint
     in
-    let result =
-      Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$result"))
+
+    let analyze_regular_targets_call
+        ~callee
+        ~callee_taint
+        ~call_location
+        ~arguments
+        ~arguments_taint
+        ~state
+        regular_target
+      =
+      let return_type_breadcrumbs =
+        return_type_breadcrumbs_for_call ~resolution callee arguments ()
+      in
+      let { Call.callee; arguments } =
+        Interprocedural.CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
+      in
+      let { Interprocedural.CallGraph.implicit_self; targets; collapse_tito } = regular_target in
+      let arguments, arguments_taint, state =
+        if not implicit_self then
+          arguments, arguments_taint, state
+        else
+          match callee.Node.value with
+          | Expression.Name (Name.Attribute { base; _ }) ->
+              let base_taint, state = analyze_expression ~resolution ~expression:base ~state in
+              ( { Call.Argument.name = None; value = base } :: arguments,
+                base_taint :: arguments_taint,
+                state )
+          | _ ->
+              let none =
+                Expression.Constant Constant.NoneLiteral
+                |> Node.create ~location:callee.Node.location
+              in
+              ( { Call.Argument.name = None; value = none } :: arguments,
+                ForwardState.Tree.bottom :: arguments_taint,
+                state )
+      in
+      apply_call_targets_with_arguments_taint
+        ~resolution
+        ~callee
+        ~collapse_tito
+        ~call_location
+        ~arguments
+        ~callee_taint
+        ~arguments_taint
+        ~return_type_breadcrumbs
+        state
+        targets
     in
 
     (* Simulate if branch. *)
-    let if_branch_state =
+    let if_branch_result_taint, if_branch_state =
       (* Simulate `$all = {q, x, y}`. *)
       let all_argument =
-        Node.create ~location:lambda_location (Expression.Name (Name.Identifier "$all"))
+        Expression.Name (Name.Identifier "$all") |> Node.create ~location:lambda_location
       in
-      let state =
-        let all_assignee =
-          Node.create
-            ~location:lambda_location
-            (Expression.Set
-               (List.map non_lambda_arguments ~f:(fun (_, argument) -> argument.Call.Argument.value)))
-        in
-        let taint, state = analyze_expression ~resolution ~state ~expression:all_assignee in
-        analyze_assignment ~resolution all_argument taint taint state
+      let all_argument_taint =
+        List.fold
+          non_lambda_arguments_taint
+          ~f:(fun taint (_, argument_taint) -> ForwardState.Tree.join taint argument_taint)
+          ~init:ForwardState.Tree.empty
+        |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       in
 
       (* Simulate `$result = fn( *all, **all)`. *)
       let arguments =
-        List.map non_lambda_arguments ~f:(fun (_, argument) ->
-            { argument with Call.Argument.value = all_argument })
+        [
+          {
+            Call.Argument.value =
+              Expression.Starred (Starred.Once all_argument)
+              |> Node.create ~location:lambda_location;
+            name = None;
+          };
+          {
+            Call.Argument.value =
+              Expression.Starred (Starred.Twice all_argument)
+              |> Node.create ~location:lambda_location;
+            name = None;
+          };
+        ]
       in
-      let { Call.callee; arguments } =
-        Interprocedural.CallGraph.redirect_special_calls
-          ~resolution
-          { Call.callee = lambda_callee; arguments }
-      in
+      let arguments_taint = [all_argument_taint; all_argument_taint] in
       let taint, state =
         analyze_regular_targets_call
-          ~resolution
-          ~location:lambda_location
-          ~callee
+          ~callee:lambda_callee
+          ~callee_taint:(lazy lambda_taint)
+          ~call_location:lambda_location
           ~arguments
+          ~arguments_taint
           ~state
           callable_argument
       in
       let taint = ForwardState.Tree.add_breadcrumb Features.lambda taint in
-      analyze_assignment ~resolution result taint taint state
+      taint, state
     in
 
-    (* Simulate else branch. *)
-    let else_branch_state =
-      let taint, state = analyze_expression ~resolution ~state ~expression:lambda_callee in
-      analyze_assignment ~resolution result taint taint state
-    in
-    let state = join if_branch_state else_branch_state in
+    (* Simulate else branch: nothing to do. *)
+    (* Join both branches. *)
+    let result_taint = ForwardState.Tree.join if_branch_result_taint lambda_taint in
+    let state = join state if_branch_state in
 
     (* Simulate `hof(q, $result, x, y)`. *)
-    let higher_order_function_arguments =
-      let lambda_argument_with_index =
-        lambda_index, { Call.Argument.value = result; name = lambda_name }
-      in
+    let index_map_to_ordered_list map =
       let compare_by_index (left_index, _) (right_index, _) = Int.compare left_index right_index in
-      lambda_argument_with_index :: non_lambda_arguments
-      |> List.sort ~compare:compare_by_index
-      |> List.map ~f:snd
+      map |> List.sort ~compare:compare_by_index |> List.map ~f:snd
+    in
+    let arguments = index_map_to_ordered_list (lambda_argument :: non_lambda_arguments) in
+    let arguments_taint =
+      index_map_to_ordered_list ((lambda_index, result_taint) :: non_lambda_arguments_taint)
     in
     analyze_regular_targets_call
-      ~resolution
-      ~location
       ~callee
-      ~arguments:higher_order_function_arguments
+      ~callee_taint:(lazy (analyze_expression ~resolution ~state ~expression:callee |> fst))
+      ~call_location:location
+      ~arguments
+      ~arguments_taint
       ~state
       higher_order_function
 

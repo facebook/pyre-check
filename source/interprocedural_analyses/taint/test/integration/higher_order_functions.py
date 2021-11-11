@@ -53,11 +53,16 @@ def test_higher_order_function_and_sink():
 
 
 def test_higher_order_tito(x):
+    # no tito because higher_order_function does not return.
     return higher_order_function(has_tito, x)
 
 
 def apply(f, x):
     return f(x)
+
+
+def test_apply_tito(x):
+    return apply(has_tito, x)
 
 
 def source_through_tito():
