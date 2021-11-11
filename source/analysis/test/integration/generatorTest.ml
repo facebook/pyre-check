@@ -243,24 +243,6 @@ let test_check_yield context =
   assert_type_errors
     {|
       import typing
-      def foo(flag: bool) -> typing.Generator[int, None, None]:
-        if flag:
-          return
-        yield 1
-    |}
-    [];
-  assert_type_errors
-    {|
-      import typing
-      async def foo(flag: bool) -> typing.AsyncGenerator[int, None]:
-        if flag:
-          return
-        yield 1
-    |}
-    [];
-  assert_type_errors
-    {|
-      import typing
       import asyncio.coroutines
 
       @asyncio.coroutines.coroutine
@@ -307,6 +289,45 @@ let test_check_yield context =
         reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  (* Make sure an empty return works properly in both the sync and async cases *)
+  assert_type_errors
+    {|
+      import typing
+      def foo(flag: bool) -> typing.Generator[int, None, None]:
+        if flag:
+          return
+        yield 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      async def foo(flag: bool) -> typing.AsyncGenerator[int, None]:
+        if flag:
+          return
+        yield 1
+    |}
+    [];
+  (* return type handling - this applies only to regualar generators, not async per PEP 525 *)
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Generator[int, None, str]:
+        yield 1
+        return "str"
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Generator[int, None, str]:
+        yield 1
+        return
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got \
+       `typing.Generator[typing.Any, typing.Any, None]`.";
+    ];
   ()
 
 
@@ -452,20 +473,6 @@ let test_check_generator_edge_cases context =
   ()
 
 
-let test_check_generator_known_failures context =
-  let assert_type_errors = assert_type_errors ~context in
-  (* return type handling for yield *)
-  assert_type_errors
-    {|
-      import typing
-      def foo() -> typing.Generator[int, None, str]:
-        yield 1
-        return "str"
-    |}
-    ["Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got `str`."];
-  ()
-
-
 let () =
   "generator"
   >::: [
@@ -473,6 +480,5 @@ let () =
          "check_yield" >:: test_check_yield;
          "check_yield_from" >:: test_check_yield_from;
          "check_generator_edge_cases" >:: test_check_generator_edge_cases;
-         "check_generator_known_failures" >:: test_check_generator_known_failures;
        ]
   |> Test.run

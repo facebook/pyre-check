@@ -770,7 +770,7 @@ module State (Context : Context) = struct
   let rec validate_return ~expression ~resolution ~errors ~location ~actual ~is_implicit =
     let global_resolution = Resolution.global_resolution resolution in
     let { Node.location = define_location; value = define } = Context.define in
-    let { Define.Signature.generator; return_annotation = return_annotation_expression; _ } =
+    let { Define.Signature.async; generator; return_annotation = return_annotation_expression; _ } =
       define.signature
     in
     let return_annotation = return_annotation ~global_resolution in
@@ -794,7 +794,7 @@ module State (Context : Context) = struct
                  ~right:return_annotation))
         && (not (Define.is_abstract_method define))
         && (not (Define.is_overloaded_function define))
-        && (not (Type.is_none actual && generator))
+        && (not (Type.is_none actual && async && generator))
         && not (Type.is_none actual && Type.is_noreturn return_annotation)
       then
         let rec check_unimplemented = function
@@ -4590,7 +4590,7 @@ module State (Context : Context) = struct
         Value resolution, errors
     | Raise _ -> Value resolution, []
     | Return { Return.expression; is_implicit } ->
-        let { Resolved.resolution; resolved = actual; errors; _ } =
+        let { Resolved.resolution; resolved = return_type; errors; _ } =
           Option.value_map
             expression
             ~default:
@@ -4602,6 +4602,12 @@ module State (Context : Context) = struct
                 base = None;
               }
             ~f:(fun expression -> forward_expression ~resolution ~expression)
+        in
+        let actual =
+          if define_signature.generator && not define_signature.async then
+            Type.generator ~return_type ()
+          else
+            return_type
         in
         Value resolution, validate_return ~expression ~resolution ~errors ~actual ~is_implicit
     | Define { signature = { Define.Signature.name; _ } as signature; _ } ->
