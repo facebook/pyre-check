@@ -924,7 +924,7 @@ let test_forward_expression context =
   (* Resolved annotation field. *)
   let assert_annotation ?(precondition = []) ?(environment = "") expression annotation =
     let expression =
-      let expression = parse expression |> Preprocessing.expand_format_string in
+      let expression = parse expression in
       expression
       |> function
       | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression

@@ -338,237 +338,6 @@ let test_expand_type_alias_body _ =
   ()
 
 
-let test_expand_format_string _ =
-  let assert_format_string source value =
-    let handle = "test.py" in
-    assert_source_equal
-      ~location_insensitive:true
-      (Source.create ~relative:handle [+Statement.Expression (+Expression.FormatString value)])
-      (Preprocessing.expand_format_string (legacy_parse ~handle source))
-  in
-  assert_format_string "f'foo'" [Substring.Literal (+"foo")];
-  assert_format_string "f'{1}'" [Substring.Format (+Expression.Constant (Constant.Integer 1))];
-  assert_format_string
-    "f'foo{1}'"
-    [Substring.Literal (+"foo"); Substring.Format (+Expression.Constant (Constant.Integer 1))];
-  assert_format_string
-    "f'foo{1}' 'foo{2}'"
-    [
-      Substring.Literal (+"foo");
-      Substring.Format (+Expression.Constant (Constant.Integer 1));
-      Substring.Literal (+"foo{2}");
-    ];
-
-  assert_format_string
-    "'foo{1}' f'foo{2}'"
-    [
-      Substring.Literal (+"foo{1}");
-      Substring.Literal (+"foo");
-      Substring.Format (+Expression.Constant (Constant.Integer 2));
-    ];
-  assert_format_string
-    "f'foo{1}' f'foo{2}'"
-    [
-      Substring.Literal (+"foo");
-      Substring.Format (+Expression.Constant (Constant.Integer 1));
-      Substring.Literal (+"foo");
-      Substring.Format (+Expression.Constant (Constant.Integer 2));
-    ];
-  assert_format_string
-    "f'foo{1}{2}foo'"
-    [
-      Substring.Literal (+"foo");
-      Substring.Format (+Expression.Constant (Constant.Integer 1));
-      Substring.Format (+Expression.Constant (Constant.Integer 2));
-      Substring.Literal (+"foo");
-    ];
-  assert_format_string "f'foo{{1}}'" [Substring.Literal (+"foo"); Substring.Literal (+"{{1}}")];
-  assert_format_string
-    "f'foo{{ {1} }}'"
-    [
-      Substring.Literal (+"foo");
-      Substring.Literal (+"{{ ");
-      Substring.Format (+Expression.Constant (Constant.Integer 1));
-      Substring.Literal (+" }}");
-    ];
-  assert_format_string
-    "f'foo{{{1} }}'"
-    [
-      Substring.Literal (+"foo");
-      Substring.Literal (+"{{");
-      Substring.Format (+Expression.Constant (Constant.Integer 1));
-      Substring.Literal (+" }}");
-    ];
-  assert_format_string
-    "f'foo{{ {1}}}'"
-    [
-      Substring.Literal (+"foo");
-      Substring.Literal (+"{{ ");
-      Substring.Format (+Expression.Constant (Constant.Integer 1));
-      Substring.Literal (+"}}");
-    ];
-  assert_format_string
-    "f'foo{{{1}}}'"
-    [
-      Substring.Literal (+"foo");
-      Substring.Literal (+"{{");
-      Substring.Format (+Expression.Constant (Constant.Integer 1));
-      Substring.Literal (+"}}");
-    ];
-  assert_format_string "f'foo{{'" [Substring.Literal (+"foo"); Substring.Literal (+"{{")];
-  assert_format_string "f'foo}}'" [Substring.Literal (+"foo}}")];
-  assert_format_string
-    "f'foo{1+2}'"
-    [
-      Substring.Literal (+"foo");
-      Substring.Format
-        (+Expression.Call
-            {
-              callee =
-                +Expression.Name
-                   (Name.Attribute
-                      {
-                        base = +Expression.Constant (Constant.Integer 1);
-                        attribute = "__add__";
-                        special = true;
-                      });
-              arguments =
-                [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
-            });
-    ];
-
-  assert_format_string
-    "f'{x for x in []}'"
-    [
-      Substring.Format
-        (+Expression.Generator
-            {
-              Comprehension.element = +Expression.Name (Name.Identifier "x");
-              generators =
-                [
-                  {
-                    Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
-                    iterator = +Expression.List [];
-                    conditions = [];
-                    async = false;
-                  };
-                ];
-            });
-    ];
-
-  (* Ensure we fix up locations. *)
-  let assert_locations source statements =
-    let parsed_source =
-      legacy_parse ~handle:"test.py" source |> Preprocessing.expand_format_string
-    in
-    let expected_source = { parsed_source with Source.statements } in
-    assert_source_equal_with_locations expected_source parsed_source
-  in
-  assert_locations
-    "f'foo{1}'"
-    [
-      node
-        ~start:(1, 0)
-        ~stop:(1, 9)
-        (Statement.Expression
-           (node
-              ~start:(1, 0)
-              ~stop:(1, 9)
-              (Expression.FormatString
-                 [
-                   Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
-                   Substring.Format
-                     (node ~start:(1, 6) ~stop:(1, 7) (Expression.Constant (Constant.Integer 1)));
-                 ])));
-    ];
-  assert_locations
-    "f'foo{123}a{456}'"
-    [
-      node
-        ~start:(1, 0)
-        ~stop:(1, 17)
-        (Statement.Expression
-           (node
-              ~start:(1, 0)
-              ~stop:(1, 17)
-              (Expression.FormatString
-                 [
-                   Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
-                   Substring.Format
-                     (node ~start:(1, 6) ~stop:(1, 9) (Expression.Constant (Constant.Integer 123)));
-                   Substring.Literal (node ~start:(1, 10) ~stop:(1, 11) "a");
-                   Substring.Format
-                     (node
-                        ~start:(1, 12)
-                        ~stop:(1, 15)
-                        (Expression.Constant (Constant.Integer 456)));
-                 ])));
-    ];
-  assert_locations
-    "return f'foo{123}a{456}'"
-    [
-      node
-        ~start:(1, 0)
-        ~stop:(1, 24)
-        (Statement.Return
-           {
-             is_implicit = false;
-             expression =
-               Some
-                 (node
-                    ~start:(1, 7)
-                    ~stop:(1, 24)
-                    (Expression.FormatString
-                       [
-                         Substring.Literal (node ~start:(1, 9) ~stop:(1, 12) "foo");
-                         Substring.Format
-                           (node
-                              ~start:(1, 13)
-                              ~stop:(1, 16)
-                              (Expression.Constant (Constant.Integer 123)));
-                         Substring.Literal (node ~start:(1, 17) ~stop:(1, 18) "a");
-                         Substring.Format
-                           (node
-                              ~start:(1, 19)
-                              ~stop:(1, 22)
-                              (Expression.Constant (Constant.Integer 456)));
-                       ]));
-           });
-    ];
-  assert_locations
-    {|
-       f'''
-       foo{123}a{456}
-       b{789}
-       '''
-     |}
-    [
-      node
-        ~start:(2, 0)
-        ~stop:(5, 3)
-        (Statement.Expression
-           (node
-              ~start:(2, 0)
-              ~stop:(5, 3)
-              (Expression.FormatString
-                 [
-                   Substring.Literal (node ~start:(2, 4) ~stop:(3, 3) "\nfoo");
-                   Substring.Format
-                     (node ~start:(3, 4) ~stop:(3, 7) (Expression.Constant (Constant.Integer 123)));
-                   Substring.Literal (node ~start:(3, 8) ~stop:(3, 9) "a");
-                   Substring.Format
-                     (node
-                        ~start:(3, 10)
-                        ~stop:(3, 13)
-                        (Expression.Constant (Constant.Integer 456)));
-                   Substring.Literal (node ~start:(3, 14) ~stop:(4, 1) "\nb");
-                   Substring.Format
-                     (node ~start:(4, 2) ~stop:(4, 5) (Expression.Constant (Constant.Integer 789)));
-                   Substring.Literal (node ~start:(4, 6) ~stop:(5, 1) "\n");
-                 ])));
-    ]
-
-
 let test_qualify_source _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
     let parsed = parse ~handle source in
@@ -4387,11 +4156,7 @@ let location (start_line, start_column) (stop_line, stop_column) =
 
 let test_populate_captures _ =
   let assert_captures ~expected source_text =
-    let source =
-      Test.parse ~handle:"test.py" source_text
-      |> Preprocessing.expand_format_string
-      |> Preprocessing.populate_captures
-    in
+    let source = Test.parse ~handle:"test.py" source_text |> Preprocessing.populate_captures in
     let defines =
       Preprocessing.defines
         ~include_toplevels:true
@@ -5183,11 +4948,7 @@ let test_populate_captures _ =
 
 let test_populate_unbound_names _ =
   let assert_unbound_names ~expected source_text =
-    let source =
-      Test.parse ~handle:"test.py" source_text
-      |> Preprocessing.expand_format_string
-      |> Preprocessing.populate_unbound_names
-    in
+    let source = Test.parse ~handle:"test.py" source_text |> Preprocessing.populate_unbound_names in
     let defines =
       Preprocessing.defines
         ~include_toplevels:true
@@ -5624,14 +5385,8 @@ let test_union_shorthand _ =
 
 let test_mangle_private_attributes _ =
   let assert_replace ?(handle = "test.py") source expected =
-    let expected =
-      parse ~handle ~coerce_special_methods:true expected |> Preprocessing.expand_format_string
-    in
-    let actual =
-      parse ~handle source
-      |> Preprocessing.expand_format_string
-      |> Preprocessing.mangle_private_attributes
-    in
+    let expected = parse ~handle ~coerce_special_methods:true expected in
+    let actual = parse ~handle source |> Preprocessing.mangle_private_attributes in
     assert_source_equal ~location_insensitive:true expected actual
   in
   assert_replace
@@ -6104,7 +5859,6 @@ let () =
          "expand_relative_imports" >:: test_expand_relative_imports;
          "expand_string_annotations" >:: test_expand_string_annotations;
          "expand_type_alias_body" >:: test_expand_type_alias_body;
-         "expand_format_string" >:: test_expand_format_string;
          "qualify_source" >:: test_qualify_source;
          "quality_ast" >:: test_qualify_ast;
          "replace_version_specific_code" >:: test_replace_version_specific_code;
