@@ -618,15 +618,15 @@
                 "leaves": [
                   {
                     "name":
+                      "Obj{model_query_transitive_extends.Test1_C2.attribute}"
+                  },
+                  {
+                    "name":
                       "Obj{model_query_transitive_extends.Test1_C1.attribute}"
                   },
                   {
                     "name":
                       "Obj{model_query_transitive_extends.Test1_C.attribute}"
-                  },
-                  {
-                    "name":
-                      "Obj{model_query_transitive_extends.Test1_C2.attribute}"
                   }
                 ],
                 "kind": "Test"

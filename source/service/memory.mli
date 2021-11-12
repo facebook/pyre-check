@@ -113,9 +113,11 @@ end
 
 (* Provide a unique integer for a given value. *)
 module Interner (Value : InternerValueType) : sig
-  type t = Int64.t
+  type t = int
 
   val intern : Value.t -> t
 
   val unintern : t -> Value.t
+
+  val compare : t -> t -> int
 end

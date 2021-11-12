@@ -297,9 +297,9 @@ end
 
 (* Provide a unique integer for a given value. *)
 module Interner (Value : InternerValueType) = struct
-  module Table = SharedMemory.WithCache (Int64) (Value)
+  module Table = SharedMemory.WithCache (Int) (Value)
 
-  type t = Int64.t
+  type t = int
 
   let intern value =
     (* The shared memory implementation uses the first 8 bytes of the md5 as a
@@ -312,7 +312,7 @@ module Interner (Value : InternerValueType) = struct
       |> Digest.string
       |> Md5_lib.to_binary
       |> Caml.Bytes.of_string
-      |> fun md5 -> Caml.Bytes.get_int64_ne md5 0
+      |> fun md5 -> Caml.Bytes.get_int64_ne md5 0 |> Int64.to_int_trunc
     in
     Table.write_through id value;
     id
@@ -321,5 +321,8 @@ module Interner (Value : InternerValueType) = struct
   let unintern id =
     match Table.get id with
     | Some value -> value
-    | None -> Format.asprintf "Invalid intern key %a" Int64.pp id |> failwith
+    | None -> Format.asprintf "Invalid intern key %d" id |> failwith
+
+
+  let compare = Int.compare
 end

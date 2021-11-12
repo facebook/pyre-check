@@ -77,8 +77,8 @@ let test_interner _ =
   let words = List.init 1000 string_of_int in
   let interned_words = List.map (fun word -> word, StringInterner.intern word) words in
   List.iter (fun (word, id) -> assert_equal word (StringInterner.unintern id)) interned_words;
-  let module Int64Set = Set.Make (Int64) in
-  let size = interned_words |> List.map snd |> Int64Set.of_list |> Int64Set.cardinal in
+  let module IntSet = Set.Make (Int) in
+  let size = interned_words |> List.map snd |> IntSet.of_list |> IntSet.cardinal in
   assert_equal size 1000;
   ()
 

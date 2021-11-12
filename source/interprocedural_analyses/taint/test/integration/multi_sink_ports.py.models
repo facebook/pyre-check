@@ -46,10 +46,10 @@
                   { "via": "a_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkD" },
-                  { "name": "multi_sink_ports.sinkA" },
                   { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" }
+                  { "name": "multi_sink_ports.sinkB" },
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkA" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -132,10 +132,10 @@
                   { "via": "a_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkD" },
-                  { "name": "multi_sink_ports.sinkA" },
                   { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" }
+                  { "name": "multi_sink_ports.sinkB" },
+                  { "name": "multi_sink_ports.sinkD" },
+                  { "name": "multi_sink_ports.sinkA" }
                 ],
                 "length": 2,
                 "kind": "Test"
@@ -196,9 +196,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkD" },
                   { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" }
+                  { "name": "multi_sink_ports.sinkB" },
+                  { "name": "multi_sink_ports.sinkD" }
                 ],
                 "length": 2,
                 "kind": "Test"
@@ -267,9 +267,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkD" },
                   { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" }
+                  { "name": "multi_sink_ports.sinkB" },
+                  { "name": "multi_sink_ports.sinkD" }
                 ],
                 "length": 2,
                 "kind": "Test"
@@ -366,9 +366,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkD" },
                   { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" }
+                  { "name": "multi_sink_ports.sinkB" },
+                  { "name": "multi_sink_ports.sinkD" }
                 ],
                 "length": 2,
                 "kind": "Test"
@@ -703,9 +703,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkD" },
                   { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" }
+                  { "name": "multi_sink_ports.sinkB" },
+                  { "name": "multi_sink_ports.sinkD" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -798,9 +798,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkD" },
                   { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" }
+                  { "name": "multi_sink_ports.sinkB" },
+                  { "name": "multi_sink_ports.sinkD" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -896,9 +896,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkD" },
                   { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" }
+                  { "name": "multi_sink_ports.sinkB" },
+                  { "name": "multi_sink_ports.sinkD" }
                 ],
                 "length": 3,
                 "kind": "Test"

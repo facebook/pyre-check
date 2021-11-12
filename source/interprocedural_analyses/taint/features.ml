@@ -36,8 +36,6 @@ struct
 
   let name = T.name
 
-  let compare = Int64.compare
-
   let pp formatter id = id |> unintern |> T.pp formatter
 
   let show id = id |> unintern |> T.show
