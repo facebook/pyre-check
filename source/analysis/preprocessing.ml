@@ -3808,130 +3808,6 @@ let inline_six_metaclass ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map ~f:inline_six_metaclass statements }
 
 
-let rec expand_starred_variadic_in_annotation_expression ({ Node.value; _ } as expression) =
-  let transform_argument ({ Call.Argument.value; _ } as argument) =
-    { argument with Call.Argument.value = expand_starred_variadic_in_annotation_expression value }
-  in
-  let value =
-    match value with
-    | Call
-        {
-          callee =
-            {
-              Node.value =
-                Name
-                  (Name.Attribute
-                    {
-                      base =
-                        {
-                          Node.value =
-                            Name
-                              (Name.Attribute
-                                {
-                                  base =
-                                    {
-                                      Node.value =
-                                        Name
-                                          ( Name.Identifier "typing_extensions"
-                                          | Name.Identifier "typing" );
-                                      _;
-                                    };
-                                  attribute = "Literal";
-                                  _;
-                                });
-                          _;
-                        };
-                      attribute = "__getitem__";
-                      _;
-                    });
-              _;
-            };
-          _;
-        } ->
-        (* Don't transform arguments in Literals. *)
-        value
-    | Call
-        {
-          callee =
-            { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } as callee;
-          arguments;
-        } ->
-        Call { callee; arguments = List.map ~f:transform_argument arguments }
-    | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
-      when name_is ~name:"typing.TypeVar" callee
-           || name_is ~name:"$local_typing$TypeVar" callee
-           || name_is ~name:"typing_extensions.IntVar" callee ->
-        Expression.Call
-          {
-            callee;
-            arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
-          }
-    | Starred
-        (Once
-          {
-            Node.value =
-              ( Name (Name.Identifier _)
-              | Call
-                  {
-                    callee =
-                      { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
-                    _;
-                  } ) as starred_value;
-            location;
-          }) ->
-        Expression.Call
-          {
-            callee =
-              {
-                Node.location;
-                value =
-                  Expression.Name
-                    (Attribute
-                       {
-                         base =
-                           {
-                             Node.location;
-                             value =
-                               Name
-                                 (Name.Attribute
-                                    {
-                                      base =
-                                        {
-                                          Node.location;
-                                          value = Name (Identifier "pyre_extensions");
-                                        };
-                                      attribute = "Unpack";
-                                      special = false;
-                                    });
-                           };
-                         attribute = "__getitem__";
-                         special = true;
-                       });
-              };
-            arguments =
-              [
-                {
-                  name = None;
-                  value =
-                    expand_starred_variadic_in_annotation_expression
-                      { Node.location; value = starred_value };
-                };
-              ];
-          }
-    | Tuple elements ->
-        Tuple (List.map elements ~f:expand_starred_variadic_in_annotation_expression)
-    | List elements -> List (List.map elements ~f:expand_starred_variadic_in_annotation_expression)
-    | _ -> value
-  in
-  { expression with Node.value }
-
-
-let expand_starred_type_variable_tuple source =
-  transform_annotations
-    ~transform_annotation_expression:expand_starred_variadic_in_annotation_expression
-    source
-
-
 (* Special syntax added to support configerator. *)
 let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer (struct
@@ -4113,7 +3989,6 @@ let preprocess_phase1 source =
   |> populate_unbound_names
   |> replace_union_shorthand
   |> mangle_private_attributes
-  |> expand_starred_type_variable_tuple
   |> qualify
   |> replace_lazy_import
   |> expand_string_annotations

@@ -5603,122 +5603,6 @@ let test_six_metaclass_decorator _ =
   ()
 
 
-let test_expand_starred_type_variable_tuples _ =
-  let assert_expand ?(handle = "test.py") source expected =
-    let expected = parse ~handle expected in
-    let actual = legacy_parse ~handle source |> Preprocessing.expand_starred_type_variable_tuple in
-    assert_source_equal ~location_insensitive:true expected actual
-  in
-  assert_expand
-    {|
-    def foo( *args: *Ts) -> Ts: ...
-  |}
-    {|
-    def foo( *args: pyre_extensions.Unpack[Ts]) -> Ts: ...
-  |};
-  assert_expand
-    {|
-    class Tensor(Generic[*Ts]): ...
-  |}
-    {|
-    class Tensor(Generic[pyre_extensions.Unpack[Ts]]): ...
-  |};
-  assert_expand
-    {|
-    def foo( *args: *Ts) -> Tensor[int, *Ts]: ...
-  |}
-    {|
-    def foo( *args: pyre_extensions.Unpack[Ts]) -> Tensor[int, pyre_extensions.Unpack[Ts]]: ...
-  |};
-  assert_expand
-    {|
-    def foo(x: List[Tuple[*Ts]]) -> None: ...
-  |}
-    {|
-    def foo(x: List[Tuple[pyre_extensions.Unpack[Ts]]]) -> None: ...
-  |};
-  assert_expand
-    {|
-    class A:
-      class B(Generic[*Ts]): ...
-
-      def some_method(self, x: Tuple[*Ts]) -> None: ...
-  |}
-    {|
-    class A:
-      class B(Generic[pyre_extensions.Unpack[Ts]]): ...
-
-      def some_method(self, x: Tuple[pyre_extensions.Unpack[Ts]]) -> None: ...
-  |};
-  assert_expand
-    {|
-    class A(Generic[*Ts]):
-      def __init__(self, x: Tensor[*Ts]) -> None:
-        self.x: Tensor[*Ts] = x
-  |}
-    {|
-    class A(Generic[pyre_extensions.Unpack[Ts]]):
-      def __init__(self, x: Tensor[pyre_extensions.Unpack[Ts]]) -> None:
-        self.x: Tensor[pyre_extensions.Unpack[Ts]] = x
-  |};
-  assert_expand
-    {|
-    def foo() -> None:
-      def bar() -> Tuple[*Ts]: ...
-  |}
-    {|
-    def foo() -> None:
-      def bar() -> Tuple[pyre_extensions.Unpack[Ts]]: ...
-  |};
-  assert_expand
-    {|
-    def foo() -> Tuple[int, *Tuple[str, bool]]: ...
-  |}
-    {|
-    def foo() -> Tuple[int, pyre_extensions.Unpack[Tuple[str, bool]]]: ...
-  |};
-  assert_expand
-    {|
-    def foo() -> Tuple[int, *Tuple[*Ts, *Ts]]: ...
-  |}
-    {|
-    def foo() -> Tuple[
-      int,
-      pyre_extensions.Unpack[Tuple[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts]]]
-    ]: ...
-  |};
-  assert_expand
-    {|
-    f: typing.Callable[[int, *Ts, str], Tuple[int, *Ts, str]]
-  |}
-    {|
-    f: typing.Callable[
-        [int, pyre_extensions.Unpack[Ts], str], Tuple[int, pyre_extensions.Unpack[Ts], str]
-    ]
-  |};
-  assert_expand
-    {|
-    f: typing.Callable[
-        [typing.Callable[[int, *Ts, str], Tuple[int, *Ts, str]]],
-        typing.Callable[[int, *Ts, *Ts2], bool],
-    ]
-  |}
-    {|
-    f: typing.Callable[
-        [
-            typing.Callable[
-                [int, pyre_extensions.Unpack[Ts], str],
-                Tuple[int, pyre_extensions.Unpack[Ts], str],
-            ]
-        ],
-        typing.Callable[
-            [int, pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts2]], bool
-        ],
-    ]
-  |};
-  ()
-
-
 let test_expand_import_python_calls _ =
   let assert_expand ?(handle = "test.py") source expected =
     let expected = parse ~handle ~coerce_special_methods:true expected in
@@ -5879,7 +5763,6 @@ let () =
          "union_shorthand" >:: test_union_shorthand;
          "mangle_private_attributes" >:: test_mangle_private_attributes;
          "six_metaclass_decorator" >:: test_six_metaclass_decorator;
-         "expand_starred_type_variable_tuples" >:: test_expand_starred_type_variable_tuples;
          "expand_import_python_calls" >:: test_expand_import_python_calls;
          "expand_pytorch_register_buffer" >:: test_expand_pytorch_register_buffer;
        ]

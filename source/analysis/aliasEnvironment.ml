@@ -11,10 +11,7 @@ open Pyre
 open Expression
 module PreviousEnvironment = EmptyStubEnvironment
 
-let preprocess_alias_value value =
-  Preprocessing.expand_strings_in_annotation_expression value
-  |> Preprocessing.expand_starred_variadic_in_annotation_expression
-
+let preprocess_alias_value value = Preprocessing.expand_strings_in_annotation_expression value
 
 module AliasValue = struct
   type t = Type.alias option
