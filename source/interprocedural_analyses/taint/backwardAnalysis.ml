@@ -556,29 +556,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                }
 
 
-  and return_type_breadcrumbs_for_call ~resolution callee arguments () =
+  and return_type_breadcrumbs_from_type ~resolution ~return_type () =
     (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
     lazy
-      (let call_expression =
-         Expression.Call { Call.callee; arguments } |> Node.create_with_default_location
-       in
-       let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
-       let resolution = Resolution.global_resolution resolution in
-       Features.type_breadcrumbs ~resolution (Some return_annotation))
+      (let resolution = Resolution.global_resolution resolution in
+       Features.type_breadcrumbs ~resolution (Some return_type))
 
 
   and apply_call_targets
       ~resolution
       ~callee
       ~call_location
+      ~return_type
       ~arguments
       initial_state
       call_taint
       call_targets
     =
-    let return_type_breadcrumbs =
-      return_type_breadcrumbs_for_call ~resolution callee arguments ()
-    in
+    let return_type_breadcrumbs = return_type_breadcrumbs_from_type ~resolution ~return_type () in
 
     let { arguments_taint; callee_taint; state } =
       apply_call_targets_and_return_arguments_taint
@@ -615,10 +610,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~taint
       ~new_targets
       ~init_targets
+      ~return_type
     =
-    let return_type_breadcrumbs =
-      return_type_breadcrumbs_for_call ~resolution callee arguments ()
-    in
+    let return_type_breadcrumbs = return_type_breadcrumbs_from_type ~resolution ~return_type () in
 
     (* Call `__init__`. Add the `self` implicit argument. *)
     let call_expression = Expression.Call { Call.callee; arguments } |> Node.create ~location in
@@ -743,8 +737,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     match targets with
     | None ->
         (* Obscure. *)
-        apply_call_targets ~callee ~resolution ~call_location:location ~arguments state taint []
-    | Some { Interprocedural.CallGraph.RegularTargets.implicit_self; targets; _ } ->
+        (* TODO(T105570363): call graph should never return None. *)
+        apply_call_targets
+          ~callee
+          ~resolution
+          ~call_location:location
+          ~return_type:Type.Any
+          ~arguments
+          state
+          taint
+          []
+    | Some { Interprocedural.CallGraph.RegularTargets.implicit_self; targets; return_type; _ } ->
         let arguments =
           if implicit_self then
             let receiver =
@@ -791,6 +794,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~callee
           ~resolution
           ~call_location:location
+          ~return_type
           ~arguments
           state
           taint
@@ -819,13 +823,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~state
         regular_target
       =
-      let return_type_breadcrumbs =
-        return_type_breadcrumbs_for_call ~resolution callee arguments ()
-      in
       let { Call.callee; arguments } =
         Interprocedural.CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
       in
-      let { Interprocedural.CallGraph.RegularTargets.implicit_self; targets; _ } = regular_target in
+      let { Interprocedural.CallGraph.RegularTargets.implicit_self; targets; return_type; _ } =
+        regular_target
+      in
       let arguments =
         if implicit_self then
           let receiver =
@@ -837,6 +840,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         else
           arguments
       in
+      let return_type_breadcrumbs = return_type_breadcrumbs_from_type ~resolution ~return_type () in
       let { arguments_taint; callee_taint; state } =
         apply_call_targets_and_return_arguments_taint
           ~resolution
@@ -1271,11 +1275,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~arguments
                   ~taint
                   (Some higher_order_function))
-        | Some (ConstructorTargets { new_targets; init_targets }) ->
+        | Some (ConstructorTargets { new_targets; init_targets; return_type }) ->
             analyze_constructor_call
               ~resolution
               ~new_targets
               ~init_targets
+              ~return_type
               ~location
               ~state
               ~taint
@@ -1383,12 +1388,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_expression ~resolution ~taint ~state ~expression:base
     | Name (Name.Attribute { base; attribute; _ }) -> (
         match get_property_callees ~location ~attribute with
-        | Some (RegularTargets { targets; _ }) ->
+        | Some (RegularTargets { targets; return_type; _ }) ->
             let arguments = [{ Call.Argument.name = None; value = base }] in
             apply_call_targets
               ~resolution
               ~callee:expression
               ~call_location:location
+              ~return_type
               ~arguments
               state
               taint
@@ -1586,7 +1592,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
               match get_property_callees ~location ~attribute with
-              | Some (RegularTargets { targets; _ }) ->
+              | Some (RegularTargets { targets; return_type; _ }) ->
                   (* Treat `a.property = x` as `a = a.property(x)` *)
                   let taint = compute_assignment_taint ~resolution base state |> fst in
                   let arguments =
@@ -1596,6 +1602,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     ~resolution
                     ~callee:target
                     ~call_location:location
+                    ~return_type
                     ~arguments
                     state
                     taint

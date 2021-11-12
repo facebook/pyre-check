@@ -613,21 +613,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     taint, state
 
 
-  and return_type_breadcrumbs_for_call ~resolution callee arguments () =
+  and return_type_breadcrumbs_from_type ~resolution ~return_type () =
     (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
     lazy
-      (let call_expression =
-         Expression.Call { Call.callee; arguments } |> Node.create_with_default_location
-       in
-       let return_annotation = Resolution.resolve_expression_to_type resolution call_expression in
-       let resolution = Resolution.global_resolution resolution in
-       Features.type_breadcrumbs ~resolution (Some return_annotation))
+      (let resolution = Resolution.global_resolution resolution in
+       Features.type_breadcrumbs ~resolution (Some return_type))
 
 
   and apply_call_targets
       ~resolution
       ~callee
       ~collapse_tito
+      ~return_type
       ~call_location
       ~arguments
       initial_state
@@ -646,10 +643,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* The callee taint is only used when call_targets is empty. *)
     let callee_taint = lazy (analyze_expression ~resolution ~state ~expression:callee |> fst) in
 
-    (* Resolving the return type can be a very expensive operation, let's make it lazy. *)
-    let return_type_breadcrumbs =
-      return_type_breadcrumbs_for_call ~resolution callee arguments ()
-    in
+    let return_type_breadcrumbs = return_type_breadcrumbs_from_type ~resolution ~return_type () in
 
     apply_call_targets_with_arguments_taint
       ~resolution
@@ -755,6 +749,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments
       ~new_targets
       ~init_targets
+      ~return_type
       ~state
     =
     (* Analyze arguments first. *)
@@ -769,9 +764,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       List.rev arguments |> List.fold ~init:([], state) ~f:compute_argument_taint
     in
 
-    let return_type_breadcrumbs =
-      return_type_breadcrumbs_for_call ~resolution callee arguments ()
-    in
+    let return_type_breadcrumbs = return_type_breadcrumbs_from_type ~resolution ~return_type () in
 
     (* Call `__new__`. *)
     let new_return_taint, state =
@@ -819,7 +812,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee
       ~arguments
       ~state
-      { Interprocedural.CallGraph.RegularTargets.implicit_self; targets; collapse_tito }
+      {
+        Interprocedural.CallGraph.RegularTargets.implicit_self;
+        targets;
+        collapse_tito;
+        return_type;
+      }
     =
     let arguments =
       if implicit_self then
@@ -838,6 +836,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~resolution
       ~callee
       ~collapse_tito
+      ~return_type
       ~call_location:location
       ~arguments
       state
@@ -888,13 +887,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~state
         regular_target
       =
-      let return_type_breadcrumbs =
-        return_type_breadcrumbs_for_call ~resolution callee arguments ()
-      in
       let { Call.callee; arguments } =
         Interprocedural.CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
       in
-      let { Interprocedural.CallGraph.RegularTargets.implicit_self; targets; collapse_tito } =
+      let {
+        Interprocedural.CallGraph.RegularTargets.implicit_self;
+        targets;
+        collapse_tito;
+        return_type;
+      }
+        =
         regular_target
       in
       let arguments, arguments_taint, state =
@@ -916,6 +918,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ForwardState.Tree.bottom :: arguments_taint,
                 state )
       in
+      let return_type_breadcrumbs = return_type_breadcrumbs_from_type ~resolution ~return_type () in
       apply_call_targets_with_arguments_taint
         ~resolution
         ~callee
@@ -1284,7 +1287,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       ~arguments
                       ~state
                       higher_order_function)
-            | Some (ConstructorTargets { new_targets; init_targets }) ->
+            | Some (ConstructorTargets { new_targets; init_targets; return_type }) ->
                 analyze_constructor_call
                   ~resolution
                   ~location
@@ -1292,6 +1295,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~arguments
                   ~new_targets
                   ~init_targets
+                  ~return_type
                   ~state
             | None ->
                 (* No target, treat call as obscure *)
@@ -1325,10 +1329,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                         (Resolution.resolve_expression_to_type resolution expression |> Type.show)
                   | _ -> ()
                 end;
+                (* TODO(T105570363): call graph should never return None. *)
                 apply_call_targets
                   ~resolution
                   ~callee
                   ~collapse_tito:false
+                  ~return_type:Type.Any
                   ~call_location:location
                   ~arguments
                   state
@@ -1538,12 +1544,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:base
       | Name (Name.Attribute { base; attribute; _ }) -> (
           match get_property_callees ~location ~attribute with
-          | Some (RegularTargets { targets; _ }) ->
+          | Some (RegularTargets { targets; return_type; _ }) ->
               let arguments = [{ Call.Argument.name = None; value = base }] in
               apply_call_targets
                 ~resolution
                 ~callee:expression
                 ~collapse_tito:true
+                ~return_type
                 ~call_location:location
                 ~arguments
                 state
@@ -1703,7 +1710,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
               match get_property_callees ~location ~attribute with
-              | Some (RegularTargets { targets; _ }) ->
+              | Some (RegularTargets { targets; return_type; _ }) ->
                   (* Treat `a.property = x` as `a = a.property(x)` *)
                   let arguments =
                     [{ Call.Argument.name = None; value = base }; { name = None; value }]
@@ -1713,6 +1720,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       ~resolution
                       ~callee:target
                       ~collapse_tito:true
+                      ~return_type
                       ~call_location:location
                       ~arguments
                       state

@@ -16,6 +16,7 @@ module RegularTargets = struct
   type t = {
     implicit_self: bool;
     collapse_tito: bool;
+    return_type: Type.t;
     targets: Target.t list;
   }
   [@@deriving eq, show { with_path = false }]
@@ -26,6 +27,7 @@ module RawCallees = struct
     | ConstructorTargets of {
         new_targets: Target.t list;
         init_targets: Target.t list;
+        return_type: Type.t;
       }
     | RegularTargets of RegularTargets.t
     | HigherOrderTargets of {
@@ -46,6 +48,7 @@ module RawCallees = struct
             {
               implicit_self = left_implicit_self;
               targets = left_targets;
+              return_type = left_return_type;
               collapse_tito = left_collapse_tito;
             }),
         Some (RegularTargets { implicit_self = right_implicit_self; targets = right_targets; _ }) )
@@ -55,18 +58,25 @@ module RawCallees = struct
              {
                implicit_self = left_implicit_self;
                targets = List.rev_append left_targets right_targets;
+               return_type = left_return_type;
                collapse_tito = left_collapse_tito;
              })
     | ( Some
-          (ConstructorTargets { new_targets = left_new_targets; init_targets = left_init_targets }),
+          (ConstructorTargets
+            {
+              new_targets = left_new_targets;
+              init_targets = left_init_targets;
+              return_type = left_return_type;
+            }),
         Some
           (ConstructorTargets
-            { new_targets = right_new_targets; init_targets = right_init_targets }) ) ->
+            { new_targets = right_new_targets; init_targets = right_init_targets; _ }) ) ->
         Some
           (ConstructorTargets
              {
                new_targets = List.rev_append left_new_targets right_new_targets;
                init_targets = List.rev_append left_init_targets right_init_targets;
+               return_type = left_return_type;
              })
     | Some left, None -> Some left
     | None, Some right -> Some right
@@ -299,6 +309,7 @@ let rec resolve_callees_from_type
     ~resolution
     ?(resolving_callable_class = false)
     ?receiver_type
+    ~return_type
     ~callee_kind
     ~collapse_tito
     callable_type
@@ -315,7 +326,8 @@ let rec resolve_callees_from_type
             | Method { is_direct_call = true } -> [Target.create_method name]
             | _ -> compute_indirect_targets ~resolution ~receiver_type name
           in
-          Some (RawCallees.RegularTargets { implicit_self = true; targets; collapse_tito })
+          Some
+            (RawCallees.RegularTargets { implicit_self = true; collapse_tito; return_type; targets })
       | None ->
           let target =
             match callee_kind with
@@ -323,25 +335,39 @@ let rec resolve_callees_from_type
             | _ -> Target.create_function name
           in
           Some
-            (RawCallees.RegularTargets { implicit_self = false; targets = [target]; collapse_tito })
-      )
+            (RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito; return_type; targets = [target] }))
   | Type.Callable { kind = Anonymous; _ } -> None
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
-      resolve_callees_from_type ~resolution ~receiver_type ~callee_kind ~collapse_tito callable
+      resolve_callees_from_type
+        ~resolution
+        ~receiver_type
+        ~return_type
+        ~callee_kind
+        ~collapse_tito
+        callable
   | Type.Union (element :: elements) ->
       let first_targets =
-        resolve_callees_from_type ~resolution ~callee_kind ?receiver_type ~collapse_tito element
+        resolve_callees_from_type
+          ~resolution
+          ~callee_kind
+          ?receiver_type
+          ~return_type
+          ~collapse_tito
+          element
       in
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
           resolve_callees_from_type
             ~resolution
             ?receiver_type
+            ~return_type
             ~callee_kind
             ~collapse_tito
             new_target
           |> RawCallees.merge combined_targets)
-  | Type.Parametric { name = "type"; _ } -> resolve_constructor_callee ~resolution callable_type
+  | Type.Parametric { name = "type"; _ } ->
+      resolve_constructor_callee ~resolution ~return_type callable_type
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
          ignore it for now to make sure our constructor logic via `cls()` still works. *)
@@ -362,17 +388,19 @@ let rec resolve_callees_from_type
             (RawCallees.RegularTargets
                {
                  implicit_self = true;
+                 collapse_tito;
+                 return_type;
                  targets =
                    [
                      `Method
                        { Target.class_name = primitive_callable_name; method_name = "__call__" };
                    ];
-                 collapse_tito;
                })
       | annotation ->
           if not resolving_callable_class then
             resolve_callees_from_type
               ~resolution
+              ~return_type
               ~resolving_callable_class:true
               ~callee_kind
               ~collapse_tito
@@ -381,7 +409,7 @@ let rec resolve_callees_from_type
             None)
 
 
-and resolve_constructor_callee ~resolution class_type =
+and resolve_constructor_callee ~resolution ~return_type class_type =
   match
     ( Resolution.resolve_attribute_access resolution ~base_type:class_type ~attribute:"__new__",
       Resolution.resolve_attribute_access resolution ~base_type:class_type ~attribute:"__init__" )
@@ -396,12 +424,14 @@ and resolve_constructor_callee ~resolution class_type =
         ( resolve_callees_from_type
             ~resolution
             ~receiver_type:class_type
+            ~return_type
             ~callee_kind:(Method { is_direct_call = true })
             ~collapse_tito:true
             new_callable_type,
           resolve_callees_from_type
             ~resolution
             ~receiver_type:class_type
+            ~return_type
             ~callee_kind:(Method { is_direct_call = true })
             ~collapse_tito:true
             init_callable_type )
@@ -409,13 +439,14 @@ and resolve_constructor_callee ~resolution class_type =
       match new_targets, init_targets with
       | ( Some (RegularTargets { targets = new_targets; _ }),
           Some (RegularTargets { targets = init_targets; _ }) ) ->
-          Some (ConstructorTargets { new_targets; init_targets })
+          Some (ConstructorTargets { new_targets; init_targets; return_type })
       | _ -> None)
 
 
 let resolve_callee_from_defining_expression
     ~resolution
     ~callee:{ Node.value = callee; _ }
+    ~return_type
     ~implementing_class
   =
   match implementing_class, callee with
@@ -430,6 +461,7 @@ let resolve_callee_from_defining_expression
       >>= fun undecorated_signature ->
       resolve_callees_from_type
         ~resolution
+        ~return_type
         ~callee_kind:Function
         ~collapse_tito:true
         (Type.Callable undecorated_signature)
@@ -476,6 +508,7 @@ let resolve_callee_from_defining_expression
           resolve_callees_from_type
             ~resolution
             ~receiver_type:implementing_class
+            ~return_type
             ~callee_kind:(Method { is_direct_call = false })
             ~collapse_tito:true
             callable_type
@@ -530,7 +563,7 @@ let redirect_special_calls ~resolution call =
   | None -> Annotated.Call.redirect_special_calls ~resolution call
 
 
-let resolve_recognized_callees ~resolution ~callee ~callee_type =
+let resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type =
   (* Special treatment for a set of hardcoded decorators returning callable classes. *)
   match Node.value callee, callee_type with
   | ( _,
@@ -540,14 +573,14 @@ let resolve_recognized_callees ~resolution ~callee ~callee_type =
           parameters = [Single (Parametric { name; _ }); Single implementing_class];
         } )
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
-      resolve_callee_from_defining_expression ~resolution ~callee ~implementing_class
+      resolve_callee_from_defining_expression ~resolution ~callee ~return_type ~implementing_class
   | Expression.Name (Name.Attribute { base; _ }), Parametric { name; _ }
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       (* Because of the special class, we don't get a bound method & lose the self argument for
          non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
       resolve_ignoring_optional ~resolution base
       |> fun implementing_class ->
-      resolve_callee_from_defining_expression ~resolution ~callee ~implementing_class
+      resolve_callee_from_defining_expression ~resolution ~callee ~return_type ~implementing_class
   | Expression.Name name, _
     when is_all_names (Node.value callee)
          && Type.Set.mem SpecialCallResolution.recognized_callable_target_types callee_type ->
@@ -555,11 +588,12 @@ let resolve_recognized_callees ~resolution ~callee ~callee_type =
       >>| Reference.show
       >>| fun name ->
       let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
-      RawCallees.RegularTargets { implicit_self = false; targets = [`Function name]; collapse_tito }
+      RawCallees.RegularTargets
+        { implicit_self = false; collapse_tito; return_type; targets = [`Function name] }
   | _ -> None
 
 
-let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
+let resolve_callees_ignoring_decorators ~resolution ~collapse_tito ~return_type callee =
   let global_resolution = Resolution.global_resolution resolution in
   let open UnannotatedGlobalEnvironment in
   match Node.value callee with
@@ -573,7 +607,12 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
         ->
           Some
             (RawCallees.RegularTargets
-               { implicit_self = false; targets = [`Function (Reference.show name)]; collapse_tito })
+               {
+                 implicit_self = false;
+                 collapse_tito;
+                 return_type;
+                 targets = [`Function (Reference.show name)];
+               })
       | Some
           (ResolvedReference.ModuleAttribute
             {
@@ -595,8 +634,9 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
                 (RawCallees.RegularTargets
                    {
                      implicit_self = not static;
-                     targets = [`Method { Target.class_name; method_name = attribute }];
                      collapse_tito;
+                     return_type;
+                     targets = [`Method { Target.class_name; method_name = attribute }];
                    })
           | _ -> None)
       | _ -> None)
@@ -616,37 +656,52 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
                 (RawCallees.RegularTargets
                    {
                      implicit_self = true;
-                     targets = [`Method { Target.class_name; method_name = attribute }];
                      collapse_tito;
+                     return_type;
+                     targets = [`Method { Target.class_name; method_name = attribute }];
                    })
           | _ -> None)
       | _ -> None)
   | _ -> None
 
 
-let resolve_regular_callees ~resolution ~callee =
+let resolve_regular_callees ~resolution ~return_type ~callee =
   let callee_type = resolve_ignoring_optional ~resolution callee in
-  match resolve_recognized_callees ~resolution ~callee ~callee_type with
+  match resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type with
   | Some callees -> Some callees
   | None -> (
       let callee_kind = callee_kind ~resolution callee callee_type in
       let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
-      match resolve_callees_from_type ~callee_kind ~resolution ~collapse_tito callee_type with
+      match
+        resolve_callees_from_type ~resolution ~return_type ~callee_kind ~collapse_tito callee_type
+      with
       | Some callees -> Some callees
-      | None -> resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee)
+      | None -> resolve_callees_ignoring_decorators ~resolution ~collapse_tito ~return_type callee)
 
 
 let resolve_callees ~resolution ~call =
   let { Call.callee; arguments } = redirect_special_calls ~resolution call in
+  let return_type =
+    Expression.Call call
+    |> Node.create_with_default_location
+    |> Resolution.resolve_expression_to_type resolution
+  in
   let higher_order_function_argument =
     let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
-      match resolve_regular_callees ~resolution ~callee:argument with
-      | Some (RegularTargets regular_targets) -> Some (index, regular_targets)
+      match resolve_regular_callees ~resolution ~return_type:Type.none ~callee:argument with
+      | Some (RegularTargets regular_targets) ->
+          let return_type =
+            Expression.Call { callee = argument; arguments = [] }
+            |> Node.create_with_default_location
+            |> Resolution.resolve_expression_to_type resolution
+          in
+          let regular_targets = { regular_targets with return_type } in
+          Some (index, regular_targets)
       | _ -> None
     in
     List.find_mapi arguments ~f:get_higher_order_function_targets
   in
-  let regular_callees = resolve_regular_callees ~resolution ~callee in
+  let regular_callees = resolve_regular_callees ~resolution ~return_type ~callee in
   match higher_order_function_argument, regular_callees with
   | Some callable_argument, Some (RegularTargets higher_order_function) ->
       Some (RawCallees.HigherOrderTargets { higher_order_function; callable_argument })
@@ -671,7 +726,7 @@ let get_property_defining_parents ~resolution ~base ~attribute =
   get_defining_parents annotation
 
 
-let resolve_property_targets ~resolution ~base ~attribute ~setter =
+let resolve_property_targets ~resolution ~base ~attribute ~special ~setter =
   match get_property_defining_parents ~resolution ~base ~attribute with
   | [] -> None
   | defining_parents ->
@@ -698,7 +753,17 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
           targets
       in
       let targets = List.concat_map defining_parents ~f:target_of_parent in
-      Some (RawCallees.RegularTargets { implicit_self = true; targets; collapse_tito = true })
+      let return_type =
+        if setter then
+          Type.none
+        else
+          Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
+          |> Node.create_with_default_location
+          |> Resolution.resolve_expression_to_type resolution
+      in
+      Some
+        (RawCallees.RegularTargets
+           { implicit_self = true; targets; collapse_tito = true; return_type })
 
 
 let call_name { Call.callee; _ } =
@@ -754,14 +819,14 @@ struct
       | Expression.Call call ->
           resolve_callees ~resolution ~call |> register_targets ~callee_name:(call_name call);
           state
-      | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
+      | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
           let setter =
             match assignment_target with
             | Some { location = assignment_target_location } ->
                 Location.equal assignment_target_location location
             | None -> false
           in
-          resolve_property_targets ~resolution ~base ~attribute ~setter
+          resolve_property_targets ~resolution ~base ~attribute ~special ~setter
           |> register_targets ~callee_name:attribute;
           state
       | Expression.ComparisonOperator comparison -> (
@@ -878,17 +943,18 @@ let call_graph_of_define
   in
   let deduplicate callees =
     let deduplicate_targets targets = List.dedup_and_sort ~compare:Target.compare targets in
-    let deduplicate_regular_targets { RegularTargets.targets; implicit_self; collapse_tito } =
-      { RegularTargets.targets = deduplicate_targets targets; implicit_self; collapse_tito }
+    let deduplicate_regular_targets ({ RegularTargets.targets; _ } as regular_targets) =
+      { regular_targets with targets = deduplicate_targets targets }
     in
     match callees with
     | RawCallees.RegularTargets regular_targets ->
         RawCallees.RegularTargets (deduplicate_regular_targets regular_targets)
-    | RawCallees.ConstructorTargets { new_targets; init_targets } ->
+    | RawCallees.ConstructorTargets { new_targets; init_targets; return_type } ->
         RawCallees.ConstructorTargets
           {
             new_targets = deduplicate_targets new_targets;
             init_targets = deduplicate_targets init_targets;
+            return_type;
           }
     | RawCallees.HigherOrderTargets
         { higher_order_function; callable_argument = index, callable_argument } ->
@@ -955,7 +1021,7 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
         let callees found_callees =
           let targets_of_callees = function
             | RawCallees.RegularTargets { targets; _ } -> targets
-            | RawCallees.ConstructorTargets { new_targets; init_targets } ->
+            | RawCallees.ConstructorTargets { new_targets; init_targets; _ } ->
                 List.rev_append new_targets init_targets
             | RawCallees.HigherOrderTargets
                 {

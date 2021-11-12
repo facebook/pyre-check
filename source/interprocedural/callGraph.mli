@@ -14,6 +14,7 @@ module RegularTargets : sig
   type t = {
     implicit_self: bool;
     collapse_tito: bool;
+    return_type: Type.t;
     targets: Target.t list;
   }
   [@@deriving eq, show]
@@ -24,6 +25,7 @@ module RawCallees : sig
     | ConstructorTargets of {
         new_targets: Target.t list;
         init_targets: Target.t list;
+        return_type: Type.t;
       }
     | RegularTargets of RegularTargets.t
     | HigherOrderTargets of {
