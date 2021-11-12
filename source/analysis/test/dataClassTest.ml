@@ -14,7 +14,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         ...
     |}
@@ -33,7 +33,7 @@ let test_transform_environment context =
     {|
       from dataclasses import dataclass
       if 1 > 2:
-        @dataclass
+        @dataclass(match_args=False)
         class Foo:
           ...
     |}
@@ -51,7 +51,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         def foo() -> None:
           pass
@@ -73,7 +73,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       import dataclasses
-      @dataclasses.dataclass
+      @dataclasses.dataclass(match_args=False)
       class Foo:
         def foo() -> None:
           pass
@@ -95,7 +95,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         def __init__(self) -> None:
           pass
@@ -116,7 +116,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         name = 'abc'
     |}
@@ -135,7 +135,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         name: str
     |}
@@ -154,7 +154,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         name: str
         age: int
@@ -176,7 +176,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         name: str
         age: int
@@ -199,7 +199,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         name: str
         age = 3
@@ -220,7 +220,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         name: str
         age: int = 3
@@ -241,7 +241,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class Foo:
         name: str
         age: typing.List[int]
@@ -268,7 +268,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass(init = False)
+      @dataclass(init = False, match_args = False)
       class Foo:
         def foo(self) -> None:
           pass
@@ -287,7 +287,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass(repr = False)
+      @dataclass(repr = False, match_args = False)
       class Foo:
         def foo(self) -> None:
           pass
@@ -306,7 +306,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass(eq = False)
+      @dataclass(eq = False, match_args = False)
       class Foo:
         def foo(self) -> None:
           pass
@@ -325,7 +325,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass(order = True)
+      @dataclass(order = True, match_args = False)
       class Foo:
         def foo(self) -> None:
           pass
@@ -354,7 +354,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass(eq = False, order = True)
+      @dataclass(eq = False, order = True, match_args = False)
       class Foo:
         def foo(self) -> None:
           pass
@@ -381,7 +381,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass(frozen = True)
+      @dataclass(frozen = True, match_args = False)
       class Foo:
         def foo(self) -> None:
           pass
@@ -404,11 +404,11 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class C(Base):
         z: int = 10
         x: int = 15
-      @dataclass
+      @dataclass(match_args=False)
       class Base:
         x: typing.Any = 15.0
         y: int = 0
@@ -442,11 +442,11 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class C(Base):
         z: int = 10
         x: int = 15
-      @dataclass
+      @dataclass(match_args=False)
       class Base:
         x: typing.Any = 15.0
         y: int = 0
@@ -480,11 +480,11 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class C(Base):
         z: int = 10
         x = 15
-      @dataclass
+      @dataclass(match_args=False)
       class Base:
         x: typing.Any = 15.0
         y: int = 0
@@ -516,11 +516,11 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class C(Base):
         z: int = 10
         x: int
-      @dataclass
+      @dataclass(match_args=False)
       class Base:
         x: str = "a"
         y: int = 0
@@ -552,14 +552,14 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class C(B):
         z: int = 10
         x: int = 15
       class B(Base):
         z: str = "a"
         y: int = 20
-      @dataclass
+      @dataclass(match_args=False)
       class Base:
         x: typing.Any = 15.0
         y: int = 0
@@ -596,13 +596,13 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class C1(B1, A1):
         z: int = 10
-      @dataclass
+      @dataclass(match_args=False)
       class B1:
         y: int = 5
-      @dataclass
+      @dataclass(match_args=False)
       class A1:
         x: int = 15
     |}
@@ -643,7 +643,7 @@ let test_transform_environment context =
       from dataclasses import dataclass
       class NotDataClass:
         x: int = 15
-      @dataclass
+      @dataclass(match_args=False)
       class DataClass(NotDataClass):
         y: int = 5
     |}
@@ -666,7 +666,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class A:
         x: int
         init_variable: dataclasses.InitVar[str]
@@ -690,7 +690,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class A:
         x: int = dataclasses.field(init=False)
     |}
@@ -710,7 +710,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class A:
         x: int = dataclasses.field(init=True)
     |}
@@ -730,7 +730,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class A:
         x: int = dataclasses.field(init=True, default=1)
     |}
@@ -750,7 +750,7 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class A:
         x: int = dataclasses.field(init=True, default_factory=foo)
     |}
@@ -771,7 +771,7 @@ let test_transform_environment context =
     (* NOTE: Ideally we'd like to warn about this somehow *)
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class A:
         x: int = dataclasses.field(init=False, default=1)
     |}
@@ -791,10 +791,10 @@ let test_transform_environment context =
   assert_equivalent_attributes
     {|
       from dataclasses import dataclass
-      @dataclass
+      @dataclass(match_args=False)
       class A:
         x: int = dataclasses.field(init=False)
-      @dataclass
+      @dataclass(match_args=False)
       class B:
         y: str = "abc"
     |}
