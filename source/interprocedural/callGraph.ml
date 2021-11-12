@@ -12,89 +12,97 @@ open Statement
 open Expression
 open Pyre
 
-type regular_targets = {
-  implicit_self: bool;
-  collapse_tito: bool;
-  targets: Target.t list;
-}
-[@@deriving eq, show { with_path = false }]
+module RegularTargets = struct
+  type t = {
+    implicit_self: bool;
+    collapse_tito: bool;
+    targets: Target.t list;
+  }
+  [@@deriving eq, show { with_path = false }]
+end
 
-type raw_callees =
-  | ConstructorTargets of {
-      new_targets: Target.t list;
-      init_targets: Target.t list;
-    }
-  | RegularTargets of regular_targets
-  | HigherOrderTargets of {
-      higher_order_function: regular_targets;
-      callable_argument: int * regular_targets;
-    }
-[@@deriving eq, show { with_path = false }]
+module RawCallees = struct
+  type t =
+    | ConstructorTargets of {
+        new_targets: Target.t list;
+        init_targets: Target.t list;
+      }
+    | RegularTargets of RegularTargets.t
+    | HigherOrderTargets of {
+        higher_order_function: RegularTargets.t;
+        callable_argument: int * RegularTargets.t;
+      }
+  [@@deriving eq, show { with_path = false }]
 
-type unprocessed_callees =
-  | Named of {
-      callee_name: string;
-      callees: raw_callees;
-    }
-  | Synthetic of raw_callees String.Map.Tree.t
-
-type callees =
-  | Callees of raw_callees
-  | SyntheticCallees of raw_callees String.Map.Tree.t
-[@@deriving eq]
-
-let pp_raw_callees_option formatter = function
-  | None -> Format.fprintf formatter "None"
-  | Some callees -> pp_raw_callees formatter callees
+  let pp_option formatter = function
+    | None -> Format.fprintf formatter "None"
+    | Some callees -> pp formatter callees
 
 
-let pp_callees formatter = function
-  | Callees callees -> Format.fprintf formatter "%s" (show_raw_callees callees)
-  | SyntheticCallees map ->
-      String.Map.Tree.to_alist map
-      |> List.map ~f:(fun (key, value) -> Format.sprintf "%s: %s" key (show_raw_callees value))
-      |> String.concat ~sep:", "
-      |> Format.fprintf formatter "%s"
+  let merge left right =
+    match left, right with
+    | ( Some
+          (RegularTargets
+            {
+              implicit_self = left_implicit_self;
+              targets = left_targets;
+              collapse_tito = left_collapse_tito;
+            }),
+        Some (RegularTargets { implicit_self = right_implicit_self; targets = right_targets; _ }) )
+      when Bool.equal left_implicit_self right_implicit_self ->
+        Some
+          (RegularTargets
+             {
+               implicit_self = left_implicit_self;
+               targets = List.rev_append left_targets right_targets;
+               collapse_tito = left_collapse_tito;
+             })
+    | ( Some
+          (ConstructorTargets { new_targets = left_new_targets; init_targets = left_init_targets }),
+        Some
+          (ConstructorTargets
+            { new_targets = right_new_targets; init_targets = right_init_targets }) ) ->
+        Some
+          (ConstructorTargets
+             {
+               new_targets = List.rev_append left_new_targets right_new_targets;
+               init_targets = List.rev_append left_init_targets right_init_targets;
+             })
+    | Some left, None -> Some left
+    | None, Some right -> Some right
+    | None, None -> None
+    | _ ->
+        (* TODO(T77637504): We should probably error here. *)
+        Log.warning "Failed to merge some call graph targets.";
+        None
+end
+
+module Callees = struct
+  type t =
+    | Callees of RawCallees.t
+    | SyntheticCallees of RawCallees.t String.Map.Tree.t
+  [@@deriving eq]
+
+  let pp formatter = function
+    | Callees callees -> Format.fprintf formatter "%a" RawCallees.pp callees
+    | SyntheticCallees map ->
+        String.Map.Tree.to_alist map
+        |> List.map ~f:(fun (key, value) -> Format.asprintf "%s: %a" key RawCallees.pp value)
+        |> String.concat ~sep:", "
+        |> Format.fprintf formatter "%s"
 
 
-let show_callees callees = Format.asprintf "%a" pp_callees callees
+  let show callees = Format.asprintf "%a" pp callees
+end
 
-let merge_targets left right =
-  match left, right with
-  | ( Some
-        (RegularTargets
-          {
-            implicit_self = left_implicit_self;
-            targets = left_targets;
-            collapse_tito = left_collapse_tito;
-          }),
-      Some (RegularTargets { implicit_self = right_implicit_self; targets = right_targets; _ }) )
-    when Bool.equal left_implicit_self right_implicit_self ->
-      Some
-        (RegularTargets
-           {
-             implicit_self = left_implicit_self;
-             targets = List.rev_append left_targets right_targets;
-             collapse_tito = left_collapse_tito;
-           })
-  | ( Some (ConstructorTargets { new_targets = left_new_targets; init_targets = left_init_targets }),
-      Some
-        (ConstructorTargets { new_targets = right_new_targets; init_targets = right_init_targets })
-    ) ->
-      Some
-        (ConstructorTargets
-           {
-             new_targets = List.rev_append left_new_targets right_new_targets;
-             init_targets = List.rev_append left_init_targets right_init_targets;
-           })
-  | Some left, None -> Some left
-  | None, Some right -> Some right
-  | None, None -> None
-  | _ ->
-      (* TODO(T77637504): We should probably error here. *)
-      Log.warning "Failed to merge some call graph targets.";
-      None
-
+module UnprocessedCallees = struct
+  type t =
+    | Named of {
+        callee_name: string;
+        callees: RawCallees.t;
+      }
+    | Synthetic of RawCallees.t String.Map.Tree.t
+end
 
 let defining_attribute ~resolution parent_type attribute =
   let global_resolution = Resolution.global_resolution resolution in
@@ -307,14 +315,16 @@ let rec resolve_callees_from_type
             | Method { is_direct_call = true } -> [Target.create_method name]
             | _ -> compute_indirect_targets ~resolution ~receiver_type name
           in
-          Some (RegularTargets { implicit_self = true; targets; collapse_tito })
+          Some (RawCallees.RegularTargets { implicit_self = true; targets; collapse_tito })
       | None ->
           let target =
             match callee_kind with
             | Method _ -> Target.create_method name
             | _ -> Target.create_function name
           in
-          Some (RegularTargets { implicit_self = false; targets = [target]; collapse_tito }))
+          Some
+            (RawCallees.RegularTargets { implicit_self = false; targets = [target]; collapse_tito })
+      )
   | Type.Callable { kind = Anonymous; _ } -> None
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
@@ -330,7 +340,7 @@ let rec resolve_callees_from_type
             ~callee_kind
             ~collapse_tito
             new_target
-          |> merge_targets combined_targets)
+          |> RawCallees.merge combined_targets)
   | Type.Parametric { name = "type"; _ } -> resolve_constructor_callee ~resolution callable_type
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
@@ -349,7 +359,7 @@ let rec resolve_callees_from_type
           Type.primitive_name callable_type
           >>= fun primitive_callable_name ->
           Some
-            (RegularTargets
+            (RawCallees.RegularTargets
                {
                  implicit_self = true;
                  targets =
@@ -545,7 +555,7 @@ let resolve_recognized_callees ~resolution ~callee ~callee_type =
       >>| Reference.show
       >>| fun name ->
       let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
-      RegularTargets { implicit_self = false; targets = [`Function name]; collapse_tito }
+      RawCallees.RegularTargets { implicit_self = false; targets = [`Function name]; collapse_tito }
   | _ -> None
 
 
@@ -562,7 +572,7 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
             { export = ResolvedReference.Exported (Module.Export.Name.Define _); remaining = []; _ })
         ->
           Some
-            (RegularTargets
+            (RawCallees.RegularTargets
                { implicit_self = false; targets = [`Function (Reference.show name)]; collapse_tito })
       | Some
           (ResolvedReference.ModuleAttribute
@@ -582,7 +592,7 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
           >>= function
           | { kind = Method { static; _ }; _ } ->
               Some
-                (RegularTargets
+                (RawCallees.RegularTargets
                    {
                      implicit_self = not static;
                      targets = [`Method { Target.class_name; method_name = attribute }];
@@ -603,7 +613,7 @@ let resolve_callees_ignoring_decorators ~resolution ~collapse_tito callee =
           >>= function
           | { kind = Method _; _ } ->
               Some
-                (RegularTargets
+                (RawCallees.RegularTargets
                    {
                      implicit_self = true;
                      targets = [`Method { Target.class_name; method_name = attribute }];
@@ -639,7 +649,7 @@ let resolve_callees ~resolution ~call =
   let regular_callees = resolve_regular_callees ~resolution ~callee in
   match higher_order_function_argument, regular_callees with
   | Some callable_argument, Some (RegularTargets higher_order_function) ->
-      Some (HigherOrderTargets { higher_order_function; callable_argument })
+      Some (RawCallees.HigherOrderTargets { higher_order_function; callable_argument })
   | _ -> regular_callees
 
 
@@ -688,7 +698,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
           targets
       in
       let targets = List.concat_map defining_parents ~f:target_of_parent in
-      Some (RegularTargets { implicit_self = true; targets; collapse_tito = true })
+      Some (RawCallees.RegularTargets { implicit_self = true; targets; collapse_tito = true })
 
 
 let call_name { Call.callee; _ } =
@@ -711,7 +721,7 @@ module DefineCallGraph (Context : sig
 
   val parent : Reference.t option
 
-  val callees_at_location : unprocessed_callees Location.Table.t
+  val callees_at_location : UnprocessedCallees.t Location.Table.t
 end) =
 struct
   type assignment_target = { location: Location.t }
@@ -729,13 +739,14 @@ struct
         Option.iter targets ~f:(fun data ->
             let data =
               match Location.Table.find Context.callees_at_location location with
-              | Some (Named { callee_name = existing_callee_name; callees }) ->
-                  Synthetic
+              | Some (UnprocessedCallees.Named { callee_name = existing_callee_name; callees }) ->
+                  UnprocessedCallees.Synthetic
                     (String.Map.Tree.of_alist_reduce
                        ~f:(fun existing _ -> existing)
                        [existing_callee_name, callees; callee_name, data])
-              | Some (Synthetic map) -> Synthetic (String.Map.Tree.set map ~key:callee_name ~data)
-              | None -> Named { callee_name; callees = data }
+              | Some (UnprocessedCallees.Synthetic map) ->
+                  UnprocessedCallees.Synthetic (String.Map.Tree.set map ~key:callee_name ~data)
+              | None -> UnprocessedCallees.Named { callee_name; callees = data }
             in
             Location.Table.set Context.callees_at_location ~key:location ~data)
       in
@@ -867,19 +878,21 @@ let call_graph_of_define
   in
   let deduplicate callees =
     let deduplicate_targets targets = List.dedup_and_sort ~compare:Target.compare targets in
-    let deduplicate_regular_targets { targets; implicit_self; collapse_tito } =
-      { targets = deduplicate_targets targets; implicit_self; collapse_tito }
+    let deduplicate_regular_targets { RegularTargets.targets; implicit_self; collapse_tito } =
+      { RegularTargets.targets = deduplicate_targets targets; implicit_self; collapse_tito }
     in
     match callees with
-    | RegularTargets regular_targets -> RegularTargets (deduplicate_regular_targets regular_targets)
-    | ConstructorTargets { new_targets; init_targets } ->
-        ConstructorTargets
+    | RawCallees.RegularTargets regular_targets ->
+        RawCallees.RegularTargets (deduplicate_regular_targets regular_targets)
+    | RawCallees.ConstructorTargets { new_targets; init_targets } ->
+        RawCallees.ConstructorTargets
           {
             new_targets = deduplicate_targets new_targets;
             init_targets = deduplicate_targets init_targets;
           }
-    | HigherOrderTargets { higher_order_function; callable_argument = index, callable_argument } ->
-        HigherOrderTargets
+    | RawCallees.HigherOrderTargets
+        { higher_order_function; callable_argument = index, callable_argument } ->
+        RawCallees.HigherOrderTargets
           {
             higher_order_function = deduplicate_regular_targets higher_order_function;
             callable_argument = index, deduplicate_regular_targets callable_argument;
@@ -890,8 +903,9 @@ let call_graph_of_define
   Location.Table.to_alist callees_at_location
   |> List.map ~f:(fun (key, value) ->
          match value with
-         | Synthetic map -> key, SyntheticCallees (Core.String.Map.Tree.map ~f:deduplicate map)
-         | Named { callees; _ } -> key, Callees (deduplicate callees))
+         | UnprocessedCallees.Synthetic map ->
+             key, Callees.SyntheticCallees (Core.String.Map.Tree.map ~f:deduplicate map)
+         | UnprocessedCallees.Named { callees; _ } -> key, Callees.Callees (deduplicate callees))
   |> Location.Map.of_alist_exn
 
 
@@ -900,7 +914,7 @@ module SharedMemory = struct
     Memory.WithCache.Make
       (Target.CallableKey)
       (struct
-        type t = callees Location.Map.Tree.t
+        type t = Callees.t Location.Map.Tree.t
 
         let prefix = Prefix.make ()
 
@@ -940,10 +954,10 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
         in
         let callees found_callees =
           let targets_of_callees = function
-            | RegularTargets { targets; _ } -> targets
-            | ConstructorTargets { new_targets; init_targets } ->
+            | RawCallees.RegularTargets { targets; _ } -> targets
+            | RawCallees.ConstructorTargets { new_targets; init_targets } ->
                 List.rev_append new_targets init_targets
-            | HigherOrderTargets
+            | RawCallees.HigherOrderTargets
                 {
                   higher_order_function = { targets = higher_order_targets; _ };
                   callable_argument = _, { targets = argument_targets; _ };
@@ -951,8 +965,8 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
                 List.rev_append higher_order_targets argument_targets
           in
           match found_callees with
-          | Callees callees -> targets_of_callees callees
-          | SyntheticCallees map ->
+          | Callees.Callees callees -> targets_of_callees callees
+          | Callees.SyntheticCallees map ->
               String.Map.Tree.data map |> List.concat_map ~f:targets_of_callees
         in
         Location.Map.data call_graph_of_define

@@ -24,7 +24,7 @@ module type FUNCTION_CONTEXT = sig
 
   val environment : TypeEnvironment.ReadOnly.t
 
-  val call_graph_of_define : Interprocedural.CallGraph.callees Location.Map.t
+  val call_graph_of_define : Interprocedural.CallGraph.Callees.t Location.Map.t
 
   val triggered_sinks : ForwardAnalysis.triggered_sinks
 end
@@ -66,8 +66,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let get_callees ~location ~call =
     let callees =
       match Map.find FunctionContext.call_graph_of_define location with
-      | Some (Interprocedural.CallGraph.Callees callees) -> Some callees
-      | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
+      | Some (Interprocedural.CallGraph.Callees.Callees callees) -> Some callees
+      | Some (Interprocedural.CallGraph.Callees.SyntheticCallees name_to_callees) ->
           String.Map.Tree.find name_to_callees (Interprocedural.CallGraph.call_name call)
       | None -> None
     in
@@ -75,15 +75,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       "Resolved callees for call `%a`:@,%a"
       Expression.pp
       (Node.create_with_default_location (Expression.Call call))
-      Interprocedural.CallGraph.pp_raw_callees_option
+      Interprocedural.CallGraph.RawCallees.pp_option
       callees;
     callees
 
 
   let get_property_callees ~location ~attribute =
     match Map.find FunctionContext.call_graph_of_define location with
-    | Some (Interprocedural.CallGraph.Callees callees) -> Some callees
-    | Some (Interprocedural.CallGraph.SyntheticCallees name_to_callees) ->
+    | Some (Interprocedural.CallGraph.Callees.Callees callees) -> Some callees
+    | Some (Interprocedural.CallGraph.Callees.SyntheticCallees name_to_callees) ->
         String.Map.Tree.find name_to_callees attribute
     | None -> None
 
@@ -744,7 +744,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | None ->
         (* Obscure. *)
         apply_call_targets ~callee ~resolution ~call_location:location ~arguments state taint []
-    | Some { Interprocedural.CallGraph.implicit_self; targets; _ } ->
+    | Some { Interprocedural.CallGraph.RegularTargets.implicit_self; targets; _ } ->
         let arguments =
           if implicit_self then
             let receiver =
@@ -825,7 +825,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let { Call.callee; arguments } =
         Interprocedural.CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
       in
-      let { Interprocedural.CallGraph.implicit_self; targets; _ } = regular_target in
+      let { Interprocedural.CallGraph.RegularTargets.implicit_self; targets; _ } = regular_target in
       let arguments =
         if implicit_self then
           let receiver =

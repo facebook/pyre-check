@@ -10,36 +10,42 @@ open Analysis
 open Ast
 open Expression
 
-type regular_targets = {
-  implicit_self: bool;
-  collapse_tito: bool;
-  targets: Target.t list;
-}
-[@@deriving eq, show]
+module RegularTargets : sig
+  type t = {
+    implicit_self: bool;
+    collapse_tito: bool;
+    targets: Target.t list;
+  }
+  [@@deriving eq, show]
+end
 
-type raw_callees =
-  | ConstructorTargets of {
-      new_targets: Target.t list;
-      init_targets: Target.t list;
-    }
-  | RegularTargets of regular_targets
-  | HigherOrderTargets of {
-      higher_order_function: regular_targets;
-      callable_argument: int * regular_targets;
-    }
-[@@deriving eq, show]
+module RawCallees : sig
+  type t =
+    | ConstructorTargets of {
+        new_targets: Target.t list;
+        init_targets: Target.t list;
+      }
+    | RegularTargets of RegularTargets.t
+    | HigherOrderTargets of {
+        higher_order_function: RegularTargets.t;
+        callable_argument: int * RegularTargets.t;
+      }
+  [@@deriving eq, show]
 
-type callees =
-  | Callees of raw_callees
-  | SyntheticCallees of raw_callees String.Map.Tree.t
-[@@deriving eq, show]
+  val pp_option : Format.formatter -> t option -> unit
+end
 
-val pp_raw_callees_option : Format.formatter -> raw_callees option -> unit
+module Callees : sig
+  type t =
+    | Callees of RawCallees.t
+    | SyntheticCallees of RawCallees.t String.Map.Tree.t
+  [@@deriving eq, show]
+end
 
 val call_graph_of_define
   :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   define:Ast.Statement.Define.t ->
-  callees Ast.Location.Map.t
+  Callees.t Ast.Location.Map.t
 
 val call_name : Call.t -> string
 
@@ -48,7 +54,7 @@ val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> T
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 
 module SharedMemory : sig
-  val add : callable:Target.callable_t -> callees:callees Location.Map.t -> unit
+  val add : callable:Target.callable_t -> callees:Callees.t Location.Map.t -> unit
 
   (* Attempts to read the call graph for the given callable from shared memory. If it doesn't exist,
      computes the call graph and writes to shard memory. *)
@@ -56,7 +62,7 @@ module SharedMemory : sig
     :  callable:Target.callable_t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     define:Ast.Statement.Define.t ->
-    callees Ast.Location.Map.t
+    Callees.t Ast.Location.Map.t
 
   val remove : Target.callable_t list -> unit
 end

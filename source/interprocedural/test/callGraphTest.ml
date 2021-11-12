@@ -56,12 +56,12 @@ let test_call_graph_of_define context =
     let overrides = DependencyGraph.create_overrides ~environment ~source:test_source in
     let _ = DependencyGraphSharedMemory.record_overrides overrides in
     assert_equal
-      ~cmp:(Location.Map.equal CallGraph.equal_callees)
+      ~cmp:(Location.Map.equal CallGraph.Callees.equal)
       ~printer:(fun map ->
         map
         |> Location.Map.to_alist
         |> List.map ~f:(fun (key, value) ->
-               Format.sprintf "%s: %s" (Location.show key) (CallGraph.show_callees value))
+               Format.asprintf "%a: %a" Location.pp key CallGraph.Callees.pp value)
         |> String.concat ~sep:"\n")
       expected
       (CallGraph.call_graph_of_define ~environment ~define);
@@ -79,8 +79,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "3:4-3:9",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                { collapse_tito = true; implicit_self = false; targets = [`Function "test.bar"] }) );
       ];
   assert_call_graph_of_define
@@ -97,8 +97,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "3:4-3:9",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -121,26 +121,26 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "7:2-7:5",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = false;
                  targets = [`Function "test.bar"; `Function "test.baz"];
                }) );
         ( "3:5-3:10",
-          CallGraph.SyntheticCallees
+          CallGraph.Callees.SyntheticCallees
             (String.Map.Tree.of_alist_exn
                [
                  ( "__le__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
                        collapse_tito = true;
                        implicit_self = true;
                        targets = [`Method { Target.class_name = "int"; method_name = "__le__" }];
                      } );
                  ( "__gt__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
                        collapse_tito = true;
                        implicit_self = true;
@@ -163,18 +163,18 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "3:5-3:10",
-          CallGraph.SyntheticCallees
+          CallGraph.Callees.SyntheticCallees
             (String.Map.Tree.of_alist_exn
                [
                  ( "__le__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
                        collapse_tito = true;
                        implicit_self = true;
                        targets = [`Method { Target.class_name = "int"; method_name = "__le__" }];
                      } );
                  ( "__gt__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
                        collapse_tito = true;
                        implicit_self = true;
@@ -182,8 +182,8 @@ let test_call_graph_of_define context =
                      } );
                ]) );
         ( "7:2-7:5",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                { collapse_tito = true; implicit_self = false; targets = [`Function "test.bar"] }) );
       ];
   assert_call_graph_of_define
@@ -202,8 +202,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -231,8 +231,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -259,8 +259,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -283,8 +283,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:3-5:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -304,8 +304,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "6:3-6:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = false;
@@ -325,8 +325,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "6:3-6:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -345,8 +345,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:5",
-          CallGraph.Callees
-            (CallGraph.ConstructorTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.ConstructorTargets
                {
                  init_targets = [`Method { Target.class_name = "test.C"; method_name = "__init__" }];
                  new_targets = [`Method { Target.class_name = "object"; method_name = "__new__" }];
@@ -364,8 +364,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "5:2-5:5",
-          CallGraph.Callees
-            (CallGraph.ConstructorTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.ConstructorTargets
                {
                  init_targets = [`Method { Target.class_name = "object"; method_name = "__init__" }];
                  new_targets = [`Method { Target.class_name = "test.C"; method_name = "__new__" }];
@@ -386,16 +386,16 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "8:2-8:5",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
                }) );
         ( "8:8-8:11",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -415,8 +415,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "6:2-6:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = false;
@@ -436,8 +436,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "6:2-6:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -453,8 +453,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "3:2-3:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -474,8 +474,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "6:2-6:9",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -496,8 +496,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "7:2-7:15",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                { collapse_tito = true; implicit_self = false; targets = [`Function "test.f"] }) );
       ];
   assert_call_graph_of_define
@@ -516,8 +516,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "9:2-9:35",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = false;
@@ -541,8 +541,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "10:2-10:24",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -562,8 +562,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "2:10-2:15",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                { collapse_tito = true; implicit_self = false; targets = [`Function "test.bar"] }) );
       ];
   assert_call_graph_of_define
@@ -584,15 +584,15 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "11:4-11:11",
-          CallGraph.Callees
-            (CallGraph.ConstructorTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.ConstructorTargets
                {
                  new_targets = [`Method { Target.class_name = "object"; method_name = "__new__" }];
                  init_targets = [`Method { Target.class_name = "super"; method_name = "__init__" }];
                }) );
         ( "11:4-11:16",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -617,8 +617,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "11:2-11:11",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = false;
@@ -645,8 +645,8 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "13:2-13:11",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
                  collapse_tito = true;
                  implicit_self = true;
@@ -669,19 +669,15 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "9:2-9:13",
-          CallGraph.Callees
-            (CallGraph.HigherOrderTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.HigherOrderTargets
                {
                  higher_order_function =
-                   {
-                     CallGraph.collapse_tito = true;
-                     implicit_self = false;
-                     targets = [`Function "test.hof"];
-                   };
+                   { collapse_tito = true; implicit_self = false; targets = [`Function "test.hof"] };
                  callable_argument =
                    ( 0,
                      {
-                       CallGraph.collapse_tito = true;
+                       collapse_tito = true;
                        implicit_self = false;
                        targets = [`Function "test.bar"];
                      } );
@@ -711,27 +707,27 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "16:14-16:23",
-          CallGraph.Callees
-            (CallGraph.ConstructorTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.ConstructorTargets
                {
                  new_targets = [`Method { Target.class_name = "object"; method_name = "__new__" }];
                  init_targets =
                    [`Method { Target.class_name = "test.Builder"; method_name = "__init__" }];
                }) );
         ( "17:4-17:33",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = false;
                  targets =
                    [`Method { Target.class_name = "test.Builder"; method_name = "set_not_saved" }];
                }) );
         ( "17:4-17:52",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = false;
                  targets =
                    [`Method { Target.class_name = "test.Builder"; method_name = "set_saved" }];
@@ -752,13 +748,9 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "8:2-8:5",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
-               {
-                 CallGraph.implicit_self = false;
-                 collapse_tito = true;
-                 targets = [`Function "test.f"];
-               }) );
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito = true; targets = [`Function "test.f"] }) );
       ];
 
   assert_call_graph_of_define
@@ -777,10 +769,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "9:2-9:8",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "m" }];
                }) );
@@ -800,17 +792,17 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "7:19-7:22",
-          CallGraph.Callees
-            (CallGraph.ConstructorTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.ConstructorTargets
                {
                  new_targets = [`Method { Target.class_name = "object"; method_name = "__new__" }];
                  init_targets = [`Method { Target.class_name = "object"; method_name = "__init__" }];
                }) );
         ( "8:14-8:21",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "run" }];
                }) );
@@ -848,13 +840,13 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "4:7-4:14",
-          CallGraph.SyntheticCallees
+          CallGraph.Callees.SyntheticCallees
             (String.Map.Tree.of_alist_exn
                [
                  ( "__enter__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
-                       CallGraph.implicit_self = true;
+                       implicit_self = true;
                        collapse_tito = true;
                        targets =
                          [
@@ -866,9 +858,9 @@ let test_call_graph_of_define context =
                          ];
                      } );
                  ( "to_cm",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
-                       CallGraph.implicit_self = false;
+                       implicit_self = false;
                        collapse_tito = true;
                        targets = [`Function "test.to_cm"];
                      } );
@@ -893,18 +885,18 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "11:2-11:5",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "p" }];
                }) );
         ( "11:2-11:7",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
                }) );
@@ -925,18 +917,18 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "7:2-7:7",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "f" }];
                }) );
         ( "8:2-8:8",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = false;
+                 implicit_self = false;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "f" }];
                }) );
@@ -965,10 +957,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "16:6-16:16",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets =
                    [
@@ -977,10 +969,10 @@ let test_call_graph_of_define context =
                    ];
                }) );
         ( "17:6-17:16",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "foo" }];
                }) );
@@ -1007,10 +999,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "15:6-15:16",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets =
                    [
@@ -1037,18 +1029,18 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "11:2-11:6",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "dict"; method_name = "__getitem__" }];
                }) );
         ( "11:2-11:12",
-          Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.C"; method_name = "foo" }];
                }) );
@@ -1066,10 +1058,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "6:2-6:10",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = false;
+                 implicit_self = false;
                  collapse_tito = true;
                  targets = [`Function "$local_test?outer$inner"];
                }) );
@@ -1088,10 +1080,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "7:4-7:12",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = false;
+                 implicit_self = false;
                  collapse_tito = true;
                  targets = [`Function "$local_test?Foo?outer$inner"];
                }) );
@@ -1116,20 +1108,20 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "10:6-10:7",
-          CallGraph.SyntheticCallees
+          CallGraph.Callees.SyntheticCallees
             (String.Map.Tree.of_alist_exn
                [
                  ( "__iter__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
-                       CallGraph.implicit_self = true;
+                       implicit_self = true;
                        collapse_tito = true;
                        targets = [`Method { Target.class_name = "list"; method_name = "__iter__" }];
                      } );
                  ( "__next__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
-                       CallGraph.implicit_self = true;
+                       implicit_self = true;
                        collapse_tito = true;
                        targets =
                          [
@@ -1139,13 +1131,9 @@ let test_call_graph_of_define context =
                      } );
                ]) );
         ( "11:4-11:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
-               {
-                 CallGraph.implicit_self = false;
-                 collapse_tito = true;
-                 targets = [`Function "test.baz"];
-               }) );
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito = true; targets = [`Function "test.baz"] }) );
       ];
   ();
   (* TODO(T105570363): Properly merge constructor and regular targets. *)
@@ -1166,20 +1154,20 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "9:6-9:7",
-          CallGraph.SyntheticCallees
+          CallGraph.Callees.SyntheticCallees
             (String.Map.Tree.of_alist_exn
                [
                  ( "__iter__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
-                       CallGraph.implicit_self = true;
+                       implicit_self = true;
                        collapse_tito = true;
                        targets = [`Method { Target.class_name = "list"; method_name = "__iter__" }];
                      } );
                  ( "__next__",
-                   CallGraph.RegularTargets
+                   CallGraph.RawCallees.RegularTargets
                      {
-                       CallGraph.implicit_self = true;
+                       implicit_self = true;
                        collapse_tito = true;
                        targets =
                          [
@@ -1189,13 +1177,9 @@ let test_call_graph_of_define context =
                      } );
                ]) );
         ( "10:4-10:7",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
-               {
-                 CallGraph.implicit_self = false;
-                 collapse_tito = true;
-                 targets = [`Function "test.bar"];
-               }) );
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito = true; targets = [`Function "test.bar"] }) );
       ];
   ();
   (* Well-typed decorators are 'safely' ignored (when not inlined). *)
@@ -1226,13 +1210,9 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "20:2-20:8",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
-               {
-                 CallGraph.implicit_self = false;
-                 collapse_tito = true;
-                 targets = [`Function "test.foo"];
-               }) );
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito = true; targets = [`Function "test.foo"] }) );
       ];
   assert_call_graph_of_define
     ~source:
@@ -1262,10 +1242,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "21:2-21:12",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.Foo"; method_name = "bar" }];
                }) );
@@ -1295,13 +1275,9 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "17:2-17:8",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
-               {
-                 CallGraph.implicit_self = false;
-                 collapse_tito = true;
-                 targets = [`Function "test.foo"];
-               }) );
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito = true; targets = [`Function "test.foo"] }) );
       ];
   assert_call_graph_of_define
     ~source:
@@ -1328,10 +1304,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "18:2-18:12",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.Foo"; method_name = "bar" }];
                }) );
@@ -1354,13 +1330,9 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "10:2-10:8",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
-               {
-                 CallGraph.implicit_self = false;
-                 collapse_tito = true;
-                 targets = [`Function "test.foo"];
-               }) );
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito = true; targets = [`Function "test.foo"] }) );
       ];
   assert_call_graph_of_define
     ~source:
@@ -1380,10 +1352,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "11:2-11:12",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.Foo"; method_name = "bar" }];
                }) );
@@ -1418,10 +1390,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "22:2-22:12",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.Foo"; method_name = "bar" }];
                }) );
@@ -1455,10 +1427,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "22:2-22:12",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = false;
+                 implicit_self = false;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.Foo"; method_name = "bar" }];
                }) );
@@ -1493,10 +1465,10 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "23:4-23:14",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
                {
-                 CallGraph.implicit_self = true;
+                 implicit_self = true;
                  collapse_tito = true;
                  targets = [`Method { Target.class_name = "test.Foo"; method_name = "bar" }];
                }) );
@@ -1527,13 +1499,9 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "18:2-18:8",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
-               {
-                 CallGraph.implicit_self = false;
-                 collapse_tito = true;
-                 targets = [`Function "test.foo"];
-               }) );
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito = true; targets = [`Function "test.foo"] }) );
       ];
   (* Resolving __call__ via __getattr__ when a union including self type is involved. *)
   assert_call_graph_of_define
@@ -1553,13 +1521,9 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "10:6-10:24",
-          CallGraph.Callees
-            (CallGraph.RegularTargets
-               {
-                 CallGraph.implicit_self = false;
-                 collapse_tito = true;
-                 targets = [`Function "print"];
-               }) );
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.RegularTargets
+               { implicit_self = false; collapse_tito = true; targets = [`Function "print"] }) );
       ];
   (* Detecting a __call__ picked up via __getattr__ redirection *)
   assert_call_graph_of_define
@@ -1583,15 +1547,11 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "14:6-14:24",
-          CallGraph.Callees
-            (CallGraph.HigherOrderTargets
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.HigherOrderTargets
                {
                  higher_order_function =
-                   {
-                     CallGraph.implicit_self = false;
-                     collapse_tito = true;
-                     targets = [`Function "print"];
-                   };
+                   { implicit_self = false; collapse_tito = true; targets = [`Function "print"] };
                  callable_argument =
                    ( 0,
                      {
