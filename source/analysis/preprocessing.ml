@@ -869,9 +869,19 @@ module Qualify (Context : QualifyContext) = struct
     scope, { statement with Node.value }
 
 
-  and qualify_match_case ~scope case =
+  and qualify_match_case ~scope { Match.Case.pattern; guard; body } =
+    let body_scope, body = qualify_statements ~scope body in
+    ( body_scope,
+      {
+        Match.Case.pattern = qualify_pattern ~scope pattern;
+        guard = guard >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
+        body;
+      } )
+
+
+  and qualify_pattern ~scope:_ pattern =
     (* TODO(T102720335): Support match statement. *)
-    scope, case
+    pattern
 
 
   and qualify_target ?(in_comprehension = false) ~scope target =

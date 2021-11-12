@@ -1700,6 +1700,33 @@ let test_qualify_ast _ =
   assert_qualify_statement
     (+Statement.Match { subject = +Expression.Name (Name.Identifier "a"); cases = [] })
     (+Statement.Match { subject = +Expression.Name (Name.Identifier "b"); cases = [] });
+
+  let assert_qualify_match_case match_case expected =
+    let qualify = Qualify.qualify_match_case ~scope in
+    let _, processed = qualify match_case in
+    assert_equal
+      ~cmp:(fun left right -> Match.Case.location_insensitive_compare left right = 0)
+      ~printer:Match.Case.show
+      expected
+      processed;
+    (* Qualifying twice should not change the source. *)
+    assert_equal
+      ~cmp:(fun left right -> Match.Case.location_insensitive_compare left right = 0)
+      ~printer:Match.Case.show
+      expected
+      (qualify processed |> snd)
+  in
+  assert_qualify_match_case
+    {
+      Match.Case.guard = Some (+Expression.Name (Name.Identifier "a"));
+      pattern = +Match.Pattern.MatchWildcard;
+      body = [];
+    }
+    {
+      Match.Case.guard = Some (+Expression.Name (Name.Identifier "b"));
+      pattern = +Match.Pattern.MatchWildcard;
+      body = [];
+    };
   ()
 
 

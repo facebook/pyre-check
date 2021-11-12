@@ -332,6 +332,8 @@ and Match : sig
     [@@deriving compare, sexp, show, hash, to_yojson]
 
     and t = pattern Node.t [@@deriving compare, sexp, show, hash, to_yojson]
+
+    val location_insensitive_compare : t -> t -> int
   end
 
   module Case : sig
@@ -341,6 +343,8 @@ and Match : sig
       body: Statement.t list;
     }
     [@@deriving compare, sexp, show, hash, to_yojson]
+
+    val location_insensitive_compare : t -> t -> int
   end
 
   type t = {
