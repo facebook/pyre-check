@@ -229,9 +229,9 @@
               {
                 "features": [
                   { "has": "first-field" },
-                  { "first-field": "x" },
                   { "first-field": "y" },
                   { "first-field": "z" },
+                  { "first-field": "x" },
                   { "via-type": "str" },
                   { "via-type": "int" },
                   { "via-type": "typing.Annotated[str]" },
@@ -275,9 +275,9 @@
     ],
     "features": [
       { "has": "first-field" },
-      { "first-field": "x" },
       { "first-field": "y" },
       { "first-field": "z" },
+      { "first-field": "x" },
       { "via-type": "str" },
       { "via-type": "int" },
       { "via-type": "typing.Annotated[str]" },
@@ -517,9 +517,9 @@
               {
                 "features": [
                   { "has": "first-field" },
-                  { "first-field": "x" },
                   { "first-field": "y" },
                   { "first-field": "z" },
+                  { "first-field": "x" },
                   { "via-type": "typing.Annotated[float]" },
                   { "via-type": "typing.List[str]" },
                   { "always-via": "obscure" },
@@ -563,9 +563,9 @@
     ],
     "features": [
       { "has": "first-field" },
-      { "first-field": "x" },
       { "first-field": "y" },
       { "first-field": "z" },
+      { "first-field": "x" },
       { "via-type": "typing.Annotated[float]" },
       { "via-type": "typing.List[str]" },
       { "always-via": "obscure" },

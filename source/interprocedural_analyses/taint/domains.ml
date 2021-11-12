@@ -437,10 +437,16 @@ end = struct
           Frame.fold BreadcrumbSet.ElementAndUnder frame ~f:gather_breadcrumb_json ~init:[]
         in
         let first_index_breadcrumbs =
-          Frame.get Frame.Slots.FirstIndex frame |> FirstIndexSet.elements |> FirstIndex.to_json
+          Frame.get Frame.Slots.FirstIndex frame
+          |> FirstIndexSet.elements
+          |> List.map ~f:FirstIndexInterned.unintern
+          |> FirstIndex.to_json
         in
         let first_field_breadcrumbs =
-          Frame.get Frame.Slots.FirstField frame |> FirstFieldSet.elements |> FirstField.to_json
+          Frame.get Frame.Slots.FirstField frame
+          |> FirstFieldSet.elements
+          |> List.map ~f:FirstFieldInterned.unintern
+          |> FirstField.to_json
         in
         let breadcrumbs =
           List.concat [first_index_breadcrumbs; first_field_breadcrumbs; breadcrumbs]

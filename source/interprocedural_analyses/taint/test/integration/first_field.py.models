@@ -128,8 +128,8 @@
     ],
     "features": [
       { "has": "first-index" },
-      { "first-index": "a" },
       { "first-index": "b" },
+      { "first-index": "a" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]

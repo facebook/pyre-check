@@ -331,8 +331,14 @@ let to_json ~filename_lookup callable issue =
   let features =
     List.concat
       [
-        Features.FirstIndex.to_json (Features.FirstIndexSet.elements issue.features.first_indices);
-        Features.FirstField.to_json (Features.FirstFieldSet.elements issue.features.first_fields);
+        issue.features.first_indices
+        |> Features.FirstIndexSet.elements
+        |> List.map ~f:Features.FirstIndexInterned.unintern
+        |> Features.FirstIndex.to_json;
+        issue.features.first_fields
+        |> Features.FirstFieldSet.elements
+        |> List.map ~f:Features.FirstFieldInterned.unintern
+        |> Features.FirstField.to_json;
         features;
       ]
   in

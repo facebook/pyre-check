@@ -64,12 +64,15 @@ module FirstIndex = First (struct
   let kind = "index"
 end)
 
+module FirstIndexInterned = MakeInterner (FirstIndex)
+module FirstIndexSet = Abstract.SetDomain.Make (FirstIndexInterned)
+
 module FirstField = First (struct
   let kind = "field"
 end)
 
-module FirstIndexSet = Abstract.SetDomain.Make (FirstIndex)
-module FirstFieldSet = Abstract.SetDomain.Make (FirstField)
+module FirstFieldInterned = MakeInterner (FirstField)
+module FirstFieldSet = Abstract.SetDomain.Make (FirstFieldInterned)
 
 module TitoPosition = struct
   let name = "tito positions"

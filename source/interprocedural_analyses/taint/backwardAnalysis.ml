@@ -117,6 +117,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let add_first_index index indices =
     if Features.FirstIndexSet.is_bottom indices then
       Features.to_first_name index
+      >>| Features.FirstIndexInterned.intern
       >>| Features.FirstIndexSet.singleton
       |> Option.value ~default:Features.FirstIndexSet.bottom
     else
