@@ -427,7 +427,7 @@ class ServerState:
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
-    query_state: PyreQueryState = PyreQueryState()
+    query_state: PyreQueryState = dataclasses.field(default_factory=PyreQueryState)
 
 
 class PyreServer:
