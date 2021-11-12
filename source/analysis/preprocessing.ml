@@ -1062,7 +1062,7 @@ module Qualify (Context : QualifyContext) = struct
           Starred (Starred.Twice (qualify_expression ~qualify_strings ~scope expression))
       | FormatString substrings ->
           let qualify_substring = function
-            | (Substring.Literal _ | Substring.RawFormat _) as substring -> substring
+            | Substring.Literal _ as substring -> substring
             | Substring.Format expression ->
                 Substring.Format (qualify_expression ~qualify_strings ~scope expression)
           in
@@ -2942,9 +2942,7 @@ module AccessCollector = struct
         List.fold expressions ~init:collected ~f:from_expression
     | FormatString substrings ->
         let from_substring sofar = function
-          | Substring.Literal _
-          | Substring.RawFormat _ ->
-              sofar
+          | Substring.Literal _ -> sofar
           | Substring.Format expression -> from_expression sofar expression
         in
         List.fold substrings ~init:collected ~f:from_substring

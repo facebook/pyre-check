@@ -108,7 +108,7 @@ module Binding = struct
         of_expression sofar alternative
     | Expression.FormatString substrings ->
         let of_substring sofar = function
-          | Substring.(Literal _ | RawFormat _) -> sofar
+          | Substring.(Literal _) -> sofar
           | Substring.Format expression -> of_expression sofar expression
         in
         List.fold substrings ~init:sofar ~f:of_substring

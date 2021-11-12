@@ -94,9 +94,7 @@ module Make (Transformer : Transformer) = struct
     let transform_substring substring ~transform_expression =
       match substring with
       | Substring.Format expression -> Substring.Format (transform_expression expression)
-      | Substring.Literal _
-      | Substring.RawFormat _ ->
-          substring
+      | Substring.Literal _ -> substring
     in
     let rec transform_expression expression =
       let transform_children value =

@@ -1863,7 +1863,7 @@ let is_generator statements =
     | Starred Starred.(Once expression | Twice expression) -> is_expression_generator expression
     | FormatString substrings ->
         let is_substring_generator = function
-          | Substring.(Literal _ | RawFormat _) -> false
+          | Substring.(Literal _) -> false
           | Substring.Format expression -> is_expression_generator expression
         in
         List.exists substrings ~f:is_substring_generator

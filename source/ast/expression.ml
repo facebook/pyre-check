@@ -608,7 +608,6 @@ end
 and Substring : sig
   type t =
     | Literal of string Node.t
-    | RawFormat of string Node.t
     | Format of Expression.t
   [@@deriving compare, sexp, show, hash, to_yojson]
 
@@ -616,17 +615,14 @@ and Substring : sig
 end = struct
   type t =
     | Literal of string Node.t
-    | RawFormat of string Node.t
     | Format of Expression.t
   [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match left, right with
     | Literal left, Literal right -> Node.location_insensitive_compare String.compare left right
-    | RawFormat left, RawFormat right -> Node.location_insensitive_compare String.compare left right
     | Format left, Format right -> Expression.location_insensitive_compare left right
     | Literal _, _ -> -1
-    | RawFormat _, _ -> -1
     | Format _, _ -> 1
 end
 
@@ -1026,7 +1022,6 @@ end = struct
       | FormatString substrings ->
           let pp_substring formatter = function
             | Substring.Literal { Node.value; _ } -> Format.fprintf formatter "\"%s\"" value
-            | Substring.RawFormat { Node.value; _ } -> Format.fprintf formatter "f\"{%s}\"" value
             | Substring.Format expression ->
                 Format.fprintf formatter "f\"{%a}\"" pp_expression_t expression
           in

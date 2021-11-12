@@ -2293,9 +2293,7 @@ module State (Context : Context) = struct
         }
     | FormatString substrings ->
         let forward_substring ((resolution, errors) as sofar) = function
-          | Substring.Literal _
-          | Substring.RawFormat _ ->
-              sofar
+          | Substring.Literal _ -> sofar
           | Substring.Format expression ->
               forward_expression ~resolution ~expression
               |> fun { resolution; errors = new_errors; _ } ->

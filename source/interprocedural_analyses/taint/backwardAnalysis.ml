@@ -1294,9 +1294,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let value =
           List.map substrings ~f:(function
               | Substring.Format _ -> "{}"
-              | Substring.Literal { Node.value; _ }
-              | Substring.RawFormat { Node.value; _ } ->
-                  value)
+              | Substring.Literal { Node.value; _ } -> value)
           |> String.concat ~sep:""
         in
         List.fold
@@ -1316,9 +1314,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~f:(fun state substring ->
         match substring with
         | Substring.Format expression -> analyze_expression ~resolution ~taint ~state ~expression
-        | Substring.Literal _
-        | Substring.RawFormat _ ->
-            state)
+        | Substring.Literal _ -> state)
       ~init:state
 
 

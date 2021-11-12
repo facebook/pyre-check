@@ -216,7 +216,6 @@ let collect_nodes_as_strings source =
           let location =
             match substring with
             | Expression.Substring.Literal { Node.location; _ } -> location
-            | Expression.Substring.RawFormat { Node.location; _ } -> location
             | Expression.Substring.Format expression -> Node.location expression
           in
           Some (Expression.Substring.show substring, location)

@@ -433,9 +433,7 @@ module State (Context : Context) = struct
         List.fold substrings ~init:([], state) ~f:(fun (awaitables, state) substring ->
             match substring with
             | Substring.Format expression -> forward_expression ~resolution ~state ~expression
-            | Substring.Literal _
-            | Substring.RawFormat _ ->
-                awaitables, state)
+            | Substring.Literal _ -> awaitables, state)
     (* Base cases. *)
     | Constant _
     | Name _ ->

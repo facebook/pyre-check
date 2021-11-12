@@ -228,7 +228,6 @@ end
 and Substring : sig
   type t =
     | Literal of string Node.t
-    | RawFormat of string Node.t
     | Format of Expression.t
   [@@deriving compare, sexp, show, hash, to_yojson]
 

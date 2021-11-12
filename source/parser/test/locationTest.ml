@@ -2704,7 +2704,7 @@ let test_string_locations _ =
            (node
               ~start:(1, 0)
               ~stop:(1, 6)
-              (Expression.FormatString [Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 5) "foo")])));
+              (Expression.FormatString [Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo")])));
     ];
   assert_source_locations
     (* Format string expressions are further parsed in preprocessing. *)
@@ -2718,7 +2718,7 @@ let test_string_locations _ =
               ~start:(1, 0)
               ~stop:(1, 10)
               (Expression.FormatString
-                 [Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 9) "foo {x}")])));
+                 [Substring.Literal (node ~start:(1, 2) ~stop:(1, 9) "foo {x}")])));
     ];
   assert_source_locations
     "f'foo' f'bar'"
@@ -2732,8 +2732,8 @@ let test_string_locations _ =
               ~stop:(1, 13)
               (Expression.FormatString
                  [
-                   Substring.RawFormat (node ~start:(1, 2) ~stop:(1, 5) "foo");
-                   Substring.RawFormat (node ~start:(1, 9) ~stop:(1, 12) "bar");
+                   Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
+                   Substring.Literal (node ~start:(1, 9) ~stop:(1, 12) "bar");
                  ])));
     ];
   assert_source_locations

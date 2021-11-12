@@ -11,6 +11,20 @@ module AstExpression = Ast.Expression
 module Node = Ast.Node
 module Identifier = Ast.Identifier
 
+module Substring = struct
+  module Kind = struct
+    type t =
+      | Literal
+      | RawFormat
+  end
+
+  type t = {
+    kind: Kind.t;
+    location: Ast.Location.t;
+    value: string;
+  }
+end
+
 module rec BooleanOperator : sig
   type t = {
     left: Expression.t;
@@ -235,7 +249,7 @@ and Expression : sig
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
     | Generator of t Comprehension.t
-    | FormatString of AstExpression.Substring.t list
+    | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
@@ -262,7 +276,7 @@ end = struct
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
     | Generator of t Comprehension.t
-    | FormatString of AstExpression.Substring.t list
+    | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
@@ -322,7 +336,12 @@ let rec convert { Node.location; value } =
         { element = convert element; generators = List.map ~f:convert_generator generators }
       |> Node.create ~location
   | FormatString substrings ->
-      AstExpression.Expression.FormatString substrings |> Node.create ~location
+      let convert_substring { Substring.value; location; _ } =
+        (* FIXME: The legacy parser no longer has the capability of parsing expressions in fstrings. *)
+        AstExpression.Substring.Literal (Node.create ~location value)
+      in
+      AstExpression.Expression.FormatString (List.map substrings ~f:convert_substring)
+      |> Node.create ~location
   | Lambda { Lambda.parameters; body } ->
       AstExpression.Expression.Lambda
         { parameters = List.map ~f:convert_parameter parameters; body = convert body }

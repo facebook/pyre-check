@@ -3710,7 +3710,6 @@ let test_call _ =
 
 let test_string _ =
   let create_literal value = Substring.Literal (+value) in
-  let create_format value = Substring.RawFormat (+value) in
   assert_parsed_equal
     "'foo'"
     [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
@@ -3767,19 +3766,19 @@ let test_string _ =
     [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "foo")))];
   assert_parsed_equal
     "f'foo'"
-    [+Statement.Expression (+Expression.FormatString [create_format "foo"])];
+    [+Statement.Expression (+Expression.FormatString [create_literal "foo"])];
   assert_parsed_equal
     "F'foo'"
-    [+Statement.Expression (+Expression.FormatString [create_format "foo"])];
+    [+Statement.Expression (+Expression.FormatString [create_literal "foo"])];
   assert_parsed_equal
     "f'foo' f'bar'"
-    [+Statement.Expression (+Expression.FormatString [create_format "foo"; create_format "bar"])];
+    [+Statement.Expression (+Expression.FormatString [create_literal "foo"; create_literal "bar"])];
   assert_parsed_equal
     "f'foo' 'bar'"
-    [+Statement.Expression (+Expression.FormatString [create_format "foo"; create_literal "bar"])];
+    [+Statement.Expression (+Expression.FormatString [create_literal "foo"; create_literal "bar"])];
   assert_parsed_equal
     "'foo' f'bar'"
-    [+Statement.Expression (+Expression.FormatString [create_literal "foo"; create_format "bar"])];
+    [+Statement.Expression (+Expression.FormatString [create_literal "foo"; create_literal "bar"])];
   assert_parsed_equal
     "\"'\""
     [+Statement.Expression (+Expression.Constant (Constant.String (StringLiteral.create "'")))];

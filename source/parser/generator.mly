@@ -227,15 +227,17 @@
 
   let create_literal_substring (string_position, (start, stop), value) =
     string_position,
-    AstExpression.Substring.Literal {
-      Node.location = Location.create ~start ~stop;
+    {
+      Substring.kind = Substring.Kind.Literal;
+      location = Location.create ~start ~stop;
       value;
     }
 
   let create_raw_format_substring (string_position, (start, stop), value) =
     string_position,
-    AstExpression.Substring.RawFormat {
-      Node.location = Location.create ~start ~stop;
+    {
+      Substring.kind = Substring.Kind.RawFormat;
+      location = Location.create ~start ~stop;
       value;
     }
 
@@ -245,26 +247,22 @@
                    AstExpression.StringLiteral.value = "";
                    kind = String
               })
-    | [ AstExpression.Substring.Literal { Node.value; _ } ] ->
+    | [ { Substring.kind = Substring.Kind.Literal; value; _ } ] ->
        Expression.Constant
          (AstExpression.Constant.String {
               AstExpression.StringLiteral.value;
               kind = String
          })
     | _ as pieces ->
-        let is_all_literal = List.for_all ~f:(function
-          | AstExpression.Substring.Literal _ -> true
-          | _ -> false
+       let is_all_literal = List.for_all ~f:(fun { Substring.kind; _ } ->
+          match kind with
+          | Substring.Kind.Literal -> true
+          | Substring.Kind.RawFormat -> false
         )
         in
         if is_all_literal pieces then
           let value =
-            let extract_value = function
-              | AstExpression.Substring.Literal { Node.value; _ } -> Some value
-              | AstExpression.Substring.RawFormat { Node.value; _ } -> Some value
-              | AstExpression.Substring.Format _ -> None
-            in
-            List.filter_map ~f:extract_value pieces
+            List.map pieces ~f:(fun { Substring.value; _ } -> value)
             |> String.concat ~sep:""
           in
           Expression.Constant

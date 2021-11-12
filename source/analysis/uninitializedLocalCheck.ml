@@ -73,9 +73,7 @@ module AccessCollector = struct
         List.fold expressions ~init:collected ~f:from_expression
     | FormatString substrings ->
         let from_substring sofar = function
-          | Substring.Literal _
-          | Substring.RawFormat _ ->
-              sofar
+          | Substring.Literal _ -> sofar
           | Substring.Format expression -> from_expression sofar expression
         in
         List.fold substrings ~init:collected ~f:from_substring
