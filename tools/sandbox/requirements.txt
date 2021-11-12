@@ -10,6 +10,7 @@ fb-sapp==0.2.8
 Flask==1.1.2
 Flask-Cors==3.0.9
 Flask-GraphQL==2.0.1
+flask-socketio==5.1.1
 graphene==2.1.8
 graphene-sqlalchemy==2.3.0
 graphql-core==2.3.2
