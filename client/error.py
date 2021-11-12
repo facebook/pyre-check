@@ -292,9 +292,9 @@ class ModelVerificationError:
                         },
                         "region": {
                             "startLine": self.line,
-                            "startColumn": self.column + 1,
+                            "startColumn": self.column,
                             "endLine": self.stop_line,
-                            "endColumn": self.stop_column,
+                            "endColumn": self.stop_column + 1,
                         },
                     },
                 },
