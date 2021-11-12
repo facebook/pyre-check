@@ -38,11 +38,11 @@
             "kinds": [
               {
                 "features": [
+                  { "via": "d_feature" },
+                  { "via": "b_feature" },
+                  { "via": "c_feature" },
                   { "via": "tito" },
                   { "via": "split" },
-                  { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" },
                   { "via": "a_feature" }
                 ],
                 "leaves": [
@@ -70,11 +70,11 @@
       }
     ],
     "features": [
+      { "via": "d_feature" },
+      { "via": "b_feature" },
+      { "via": "c_feature" },
       { "via": "tito" },
       { "via": "split" },
-      { "via": "d_feature" },
-      { "via": "c_feature" },
-      { "via": "b_feature" },
       { "always-via": "a_feature" }
     ]
   }
@@ -98,9 +98,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "broadening" },
                   { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "always-via": "issue-broadening" },
                   { "always-via": "a_feature" }
                 ],
                 "leaves": [ { "name": "multi_sink_ports.source" } ],
@@ -124,11 +124,11 @@
             "kinds": [
               {
                 "features": [
+                  { "via": "d_feature" },
+                  { "via": "b_feature" },
+                  { "via": "c_feature" },
                   { "via": "tito" },
                   { "via": "split" },
-                  { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" },
                   { "via": "a_feature" }
                 ],
                 "leaves": [
@@ -156,13 +156,13 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
-      { "always-via": "broadening" },
-      { "always-via": "tito" },
-      { "via": "split" },
       { "via": "d_feature" },
-      { "via": "c_feature" },
       { "via": "b_feature" },
+      { "via": "c_feature" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
+      { "via": "split" },
       { "always-via": "a_feature" }
     ]
   }
@@ -192,8 +192,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" }
+                  { "via": "b_feature" },
+                  { "via": "c_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -263,8 +263,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" }
+                  { "via": "b_feature" },
+                  { "via": "c_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -362,8 +362,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" }
+                  { "via": "b_feature" },
+                  { "via": "c_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -699,8 +699,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" }
+                  { "via": "b_feature" },
+                  { "via": "c_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -794,8 +794,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" }
+                  { "via": "b_feature" },
+                  { "via": "c_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -892,8 +892,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" }
+                  { "via": "b_feature" },
+                  { "via": "c_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },

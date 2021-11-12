@@ -238,8 +238,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[benign]" ],
                 "kind": "LocalReturn"
@@ -366,7 +366,7 @@
           {
             "kinds": [
               {
-                "features": [ { "type": "scalar" }, { "type": "integer" } ],
+                "features": [ { "type": "integer" }, { "type": "scalar" } ],
                 "return_paths": [ "[benign]" ],
                 "kind": "LocalReturn"
               }
@@ -432,8 +432,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[benign]" ],
                 "kind": "LocalReturn"

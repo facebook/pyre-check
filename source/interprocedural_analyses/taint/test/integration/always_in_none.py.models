@@ -40,8 +40,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
                   { "always-via": "string_concat_rhs" },
+                  { "always-via": "tito" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],

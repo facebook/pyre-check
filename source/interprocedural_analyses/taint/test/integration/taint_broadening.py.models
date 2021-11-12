@@ -18,8 +18,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "issue-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "issue-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -57,8 +57,8 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
       { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -86,8 +86,8 @@
                   { "has": "first-index" },
                   { "first-index": "b" },
                   { "always-via": "tito-broadening" },
-                  { "always-via": "broadening" },
                   { "always-via": "tito" },
+                  { "always-via": "broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -129,8 +129,8 @@
       { "has": "first-index" },
       { "first-index": "b" },
       { "always-via": "tito-broadening" },
-      { "always-via": "broadening" },
       { "always-via": "tito" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -148,8 +148,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -167,8 +167,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -186,8 +186,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -205,8 +205,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -224,8 +224,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -243,8 +243,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -262,8 +262,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -281,8 +281,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -300,8 +300,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -319,8 +319,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -338,8 +338,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -357,8 +357,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -376,8 +376,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -395,8 +395,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -414,8 +414,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -433,8 +433,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -452,8 +452,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -471,8 +471,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -490,8 +490,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -509,8 +509,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -528,8 +528,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -547,8 +547,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -566,8 +566,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -585,8 +585,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -604,8 +604,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -623,8 +623,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -642,8 +642,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -661,8 +661,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -680,8 +680,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -699,8 +699,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "widen-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "widen-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -783,8 +783,8 @@
                   { "has": "first-index" },
                   { "first-index": "b" },
                   { "always-via": "tito-broadening" },
-                  { "always-via": "broadening" },
                   { "always-via": "tito" },
+                  { "always-via": "broadening" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -817,8 +817,8 @@
               {
                 "features": [
                   { "always-via": "tito-broadening" },
-                  { "always-via": "broadening" },
                   { "always-via": "tito" },
+                  { "always-via": "broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],

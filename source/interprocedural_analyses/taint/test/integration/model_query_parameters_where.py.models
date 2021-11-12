@@ -98,15 +98,15 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "SourceA"
               },
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "Test"
               }
@@ -142,8 +142,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "Test"
               }
@@ -161,8 +161,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -200,8 +200,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "model_query_parameters_where.test1_alarm1" }
@@ -240,8 +240,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "integer" },
+      { "always-type": "scalar" },
       { "always-via": "special_sink" }
     ]
   }
@@ -270,8 +270,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "Test"
               }
@@ -386,8 +386,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "Test"
               }
@@ -502,8 +502,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "Test"
               }
@@ -862,8 +862,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],

@@ -38,8 +38,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -62,8 +62,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "integer" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -117,8 +117,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -143,8 +143,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[bad]" ],
                 "kind": "LocalReturn"
@@ -189,8 +189,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "UserControlled"
               }
@@ -206,8 +206,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "dataclass_taint.WeirdDataClass.__init__" }
@@ -233,8 +233,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}" }
@@ -260,8 +260,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[bad_sink]" ],
                 "kind": "LocalReturn"
@@ -289,8 +289,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[bad]" ],
                 "kind": "LocalReturn"
@@ -335,8 +335,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "UserControlled"
               }
@@ -352,8 +352,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "dataclass_taint.WeirdDataClass.__init__" }
@@ -379,8 +379,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}" }
@@ -404,8 +404,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -430,8 +430,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[bad_sink]" ],
                 "kind": "LocalReturn"
@@ -459,8 +459,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[bad]" ],
                 "kind": "LocalReturn"
@@ -535,8 +535,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -561,8 +561,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[bad]" ],
                 "kind": "LocalReturn"
@@ -667,8 +667,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "UserControlled"
               }
@@ -684,8 +684,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "dataclass_taint.WeirdDataClass.__init__" }
@@ -711,8 +711,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}" }
@@ -738,8 +738,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[bad_sink]" ],
                 "kind": "LocalReturn"
@@ -767,8 +767,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[bad]" ],
                 "kind": "LocalReturn"
@@ -852,9 +852,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "broadening" },
                   { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "always-via": "issue-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -893,9 +893,9 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
-      { "always-via": "broadening" },
       { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -1161,8 +1161,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "dataclass_taint.WeirdDataClass.__init__" }

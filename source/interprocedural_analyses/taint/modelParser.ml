@@ -1945,7 +1945,9 @@ let add_taint_annotation_to_model
       let root = AccessPath.Root.LocalResult in
       match annotation with
       | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
-          List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
+          breadcrumbs
+          |> List.map ~f:Features.BreadcrumbInterned.intern
+          |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_sink_taint
                ~root
@@ -1958,7 +1960,9 @@ let add_taint_annotation_to_model
                via_features
           |> map_error ~f:invalid_model_for_taint
       | Source { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
-          List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
+          breadcrumbs
+          |> List.map ~f:Features.BreadcrumbInterned.intern
+          |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_source_taint
                ~root
@@ -1986,7 +1990,9 @@ let add_taint_annotation_to_model
   | ParameterAnnotation root -> (
       match annotation with
       | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
-          List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
+          breadcrumbs
+          |> List.map ~f:Features.BreadcrumbInterned.intern
+          |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_sink_taint
                ~root
@@ -1999,7 +2005,9 @@ let add_taint_annotation_to_model
                via_features
           |> map_error ~f:invalid_model_for_taint
       | Source { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
-          List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
+          breadcrumbs
+          |> List.map ~f:Features.BreadcrumbInterned.intern
+          |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_source_taint
                ~root
@@ -2013,7 +2021,9 @@ let add_taint_annotation_to_model
           |> map_error ~f:invalid_model_for_taint
       | Tito { tito; breadcrumbs; via_features; path } ->
           (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
-          List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
+          breadcrumbs
+          |> List.map ~f:Features.BreadcrumbInterned.intern
+          |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> add_signature_based_breadcrumbs
                ~resolution
@@ -2022,7 +2032,9 @@ let add_taint_annotation_to_model
           |> introduce_taint_in_taint_out ~root ~path model tito via_features
           |> map_error ~f:invalid_model_for_taint
       | AddFeatureToArgument { breadcrumbs; via_features; path } ->
-          List.map ~f:Features.BreadcrumbSet.inject breadcrumbs
+          breadcrumbs
+          |> List.map ~f:Features.BreadcrumbInterned.intern
+          |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_sink_taint
                ~root

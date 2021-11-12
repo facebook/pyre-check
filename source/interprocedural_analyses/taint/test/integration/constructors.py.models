@@ -256,8 +256,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[y]" ],
                 "kind": "LocalReturn"
@@ -436,8 +436,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[y]" ],
                 "kind": "LocalReturn"
@@ -653,8 +653,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[y]" ],
                 "kind": "LocalReturn"
@@ -957,8 +957,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "[y]" ],
                 "kind": "LocalReturn"

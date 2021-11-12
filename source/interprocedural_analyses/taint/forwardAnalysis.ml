@@ -282,7 +282,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let tito =
         let convert_tito_path kind (path, return_taint) accumulated_tito =
           let breadcrumbs =
-            BackwardTaint.breadcrumbs return_taint |> Features.BreadcrumbSet.add Features.tito
+            BackwardTaint.breadcrumbs return_taint |> Features.BreadcrumbSet.add (Features.tito ())
           in
           let add_features_and_position leaf_taint =
             leaf_taint
@@ -293,7 +293,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             if collapse_tito then
               ForwardState.Tree.read path argument_taint
               |> ForwardState.Tree.collapse
-                   ~transform:(ForwardTaint.add_breadcrumbs Features.tito_broadening)
+                   ~transform:(ForwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
               |> ForwardTaint.transform Frame.Self Map ~f:add_features_and_position
               |> ForwardState.Tree.create_leaf
             else
@@ -356,10 +356,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         if TaintResult.ModeSet.contains Obscure modes then
           let obscure_tito =
             ForwardState.Tree.collapse
-              ~transform:(ForwardTaint.add_breadcrumbs Features.tito_broadening)
+              ~transform:(ForwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
               argument_taint
             |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
-            |> ForwardTaint.add_breadcrumb Features.obscure
+            |> ForwardTaint.add_breadcrumb (Features.obscure ())
             |> ForwardState.Tree.create_leaf
           in
           (* Apply source- and sink- specific tito sanitizers for obscure models,
@@ -458,7 +458,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          in
          BackwardTaint.kinds
            (BackwardState.Tree.collapse
-              ~transform:(BackwardTaint.add_breadcrumbs Features.issue_broadening)
+              ~transform:(BackwardTaint.add_breadcrumbs (Features.issue_broadening_set ()))
               taint)
          |> List.fold ~f:add ~init:roots_and_sinks
        in
@@ -574,7 +574,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint =
             List.zip_exn arguments arguments_taint
             |> List.fold ~f:analyze_argument ~init:callee_taint
-            |> ForwardState.Tree.add_breadcrumb Features.obscure
+            |> ForwardState.Tree.add_breadcrumb (Features.obscure ())
           in
           taint, initial_state
       | call_targets ->
@@ -968,7 +968,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~state
           callable_argument
       in
-      let taint = ForwardState.Tree.add_breadcrumb Features.lambda taint in
+      let taint = ForwardState.Tree.add_breadcrumb (Features.lambda ()) taint in
       taint, state
     in
 
@@ -1340,7 +1340,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     attribute = "format";
                     _;
                   }) ->
-                ForwardState.Tree.add_breadcrumb Features.format_string taint
+                ForwardState.Tree.add_breadcrumb (Features.format_string ()) taint
             | _ -> taint
           in
           taint, state
@@ -1445,7 +1445,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~f:(fun (taint, state) expression ->
               analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
             ~init:(ForwardState.Tree.empty, state)
-          |>> ForwardState.Tree.add_breadcrumb Features.format_string
+          |>> ForwardState.Tree.add_breadcrumb (Features.format_string ())
           |>> ForwardState.Tree.join value_taint
         in
         (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
@@ -1487,7 +1487,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
               let taint =
                 ForwardState.Tree.join left_taint right_taint
-                |> ForwardState.Tree.add_breadcrumbs Features.type_bool
+                |> ForwardState.Tree.add_breadcrumbs (Features.type_bool_scalar_set ())
               in
               taint, state)
       | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
@@ -1863,12 +1863,12 @@ let extract_source_model
     in
     let essential = ForwardState.Tree.essential tree in
     ForwardState.Tree.shape
-      ~transform:(ForwardTaint.add_breadcrumbs Features.widen_broadening)
+      ~transform:(ForwardTaint.add_breadcrumbs (Features.widen_broadening_set ()))
       tree
       ~mold:essential
     |> ForwardState.Tree.add_breadcrumbs return_type_breadcrumbs
     |> ForwardState.Tree.limit_to
-         ~transform:(ForwardTaint.add_breadcrumbs Features.widen_broadening)
+         ~transform:(ForwardTaint.add_breadcrumbs (Features.widen_broadening_set ()))
          ~width:maximum_model_width
     |> ForwardState.Tree.approximate_return_access_paths ~maximum_return_access_path_length
   in

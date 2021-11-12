@@ -21,8 +21,8 @@
                   { "has": "first-field" },
                   { "first-field": "x" },
                   { "always-via-type": "int" },
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -63,9 +63,9 @@
       { "has": "first-field" },
       { "first-field": "x" },
       { "always-via-type": "int" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -91,8 +91,8 @@
                   { "has": "first-field" },
                   { "first-field": "y" },
                   { "always-via-type": "str" },
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -133,9 +133,9 @@
       { "has": "first-field" },
       { "first-field": "y" },
       { "always-via-type": "str" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -161,8 +161,8 @@
                   { "has": "first-field" },
                   { "first-field": "z" },
                   { "always-via-type": "typing.Annotated[str]" },
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -203,9 +203,9 @@
       { "has": "first-field" },
       { "first-field": "z" },
       { "always-via-type": "typing.Annotated[str]" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -232,11 +232,11 @@
                   { "first-field": "x" },
                   { "first-field": "y" },
                   { "first-field": "z" },
-                  { "via-type": "typing.Annotated[str]" },
                   { "via-type": "str" },
                   { "via-type": "int" },
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "via-type": "typing.Annotated[str]" },
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -278,12 +278,12 @@
       { "first-field": "x" },
       { "first-field": "y" },
       { "first-field": "z" },
-      { "via-type": "typing.Annotated[str]" },
       { "via-type": "str" },
       { "via-type": "int" },
+      { "via-type": "typing.Annotated[str]" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -308,9 +308,9 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "x" },
-                  { "always-via-type": "typing.Dict[str, int]" },
+                  { "always-via": "obscure" },
                   { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via-type": "typing.Dict[str, int]" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -350,10 +350,10 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "x" },
-      { "always-via-type": "typing.Dict[str, int]" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via-type": "typing.Dict[str, int]" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -379,8 +379,8 @@
                   { "has": "first-field" },
                   { "first-field": "y" },
                   { "always-via-type": "typing.List[str]" },
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -421,9 +421,9 @@
       { "has": "first-field" },
       { "first-field": "y" },
       { "always-via-type": "typing.List[str]" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -449,8 +449,8 @@
                   { "has": "first-field" },
                   { "first-field": "z" },
                   { "always-via-type": "typing.Annotated[float]" },
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -491,9 +491,9 @@
       { "has": "first-field" },
       { "first-field": "z" },
       { "always-via-type": "typing.Annotated[float]" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -520,11 +520,11 @@
                   { "first-field": "x" },
                   { "first-field": "y" },
                   { "first-field": "z" },
-                  { "via-type": "typing.List[str]" },
-                  { "via-type": "typing.Dict[str, int]" },
                   { "via-type": "typing.Annotated[float]" },
+                  { "via-type": "typing.List[str]" },
+                  { "always-via": "obscure" },
                   { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "via-type": "typing.Dict[str, int]" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -566,12 +566,12 @@
       { "first-field": "x" },
       { "first-field": "y" },
       { "first-field": "z" },
-      { "via-type": "typing.List[str]" },
-      { "via-type": "typing.Dict[str, int]" },
       { "via-type": "typing.Annotated[float]" },
+      { "via-type": "typing.List[str]" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "via-type": "typing.Dict[str, int]" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -688,8 +688,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Any" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via-type": "typing.Any" }
     ]
   }
 }
@@ -747,8 +747,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "object" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via-type": "object" }
     ]
   }
 }
@@ -1615,8 +1615,8 @@
     ],
     "features": [
       { "via-type": "via_type_of.Test3_Foo" },
-      { "via-type": "typing.Dict[str, typing.List[int]]" },
       { "via-type": "typing.Annotated[typing.List[typing.List[str]]]" },
+      { "via-type": "typing.Dict[str, typing.List[int]]" },
       { "always-via": "special_sink" }
     ]
   }
@@ -1633,8 +1633,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "always-via-type": "str" }
+                  { "always-via-type": "str" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
@@ -1780,8 +1780,8 @@
               {
                 "features": [
                   { "always-via": "tito" },
-                  { "always-via-type": "typing.List[int]" },
-                  { "always-via": "special_source" }
+                  { "always-via": "special_source" },
+                  { "always-via-type": "typing.List[int]" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"

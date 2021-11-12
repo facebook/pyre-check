@@ -61,8 +61,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -111,8 +111,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -161,8 +161,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -243,8 +243,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -309,8 +309,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"

@@ -303,8 +303,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Dict[str, int]" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via-type": "typing.Dict[str, int]" }
     ]
   }
 }
@@ -369,8 +369,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "model_query_parameters_viatypeof.Test2_T" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via-type": "model_query_parameters_viatypeof.Test2_T" }
     ]
   }
 }
@@ -560,8 +560,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "float" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via-type": "float" }
     ]
   }
 }

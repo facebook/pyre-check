@@ -188,7 +188,8 @@ module Breadcrumb = struct
       Error (Format.sprintf "Unrecognized Via annotation `%s`" name)
 end
 
-module BreadcrumbSet = Abstract.OverUnderSetDomain.Make (Breadcrumb)
+module BreadcrumbInterned = MakeInterner (Breadcrumb)
+module BreadcrumbSet = Abstract.OverUnderSetDomain.Make (BreadcrumbInterned)
 
 module ViaFeature = struct
   let name = "via features"
@@ -244,7 +245,7 @@ module ViaFeature = struct
           | Some value -> value
           | None -> Format.asprintf "<unknown:%s>" (generate_kind arguments))
     in
-    Breadcrumb.ViaValue { value = feature; tag }
+    Breadcrumb.ViaValue { value = feature; tag } |> BreadcrumbInterned.intern
 
 
   let via_type_of_breadcrumb ?tag ~resolution ~argument =
@@ -256,7 +257,7 @@ module ViaFeature = struct
       |> Option.value ~default:Type.Top
       |> Type.show
     in
-    Breadcrumb.ViaType { value = feature; tag }
+    Breadcrumb.ViaType { value = feature; tag } |> BreadcrumbInterned.intern
 
 
   let via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target =
@@ -267,7 +268,7 @@ module ViaFeature = struct
       |> Type.weaken_literals
       |> Type.show
     in
-    Breadcrumb.ViaType { value = feature; tag }
+    Breadcrumb.ViaType { value = feature; tag } |> BreadcrumbInterned.intern
 
 
   let to_json via =
@@ -326,45 +327,55 @@ module ReturnAccessPathSet = struct
       set
 end
 
-let obscure = Breadcrumb.Obscure
+(* We need to make all breadcrumb creation lazy because the shared memory might
+ * not be initialized yet. *)
 
-let lambda = Breadcrumb.Lambda
+let memoize closure () = Lazy.force closure
 
-let tito = Breadcrumb.Tito
-
-let format_string = Breadcrumb.FormatString
-
-let widen_broadening =
-  BreadcrumbSet.create
-    [
-      Part (BreadcrumbSet.Element, Breadcrumb.Broadening);
-      Part (BreadcrumbSet.Element, Breadcrumb.WidenBroadening);
-    ]
+let memoize_breadcrumb_interned breadcrumb =
+  memoize (lazy (breadcrumb |> BreadcrumbInterned.intern))
 
 
-let tito_broadening =
-  BreadcrumbSet.create
-    [
-      Part (BreadcrumbSet.Element, Breadcrumb.Broadening);
-      Part (BreadcrumbSet.Element, Breadcrumb.TitoBroadening);
-    ]
+let obscure = memoize_breadcrumb_interned Breadcrumb.Obscure
+
+let lambda = memoize_breadcrumb_interned Breadcrumb.Lambda
+
+let tito = memoize_breadcrumb_interned Breadcrumb.Tito
+
+let format_string = memoize_breadcrumb_interned Breadcrumb.FormatString
+
+let type_scalar = memoize_breadcrumb_interned (Breadcrumb.Type "scalar")
+
+let type_bool = memoize_breadcrumb_interned (Breadcrumb.Type "bool")
+
+let type_integer = memoize_breadcrumb_interned (Breadcrumb.Type "integer")
+
+let type_enumeration = memoize_breadcrumb_interned (Breadcrumb.Type "enumeration")
+
+let broadening = memoize_breadcrumb_interned Breadcrumb.Broadening
+
+let issue_broadening = memoize_breadcrumb_interned Breadcrumb.IssueBroadening
+
+let memoize_breadcrumb_set breadcrumbs =
+  memoize
+    (lazy
+      (breadcrumbs
+      |> List.map ~f:(fun breadcrumb ->
+             Abstract.Domain.Part (BreadcrumbSet.Element, BreadcrumbInterned.intern breadcrumb))
+      |> BreadcrumbSet.create))
 
 
-let issue_broadening =
-  BreadcrumbSet.create
-    [
-      Part (BreadcrumbSet.Element, Breadcrumb.Broadening);
-      Part (BreadcrumbSet.Element, Breadcrumb.IssueBroadening);
-    ]
+let widen_broadening_set =
+  memoize_breadcrumb_set [Breadcrumb.Broadening; Breadcrumb.WidenBroadening]
 
 
-let type_bool =
-  BreadcrumbSet.create
-    [
-      Part (BreadcrumbSet.Element, Breadcrumb.Type "scalar");
-      Part (BreadcrumbSet.Element, Breadcrumb.Type "bool");
-    ]
+let tito_broadening_set = memoize_breadcrumb_set [Breadcrumb.Broadening; Breadcrumb.TitoBroadening]
 
+let issue_broadening_set =
+  memoize_breadcrumb_set [Breadcrumb.Broadening; Breadcrumb.IssueBroadening]
+
+
+let type_bool_scalar_set = memoize_breadcrumb_set [Breadcrumb.Type "scalar"; Breadcrumb.Type "bool"]
 
 let type_breadcrumbs ~resolution annotation =
   let matches_at_leaves ~f annotation =
@@ -404,17 +415,17 @@ let type_breadcrumbs ~resolution annotation =
         GlobalResolution.less_or_equal resolution ~left ~right:Type.enumeration)
   in
   let is_scalar = is_boolean || is_integer || is_float || is_enumeration in
-  let add_if cond type_name features =
-    if cond then
-      BreadcrumbSet.add (Breadcrumb.Type type_name) features
+  let add_if condition breadcrumb features =
+    if condition then
+      BreadcrumbSet.add (breadcrumb ()) features
     else
       features
   in
   BreadcrumbSet.bottom
-  |> add_if is_scalar "scalar"
-  |> add_if is_boolean "bool"
-  |> add_if is_integer "integer"
-  |> add_if is_enumeration "enumeration"
+  |> add_if is_scalar type_scalar
+  |> add_if is_boolean type_bool
+  |> add_if is_integer type_integer
+  |> add_if is_enumeration type_enumeration
 
 
 let number_regexp = Str.regexp "[0-9]+"

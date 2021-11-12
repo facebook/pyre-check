@@ -24,9 +24,11 @@ let test_add_type_breadcrumb context =
       type_breadcrumbs ~resolution (Some annotation)
       |> BreadcrumbSet.to_approximation
       |> List.map ~f:(fun { element; _ } -> element)
+      |> List.map ~f:BreadcrumbInterned.unintern
       |> List.filter_map ~f:(function
              | Breadcrumb.Type type_name -> Some type_name
              | _ -> None)
+      |> List.sort ~compare:String.compare
     in
     assert_equal ~printer:(String.concat ~sep:", ") ~cmp:(List.equal String.equal) expected actual
   in

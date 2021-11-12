@@ -57,7 +57,7 @@ let generate_source_sink_matches ~location ~source_tree ~sink_tree =
     let source_taint =
       ForwardState.Tree.read path source_tree
       |> ForwardState.Tree.collapse
-           ~transform:(ForwardTaint.add_breadcrumbs Features.issue_broadening)
+           ~transform:(ForwardTaint.add_breadcrumbs (Features.issue_broadening_set ()))
     in
     if ForwardTaint.is_bottom source_taint then
       matches
@@ -318,6 +318,7 @@ let to_json ~filename_lookup callable issue =
   let sink_traces = Domains.BackwardTaint.to_external_json ~filename_lookup issue.flow.sink_taint in
   let features =
     let get_feature_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
+      let element = Features.BreadcrumbInterned.unintern element in
       let breadcrumb_json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
       breadcrumb_json :: breadcrumbs
     in
@@ -375,7 +376,7 @@ let code_metadata () =
 let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
   let partial_sinks_to_taint =
     BackwardState.Tree.collapse
-      ~transform:(BackwardTaint.add_breadcrumbs Features.issue_broadening)
+      ~transform:(BackwardTaint.add_breadcrumbs (Features.issue_broadening_set ()))
       sink_tree
     |> BackwardTaint.partition BackwardTaint.kind ByFilter ~f:Sinks.extract_partial_sink
   in

@@ -256,7 +256,7 @@ module type TAINT_DOMAIN = sig
 
   val call_info : CallInfo.t Abstract.Domain.part
 
-  val add_breadcrumb : Features.Breadcrumb.t -> t -> t
+  val add_breadcrumb : Features.BreadcrumbInterned.t -> t -> t
 
   val add_breadcrumbs : Features.BreadcrumbSet.t -> t -> t
 
@@ -429,6 +429,7 @@ end = struct
         let json = cons_if_non_empty "via_features" via_features json in
 
         let gather_breadcrumb_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
+          let element = Features.BreadcrumbInterned.unintern element in
           let json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
           json :: breadcrumbs
         in
@@ -490,17 +491,17 @@ end = struct
       taint
 
 
-  let transform_on_widening_collapse =
+  let transform_on_widening_collapse taint =
     (* using an always-feature here would break the widening invariant: a <= a widen b *)
     let open Features in
     let broadening =
       BreadcrumbSet.of_approximation
         [
-          { element = Breadcrumb.Broadening; in_under = false };
-          { element = Breadcrumb.IssueBroadening; in_under = false };
+          { element = Features.broadening (); in_under = false };
+          { element = Features.issue_broadening (); in_under = false };
         ]
     in
-    add_breadcrumbs broadening
+    add_breadcrumbs broadening taint
 
 
   let prune_maximum_length maximum_length =

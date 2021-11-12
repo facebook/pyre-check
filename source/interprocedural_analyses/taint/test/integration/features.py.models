@@ -18,8 +18,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -62,8 +62,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "bool" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -88,8 +88,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -132,8 +132,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "bool" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -158,10 +158,10 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-type": "scalar" },
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -199,11 +199,11 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "bool" },
+      { "always-type": "scalar" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -226,10 +226,10 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
-                  { "always-via": "special_source" },
-                  { "always-via": "obscure" }
+                  { "always-type": "scalar" },
+                  { "always-via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 1,
@@ -272,11 +272,11 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "bool" },
+      { "always-type": "scalar" },
+      { "always-via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -299,8 +299,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -338,8 +338,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "bool" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -364,8 +364,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -403,8 +403,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "bool" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -422,8 +422,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -446,8 +446,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -501,8 +501,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
@@ -536,8 +536,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
@@ -562,8 +562,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
-                  { "always-type": "integer" }
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
@@ -588,8 +588,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -612,8 +612,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "bool" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -672,8 +672,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "obscure" }
                 ],
                 "return_paths": [ "" ],
@@ -700,8 +700,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
@@ -729,8 +729,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
@@ -758,8 +758,8 @@
             "kinds": [
               {
                 "features": [
-                  { "type": "scalar" },
                   { "type": "integer" },
+                  { "type": "scalar" },
                   { "via": "tito" }
                 ],
                 "return_paths": [ "" ],
@@ -811,8 +811,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
@@ -840,8 +840,8 @@
             "kinds": [
               {
                 "features": [
-                  { "type": "scalar" },
                   { "type": "integer" },
+                  { "type": "scalar" },
                   { "via": "tito" }
                 ],
                 "return_paths": [ "[0]", "[1]" ],

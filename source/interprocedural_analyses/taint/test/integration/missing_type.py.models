@@ -61,8 +61,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "special_sink" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
@@ -140,8 +140,8 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "obscure" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -157,8 +157,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "special_sink" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure" },
+                  { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"

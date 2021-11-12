@@ -11,9 +11,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
-                  { "always-via": "string_concat_rhs" }
+                  { "always-via": "string_concat_rhs" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "Attach"
               }
@@ -24,9 +24,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
                   { "always-via": "string_concat_rhs" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -307,9 +307,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
-                  { "always-via": "string_concat_rhs" }
+                  { "always-via": "string_concat_rhs" },
+                  { "always-type": "scalar" }
                 ],
                 "kind": "Attach"
               }
@@ -320,9 +320,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
                   { "always-via": "string_concat_rhs" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -526,8 +526,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "string_concat_lhs" }
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,

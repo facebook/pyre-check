@@ -82,8 +82,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "issue-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "issue-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -121,8 +121,8 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
       { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -212,8 +212,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "issue-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "issue-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -258,9 +258,9 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
-      { "always-via": "broadening" },
       { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_source" }
     ]
   }
@@ -531,8 +531,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "issue-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "issue-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -570,8 +570,8 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
       { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -596,8 +596,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "issue-broadening" },
                   { "always-via": "broadening" },
+                  { "always-via": "issue-broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -635,8 +635,8 @@
       }
     ],
     "features": [
-      { "always-via": "issue-broadening" },
       { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -662,8 +662,8 @@
               {
                 "features": [
                   { "always-via": "tito" },
-                  { "always-via": "special_source" },
-                  { "via": "obscure" }
+                  { "via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -702,9 +702,9 @@
     ],
     "features": [
       { "always-via": "tito" },
+      { "via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -728,8 +728,8 @@
               {
                 "features": [
                   { "always-via": "tito" },
-                  { "always-via": "special_source" },
-                  { "via": "obscure" }
+                  { "via": "obscure" },
+                  { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -768,9 +768,9 @@
     ],
     "features": [
       { "always-via": "tito" },
+      { "via": "obscure" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure" }
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -853,8 +853,8 @@
               {
                 "features": [
                   { "always-via": "tito-broadening" },
-                  { "always-via": "broadening" },
                   { "always-via": "tito" },
+                  { "always-via": "broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -895,8 +895,8 @@
     ],
     "features": [
       { "always-via": "tito-broadening" },
-      { "always-via": "broadening" },
       { "always-via": "tito" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" }
     ]
   }

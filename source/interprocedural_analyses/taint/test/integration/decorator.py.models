@@ -38,8 +38,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -62,8 +62,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "integer" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -108,8 +108,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -132,8 +132,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "integer" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -306,8 +306,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -330,8 +330,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "integer" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -632,8 +632,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -656,8 +656,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "integer" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -766,8 +766,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -790,8 +790,8 @@
       }
     ],
     "features": [
-      { "always-type": "scalar" },
       { "always-type": "integer" },
+      { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -972,8 +972,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -1012,8 +1012,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -1101,8 +1101,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -1199,8 +1199,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
                   { "always-via": "string_concat_lhs" },
+                  { "always-via": "tito" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -1247,8 +1247,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
                   { "always-via": "string_concat_rhs" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -1294,8 +1294,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "always-via": "string_concat_rhs" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -1757,8 +1757,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -1794,8 +1794,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -1889,8 +1889,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -1928,8 +1928,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2023,8 +2023,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2124,8 +2124,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2163,8 +2163,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
                   { "always-via": "string_concat_lhs" },
+                  { "always-via": "tito" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2202,8 +2202,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2241,8 +2241,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2278,8 +2278,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2310,8 +2310,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2398,8 +2398,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "scalar" },
                   { "always-type": "integer" },
+                  { "always-type": "scalar" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],

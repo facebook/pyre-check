@@ -930,8 +930,8 @@
               {
                 "features": [
                   { "always-via": "tito" },
-                  { "always-via-value": "second" },
-                  { "always-via": "special_source" }
+                  { "always-via": "special_source" },
+                  { "always-via-value": "second" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
