@@ -34,6 +34,7 @@ module GlobalResolution = GlobalResolution
 module LivenessCheck = LivenessCheck
 module LocalAnnotationMap = LocalAnnotationMap
 module Lookup = Lookup
+module MatchTranslate = MatchTranslate
 module ModuleTracker = ModuleTracker
 module NamedTuple = NamedTuple
 module Postprocessing = Postprocessing
