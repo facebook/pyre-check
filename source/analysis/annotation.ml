@@ -11,35 +11,33 @@ type immutable = {
   original: Type.t;
   final: bool;
 }
-[@@deriving compare, eq, show, hash, sexp]
+[@@deriving compare, eq, hash, sexp]
 
 type mutability =
   | Mutable
   | Immutable of immutable
-[@@deriving compare, eq, show, hash, sexp]
+[@@deriving compare, eq, hash, sexp]
+
+let pp_mutability format = function
+  | Mutable -> Format.fprintf format "m"
+  | Immutable { original; final } ->
+      let final =
+        match final with
+        | true -> " (final)"
+        | _ -> ""
+      in
+      Format.fprintf format " (%a)%s" Type.pp original final
+
 
 type t = {
   annotation: Type.t;
   mutability: mutability;
 }
-[@@deriving compare, eq, show, hash, sexp]
+[@@deriving compare, eq, hash, sexp]
 
 let pp format { annotation; mutability } =
-  let mutability =
-    match mutability with
-    | Mutable -> "m"
-    | Immutable { original; final } ->
-        let final =
-          match final with
-          | true -> " (final)"
-          | _ -> ""
-        in
-        Format.asprintf " (%a)%s" Type.pp original final
-  in
-  Format.fprintf format "(%a: %s)" Type.pp annotation mutability
+  Format.fprintf format "(%a: %a)" Type.pp annotation pp_mutability mutability
 
-
-let _ = show (* Ignore unused generated show *)
 
 let show = Format.asprintf "%a" pp
 
