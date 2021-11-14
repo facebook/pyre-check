@@ -11,12 +11,14 @@ type immutable = {
   original: Type.t;
   final: bool;
 }
+[@@deriving compare, eq, show, hash, sexp]
 
-and mutability =
+type mutability =
   | Mutable
   | Immutable of immutable
+[@@deriving compare, eq, show, hash, sexp]
 
-and t = {
+type t = {
   annotation: Type.t;
   mutability: mutability;
 }
