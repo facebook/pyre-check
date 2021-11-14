@@ -1919,26 +1919,12 @@ let rec messages ~concise ~signature location kind =
   | RedundantCast _ when concise -> ["The cast is redundant."]
   | RedundantCast annotation ->
       [Format.asprintf "The value being cast is already of type `%a`." pp_type annotation]
-  | RevealedType { expression; annotation = { Annotation.annotation; mutability }; _ } ->
-      let annotation, detail =
-        match mutability with
-        | Mutable -> Format.asprintf "%a" pp_type annotation, ""
-        | Immutable { Annotation.original; Annotation.final; _ } ->
-            let if_final display = if final then display else "" in
-            if Type.contains_unknown original then
-              Format.asprintf "%a" pp_type annotation, if_final " (final)"
-            else if Type.equal annotation original then
-              Format.asprintf "%a" pp_type original, if_final " (final)"
-            else
-              ( Format.asprintf "%a" pp_type original,
-                Format.asprintf " (inferred: `%a`%s)" pp_type annotation (if_final ", final") )
-      in
+  | RevealedType { expression; annotation; _ } ->
       [
         Format.asprintf
-          "Revealed type for `%s` is `%s`%s."
+          "Revealed type for `%s` is %s."
           (show_sanitized_expression expression)
-          annotation
-          detail;
+          (Annotation.display_as_revealed_type annotation);
       ]
   | UnsupportedOperand (Binary { operator_name; left_operand; right_operand }) ->
       [

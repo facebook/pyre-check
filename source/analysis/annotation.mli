@@ -24,6 +24,8 @@ type t = {
 }
 [@@deriving compare, eq, show, hash, sexp]
 
+val display_as_revealed_type : t -> string
+
 val create_mutable : Type.t -> t
 
 val create_immutable : ?original:Type.t option -> ?final:bool -> Type.t -> t

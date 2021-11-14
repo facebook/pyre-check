@@ -46,6 +46,25 @@ let pp format { annotation; mutability } =
 
 let show = Format.asprintf "%a" pp
 
+let display_as_revealed_type { annotation; mutability } =
+  match mutability with
+  | Mutable -> Format.asprintf "`%a`" Type.pp annotation
+  | Immutable { original; final; _ } ->
+      let if_final display = if final then display else "" in
+      if Type.contains_unknown original then
+        Format.asprintf "`%a`%s" Type.pp annotation (if_final " (final)")
+      else if Type.equal annotation original then
+        Format.asprintf "`%a`%s" Type.pp original (if_final " (final)")
+      else
+        Format.asprintf
+          "`%a` (inferred: `%a`%s)"
+          Type.pp
+          original
+          Type.pp
+          annotation
+          (if_final ", final")
+
+
 let create_mutable annotation = { annotation; mutability = Mutable }
 
 let create_immutable ?(original = None) ?(final = false) annotation =
