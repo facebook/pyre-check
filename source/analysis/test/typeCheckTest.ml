@@ -37,7 +37,7 @@ let create_annotation_store ?(immutables = []) annotations =
             RefinementUnit.create
               ~base:(Annotation.create_immutable ~original:(Some original) annotation)
               ()
-        | _ -> RefinementUnit.create ~base:(Annotation.create annotation) ()
+        | _ -> RefinementUnit.create ~base:(Annotation.create_mutable annotation) ()
       in
       create annotation
     in

@@ -3526,7 +3526,10 @@ class base class_metadata_environment dependency =
                         let return_type =
                           resolve_with_locals
                             ~locals:
-                              [Reference.create lambda_parameter, Annotation.create parameter_type]
+                              [
+                                ( Reference.create lambda_parameter,
+                                  Annotation.create_mutable parameter_type );
+                              ]
                             lambda_body
                           |> Type.weaken_literals
                         in

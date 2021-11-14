@@ -17,11 +17,11 @@ let test_create _ =
   in
   assert_create ~refinement_unit:(create ()) ~expected:None;
   assert_create
-    ~refinement_unit:(create ~base:(Annotation.create Type.Bottom) ())
+    ~refinement_unit:(create ~base:(Annotation.create_mutable Type.Bottom) ())
     ~expected:(Some { mutability = Mutable; annotation = Type.Bottom });
   assert_create
-    ~refinement_unit:(create ~base:(Annotation.create Type.object_primitive) ())
-    ~expected:(Some (Annotation.create (Type.Primitive "object")));
+    ~refinement_unit:(create ~base:(Annotation.create_mutable Type.object_primitive) ())
+    ~expected:(Some (Annotation.create_mutable (Type.Primitive "object")));
   ()
 
 
@@ -36,7 +36,7 @@ let test_add_attribute_refinement _ =
     add_attribute_refinement
       (create ())
       ~reference:!&"a.b.c.d"
-      ~base:(Annotation.create Type.integer)
+      ~base:(Annotation.create_mutable Type.integer)
   in
   assert_attribute_refinement ~refinement_unit ~reference:!&"a" ~expected:None;
   assert_attribute_refinement ~refinement_unit ~reference:!&"a.b" ~expected:None;
@@ -52,7 +52,7 @@ let test_add_attribute_refinement _ =
       (add_attribute_refinement
          refinement_unit
          ~reference:!&"a.b.c.d"
-         ~base:(Annotation.create Type.bool))
+         ~base:(Annotation.create_mutable Type.bool))
     ~reference:!&"a.b.c.d"
     ~expected:(Some { mutability = Mutable; annotation = Type.Primitive "bool" });
   ()
@@ -82,57 +82,63 @@ let test_less_or_equal context =
   assert_true
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create Type.integer) ()));
+       (create ~base:(Annotation.create_mutable Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.integer) ()));
   assert_true
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create Type.float) ()));
+       (create ~base:(Annotation.create_mutable Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.float) ()));
   assert_false
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create Type.float) ())
-       (create ~base:(Annotation.create Type.integer) ()));
+       (create ~base:(Annotation.create_mutable Type.float) ())
+       (create ~base:(Annotation.create_mutable Type.integer) ()));
   assert_true
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer)));
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       )
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       ));
   assert_true
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.float)));
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       )
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.float)));
   assert_false
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.float))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer)));
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.float))
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       ));
   assert_false
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
        |> add_attribute_refinement
             ~reference:!&"a.x"
-            ~base:(Annotation.create Type.object_primitive))
-       (create ~base:(Annotation.create Type.object_primitive) ()
+            ~base:(Annotation.create_mutable Type.object_primitive))
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
        |> add_attribute_refinement
             ~reference:!&"a.x"
-            ~base:(Annotation.create Type.object_primitive)
-       |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer)));
+            ~base:(Annotation.create_mutable Type.object_primitive)
+       |> add_attribute_refinement
+            ~reference:!&"a.x.b"
+            ~base:(Annotation.create_mutable Type.integer)));
 
   (* Mutable <= Immutable. *)
   assert_true
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.integer) ())
        (create ~base:(Annotation.create_immutable Type.integer) ()));
   assert_true
     (less_or_equal
@@ -143,7 +149,7 @@ let test_less_or_equal context =
     (less_or_equal
        ~global_resolution
        (create ~base:(Annotation.create_immutable Type.integer) ())
-       (create ~base:(Annotation.create Type.integer) ()));
+       (create ~base:(Annotation.create_mutable Type.integer) ()));
   ()
 
 
@@ -153,60 +159,69 @@ let test_join context =
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create Type.integer) ()))
-    (create ~base:(Annotation.create Type.integer) ());
+       (create ~base:(Annotation.create_mutable Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.integer) ()))
+    (create ~base:(Annotation.create_mutable Type.integer) ());
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create Type.float) ()))
-    (create ~base:(Annotation.create Type.float) ());
+       (create ~base:(Annotation.create_mutable Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.float) ()))
+    (create ~base:(Annotation.create_mutable Type.float) ());
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer)))
-    (create ~base:(Annotation.create Type.object_primitive) ()
-    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer));
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       )
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       ))
+    (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer));
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string)))
-    (create ~base:(Annotation.create Type.object_primitive) ()
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       )
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.string)
+       ))
+    (create ~base:(Annotation.create_mutable Type.object_primitive) ()
     |> add_attribute_refinement
          ~reference:!&"a.x"
-         ~base:(Annotation.create Type.(Union [integer; string])));
+         ~base:(Annotation.create_mutable Type.(Union [integer; string])));
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
        |> add_attribute_refinement
             ~reference:!&"a.x"
-            ~base:(Annotation.create Type.object_primitive)
-       |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string)))
-    (create ~base:(Annotation.create Type.object_primitive) ()
-    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.object_primitive));
+            ~base:(Annotation.create_mutable Type.object_primitive)
+       |> add_attribute_refinement
+            ~reference:!&"a.x.b"
+            ~base:(Annotation.create_mutable Type.integer))
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.string)
+       ))
+    (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+    |> add_attribute_refinement
+         ~reference:!&"a.x"
+         ~base:(Annotation.create_mutable Type.object_primitive));
 
   (* Mutability. *)
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.integer) ())
        (create ~base:(Annotation.create_immutable Type.integer) ()))
     (create ~base:(Annotation.create_immutable Type.integer) ());
   assert_equal
     (join
        ~global_resolution
        (create ~base:(Annotation.create_immutable Type.integer) ())
-       (create ~base:(Annotation.create Type.integer) ()))
+       (create ~base:(Annotation.create_mutable Type.integer) ()))
     (create ~base:(Annotation.create_immutable Type.integer) ());
   assert_equal
     (join
@@ -244,81 +259,91 @@ let test_meet context =
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create Type.integer) ()))
-    (create ~base:(Annotation.create Type.integer) ());
+       (create ~base:(Annotation.create_mutable Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.integer) ()))
+    (create ~base:(Annotation.create_mutable Type.integer) ());
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create Type.float) ()))
-    (create ~base:(Annotation.create Type.integer) ());
+       (create ~base:(Annotation.create_mutable Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.float) ()))
+    (create ~base:(Annotation.create_mutable Type.integer) ());
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer)))
-    (create ~base:(Annotation.create Type.object_primitive) ()
-    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer));
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       )
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       ))
+    (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer));
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.float)))
-    (create ~base:(Annotation.create Type.object_primitive) ()
-    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer));
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       )
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.float)))
+    (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer));
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string)))
-    (create ~base:(Annotation.create Type.object_primitive) ()
-    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.Bottom));
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       )
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.string)
+       ))
+    (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.Bottom));
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
        |> add_attribute_refinement
             ~reference:!&"a.x"
-            ~base:(Annotation.create Type.object_primitive)
-       |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string)))
-    (create ~base:(Annotation.create Type.object_primitive) ()
-    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string)
-    |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer));
+            ~base:(Annotation.create_mutable Type.object_primitive)
+       |> add_attribute_refinement
+            ~reference:!&"a.x.b"
+            ~base:(Annotation.create_mutable Type.integer))
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.string)
+       ))
+    (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.string)
+    |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create_mutable Type.integer)
+    );
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string)
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.string)
        |> add_attribute_refinement
             ~reference:!&"a.x.b"
-            ~base:(Annotation.create Type.object_primitive))
-       (create ~base:(Annotation.create Type.object_primitive) ()
-       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer)))
-    (create ~base:(Annotation.create Type.object_primitive) ()
-    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.Bottom));
+            ~base:(Annotation.create_mutable Type.object_primitive))
+       (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
+       ))
+    (create ~base:(Annotation.create_mutable Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.Bottom));
 
   (* Mutability. *)
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create Type.integer) ())
+       (create ~base:(Annotation.create_mutable Type.integer) ())
        (create ~base:(Annotation.create_immutable Type.integer) ()))
-    (create ~base:(Annotation.create Type.integer) ());
+    (create ~base:(Annotation.create_mutable Type.integer) ());
   assert_equal
     (meet
        ~global_resolution
        (create ~base:(Annotation.create_immutable Type.integer) ())
-       (create ~base:(Annotation.create Type.integer) ()))
-    (create ~base:(Annotation.create Type.integer) ());
+       (create ~base:(Annotation.create_mutable Type.integer) ()))
+    (create ~base:(Annotation.create_mutable Type.integer) ());
   assert_equal
     (meet
        ~global_resolution

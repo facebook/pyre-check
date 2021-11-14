@@ -41,7 +41,7 @@ let pp format { annotation; mutability } =
 
 let show = Format.asprintf "%a" pp
 
-let create ?(mutability = Mutable) annotation = { annotation; mutability }
+let create_mutable annotation = { annotation; mutability = Mutable }
 
 let create_immutable ?(original = None) ?(final = false) annotation =
   let original = Option.value ~default:annotation original in

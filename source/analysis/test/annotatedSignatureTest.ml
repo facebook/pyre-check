@@ -115,7 +115,7 @@ let test_unresolved_select context =
         TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
         |> Resolution.set_local
              ~reference:(Reference.create "optional")
-             ~annotation:(Annotation.create (Type.optional Type.integer))
+             ~annotation:(Annotation.create_mutable (Type.optional Type.integer))
       in
       let enforce_callable = function
         | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->

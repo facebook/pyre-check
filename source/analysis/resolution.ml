@@ -128,7 +128,7 @@ let partition_name resolution ~name =
           | attribute :: attribute_list ->
               partition_attribute Reference.(attribute |> create |> combine base) attribute_list
         else
-          base, attribute_list, Some (Annotation.create base_type)
+          base, attribute_list, Some (Annotation.create_mutable base_type)
       in
       partition_attribute (Reference.create head) attributes
       |> fun (base, attributes, annotation) ->
@@ -260,7 +260,7 @@ let clear_temporary_annotations ({ annotation_store; _ } as resolution) =
 let resolve_attribute_access resolution ~base_type ~attribute =
   let unique_name = Reference.create "$n" in
   let resolution =
-    set_local resolution ~reference:unique_name ~annotation:(Annotation.create base_type)
+    set_local resolution ~reference:unique_name ~annotation:(Annotation.create_mutable base_type)
   in
   let expression_to_analyze =
     Expression.from_reference

@@ -404,7 +404,8 @@ module State (Context : Context) = struct
                 ~resolution
                 ~name
                 ~annotation:
-                  (Annotation.create (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
+                  (Annotation.create_mutable
+                     (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
             in
             Value { state with resolution }
         | Statement.Expression
@@ -440,7 +441,7 @@ module State (Context : Context) = struct
                 (resolve value)
                 base_element
               |> Type.list
-              |> Annotation.create
+              |> Annotation.create_mutable
             in
             Value { state with resolution = add_local ~resolution ~name ~annotation }
         | Statement.Assign
@@ -455,7 +456,7 @@ module State (Context : Context) = struct
                 ~resolution
                 ~name
                 ~annotation:
-                  (Annotation.create (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
+                  (Annotation.create_mutable (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
             in
             Value { state with resolution }
         | Expression expression -> (
@@ -486,7 +487,10 @@ module State (Context : Context) = struct
             { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
           when is_simple_name name ->
             let resolution =
-              add_local ~resolution ~name ~annotation:(Annotation.create (Type.list Type.Bottom))
+              add_local
+                ~resolution
+                ~name
+                ~annotation:(Annotation.create_mutable (Type.list Type.Bottom))
             in
             Value { state with resolution }
         | Statement.Return { Return.expression; _ } ->
@@ -541,7 +545,7 @@ module State (Context : Context) = struct
                   Map.set
                     annotations
                     ~key:(make_parameter_name name)
-                    ~data:(RefinementUnit.create ~base:(Annotation.create Type.Bottom) ())
+                    ~data:(RefinementUnit.create ~base:(Annotation.create_mutable Type.Bottom) ())
               | Some annotation, None
                 when Type.is_any
                        (GlobalResolution.parse_annotation
@@ -550,7 +554,7 @@ module State (Context : Context) = struct
                   Map.set
                     annotations
                     ~key:(make_parameter_name name)
-                    ~data:(RefinementUnit.create ~base:(Annotation.create Type.Bottom) ())
+                    ~data:(RefinementUnit.create ~base:(Annotation.create_mutable Type.Bottom) ())
               | _ -> annotations)
         in
         { Resolution.annotations; temporary_annotations }
@@ -572,7 +576,7 @@ module State (Context : Context) = struct
           RefinementUnit.create
             ~base:
               (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
-              |> Annotation.create)
+              |> Annotation.create_mutable)
             ()
         in
         let backward_initial_state =
@@ -763,7 +767,7 @@ module State (Context : Context) = struct
                               Resolution.set_local
                                 resolution
                                 ~reference
-                                ~annotation:(Annotation.create refined))
+                                ~annotation:(Annotation.create_mutable refined))
                         |> Option.value ~default:resolution
                     | Tuple arguments -> (
                         match parameter_annotation with
@@ -806,7 +810,7 @@ module State (Context : Context) = struct
                             Resolution.set_local
                               resolution
                               ~reference:(Reference.create identifier)
-                              ~annotation:(Annotation.create refined))
+                              ~annotation:(Annotation.create_mutable refined))
                       |> Option.value ~default:resolution
                     in
                     annotate_call_accesses statement resolution
@@ -825,7 +829,10 @@ module State (Context : Context) = struct
                     let resolution =
                       resolve_assign target_annotation (forward_expression ~state ~expression:value)
                       >>| (fun refined ->
-                            add_local ~resolution ~name ~annotation:(Annotation.create refined))
+                            add_local
+                              ~resolution
+                              ~name
+                              ~annotation:(Annotation.create_mutable refined))
                       |> Option.value ~default:resolution
                     in
                     annotate_call_accesses statement resolution
@@ -888,7 +895,10 @@ module State (Context : Context) = struct
                     ~f:(fun resolution annotation expression ->
                       match Node.value expression with
                       | Name name when is_simple_name name ->
-                          add_local ~resolution ~name ~annotation:(Annotation.create annotation)
+                          add_local
+                            ~resolution
+                            ~name
+                            ~annotation:(Annotation.create_mutable annotation)
                       | _ -> resolution)
               | _ -> resolution)
           | _ -> annotate_call_accesses statement resolution

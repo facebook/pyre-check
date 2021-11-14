@@ -24,7 +24,7 @@ type t = {
 }
 [@@deriving compare, eq, show, hash, sexp]
 
-val create : ?mutability:mutability -> Type.t -> t
+val create_mutable : Type.t -> t
 
 val create_immutable : ?original:Type.t option -> ?final:bool -> Type.t -> t
 

@@ -27,11 +27,14 @@ let test_set_local context =
     Resolution.set_local
       resolution
       ~reference:!&"local"
-      ~annotation:(Annotation.create Type.integer)
+      ~annotation:(Annotation.create_mutable Type.integer)
   in
   assert_local ~resolution ~name:"local" ~expected:(Some "int");
   let resolution =
-    Resolution.set_local resolution ~reference:!&"local" ~annotation:(Annotation.create Type.float)
+    Resolution.set_local
+      resolution
+      ~reference:!&"local"
+      ~annotation:(Annotation.create_mutable Type.float)
   in
   assert_local ~resolution ~name:"local" ~expected:(Some "float")
 
@@ -53,7 +56,7 @@ let test_set_local_with_attributes context =
     Resolution.set_local_with_attributes
       resolution
       ~name:(Expression.create_name ~location:Location.any "local.a.x")
-      ~annotation:(Annotation.create Type.integer)
+      ~annotation:(Annotation.create_mutable Type.integer)
   in
   assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "int") ();
   assert_local_with_attributes ~resolution ~name:"local.a.y" ~expected:None ();
@@ -61,7 +64,7 @@ let test_set_local_with_attributes context =
     Resolution.set_local_with_attributes
       resolution
       ~name:(Expression.create_name ~location:Location.any "local.a.x")
-      ~annotation:(Annotation.create Type.float)
+      ~annotation:(Annotation.create_mutable Type.float)
   in
   assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "float") ();
   ()
