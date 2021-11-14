@@ -163,27 +163,20 @@ let join
     let valid_join left_base right_base =
       match left_base, right_base with
       | Some left, Some right ->
-          let mutability =
-            match left.mutability, right.mutability with
-            | ( Immutable ({ final = left_final; _ } as left),
-                Immutable ({ final = right_final; _ } as right) ) ->
-                Immutable
-                  {
-                    original = GlobalResolution.join global_resolution left.original right.original;
-                    final = left_final || right_final;
-                  }
-            | (Immutable _ as immutable), _
-            | _, (Immutable _ as immutable) ->
-                immutable
-            | _ -> Mutable
+          let valid =
+            GlobalResolution.less_or_equal
+              global_resolution
+              ~left:left.annotation
+              ~right:right.annotation
+            || GlobalResolution.less_or_equal
+                 global_resolution
+                 ~left:right.annotation
+                 ~right:left.annotation
           in
-          let left, right = left.annotation, right.annotation in
           let base =
-            { annotation = GlobalResolution.join global_resolution left right; mutability }
+            Annotation.join ~type_join:(GlobalResolution.join global_resolution) left right
           in
-          ( GlobalResolution.less_or_equal global_resolution ~left ~right
-            || GlobalResolution.less_or_equal global_resolution ~left:right ~right:left,
-            Some base )
+          valid, Some base
       | None, None ->
           (* you only want to continue the nested join should both attribute trees exist *)
           not (Map.Tree.is_empty left_attributes || Map.Tree.is_empty right_attributes), None
@@ -235,26 +228,20 @@ let meet
   let valid_meet left_base right_base =
     match left_base, right_base with
     | Some left, Some right ->
-        let mutability =
-          match left.mutability, right.mutability with
-          | Mutable, _
-          | _, Mutable ->
-              Mutable
-          | ( Immutable ({ final = left_final; _ } as left),
-              Immutable ({ final = right_final; _ } as right) ) ->
-              Immutable
-                {
-                  original = GlobalResolution.meet global_resolution left.original right.original;
-                  final = left_final && right_final;
-                }
+        let valid =
+          GlobalResolution.less_or_equal
+            global_resolution
+            ~left:left.annotation
+            ~right:right.annotation
+          || GlobalResolution.less_or_equal
+               global_resolution
+               ~left:right.annotation
+               ~right:left.annotation
         in
-        let left, right = left.annotation, right.annotation in
         let base =
-          { annotation = GlobalResolution.meet global_resolution left right; mutability }
+          Annotation.meet ~type_meet:(GlobalResolution.meet global_resolution) left right
         in
-        ( GlobalResolution.less_or_equal global_resolution ~left ~right
-          || GlobalResolution.less_or_equal global_resolution ~left:right ~right:left,
-          Some base )
+        valid, Some base
     | None, None ->
         (* you only want to continue the nested meet should both attribute trees exist *)
         not (Map.Tree.is_empty left_attributes || Map.Tree.is_empty right_attributes), None

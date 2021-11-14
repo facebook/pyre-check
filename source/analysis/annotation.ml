@@ -43,6 +43,27 @@ let less_or_equal_mutability ~left ~right =
   | Immutable _, Mutable -> false
 
 
+let join_mutability ~type_join left right =
+  match left, right with
+  | Immutable left, Immutable right ->
+      Immutable
+        { original = type_join left.original right.original; final = left.final || right.final }
+  | (Immutable _ as immutable), Mutable
+  | Mutable, (Immutable _ as immutable) ->
+      immutable
+  | Mutable, Mutable -> Mutable
+
+
+let meet_mutability ~type_meet left right =
+  match left, right with
+  | Mutable, _
+  | _, Mutable ->
+      Mutable
+  | Immutable left, Immutable right ->
+      Immutable
+        { original = type_meet left.original right.original; final = left.final && right.final }
+
+
 type t = {
   annotation: Type.t;
   mutability: mutability;
@@ -116,3 +137,17 @@ let dequalify dequalify_map annotation =
 let less_or_equal ~type_less_or_equal ~left ~right =
   less_or_equal_mutability ~left:left.mutability ~right:right.mutability
   && type_less_or_equal ~left:left.annotation ~right:right.annotation
+
+
+let join ~type_join left right =
+  {
+    annotation = type_join left.annotation right.annotation;
+    mutability = join_mutability ~type_join left.mutability right.mutability;
+  }
+
+
+let meet ~type_meet left right =
+  {
+    annotation = type_meet left.annotation right.annotation;
+    mutability = meet_mutability ~type_meet left.mutability right.mutability;
+  }

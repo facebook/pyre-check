@@ -51,3 +51,7 @@ val less_or_equal
   left:t ->
   right:t ->
   bool
+
+val join : type_join:(Type.t -> Type.t -> Type.t) -> t -> t -> t
+
+val meet : type_meet:(Type.t -> Type.t -> Type.t) -> t -> t -> t
