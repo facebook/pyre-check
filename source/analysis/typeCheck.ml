@@ -5145,7 +5145,7 @@ module State (Context : Context) = struct
             | _ -> errors
           in
           let parse_as_unary () =
-            let errors, { Annotation.annotation; mutability } =
+            let errors, annotation =
               match index, parent with
               | 0, Some parent
               (* __new__ does not require an annotation for __cls__, even though it is a static
@@ -5295,19 +5295,10 @@ module State (Context : Context) = struct
               else
                 annotation
             in
-            let annotation =
-              Type.Variable.mark_all_variables_as_bound annotation |> apply_starred_annotations
+            let transform type_ =
+              Type.Variable.mark_all_variables_as_bound type_ |> apply_starred_annotations
             in
-            let mutability =
-              match mutability with
-              | Annotation.Immutable { Annotation.original; final } ->
-                  let original =
-                    Type.Variable.mark_all_variables_as_bound original |> apply_starred_annotations
-                  in
-                  Annotation.Immutable { Annotation.original; final }
-              | _ -> mutability
-            in
-            errors, { Annotation.annotation; mutability }
+            errors, Annotation.transform_types ~f:transform annotation
           in
           let errors, { Annotation.annotation; mutability } =
             if String.is_prefix ~prefix:"*" name && not (String.is_prefix ~prefix:"**" name) then

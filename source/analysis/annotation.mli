@@ -38,6 +38,8 @@ val is_immutable : t -> bool
 
 val is_final : t -> bool
 
+val transform_types : f:(Type.t -> Type.t) -> t -> t
+
 val instantiate : t -> constraints:(Type.t -> Type.t option) -> t
 
 val dequalify : Reference.t Reference.Map.t -> t -> t

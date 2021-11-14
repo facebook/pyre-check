@@ -29,6 +29,11 @@ let pp_mutability format = function
       Format.fprintf format " (%a)%s" Type.pp original final
 
 
+let transform_types_mutability ~f = function
+  | Mutable -> Mutable
+  | Immutable { original; final } -> Immutable { original = f original; final }
+
+
 type t = {
   annotation: Type.t;
   mutability: mutability;
@@ -66,21 +71,15 @@ let is_final { mutability; _ } =
   | Mutable -> false
 
 
-let instantiate { annotation; mutability } ~constraints =
+let transform_types ~f { annotation; mutability } =
+  { annotation = f annotation; mutability = transform_types_mutability ~f mutability }
+
+
+let instantiate annotation ~constraints =
   let instantiate = Type.instantiate ~constraints in
-  let mutability =
-    match mutability with
-    | Mutable -> Mutable
-    | Immutable { original; final } -> Immutable { original = instantiate original; final }
-  in
-  { annotation = instantiate annotation; mutability }
+  transform_types ~f:instantiate annotation
 
 
-let dequalify dequalify_map { annotation; mutability } =
-  let mutability =
-    match mutability with
-    | Mutable -> Mutable
-    | Immutable { original; final } ->
-        Immutable { original = Type.dequalify dequalify_map original; final }
-  in
-  { annotation = Type.dequalify dequalify_map annotation; mutability }
+let dequalify dequalify_map annotation =
+  let dequalify = Type.dequalify dequalify_map in
+  transform_types ~f:dequalify annotation
