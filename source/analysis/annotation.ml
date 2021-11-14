@@ -34,6 +34,15 @@ let transform_types_mutability ~f = function
   | Immutable { original; final } -> Immutable { original = f original; final }
 
 
+let less_or_equal_mutability ~left ~right =
+  match left, right with
+  | Mutable, _
+  (* we don't have to look at original or final because they will be the same *)
+  | Immutable _, Immutable _ ->
+      true
+  | Immutable _, Mutable -> false
+
+
 type t = {
   annotation: Type.t;
   mutability: mutability;
@@ -102,3 +111,8 @@ let instantiate annotation ~constraints =
 let dequalify dequalify_map annotation =
   let dequalify = Type.dequalify dequalify_map in
   transform_types ~f:dequalify annotation
+
+
+let less_or_equal ~type_less_or_equal ~left ~right =
+  less_or_equal_mutability ~left:left.mutability ~right:right.mutability
+  && type_less_or_equal ~left:left.annotation ~right:right.annotation

@@ -120,19 +120,10 @@ let less_or_equal
   let annotation_less_or_equal left_base right_base =
     match left_base, right_base with
     | Some left, Some right ->
-        let mutability_less_or_equal =
-          match left.mutability, right.mutability with
-          | Immutable _, Immutable _ -> true
-          | Immutable _, Mutable -> false
-          | Mutable, Immutable _
-          | Mutable, Mutable ->
-              true
-        in
-        mutability_less_or_equal
-        && GlobalResolution.less_or_equal
-             global_resolution
-             ~left:left.annotation
-             ~right:right.annotation
+        Annotation.less_or_equal
+          ~type_less_or_equal:(GlobalResolution.less_or_equal global_resolution)
+          ~left
+          ~right
     | None, None -> true (* intermediate refinement units don't require computation *)
     | _ -> false
   in
