@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-ignore-all-errors
-from typing import Any, Callable, Optional, Protocol, Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar
+
+from typing_extensions import Protocol
 
 # Surfacing `tests` is important for importers to be able to run our tests
 # in their own environment
