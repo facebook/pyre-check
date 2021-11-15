@@ -151,11 +151,10 @@ class Setup(NamedTuple):
                 "--set-switch",
             ]
         )
+        print(opam_env_result)
         opam_environment_variables: Dict[str, str] = {}
         for line in opam_env_result.split("\n"):
-            print(line)
-            print(line.split(";")[0])
-            environment_variable, quoted_value = line.split(";")[0].split("=")
+            environment_variable, quoted_value = line.split(";")[-1].split("=")
             value = quoted_value[1:-1]
             LOG.info(f'{environment_variable}="{value}"')
             opam_environment_variables[environment_variable] = value
