@@ -7,11 +7,13 @@
 
 open Ast
 
-type mutability
+module Mutability : sig
+  type t
+end
 
 type t = {
   annotation: Type.t;
-  mutability: mutability;
+  mutability: Mutability.t;
 }
 [@@deriving compare, eq, show, hash, sexp]
 

@@ -7,71 +7,73 @@
 
 open Core
 
-type immutable = {
-  original: Type.t;
-  final: bool;
-}
-[@@deriving compare, eq, hash, sexp]
+module Mutability = struct
+  type immutable = {
+    original: Type.t;
+    final: bool;
+  }
+  [@@deriving compare, eq, hash, sexp]
 
-type mutability =
-  | Mutable
-  | Immutable of immutable
-[@@deriving compare, eq, hash, sexp]
+  type t =
+    | Mutable
+    | Immutable of immutable
+  [@@deriving compare, eq, hash, sexp]
 
-let pp_mutability format = function
-  | Mutable -> Format.fprintf format "m"
-  | Immutable { original; final } ->
-      let final =
-        match final with
-        | true -> " (final)"
-        | _ -> ""
-      in
-      Format.fprintf format " (%a)%s" Type.pp original final
-
-
-let transform_types_mutability ~f = function
-  | Mutable -> Mutable
-  | Immutable { original; final } -> Immutable { original = f original; final }
+  let pp format = function
+    | Mutable -> Format.fprintf format "m"
+    | Immutable { original; final } ->
+        let final =
+          match final with
+          | true -> " (final)"
+          | _ -> ""
+        in
+        Format.fprintf format " (%a)%s" Type.pp original final
 
 
-let less_or_equal_mutability ~left ~right =
-  match left, right with
-  | Mutable, _
-  (* we don't have to look at original or final because they will be the same *)
-  | Immutable _, Immutable _ ->
-      true
-  | Immutable _, Mutable -> false
+  let transform_types ~f = function
+    | Mutable -> Mutable
+    | Immutable { original; final } -> Immutable { original = f original; final }
 
 
-let join_mutability ~type_join left right =
-  match left, right with
-  | Immutable left, Immutable right ->
-      Immutable
-        { original = type_join left.original right.original; final = left.final || right.final }
-  | (Immutable _ as immutable), Mutable
-  | Mutable, (Immutable _ as immutable) ->
-      immutable
-  | Mutable, Mutable -> Mutable
+  let less_or_equal ~left ~right =
+    match left, right with
+    | Mutable, _
+    (* we don't have to look at original or final because they will be the same *)
+    | Immutable _, Immutable _ ->
+        true
+    | Immutable _, Mutable -> false
 
 
-let meet_mutability ~type_meet left right =
-  match left, right with
-  | Mutable, _
-  | _, Mutable ->
-      Mutable
-  | Immutable left, Immutable right ->
-      Immutable
-        { original = type_meet left.original right.original; final = left.final && right.final }
+  let join ~type_join left right =
+    match left, right with
+    | Immutable left, Immutable right ->
+        Immutable
+          { original = type_join left.original right.original; final = left.final || right.final }
+    | (Immutable _ as immutable), Mutable
+    | Mutable, (Immutable _ as immutable) ->
+        immutable
+    | Mutable, Mutable -> Mutable
+
+
+  let meet ~type_meet left right =
+    match left, right with
+    | Mutable, _
+    | _, Mutable ->
+        Mutable
+    | Immutable left, Immutable right ->
+        Immutable
+          { original = type_meet left.original right.original; final = left.final && right.final }
+end
 
 
 type t = {
   annotation: Type.t;
-  mutability: mutability;
+  mutability: Mutability.t;
 }
 [@@deriving compare, eq, hash, sexp]
 
 let pp format { annotation; mutability } =
-  Format.fprintf format "(%a: %a)" Type.pp annotation pp_mutability mutability
+  Format.fprintf format "(%a: %a)" Type.pp annotation Mutability.pp mutability
 
 
 let show = Format.asprintf "%a" pp
@@ -110,7 +112,7 @@ let original { annotation; mutability } =
   | Mutable -> annotation
 
 
-let is_immutable { mutability; _ } = not (equal_mutability mutability Mutable)
+let is_immutable { mutability; _ } = not (Mutability.equal mutability Mutable)
 
 let is_final { mutability; _ } =
   match mutability with
@@ -119,7 +121,7 @@ let is_final { mutability; _ } =
 
 
 let transform_types ~f { annotation; mutability } =
-  { annotation = f annotation; mutability = transform_types_mutability ~f mutability }
+  { annotation = f annotation; mutability = Mutability.transform_types ~f mutability }
 
 
 let instantiate annotation ~constraints =
@@ -133,21 +135,21 @@ let dequalify dequalify_map annotation =
 
 
 let less_or_equal ~type_less_or_equal ~left ~right =
-  less_or_equal_mutability ~left:left.mutability ~right:right.mutability
+  Mutability.less_or_equal ~left:left.mutability ~right:right.mutability
   && type_less_or_equal ~left:left.annotation ~right:right.annotation
 
 
 let join ~type_join left right =
   {
     annotation = type_join left.annotation right.annotation;
-    mutability = join_mutability ~type_join left.mutability right.mutability;
+    mutability = Mutability.join ~type_join left.mutability right.mutability;
   }
 
 
 let meet ~type_meet left right =
   {
     annotation = type_meet left.annotation right.annotation;
-    mutability = meet_mutability ~type_meet left.mutability right.mutability;
+    mutability = Mutability.meet ~type_meet left.mutability right.mutability;
   }
 
 
