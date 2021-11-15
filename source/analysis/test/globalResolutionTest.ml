@@ -2783,6 +2783,34 @@ let test_define context =
   ()
 
 
+let test_refine context =
+  let global_resolution =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+  in
+  assert_equal
+    (GlobalResolution.refine
+       ~global_resolution
+       (Annotation.create_immutable Type.float)
+       Type.integer)
+    (Annotation.create_immutable ~original:(Some Type.float) Type.integer);
+  assert_equal
+    (GlobalResolution.refine
+       ~global_resolution
+       (Annotation.create_immutable Type.integer)
+       Type.float)
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (GlobalResolution.refine
+       ~global_resolution
+       (Annotation.create_immutable Type.integer)
+       Type.Bottom)
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (GlobalResolution.refine ~global_resolution (Annotation.create_immutable Type.integer) Type.Top)
+    (Annotation.create_immutable ~original:(Some Type.integer) Type.Top);
+  ()
+
+
 let () =
   "class"
   >::: [
@@ -2804,5 +2832,6 @@ let () =
          "test_meet" >:: test_meet;
          "test_join" >:: test_join;
          "define" >:: test_define;
+         "refine" >:: test_refine;
        ]
   |> Test.run

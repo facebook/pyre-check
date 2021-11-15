@@ -609,3 +609,16 @@ let define resolution decorator_name =
     | _ -> None
   in
   get_define decorator_name
+
+
+let refine ~global_resolution annotation refined_type =
+  let solve_less_or_equal ~left ~right =
+    ConstraintsSet.add
+      ConstraintsSet.empty
+      ~new_constraint:(LessOrEqual { left; right })
+      ~global_resolution
+    |> ConstraintsSet.solve ~global_resolution
+    >>| fun solution -> ConstraintsSet.Solution.instantiate solution left
+  in
+  let type_less_or_equal = less_or_equal global_resolution in
+  Annotation.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation

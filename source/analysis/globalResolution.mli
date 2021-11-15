@@ -256,3 +256,5 @@ val type_of_iteration_value : global_resolution:t -> Type.t -> Type.t option
 val type_of_generator_send_and_return : global_resolution:t -> Type.t -> Type.t * Type.t
 
 val define : t -> Reference.t -> Define.t option
+
+val refine : global_resolution:t -> Annotation.t -> Type.t -> Annotation.t

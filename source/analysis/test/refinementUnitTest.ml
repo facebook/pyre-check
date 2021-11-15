@@ -60,22 +60,6 @@ let test_add_attribute_refinement _ =
 
 let resolution context = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
 
-let test_refine context =
-  let global_resolution = resolution context in
-  assert_equal
-    (refine ~global_resolution (Annotation.create_immutable Type.float) Type.integer)
-    (Annotation.create_immutable ~original:(Some Type.float) Type.integer);
-  assert_equal
-    (refine ~global_resolution (Annotation.create_immutable Type.integer) Type.float)
-    (Annotation.create_immutable Type.integer);
-  assert_equal
-    (refine ~global_resolution (Annotation.create_immutable Type.integer) Type.Bottom)
-    (Annotation.create_immutable Type.integer);
-  assert_equal
-    (refine ~global_resolution (Annotation.create_immutable Type.integer) Type.Top)
-    (Annotation.create_immutable ~original:(Some Type.integer) Type.Top)
-
-
 let test_less_or_equal context =
   let global_resolution = resolution context in
   (* Type order is preserved. *)
@@ -376,7 +360,6 @@ let () =
   >::: [
          "create" >:: test_create;
          "add_attribute_refinement" >:: test_add_attribute_refinement;
-         "refine" >:: test_refine;
          "less_or_equal" >:: test_less_or_equal;
          "join" >:: test_join;
          "meet" >:: test_meet;

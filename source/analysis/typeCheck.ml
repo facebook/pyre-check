@@ -4219,7 +4219,7 @@ module State (Context : Context) = struct
                     is_global && not (Define.is_toplevel Context.define.value)
                   in
                   let refine_annotation annotation refined =
-                    RefinementUnit.refine ~global_resolution annotation refined
+                    GlobalResolution.refine ~global_resolution annotation refined
                   in
                   let annotation =
                     (* Do not refine targets explicitly annotated as 'Any' to allow for escape hatch *)

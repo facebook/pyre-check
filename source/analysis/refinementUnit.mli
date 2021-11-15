@@ -21,8 +21,6 @@ val set_base : t -> base:Annotation.t -> t
 
 val annotation : t -> reference:Reference.t -> Annotation.t option
 
-val refine : global_resolution:GlobalResolution.t -> Annotation.t -> Type.t -> Annotation.t
-
 val less_or_equal : global_resolution:GlobalResolution.t -> t -> t -> bool
 
 val join : global_resolution:GlobalResolution.t -> t -> t -> t
