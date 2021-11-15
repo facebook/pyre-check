@@ -11,25 +11,22 @@ open Annotation
 
 type t = {
   base: Annotation.t option;
-  attribute_refinements: t Identifier.Map.Tree.t;
+  attributes: t Identifier.Map.Tree.t;
 }
 [@@deriving eq]
 
 let top =
-  {
-    base = Some (Annotation.create_mutable Type.Top);
-    attribute_refinements = Identifier.Map.Tree.empty;
-  }
+  { base = Some (Annotation.create_mutable Type.Top); attributes = Identifier.Map.Tree.empty }
 
 
-let rec pp format { base; attribute_refinements } =
+let rec pp format { base; attributes } =
   let attribute_map_entry (identifier, refinement_unit) =
     Format.asprintf "%a -> %a" Identifier.pp identifier pp refinement_unit
   in
   (match base with
   | Some base -> Format.fprintf format "[Base: %a; " Annotation.pp base
   | None -> Format.fprintf format "[Base: (); ");
-  Map.Tree.to_alist attribute_refinements
+  Map.Tree.to_alist attributes
   |> List.map ~f:attribute_map_entry
   |> String.concat ~sep:", "
   |> Format.fprintf format "Attributes: [%s]]"
@@ -41,27 +38,23 @@ let find = Identifier.Map.Tree.find
 
 let base { base; _ } = base
 
-let create ?base () = { base; attribute_refinements = Identifier.Map.Tree.empty }
+let create ?base () = { base; attributes = Identifier.Map.Tree.empty }
 
 let set_base refinement_unit ~base = { refinement_unit with base = Some base }
 
 let add_attribute_refinement refinement_unit ~reference ~base =
-  let rec add_attribute_refinement
-      ({ attribute_refinements; _ } as refinement_unit)
-      ~base
-      ~identifiers
-    =
+  let rec add_attribute_refinement ({ attributes; _ } as refinement_unit) ~base ~identifiers =
     match identifiers with
     | [] -> { refinement_unit with base = Some base }
     | identifier :: identifiers ->
         {
           refinement_unit with
-          attribute_refinements =
-            attribute_refinements
+          attributes =
+            attributes
             |> Identifier.Map.Tree.set
                  ~key:identifier
                  ~data:
-                   (find attribute_refinements identifier
+                   (find attributes identifier
                    |> Option.value ~default:(create ())
                    |> add_attribute_refinement ~base ~identifiers);
         }
@@ -70,11 +63,11 @@ let add_attribute_refinement refinement_unit ~reference ~base =
 
 
 let annotation refinement_unit ~reference =
-  let rec annotation { base; attribute_refinements } ~identifiers =
+  let rec annotation { base; attributes } ~identifiers =
     match identifiers with
     | [] -> base
     | identifier :: identifiers -> (
-        match find attribute_refinements identifier with
+        match find attributes identifier with
         | Some refinement_unit -> annotation refinement_unit ~identifiers
         | None -> None)
   in
@@ -83,8 +76,8 @@ let annotation refinement_unit ~reference =
 
 let rec less_or_equal
     ~global_resolution
-    { base = left_base; attribute_refinements = left_attributes }
-    { base = right_base; attribute_refinements = right_attributes }
+    { base = left_base; attributes = left_attributes }
+    { base = right_base; attributes = right_attributes }
   =
   let annotation_less_or_equal left_base right_base =
     match left_base, right_base with
@@ -117,8 +110,8 @@ let rec less_or_equal
 
 let join
     ~global_resolution
-    ({ base = left_base; attribute_refinements = left_attributes } as left)
-    ({ base = right_base; attribute_refinements = right_attributes } as right)
+    ({ base = left_base; attributes = left_attributes } as left)
+    ({ base = right_base; attributes = right_attributes } as right)
   =
   if equal left top || equal right top then
     top
@@ -150,8 +143,8 @@ let join
         let join_refinement_units ~key ~data sofar =
           match data with
           | `Both
-              ( { base = left_base; attribute_refinements = left_attributes },
-                { base = right_base; attribute_refinements = right_attributes } ) ->
+              ( { base = left_base; attributes = left_attributes },
+                { base = right_base; attributes = right_attributes } ) ->
               valid_join left_base right_base
               |> fun annotation ->
               Identifier.Map.Tree.set
@@ -168,21 +161,21 @@ let join
           ~init:Identifier.Map.Tree.empty
           ~f:join_refinement_units
       in
-      let attribute_refinements =
+      let attributes =
         if valid then
           join left_attributes right_attributes
         else
           Identifier.Map.Tree.empty
       in
-      { base; attribute_refinements }
+      { base; attributes }
     in
     valid_join left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
 
 
 let meet
     ~global_resolution
-    { base = left_base; attribute_refinements = left_attributes }
-    { base = right_base; attribute_refinements = right_attributes }
+    { base = left_base; attributes = left_attributes }
+    { base = right_base; attributes = right_attributes }
   =
   let valid_meet left_base right_base =
     match left_base, right_base with
@@ -211,8 +204,8 @@ let meet
       let meet_refinement_units ~key ~data sofar =
         match data with
         | `Both
-            ( { base = left_base; attribute_refinements = left_attributes },
-              { base = right_base; attribute_refinements = right_attributes } ) ->
+            ( { base = left_base; attributes = left_attributes },
+              { base = right_base; attributes = right_attributes } ) ->
             valid_meet left_base right_base
             |> fun annotation ->
             Identifier.Map.Tree.set
@@ -229,13 +222,13 @@ let meet
         ~init:Identifier.Map.Tree.empty
         ~f:meet_refinement_units
     in
-    let attribute_refinements =
+    let attributes =
       if valid then
         meet left_attributes right_attributes
       else
         Identifier.Map.Tree.empty
     in
-    { base; attribute_refinements }
+    { base; attributes }
   in
   valid_meet left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
 
