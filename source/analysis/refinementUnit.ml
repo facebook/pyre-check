@@ -74,11 +74,7 @@ let annotation refinement_unit ~reference =
   annotation refinement_unit ~identifiers:(reference |> Reference.as_list)
 
 
-let rec less_or_equal
-    ~global_resolution
-    { base = left_base; attributes = left_attributes }
-    { base = right_base; attributes = right_attributes }
-  =
+let rec less_or_equal ~global_resolution left right =
   let annotation_less_or_equal left_base right_base =
     match left_base, right_base with
     | Some left, Some right ->
@@ -104,15 +100,11 @@ let rec less_or_equal
       ~init:true
       ~f:compare_refinement_units
   in
-  annotation_less_or_equal left_base right_base
-  && attributes_less_or_equal left_attributes right_attributes
+  annotation_less_or_equal left.base right.base
+  && attributes_less_or_equal left.attributes right.attributes
 
 
-let join
-    ~global_resolution
-    ({ base = left_base; attributes = left_attributes } as left)
-    ({ base = right_base; attributes = right_attributes } as right)
-  =
+let join ~global_resolution left right =
   if equal left top || equal right top then
     top
   else
@@ -135,7 +127,7 @@ let join
           valid, Some base
       | None, None ->
           (* you only want to continue the nested join should both attribute trees exist *)
-          not (Map.Tree.is_empty left_attributes || Map.Tree.is_empty right_attributes), None
+          not (Map.Tree.is_empty left.attributes || Map.Tree.is_empty right.attributes), None
       | _ -> false, None
     in
     let rec create_refinement_unit (valid, base) ~left_attributes ~right_attributes =
@@ -169,14 +161,11 @@ let join
       in
       { base; attributes }
     in
-    valid_join left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
+    valid_join left.base right.base
+    |> create_refinement_unit ~left_attributes:left.attributes ~right_attributes:right.attributes
 
 
-let meet
-    ~global_resolution
-    { base = left_base; attributes = left_attributes }
-    { base = right_base; attributes = right_attributes }
-  =
+let meet ~global_resolution left right =
   let valid_meet left_base right_base =
     match left_base, right_base with
     | Some left, Some right ->
@@ -196,7 +185,7 @@ let meet
         valid, Some base
     | None, None ->
         (* you only want to continue the nested meet should at least one attribute tree exists *)
-        not (Map.Tree.is_empty left_attributes && Map.Tree.is_empty right_attributes), None
+        not (Map.Tree.is_empty left.attributes && Map.Tree.is_empty right.attributes), None
     | _ -> false, None
   in
   let rec create_refinement_unit (valid, base) ~left_attributes ~right_attributes =
@@ -230,7 +219,8 @@ let meet
     in
     { base; attributes }
   in
-  valid_meet left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
+  valid_meet left.base right.base
+  |> create_refinement_unit ~left_attributes:left.attributes ~right_attributes:right.attributes
 
 
 let widen ~global_resolution ~widening_threshold ~previous ~next ~iteration =
