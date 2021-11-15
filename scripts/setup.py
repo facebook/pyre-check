@@ -152,11 +152,15 @@ class Setup(NamedTuple):
             ]
         )
         opam_environment_variables: Dict[str, str] = {}
+        # `opam env` produces lines of two forms:
+        # - comments like ": this comment, starts with a colon;"
+        # - lines defining and exporting env vars like "ENV_VAR=value; export ENV_VAR;"
         for line in opam_env_result.split("\n"):
-            environment_variable, quoted_value = line.split(";")[0].split("=")
-            value = quoted_value[1:-1]
-            LOG.info(f'{environment_variable}="{value}"')
-            opam_environment_variables[environment_variable] = value
+            if not line.startswith(":"):
+                environment_variable, quoted_value = line.split(";")[0].split("=")
+                value = quoted_value[1:-1]
+                LOG.info(f'{environment_variable}="{value}"')
+                opam_environment_variables[environment_variable] = value
         return opam_environment_variables
 
     def initialize_opam_switch(self) -> Mapping[str, str]:
