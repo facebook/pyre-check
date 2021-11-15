@@ -104,11 +104,11 @@ let rec less_or_equal ~global_resolution left right =
   && attributes_less_or_equal left.attributes right.attributes
 
 
-let join ~global_resolution left right =
+let rec join ~global_resolution left right =
   if equal left top || equal right top then
     top
   else
-    let process_root left right =
+    let should_recurse, base =
       match left.base, right.base with
       | Some left, Some right ->
           let should_recurse =
@@ -130,45 +130,29 @@ let join ~global_resolution left right =
           not (Map.Tree.is_empty left.attributes || Map.Tree.is_empty right.attributes), None
       | _ -> false, None
     in
-    let rec create_refinement_unit (should_recurse, base) ~left_attributes ~right_attributes =
-      let combine_attributes left_attributes right_attributes =
+    let attributes =
+      if should_recurse then
         let combine_one_attribute ~key ~data sofar =
           match data with
           | `Both (left, right) ->
-              process_root left right
-              |> fun processed_root ->
-              Identifier.Map.Tree.set
-                sofar
-                ~key
-                ~data:
-                  (create_refinement_unit
-                     processed_root
-                     ~left_attributes:left.attributes
-                     ~right_attributes:right.attributes)
+              Identifier.Map.Tree.set sofar ~key ~data:(join ~global_resolution left right)
           | `Left _
           | `Right _ ->
               sofar
         in
         Identifier.Map.Tree.fold2
-          left_attributes
-          right_attributes
+          left.attributes
+          right.attributes
           ~init:Identifier.Map.Tree.empty
           ~f:combine_one_attribute
-      in
-      let attributes =
-        if should_recurse then
-          combine_attributes left_attributes right_attributes
-        else
-          Identifier.Map.Tree.empty
-      in
-      { base; attributes }
+      else
+        Identifier.Map.Tree.empty
     in
-    process_root left right
-    |> create_refinement_unit ~left_attributes:left.attributes ~right_attributes:right.attributes
+    { base; attributes }
 
 
-let meet ~global_resolution left right =
-  let process_root left right =
+let rec meet ~global_resolution left right =
+  let should_recurse, base =
     match left.base, right.base with
     | Some left, Some right ->
         let should_recurse =
@@ -190,41 +174,25 @@ let meet ~global_resolution left right =
         not (Map.Tree.is_empty left.attributes && Map.Tree.is_empty right.attributes), None
     | _ -> false, None
   in
-  let rec create_refinement_unit (should_recurse, base) ~left_attributes ~right_attributes =
-    let combine_attributes left_attributes right_attributes =
+  let attributes =
+    if should_recurse then
       let combine_one_attribute ~key ~data sofar =
         match data with
         | `Both (left, right) ->
-            process_root left right
-            |> fun processed_root ->
-            Identifier.Map.Tree.set
-              sofar
-              ~key
-              ~data:
-                (create_refinement_unit
-                   processed_root
-                   ~left_attributes:left.attributes
-                   ~right_attributes:right.attributes)
+            Identifier.Map.Tree.set sofar ~key ~data:(meet ~global_resolution left right)
         | `Left refinement_unit
         | `Right refinement_unit ->
             Identifier.Map.Tree.set sofar ~key ~data:refinement_unit
       in
       Identifier.Map.Tree.fold2
-        left_attributes
-        right_attributes
+        left.attributes
+        right.attributes
         ~init:Identifier.Map.Tree.empty
         ~f:combine_one_attribute
-    in
-    let attributes =
-      if should_recurse then
-        combine_attributes left_attributes right_attributes
-      else
-        Identifier.Map.Tree.empty
-    in
-    { base; attributes }
+    else
+      Identifier.Map.Tree.empty
   in
-  process_root left right
-  |> create_refinement_unit ~left_attributes:left.attributes ~right_attributes:right.attributes
+  { base; attributes }
 
 
 let widen ~global_resolution ~widening_threshold ~previous ~next ~iteration =
