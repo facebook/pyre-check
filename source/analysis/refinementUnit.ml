@@ -41,9 +41,7 @@ let find = Identifier.Map.Tree.find
 
 let base { base; _ } = base
 
-let create ?base ?(attribute_refinements = Identifier.Map.Tree.empty) () =
-  { base; attribute_refinements }
-
+let create ?base () = { base; attribute_refinements = Identifier.Map.Tree.empty }
 
 let set_base refinement_unit ~base = { refinement_unit with base = Some base }
 

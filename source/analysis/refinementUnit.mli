@@ -13,7 +13,7 @@ val top : t
 
 val base : t -> Annotation.t option
 
-val create : ?base:Annotation.t -> ?attribute_refinements:t Identifier.Map.Tree.t -> unit -> t
+val create : ?base:Annotation.t -> unit -> t
 
 val set_base : t -> base:Annotation.t -> t
 
