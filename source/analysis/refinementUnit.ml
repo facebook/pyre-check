@@ -195,8 +195,8 @@ let meet
         in
         valid, Some base
     | None, None ->
-        (* you only want to continue the nested meet should both attribute trees exist *)
-        not (Map.Tree.is_empty left_attributes || Map.Tree.is_empty right_attributes), None
+        (* you only want to continue the nested meet should at least one attribute tree exists *)
+        not (Map.Tree.is_empty left_attributes && Map.Tree.is_empty right_attributes), None
     | _ -> false, None
   in
   let rec create_refinement_unit (valid, base) ~left_attributes ~right_attributes =

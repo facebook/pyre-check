@@ -314,6 +314,15 @@ let test_meet context =
        ))
     (create ~base:(Annotation.create_mutable Type.object_primitive) ()
     |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.Bottom));
+  assert_equal
+    (meet
+       ~global_resolution
+       (create ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.string)
+       )
+       (create ()))
+    (create ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.string));
 
   (* Mutability. *)
   assert_equal
