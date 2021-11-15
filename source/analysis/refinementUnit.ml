@@ -49,36 +49,36 @@ let add_attribute_refinement refinement_unit ~reference ~base =
   let rec add_attribute_refinement
       ({ attribute_refinements; _ } as refinement_unit)
       ~base
-      ~attributes
+      ~identifiers
     =
-    match attributes with
+    match identifiers with
     | [] -> { refinement_unit with base = Some base }
-    | attribute :: attributes ->
+    | identifier :: identifiers ->
         {
           refinement_unit with
           attribute_refinements =
             attribute_refinements
             |> Identifier.Map.Tree.set
-                 ~key:attribute
+                 ~key:identifier
                  ~data:
-                   (find attribute_refinements attribute
+                   (find attribute_refinements identifier
                    |> Option.value ~default:(create ())
-                   |> add_attribute_refinement ~base ~attributes);
+                   |> add_attribute_refinement ~base ~identifiers);
         }
   in
-  add_attribute_refinement refinement_unit ~base ~attributes:(reference |> Reference.as_list)
+  add_attribute_refinement refinement_unit ~base ~identifiers:(reference |> Reference.as_list)
 
 
 let annotation refinement_unit ~reference =
-  let rec annotation { base; attribute_refinements } ~attributes =
-    match attributes with
+  let rec annotation { base; attribute_refinements } ~identifiers =
+    match identifiers with
     | [] -> base
-    | attribute :: attributes -> (
-        match find attribute_refinements attribute with
-        | Some refinement_unit -> annotation refinement_unit ~attributes
+    | identifier :: identifiers -> (
+        match find attribute_refinements identifier with
+        | Some refinement_unit -> annotation refinement_unit ~identifiers
         | None -> None)
   in
-  annotation refinement_unit ~attributes:(reference |> Reference.as_list)
+  annotation refinement_unit ~identifiers:(reference |> Reference.as_list)
 
 
 let rec less_or_equal
