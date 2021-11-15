@@ -108,8 +108,8 @@ let join ~global_resolution left right =
   if equal left top || equal right top then
     top
   else
-    let valid_join left_base right_base =
-      match left_base, right_base with
+    let valid_join left right =
+      match left.base, right.base with
       | Some left, Some right ->
           let valid =
             GlobalResolution.less_or_equal
@@ -134,15 +134,17 @@ let join ~global_resolution left right =
       let join left_attributes right_attributes =
         let join_refinement_units ~key ~data sofar =
           match data with
-          | `Both
-              ( { base = left_base; attributes = left_attributes },
-                { base = right_base; attributes = right_attributes } ) ->
-              valid_join left_base right_base
+          | `Both (left, right) ->
+              valid_join left right
               |> fun annotation ->
               Identifier.Map.Tree.set
                 sofar
                 ~key
-                ~data:(create_refinement_unit annotation ~left_attributes ~right_attributes)
+                ~data:
+                  (create_refinement_unit
+                     annotation
+                     ~left_attributes:left.attributes
+                     ~right_attributes:right.attributes)
           | `Left _
           | `Right _ ->
               sofar
@@ -161,13 +163,13 @@ let join ~global_resolution left right =
       in
       { base; attributes }
     in
-    valid_join left.base right.base
+    valid_join left right
     |> create_refinement_unit ~left_attributes:left.attributes ~right_attributes:right.attributes
 
 
 let meet ~global_resolution left right =
-  let valid_meet left_base right_base =
-    match left_base, right_base with
+  let valid_meet left right =
+    match left.base, right.base with
     | Some left, Some right ->
         let valid =
           GlobalResolution.less_or_equal
@@ -192,15 +194,17 @@ let meet ~global_resolution left right =
     let meet left_attributes right_attributes =
       let meet_refinement_units ~key ~data sofar =
         match data with
-        | `Both
-            ( { base = left_base; attributes = left_attributes },
-              { base = right_base; attributes = right_attributes } ) ->
-            valid_meet left_base right_base
+        | `Both (left, right) ->
+            valid_meet left right
             |> fun annotation ->
             Identifier.Map.Tree.set
               sofar
               ~key
-              ~data:(create_refinement_unit annotation ~left_attributes ~right_attributes)
+              ~data:
+                (create_refinement_unit
+                   annotation
+                   ~left_attributes:left.attributes
+                   ~right_attributes:right.attributes)
         | `Left refinement_unit
         | `Right refinement_unit ->
             Identifier.Map.Tree.set sofar ~key ~data:refinement_unit
@@ -219,7 +223,7 @@ let meet ~global_resolution left right =
     in
     { base; attributes }
   in
-  valid_meet left.base right.base
+  valid_meet left right
   |> create_refinement_unit ~left_attributes:left.attributes ~right_attributes:right.attributes
 
 
