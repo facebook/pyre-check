@@ -62,12 +62,6 @@ val check_invalid_type_parameters
 
 val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
 
-val join : t -> Type.t -> Type.t -> Type.t
-
-val meet : t -> Type.t -> Type.t -> Type.t
-
-val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
-
 val legacy_resolve_exports : t -> reference:Reference.t -> Reference.t
 
 val resolve_exports
@@ -111,6 +105,12 @@ val function_definitions : t -> Reference.t -> Define.t Node.t list option
 val is_suppressed_module : t -> Reference.t -> bool
 
 val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
+
+val join : t -> Type.t -> Type.t -> Type.t
+
+val meet : t -> Type.t -> Type.t -> Type.t
+
+val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
 
 (* Only for use in monkey check. *)
 val is_compatible_with : t -> left:Type.t -> right:Type.t -> bool

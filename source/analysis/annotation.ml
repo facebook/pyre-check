@@ -65,7 +65,6 @@ module Mutability = struct
           { original = type_meet left.original right.original; final = left.final && right.final }
 end
 
-
 type t = {
   annotation: Type.t;
   mutability: Mutability.t;

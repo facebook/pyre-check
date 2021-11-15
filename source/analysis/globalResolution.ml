@@ -146,6 +146,12 @@ let full_order ({ dependency; _ } as resolution) =
 
 let less_or_equal resolution = full_order resolution |> TypeOrder.always_less_or_equal
 
+let join resolution = full_order resolution |> TypeOrder.join
+
+let meet resolution = full_order resolution |> TypeOrder.meet
+
+let widen resolution = full_order resolution |> TypeOrder.widen
+
 let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compatible_with
 
 let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
@@ -409,12 +415,6 @@ let resolve_exports ({ dependency; _ } as resolution) ?from reference =
     ?from
     reference
 
-
-let widen resolution = full_order resolution |> TypeOrder.widen
-
-let join resolution = full_order resolution |> TypeOrder.join
-
-let meet resolution = full_order resolution |> TypeOrder.meet
 
 let check_invalid_type_parameters ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.check_invalid_type_parameters
