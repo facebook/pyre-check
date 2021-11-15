@@ -2705,15 +2705,11 @@ let less_or_equal ~resolution left right =
   | RedundantCast left, RedundantCast right ->
       GlobalResolution.less_or_equal resolution ~left ~right
   | RevealedType left, RevealedType right ->
-      let less_or_equal_annotation
-          { Annotation.annotation = left_annotation; mutability = left_mutability; _ }
-          { Annotation.annotation = right_annotation; mutability = right_mutability; _ }
-        =
-        [%compare.equal: Annotation.mutability] left_mutability right_mutability
-        && GlobalResolution.less_or_equal resolution ~left:left_annotation ~right:right_annotation
-      in
       [%compare.equal: Expression.t] left.expression right.expression
-      && less_or_equal_annotation left.annotation right.annotation
+      && Annotation.less_or_equal
+           ~type_less_or_equal:(GlobalResolution.less_or_equal resolution)
+           ~left:left.annotation
+           ~right:right.annotation
   | TooManyArguments left, TooManyArguments right ->
       Option.equal Reference.equal_sanitized left.callee right.callee
       && left.expected = right.expected
@@ -3002,28 +2998,19 @@ let join ~resolution left right =
     | RedundantCast left, RedundantCast right ->
         RedundantCast (GlobalResolution.join resolution left right)
     | ( RevealedType
-          {
-            annotation = { Annotation.annotation = left_annotation; mutability = left_mutability };
-            expression = left_expression;
-            qualify = left_qualify;
-          },
+          { annotation = left_annotation; expression = left_expression; qualify = left_qualify },
         RevealedType
-          {
-            annotation = { Annotation.annotation = right_annotation; mutability = right_mutability };
-            expression = right_expression;
-            qualify = right_qualify;
-          } )
-      when [%compare.equal: Expression.t] left_expression right_expression
-           && [%compare.equal: Annotation.mutability] left_mutability right_mutability ->
+          { annotation = right_annotation; expression = right_expression; qualify = right_qualify }
+      )
+      when [%compare.equal: Expression.t] left_expression right_expression ->
         RevealedType
           {
             expression = left_expression;
             annotation =
-              {
-                Annotation.annotation =
-                  GlobalResolution.join resolution left_annotation right_annotation;
-                mutability = left_mutability;
-              };
+              Annotation.join
+                ~type_join:(GlobalResolution.join resolution)
+                left_annotation
+                right_annotation;
             qualify = left_qualify || right_qualify (* lol *);
           }
     | IncompatibleParameterType left, IncompatibleParameterType right

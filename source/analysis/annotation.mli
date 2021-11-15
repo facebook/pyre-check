@@ -7,16 +7,7 @@
 
 open Ast
 
-type immutable = {
-  original: Type.t;
-  final: bool;
-}
-[@@deriving compare, eq, hash, sexp]
-
-type mutability =
-  | Mutable
-  | Immutable of immutable
-[@@deriving compare, eq, hash, sexp]
+type mutability
 
 type t = {
   annotation: Type.t;
@@ -33,8 +24,6 @@ val create_immutable : ?original:Type.t option -> ?final:bool -> Type.t -> t
 val annotation : t -> Type.t
 
 val original : t -> Type.t
-
-val mutability : t -> mutability
 
 val is_immutable : t -> bool
 

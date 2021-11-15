@@ -18,7 +18,7 @@ let test_create _ =
   assert_create ~refinement_unit:(create ()) ~expected:None;
   assert_create
     ~refinement_unit:(create ~base:(Annotation.create_mutable Type.Bottom) ())
-    ~expected:(Some { mutability = Mutable; annotation = Type.Bottom });
+    ~expected:(Some (Annotation.create_mutable Type.Bottom));
   assert_create
     ~refinement_unit:(create ~base:(Annotation.create_mutable Type.object_primitive) ())
     ~expected:(Some (Annotation.create_mutable (Type.Primitive "object")));
@@ -44,7 +44,7 @@ let test_add_attribute_refinement _ =
   assert_attribute_refinement
     ~refinement_unit
     ~reference:!&"a.b.c.d"
-    ~expected:(Some { mutability = Mutable; annotation = Type.Primitive "int" });
+    ~expected:(Some (Annotation.create_mutable (Type.Primitive "int")));
   assert_attribute_refinement ~refinement_unit ~reference:!&"a.b.c.d.e" ~expected:None;
 
   assert_attribute_refinement
@@ -54,7 +54,7 @@ let test_add_attribute_refinement _ =
          ~reference:!&"a.b.c.d"
          ~base:(Annotation.create_mutable Type.bool))
     ~reference:!&"a.b.c.d"
-    ~expected:(Some { mutability = Mutable; annotation = Type.Primitive "bool" });
+    ~expected:(Some (Annotation.create_mutable (Type.Primitive "bool")));
   ()
 
 

@@ -104,8 +104,6 @@ let create_immutable ?(original = None) ?(final = false) annotation =
 
 let annotation { annotation; _ } = annotation
 
-let mutability { mutability; _ } = mutability
-
 let original { annotation; mutability } =
   match mutability with
   | Immutable { original; _ } -> original

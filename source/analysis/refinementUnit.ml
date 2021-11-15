@@ -18,7 +18,7 @@ type t = {
 
 let top =
   {
-    base = Some { annotation = Type.Top; mutability = Mutable };
+    base = Some (Annotation.create_mutable Type.Top);
     attribute_refinements = Identifier.Map.Tree.empty;
   }
 
@@ -272,6 +272,6 @@ let meet
 
 let widen ~global_resolution ~widening_threshold ~previous ~next ~iteration =
   if iteration + 1 >= widening_threshold then
-    create ~base:{ annotation = Type.Top; mutability = Mutable } ()
+    create ~base:(Annotation.create_mutable Type.Top) ()
   else
     join ~global_resolution previous next

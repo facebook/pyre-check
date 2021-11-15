@@ -582,13 +582,13 @@ let test_join context =
     (error (Error.AnalysisFailure (FixpointThresholdReached { define = !&"foo.not_bar" })))
     (error Error.Top);
   assert_join
-    (error (revealed_type "a" (Annotation.create_mutable Type.integer)))
+    (error (revealed_type "a" (Annotation.create_mutable Type.string)))
     (error (revealed_type "a" (Annotation.create_mutable Type.float)))
-    (error (revealed_type "a" (Annotation.create_mutable Type.float)));
+    (error (revealed_type "a" (Annotation.create_mutable (Type.union [Type.string; Type.float]))));
   assert_join
-    (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
+    (error (revealed_type "a" (Annotation.create_immutable Type.string)))
     (error (revealed_type "a" (Annotation.create_immutable Type.float)))
-    (error Error.Top);
+    (error (revealed_type "a" (Annotation.create_immutable (Type.union [Type.string; Type.float]))));
   assert_join
     (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
     (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
@@ -664,8 +664,8 @@ let test_less_or_equal context =
   assert_false
     (Error.less_or_equal
        ~resolution
-       (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
-       (error (revealed_type "a" (Annotation.create_immutable Type.float))))
+       (error (revealed_type "a" (Annotation.create_immutable Type.float)))
+       (error (revealed_type "a" (Annotation.create_immutable Type.integer))))
 
 
 let test_filter context =
