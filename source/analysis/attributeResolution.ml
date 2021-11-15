@@ -396,215 +396,217 @@ module ClassDecorators = struct
       match options definition with
       | None -> []
       | Some { init; repr; eq; order } ->
-          let methods =
-            if init && not (already_in_table "__init__") then
-              let parameters =
-                let extract_dataclass_field_arguments (_, value) =
-                  match value with
-                  | {
-                   Node.value =
-                     Expression.Call
+          let init_parameters ~implicitly_initialize =
+            let extract_dataclass_field_arguments (_, value) =
+              match value with
+              | {
+               Node.value =
+                 Expression.Call
+                   {
+                     callee =
                        {
-                         callee =
-                           {
-                             Node.value =
-                               Expression.Name
-                                 (Name.Attribute
+                         Node.value =
+                           Expression.Name
+                             (Name.Attribute
+                               {
+                                 base =
                                    {
-                                     base =
-                                       {
-                                         Node.value =
-                                           Expression.Name (Name.Identifier "dataclasses");
-                                         _;
-                                       };
-                                     attribute = "field";
+                                     Node.value = Expression.Name (Name.Identifier "dataclasses");
                                      _;
-                                   });
-                             _;
-                           };
-                         arguments;
+                                   };
+                                 attribute = "field";
+                                 _;
+                               });
                          _;
                        };
+                     arguments;
+                     _;
+                   };
+               _;
+              } ->
+                  Some arguments
+              | _ -> None
+            in
+            let init_not_disabled attribute =
+              let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
+                match name, value with
+                | Some { Node.value = parameter_name; _ }, Expression.Constant Constant.False
+                  when String.equal "init" (Identifier.sanitized parameter_name) ->
+                    true
+                | _ -> false
+              in
+              match extract_dataclass_field_arguments attribute with
+              | Some arguments -> not (List.exists arguments ~f:is_disable_init)
+              | _ -> true
+            in
+            let extract_init_value (attribute, value) =
+              let initialized = AnnotatedAttribute.initialized attribute in
+              let get_default_value { Call.Argument.name; value } =
+                match name with
+                | Some { Node.value = parameter_name; _ } ->
+                    if String.equal "default" (Identifier.sanitized parameter_name) then
+                      Some value
+                    else if String.equal "default_factory" (Identifier.sanitized parameter_name)
+                    then
+                      let { Node.location; _ } = value in
+                      Some
+                        {
+                          Node.value = Expression.Call { Call.callee = value; arguments = [] };
+                          location;
+                        }
+                    else
+                      None
+                | _ -> None
+              in
+              match initialized with
+              | NotInitialized -> None
+              | _ -> (
+                  match extract_dataclass_field_arguments (attribute, value) with
+                  | Some arguments -> List.find_map arguments ~f:get_default_value
+                  | _ -> Some value)
+            in
+            let collect_parameters parameters (attribute, value) =
+              (* Parameters must be annotated attributes *)
+              let annotation =
+                instantiate_attribute attribute
+                |> AnnotatedAttribute.annotation
+                |> Annotation.original
+                |> function
+                | Type.Parametric
+                    { name = "dataclasses.InitVar"; parameters = [Single single_parameter] } ->
+                    single_parameter
+                | annotation -> annotation
+              in
+              match AnnotatedAttribute.name attribute with
+              | name when not (Type.contains_unknown annotation) ->
+                  if implicitly_initialize then
+                    UninstantiatedAttributeTable.mark_as_implicitly_initialized_if_uninitialized
+                      table
+                      name;
+                  let name = "$parameter$" ^ name in
+                  let value = extract_init_value (attribute, value) in
+                  let rec override_existing_parameters unchecked_parameters =
+                    match unchecked_parameters with
+                    | [] ->
+                        [
+                          {
+                            Type.Callable.Parameter.name;
+                            annotation;
+                            default = Option.is_some value;
+                          };
+                        ]
+                    | { Type.Callable.Parameter.name = old_name; default = old_default; _ } :: tail
+                      when Identifier.equal old_name name ->
+                        { name; annotation; default = Option.is_some value || old_default } :: tail
+                    | head :: tail -> head :: override_existing_parameters tail
+                  in
+                  override_existing_parameters parameters
+              | _ -> parameters
+            in
+            let get_table ({ Node.value = class_summary; _ } as parent) =
+              let create attribute : uninstantiated_attribute * Expression.t =
+                let value =
+                  match attribute with
+                  | {
+                   Node.value = { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ };
                    _;
                   } ->
-                      Some arguments
-                  | _ -> None
+                      value
+                  | { Node.location; _ } ->
+                      Node.create (Expression.Constant Constant.Ellipsis) ~location
                 in
-                let init_not_disabled attribute =
-                  let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
-                    match name, value with
-                    | Some { Node.value = parameter_name; _ }, Expression.Constant Constant.False
-                      when String.equal "init" (Identifier.sanitized parameter_name) ->
-                        true
-                    | _ -> false
-                  in
-                  match extract_dataclass_field_arguments attribute with
-                  | Some arguments -> not (List.exists arguments ~f:is_disable_init)
-                  | _ -> true
-                in
-                let extract_init_value (attribute, value) =
-                  let initialized = AnnotatedAttribute.initialized attribute in
-                  let get_default_value { Call.Argument.name; value } =
-                    match name with
-                    | Some { Node.value = parameter_name; _ } ->
-                        if String.equal "default" (Identifier.sanitized parameter_name) then
-                          Some value
-                        else if String.equal "default_factory" (Identifier.sanitized parameter_name)
-                        then
-                          let { Node.location; _ } = value in
-                          Some
-                            {
-                              Node.value = Expression.Call { Call.callee = value; arguments = [] };
-                              location;
-                            }
-                        else
-                          None
-                    | _ -> None
-                  in
-                  match initialized with
-                  | NotInitialized -> None
-                  | _ -> (
-                      match extract_dataclass_field_arguments (attribute, value) with
-                      | Some arguments -> List.find_map arguments ~f:get_default_value
-                      | _ -> Some value)
-                in
-                let collect_parameters parameters (attribute, value) =
-                  (* Parameters must be annotated attributes *)
-                  let annotation =
-                    instantiate_attribute attribute
-                    |> AnnotatedAttribute.annotation
-                    |> Annotation.original
-                    |> function
-                    | Type.Parametric
-                        { name = "dataclasses.InitVar"; parameters = [Single single_parameter] } ->
-                        single_parameter
-                    | annotation -> annotation
-                  in
-                  match AnnotatedAttribute.name attribute with
-                  | name when not (Type.contains_unknown annotation) ->
-                      UninstantiatedAttributeTable.mark_as_implicitly_initialized_if_uninitialized
-                        table
-                        name;
-                      let name = "$parameter$" ^ name in
-                      let value = extract_init_value (attribute, value) in
-                      let rec override_existing_parameters unchecked_parameters =
-                        match unchecked_parameters with
-                        | [] ->
-                            [
-                              {
-                                Type.Callable.Parameter.name;
-                                annotation;
-                                default = Option.is_some value;
-                              };
-                            ]
-                        | { Type.Callable.Parameter.name = old_name; default = old_default; _ }
-                          :: tail
-                          when Identifier.equal old_name name ->
-                            { name; annotation; default = Option.is_some value || old_default }
-                            :: tail
-                        | head :: tail -> head :: override_existing_parameters tail
-                      in
-                      override_existing_parameters parameters
-                  | _ -> parameters
-                in
-                let get_table ({ Node.value = class_summary; _ } as parent) =
-                  let create attribute : uninstantiated_attribute * Expression.t =
-                    let value =
-                      match attribute with
-                      | {
-                       Node.value = { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ };
-                       _;
-                      } ->
-                          value
-                      | { Node.location; _ } ->
-                          Node.create (Expression.Constant Constant.Ellipsis) ~location
-                    in
-                    ( create_attribute
-                        ~parent
-                        ?defined:None
-                        ~accessed_via_metaclass:false
-                        (Node.value attribute),
-                      value )
-                  in
-                  let compare_by_location left right =
-                    Ast.Location.compare (Node.location left) (Node.location right)
-                  in
-                  ClassSummary.attributes
-                    ~include_generated_attributes:false
-                    ~in_test:false
-                    class_summary
-                  |> Identifier.SerializableMap.bindings
-                  |> List.unzip
-                  |> snd
-                  |> List.filter ~f:(fun attribute ->
-                         (* ClassVar should be excluded from considerations as field. *)
-                         match Node.value attribute with
-                         | {
-                          Attribute.kind =
-                            Attribute.Simple
-                              {
-                                annotation =
-                                  Some
-                                    {
-                                      Node.value =
-                                        Expression.Call
-                                          {
-                                            callee =
-                                              {
-                                                value =
-                                                  Name
-                                                    (Name.Attribute
-                                                      {
-                                                        attribute = "__getitem__";
-                                                        base =
-                                                          {
-                                                            Node.value =
-                                                              Name
-                                                                (Name.Attribute
-                                                                  {
-                                                                    attribute = "ClassVar";
-                                                                    base =
-                                                                      {
-                                                                        Node.value =
-                                                                          Name
-                                                                            (Name.Identifier
-                                                                              "typing");
-                                                                        _;
-                                                                      };
-                                                                    _;
-                                                                  });
-                                                            _;
-                                                          };
-                                                        _;
-                                                      });
-                                                _;
-                                              };
-                                            arguments = [_];
-                                          };
-                                      _;
-                                    };
-                                _;
-                              };
-                          _;
-                         } ->
-                             false
-                         | _ -> true)
-                  |> List.sort ~compare:compare_by_location
-                  |> List.map ~f:create
-                in
-
-                let parent_attribute_tables =
-                  parent_dataclasses
-                  |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
-                  |> List.rev
-                  |> List.map ~f:get_table
-                in
-                parent_attribute_tables @ [get_table definition]
-                |> List.map ~f:(List.filter ~f:init_not_disabled)
-                |> List.fold ~init:[] ~f:(fun parameters ->
-                       List.fold ~init:parameters ~f:collect_parameters)
+                ( create_attribute
+                    ~parent
+                    ?defined:None
+                    ~accessed_via_metaclass:false
+                    (Node.value attribute),
+                  value )
               in
-              [make_method ~parameters ~annotation:Type.none ~attribute_name:"__init__"]
+              let compare_by_location left right =
+                Ast.Location.compare (Node.location left) (Node.location right)
+              in
+              ClassSummary.attributes
+                ~include_generated_attributes:false
+                ~in_test:false
+                class_summary
+              |> Identifier.SerializableMap.bindings
+              |> List.unzip
+              |> snd
+              |> List.filter ~f:(fun attribute ->
+                     (* ClassVar should be excluded from considerations as field. *)
+                     match Node.value attribute with
+                     | {
+                      Attribute.kind =
+                        Attribute.Simple
+                          {
+                            annotation =
+                              Some
+                                {
+                                  Node.value =
+                                    Expression.Call
+                                      {
+                                        callee =
+                                          {
+                                            value =
+                                              Name
+                                                (Name.Attribute
+                                                  {
+                                                    attribute = "__getitem__";
+                                                    base =
+                                                      {
+                                                        Node.value =
+                                                          Name
+                                                            (Name.Attribute
+                                                              {
+                                                                attribute = "ClassVar";
+                                                                base =
+                                                                  {
+                                                                    Node.value =
+                                                                      Name
+                                                                        (Name.Identifier "typing");
+                                                                    _;
+                                                                  };
+                                                                _;
+                                                              });
+                                                        _;
+                                                      };
+                                                    _;
+                                                  });
+                                            _;
+                                          };
+                                        arguments = [_];
+                                      };
+                                  _;
+                                };
+                            _;
+                          };
+                      _;
+                     } ->
+                         false
+                     | _ -> true)
+              |> List.sort ~compare:compare_by_location
+              |> List.map ~f:create
+            in
+
+            let parent_attribute_tables =
+              parent_dataclasses
+              |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
+              |> List.rev
+              |> List.map ~f:get_table
+            in
+            parent_attribute_tables @ [get_table definition]
+            |> List.map ~f:(List.filter ~f:init_not_disabled)
+            |> List.fold ~init:[] ~f:(fun parameters ->
+                   List.fold ~init:parameters ~f:collect_parameters)
+          in
+          let methods =
+            if init && not (already_in_table "__init__") then
+              [
+                make_method
+                  ~parameters:(init_parameters ~implicitly_initialize:true)
+                  ~annotation:Type.none
+                  ~attribute_name:"__init__";
+              ]
             else
               []
           in
