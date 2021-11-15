@@ -3049,14 +3049,7 @@ module State (Context : Context) = struct
               if not (Type.is_unbound consistent_with_boundary) then
                 Value (Annotation.create_mutable consistent_with_boundary |> set_local ~name)
               else if
-                GlobalResolution.less_or_equal
-                  global_resolution
-                  ~left:existing_type
-                  ~right:annotation
-                || GlobalResolution.less_or_equal
-                     global_resolution
-                     ~left:annotation
-                     ~right:existing_type
+                GlobalResolution.types_are_orderable global_resolution existing_type annotation
               then
                 Value (Annotation.create_mutable annotation |> set_local ~name)
               else

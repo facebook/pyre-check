@@ -152,6 +152,11 @@ let meet resolution = full_order resolution |> TypeOrder.meet
 
 let widen resolution = full_order resolution |> TypeOrder.widen
 
+let types_are_orderable resolution type0 type1 =
+  less_or_equal resolution ~left:type0 ~right:type1
+  || less_or_equal resolution ~left:type1 ~right:type0
+
+
 let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compatible_with
 
 let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)

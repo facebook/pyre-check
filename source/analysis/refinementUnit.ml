@@ -111,20 +111,8 @@ let rec join ~global_resolution left right =
     let should_recurse, base =
       match left.base, right.base with
       | Some left, Some right ->
-          let should_recurse =
-            GlobalResolution.less_or_equal
-              global_resolution
-              ~left:left.annotation
-              ~right:right.annotation
-            || GlobalResolution.less_or_equal
-                 global_resolution
-                 ~left:right.annotation
-                 ~right:left.annotation
-          in
-          let base =
-            Annotation.join ~type_join:(GlobalResolution.join global_resolution) left right
-          in
-          should_recurse, Some base
+          ( GlobalResolution.types_are_orderable global_resolution left.annotation right.annotation,
+            Some (Annotation.join ~type_join:(GlobalResolution.join global_resolution) left right) )
       | None, None ->
           (* you only want to continue the nested join should both attribute trees exist *)
           not (Map.Tree.is_empty left.attributes || Map.Tree.is_empty right.attributes), None
@@ -155,20 +143,8 @@ let rec meet ~global_resolution left right =
   let should_recurse, base =
     match left.base, right.base with
     | Some left, Some right ->
-        let should_recurse =
-          GlobalResolution.less_or_equal
-            global_resolution
-            ~left:left.annotation
-            ~right:right.annotation
-          || GlobalResolution.less_or_equal
-               global_resolution
-               ~left:right.annotation
-               ~right:left.annotation
-        in
-        let base =
-          Annotation.meet ~type_meet:(GlobalResolution.meet global_resolution) left right
-        in
-        should_recurse, Some base
+        ( GlobalResolution.types_are_orderable global_resolution left.annotation right.annotation,
+          Some (Annotation.meet ~type_meet:(GlobalResolution.meet global_resolution) left right) )
     | None, None ->
         (* you only want to continue the nested meet should at least one attribute tree exists *)
         not (Map.Tree.is_empty left.attributes && Map.Tree.is_empty right.attributes), None
