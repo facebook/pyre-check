@@ -159,13 +159,7 @@ let run ~scheduler ~configuration ~environment sources =
         when is_external ->
           []
       | Some (Result.Error { AstEnvironment.ParserError.is_suppressed; _ }) when is_suppressed -> []
-      | Some (Result.Error { AstEnvironment.ParserError.message; _ }) ->
-          let location =
-            {
-              Location.start = { Location.line = 1; column = 1 };
-              stop = { Location.line = 1; column = 1 };
-            }
-          in
+      | Some (Result.Error { AstEnvironment.ParserError.message; location; _ }) ->
           let location_with_module =
             {
               Location.WithModule.path = module_name;

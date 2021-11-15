@@ -18,6 +18,7 @@ type t = {
 module ParserError = struct
   type t = {
     source_path: SourcePath.t;
+    location: Location.t;
     is_suppressed: bool;
     message: string;
   }
@@ -111,6 +112,7 @@ end
 type parse_result =
   | Success of Source.t
   | Error of {
+      location: Location.t;
       message: string;
       is_suppressed: bool;
     }
@@ -147,14 +149,26 @@ let parse_source
               (* NOTE: The number needs to be updated when the error code changes. *)
               List.exists ignore_codes ~f:(Int.equal 404)
         in
-        let message = Format.sprintf "Parse error on line %d, column %d: %s" line column message in
-        Error { message; is_suppressed }
+        let location =
+          let error_position = { Location.line; column } in
+          { Location.start = error_position; stop = error_position }
+        in
+        Error { location; message; is_suppressed }
   in
   let path = SourcePath.full_path ~configuration source_path in
   try File.content_exn (File.create path) |> parse with
   | Sys_error error ->
       let message = Format.asprintf "Cannot open file `%a` due to: %s" Path.pp path error in
-      Error { message; is_suppressed = false }
+      Error
+        {
+          location =
+            {
+              Location.start = { Location.line = 1; column = 1 };
+              stop = { Location.line = 1; column = 1 };
+            };
+          message;
+          is_suppressed = false;
+        }
 
 
 let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
@@ -181,11 +195,11 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
           in
           Raw.add_parsed_source ast_environment source;
           qualifier :: result
-      | Error { message; is_suppressed } ->
+      | Error { location; message; is_suppressed } ->
           let { SourcePath.qualifier; _ } = source_path in
           Raw.add_unparsed_source
             ast_environment
-            { ParserError.source_path; message; is_suppressed };
+            { ParserError.source_path; location; message; is_suppressed };
           qualifier :: result
     in
     PyreNewParser.with_context do_parse
