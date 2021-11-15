@@ -120,6 +120,24 @@ let test_global _ =
              print(x + y)
     |}
     ~expected:["x"; "y"];
+  assert_global
+    {|
+       def foo():
+         match subject:
+           case 1:
+             global x
+    |}
+    ~expected:["x"];
+  assert_global
+    {|
+       def foo():
+         match subject:
+           case 1:
+             global x
+           case 2:
+             global y
+    |}
+    ~expected:["x"; "y"];
 
   (* Global discovery does not go beyond nesting *)
   assert_global

@@ -290,6 +290,9 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | While { While.body; orelse; _ } ->
       let sofar = globals_of_statements sofar body in
       globals_of_statements sofar orelse
+  | Match { Match.cases; _ } ->
+      List.fold cases ~init:sofar ~f:(fun sofar { Match.Case.body; _ } ->
+          globals_of_statements sofar body)
   | Try { Try.body; handlers; orelse; finally } ->
       let sofar = globals_of_statements sofar body in
       let sofar =
@@ -308,8 +311,6 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | Delete _
   | Expression _
   | Import _
-  (* TODO(T102720335): Support match statement. *)
-  | Match _
   | Nonlocal _
   | Pass
   | Raise _
