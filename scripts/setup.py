@@ -153,6 +153,8 @@ class Setup(NamedTuple):
         )
         opam_environment_variables: Dict[str, str] = {}
         for line in opam_env_result.split("\n"):
+            print(line)
+            print(line.split(";")[0])
             environment_variable, quoted_value = line.split(";")[0].split("=")
             value = quoted_value[1:-1]
             LOG.info(f'{environment_variable}="{value}"')
