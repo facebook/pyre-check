@@ -108,10 +108,10 @@ let join ~global_resolution left right =
   if equal left top || equal right top then
     top
   else
-    let valid_join left right =
+    let process_root left right =
       match left.base, right.base with
       | Some left, Some right ->
-          let valid =
+          let should_recurse =
             GlobalResolution.less_or_equal
               global_resolution
               ~left:left.annotation
@@ -124,25 +124,25 @@ let join ~global_resolution left right =
           let base =
             Annotation.join ~type_join:(GlobalResolution.join global_resolution) left right
           in
-          valid, Some base
+          should_recurse, Some base
       | None, None ->
           (* you only want to continue the nested join should both attribute trees exist *)
           not (Map.Tree.is_empty left.attributes || Map.Tree.is_empty right.attributes), None
       | _ -> false, None
     in
-    let rec create_refinement_unit (valid, base) ~left_attributes ~right_attributes =
-      let join left_attributes right_attributes =
-        let join_refinement_units ~key ~data sofar =
+    let rec create_refinement_unit (should_recurse, base) ~left_attributes ~right_attributes =
+      let combine_attributes left_attributes right_attributes =
+        let combine_one_attribute ~key ~data sofar =
           match data with
           | `Both (left, right) ->
-              valid_join left right
-              |> fun annotation ->
+              process_root left right
+              |> fun processed_root ->
               Identifier.Map.Tree.set
                 sofar
                 ~key
                 ~data:
                   (create_refinement_unit
-                     annotation
+                     processed_root
                      ~left_attributes:left.attributes
                      ~right_attributes:right.attributes)
           | `Left _
@@ -153,25 +153,25 @@ let join ~global_resolution left right =
           left_attributes
           right_attributes
           ~init:Identifier.Map.Tree.empty
-          ~f:join_refinement_units
+          ~f:combine_one_attribute
       in
       let attributes =
-        if valid then
-          join left_attributes right_attributes
+        if should_recurse then
+          combine_attributes left_attributes right_attributes
         else
           Identifier.Map.Tree.empty
       in
       { base; attributes }
     in
-    valid_join left right
+    process_root left right
     |> create_refinement_unit ~left_attributes:left.attributes ~right_attributes:right.attributes
 
 
 let meet ~global_resolution left right =
-  let valid_meet left right =
+  let process_root left right =
     match left.base, right.base with
     | Some left, Some right ->
-        let valid =
+        let should_recurse =
           GlobalResolution.less_or_equal
             global_resolution
             ~left:left.annotation
@@ -184,25 +184,25 @@ let meet ~global_resolution left right =
         let base =
           Annotation.meet ~type_meet:(GlobalResolution.meet global_resolution) left right
         in
-        valid, Some base
+        should_recurse, Some base
     | None, None ->
         (* you only want to continue the nested meet should at least one attribute tree exists *)
         not (Map.Tree.is_empty left.attributes && Map.Tree.is_empty right.attributes), None
     | _ -> false, None
   in
-  let rec create_refinement_unit (valid, base) ~left_attributes ~right_attributes =
-    let meet left_attributes right_attributes =
-      let meet_refinement_units ~key ~data sofar =
+  let rec create_refinement_unit (should_recurse, base) ~left_attributes ~right_attributes =
+    let combine_attributes left_attributes right_attributes =
+      let combine_one_attribute ~key ~data sofar =
         match data with
         | `Both (left, right) ->
-            valid_meet left right
-            |> fun annotation ->
+            process_root left right
+            |> fun processed_root ->
             Identifier.Map.Tree.set
               sofar
               ~key
               ~data:
                 (create_refinement_unit
-                   annotation
+                   processed_root
                    ~left_attributes:left.attributes
                    ~right_attributes:right.attributes)
         | `Left refinement_unit
@@ -213,17 +213,17 @@ let meet ~global_resolution left right =
         left_attributes
         right_attributes
         ~init:Identifier.Map.Tree.empty
-        ~f:meet_refinement_units
+        ~f:combine_one_attribute
     in
     let attributes =
-      if valid then
-        meet left_attributes right_attributes
+      if should_recurse then
+        combine_attributes left_attributes right_attributes
       else
         Identifier.Map.Tree.empty
     in
     { base; attributes }
   in
-  valid_meet left right
+  process_root left right
   |> create_refinement_unit ~left_attributes:left.attributes ~right_attributes:right.attributes
 
 
