@@ -83,7 +83,7 @@ let annotation refinement_unit ~reference =
   annotation refinement_unit ~attributes:(reference |> Reference.as_list)
 
 
-let less_or_equal
+let rec less_or_equal
     ~global_resolution
     { base = left_base; attribute_refinements = left_attributes }
     { base = right_base; attribute_refinements = right_attributes }
@@ -98,29 +98,23 @@ let less_or_equal
     | None, None -> true (* intermediate refinement units don't require computation *)
     | _ -> false
   in
-  let attributes_less_or_equal =
-    let rec less_or_equal left_attributes right_attributes =
-      let compare_refinement_units ~key:_ ~data sofar =
-        match data with
-        | `Both
-            ( { base = left_base; attribute_refinements = left_attributes },
-              { base = right_base; attribute_refinements = right_attributes } ) ->
-            let inner () = annotation_less_or_equal left_base right_base in
-            sofar && inner () && less_or_equal left_attributes right_attributes
-        | `Left _
-        | `Right _ ->
-            (* only compare refinement units which possess the same attributes *)
-            false
-      in
-      Identifier.Map.Tree.fold2
-        left_attributes
-        right_attributes
-        ~init:true
-        ~f:compare_refinement_units
+  let attributes_less_or_equal left_attributes right_attributes =
+    let compare_refinement_units ~key:_ ~data sofar =
+      match data with
+      | `Both (left, right) -> sofar && less_or_equal ~global_resolution left right
+      (* only compare refinement units which possess the same attributes *)
+      | `Left _
+      | `Right _ ->
+          false
     in
-    less_or_equal left_attributes right_attributes
+    Identifier.Map.Tree.fold2
+      left_attributes
+      right_attributes
+      ~init:true
+      ~f:compare_refinement_units
   in
-  annotation_less_or_equal left_base right_base && attributes_less_or_equal
+  annotation_less_or_equal left_base right_base
+  && attributes_less_or_equal left_attributes right_attributes
 
 
 let join
