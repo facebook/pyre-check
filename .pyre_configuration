@@ -28,6 +28,9 @@
       "site-package": "graphql"
     },
     {
+      "site-package": "intervaltree"
+    },
+    {
       "site-package": "libcst"
     },
     {
