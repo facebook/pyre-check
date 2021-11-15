@@ -15,9 +15,9 @@ val base : t -> Annotation.t option
 
 val create : ?base:Annotation.t -> ?attribute_refinements:t Identifier.Map.Tree.t -> unit -> t
 
-val add_attribute_refinement : t -> reference:Reference.t -> base:Annotation.t -> t
-
 val set_base : t -> base:Annotation.t -> t
+
+val add_attribute_refinement : t -> reference:Reference.t -> base:Annotation.t -> t
 
 val annotation : t -> reference:Reference.t -> Annotation.t option
 

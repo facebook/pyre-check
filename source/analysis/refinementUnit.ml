@@ -45,6 +45,8 @@ let create ?base ?(attribute_refinements = Identifier.Map.Tree.empty) () =
   { base; attribute_refinements }
 
 
+let set_base refinement_unit ~base = { refinement_unit with base = Some base }
+
 let add_attribute_refinement refinement_unit ~reference ~base =
   let rec add_attribute_refinement
       ({ attribute_refinements; _ } as refinement_unit)
@@ -68,8 +70,6 @@ let add_attribute_refinement refinement_unit ~reference ~base =
   in
   add_attribute_refinement refinement_unit ~base ~attributes:(reference |> Reference.as_list)
 
-
-let set_base refinement_unit ~base = { refinement_unit with base = Some base }
 
 let annotation refinement_unit ~reference =
   let rec annotation { base; attribute_refinements } ~attributes =
@@ -176,11 +176,7 @@ let join
         else
           Identifier.Map.Tree.empty
       in
-      create ~attribute_refinements ()
-      |> fun refinement_unit ->
-      match base with
-      | Some base -> set_base refinement_unit ~base
-      | _ -> refinement_unit
+      { base; attribute_refinements }
     in
     valid_join left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
 
@@ -241,11 +237,7 @@ let meet
       else
         Identifier.Map.Tree.empty
     in
-    create ~attribute_refinements ()
-    |> fun refinement_unit ->
-    match base with
-    | Some base -> set_base refinement_unit ~base
-    | _ -> refinement_unit
+    { base; attribute_refinements }
   in
   valid_meet left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
 

@@ -148,12 +148,9 @@ let set_local
         Map.set
           temporary_annotations
           ~key:reference
-          ~data:(RefinementUnit.create () |> RefinementUnit.set_base ~base:annotation) )
+          ~data:(RefinementUnit.create ~base:annotation ()) )
     else
-      ( Map.set
-          annotations
-          ~key:reference
-          ~data:(RefinementUnit.create () |> RefinementUnit.set_base ~base:annotation),
+      ( Map.set annotations ~key:reference ~data:(RefinementUnit.create ~base:annotation ()),
         temporary_annotations )
   in
   { resolution with annotation_store = { annotations; temporary_annotations } }
