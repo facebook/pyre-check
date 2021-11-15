@@ -151,3 +151,23 @@ let meet ~type_meet left right =
     annotation = type_meet left.annotation right.annotation;
     mutability = meet_mutability ~type_meet left.mutability right.mutability;
   }
+
+
+let refine ~type_less_or_equal ~solve_less_or_equal ~refined_type { annotation; mutability } =
+  let accept_refinement_of_immutable original =
+    (not (Type.is_unbound refined_type)) && type_less_or_equal ~left:refined_type ~right:original
+  in
+  match mutability with
+  | Mutable -> { annotation = refined_type; mutability }
+  | Immutable { original; _ } -> (
+      match refined_type with
+      | Type.Top -> { annotation = Type.Top; mutability }
+      | Type.Bottom -> { annotation; mutability }
+      | _ when accept_refinement_of_immutable original -> { annotation = refined_type; mutability }
+      | _ ->
+          {
+            annotation =
+              solve_less_or_equal ~left:refined_type ~right:original
+              |> Option.value ~default:annotation;
+            mutability;
+          })

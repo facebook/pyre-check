@@ -84,32 +84,17 @@ let annotation refinement_unit ~reference =
   annotation refinement_unit ~attributes:(reference |> Reference.as_list)
 
 
-let refine ~global_resolution { annotation; mutability } refined =
-  match mutability with
-  | Mutable -> { annotation = refined; mutability }
-  | Immutable { original; _ } ->
-      let annotation =
-        match refined with
-        | Type.Top -> refined
-        | Type.Bottom -> annotation
-        | refined ->
-            GlobalResolution.ConstraintsSet.add
-              ConstraintsSet.empty
-              ~new_constraint:(LessOrEqual { left = refined; right = original })
-              ~global_resolution
-            |> GlobalResolution.ConstraintsSet.solve ~global_resolution
-            >>| (fun solution -> ConstraintsSet.Solution.instantiate solution refined)
-            |> Option.value ~default:annotation
-      in
-      let refine =
-        Type.is_top refined
-        || (not (Type.is_unbound refined))
-           && GlobalResolution.less_or_equal global_resolution ~left:refined ~right:original
-      in
-      if refine then
-        { annotation = refined; mutability }
-      else
-        { annotation; mutability }
+let refine ~global_resolution annotation refined_type =
+  let solve_less_or_equal ~left ~right =
+    GlobalResolution.ConstraintsSet.add
+      ConstraintsSet.empty
+      ~new_constraint:(LessOrEqual { left; right })
+      ~global_resolution
+    |> GlobalResolution.ConstraintsSet.solve ~global_resolution
+    >>| fun solution -> ConstraintsSet.Solution.instantiate solution left
+  in
+  let type_less_or_equal = GlobalResolution.less_or_equal global_resolution in
+  Annotation.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation
 
 
 let less_or_equal

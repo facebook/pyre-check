@@ -55,3 +55,10 @@ val less_or_equal
 val join : type_join:(Type.t -> Type.t -> Type.t) -> t -> t -> t
 
 val meet : type_meet:(Type.t -> Type.t -> Type.t) -> t -> t -> t
+
+val refine
+  :  type_less_or_equal:(left:Type.t -> right:Type.t -> bool) ->
+  solve_less_or_equal:(left:Type.t -> right:Type.t -> Type.t option) ->
+  refined_type:Type.t ->
+  t ->
+  t
