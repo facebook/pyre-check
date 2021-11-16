@@ -6,11 +6,12 @@
    classHierarchyTest classHierarchyEnvironmentTest
    classMetadataEnvironmentTest constraintsSetTest customAnalysisTest
    dataClassTest environmentTest fixpointTest globalResolutionTest
-   livenessCheckTest lookupTest moduleTrackerTest newTypeTest namedTupleTest
-   preprocessingTest refinementUnitTest resolutionTest resolvedCallableTest
-   scopeTest sqlAlchemyTest typeCheckTest typeConstraintsTest
-   typeOperationTest typeOrderTest typeTest unannotatedGlobalEnvironmentTest
-   uninitializedLocalCheckTest weakTopologicalOrderTest)
+   inlineDecoratorTest livenessCheckTest lookupTest moduleTrackerTest
+   newTypeTest namedTupleTest preprocessingTest refinementUnitTest
+   resolutionTest resolvedCallableTest scopeTest sqlAlchemyTest typeCheckTest
+   typeConstraintsTest typeOperationTest typeOrderTest typeTest
+   unannotatedGlobalEnvironmentTest uninitializedLocalCheckTest
+   weakTopologicalOrderTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv
     ppx_sexp_message ppx_hash))

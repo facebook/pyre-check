@@ -31,6 +31,7 @@ module AnalysisError = AnalysisError
 module Fixpoint = Fixpoint
 module FunctionDefinition = FunctionDefinition
 module GlobalResolution = GlobalResolution
+module InlineDecorator = InlineDecorator
 module LivenessCheck = LivenessCheck
 module LocalAnnotationMap = LocalAnnotationMap
 module Lookup = Lookup

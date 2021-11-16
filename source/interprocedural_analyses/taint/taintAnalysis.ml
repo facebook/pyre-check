@@ -607,7 +607,7 @@ include Taint.Result.Register (struct
          point to the lines in the module where the decorator was defined, not the module where it
          was inlined. So, look up the originating module, if any, and use that as the module
          qualifier. *)
-      Interprocedural.DecoratorHelper.InlinedNameToOriginalName.get define_qualifier
+      InlineDecorator.InlinedNameToOriginalName.get define_qualifier
       >>= AnnotatedGlobalEnvironment.ReadOnly.get_global_location annotated_global_environment
       >>| fun { Location.WithModule.path; _ } -> path
     in

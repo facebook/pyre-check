@@ -435,7 +435,7 @@ module InlineDecorators = struct
     match define with
     | Some define -> (
         let define_with_inlining =
-          inline_decorators_for_define
+          InlineDecorator.inline_decorators_for_define
             ~get_decorator_body:(Map.find decorator_bodies)
             ~location:Location.any
             define
