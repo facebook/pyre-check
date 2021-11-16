@@ -3801,7 +3801,6 @@ module State (Context : Context) = struct
                               }
                             |> fun kind -> emit_error ~errors ~location ~kind
                         | None when is_incompatible ->
-                            Log.dump "at IncompatibleVariableType instantiation";
                             Error.IncompatibleVariableType
                               {
                                 incompatible_type =
