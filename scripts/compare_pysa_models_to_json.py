@@ -23,7 +23,7 @@ ANNOTATION_TO_MODEL_TYPE = {
 
 PYSA_CALLABLE_MODEL_PATTERN: Pattern[str] = re.compile(
     r"def\s*(?P<callable_name>.+)\((?P<parameters>.*)\)"
-    "(:?\s*->\s*(?P<return_model>[^:]+))*(:?:\s*...)*"
+    r"(:?\s*->\s*(?P<return_model>[^:]+))*(:?:\s*...)*"
 )
 PYSA_ATTRIBUTE_MODEL_PATTERN: Pattern[str] = re.compile(
     r"(?P<attribute_name>.+):\s*(?P<attribute_model>.*\[.*\])(= ...)*"
