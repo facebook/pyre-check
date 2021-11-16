@@ -265,11 +265,8 @@ let parse source_jsons =
   let parse_rules ~allowed_sources ~allowed_sinks json =
     let parse_rule json =
       let required_keys = ["name"; "code"; "sources"; "sinks"; "message_format"] in
-      check_keys
-        ~required_keys
-        ~valid_keys:required_keys
-        ~current_keys:(Json.Util.keys json)
-        ~section:"rules";
+      let valid_keys = "oncall" :: "comment" :: required_keys in
+      check_keys ~required_keys ~valid_keys ~current_keys:(Json.Util.keys json) ~section:"rules";
       let sources =
         Json.Util.member "sources" json
         |> parse_string_list
