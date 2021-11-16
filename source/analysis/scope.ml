@@ -33,6 +33,7 @@ module Binding = struct
       | ExceptTarget of Expression.t option
       | ForTarget
       | ImportName of Import.t
+      | MatchTarget
       | ParameterName of {
           index: int;
           annotation: Expression.t option;
@@ -331,6 +332,9 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | While { While.body; orelse; _ } ->
       let sofar = nonlocals_of_statements sofar body in
       nonlocals_of_statements sofar orelse
+  | Match { Match.cases; _ } ->
+      List.fold cases ~init:sofar ~f:(fun sofar { Match.Case.body; _ } ->
+          nonlocals_of_statements sofar body)
   | Try { Try.body; handlers; orelse; finally } ->
       let sofar = nonlocals_of_statements sofar body in
       let sofar =
@@ -350,8 +354,6 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | Expression _
   | Global _
   | Import _
-  (* TODO(T102720335): Support match statement. *)
-  | Match _
   | Pass
   | Raise _
   | Return _ ->

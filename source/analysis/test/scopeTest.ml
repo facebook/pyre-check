@@ -277,6 +277,24 @@ let test_nonlocal _ =
              print(x + y)
     |}
     ~expected:["x"; "y"];
+  assert_nonlocal
+    {|
+       def foo():
+         match subject:
+           case 1:
+             nonlocal x
+    |}
+    ~expected:["x"];
+  assert_nonlocal
+    {|
+       def foo():
+         match subject:
+           case 1:
+             nonlocal x
+           case 2:
+             nonlocal y
+    |}
+    ~expected:["x"; "y"];
 
   (* Nonlocal discovery does not go beyond nesting *)
   assert_nonlocal

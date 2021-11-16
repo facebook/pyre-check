@@ -33,6 +33,7 @@ module Binding : sig
       | ExceptTarget of Expression.t option
       | ForTarget
       | ImportName of Import.t
+      | MatchTarget
       | ParameterName of {
           index: int;
           annotation: Expression.t option;
