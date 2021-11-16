@@ -356,6 +356,71 @@ let test_if _ =
     ]
 
 
+let test_match _ =
+  let refutable_case =
+    {
+      Match.Case.pattern = +Match.Pattern.MatchWildcard;
+      guard = Some !"guard";
+      body = [!!"refutable_body"];
+    }
+  in
+  let expected_refutable_case_pass_block =
+    Node.Block [Statement.assume ~origin:Assert.Origin.Match !"guard"; !!"refutable_body"]
+  in
+  let expected_refutable_case_fail_block =
+    Node.Block
+      [
+        Statement.assume
+          ~origin:Assert.Origin.Match
+          (+Expression.UnaryOperator { operator = UnaryOperator.Not; operand = !"guard" });
+      ]
+  in
+  assert_cfg
+    [+Statement.Match { Match.subject = !"x"; cases = [refutable_case] }]
+    [
+      node 0 Node.Entry [] [6; 7];
+      node 1 Node.Normal [5] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 Node.Join [6; 7] [1];
+      node 6 expected_refutable_case_pass_block [0] [5];
+      node 7 expected_refutable_case_fail_block [0] [5];
+    ];
+  let irrefutable_case =
+    {
+      Match.Case.pattern = +Match.Pattern.MatchWildcard;
+      guard = None;
+      body = [!!"irrefutable_body"];
+    }
+  in
+  let expected_irrefutable_case_pass_block =
+    Node.Block
+      [
+        Statement.assume ~origin:Assert.Origin.Match (+Expression.Constant Constant.True);
+        !!"irrefutable_body";
+      ]
+  in
+  let expected_irrefutable_case_fail_block =
+    Node.Block [Statement.assume ~origin:Assert.Origin.Match (+Expression.Constant Constant.False)]
+  in
+  assert_cfg
+    [+Statement.Match { Match.subject = !"x"; cases = [refutable_case; irrefutable_case] }]
+    [
+      node 0 Node.Entry [] [6; 7];
+      node 1 Node.Normal [5] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 Node.Join [6; 8] [1];
+      node 6 expected_refutable_case_pass_block [0] [5];
+      node 7 expected_refutable_case_fail_block [0] [8; 9];
+      node 8 expected_irrefutable_case_pass_block [7] [5];
+      node 9 expected_irrefutable_case_fail_block [7] [];
+    ];
+  ()
+
+
 let test_raise _ =
   let error = +Statement.Raise { Raise.expression = None; from = None } in
   assert_cfg
@@ -1028,6 +1093,7 @@ let () =
          "block" >:: test_block;
          "for" >:: test_for;
          "if" >:: test_if;
+         "match" >:: test_match;
          "raise" >:: test_raise;
          "assert_false" >:: test_assert_false;
          "return" >:: test_return;

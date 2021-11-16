@@ -255,6 +255,51 @@ let create define =
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
         create statements jumps join
+    | { Ast.Node.value = Match { cases; _ }; _ } :: statements ->
+        (* The final else is optionally connected to the join node if it is refutable.
+         *
+         *  predecessor -> [else 1] -> [else 2] -> ... -> [else n-1] -> [else n]
+         *      |           |           |                  |             :
+         *      v           v           v                  v             :
+         *     [case 1     [case 2     [case 3     ...    [case n        :
+         *      body]       body]       body]              body]         :
+         *      |           |           |                  |             :
+         *      |           |           |                  |             :
+         *      |           \           \                  \             v
+         *      \-----------------------------------------------------> [join]
+         *)
+        let to_condition = function
+          (* TODO(T102720335): Support match statetment. *)
+          | { Match.Case.guard = None; _ } ->
+              Ast.Node.create_with_default_location
+                (Expression.Expression.Constant Expression.Constant.True)
+          | { Match.Case.guard = Some guard; _ } -> guard
+        in
+        let is_refutable =
+          (* TODO(T102720335): Support match statetment. *)
+          let { Match.Case.guard; _ } = List.last_exn cases in
+          Option.is_some guard
+        in
+        let join = Node.empty graph Node.Join in
+        let from_case predecessor case =
+          let test = to_condition case in
+          let case_node =
+            let test = Expression.normalize test in
+            Node.empty graph (Node.Block [Statement.assume ~origin:Assert.Origin.Match test])
+          in
+          Node.connect predecessor case_node;
+          let case_node = create case.body jumps case_node in
+          Node.connect_option case_node join;
+          let else_node =
+            let test = Expression.negate test |> Expression.normalize in
+            Node.empty graph (Node.Block [Statement.assume ~origin:Assert.Origin.Match test])
+          in
+          Node.connect predecessor else_node;
+          else_node
+        in
+        let final_else = List.fold cases ~init:predecessor ~f:from_case in
+        if is_refutable then Node.connect final_else join;
+        create statements jumps join
     | { Ast.Node.value = Try ({ Try.body; orelse; finally; handlers } as block); _ } :: statements
       ->
         (* We need to replicate the "finally" block three times because that block is always

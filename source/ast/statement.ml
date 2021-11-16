@@ -148,6 +148,7 @@ module rec Assert : sig
       | Assertion
       | If of { true_branch: bool }
       | While of { true_branch: bool }
+      | Match
     [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
@@ -167,15 +168,18 @@ end = struct
       | Assertion
       | If of { true_branch: bool }
       | While of { true_branch: bool }
+      | Match
     [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right : int =
       match left, right with
       | Assertion, Assertion -> 0
       | If left, If right -> Bool.compare left.true_branch right.true_branch
+      | Match, Match -> 0
       | While left, While right -> Bool.compare left.true_branch right.true_branch
       | Assertion, _ -> -1
       | If _, _ -> -1
+      | Match, _ -> -1
       | While _, _ -> 1
   end
 
