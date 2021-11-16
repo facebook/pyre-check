@@ -10,7 +10,7 @@ import logging
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Pattern, Set, TypedDict
+from typing import Any, Dict, List, Optional, Pattern, Set, TypedDict, Tuple
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -22,12 +22,18 @@ ANNOTATION_TO_MODEL_TYPE = {
 }
 
 PYSA_CALLABLE_MODEL_PATTERN: Pattern[str] = re.compile(
-    r"def\s*(.+)\((.*)\)(:?\s*->\s*([^:]+))*(:?:\s*...)*"
+    r"def\s*(?P<callable_name>.+)\((?P<parameters>.*)\)"
+    "(:?\s*->\s*(?P<return_model>[^:]+))*(:?:\s*...)*"
+)
+PYSA_ATTRIBUTE_MODEL_PATTERN: Pattern[str] = re.compile(
+    r"(?P<attribute_name>.+):\s*(?P<attribute_model>.*\[.*\])(= ...)*"
 )
 PARAMETERS_ANNOTATION_PATTERN: Pattern[str] = re.compile(
     r"(\w*):\s?(\w*)\[((\w+)(,\s*\w+)*)\]"
 )
-RETURN_ANNOTATION_PATTERN: Pattern[str] = re.compile(r"(.*)\[(.*)\]")
+RETURN_ANNOTATION_PATTERN: Pattern[str] = re.compile(
+    r"(?P<model_type>.*)\[(?P<model_leaves>.*)\]"
+)
 
 
 class TaintModel(TypedDict):
@@ -36,7 +42,7 @@ class TaintModel(TypedDict):
     tito: Set[str]
 
 
-class CallableModel(TypedDict):
+class TargetModel(TypedDict):
     parameters: Dict[str, TaintModel]
     return_model: TaintModel
 
@@ -49,37 +55,31 @@ def make_default_taint_model() -> TaintModel:
     }
 
 
-def make_default_callable_model() -> CallableModel:
+def make_default_target_model() -> TargetModel:
     return {
         "parameters": defaultdict(make_default_taint_model),
         "return_model": make_default_taint_model(),
     }
 
 
-def parse_leaves(taints: List[Dict[str, Any]]) -> Set[str]:
+def parse_kinds(taints: List[Dict[str, Any]]) -> Set[str]:
     """
     Parse the list of sources/sinks/tito from a Pysa JSON output
     dump, e.g.
-        [ { "decl": null, "leaves": [ { "kind": "Test" } ]
+        [ { "decl": null, "kinds": [ { "kind": "Test" } ]
     into a set consisting of just the leaf names, i.e.
         { "Test" }
     """
-    leaves = set()
+    kinds = set()
 
     for taint in taints:
-        if "leaves" not in taint:
-            continue
+        for kind in taint.get("kinds", []):
+            kinds.add(kind["kind"])
 
-        for leaf in taint["leaves"]:
-            if "kind" not in leaf:
-                continue
-
-            leaves.add(leaf["kind"])
-
-    return leaves
+    return kinds
 
 
-def json_to_parsed_model(taint_data: List[Dict[str, Any]]) -> CallableModel:
+def json_to_parsed_model(taint_data: List[Dict[str, Any]]) -> TargetModel:
     """
     Parse the list of taint models from a Pysa JSON output dump, e.g.
         [{
@@ -102,7 +102,7 @@ def json_to_parsed_model(taint_data: List[Dict[str, Any]]) -> CallableModel:
             'return_model': {'sources': {}, 'sinks': {'B'}, 'tito': {}}
         }
     """
-    result: CallableModel = make_default_callable_model()
+    result: TargetModel = make_default_target_model()
 
     for data in taint_data:
         if "data" not in data:
@@ -114,7 +114,7 @@ def json_to_parsed_model(taint_data: List[Dict[str, Any]]) -> CallableModel:
             if model_type in model:
                 for entry in model[model_type]:
                     port = entry["port"]
-                    taints = parse_leaves(entry["taint"])
+                    taints = parse_kinds(entry["taint"])
                     if port == "result":
                         # pyre-fixme[26]: TypedDict key must be a string literal.
                         result["return_model"][model_type].update(taints)
@@ -127,7 +127,7 @@ def json_to_parsed_model(taint_data: List[Dict[str, Any]]) -> CallableModel:
     return result
 
 
-def get_models_from_json_file(path: str) -> Dict[str, CallableModel]:
+def get_models_from_json_file(path: str) -> Dict[str, TargetModel]:
     """
     Process a JSON file and return a dictionary of callables and their models,
     in the form:
@@ -136,7 +136,7 @@ def get_models_from_json_file(path: str) -> Dict[str, CallableModel]:
             'return_model': {'TaintSink[B]'}
         }
     """
-    json_models: Dict[str, CallableModel] = defaultdict(make_default_callable_model)
+    json_models: Dict[str, TargetModel] = defaultdict(make_default_target_model)
     with Path(path).open() as json_file:
         for entry in json.loads(json_file.read()):
             callable_name = entry["callable"]
@@ -147,7 +147,85 @@ def get_models_from_json_file(path: str) -> Dict[str, CallableModel]:
     return json_models
 
 
-def get_models_from_pysa_file(path: str) -> Dict[str, CallableModel]:
+def get_callable_model_from_line(line: str) -> Optional[Tuple[str, TargetModel]]:
+    match = PYSA_CALLABLE_MODEL_PATTERN.match(line)
+    if not match:
+        return None
+
+    result = make_default_target_model()
+
+    callable_name = match.group("callable_name")
+    parameters = match.group("parameters")
+    return_model = match.group("return_model")
+    if not callable_name and (not parameters and not return_model):
+        return None
+    annotated_parameters = PARAMETERS_ANNOTATION_PATTERN.findall(parameters)
+    for (
+        parameter_name,
+        model_annotation,
+        leaves,
+        _,
+        _,
+    ) in annotated_parameters:
+        if not parameter_name or not model_annotation or not leaves:
+            continue
+
+        model_type = ANNOTATION_TO_MODEL_TYPE[model_annotation]
+        parameter_model = {annotation.strip() for annotation in leaves.split(",")}
+        # pyre-fixme[26]: TypedDict key must be a string literal.
+        result["parameters"][parameter_name][model_type].update(parameter_model)
+
+    if not return_model:
+        return None
+
+    annotation_match = RETURN_ANNOTATION_PATTERN.match(return_model)
+    if not annotation_match or None in annotation_match.groups():
+        return None
+
+    model_type = ANNOTATION_TO_MODEL_TYPE[annotation_match.group("model_type").strip()]
+    return_model = {
+        annotation.strip()
+        for annotation in annotation_match.group("model_leaves").split(",")
+    }
+    # pyre-fixme[26]: TypedDict key must be a string literal.
+    result["return_model"][model_type].update(return_model)
+
+    return (callable_name, result)
+
+
+def get_attribute_model_from_line(line: str) -> Optional[Tuple[str, TargetModel]]:
+    match = PYSA_ATTRIBUTE_MODEL_PATTERN.match(line)
+    if not match:
+        return None
+
+    result = make_default_target_model()
+    attribute_name = "Obj{{{}}}".format(match.group("attribute_name"))
+    attribute_model = match.group("attribute_model")
+    if not attribute_name or not attribute_model:
+        return None
+
+    annotation_match = RETURN_ANNOTATION_PATTERN.match(attribute_model)
+    if not annotation_match or None in annotation_match.groups():
+        return None
+
+    model_type = ANNOTATION_TO_MODEL_TYPE[annotation_match.group("model_type").strip()]
+    attribute_model_leaves = {
+        annotation.strip()
+        for annotation in annotation_match.group("model_leaves").split(", ")
+    }
+    if model_type == "sources":
+        # pyre-fixme[26]: TypedDict key must be a string literal.
+        result["return_model"][model_type].update(attribute_model_leaves)
+    else:
+        result["parameters"]["$global"][
+            # pyre-fixme[26]: TypedDict key must be a string literal.
+            model_type
+        ].update(attribute_model_leaves)
+
+    return (attribute_name, result)
+
+
+def get_models_from_pysa_file(path: str) -> Dict[str, TargetModel]:
     """
     Process a .pysa file with models in the form of:
         def foo.bar(x: TaintSource[A], b) -> TaintSink[B]: ...
@@ -157,15 +235,14 @@ def get_models_from_pysa_file(path: str) -> Dict[str, CallableModel]:
             'return_model': {'sources': {}, 'sinks': {'B'}, 'tito': {}}
         }
     IMPORTANT: Note that this only works on .pysa files where:
-        1. All the models are callables, and
-        2. All the models are self-contained on a single line.
+        1. All the models are self-contained on a single line.
+        2. Models do not contain ViaTag[...], AppliesTo[...] syntax
 
-    This script will not work with files that have attribute models, or Pysa models
-    that span multiple lines. These assumptions seem to be met for models
-    generated by the existing Python model generators, but it should be noted that
+    This script was originally intended to compare models that were generated
+    by the existing Python model generators, so it should be noted that
     this will likely not work with most user-defined .pysa files.
     """
-    pysa_models: Dict[str, CallableModel] = defaultdict(make_default_callable_model)
+    pysa_models: Dict[str, TargetModel] = defaultdict(make_default_target_model)
     skipped = 0
     with Path(path).open() as pysa_file:
         for line in pysa_file:
@@ -175,50 +252,16 @@ def get_models_from_pysa_file(path: str) -> Dict[str, CallableModel]:
                 skipped += 1
                 continue
 
-            match = PYSA_CALLABLE_MODEL_PATTERN.match(line)
-            if not match:
+            result = get_callable_model_from_line(line)
+            if not result:
+                result = get_attribute_model_from_line(line)
+
+            if result:
+                name, model = result
+                pysa_models[name]["parameters"].update(model["parameters"])
+                pysa_models[name]["return_model"].update(model["return_model"])
+            else:
                 skipped += 1
-                continue
-
-            match_groups = match.groups()
-            callable_name = match_groups[0]
-            parameters = match_groups[1]
-            return_model = match_groups[3]
-            if not callable_name and (not parameters and not return_model):
-                skipped += 1
-                continue
-
-            annotated_parameters = PARAMETERS_ANNOTATION_PATTERN.findall(parameters)
-            for parameter_name, model_annotation, leaves, _, _ in annotated_parameters:
-                if not parameter_name or not model_annotation or not leaves:
-                    continue
-
-                model_type = ANNOTATION_TO_MODEL_TYPE[model_annotation]
-                parameter_model = set(
-                    {annotation.strip() for annotation in leaves.split(",")}
-                )
-                pysa_models[callable_name]["parameters"][parameter_name][
-                    # pyre-fixme[26]: TypedDict key must be a string literal.
-                    model_type
-                ].update(parameter_model)
-
-            if not return_model:
-                continue
-
-            annotation_match = RETURN_ANNOTATION_PATTERN.match(return_model)
-            if not annotation_match or None in annotation_match.groups():
-                continue
-
-            annotation_match_groups = annotation_match.groups()
-            model_type = ANNOTATION_TO_MODEL_TYPE[annotation_match_groups[0].strip()]
-            return_model = set(
-                {
-                    annotation.strip()
-                    for annotation in annotation_match_groups[1].split(",")
-                }
-            )
-            # pyre-fixme[26]: TypedDict key must be a string literal.
-            pysa_models[callable_name]["return_model"][model_type].update(return_model)
 
     LOG.warning(f"Skipped {skipped} lines in .pysa (no models found or were invalid).")
     return pysa_models
@@ -249,8 +292,8 @@ def main() -> None:
         format="[%(asctime)s][%(levelname)s]: %(message)s", level=logging.INFO
     )
 
-    json_models: Dict[str, CallableModel] = get_models_from_json_file(arguments.json)
-    pysa_models: Dict[str, CallableModel] = get_models_from_pysa_file(arguments.pysa)
+    json_models: Dict[str, TargetModel] = get_models_from_json_file(arguments.json)
+    pysa_models: Dict[str, TargetModel] = get_models_from_pysa_file(arguments.pysa)
 
     # Models in .json that differ from the .pysa
     diff_json = {

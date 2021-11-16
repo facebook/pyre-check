@@ -8,18 +8,18 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from ..compare_pysa_models_to_json import (
-    CallableModel,
-    make_default_callable_model,
+    TargetModel,
+    make_default_target_model,
     make_default_taint_model,
-    parse_leaves,
+    parse_kinds,
     json_to_parsed_model,
     get_models_from_json_file,
     get_models_from_pysa_file,
 )
 
 
-class MakeDefaultCallableModelTest(unittest.TestCase):
-    EMPTY_CALLABLE_MODEL: CallableModel = make_default_callable_model()
+class MakeDefaultTargetModelTest(unittest.TestCase):
+    EMPTY_CALLABLE_MODEL: TargetModel = make_default_target_model()
 
     def test_defaultdict(self) -> None:
         self.assertEqual(
@@ -27,25 +27,34 @@ class MakeDefaultCallableModelTest(unittest.TestCase):
         )
 
 
-class ParseLeavesTest(unittest.TestCase):
+class ParseKindTest(unittest.TestCase):
     def test_sinks(self) -> None:
-        taints = json.loads('[{"decl": null, "leaves": [{"kind": "ReturnedToUser"}]}]')
-        self.assertEqual(parse_leaves(taints), {"ReturnedToUser"})
+        taints = json.loads(
+            """
+            [
+                {
+                    "kinds": [ { "kind": "ReturnedToUser" } ],
+                    "decl": null
+                }
+            ]
+            """
+        )
+        self.assertEqual(parse_kinds(taints), {"ReturnedToUser"})
 
     def test_sources(self) -> None:
         taints = json.loads(
             """
-[
-    { "decl": null, "leaves": [ { "kind": "UserControlled" } ] },
-    {
-        "decl": null,
-        "leaves": [ { "kind": "UserControlled_Parameter" } ]
-    }
-]
-"""
+            [
+                { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                {
+                    "decl": null,
+                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                }
+            ]
+            """
         )
         self.assertEqual(
-            parse_leaves(taints), {"UserControlled", "UserControlled_Parameter"}
+            parse_kinds(taints), {"UserControlled", "UserControlled_Parameter"}
         )
 
 
@@ -53,37 +62,37 @@ class JsonToParsedModelTest(unittest.TestCase):
     def test_parameters_sources(self) -> None:
         models = json.loads(
             """
-[
-    {
-    "kind": "model",
-    "data": {
-        "callable": "foo.bar.websocket.WebSocketHandler.get",
-        "sources": [
-        {
-            "port": "formal(**kw)",
-            "taint": [
-            { "decl": null, "leaves": [ { "kind": "UserControlled" } ] },
-            {
-                "decl": null,
-                "leaves": [ { "kind": "UserControlled_Parameter" } ]
-            }
+            [
+                {
+                    "kind": "model",
+                    "data": {
+                        "callable": "foo.bar.websocket.WebSocketHandler.get",
+                        "sources": [
+                        {
+                            "port": "formal(**kw)",
+                            "taint": [
+                                { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                                {
+                                    "decl": null,
+                                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                                }
+                            ]
+                        },
+                        {
+                            "port": "formal(*rest1)",
+                            "taint": [
+                                { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                                {
+                                    "decl": null,
+                                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                                }
+                            ]
+                        }
+                        ]
+                    }
+                }
             ]
-        },
-        {
-            "port": "formal(*rest1)",
-            "taint": [
-            { "decl": null, "leaves": [ { "kind": "UserControlled" } ] },
-            {
-                "decl": null,
-                "leaves": [ { "kind": "UserControlled_Parameter" } ]
-            }
-            ]
-        }
-        ]
-    }
-    }
-]
-"""
+            """
         )
         self.assertEqual(
             json_to_parsed_model(models),
@@ -107,24 +116,24 @@ class JsonToParsedModelTest(unittest.TestCase):
     def test_return_model(self) -> None:
         models = json.loads(
             """
-[
-    {
-    "kind": "model",
-    "data": {
-        "callable":
-        "foo.bar.baz.lorem.LoremIpsum.fake_render_function",
-        "sinks": [
-        {
-            "port": "result",
-            "taint": [
-            { "decl": null, "leaves": [ { "kind": "ReturnedToUser" } ] }
+            [
+                {
+                "kind": "model",
+                "data": {
+                    "callable":
+                    "foo.bar.baz.lorem.LoremIpsum.fake_render_function",
+                    "sinks": [
+                    {
+                        "port": "result",
+                        "taint": [
+                        { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+                        ]
+                    }
+                    ]
+                }
+                }
             ]
-        }
-        ]
-    }
-    }
-]
-"""
+            """
         )
 
         self.assertEqual(
@@ -155,7 +164,7 @@ TEST_JSON_FILE = """
               {
                 "port": "result",
                 "taint": [
-                  { "decl": null, "leaves": [ { "kind": "ReturnedToUser" } ] }
+                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
                 ]
               }
             ]
@@ -176,7 +185,7 @@ TEST_JSON_FILE = """
               {
                 "port": "result",
                 "taint": [
-                  { "decl": null, "leaves": [ { "kind": "ReturnedToUser" } ] }
+                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
                 ]
               }
             ]
@@ -197,7 +206,7 @@ TEST_JSON_FILE = """
               {
                 "port": "result",
                 "taint": [
-                  { "decl": null, "leaves": [ { "kind": "ReturnedToUser" } ] }
+                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
                 ]
               }
             ]
@@ -218,7 +227,7 @@ TEST_JSON_FILE = """
               {
                 "port": "result",
                 "taint": [
-                  { "decl": null, "leaves": [ { "kind": "ReturnedToUser" } ] }
+                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
                 ]
               }
             ]
@@ -239,7 +248,7 @@ TEST_JSON_FILE = """
               {
                 "port": "result",
                 "taint": [
-                  { "decl": null, "leaves": [ { "kind": "ReturnedToUser" } ] }
+                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
                 ]
               }
             ]
@@ -260,20 +269,69 @@ TEST_JSON_FILE = """
               {
                 "port": "formal(fmt)",
                 "taint": [
-                  { "decl": null, "leaves": [ { "kind": "UserControlled" } ] },
+                  { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
                   {
                     "decl": null,
-                    "leaves": [ { "kind": "UserControlled_Parameter" } ]
+                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
                   }
                 ]
               },
               {
                 "port": "formal(fignum)",
                 "taint": [
-                  { "decl": null, "leaves": [ { "kind": "UserControlled" } ] },
+                  { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
                   {
                     "decl": null,
-                    "leaves": [ { "kind": "UserControlled_Parameter" } ]
+                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "callable":
+        "Obj{foo.bar.baz.FakeClass1.a}",
+      "model": [
+        {
+          "kind": "model",
+          "data": {
+            "callable":
+              "Obj{foo.bar.baz.FakeClass1.a}",
+            "sources": [
+              {
+                "port": "result",
+                "taint": [
+                  {
+                    "kinds": [ { "kind": "UserControlled" } ],
+                    "decl": null
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "callable":
+        "Obj{foo.bar.baz.FakeClass1.b}",
+      "model": [
+        {
+          "kind": "model",
+          "data": {
+            "callable":
+              "Obj{foo.bar.baz.FakeClass1.b}",
+            "sources": [
+              {
+                "port": "result",
+                "taint": [
+                  { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                  {
+                    "decl": null,
+                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
                   }
                 ]
               }
@@ -357,6 +415,27 @@ class GetModelsFromJsonFileTest(unittest.TestCase):
                             "tito": set(),
                         },
                     },
+                    "Obj{foo.bar.baz.FakeClass1.a}": {
+                        "parameters": {},
+                        "return_model": {
+                            "sources": {
+                                "UserControlled",
+                            },
+                            "sinks": set(),
+                            "tito": set(),
+                        },
+                    },
+                    "Obj{foo.bar.baz.FakeClass1.b}": {
+                        "parameters": {},
+                        "return_model": {
+                            "sources": {
+                                "UserControlled_Parameter",
+                                "UserControlled",
+                            },
+                            "sinks": set(),
+                            "tito": set(),
+                        },
+                    },
                 },
             )
 
@@ -366,6 +445,8 @@ def foo.bar.baz.fake_method1(a, b, c: TaintSource[UserControlled, UserControlled
 def foo.bar.baz.fake_method2(a, b: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method3(a, b: TaintSource[UserControlled, UserControlled_Parameter], c: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method4(a, b: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
+foo.bar.baz.FakeClass1.a: TaintSource[UserControlled]
+foo.bar.baz.FakeClass1.b: TaintSource[UserControlled, UserControlled_Parameter] = ...
 def foo.bar.baz.fake_method5(a, b, c: TaintSource[UserControlled, UserControlled_Parameter], d: TaintSource[UserControlled, UserControlled_Parameter], _e: TaintSource[UserControlled, UserControlled_Parameter], _f: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method6(_a) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method7(a, b, c: TaintSource[UserControlled, UserControlled_Parameter], d: TaintSource[UserControlled, UserControlled_Parameter], e: TaintSource[UserControlled, UserControlled_Parameter], f: TaintSource[UserControlled, UserControlled_Parameter], g: TaintSource[UserControlled, UserControlled_Parameter], h: TaintSource[UserControlled, UserControlled_Parameter], i: TaintSource[UserControlled, UserControlled_Parameter], j: TaintSource[UserControlled, UserControlled_Parameter], k: TaintSource[UserControlled, UserControlled_Parameter], l: TaintSource[UserControlled, UserControlled_Parameter], m: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
@@ -452,6 +533,27 @@ class GetModelsFromPysaFileTest(unittest.TestCase):
                         "return_model": {
                             "sources": set(),
                             "sinks": {"ReturnedToUser"},
+                            "tito": set(),
+                        },
+                    },
+                    "Obj{foo.bar.baz.FakeClass1.a}": {
+                        "parameters": {},
+                        "return_model": {
+                            "sources": {
+                                "UserControlled",
+                            },
+                            "sinks": set(),
+                            "tito": set(),
+                        },
+                    },
+                    "Obj{foo.bar.baz.FakeClass1.b}": {
+                        "parameters": {},
+                        "return_model": {
+                            "sources": {
+                                "UserControlled_Parameter",
+                                "UserControlled",
+                            },
+                            "sinks": set(),
                             "tito": set(),
                         },
                     },
