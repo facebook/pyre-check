@@ -140,7 +140,8 @@ module Binding = struct
 
 
   let rec of_statement sofar { Node.value = statement; location } =
-    let of_optional_expression sofar = Option.value_map ~default:sofar ~f:(of_expression sofar) in
+    let of_optional ~f sofar = Option.value_map ~default:sofar ~f:(f sofar) in
+    let of_optional_expression sofar = of_optional ~f:of_expression sofar in
     let open Statement in
     match statement with
     | Statement.Assert { test; message; _ } ->
