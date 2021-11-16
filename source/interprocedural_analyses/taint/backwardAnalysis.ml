@@ -72,20 +72,37 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | None -> None
     in
     log
-      "Resolved callees for call `%a`:@,%a"
+      "Resolved callees for call `%a` at %a:@,%a"
       Expression.pp
       (Node.create_with_default_location (Expression.Call call))
+      Location.pp
+      location
       Interprocedural.CallGraph.RawCallees.pp_option
       callees;
     callees
 
 
   let get_property_callees ~location ~attribute =
-    match Map.find FunctionContext.call_graph_of_define location with
-    | Some (Interprocedural.CallGraph.Callees.Callees callees) -> Some callees
-    | Some (Interprocedural.CallGraph.Callees.SyntheticCallees name_to_callees) ->
-        String.Map.Tree.find name_to_callees attribute
-    | None -> None
+    let callees =
+      match Map.find FunctionContext.call_graph_of_define location with
+      | Some (Interprocedural.CallGraph.Callees.Callees callees) -> Some callees
+      | Some (Interprocedural.CallGraph.Callees.SyntheticCallees name_to_callees) ->
+          String.Map.Tree.find name_to_callees attribute
+      | None -> None
+    in
+    let () =
+      match callees with
+      | Some callees ->
+          log
+            "Resolved property callees for `%s` at %a:@,%a"
+            attribute
+            Location.pp
+            location
+            Interprocedural.CallGraph.RawCallees.pp
+            callees
+      | _ -> ()
+    in
+    callees
 
 
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution FunctionContext.environment
