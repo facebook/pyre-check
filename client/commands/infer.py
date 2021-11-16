@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, TypeVar, Union
 
@@ -1025,6 +1026,7 @@ def run(
     except commands.ClientException:
         raise
     except Exception as error:
+        traceback.print_exc(file=sys.stderr)
         raise commands.ClientException(
             f"Exception occured during Pyre infer: {error}"
         ) from error
