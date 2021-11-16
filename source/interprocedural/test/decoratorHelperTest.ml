@@ -47,12 +47,10 @@ let test_all_decorators context =
     in
     let _, environment = setup ~additional_sources ~context ~handle:"test.py" source in
     assert_equal
-      ~cmp:[%compare.equal: DecoratorHelper.decorator_reference_and_module list]
-      ~printer:[%show: DecoratorHelper.decorator_reference_and_module list]
-      (List.map expected ~f:(fun (decorator, module_reference) ->
-           { DecoratorHelper.decorator; module_reference }))
-      (DecoratorHelper.all_decorators environment
-      |> List.sort ~compare:[%compare: DecoratorHelper.decorator_reference_and_module])
+      ~cmp:[%equal: Reference.t list]
+      ~printer:[%show: Reference.t list]
+      expected
+      (DecoratorHelper.all_decorators environment |> List.sort ~compare:[%compare: Reference.t])
   in
   assert_decorators
     {|
@@ -65,11 +63,7 @@ let test_all_decorators context =
     def bar(z: str) -> None:
       print(z)
   |}
-    [
-      !&"decorator_with_no_module", None;
-      !&"file1.decorator1", Some !&"file1";
-      !&"some_module.file2.decorator2", Some !&"some_module.file2";
-    ];
+    [!&"decorator_with_no_module"; !&"file1.decorator1"; !&"some_module.file2.decorator2"];
   assert_decorators
     {|
     def outer(z: str) -> None:
@@ -77,7 +71,7 @@ let test_all_decorators context =
       def inner(z: str) -> None:
         print(z)
   |}
-    [!&"file1.decorator1", Some !&"file1"];
+    [!&"file1.decorator1"];
   assert_decorators
     {|
     class Foo:
@@ -85,7 +79,7 @@ let test_all_decorators context =
       def some_method(self, z: str) -> None:
         print(z)
   |}
-    [!&"file1.decorator1", Some !&"file1"];
+    [!&"file1.decorator1"];
   ()
 
 

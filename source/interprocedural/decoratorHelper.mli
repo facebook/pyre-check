@@ -9,40 +9,23 @@ open Ast
 open Analysis
 open Statement
 
-type decorator_reference_and_module = {
-  decorator: Reference.t;
-  module_reference: Reference.t option;
-}
-[@@deriving compare, hash, sexp, show]
-
-type define_and_originating_module = {
-  decorator_define: Define.t;
-  module_reference: Reference.t option;
-}
-[@@deriving compare, hash, sexp, show]
-
 val uniquify_names
   :  get_reference:('a -> Reference.t) ->
   set_reference:(Reference.t -> 'a -> 'a) ->
   'a list ->
   'a list
 
-val all_decorators : TypeEnvironment.ReadOnly.t -> decorator_reference_and_module list
+val all_decorators : TypeEnvironment.ReadOnly.t -> Reference.t list
 
-val all_decorator_bodies
-  :  TypeEnvironment.ReadOnly.t ->
-  define_and_originating_module Reference.Map.t
+val all_decorator_bodies : TypeEnvironment.ReadOnly.t -> Define.t Reference.Map.t
 
 val inline_decorators_for_define
-  :  get_decorator_body:(Reference.t -> define_and_originating_module option) ->
+  :  get_decorator_body:(Reference.t -> Define.t option) ->
   location:Location.t ->
   Define.t ->
   Define.t
 
-val inline_decorators
-  :  decorator_bodies:define_and_originating_module Reference.Map.t ->
-  Source.t ->
-  Source.t
+val inline_decorators : decorator_bodies:Define.t Reference.Map.t -> Source.t -> Source.t
 
 val type_environment_with_decorators_inlined
   :  configuration:Configuration.Analysis.t ->
