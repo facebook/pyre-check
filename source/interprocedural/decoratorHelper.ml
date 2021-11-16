@@ -225,7 +225,7 @@ let convert_parameter_to_argument ~location { Node.value = { Parameter.name; _ }
   { Call.Argument.name = None; value = argument_value }
 
 
-let create_function_call ~location ~callee_name ~async arguments =
+let create_function_call ~should_await ~location ~callee_name arguments =
   let call =
     Expression.Call
       {
@@ -235,12 +235,12 @@ let create_function_call ~location ~callee_name ~async arguments =
         arguments;
       }
   in
-  if async then Expression.Await (Node.create ~location call) else call
+  if should_await then Expression.Await (Node.create ~location call) else call
 
 
 let create_function_call_to ~location ~callee_name { Define.Signature.parameters; async; _ } =
   List.map parameters ~f:(convert_parameter_to_argument ~location)
-  |> create_function_call ~location ~callee_name ~async
+  |> create_function_call ~location ~callee_name ~should_await:async
 
 
 let rename_define ~new_name ({ Define.signature; _ } as define) =
@@ -428,7 +428,7 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
 let call_function_with_precise_parameters
     ~callee_name
     ~callee_prefix_parameters
-    ~new_signature:{ Define.Signature.parameters = new_parameters; async; _ }
+    ~new_signature:{ Define.Signature.parameters = new_parameters; _ }
     ({ Define.signature = wrapper_signature; _ } as define)
   =
   let wraps_original_function =
@@ -492,7 +492,7 @@ let call_function_with_precise_parameters
               create_function_call
                 ~location
                 ~callee_name:(Reference.create callee_name)
-                ~async
+                ~should_await:false
                 (prefix_arguments
                 @ List.map suffix_parameters ~f:(convert_parameter_to_argument ~location)))
             else (

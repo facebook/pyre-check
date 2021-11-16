@@ -1457,6 +1457,48 @@ let test_inline_decorators context =
 
       return _inlined_decorator_not_using_wraps(x)
   |};
+  (* Async function with `*args` and `**kwargs`. *)
+  assert_inlined
+    {|
+    from typing import Awaitable, Callable
+    from builtins import _test_sink
+
+    def with_logging(f: Callable) -> Callable:
+        async def inner( *args, **kwargs) -> None:
+            await f( *args, **kwargs)
+            _test_sink(args)
+
+        return inner
+
+
+    @with_logging
+    async def foo(x: int, y: str) -> None:
+        print(x, y)
+  |}
+    {|
+    from typing import Awaitable, Callable
+    from builtins import _test_sink
+
+    def with_logging(f: Callable) -> Callable:
+        async def inner( *args, **kwargs) -> None:
+            await f( *args, **kwargs)
+            _test_sink(args)
+
+        return inner
+
+
+    async def foo(x: int, y: str) -> None:
+      async def _original_function(x: int, y: str) -> None:
+        print(x, y)
+
+      async def _inlined_with_logging(x: int, y: str) -> None:
+        _args = (x, y)
+        _kwargs = {"x": x, "y": y}
+        await _original_function(x, y)
+        _test_sink(_args)
+
+      return await _inlined_with_logging(x, y)
+  |};
   ()
 
 
@@ -1898,6 +1940,19 @@ let test_replace_signature _ =
         foo(some_parameter, *args, **kwargs)
         print(some_parameter)
         print(_args, _kwargs)
+  |});
+  assert_signature_replaced
+    ~new_signature:"async def foo(y: str, z: int) -> None: ..."
+    {|
+      async def wrapper( *args, **kwargs) -> None:
+        await foo( *args, **kwargs)
+  |}
+    (Some
+       {|
+      async def wrapper(y: str, z: int) -> None:
+        _args = (y, z)
+        _kwargs = {"y": y, "z": z}
+        await foo(y, z)
   |});
   ()
 
