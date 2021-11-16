@@ -286,6 +286,12 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
         "Can be specified multiple times to include multiple directories."
     ),
 )
+@click.option(
+    "--do-not-ignore-all-errors-in",
+    type=str,
+    multiple=True,
+    help=("Report type errors within the given directory."),
+)
 @click.option("--filter-directory", type=str, hidden=True)
 @click.option(
     "--no-saved-state",
@@ -385,6 +391,7 @@ def pyre(
     buck_mode: Optional[str],
     use_buck_source_database: Optional[bool],
     source_directory: Iterable[str],
+    do_not_ignore_all_errors_in: Iterable[str],
     filter_directory: Optional[str],
     no_saved_state: bool,
     search_path: Iterable[str],
@@ -425,6 +432,7 @@ def pyre(
         use_buck_builder=use_buck_builder,
         use_buck_source_database=use_buck_source_database,
         source_directories=list(source_directory),
+        do_not_ignore_all_errors_in=list(do_not_ignore_all_errors_in),
         filter_directory=filter_directory,
         buck_mode=buck_mode,
         no_saved_state=no_saved_state,

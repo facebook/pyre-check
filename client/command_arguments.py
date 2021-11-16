@@ -63,6 +63,7 @@ class CommandArguments:
     use_buck_source_database: Optional[bool] = None
     source_directories: List[str] = field(default_factory=list)
     filter_directory: Optional[str] = None
+    do_not_ignore_all_errors_in: List[str] = field(default_factory=list)
     buck_mode: Optional[str] = None
     no_saved_state: bool = False
     search_path: List[str] = field(default_factory=list)

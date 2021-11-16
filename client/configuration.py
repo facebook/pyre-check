@@ -471,7 +471,7 @@ class PartialConfiguration:
             buck_builder_binary=arguments.buck_builder_binary,
             buck_mode=arguments.buck_mode,
             disabled=None,
-            do_not_ignore_all_errors_in=[],
+            do_not_ignore_all_errors_in=arguments.do_not_ignore_all_errors_in,
             dot_pyre_directory=arguments.dot_pyre_directory,
             excludes=arguments.exclude,
             extensions=[],
