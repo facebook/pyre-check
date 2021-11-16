@@ -1506,7 +1506,7 @@ let test_decorator_location context =
   let assert_inlined
       ?(additional_sources = [])
       ?(handle = "test.py")
-      ~expected_function_module_pairs
+      ~expected_inlined_original_pairs
       source
       expected
     =
@@ -1521,16 +1521,16 @@ let test_decorator_location context =
       |> DecoratorHelper.sanitize_defines ~strip_decorators:false
     in
     assert_source_equal ~location_insensitive:true expected actual;
-    List.iter expected_function_module_pairs ~f:(fun (function_reference, decorator_module) ->
+    List.iter expected_inlined_original_pairs ~f:(fun (inlined_function_reference, expected) ->
         assert_equal
-          ~printer:(fun module_reference ->
+          ~printer:(fun outer_decorator_reference ->
             Format.asprintf
-              "function: %s\tmodule: %s"
-              ([%show: Reference.t] function_reference)
-              ([%show: Reference.t option] module_reference))
+              "inlined_function: %s\toriginal_decorator: %s"
+              ([%show: Reference.t] inlined_function_reference)
+              ([%show: Reference.t option] outer_decorator_reference))
           ~cmp:[%equal: Reference.t option]
-          decorator_module
-          (DecoratorHelper.DecoratorModule.get function_reference))
+          expected
+          (DecoratorHelper.InlinedNameToOriginalName.get inlined_function_reference))
   in
   let additional_sources =
     [
@@ -1598,22 +1598,25 @@ let test_decorator_location context =
     def same_decorator_twice(z: str) -> None:
       print(z)
   |}
-    ~expected_function_module_pairs:
+    ~expected_inlined_original_pairs:
       [
-        !&"test.baz._inlined_same_module_decorator", Some !&"test";
+        !&"test.baz._inlined_same_module_decorator", Some !&"test.same_module_decorator";
         !&"test.baz._original_function", None;
         !&"test.baz", None;
-        !&"test.bar._inlined_with_logging", Some !&"logging_decorator";
-        !&"test.bar._inlined_with_logging.helper", Some !&"logging_decorator";
+        !&"test.bar._inlined_with_logging", Some !&"logging_decorator.with_logging";
+        !&"test.bar._inlined_with_logging.helper", Some !&"logging_decorator.with_logging";
         !&"test.bar", None;
         !&"test.bar._original_function", None;
-        !&"test.bar._inlined_identity", Some !&"some_module.identity_decorator";
-        !&"test.foo._inlined_with_logging", Some !&"logging_decorator";
-        !&"test.foo._inlined_with_logging.helper", Some !&"logging_decorator";
+        !&"test.bar._inlined_identity", Some !&"some_module.identity_decorator.identity";
+        !&"test.foo._inlined_with_logging", Some !&"logging_decorator.with_logging";
+        !&"test.foo._inlined_with_logging.helper", Some !&"logging_decorator.with_logging";
         !&"test.foo", None;
         !&"test.foo._original_function", None;
-        !&"test.same_decorator_twice._inlined_identity", Some !&"some_module.identity_decorator";
-        !&"test.same_decorator_twice._inlined_identity2", Some !&"some_module.identity_decorator";
+        ( !&"test.same_decorator_twice._inlined_identity",
+          Some !&"some_module.identity_decorator.identity" );
+        ( !&"test.same_decorator_twice._inlined_identity2",
+          (* TODO(T105998389): The original name should be `identity`, not `identity2`. *)
+          Some !&"some_module.identity_decorator.identity2" );
         !&"test.same_decorator_twice._original_function", None;
         !&"test.same_decorator_twice", None;
       ]

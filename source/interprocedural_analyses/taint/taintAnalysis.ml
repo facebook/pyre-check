@@ -596,14 +596,22 @@ include Taint.Result.Register (struct
       ~existing
     =
     let define_qualifier = Ast.Reference.delocalize name in
-    let qualifier =
+    let open Analysis in
+    let open Ast in
+    let module_reference =
+      let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+      let annotated_global_environment =
+        GlobalResolution.annotated_global_environment global_resolution
+      in
       (* Pysa inlines decorators when a function is decorated. However, we want issues and models to
          point to the lines in the module where the decorator was defined, not the module where it
          was inlined. So, look up the originating module, if any, and use that as the module
          qualifier. *)
-      Interprocedural.DecoratorHelper.DecoratorModule.get define_qualifier
-      |> Option.value ~default:qualifier
+      Interprocedural.DecoratorHelper.InlinedNameToOriginalName.get define_qualifier
+      >>= AnnotatedGlobalEnvironment.ReadOnly.get_global_location annotated_global_environment
+      >>| fun { Location.WithModule.path; _ } -> path
     in
+    let qualifier = Option.value ~default:qualifier module_reference in
     match existing with
     | Some ({ modes; _ } as model) when ModeSet.contains Mode.SkipAnalysis modes ->
         let () = Log.info "Skipping taint analysis of %a" Target.pretty_print callable in

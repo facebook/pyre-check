@@ -76,7 +76,7 @@ val rename_local_variables : pairs:(Identifier.t * Identifier.t) list -> Define.
 
 module DecoratorModuleValue : Memory.ValueType with type t = Ast.Reference.t
 
-module DecoratorModule :
+module InlinedNameToOriginalName :
   Memory.WithCache.S
-    with type t = DecoratorModuleValue.t
+    with type t = Ast.Reference.t
      and type key = Analysis.SharedMemoryKeys.ReferenceKey.t

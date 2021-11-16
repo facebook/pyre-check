@@ -47,9 +47,9 @@ module DecoratorModuleValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module DecoratorModule =
-  Memory.WithCache.Make (Analysis.SharedMemoryKeys.ReferenceKey) (DecoratorModuleValue)
-(** Mapping from an inlined decorator function to its original module. *)
+module InlinedNameToOriginalName =
+  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DecoratorModuleValue)
+(** Mapping from an inlined decorator function name to its original name. *)
 
 let all_decorators environment =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
@@ -589,11 +589,11 @@ let replace_signature_if_always_passing_on_arguments
 
 let add_function_decorator_module_mapping
     ~qualifier
-    ~module_reference
+    ~outer_decorator_reference
     { Define.signature = { name; _ }; _ }
   =
   let qualified_inlined_name = Reference.combine qualifier name in
-  Option.iter module_reference ~f:(DecoratorModule.add qualified_inlined_name)
+  InlinedNameToOriginalName.add qualified_inlined_name outer_decorator_reference
 
 
 let make_wrapper_define
@@ -617,7 +617,6 @@ let make_wrapper_define
       higher_order_function_parameter_name;
       decorator_reference;
       outer_decorator_reference;
-      module_reference;
       _;
     }
   =
@@ -683,8 +682,11 @@ let make_wrapper_define
   in
   List.iter
     helper_defines
-    ~f:(add_function_decorator_module_mapping ~qualifier:wrapper_qualifier ~module_reference);
-  add_function_decorator_module_mapping ~qualifier ~module_reference wrapper_define;
+    ~f:
+      (add_function_decorator_module_mapping
+         ~qualifier:wrapper_qualifier
+         ~outer_decorator_reference);
+  add_function_decorator_module_mapping ~qualifier ~outer_decorator_reference wrapper_define;
   wrapper_define, outer_signature
 
 
