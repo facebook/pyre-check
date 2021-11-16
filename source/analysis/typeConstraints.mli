@@ -13,7 +13,7 @@ val empty : t
 val exists_in_bounds : t -> variables:Type.Variable.t list -> bool
 
 module Solution : sig
-  type t [@@deriving eq]
+  type t [@@deriving show, eq]
 
   val empty : t
 
@@ -32,8 +32,6 @@ module Solution : sig
 
   (* For testing *)
   val create : Type.Variable.pair list -> t
-
-  val show : t -> string
 end
 
 module type OrderedConstraintsType = sig

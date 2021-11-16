@@ -181,6 +181,8 @@ module Solution = struct
     Format.sprintf "{%s%s%s}" unaries callable_parameters tuple_variadics
 
 
+  let pp format solution = Format.fprintf format "%s" (show solution)
+
   let empty =
     {
       unaries = UnaryVariable.Map.empty;

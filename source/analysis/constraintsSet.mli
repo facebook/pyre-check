@@ -32,7 +32,7 @@ type order = {
 
 val resolve_callable_protocol : assumption:Type.t -> order:order -> Type.t -> Type.t option
 
-type t = TypeConstraints.t list
+type t = TypeConstraints.t list [@@deriving show]
 
 val empty : t
 

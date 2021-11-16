@@ -39,7 +39,7 @@ module Solution = struct
   include TypeConstraints.Solution
 end
 
-type t = TypeConstraints.t list
+type t = TypeConstraints.t list [@@deriving show]
 
 let empty = [TypeConstraints.empty]
 
