@@ -1937,7 +1937,7 @@ let run
   in
   let module State = State (FunctionContext) in
   let module Fixpoint = Fixpoint.Make (State) in
-  if Statement.Define.dump_call_graph (Node.value define) then
+  if FunctionContext.debug || Statement.Define.dump_call_graph define.value then
     Map.to_alist call_graph_of_define
     |> List.map ~f:(fun (key, callees) ->
            Format.asprintf "%a: %a" Location.pp key Interprocedural.CallGraph.Callees.pp callees)
