@@ -34,7 +34,7 @@ val all_decorator_bodies
   define_and_originating_module Reference.Map.t
 
 val inline_decorators_for_define
-  :  decorator_bodies:define_and_originating_module Reference.Map.t ->
+  :  get_decorator_body:(Reference.t -> define_and_originating_module option) ->
   location:Location.t ->
   Define.t ->
   Define.t

@@ -786,7 +786,7 @@ let postprocess
 
 
 let inline_decorators_for_define
-    ~decorator_bodies
+    ~get_decorator_body
     ~location
     ({ Define.signature = { decorators = original_decorators; _ }; _ } as define)
   =
@@ -804,7 +804,7 @@ let inline_decorators_for_define
           Decorator.name = { Node.value = decorator_name; location = decorator_call_location };
           arguments;
         } ->
-        Map.find decorator_bodies decorator_name
+        get_decorator_body decorator_name
         >>= extract_decorator_data
               ~decorator_call_location
               ~is_decorator_factory:(Option.is_some arguments)
@@ -837,7 +837,11 @@ let inline_decorators ~decorator_bodies source =
             {
               statement with
               value =
-                Statement.Define (inline_decorators_for_define ~decorator_bodies ~location define);
+                Statement.Define
+                  (inline_decorators_for_define
+                     ~get_decorator_body:(Map.find decorator_bodies)
+                     ~location
+                     define);
             }
         | _ -> statement
       in
