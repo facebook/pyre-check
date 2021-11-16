@@ -95,7 +95,7 @@ val create
   taint_model_paths:Path.t list ->
   t
 
-val validate : t -> unit
+val validate : t -> string list -> unit
 
 val apply_missing_flows : t -> missing_flows_kind -> t
 

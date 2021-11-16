@@ -360,14 +360,13 @@ let parse source_jsons =
               code;
               message_format;
             }
-            ::
-            {
-              Rule.sources = second_sources;
-              sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
-              name;
-              code;
-              message_format;
-            }
+            :: {
+                 Rule.sources = second_sources;
+                 sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
+                 name;
+                 code;
+                 message_format;
+               }
             :: rules,
             PartialSinkConverter.add
               partial_sink_converter
@@ -523,13 +522,49 @@ let parse source_jsons =
   }
 
 
-let validate { sources; sinks; features; _ } =
+let get_location ?encoding section label src =
+  let rec loop position section label section_hit d =
+    match Jsonm.decode d with
+    | `Lexeme (`String label_name) when String.equal label_name label ->
+        (if Int.equal section_hit 1 then
+           let (starting_row, starting_column), (ending_row, ending_column) =
+             Jsonm.decoded_range d
+           in
+           Log.error
+             "Entry for `%s` on lines %d - %d columns %d - %d"
+             label
+             starting_row
+             ending_row
+             starting_column
+             ending_column);
+        loop position section label section_hit d
+    | `Lexeme (`Name section_name) when String.equal section_name section ->
+        loop position section label (section_hit + 1) d
+    | `Lexeme (`Name another_section_name)
+      when List.exists
+             ~f:(String.equal another_section_name)
+             ["sources"; "sinks"; "features"; "rules"] ->
+        loop position section label (section_hit + 1) d
+    | `Lexeme _
+    | `Error _ ->
+        loop position section label section_hit d
+    | `End -> List.rev position
+    | `Await -> assert false
+  in
+  loop [] section label 0 (Jsonm.decoder ?encoding (`String src))
+
+
+let validate { sources; sinks; features; _ } configurations =
   let ensure_list_unique ~kind ~get_name elements =
     let seen = String.Hash_set.create () in
     let ensure_unique element =
       let element = get_name element in
-      if Hash_set.mem seen element then
-        failwith (Format.sprintf "Duplicate entry for %s: `%s`" kind element);
+      if Hash_set.mem seen element then (
+        Log.error "Duplicate entry for %s `%s` found:" kind element;
+        let section = kind ^ "s" in
+        let _ = List.map configurations ~f:(get_location section element) in
+        (*TODO: Fail after checking every element rather than single element*)
+        failwith (Format.sprintf "Duplicate entries are not allowed."));
       Hash_set.add seen element
     in
     List.iter elements ~f:ensure_unique
@@ -720,28 +755,25 @@ let create
     ~taint_model_paths
   =
   let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths in
-  let parse_configuration config_file =
+  let parse_raw_configuration config_file =
     if not (Path.file_exists config_file) then
       raise
         (MalformedConfiguration { path = Path.absolute config_file; parse_error = "File not found" })
     else
-      try
-        config_file
-        |> File.create
-        |> File.content
-        |> Option.value ~default:""
-        |> Json.from_string
-        |> Option.some
-      with
-      | Yojson.Json_error parse_error
-      | Failure parse_error ->
-          raise (MalformedConfiguration { path = Path.absolute config_file; parse_error })
+      config_file |> File.create |> File.content |> Option.value ~default:""
   in
-  let configurations = file_paths |> List.filter_map ~f:parse_configuration in
+  let parse_configuration config_file =
+    try config_file |> Json.from_string |> Option.some with
+    | Yojson.Json_error parse_error
+    | Failure parse_error ->
+        raise (MalformedConfiguration { path = ""; parse_error })
+  in
+  let raw_configurations = file_paths |> List.map ~f:parse_raw_configuration in
+  let configurations = raw_configurations |> List.filter_map ~f:parse_configuration in
   if List.is_empty configurations then
     raise (Invalid_argument "No `.config` was found in the taint directories.");
   let configuration = parse configurations in
-  validate configuration;
+  let _ = validate configuration raw_configurations in
   let configuration =
     match find_missing_flows with
     | Some Obscure -> obscure_flows_configuration configuration
