@@ -115,7 +115,11 @@ module Error : sig
         labels: string list;
       }
     | InvalidMultiSink of string
-    | RuleCodeDuplicate of int
+    | RuleCodeDuplicate of {
+        code: int;
+        previous_location: string;
+        current_location: string;
+      }
     | OptionDuplicate of string
     | SourceDuplicate of string
     | SinkDuplicate of string

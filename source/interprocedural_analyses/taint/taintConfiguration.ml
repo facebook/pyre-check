@@ -563,7 +563,11 @@ module Error = struct
         labels: string list;
       }
     | InvalidMultiSink of string
-    | RuleCodeDuplicate of int
+    | RuleCodeDuplicate of {
+        code: int;
+        previous_location: string;
+        current_location: string;
+      }
     | OptionDuplicate of string
     | SourceDuplicate of string
     | SinkDuplicate of string
@@ -624,8 +628,13 @@ module Error = struct
           sink
           (String.concat labels ~sep:", ")
     | InvalidMultiSink sink -> Format.fprintf formatter "`%s` is not a multi sink" sink
-    | RuleCodeDuplicate code ->
-        Format.fprintf formatter "Multiple rules share the same code `%d`" code
+    | RuleCodeDuplicate { code; previous_location; current_location } ->
+        Format.fprintf
+          formatter
+          "Multiple rules share the same code `%d` at locations: `%s` and `%s`."
+          code
+          previous_location
+          current_location
     | OptionDuplicate name ->
         Format.fprintf formatter "Multiple values were passed in for option `%s`" name
     | SourceDuplicate name -> Format.fprintf formatter "Duplicate entry for source: `%s`" name
@@ -832,11 +841,20 @@ let from_json_list source_json_list =
     |> Result.map_error ~f:List.concat
   in
   let seen_rules = Int.Hash_set.create () in
+  let seen_locations = Hashtbl.create 10000 in
   let validate_code_uniqueness ~path code =
+    let current_position = "line %d character %d" Yojson.lexer_state.lnum Yojson.lexer_state.bol in
     if Hash_set.mem seen_rules code then
-      Error [Error.create ~path ~kind:(Error.RuleCodeDuplicate code)]
+      let previous_position = Hashtbl.find seen_locations code in
+      Error
+        [
+          Error.create
+            ~path
+            ~kind:(Error.RuleCodeDuplicate { code; previous_position; current_position });
+        ]
     else (
       Hash_set.add seen_rules code;
+      Hashtbl.add seen_locations code current_location;
       Ok ())
   in
   let parse_source_reference ~path ~allowed_sources source =
@@ -954,15 +972,14 @@ let from_json_list source_json_list =
                 code;
                 message_format;
               }
-              ::
-              {
-                Rule.sources = second_sources;
-                sinks = [Sinks.TriggeredPartialSink second_sink];
-                transforms = [];
-                name;
-                code;
-                message_format;
-              }
+              :: {
+                   Rule.sources = second_sources;
+                   sinks = [Sinks.TriggeredPartialSink second_sink];
+                   transforms = [];
+                   name;
+                   code;
+                   message_format;
+                 }
               :: rules,
               PartialSinkConverter.add
                 partial_sink_converter
