@@ -175,20 +175,20 @@ def get_callable_model_from_line(line: str) -> Optional[Tuple[str, TargetModel]]
         # pyre-fixme[26]: TypedDict key must be a string literal.
         result["parameters"][parameter_name][model_type].update(parameter_model)
 
-    if not return_model:
-        return None
+    if return_model:
+        annotation_match = RETURN_ANNOTATION_PATTERN.match(return_model)
+        if not annotation_match or None in annotation_match.groups():
+            return None
 
-    annotation_match = RETURN_ANNOTATION_PATTERN.match(return_model)
-    if not annotation_match or None in annotation_match.groups():
-        return None
-
-    model_type = ANNOTATION_TO_MODEL_TYPE[annotation_match.group("model_type").strip()]
-    return_model = {
-        annotation.strip()
-        for annotation in annotation_match.group("model_leaves").split(",")
-    }
-    # pyre-fixme[26]: TypedDict key must be a string literal.
-    result["return_model"][model_type].update(return_model)
+        model_type = ANNOTATION_TO_MODEL_TYPE[
+            annotation_match.group("model_type").strip()
+        ]
+        return_model = {
+            annotation.strip()
+            for annotation in annotation_match.group("model_leaves").split(",")
+        }
+        # pyre-fixme[26]: TypedDict key must be a string literal.
+        result["return_model"][model_type].update(return_model)
 
     return (callable_name, result)
 
@@ -252,8 +252,9 @@ def get_models_from_pysa_file(path: str) -> Dict[str, TargetModel]:
                 skipped += 1
                 continue
 
-            result = get_callable_model_from_line(line)
-            if not result:
+            if "def " in line:
+                result = get_callable_model_from_line(line)
+            else:
                 result = get_attribute_model_from_line(line)
 
             if result:
