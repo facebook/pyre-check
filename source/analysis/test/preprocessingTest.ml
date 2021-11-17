@@ -1738,6 +1738,30 @@ let test_qualify_ast _ =
       pattern = +Match.Pattern.MatchWildcard;
       body = [+Statement.Expression !"b"];
     };
+
+  let assert_qualify_pattern pattern expected =
+    let qualify = Qualify.qualify_pattern ~scope in
+    let processed = qualify pattern in
+    assert_equal
+      ~cmp:(fun left right -> Match.Pattern.location_insensitive_compare left right = 0)
+      ~printer:Match.Pattern.show
+      expected
+      processed;
+    (* Qualifying twice should not change the source. *)
+    assert_equal
+      ~cmp:(fun left right -> Match.Pattern.location_insensitive_compare left right = 0)
+      ~printer:Match.Pattern.show
+      expected
+      (qualify processed)
+  in
+  assert_qualify_pattern
+    (+Match.Pattern.MatchAs { pattern = None; name = "a" })
+    (+Match.Pattern.MatchAs { pattern = None; name = "b" });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchAs
+        { pattern = Some (+Match.Pattern.MatchAs { pattern = None; name = "a" }); name = "x" })
+    (+Match.Pattern.MatchAs
+        { pattern = Some (+Match.Pattern.MatchAs { pattern = None; name = "b" }); name = "x" });
   ()
 
 

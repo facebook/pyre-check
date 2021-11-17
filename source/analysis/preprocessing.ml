@@ -878,9 +878,27 @@ module Qualify (Context : QualifyContext) = struct
       } )
 
 
-  and qualify_pattern ~scope:_ pattern =
-    (* TODO(T102720335): Support match statement. *)
-    pattern
+  and qualify_pattern ~scope { Node.value; location } =
+    let qualify_pattern = qualify_pattern ~scope in
+    let qualify_match_target name =
+      match
+        qualify_name
+          ~scope
+          ~qualify_strings:DoNotQualify
+          ~location:Location.any
+          (Name.Identifier name)
+      with
+      | Name.Identifier name -> name
+      | _ -> name
+    in
+    let value =
+      match value with
+      | Match.Pattern.MatchAs { pattern; name } ->
+          Match.Pattern.MatchAs
+            { pattern = pattern >>| qualify_pattern; name = qualify_match_target name }
+      | _ -> value
+    in
+    { Node.value; location }
 
 
   and qualify_target ?(in_comprehension = false) ~scope target =
