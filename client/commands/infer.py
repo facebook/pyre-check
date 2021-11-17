@@ -727,8 +727,8 @@ def create_infer_arguments(
         base_arguments=backend_arguments.BaseArguments(
             log_path=configuration.log_directory,
             global_root=configuration.project_root,
-            checked_directory_allowlist=list(
-                source_paths.get_checked_directory_allowlist()
+            checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
+                configuration, source_paths
             ),
             checked_directory_blocklist=(
                 configuration.get_existent_ignore_all_errors_paths()

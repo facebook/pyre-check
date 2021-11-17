@@ -133,9 +133,8 @@ def create_analyze_arguments(
         base_arguments=backend_arguments.BaseArguments(
             log_path=configuration.log_directory,
             global_root=configuration.project_root,
-            checked_directory_allowlist=(
-                list(source_paths.get_checked_directory_allowlist())
-                + configuration.get_existent_do_not_ignore_errors_in_paths()
+            checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
+                configuration, source_paths
             ),
             checked_directory_blocklist=(
                 configuration.get_existent_ignore_all_errors_paths()

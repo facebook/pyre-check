@@ -18,6 +18,7 @@ from ..backend_arguments import (
     BaseArguments,
     find_watchman_root,
     find_buck_root,
+    get_checked_directory_allowlist,
     get_source_path,
 )
 
@@ -373,3 +374,53 @@ class ArgumentsTest(testslide.TestCase):
             ).get_checked_directory_allowlist(),
             ["/source/ct"],
         )
+
+    def test_checked_directory_allowlist(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, ["a", "b/c"])
+
+            test_configuration = configuration.Configuration(
+                project_root=str(root_path),
+                dot_pyre_directory=Path(".pyre"),
+                do_not_ignore_all_errors_in=[
+                    str(root_path / "a"),
+                    str(root_path / "x"),
+                    "//b/c",
+                    "//y/z",
+                ],
+            )
+            self.assertCountEqual(
+                get_checked_directory_allowlist(
+                    test_configuration,
+                    SimpleSourcePath([configuration.SimpleSearchPathElement("source")]),
+                ),
+                [
+                    str("source"),
+                    str(root_path / "a"),
+                    str(root_path / "b/c"),
+                ],
+            )
+
+            test_configuration = configuration.Configuration(
+                project_root=str(root_path),
+                dot_pyre_directory=Path(".pyre"),
+                do_not_ignore_all_errors_in=[
+                    str(root_path / "a"),
+                    str(root_path / "x"),
+                    "//b/c",
+                    "//y/z",
+                ],
+            )
+            self.assertCountEqual(
+                get_checked_directory_allowlist(
+                    test_configuration,
+                    SimpleSourcePath(
+                        [configuration.SimpleSearchPathElement(str(root_path))]
+                    ),
+                ),
+                [
+                    str(root_path / "a"),
+                    str(root_path / "b/c"),
+                ],
+            )

@@ -11,7 +11,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional, Dict, Union, Sequence, Set, IO, Iterator, Any
+from typing import Optional, Dict, List, Union, Sequence, Set, IO, Iterator, Any
 
 from typing_extensions import Protocol
 
@@ -254,6 +254,23 @@ def get_source_path_for_check(
     # concurrent check commands overwriting each other's artifacts. Here we use process
     # ID to isolate the artifact root of each individual check command.
     return get_source_path(configuration, str(os.getpid()))
+
+
+def get_checked_directory_allowlist(
+    configuration: configuration_module.Configuration, source_path: SourcePath
+) -> List[str]:
+    source_path_allowlist = list(source_path.get_checked_directory_allowlist())
+    explicit_allowlist = configuration.get_existent_do_not_ignore_errors_in_paths()
+    # If an explicitly given allowlist path is more specific than an allowlist path
+    # that was inferred from the source path, do not include the inferred path.
+    return [
+        path
+        for path in source_path_allowlist
+        if not any(
+            Path(path) in Path(explicit_path).parents
+            for explicit_path in explicit_allowlist
+        )
+    ] + explicit_allowlist
 
 
 def get_profiling_log_path(log_directory: Path) -> Path:
