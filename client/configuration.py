@@ -408,7 +408,7 @@ class PartialConfiguration:
     buck_builder_binary: Optional[str] = None
     buck_mode: Optional[str] = None
     disabled: Optional[bool] = None
-    do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
+    do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     dot_pyre_directory: Optional[Path] = None
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
@@ -471,7 +471,7 @@ class PartialConfiguration:
             buck_builder_binary=arguments.buck_builder_binary,
             buck_mode=arguments.buck_mode,
             disabled=None,
-            do_not_ignore_all_errors_in=arguments.do_not_ignore_all_errors_in,
+            do_not_ignore_errors_in=arguments.do_not_ignore_errors_in,
             dot_pyre_directory=arguments.dot_pyre_directory,
             excludes=arguments.exclude,
             extensions=[],
@@ -655,7 +655,7 @@ class PartialConfiguration:
                 ),
                 buck_mode=ensure_option_type(configuration_json, "buck_mode", str),
                 disabled=ensure_option_type(configuration_json, "disabled", bool),
-                do_not_ignore_all_errors_in=ensure_string_list(
+                do_not_ignore_errors_in=ensure_string_list(
                     configuration_json, "do_not_ignore_errors_in"
                 ),
                 dot_pyre_directory=Path(dot_pyre_directory)
@@ -759,9 +759,9 @@ class PartialConfiguration:
             buck_builder_binary=buck_builder_binary,
             buck_mode=self.buck_mode,
             disabled=self.disabled,
-            do_not_ignore_all_errors_in=[
+            do_not_ignore_errors_in=[
                 expand_relative_path(root, path)
-                for path in self.do_not_ignore_all_errors_in
+                for path in self.do_not_ignore_errors_in
             ],
             dot_pyre_directory=self.dot_pyre_directory,
             excludes=self.excludes,
@@ -838,8 +838,8 @@ def merge_partial_configurations(
         ),
         buck_mode=overwrite_base(base.buck_mode, override.buck_mode),
         disabled=overwrite_base(base.disabled, override.disabled),
-        do_not_ignore_all_errors_in=prepend_base(
-            base.do_not_ignore_all_errors_in, override.do_not_ignore_all_errors_in
+        do_not_ignore_errors_in=prepend_base(
+            base.do_not_ignore_errors_in, override.do_not_ignore_errors_in
         ),
         dot_pyre_directory=overwrite_base(
             base.dot_pyre_directory, override.dot_pyre_directory
@@ -912,7 +912,7 @@ class Configuration:
     buck_builder_binary: Optional[str] = None
     buck_mode: Optional[str] = None
     disabled: bool = False
-    do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
+    do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
     file_hash: Optional[str] = None
@@ -962,7 +962,7 @@ class Configuration:
             buck_builder_binary=partial_configuration.buck_builder_binary,
             buck_mode=partial_configuration.buck_mode,
             disabled=_get_optional_value(partial_configuration.disabled, default=False),
-            do_not_ignore_all_errors_in=partial_configuration.do_not_ignore_all_errors_in,
+            do_not_ignore_errors_in=partial_configuration.do_not_ignore_errors_in,
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             file_hash=partial_configuration.file_hash,
@@ -1039,7 +1039,7 @@ class Configuration:
             ),
             **({"buck_mode": buck_mode} if buck_mode is not None else {}),
             "disabled": self.disabled,
-            "do_not_ignore_all_errors_in": list(self.do_not_ignore_all_errors_in),
+            "do_not_ignore_errors_in": list(self.do_not_ignore_errors_in),
             "excludes": list(self.excludes),
             "extensions": list(self.extensions),
             "ignore_all_errors": list(self.ignore_all_errors),
@@ -1120,7 +1120,7 @@ class Configuration:
             buck_builder_binary=self.buck_builder_binary,
             buck_mode=self.buck_mode,
             disabled=self.disabled,
-            do_not_ignore_all_errors_in=self.do_not_ignore_all_errors_in,
+            do_not_ignore_errors_in=self.do_not_ignore_errors_in,
             excludes=self.excludes,
             extensions=self.extensions,
             file_hash=self.file_hash,
@@ -1166,7 +1166,7 @@ class Configuration:
         """
         ignore_paths = [
             _expand_global_root(path, global_root=self.project_root)
-            for path in self.do_not_ignore_all_errors_in
+            for path in self.do_not_ignore_errors_in
         ]
         paths = []
         for path in ignore_paths:

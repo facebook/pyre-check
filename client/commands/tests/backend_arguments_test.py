@@ -383,7 +383,7 @@ class ArgumentsTest(testslide.TestCase):
             test_configuration = configuration.Configuration(
                 project_root=str(root_path),
                 dot_pyre_directory=Path(".pyre"),
-                do_not_ignore_all_errors_in=[
+                do_not_ignore_errors_in=[
                     str(root_path / "a"),
                     str(root_path / "x"),
                     "//b/c",
@@ -404,7 +404,7 @@ class ArgumentsTest(testslide.TestCase):
             test_configuration = configuration.Configuration(
                 project_root=str(root_path),
                 dot_pyre_directory=Path(".pyre"),
-                do_not_ignore_all_errors_in=[
+                do_not_ignore_errors_in=[
                     str(root_path / "a"),
                     str(root_path / "x"),
                     "//b/c",
@@ -427,7 +427,7 @@ class ArgumentsTest(testslide.TestCase):
             test_configuration = configuration.Configuration(
                 project_root=str(root_path),
                 dot_pyre_directory=Path(".pyre"),
-                do_not_ignore_all_errors_in=[],
+                do_not_ignore_errors_in=[],
             )
             self.assertCountEqual(
                 get_checked_directory_allowlist(

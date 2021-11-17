@@ -169,7 +169,7 @@ class PartialConfigurationTest(unittest.TestCase):
             list(
                 PartialConfiguration.from_string(
                     json.dumps({"do_not_ignore_errors_in": ["foo", "bar"]})
-                ).do_not_ignore_all_errors_in
+                ).do_not_ignore_errors_in
             ),
             ["foo", "bar"],
         )
@@ -585,7 +585,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_overwritten("buck_builder_binary")
         assert_overwritten("buck_mode")
         assert_overwritten("disabled")
-        assert_prepended("do_not_ignore_all_errors_in")
+        assert_prepended("do_not_ignore_errors_in")
         assert_overwritten("dot_pyre_directory")
         assert_prepended("excludes")
         assert_prepended("extensions")
@@ -656,9 +656,9 @@ class PartialConfigurationTest(unittest.TestCase):
             "bar/foo",
         )
         self.assertEqual(
-            PartialConfiguration(do_not_ignore_all_errors_in=["foo", "bar"])
+            PartialConfiguration(do_not_ignore_errors_in=["foo", "bar"])
             .expand_relative_paths("baz")
-            .do_not_ignore_all_errors_in,
+            .do_not_ignore_errors_in,
             ["baz/foo", "baz/bar"],
         )
         self.assertEqual(
@@ -736,7 +736,7 @@ class ConfigurationTest(testslide.TestCase):
                 buck_builder_binary="buck_builder_binary",
                 buck_mode="opt",
                 disabled=None,
-                do_not_ignore_all_errors_in=["foo"],
+                do_not_ignore_errors_in=["foo"],
                 dot_pyre_directory=None,
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
@@ -770,7 +770,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
         self.assertEqual(configuration.buck_mode, "opt")
         self.assertEqual(configuration.disabled, False)
-        self.assertListEqual(list(configuration.do_not_ignore_all_errors_in), ["foo"])
+        self.assertListEqual(list(configuration.do_not_ignore_errors_in), ["foo"])
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
@@ -988,7 +988,7 @@ class ConfigurationTest(testslide.TestCase):
                 Configuration(
                     project_root=str(root_path),
                     dot_pyre_directory=Path(".pyre"),
-                    do_not_ignore_all_errors_in=[
+                    do_not_ignore_errors_in=[
                         str(root_path / "a"),
                         str(root_path / "x"),
                         "//b/c",
