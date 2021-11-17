@@ -1727,6 +1727,17 @@ let test_qualify_ast _ =
       pattern = +Match.Pattern.MatchWildcard;
       body = [];
     };
+  assert_qualify_match_case
+    {
+      Match.Case.guard = None;
+      pattern = +Match.Pattern.MatchWildcard;
+      body = [+Statement.Expression !"a"];
+    }
+    {
+      Match.Case.guard = None;
+      pattern = +Match.Pattern.MatchWildcard;
+      body = [+Statement.Expression !"b"];
+    };
   ()
 
 
