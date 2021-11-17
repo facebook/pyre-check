@@ -8,6 +8,8 @@
 open Ast
 open Statement
 
+val decorators_to_skip : path:PyrePath.t -> string -> Reference.t list
+
 val uniquify_names
   :  get_reference:('a -> Reference.t) ->
   set_reference:(Reference.t -> 'a -> 'a) ->
