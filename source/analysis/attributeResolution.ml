@@ -2140,6 +2140,24 @@ class base class_metadata_environment dependency =
                 in
                 annotation, visibility
             in
+            (* Try resolve to tuple of string literal types for __match_args__ *)
+            let annotation =
+              let open Expression in
+              match attribute_name, annotation, value with
+              | "__match_args__", None, Some { Node.value = Expression.Tuple elements; _ } ->
+                  let string_literal_value_to_type = function
+                    | {
+                        Node.value =
+                          Expression.Constant
+                            (Constant.String { StringLiteral.kind = String; value });
+                        _;
+                      } ->
+                        Some (Type.Literal (String (LiteralValue value)))
+                    | _ -> None
+                  in
+                  List.map elements ~f:string_literal_value_to_type |> Option.all >>| Type.tuple
+              | _ -> annotation
+            in
             let annotation =
               match annotation, value with
               | Some annotation, _ -> annotation

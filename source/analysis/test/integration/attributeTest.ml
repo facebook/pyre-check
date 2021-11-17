@@ -654,6 +654,63 @@ let test_check_attributes context =
       "Revealed type [-1]: Revealed type for `f.n` is `unknown`.";
       "Revealed type [-1]: Revealed type for `f.l` is `unknown`.";
     ];
+
+  (* Try resolve to string literal types for __match_args__ *)
+  assert_type_errors
+    {|
+      class Foo:
+        __match_args__ = ("x", "y")
+        x: int = 0
+        y: str = ""
+
+      def g(f: Foo) -> None:
+        reveal_type(f.__match_args__)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f.__match_args__` is \
+       `typing.Tuple[typing_extensions.Literal['x'], typing_extensions.Literal['y']]`.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        __match_args__ = ("x", "y")
+        x: int = 0
+        y: str = ""
+
+        def update_match_args(self) -> None:
+          self.__match_args__ = ("x",)
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `__match_args__` declared in class `Foo` has \
+       type `typing.Tuple[typing_extensions.Literal['x'], typing_extensions.Literal['y']]` but is \
+       used as type `typing.Tuple[typing_extensions.Literal['x']]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      class Foo:
+        __match_args__: Tuple[str]
+        x: int = 0
+        y: float = 0.
+
+        def __init__(self, use_floats: bool) -> None:
+          if use_floats:
+            self.__match_args__ = ("y",)
+          else:
+            self.__match_args__ = ("x",)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        __match_args__ = ["x", "y"]
+        x: int = 0
+        y: str = ""
+
+        def update_match_args(self) -> None:
+          self.__match_args__ = ["x"]
+    |}
+    [];
   ()
 
 
