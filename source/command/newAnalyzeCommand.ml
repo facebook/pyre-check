@@ -202,7 +202,7 @@ let run_taint_analysis
 
         (* Collect decorators to skip before type-checking because decorator inlining happens in an
            early phase of type-checking and needs to know which decorators to skip. *)
-        Service.StaticAnalysis.parse_and_save_decorators_to_skip configuration;
+        Service.StaticAnalysis.parse_and_save_decorators_to_skip ~inline_decorators configuration;
         let environment = Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache in
 
         let qualifiers =
@@ -230,37 +230,6 @@ let run_taint_analysis
             ~environment:(Analysis.TypeEnvironment.read_only environment)
             ~callables:(List.map callables_with_dependency_information ~f:fst)
             ~stubs
-        in
-
-        let environment, initial_callables =
-          if inline_decorators then (
-            Log.info "Inlining decorators for taint analysis...";
-            let timer = Timer.start () in
-            let updated_environment =
-              Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
-                ~configuration
-                ~scheduler
-                ~recheck:Service.IncrementalCheck.recheck
-                environment
-            in
-            Statistics.performance
-              ~name:"Inlined decorators"
-              ~phase_name:"Inlining decorators"
-              ~timer
-              ();
-
-            let updated_initial_callables =
-              (* We need to re-fetch initial callables, since inlining creates new callables. *)
-              Service.StaticAnalysis.fetch_initial_callables
-                ~scheduler
-                ~configuration
-                ~environment:(Analysis.TypeEnvironment.read_only updated_environment)
-                ~qualifiers
-                ~use_cache:false
-            in
-            updated_environment, updated_initial_callables)
-          else
-            environment, initial_callables
         in
 
         let environment = Analysis.TypeEnvironment.read_only environment in

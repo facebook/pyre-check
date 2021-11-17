@@ -311,7 +311,11 @@ let get_and_preprocess_source
      to explicitly record the dependency. *)
   Raw.get_source ast_environment qualifier ?dependency:None
   >>| function
-  | Result.Ok source -> expand_wildcard_imports ?dependency ~ast_environment source |> preprocessing
+  | Result.Ok source ->
+      expand_wildcard_imports ?dependency ~ast_environment source
+      |> preprocessing
+      |> InlineDecorator.inline_decorators ~get_source:(fun qualifier ->
+             Raw.get_source ?dependency ast_environment qualifier >>= Result.ok)
   | Result.Error
       { ParserError.source_path = { SourcePath.qualifier; relative; _ } as source_path; _ } ->
       (* Files that have parser errors fall back into getattr-any. *)

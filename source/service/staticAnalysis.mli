@@ -16,7 +16,7 @@ val type_check
   use_cache:bool ->
   TypeEnvironment.t
 
-val parse_and_save_decorators_to_skip : Configuration.Analysis.t -> unit
+val parse_and_save_decorators_to_skip : inline_decorators:bool -> Configuration.Analysis.t -> unit
 
 (* Exposed for testing purposes. *)
 val record_and_merge_call_graph

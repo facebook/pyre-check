@@ -479,13 +479,15 @@ type test_environment = {
   environment: TypeEnvironment.ReadOnly.t;
 }
 
-let type_environment_with_decorators_inlined ~configuration environment =
-  DecoratorHelper.type_environment_with_decorators_inlined
-    ~configuration
-    ~scheduler:(Test.mock_scheduler ())
-    ~recheck:Service.IncrementalCheck.recheck
-    environment
-  |> TypeEnvironment.read_only
+let set_up_decorator_inlining ~handle models =
+  let decorators_to_skip =
+    models
+    >>| Analysis.InlineDecorator.decorators_to_skip ~path:(Path.create_absolute handle)
+    |> Option.value ~default:[]
+  in
+  List.iter decorators_to_skip ~f:(fun decorator ->
+      Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
+  Analysis.InlineDecorator.set_should_inline_decorators true
 
 
 let initialize
@@ -497,6 +499,7 @@ let initialize
   =
   let configuration, environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
+    set_up_decorator_inlining ~handle models;
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
       Test.ScratchProject.build_type_environment_and_postprocess
         ~call_graph_builder:(module Callgraph.NullBuilder)
@@ -504,14 +507,7 @@ let initialize
     in
     Test.ScratchProject.configuration_of project, type_environment, errors
   in
-  let decorators_to_skip =
-    models
-    >>| Analysis.InlineDecorator.decorators_to_skip ~path:(Path.create_absolute handle)
-    |> Option.value ~default:[]
-  in
-  List.iter decorators_to_skip ~f:(fun decorator ->
-      Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
-  let environment = type_environment_with_decorators_inlined ~configuration environment in
+  let environment = TypeEnvironment.read_only environment in
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
   let source =
     AstEnvironment.ReadOnly.get_processed_source

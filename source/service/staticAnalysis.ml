@@ -313,21 +313,26 @@ let type_check ~scheduler ~configuration ~use_cache =
       environment
 
 
-let parse_and_save_decorators_to_skip { Configuration.Analysis.taint_model_paths; _ } =
-  let timer = Timer.start () in
-  Log.info "Getting decorators to skip when inlining...";
-  let model_sources = Taint.Model.get_model_sources ~paths:taint_model_paths in
-  let decorators_to_skip =
-    List.concat_map model_sources ~f:(fun (path, source) ->
-        Analysis.InlineDecorator.decorators_to_skip ~path source)
-  in
-  List.iter decorators_to_skip ~f:(fun decorator ->
-      Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
-  Statistics.performance
-    ~name:"Getting decorators to skip when inlining"
-    ~phase_name:"Getting decorators to skip when inlining"
-    ~timer
-    ()
+let parse_and_save_decorators_to_skip
+    ~inline_decorators
+    { Configuration.Analysis.taint_model_paths; _ }
+  =
+  Analysis.InlineDecorator.set_should_inline_decorators inline_decorators;
+  if inline_decorators then (
+    let timer = Timer.start () in
+    Log.info "Getting decorators to skip when inlining...";
+    let model_sources = Taint.Model.get_model_sources ~paths:taint_model_paths in
+    let decorators_to_skip =
+      List.concat_map model_sources ~f:(fun (path, source) ->
+          Analysis.InlineDecorator.decorators_to_skip ~path source)
+    in
+    List.iter decorators_to_skip ~f:(fun decorator ->
+        Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
+    Statistics.performance
+      ~name:"Getting decorators to skip when inlining"
+      ~phase_name:"Getting decorators to skip when inlining"
+      ~timer
+      ())
 
 
 let record_and_merge_call_graph ~environment ~call_graph ~source =
