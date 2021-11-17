@@ -422,21 +422,23 @@ let parse_request query =
 
 module InlineDecorators = struct
   let inline_decorators ~environment ~decorators_to_skip function_reference =
-    let open Interprocedural.DecoratorHelper in
     let define =
       GlobalResolution.define
         (TypeEnvironment.ReadOnly.global_resolution environment)
         function_reference
     in
-    let decorator_bodies =
-      all_decorator_bodies environment
-      |> Map.filter_keys ~f:(fun decorator -> Set.mem decorators_to_skip decorator |> not)
-    in
     match define with
     | Some define -> (
+        let get_source =
+          AstEnvironment.ReadOnly.get_processed_source
+            (TypeEnvironment.ReadOnly.ast_environment environment)
+        in
         let define_with_inlining =
           InlineDecorator.inline_decorators_for_define
-            ~get_decorator_body:(Map.find decorator_bodies)
+            ~get_decorator_body:
+              (InlineDecorator.decorator_body
+                 ~should_skip_decorator:(Set.mem decorators_to_skip)
+                 ~get_source)
             ~location:Location.any
             define
         in
