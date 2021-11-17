@@ -809,7 +809,7 @@ let inline_decorators_for_define
       |> Option.value ~default:define
 
 
-let decorator_body ~get_source decorator_reference =
+let decorator_body ~should_skip_decorator ~get_source decorator_reference =
   let module DecoratorCollector = Visit.StatementCollector (struct
     type t = Define.t
 
@@ -836,15 +836,12 @@ let decorator_body ~get_source decorator_reference =
         >>| Preprocessing.qualify
         >>| DecoratorCollector.collect
         >>| fun decorators ->
-        let unskipped_decorators =
-          List.filter decorators ~f:(fun decorator ->
-              not (DecoratorsToSkip.mem (Define.name decorator)))
-        in
-        ModuleDecorators.add module_reference unskipped_decorators;
-        unskipped_decorators
+        ModuleDecorators.add module_reference decorators;
+        decorators
   in
   Reference.prefix decorator_reference
   >>= module_decorators
+  >>| List.filter ~f:(fun decorator -> not (should_skip_decorator (Define.name decorator)))
   >>= List.find ~f:(fun define -> Reference.equal (Define.name define) decorator_reference)
 
 
@@ -867,7 +864,8 @@ let inline_decorators ~get_source source =
               value =
                 Statement.Define
                   (inline_decorators_for_define
-                     ~get_decorator_body:(decorator_body ~get_source)
+                     ~get_decorator_body:
+                       (decorator_body ~should_skip_decorator:DecoratorsToSkip.mem ~get_source)
                      ~location
                      define);
             }

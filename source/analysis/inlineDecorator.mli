@@ -16,6 +16,12 @@ val uniquify_names
   'a list ->
   'a list
 
+val decorator_body
+  :  should_skip_decorator:(Reference.t -> bool) ->
+  get_source:(Reference.t -> Source.t option) ->
+  Reference.t ->
+  Define.t option
+
 val inline_decorators_for_define
   :  get_decorator_body:(Reference.t -> Define.t option) ->
   location:Location.t ->

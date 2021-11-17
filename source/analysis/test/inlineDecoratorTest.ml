@@ -48,6 +48,112 @@ let test_decorators_to_skip _ =
   ()
 
 
+let test_decorator_body context =
+  Memory.reset_shared_memory ();
+  let assert_decorator_body
+      ?(should_skip_decorator = fun _ -> false)
+      ~expected_handle
+      decorator_reference
+      expected
+    =
+    let additional_sources =
+      [
+        ( "file1.py",
+          {|
+            from typing import Callable
+            def decorator1(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+              def inner(x: str) -> None:
+                return None
+
+              return inner
+
+            def no_body(callable: Callable[[str], None]) -> Callable[[str], None]: ...
+
+            def no_inner_function(callable: Callable[[str], None]) -> Callable[[str], None]:
+              return callable
+      |}
+        );
+        ( "some_module/file2.py",
+          {|
+            from typing import Callable
+
+            def decorator2(callable: Callable[[str], None]) -> Callable[[str], None]:
+              def inner(x: str) -> None:
+                return None
+
+              return inner
+      |}
+        );
+      ]
+    in
+    let handle = "test.py" in
+    let ast_environment, _ =
+      ScratchProject.setup ~context ~external_sources:additional_sources [handle, ""]
+      |> ScratchProject.parse_sources
+    in
+    let get_source =
+      AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment)
+    in
+    let get_expected_define expected =
+      let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
+        ScratchProject.setup ~context ~external_sources:[] [expected_handle, expected]
+        |> ScratchProject.build_type_environment
+      in
+      List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
+          String.equal relative expected_handle)
+      |> InlineDecorator.sanitize_defines ~strip_decorators:true
+      |> Source.statements
+      |> List.last_exn
+      |> function
+      | { Node.value = Define define; _ } -> define
+      | _ -> failwith "expected define as the last statement"
+    in
+    let open Statement in
+    assert_equal
+      ~cmp:(Option.equal (fun left right -> Define.location_insensitive_compare left right = 0))
+      ~printer:[%show: Define.t option]
+      (expected >>| get_expected_define)
+      (InlineDecorator.decorator_body ~should_skip_decorator ~get_source decorator_reference)
+  in
+  assert_decorator_body
+    ~expected_handle:"file1.py"
+    !&"file1.decorator1"
+    (Some
+       {|
+      from typing import Callable
+
+      def decorator1(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+        def inner(x: str) -> None:
+          return None
+
+        return inner
+  |});
+  assert_decorator_body
+    ~expected_handle:"file1.py"
+    ~should_skip_decorator:(Reference.equal !&"file1.decorator1")
+    !&"file1.decorator1"
+    None;
+  assert_decorator_body
+    ~expected_handle:"some_module/file2.py"
+    !&"some_module.file2.decorator2"
+    (Some
+       {|
+      from typing import Callable
+
+      def decorator2(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+        def inner(x: str) -> None:
+          return None
+
+        return inner
+  |});
+  assert_decorator_body ~expected_handle:"file1.py" !&"file1.no_body" None;
+  assert_decorator_body ~expected_handle:"file1.py" !&"file1.no_inner_function" None;
+  ()
+
+
 let get_expected_actual_sources ~context ~additional_sources ~handle source expected =
   Memory.reset_shared_memory ();
   InlineDecorator.set_should_inline_decorators true;
@@ -2072,6 +2178,7 @@ let () =
   "inline"
   >::: [
          "decorators_to_skip" >:: test_decorators_to_skip;
+         "decorator_body" >:: test_decorator_body;
          "inline_decorators" >:: test_inline_decorators;
          "decorator_location" >:: test_decorator_location;
          "requalify_name" >:: test_requalify_name;
