@@ -112,7 +112,6 @@ class RawDefineAnnotation(RawAnnotation):
         metadata=dataclasses_json.config(field_name="return"), default=None
     )
     parameters: List[RawParameter] = dataclasses.field(default_factory=list)
-    decorators: List[str] = dataclasses.field(default_factory=list)
     is_async: bool = dataclasses.field(
         metadata=dataclasses_json.config(field_name="async"), default=False
     )
@@ -431,16 +430,14 @@ class FunctionAnnotation:
     name: str
     return_annotation: TypeAnnotation
     parameters: Sequence[Parameter]
-    decorators: Sequence[str]
     is_async: bool
 
     def to_stub(self) -> str:
         name = _sanitize_name(self.name)
-        decorators = "".join(f"@{decorator}\n" for decorator in self.decorators)
         async_ = "async " if self.is_async else ""
         parameters = ", ".join(parameter.to_stub() for parameter in self.parameters)
         return_ = self.return_annotation.to_stub(prefix=" -> ")
-        return f"{decorators}{async_}def {name}({parameters}){return_}: ..."
+        return f"{async_}def {name}({parameters}){return_}: ..."
 
 
 @dataclasses.dataclass(frozen=True)
@@ -524,7 +521,6 @@ class ModuleAnnotations:
                         )
                         for parameter in define.parameters
                     ],
-                    decorators=define.decorators,
                     is_async=define.is_async,
                 )
                 for define in infer_output.define_annotations
@@ -543,7 +539,6 @@ class ModuleAnnotations:
                         )
                         for parameter in define.parameters
                     ],
-                    decorators=define.decorators,
                     is_async=define.is_async,
                 )
                 for define in infer_output.define_annotations

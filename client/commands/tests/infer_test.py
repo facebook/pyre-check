@@ -255,7 +255,7 @@ class InferTest(testslide.TestCase):
                                 "index": 1,
                             },
                         ],
-                        "decorators": ["derp"],
+                        "decorators": [],
                         "location": {"qualifier": "test", "path": "test.py", "line": 1},
                         "async": True,
                     }
@@ -276,7 +276,6 @@ class InferTest(testslide.TestCase):
                                 name="x", index=1, annotation="int", value="42"
                             ),
                         ],
-                        decorators=["derp"],
                         is_async=True,
                     )
                 ]
@@ -460,7 +459,6 @@ class ModuleAnnotationTest(testslide.TestCase):
                             qualifier="test", path="test.py", line=1
                         ),
                         return_="int",
-                        decorators=["derp"],
                         is_async=True,
                     ),
                     RawDefineAnnotation(
@@ -484,7 +482,6 @@ class ModuleAnnotationTest(testslide.TestCase):
                             options=default_options,
                         ),
                         parameters=[],
-                        decorators=[],
                         is_async=False,
                     )
                 ],
@@ -498,7 +495,6 @@ class ModuleAnnotationTest(testslide.TestCase):
                             options=default_options,
                         ),
                         parameters=[],
-                        decorators=["derp"],
                         is_async=True,
                     )
                 ],
@@ -861,14 +857,13 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": ["classmethod"],
+                        "decorators": [],
                         "async": False,
                     }
                 ]
             },
             """\
             class Test:
-                @classmethod
                 def ret_int(self) -> int: ...
             """,
         )
@@ -881,13 +876,12 @@ class StubGenerationTest(testslide.TestCase):
                         "name": "test.returns_int",
                         "parent": None,
                         "parameters": [],
-                        "decorators": ["staticmethod"],
+                        "decorators": [],
                         "async": True,
                     }
                 ]
             },
             """\
-            @staticmethod
             async def returns_int() -> int: ...
             """,
         )
