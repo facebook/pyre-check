@@ -216,7 +216,6 @@ class InferTest(testslide.TestCase):
                         "parent": None,
                         "return": None,
                         "parameters": [],
-                        "decorators": [],
                         "location": {"qualifier": "test", "path": "test.py", "line": 1},
                         "async": False,
                     }
@@ -255,7 +254,6 @@ class InferTest(testslide.TestCase):
                                 "index": 1,
                             },
                         ],
-                        "decorators": [],
                         "location": {"qualifier": "test", "path": "test.py", "line": 1},
                         "async": True,
                     }
@@ -319,7 +317,6 @@ class InferTest(testslide.TestCase):
             "parent": None,
             "return": None,
             "parameters": [],
-            "decorators": [],
             "location": {"qualifier": "baz", "path": "baz.py", "line": 1},
             "async": False,
         }
@@ -857,7 +854,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -876,7 +872,6 @@ class StubGenerationTest(testslide.TestCase):
                         "name": "test.returns_int",
                         "parent": None,
                         "parameters": [],
-                        "decorators": [],
                         "async": True,
                     }
                 ]
@@ -902,7 +897,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 1,
                             },
                         ],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -918,7 +912,6 @@ class StubGenerationTest(testslide.TestCase):
                         "name": "test.returns_string",
                         "parent": None,
                         "parameters": [],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -934,7 +927,6 @@ class StubGenerationTest(testslide.TestCase):
                         "name": "test.returns_bool",
                         "parent": None,
                         "parameters": [],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -950,7 +942,6 @@ class StubGenerationTest(testslide.TestCase):
                         "name": "test.returns_float",
                         "parent": None,
                         "parameters": [],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -967,7 +958,6 @@ class StubGenerationTest(testslide.TestCase):
                         "parameters": [
                             {"name": "x", "annotation": "int", "value": "5", "index": 0}
                         ],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -983,7 +973,6 @@ class StubGenerationTest(testslide.TestCase):
                         "name": "test.some_fun.another_fun",
                         "parent": None,
                         "parameters": [],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -1006,7 +995,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": ["classmethod"],
                         "async": False,
                     }
                 ]
@@ -1029,7 +1017,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": ["classmethod"],
                         "async": False,
                     }
                 ]
@@ -1052,7 +1039,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": ["classmethod"],
                         "async": False,
                     },
                     {
@@ -1067,7 +1053,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": [],
                         "async": False,
                     },
                 ],
@@ -1093,7 +1078,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": [],
                         "async": False,
                     },
                     {
@@ -1108,7 +1092,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": [],
                         "async": False,
                     },
                 ],
@@ -1135,7 +1118,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": [],
                         "async": False,
                     },
                     {
@@ -1150,7 +1132,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 0,
                             }
                         ],
-                        "decorators": [],
                         "async": False,
                     },
                 ],
@@ -1232,7 +1213,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 1,
                             },
                         ],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -1262,7 +1242,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 1,
                             },
                         ],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
@@ -1304,7 +1283,6 @@ class StubGenerationTest(testslide.TestCase):
                                 "index": 2,
                             },
                         ],
-                        "decorators": [],
                         "async": False,
                     }
                 ]
