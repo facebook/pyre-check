@@ -45,3 +45,7 @@ module InlinedNameToOriginalName :
 (** The keys represent the decorators to skip. The values are dont-care values. *)
 module DecoratorsToSkip :
   Memory.WithCache.S with type t = Ast.Reference.t and type key = SharedMemoryKeys.ReferenceKey.t
+
+val inline_decorators : get_source:(Reference.t -> Source.t option) -> Source.t -> Source.t
+
+val set_should_inline_decorators : bool -> unit

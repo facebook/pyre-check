@@ -12,6 +12,27 @@ open PyreParser
 open Statement
 open Expression
 
+module BooleanValue = struct
+  type t = bool
+
+  let prefix = Prefix.make ()
+
+  let description = "Whether decorators should be inlined."
+
+  let unmarshall value = Marshal.from_string value 0
+end
+
+module ShouldInlineDecorators = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (BooleanValue)
+(** This is basically a global variable storing whether decorators should be inlined. *)
+
+let set_should_inline_decorators should_inline_decorators =
+  ShouldInlineDecorators.add "should_inline" should_inline_decorators
+
+
+let should_inline_decorators () =
+  ShouldInlineDecorators.get "should_inline" |> Option.value ~default:false
+
+
 let inlined_original_function_name = "_original_function"
 
 let skip_inlining_decorator_name = "SkipDecoratorWhenInlining"
@@ -59,6 +80,19 @@ module DecoratorModuleValue = struct
 
   let unmarshall value = Marshal.from_string value 0
 end
+
+module Decorators = struct
+  type t = Define.t list
+
+  let prefix = Prefix.make ()
+
+  let description = "Decorators from a module."
+
+  let unmarshall value = Marshal.from_string value 0
+end
+
+module ModuleDecorators = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (Decorators)
+(** Mapping from a decorator reference to its body. *)
 
 module InlinedNameToOriginalName =
   Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DecoratorModuleValue)
@@ -773,3 +807,76 @@ let inline_decorators_for_define
       inline_decorators_at_same_scope ~location ~head_decorator ~tail_decorators define
       |> postprocess ~define ~location
       |> Option.value ~default:define
+
+
+let decorator_body ~get_source decorator_reference =
+  let module DecoratorCollector = Visit.StatementCollector (struct
+    type t = Define.t
+
+    let visit_children _ = false
+
+    let predicate = function
+      | { Node.value = Statement.Define ({ body; _ } as define); _ } ->
+          if
+            List.exists body ~f:(function
+                | { Node.value = Statement.Define _; _ } -> true
+                | _ -> false)
+          then
+            Some define
+          else
+            None
+      | _ -> None
+  end)
+  in
+  let module_decorators module_reference =
+    match ModuleDecorators.get module_reference with
+    | Some decorators -> Some decorators
+    | None ->
+        get_source module_reference
+        >>| Preprocessing.qualify
+        >>| DecoratorCollector.collect
+        >>| fun decorators ->
+        let unskipped_decorators =
+          List.filter decorators ~f:(fun decorator ->
+              not (DecoratorsToSkip.mem (Define.name decorator)))
+        in
+        ModuleDecorators.add module_reference unskipped_decorators;
+        unskipped_decorators
+  in
+  Reference.prefix decorator_reference
+  >>= module_decorators
+  >>= List.find ~f:(fun define -> Reference.equal (Define.name define) decorator_reference)
+
+
+let inline_decorators ~get_source source =
+  let module Transform = Transform.Make (struct
+    type t = unit
+
+    let transform_expression_children _ _ = true
+
+    let transform_children state _ = state, true
+
+    let expression _ expression = expression
+
+    let statement _ statement =
+      let statement =
+        match statement with
+        | { Node.value = Statement.Define define; location } ->
+            {
+              statement with
+              value =
+                Statement.Define
+                  (inline_decorators_for_define
+                     ~get_decorator_body:(decorator_body ~get_source)
+                     ~location
+                     define);
+            }
+        | _ -> statement
+      in
+      (), [statement]
+  end)
+  in
+  if should_inline_decorators () then
+    Transform.transform () source |> Transform.source
+  else
+    source
