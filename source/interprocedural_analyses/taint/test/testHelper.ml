@@ -533,6 +533,13 @@ let initialize
     in
     Test.ScratchProject.configuration_of project, type_environment, errors
   in
+  let decorators_to_skip =
+    models
+    >>| Analysis.InlineDecorator.decorators_to_skip ~path:(Path.create_absolute handle)
+    |> Option.value ~default:[]
+  in
+  List.iter decorators_to_skip ~f:(fun decorator ->
+      Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
   let environment =
     type_environment_with_decorators_inlined ~configuration ~taint_configuration ~models environment
   in

@@ -43,7 +43,7 @@ let test_decorators_to_skip _ =
   |}
     [!&"bar.skip_this_decorator2"; !&"foo.skip_this_decorator"];
   assert_decorators_to_skip {|
-    @CouldNotParse!!!
+    @CouldNotParse
   |} [];
   ()
 

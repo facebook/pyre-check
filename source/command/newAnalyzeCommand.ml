@@ -200,6 +200,9 @@ let run_taint_analysis
           ~static_analysis_configuration
           analysis_kind;
 
+        (* Collect decorators to skip before type-checking because decorator inlining happens in an
+           early phase of type-checking and needs to know which decorators to skip. *)
+        Service.StaticAnalysis.parse_and_save_decorators_to_skip configuration;
         let environment = Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache in
 
         let qualifiers =

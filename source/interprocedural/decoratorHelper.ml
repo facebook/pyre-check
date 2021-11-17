@@ -83,7 +83,7 @@ let type_environment_with_decorators_inlined
     ~configuration
     ~scheduler
     ~recheck
-    ~decorators_to_skip
+    ~decorators_to_skip:_
     environment
   =
   let open Analysis in
@@ -91,7 +91,7 @@ let type_environment_with_decorators_inlined
   let decorator_bodies = all_decorator_bodies (TypeEnvironment.read_only environment) in
   let decorator_bodies =
     Map.filter_keys decorator_bodies ~f:(fun decorator ->
-        Set.mem decorators_to_skip decorator |> not)
+        not (InlineDecorator.DecoratorsToSkip.mem decorator))
   in
   let environment =
     AstEnvironment.create

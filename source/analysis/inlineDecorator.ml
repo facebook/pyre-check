@@ -62,7 +62,8 @@ end
 
 module InlinedNameToOriginalName =
   Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DecoratorModuleValue)
-(** Mapping from an inlined decorator function name to its original name. *)
+module DecoratorsToSkip =
+  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DecoratorModuleValue)
 
 (* Pysa doesn't care about metadata like `unbound_names`. So, strip them. *)
 let sanitize_define
