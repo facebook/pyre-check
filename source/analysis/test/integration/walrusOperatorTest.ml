@@ -73,6 +73,30 @@ let test_check_walrus_operator context =
     ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`."];
   assert_type_errors
     {|
+      if (b := 42) and True:
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[42]`."];
+  assert_type_errors
+    {|
+      if True and (b := 42):
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[42]`."];
+  assert_type_errors
+    {|
+      if (b := 0) or True:
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[0]`."];
+  assert_type_errors
+    {|
+      if False or (b := 0):
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[0]`."];
+  assert_type_errors
+    {|
       if (b := 3) > 4:
         pass
       reveal_type(b)

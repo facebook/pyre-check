@@ -544,9 +544,8 @@ module State (Context : Context) = struct
                ~global_resolution:(Resolution.global_resolution left_resolution)
                left
                right)
-      | `Left _
-      | `Right _ ->
-          Some (RefinementUnit.create ~base:(Annotation.create_mutable Type.Top) ())
+      | `Left left -> Some left
+      | `Right right -> Some right
     in
     let merge_temporary_annotation_stores ~key:_ = function
       | `Both (left, right) ->
