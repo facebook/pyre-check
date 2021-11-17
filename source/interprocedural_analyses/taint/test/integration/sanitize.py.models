@@ -3235,7 +3235,8 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "tito" },
+                  { "has": "first-field" },
+                  { "first-field": "__add__" },
                   { "always-via": "obscure" }
                 ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
@@ -3288,7 +3289,8 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "tito" },
+                  { "has": "first-field" },
+                  { "first-field": "__add__" },
                   { "always-via": "obscure" }
                 ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
@@ -3730,7 +3732,8 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "tito" },
+                  { "has": "first-field" },
+                  { "first-field": "__add__" },
                   { "always-via": "obscure" }
                 ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
@@ -3833,7 +3836,8 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "tito" },
+                  { "has": "first-field" },
+                  { "first-field": "__add__" },
                   { "always-via": "obscure" }
                 ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
