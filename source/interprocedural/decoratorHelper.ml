@@ -79,13 +79,7 @@ let inline_decorators ~decorator_bodies source =
   Transform.transform () source |> Transform.source
 
 
-let type_environment_with_decorators_inlined
-    ~configuration
-    ~scheduler
-    ~recheck
-    ~decorators_to_skip:_
-    environment
-  =
+let type_environment_with_decorators_inlined ~configuration ~scheduler ~recheck environment =
   let open Analysis in
   let open Ast in
   let decorator_bodies = all_decorator_bodies (TypeEnvironment.read_only environment) in

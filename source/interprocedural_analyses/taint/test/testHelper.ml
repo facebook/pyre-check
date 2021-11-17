@@ -479,40 +479,11 @@ type test_environment = {
   environment: TypeEnvironment.ReadOnly.t;
 }
 
-let type_environment_with_decorators_inlined ~configuration ~taint_configuration ~models environment
-  =
-  let read_only_environment = TypeEnvironment.read_only environment in
-  let inferred_models = Model.infer_class_models ~environment:read_only_environment in
-  let models =
-    match models with
-    | None -> inferred_models
-    | Some source ->
-        let resolution =
-          TypeCheck.resolution
-            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-            (TypeEnvironment.ReadOnly.global_resolution read_only_environment)
-            (module TypeCheck.DummyContext)
-        in
-        let { Taint.Model.models; _ } =
-          Model.parse
-            ~resolution
-            ~source:(Test.trim_extra_indentation source)
-            ~configuration:taint_configuration
-            ~callables:None
-            ~stubs:(Interprocedural.Target.HashSet.create ())
-            inferred_models
-        in
-        models
-  in
-  let decorators_to_skip =
-    Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind) models
-    |> Taint.Result.decorators_to_skip
-  in
+let type_environment_with_decorators_inlined ~configuration environment =
   DecoratorHelper.type_environment_with_decorators_inlined
     ~configuration
     ~scheduler:(Test.mock_scheduler ())
     ~recheck:Service.IncrementalCheck.recheck
-    ~decorators_to_skip
     environment
   |> TypeEnvironment.read_only
 
@@ -540,9 +511,7 @@ let initialize
   in
   List.iter decorators_to_skip ~f:(fun decorator ->
       Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
-  let environment =
-    type_environment_with_decorators_inlined ~configuration ~taint_configuration ~models environment
-  in
+  let environment = type_environment_with_decorators_inlined ~configuration environment in
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
   let source =
     AstEnvironment.ReadOnly.get_processed_source

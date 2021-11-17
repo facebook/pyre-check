@@ -236,15 +236,11 @@ let run_taint_analysis
           if inline_decorators then (
             Log.info "Inlining decorators for taint analysis...";
             let timer = Timer.start () in
-            let { Interprocedural.AnalysisResult.InitializedModels.initial_models; _ } =
-              Interprocedural.AnalysisResult.InitializedModels.get_models initialized_models
-            in
             let updated_environment =
               Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
                 ~configuration
                 ~scheduler
                 ~recheck:Service.IncrementalCheck.recheck
-                ~decorators_to_skip:(Taint.Result.decorators_to_skip initial_models)
                 environment
             in
             Statistics.performance

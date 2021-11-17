@@ -25,6 +25,5 @@ val type_environment_with_decorators_inlined
     errors:Analysis.AnalysisError.t list Ast.Reference.Table.t ->
     PyrePath.t list ->
     Ast.Reference.t list * Analysis.AnalysisError.t list) ->
-  decorators_to_skip:Reference.Set.t ->
   TypeEnvironment.t ->
   TypeEnvironment.t

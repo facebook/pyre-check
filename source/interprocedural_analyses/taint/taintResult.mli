@@ -86,7 +86,3 @@ val model_to_json
   Interprocedural.Target.t ->
   call_model ->
   Yojson.Safe.t
-
-val decorators_to_skip
-  :  Interprocedural.AnalysisResult.model_t Interprocedural.Target.Map.t ->
-  Ast.Reference.Set.t
