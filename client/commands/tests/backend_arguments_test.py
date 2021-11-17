@@ -396,7 +396,6 @@ class ArgumentsTest(testslide.TestCase):
                     SimpleSourcePath([configuration.SimpleSearchPathElement("source")]),
                 ),
                 [
-                    str("source"),
                     str(root_path / "a"),
                     str(root_path / "b/c"),
                 ],
@@ -423,4 +422,19 @@ class ArgumentsTest(testslide.TestCase):
                     str(root_path / "a"),
                     str(root_path / "b/c"),
                 ],
+            )
+
+            test_configuration = configuration.Configuration(
+                project_root=str(root_path),
+                dot_pyre_directory=Path(".pyre"),
+                do_not_ignore_all_errors_in=[],
+            )
+            self.assertCountEqual(
+                get_checked_directory_allowlist(
+                    test_configuration,
+                    SimpleSourcePath(
+                        [configuration.SimpleSearchPathElement(str(root_path))]
+                    ),
+                ),
+                [str(root_path)],
             )

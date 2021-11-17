@@ -261,16 +261,8 @@ def get_checked_directory_allowlist(
 ) -> List[str]:
     source_path_allowlist = list(source_path.get_checked_directory_allowlist())
     explicit_allowlist = configuration.get_existent_do_not_ignore_errors_in_paths()
-    # If an explicitly given allowlist path is more specific than an allowlist path
-    # that was inferred from the source path, do not include the inferred path.
-    return [
-        path
-        for path in source_path_allowlist
-        if not any(
-            Path(path) in Path(explicit_path).parents
-            for explicit_path in explicit_allowlist
-        )
-    ] + explicit_allowlist
+    # If allowlist paths were specifically provided, do not include inferred paths.
+    return explicit_allowlist or source_path_allowlist
 
 
 def get_profiling_log_path(log_directory: Path) -> Path:
