@@ -25,7 +25,7 @@ let run_analysis
     find_missing_flows
     dump_model_query_results
     use_cache
-    inline_decorators
+    _inline_decorators
     maximum_trace_length
     maximum_tito_depth
     _verbose
@@ -168,37 +168,6 @@ let run_analysis
               ~environment:(Analysis.TypeEnvironment.read_only environment)
               ~callables:(List.map callables_with_dependency_information ~f:fst)
               ~stubs
-          in
-
-          let environment, initial_callables =
-            if inline_decorators then (
-              Log.info "Inlining decorators for taint analysis...";
-              let timer = Timer.start () in
-              let updated_environment =
-                Interprocedural.DecoratorHelper.type_environment_with_decorators_inlined
-                  ~configuration
-                  ~scheduler
-                  ~recheck:Service.IncrementalCheck.recheck
-                  environment
-              in
-              Statistics.performance
-                ~name:"Inlined decorators"
-                ~phase_name:"Inlining decorators"
-                ~timer
-                ();
-
-              let updated_initial_callables =
-                (* We need to re-fetch initial callables, since inlining creates new callables. *)
-                Service.StaticAnalysis.fetch_initial_callables
-                  ~scheduler
-                  ~configuration
-                  ~environment:(Analysis.TypeEnvironment.read_only updated_environment)
-                  ~qualifiers
-                  ~use_cache:false
-              in
-              updated_environment, updated_initial_callables)
-            else
-              environment, initial_callables
           in
 
           let environment = Analysis.TypeEnvironment.read_only environment in
