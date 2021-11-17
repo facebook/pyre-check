@@ -815,6 +815,91 @@ let test_define_local_bindings _ =
   |}
     ~expected:
       ["y", Some (ExpectBinding.create Binding.Kind.WalrusTarget (location (3, 29) (3, 30)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case 1:
+          x = 1
+  |}
+    ~expected:
+      ["x", Some (ExpectBinding.create Binding.Kind.(AssignTarget None) (location (5, 6) (5, 7)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case 1:
+          x = 1
+        case 2:
+          y = 1
+  |}
+    ~expected:
+      [
+        "x", Some (ExpectBinding.create Binding.Kind.(AssignTarget None) (location (5, 6) (5, 7)));
+        "y", Some (ExpectBinding.create Binding.Kind.(AssignTarget None) (location (7, 6) (7, 7)));
+      ];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case x:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 9) (4, 10)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case [_, *x]:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 13) (4, 15)))];
+  (* TODO(T102720335): Add location to MatchMapping's rest for better location. *)
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case {1:1, **x}:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 9) (4, 19)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case Foo(a=x, b=y):
+          pass
+  |}
+    ~expected:
+      [
+        "x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 15) (4, 16)));
+        "y", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 20) (4, 21)));
+      ];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case [x] | [_, x]:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 10) (4, 11)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case _ if (x := subject):
+          pass
+  |}
+    ~expected:
+      ["x", Some (ExpectBinding.create Binding.Kind.WalrusTarget (location (4, 15) (4, 16)))];
+  assert_bindings
+    {|
+    def foo():
+      match (x := subject):
+        case _:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.WalrusTarget (location (3, 9) (3, 10)))];
 
   (* Bindings in nested scope should not leak into the nesting scope (except for walrus operators) *)
   assert_bindings {|

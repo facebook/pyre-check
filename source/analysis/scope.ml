@@ -210,6 +210,38 @@ module Binding = struct
                   { kind = Kind.ImportName import_status; name; location } :: sofar)
         in
         List.fold imports ~init:sofar ~f:binding_of_import
+    | Match { Match.subject; cases } ->
+        let of_match_target sofar { Node.value = name; location } =
+          { name; kind = Kind.MatchTarget; location } :: sofar
+        in
+        let rec of_pattern sofar { Node.value = pattern; location } =
+          match pattern with
+          | Match.Pattern.MatchAs { pattern; name } ->
+              let sofar = of_optional ~f:of_pattern sofar pattern in
+              name |> Node.create ~location |> of_match_target sofar
+          | MatchClass { patterns; keyword_patterns; _ } ->
+              let sofar = List.fold ~init:sofar ~f:of_pattern patterns in
+              List.fold ~init:sofar ~f:of_pattern keyword_patterns
+          | MatchMapping { patterns; rest; _ } ->
+              let sofar = List.fold ~init:sofar ~f:of_pattern patterns in
+              rest >>| Node.create ~location |> of_optional ~f:of_match_target sofar
+          | MatchOr patterns
+          | MatchSequence patterns ->
+              List.fold ~init:sofar ~f:of_pattern patterns
+          | MatchStar maybe_name ->
+              maybe_name >>| Node.create ~location |> of_optional ~f:of_match_target sofar
+          | MatchValue value -> of_expression sofar value
+          | MatchSingleton _
+          | MatchWildcard ->
+              sofar
+        in
+        let of_case sofar { Match.Case.pattern; guard; body } =
+          let sofar = of_pattern sofar pattern in
+          let sofar = of_optional_expression sofar guard in
+          of_statements sofar body
+        in
+        let sofar = of_expression sofar subject in
+        List.fold ~init:sofar ~f:of_case cases
     | Statement.Raise { Raise.expression; from } ->
         let sofar = of_optional_expression sofar expression in
         of_optional_expression sofar from
@@ -246,8 +278,6 @@ module Binding = struct
     | Continue
     | Delete _
     | Global _
-    (* TODO(T102720335): Support match statement. *)
-    | Match _
     | Nonlocal _
     | Pass ->
         sofar
