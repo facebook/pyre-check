@@ -2023,7 +2023,13 @@ module State (Context : Context) = struct
           ~arguments
     | Call call ->
         let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
-        let { Resolved.errors = callee_errors; resolved = resolved_callee; base = resolved_base; _ }
+        let {
+          Resolved.errors = callee_errors;
+          resolved = resolved_callee;
+          base = resolved_base;
+          resolution = callee_resolution;
+          _;
+        }
           =
           forward_expression ~resolution ~expression:callee
         in
@@ -2076,7 +2082,7 @@ module State (Context : Context) = struct
               let resolution, errors, return_annotations =
                 List.fold_left
                   ~f:forward_inner_callable
-                  ~init:(resolution, callee_errors, [])
+                  ~init:(callee_resolution, callee_errors, [])
                   (List.map ~f:Type.meta resolved_callees)
               in
               {
@@ -2089,7 +2095,7 @@ module State (Context : Context) = struct
           | _ ->
               let target, dynamic = target_and_dynamic resolved_callee in
               forward_callable
-                ~resolution
+                ~resolution:callee_resolution
                 ~errors:callee_errors
                 ~target
                 ~dynamic

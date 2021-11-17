@@ -63,7 +63,7 @@ let test_check_walrus_operator context =
       if (b := len(a)) > 4:
         reveal_type(b)
     |}
-    ["Revealed type [-1]: Revealed type for `b` is `unknown`."];
+    ["Revealed type [-1]: Revealed type for `b` is `int`."];
   assert_type_errors
     {|
       a = [1, 2, 3]
@@ -77,7 +77,7 @@ let test_check_walrus_operator context =
         pass
       reveal_type(b)
     |}
-    ["Revealed type [-1]: Revealed type for `b` is `unknown`."];
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`."];
   assert_type_errors
     {|
     from typing import Optional
