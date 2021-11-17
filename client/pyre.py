@@ -292,7 +292,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     multiple=True,
     help=("Report type errors within the given directory."),
 )
-@click.option("--filter-directory", type=str, hidden=True)
 @click.option(
     "--no-saved-state",
     is_flag=True,
@@ -392,7 +391,6 @@ def pyre(
     use_buck_source_database: Optional[bool],
     source_directory: Iterable[str],
     do_not_ignore_all_errors_in: Iterable[str],
-    filter_directory: Optional[str],
     no_saved_state: bool,
     search_path: Iterable[str],
     binary: Optional[str],
@@ -433,7 +431,6 @@ def pyre(
         use_buck_source_database=use_buck_source_database,
         source_directories=list(source_directory),
         do_not_ignore_all_errors_in=list(do_not_ignore_all_errors_in),
-        filter_directory=filter_directory,
         buck_mode=buck_mode,
         no_saved_state=no_saved_state,
         search_path=list(search_path),
