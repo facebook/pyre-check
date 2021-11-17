@@ -105,7 +105,7 @@ let serialization_test context =
                 { "name": "y", "annotation": null, "value": null, "index": 0 },
                 { "name": "x", "annotation": null, "value": null, "index": 1 }
               ],
-              "decorators": [ "functools.lru_cache(4)" ],
+              "decorators": [],
               "location": { "qualifier": "test", "path": "*", "line": 14 },
               "async": false
             }

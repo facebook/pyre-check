@@ -391,8 +391,7 @@ module LocalResult = struct
       {
         Node.value =
           {
-            Statement.Define.signature =
-              { name; parameters; return_annotation; decorators; parent; async; _ };
+            Statement.Define.signature = { name; parameters; return_annotation; parent; async; _ };
             _;
           };
         Node.location = define_location;
@@ -423,7 +422,7 @@ module LocalResult = struct
         parent;
         return;
         parameters;
-        decorators;
+        decorators = [];
         location = define_location |> AnnotationLocation.from_location ~lookup ~qualifier;
         async;
       }
