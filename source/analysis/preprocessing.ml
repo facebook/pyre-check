@@ -522,11 +522,12 @@ module Qualify (Context : QualifyContext) = struct
                         scope
                     in
                     ( scope,
-                      qualify_name
-                        ~qualify_strings:DoNotQualify
-                        ~location
-                        ~scope
-                        (Expression.Name (Name.Identifier name)) )
+                      Expression.Name
+                        (qualify_name
+                           ~qualify_strings:DoNotQualify
+                           ~location
+                           ~scope
+                           (Name.Identifier name)) )
                 | Name name ->
                     let name =
                       if qualify_assign then
@@ -534,12 +535,10 @@ module Qualify (Context : QualifyContext) = struct
                         |> create_name_from_reference ~location
                         |> fun name -> Expression.Name name
                       else
-                        match
-                          qualify_name ~qualify_strings:DoNotQualify ~location ~scope (Name name)
-                        with
-                        | Name (Name.Identifier name) ->
+                        match qualify_name ~qualify_strings:DoNotQualify ~location ~scope name with
+                        | Name.Identifier name ->
                             Expression.Name (Name.Identifier (Identifier.sanitized name))
-                        | qualified -> qualified
+                        | qualified -> Name qualified
                     in
                     scope, name
                 | target -> scope, target
@@ -926,28 +925,25 @@ module Qualify (Context : QualifyContext) = struct
       ~location
       ~scope:({ aliases; use_forward_references; _ } as scope)
     = function
-    | Name (Name.Identifier identifier) -> (
+    | Name.Identifier identifier -> (
         match Map.find aliases (Reference.create identifier) with
         | Some { name; is_forward_reference; qualifier }
           when (not is_forward_reference) || use_forward_references ->
             if Reference.show name |> is_qualified && suppress_synthetics then
-              Name
-                (Name.Attribute
-                   {
-                     base = from_reference ~location qualifier;
-                     attribute = identifier;
-                     special = false;
-                   })
+              Name.Attribute
+                {
+                  base = from_reference ~location qualifier;
+                  attribute = identifier;
+                  special = false;
+                }
             else
-              Node.value (from_reference ~location name)
-        | _ -> Name (Name.Identifier identifier))
-    | Name
-        (Name.Attribute
-          { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }) ->
-        Name (Name.Identifier attribute)
-    | Name (Name.Attribute ({ base; _ } as name)) ->
-        Name (Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base })
-    | expression -> expression
+              create_name_from_reference ~location name
+        | _ -> Name.Identifier identifier)
+    | Name.Attribute { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }
+      ->
+        Name.Identifier attribute
+    | Name.Attribute ({ base; _ } as name) ->
+        Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base }
 
 
   and qualify_expression ~qualify_strings ~scope ({ Node.location; value } as expression) =
@@ -1057,7 +1053,7 @@ module Qualify (Context : QualifyContext) = struct
               Comprehension.element = qualify_expression ~qualify_strings ~scope element;
               generators;
             }
-      | Name _ -> qualify_name ~qualify_strings ~location ~scope value
+      | Name name -> Name (qualify_name ~qualify_strings ~location ~scope name)
       | Set elements -> Set (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
       | SetComprehension { Comprehension.element; generators } ->
           let scope, generators = qualify_generators ~qualify_strings ~scope generators in
