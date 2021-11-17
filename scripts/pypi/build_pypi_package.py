@@ -27,6 +27,7 @@ RUNTIME_DEPENDENCIES = [
     "click",
     "dataclasses;python_version=='3.6'",
     "dataclasses-json",
+    "intervaltree",
     "libcst>=0.3.6",
     "psutil",
     "pyre-extensions",
