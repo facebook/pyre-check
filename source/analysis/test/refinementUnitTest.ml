@@ -91,16 +91,9 @@ let test_less_or_equal context =
        (create_mutable Type.object_primitive |> add_mutable_attribute_refinement !&"a.x" Type.float)
        (create_mutable Type.object_primitive
        |> add_mutable_attribute_refinement !&"a.x" Type.integer));
-  (* If attributes differe at all, the left must be a subset of the right *)
+  (* If attributes differ at all, then left must be a subset of right because more data means more
+     restrictions, so lower in the lattice *)
   assert_true
-    (less_or_equal
-       ~global_resolution
-       (create_mutable Type.object_primitive
-       |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive)
-       (create_mutable Type.object_primitive
-       |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
-       |> add_mutable_attribute_refinement !&"a.x.b" Type.integer));
-  assert_false
     (less_or_equal
        ~global_resolution
        (create_mutable Type.object_primitive
@@ -108,6 +101,14 @@ let test_less_or_equal context =
        |> add_mutable_attribute_refinement !&"a.x.b" Type.integer)
        (create_mutable Type.object_primitive
        |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive));
+  assert_false
+    (less_or_equal
+       ~global_resolution
+       (create_mutable Type.object_primitive
+       |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive)
+       (create_mutable Type.object_primitive
+       |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
+       |> add_mutable_attribute_refinement !&"a.x.b" Type.integer));
   ()
 
 

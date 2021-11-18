@@ -92,8 +92,8 @@ let rec less_or_equal ~global_resolution left right =
       match data with
       | `Both (left, right) -> sofar && less_or_equal ~global_resolution left right
       (* The "lower = more restrictive" RefinementUnit may have more attributes *)
-      | `Left _ -> false
-      | `Right _ -> true
+      | `Left _ -> true
+      | `Right _ -> false
     in
     Identifier.Map.Tree.fold2
       left_attributes
