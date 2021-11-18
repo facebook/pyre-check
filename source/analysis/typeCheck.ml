@@ -2853,6 +2853,10 @@ module State (Context : Context) = struct
 
   and refine_resolution_for_assert ~resolution test =
     let global_resolution = Resolution.global_resolution resolution in
+    let annotation_less_or_equal =
+      Annotation.less_or_equal
+        ~type_less_or_equal:(GlobalResolution.less_or_equal global_resolution)
+    in
     let parse_refinement_annotation annotation =
       let parse_meta annotation =
         match parse_and_check_annotation ~resolution annotation |> snd with
@@ -3017,36 +3021,34 @@ module State (Context : Context) = struct
             ];
         }
       when is_simple_name name ->
-        let annotation = parse_refinement_annotation annotation in
+        let type_ = parse_refinement_annotation annotation in
         let resolution =
           let refinement_unnecessary existing_annotation =
-            RefinementUnit.less_or_equal
-              ~global_resolution
-              (RefinementUnit.create existing_annotation)
-              (RefinementUnit.create_mutable annotation)
+            annotation_less_or_equal
+              ~left:existing_annotation
+              ~right:(Annotation.create_mutable type_)
             && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
             && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
           in
           match existing_annotation name with
           (* Allow Anys [especially from placeholder stubs] to clobber *)
-          | Some _ when Type.is_any annotation ->
-              Value (Annotation.create_mutable annotation |> set_local ~name)
+          | Some _ when Type.is_any type_ ->
+              Value (Annotation.create_mutable type_ |> set_local ~name)
           | Some existing_annotation when refinement_unnecessary existing_annotation ->
               Value (set_local ~name existing_annotation)
           (* Clarify Anys if possible *)
           | Some existing_annotation
             when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
-              Value (Annotation.create_mutable annotation |> set_local ~name)
+              Value (Annotation.create_mutable type_ |> set_local ~name)
           | None -> Value resolution
           | Some existing_annotation ->
               let existing_type = Annotation.annotation existing_annotation in
-              let { consistent_with_boundary; _ } = partition existing_type ~boundary:annotation in
+              let { consistent_with_boundary; _ } = partition existing_type ~boundary:type_ in
               if not (Type.is_unbound consistent_with_boundary) then
                 Value (Annotation.create_mutable consistent_with_boundary |> set_local ~name)
-              else if
-                GlobalResolution.types_are_orderable global_resolution existing_type annotation
+              else if GlobalResolution.types_are_orderable global_resolution existing_type type_
               then
-                Value (Annotation.create_mutable annotation |> set_local ~name)
+                Value (Annotation.create_mutable type_ |> set_local ~name)
               else
                 Unreachable
         in
@@ -3298,12 +3300,7 @@ module State (Context : Context) = struct
         let refined = Annotation.create_mutable refined in
         match existing_annotation name with
         | Some previous ->
-            if
-              RefinementUnit.less_or_equal
-                ~global_resolution
-                (RefinementUnit.create refined)
-                (RefinementUnit.create previous)
-            then
+            if annotation_less_or_equal ~left:refined ~right:previous then
               Value (set_local ~name refined)
             else
               (* Keeping previous state, since it is more refined. *)
@@ -3340,12 +3337,7 @@ module State (Context : Context) = struct
                   else
                     Annotation.create_mutable element_type
                 in
-                if
-                  RefinementUnit.less_or_equal
-                    ~global_resolution
-                    (RefinementUnit.create refined)
-                    (RefinementUnit.create previous)
-                then
+                if annotation_less_or_equal ~left:refined ~right:previous then
                   Value (set_local ~name refined)
                 else (* Keeping previous state, since it is more refined. *)
                   Value resolution
