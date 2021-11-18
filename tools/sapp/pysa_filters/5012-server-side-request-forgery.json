@@ -1,0 +1,27 @@
+{
+    "name": "Server-Side Request Forgery (SSRF)",
+    "description": "High signal filter for 5012 Server-Side Request Forgery",
+    "features":[
+        {
+            "mode":"none of",
+            "features":[
+                "always-type:scalar",
+                "always-type:bool",
+                "always-via:bytesio",
+                "always-via:urlencode",
+                "via:urlencode"
+            ]
+        }
+    ],
+    "codes": [
+        5012
+    ],
+    "traceLengthFromSources": [
+        0,
+        2
+    ],
+    "traceLengthToSinks": [
+        0,
+        5
+    ]
+}
