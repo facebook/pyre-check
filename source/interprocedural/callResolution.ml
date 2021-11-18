@@ -11,8 +11,6 @@ open Analysis
 open Expression
 open Pyre
 
-let is_local identifier = String.is_prefix ~prefix:"$" identifier
-
 let extract_constant_name { Node.value = expression; _ } =
   match expression with
   | Expression.Constant (Constant.String literal) -> Some literal.value

@@ -8,8 +8,6 @@
 open Ast
 open Analysis
 
-val is_local : Identifier.t -> bool
-
 (* Evaluates to the representation of literal strings, integers and enums. *)
 val extract_constant_name : Expression.t -> string option
 

@@ -265,10 +265,7 @@ let to_json { root; path } =
 
 let get_global ~resolution name =
   match Node.value name with
-  | Expression.Name (Name.Identifier identifier)
-    when not (Interprocedural.CallResolution.is_local identifier) ->
-      Some (Reference.create identifier)
-  | Name (Name.Identifier identifier) ->
+  | Expression.Name (Name.Identifier identifier) ->
       let reference = Reference.delocalize (Reference.create identifier) in
       if Resolution.is_global resolution ~reference then
         Some reference
