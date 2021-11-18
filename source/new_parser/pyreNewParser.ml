@@ -578,13 +578,19 @@ let process_function_type_comment
     ~context:{ StatementContext.parse_function_signature; parent }
     ~parameters
     ~returns
+    ~comment_location
   = function
   | None -> Result.Ok (parameters, returns)
   | Some type_comment -> (
       match parse_function_signature type_comment with
       | Result.Error _ -> Result.Error "Syntax error in function signature type comment"
       | Result.Ok { FunctionSignature.parameter_annotations; return_annotation } -> (
-          let open Ast.Expression in
+          let
+          (* NOTE(grievejia): Locations in both `parameter_annotations` and `return_annotation` are
+             all off since they are counted from the start of `type_comment`, not from the start of
+             the entire file. *)
+          open
+            Ast.Expression in
           let module Node = Ast.Node in
           let parameter_annotations =
             let parameter_count = List.length parameters in
@@ -616,8 +622,12 @@ let process_function_type_comment
                 (* NOTE(grievejia): Currently we let inline annotations take precedence over comment
                    annotations. *)
                 match old_annotation with
-                | None -> new_annotation
                 | Some _ -> old_annotation
+                | None -> (
+                    match new_annotation with
+                    | None -> None
+                    | Some new_annotation ->
+                        Some { new_annotation with Node.location = comment_location })
               in
               let override_parameter ({ Node.value = parameter; location }, new_annotation) =
                 let { Parameter.annotation; _ } = parameter in
@@ -647,7 +657,25 @@ let statement =
       ~context:({ StatementContext.parent; _ } as context)
     =
     let body = build_statements ~context:{ context with parent = None } body in
-    match process_function_type_comment ~context ~parameters:args ~returns type_comment with
+    let comment_location =
+      (* NOTE(grievejia): This is just a rough estimation on where type comment is. We don't know
+         for sure since CPython does not preserve the positions of those comments. *)
+      let open Ast.Location in
+      let estimated_stop =
+        match body with
+        | [] -> location.stop
+        | { Node.location; _ } :: _ -> location.start
+      in
+      { start = location.start; stop = estimated_stop }
+    in
+    match
+      process_function_type_comment
+        ~context
+        ~parameters:args
+        ~returns
+        ~comment_location
+        type_comment
+    with
     | Result.Error message ->
         let { Ast.Location.start = { line; column }; _ } = location in
         raise (InternalError { Error.line; column; message })
@@ -680,7 +708,25 @@ let statement =
       ~context:({ StatementContext.parent; _ } as context)
     =
     let body = build_statements ~context:{ context with parent = None } body in
-    match process_function_type_comment ~context ~parameters:args ~returns type_comment with
+    let comment_location =
+      (* NOTE(grievejia): This is just a rough estimation on where type comment is. We don't know
+         for sure since CPython does not preserve the positions of those comments. *)
+      let open Ast.Location in
+      let estimated_stop =
+        match body with
+        | [] -> location.stop
+        | { Node.location; _ } :: _ -> location.start
+      in
+      { start = location.start; stop = estimated_stop }
+    in
+    match
+      process_function_type_comment
+        ~context
+        ~parameters:args
+        ~returns
+        ~comment_location
+        type_comment
+    with
     | Result.Error message ->
         let { Ast.Location.start = { line; column }; _ } = location in
         raise (InternalError { Error.line; column; message })

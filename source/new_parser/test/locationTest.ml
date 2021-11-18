@@ -3445,6 +3445,104 @@ let test_yield_locations _ =
   PyreNewParser.with_context do_test
 
 
+let test_type_comments _ =
+  let do_test context =
+    let assert_parsed = assert_parsed ~context in
+    assert_parsed
+      "def foo(x):\n  # type: (int) -> None\n  pass"
+      ~expected:
+        [
+          node
+            ~start:(1, 0)
+            ~stop:(3, 6)
+            (Statement.Define
+               {
+                 signature =
+                   {
+                     name = !&"foo";
+                     parameters =
+                       [
+                         node
+                           ~start:(1, 8)
+                           ~stop:(1, 9)
+                           {
+                             Parameter.name = "x";
+                             value = None;
+                             annotation =
+                               Some
+                                 (node
+                                    ~start:(1, 0)
+                                    ~stop:(3, 2)
+                                    (Expression.Name (Name.Identifier "int")));
+                           };
+                       ];
+                     decorators = [];
+                     return_annotation =
+                       Some
+                         (node
+                            ~start:(1, 0)
+                            ~stop:(3, 2)
+                            (Expression.Constant Constant.NoneLiteral));
+                     async = false;
+                     generator = false;
+                     parent = None;
+                     nesting_define = None;
+                   };
+                 captures = [];
+                 unbound_names = [];
+                 body = [node ~start:(3, 2) ~stop:(3, 6) Statement.Pass];
+               });
+        ];
+    assert_parsed
+      "async def foo(x):\n  # type: (int) -> None\n  pass"
+      ~expected:
+        [
+          node
+            ~start:(1, 0)
+            ~stop:(3, 6)
+            (Statement.Define
+               {
+                 signature =
+                   {
+                     name = !&"foo";
+                     parameters =
+                       [
+                         node
+                           ~start:(1, 14)
+                           ~stop:(1, 15)
+                           {
+                             Parameter.name = "x";
+                             value = None;
+                             annotation =
+                               Some
+                                 (node
+                                    ~start:(1, 0)
+                                    ~stop:(3, 2)
+                                    (Expression.Name (Name.Identifier "int")));
+                           };
+                       ];
+                     decorators = [];
+                     return_annotation =
+                       Some
+                         (node
+                            ~start:(1, 0)
+                            ~stop:(3, 2)
+                            (Expression.Constant Constant.NoneLiteral));
+                     async = true;
+                     generator = false;
+                     parent = None;
+                     nesting_define = None;
+                   };
+                 captures = [];
+                 unbound_names = [];
+                 body = [node ~start:(3, 2) ~stop:(3, 6) Statement.Pass];
+               });
+        ];
+    ()
+  in
+  PyreNewParser.with_context do_test
+
+
 let () =
   "parsed_locations"
   >::: [
@@ -3479,5 +3577,6 @@ let () =
          "with_locations" >:: test_with_locations;
          "walrus_locations" >:: test_walrus_locations;
          "yield_locations" >:: test_yield_locations;
+         "type_comments" >:: test_type_comments;
        ]
   |> Test.run
