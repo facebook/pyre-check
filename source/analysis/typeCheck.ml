@@ -1222,8 +1222,8 @@ module State (Context : Context) = struct
                 let refined =
                   RefinementUnit.join
                     ~global_resolution
-                    (RefinementUnit.create ~base:sofar ())
-                    (RefinementUnit.create ~base:element ())
+                    (RefinementUnit.create sofar)
+                    (RefinementUnit.create element)
                   |> RefinementUnit.base
                   |> Option.value ~default:(Annotation.create_mutable Type.Bottom)
                 in
@@ -3022,8 +3022,8 @@ module State (Context : Context) = struct
           let refinement_unnecessary existing_annotation =
             RefinementUnit.less_or_equal
               ~global_resolution
-              (RefinementUnit.create ~base:existing_annotation ())
-              (RefinementUnit.create ~base:(Annotation.create_mutable annotation) ())
+              (RefinementUnit.create existing_annotation)
+              (RefinementUnit.create_mutable annotation)
             && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
             && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
           in
@@ -3301,8 +3301,8 @@ module State (Context : Context) = struct
             if
               RefinementUnit.less_or_equal
                 ~global_resolution
-                (RefinementUnit.create ~base:refined ())
-                (RefinementUnit.create ~base:previous ())
+                (RefinementUnit.create refined)
+                (RefinementUnit.create previous)
             then
               Value (set_local ~name refined)
             else
@@ -3343,8 +3343,8 @@ module State (Context : Context) = struct
                 if
                   RefinementUnit.less_or_equal
                     ~global_resolution
-                    (RefinementUnit.create ~base:refined ())
-                    (RefinementUnit.create ~base:previous ())
+                    (RefinementUnit.create refined)
+                    (RefinementUnit.create previous)
                 then
                   Value (set_local ~name refined)
                 else (* Keeping previous state, since it is more refined. *)
@@ -5308,7 +5308,7 @@ module State (Context : Context) = struct
                 Map.set
                   annotations
                   ~key:(make_parameter_name name)
-                  ~data:(RefinementUnit.create ~base:{ Annotation.annotation; mutability } ());
+                  ~data:(RefinementUnit.create { Annotation.annotation; mutability });
               temporary_annotations;
             } )
         in
@@ -5358,16 +5358,10 @@ module State (Context : Context) = struct
                       Resolution.annotations resolution
                       |> Map.set
                            ~key:(make_parameter_name first_name)
-                           ~data:
-                             (RefinementUnit.create
-                                ~base:(Annotation.create_mutable positional_component)
-                                ())
+                           ~data:(RefinementUnit.create_mutable positional_component)
                       |> Map.set
                            ~key:(make_parameter_name second_name)
-                           ~data:
-                             (RefinementUnit.create
-                                ~base:(Annotation.create_mutable keyword_component)
-                                ());
+                           ~data:(RefinementUnit.create_mutable keyword_component);
                     temporary_annotations = Resolution.temporary_annotations resolution;
                   }
                 in

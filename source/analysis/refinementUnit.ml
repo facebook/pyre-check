@@ -15,9 +15,13 @@ type t = {
 }
 [@@deriving eq]
 
-let top =
-  { base = Some (Annotation.create_mutable Type.Top); attributes = Identifier.Map.Tree.empty }
+let empty = { base = None; attributes = Identifier.Map.Tree.empty }
 
+let create base = { empty with base = Some base }
+
+let create_mutable type_ = create (Annotation.create_mutable type_)
+
+let top = create (Annotation.create_mutable Type.Top)
 
 let rec pp format { base; attributes } =
   let attribute_map_entry (identifier, refinement_unit) =
@@ -38,14 +42,12 @@ let find = Identifier.Map.Tree.find
 
 let base { base; _ } = base
 
-let create ?base () = { base; attributes = Identifier.Map.Tree.empty }
-
 let set_base refinement_unit ~base = { refinement_unit with base = Some base }
 
-let add_attribute_refinement refinement_unit ~reference ~base =
-  let rec add_attribute_refinement ({ attributes; _ } as refinement_unit) ~base ~identifiers =
+let add_attribute_refinement refinement_unit ~reference ~annotation =
+  let rec add_attribute_refinement ({ attributes; _ } as refinement_unit) ~annotation ~identifiers =
     match identifiers with
-    | [] -> { refinement_unit with base = Some base }
+    | [] -> { refinement_unit with base = Some annotation }
     | identifier :: identifiers ->
         {
           refinement_unit with
@@ -55,11 +57,11 @@ let add_attribute_refinement refinement_unit ~reference ~base =
                  ~key:identifier
                  ~data:
                    (find attributes identifier
-                   |> Option.value ~default:(create ())
-                   |> add_attribute_refinement ~base ~identifiers);
+                   |> Option.value ~default:empty
+                   |> add_attribute_refinement ~annotation ~identifiers);
         }
   in
-  add_attribute_refinement refinement_unit ~base ~identifiers:(reference |> Reference.as_list)
+  add_attribute_refinement refinement_unit ~annotation ~identifiers:(reference |> Reference.as_list)
 
 
 let annotation refinement_unit ~reference =
@@ -173,6 +175,6 @@ let rec meet ~global_resolution left right =
 
 let widen ~global_resolution ~widening_threshold ~previous ~next ~iteration =
   if iteration + 1 >= widening_threshold then
-    create ~base:(Annotation.create_mutable Type.Top) ()
+    create (Annotation.create_mutable Type.Top)
   else
     join ~global_resolution previous next

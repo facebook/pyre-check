@@ -545,7 +545,7 @@ module State (Context : Context) = struct
                   Map.set
                     annotations
                     ~key:(make_parameter_name name)
-                    ~data:(RefinementUnit.create ~base:(Annotation.create_mutable Type.Bottom) ())
+                    ~data:(RefinementUnit.create_mutable Type.Bottom)
               | Some annotation, None
                 when Type.is_any
                        (GlobalResolution.parse_annotation
@@ -554,7 +554,7 @@ module State (Context : Context) = struct
                   Map.set
                     annotations
                     ~key:(make_parameter_name name)
-                    ~data:(RefinementUnit.create ~base:(Annotation.create_mutable Type.Bottom) ())
+                    ~data:(RefinementUnit.create_mutable Type.Bottom)
               | _ -> annotations)
         in
         { Resolution.annotations; temporary_annotations }
@@ -573,11 +573,8 @@ module State (Context : Context) = struct
             GlobalResolution.annotation_parser (Resolution.global_resolution resolution)
           in
           let { Node.value = { Define.signature; _ }; _ } = Context.define in
-          RefinementUnit.create
-            ~base:
-              (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
-              |> Annotation.create_mutable)
-            ()
+          RefinementUnit.create_mutable
+            (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser)
         in
         let backward_initial_state =
           let resolution =

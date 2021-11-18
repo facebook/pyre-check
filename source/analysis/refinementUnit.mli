@@ -9,15 +9,19 @@ open Ast
 
 type t [@@deriving eq, show]
 
+val empty : t
+
 val top : t
+
+val create : Annotation.t -> t
+
+val create_mutable : Type.t -> t
 
 val base : t -> Annotation.t option
 
-val create : ?base:Annotation.t -> unit -> t
-
 val set_base : t -> base:Annotation.t -> t
 
-val add_attribute_refinement : t -> reference:Reference.t -> base:Annotation.t -> t
+val add_attribute_refinement : t -> reference:Reference.t -> annotation:Annotation.t -> t
 
 val annotation : t -> reference:Reference.t -> Annotation.t option
 

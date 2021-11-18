@@ -145,12 +145,9 @@ let set_local
   let annotations, temporary_annotations =
     if temporary then
       ( annotations,
-        Map.set
-          temporary_annotations
-          ~key:reference
-          ~data:(RefinementUnit.create ~base:annotation ()) )
+        Map.set temporary_annotations ~key:reference ~data:(RefinementUnit.create annotation) )
     else
-      ( Map.set annotations ~key:reference ~data:(RefinementUnit.create ~base:annotation ()),
+      ( Map.set annotations ~key:reference ~data:(RefinementUnit.create annotation),
         temporary_annotations )
   in
   { resolution with annotation_store = { annotations; temporary_annotations } }
@@ -177,8 +174,8 @@ let set_local_with_attributes
           ~data:
             (Map.find temporary_annotations object_reference
             |> (fun existing -> Option.first_some existing (Map.find annotations object_reference))
-            |> Option.value ~default:(RefinementUnit.create ())
-            |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation
+            |> Option.value ~default:RefinementUnit.empty
+            |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~annotation
             |> set_base ~base) )
     else
       ( Map.set
@@ -186,8 +183,8 @@ let set_local_with_attributes
           ~key:object_reference
           ~data:
             (Map.find annotations object_reference
-            |> Option.value ~default:(RefinementUnit.create ())
-            |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation
+            |> Option.value ~default:RefinementUnit.empty
+            |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~annotation
             |> set_base ~base),
         temporary_annotations )
   in
