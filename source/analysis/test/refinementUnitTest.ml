@@ -91,8 +91,8 @@ let test_less_or_equal context =
        (create_mutable Type.object_primitive |> add_mutable_attribute_refinement !&"a.x" Type.float)
        (create_mutable Type.object_primitive
        |> add_mutable_attribute_refinement !&"a.x" Type.integer));
-  (* Nested attributes are compared *)
-  assert_false
+  (* If attributes differe at all, the left must be a subset of the right *)
+  assert_true
     (less_or_equal
        ~global_resolution
        (create_mutable Type.object_primitive
@@ -100,6 +100,14 @@ let test_less_or_equal context =
        (create_mutable Type.object_primitive
        |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
        |> add_mutable_attribute_refinement !&"a.x.b" Type.integer));
+  assert_false
+    (less_or_equal
+       ~global_resolution
+       (create_mutable Type.object_primitive
+       |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
+       |> add_mutable_attribute_refinement !&"a.x.b" Type.integer)
+       (create_mutable Type.object_primitive
+       |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive));
   ()
 
 
