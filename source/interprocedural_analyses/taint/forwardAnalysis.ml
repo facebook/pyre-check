@@ -224,19 +224,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       fields
 
 
-  type analyze_attribute_access_result = {
-    base_taint: ForwardState.Tree.t;
-    attribute_taint: ForwardState.Tree.t;
-    state: t;
-  }
-
-  type analyze_callee_result = {
-    self_taint: ForwardState.Tree.t option;
-    callee_taint: ForwardState.Tree.t option;
-    state: t;
-  }
-
-  let rec apply_call_target
+  let apply_call_target
       ~resolution
       ~triggered_sinks
       ~call_location
@@ -541,7 +529,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     returned_taint, state
 
 
-  and apply_call_targets_with_arguments_taint
+  let apply_call_targets_with_arguments_taint
       ~resolution
       ~callee
       ~call_location
@@ -669,7 +657,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     taint, state
 
 
-  and analyze_callee ~resolution ~state ~callee =
+  type analyze_attribute_access_result = {
+    base_taint: ForwardState.Tree.t;
+    attribute_taint: ForwardState.Tree.t;
+    state: t;
+  }
+
+  type analyze_callee_result = {
+    self_taint: ForwardState.Tree.t option;
+    callee_taint: ForwardState.Tree.t option;
+    state: t;
+  }
+
+  let rec analyze_callee ~resolution ~state ~callee =
     match callee.Node.value with
     | Expression.Name (Name.Attribute { base; attribute; special }) ->
         let { base_taint; attribute_taint; state } =

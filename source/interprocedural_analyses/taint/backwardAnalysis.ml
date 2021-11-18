@@ -223,7 +223,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     { arguments_taint; self_taint; callee_taint; state }
 
 
-  let rec apply_call_target
+  let apply_call_target
       ~resolution
       ~call_location
       ~arguments
@@ -489,7 +489,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     { arguments_taint; self_taint = None; callee_taint = None; state }
 
 
-  and apply_call_targets_and_return_arguments_taint
+  let apply_call_targets_and_return_arguments_taint
       ~resolution
       ~callee
       ~call_location
@@ -650,7 +650,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     { arguments_taint; self_taint; callee_taint; state }
 
 
-  and analyze_arguments ~resolution ~arguments ~arguments_taint ~state =
+  let rec analyze_arguments ~resolution ~arguments ~arguments_taint ~state =
     (* Explicitly analyze arguments from right to left (opposite of forward analysis). *)
     List.zip_exn arguments arguments_taint
     |> List.rev
