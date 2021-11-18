@@ -71,13 +71,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           String.Map.Tree.find name_to_callees (Interprocedural.CallGraph.call_name call)
       | None -> None
     in
+    let callees =
+      Option.bind ~f:Interprocedural.CallGraph.LegacyRawCallees.from_raw_callees callees
+    in
     log
       "Resolved callees for call `%a` at %a:@,%a"
       Expression.pp
       (Node.create_with_default_location (Expression.Call call))
       Location.pp
       location
-      Interprocedural.CallGraph.RawCallees.pp_option
+      Interprocedural.CallGraph.LegacyRawCallees.pp_option
       callees;
     callees
 
@@ -90,6 +93,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           String.Map.Tree.find name_to_callees attribute
       | None -> None
     in
+    let callees =
+      Option.bind ~f:Interprocedural.CallGraph.LegacyRawCallees.from_raw_callees callees
+    in
     let () =
       match callees with
       | Some callees ->
@@ -98,7 +104,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             attribute
             Location.pp
             location
-            Interprocedural.CallGraph.RawCallees.pp
+            Interprocedural.CallGraph.LegacyRawCallees.pp
             callees
       | _ -> ()
     in
@@ -497,7 +503,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state:initial_state
       ~call_taint
       {
-        Interprocedural.CallGraph.RegularTargets.implicit_self;
+        Interprocedural.CallGraph.LegacyRegularTargets.implicit_self;
         targets = call_targets;
         return_type;
         _;
@@ -811,7 +817,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~state
         ~call_taint:taint
         {
-          Interprocedural.CallGraph.RegularTargets.implicit_self = false;
+          Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
           collapse_tito = true;
           return_type;
           targets = init_targets;
@@ -841,7 +847,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~state
               ~call_taint:self_taint
               {
-                Interprocedural.CallGraph.RegularTargets.implicit_self = false;
+                Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
                 collapse_tito = true;
                 return_type;
                 targets = new_targets;
@@ -1361,7 +1367,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~arguments
               ~call_taint:taint
               {
-                Interprocedural.CallGraph.RegularTargets.implicit_self = false;
+                Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
                 collapse_tito = false;
                 return_type = Type.Any;
                 targets = [];

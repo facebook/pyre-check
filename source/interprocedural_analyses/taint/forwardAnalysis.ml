@@ -75,13 +75,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           String.Map.Tree.find name_to_callees (Interprocedural.CallGraph.call_name call)
       | None -> None
     in
+    let callees =
+      Option.bind ~f:Interprocedural.CallGraph.LegacyRawCallees.from_raw_callees callees
+    in
     log
       "Resolved callees for call `%a` at %a:@,%a"
       Expression.pp
       (Node.create_with_default_location (Expression.Call call))
       Location.pp
       location
-      Interprocedural.CallGraph.RawCallees.pp_option
+      Interprocedural.CallGraph.LegacyRawCallees.pp_option
       callees;
     callees
 
@@ -94,6 +97,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           String.Map.Tree.find name_to_callees attribute
       | None -> None
     in
+    let callees =
+      Option.bind ~f:Interprocedural.CallGraph.LegacyRawCallees.from_raw_callees callees
+    in
     let () =
       match callees with
       | Some callees ->
@@ -102,7 +108,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             attribute
             Location.pp
             location
-            Interprocedural.CallGraph.RawCallees.pp
+            Interprocedural.CallGraph.LegacyRawCallees.pp
             callees
       | _ -> ()
     in
@@ -539,7 +545,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint
       ~state:initial_state
       {
-        Interprocedural.CallGraph.RegularTargets.implicit_self;
+        Interprocedural.CallGraph.LegacyRegularTargets.implicit_self;
         targets = call_targets;
         collapse_tito;
         return_type;
@@ -690,10 +696,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   (* Lazy version of `analyze_callee` which only analyze what we need for a target. *)
   and analyze_callee_for_targets ~resolution ~state ~callee = function
-    | { Interprocedural.CallGraph.RegularTargets.targets = []; _ } ->
+    | { Interprocedural.CallGraph.LegacyRegularTargets.targets = []; _ } ->
         (* We need both the taint on self and on the whole callee. *)
         analyze_callee ~resolution ~state ~callee
-    | { Interprocedural.CallGraph.RegularTargets.implicit_self = true; _ } ->
+    | { Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = true; _ } ->
         (* We only need the taint of the receiver. *)
         let taint, state =
           match callee.Node.value with
@@ -856,7 +862,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~arguments_taint:new_arguments_taint
             ~state
             {
-              Interprocedural.CallGraph.RegularTargets.implicit_self = false;
+              Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
               collapse_tito = true;
               return_type;
               targets = new_targets;
@@ -877,7 +883,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint:init_arguments_taint
       ~state
       {
-        Interprocedural.CallGraph.RegularTargets.implicit_self = false;
+        Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
         collapse_tito = true;
         return_type;
         targets = init_targets;
@@ -1346,7 +1352,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~arguments
                   ~state
                   {
-                    Interprocedural.CallGraph.RegularTargets.implicit_self = false;
+                    Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
                     collapse_tito = false;
                     return_type = Type.Any;
                     targets = [];

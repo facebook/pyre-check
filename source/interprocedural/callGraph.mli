@@ -10,7 +10,64 @@ open Analysis
 open Ast
 open Expression
 
-module RegularTargets : sig
+module CallTarget : sig
+  type t = {
+    target: Target.t;
+    (* True if the call has an implicit receiver.
+     * For instance, `x.foo()` should be treated as `C.foo(x)`. *)
+    implicit_self: bool;
+    (* True if we should collapse the taint from arguments, cf. the taint analysis. *)
+    collapse_tito: bool;
+  }
+  [@@deriving eq, show]
+end
+
+(* Information about an argument being a callable. *)
+module HigherOrderParameter : sig
+  type t = {
+    index: int;
+    call_targets: CallTarget.t list;
+    return_type: Type.t;
+  }
+  [@@deriving eq, show]
+end
+
+(* An aggregate of all possible callees at a call site. *)
+module RawCallees : sig
+  type t = {
+    (* Normal call targets. *)
+    call_targets: CallTarget.t list;
+    (* Call targets for calls to the `__new__` class method. *)
+    new_targets: Target.t list;
+    (* Call targets for calls to the `__init__` instance method. *)
+    init_targets: Target.t list;
+    (* The return type of the call. *)
+    return_type: Type.t;
+    (* Information about an argument being a callable, and possibly called. *)
+    higher_order_parameter: HigherOrderParameter.t option;
+    (* True if at least one callee could not be resolved.
+     * Usually indicates missing type information at the call site. *)
+    unresolved: bool;
+  }
+  [@@deriving eq, show]
+
+  val create
+    :  ?call_targets:CallTarget.t list ->
+    ?new_targets:Target.t list ->
+    ?init_targets:Target.t list ->
+    ?higher_order_parameter:HigherOrderParameter.t ->
+    ?unresolved:bool ->
+    return_type:Type.t ->
+    unit ->
+    t
+
+  val create_unresolved : Type.t -> t
+
+  val pp_option : Format.formatter -> t option -> unit
+end
+
+(* TODO(T105570363): Migrate to the new representation. *)
+module LegacyRegularTargets : sig
   type t = {
     implicit_self: bool;
     collapse_tito: bool;
@@ -20,21 +77,24 @@ module RegularTargets : sig
   [@@deriving eq, show]
 end
 
-module RawCallees : sig
+(* TODO(T105570363): Migrate to the new representation. *)
+module LegacyRawCallees : sig
   type t =
     | ConstructorTargets of {
         new_targets: Target.t list;
         init_targets: Target.t list;
         return_type: Type.t;
       }
-    | RegularTargets of RegularTargets.t
+    | RegularTargets of LegacyRegularTargets.t
     | HigherOrderTargets of {
-        higher_order_function: RegularTargets.t;
-        callable_argument: int * RegularTargets.t;
+        higher_order_function: LegacyRegularTargets.t;
+        callable_argument: int * LegacyRegularTargets.t;
       }
   [@@deriving eq, show]
 
   val pp_option : Format.formatter -> t option -> unit
+
+  val from_raw_callees : RawCallees.t -> t option
 end
 
 module Callees : sig
