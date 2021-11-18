@@ -646,8 +646,9 @@ let statement =
   let open Ast.Expression in
   let open Ast.Statement in
   let module Node = Ast.Node in
-  let function_def
+  let create_function_definition
       ~location
+      ~async
       ~name
       ~args
       ~body
@@ -686,7 +687,7 @@ let statement =
             parameters;
             decorators = decorator_list;
             return_annotation;
-            async = false;
+            async;
             generator = is_generator body;
             parent = Option.map parent ~f:Ast.Reference.create;
             nesting_define = None;
@@ -697,56 +698,30 @@ let statement =
           |> Node.create ~location;
         ]
   in
-  let async_function_def
+  let function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment ~context =
+    create_function_definition
       ~location
+      ~async:false
       ~name
       ~args
       ~body
       ~decorator_list
       ~returns
       ~type_comment
-      ~context:({ StatementContext.parent; _ } as context)
+      ~context
+  in
+  let async_function_def ~location ~name ~args ~body ~decorator_list ~returns ~type_comment ~context
     =
-    let body = build_statements ~context:{ context with parent = None } body in
-    let comment_location =
-      (* NOTE(grievejia): This is just a rough estimation on where type comment is. We don't know
-         for sure since CPython does not preserve the positions of those comments. *)
-      let open Ast.Location in
-      let estimated_stop =
-        match body with
-        | [] -> location.stop
-        | { Node.location; _ } :: _ -> location.start
-      in
-      { start = location.start; stop = estimated_stop }
-    in
-    match
-      process_function_type_comment
-        ~context
-        ~parameters:args
-        ~returns
-        ~comment_location
-        type_comment
-    with
-    | Result.Error message ->
-        let { Ast.Location.start = { line; column }; _ } = location in
-        raise (InternalError { Error.line; column; message })
-    | Result.Ok (parameters, return_annotation) ->
-        let signature =
-          {
-            Define.Signature.name = Ast.Reference.create name;
-            parameters;
-            decorators = decorator_list;
-            return_annotation;
-            async = true;
-            generator = is_generator body;
-            parent = Option.map parent ~f:Ast.Reference.create;
-            nesting_define = None;
-          }
-        in
-        [
-          Statement.Define { Define.signature; captures = []; unbound_names = []; body }
-          |> Node.create ~location;
-        ]
+    create_function_definition
+      ~location
+      ~async:true
+      ~name
+      ~args
+      ~body
+      ~decorator_list
+      ~returns
+      ~type_comment
+      ~context
   in
   let class_def ~location ~name ~bases ~keywords ~body ~decorator_list ~context =
     let base_arguments =
