@@ -4022,7 +4022,7 @@ class base class_metadata_environment dependency =
 
     method global_annotation ~assumptions name =
       let process_unannotated_global global =
-        let produce_assignment_global ~is_explicit annotation =
+        let produce_assignment_global ~is_explicit ~is_final annotation =
           let original =
             if is_explicit then
               None
@@ -4034,7 +4034,7 @@ class base class_metadata_environment dependency =
             else
               None
           in
-          Annotation.create_immutable ~original annotation
+          Annotation.create_immutable ~final:is_final ~original annotation
         in
         match global with
         | UnannotatedGlobal.Define defines ->
@@ -4096,12 +4096,17 @@ class base class_metadata_environment dependency =
               >>| self#parse_annotation ~assumptions
               >>= fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation
             in
-            let annotation =
+            let annotation, is_final =
               match explicit_annotation with
-              | Some explicit -> explicit
-              | None -> self#resolve_literal value ~assumptions
+              | Some explicit when Type.is_final explicit ->
+                  Type.final_value explicit |> Option.value ~default:explicit, true
+              | Some explicit -> explicit, false
+              | None -> self#resolve_literal value ~assumptions, false
             in
-            produce_assignment_global ~is_explicit:(Option.is_some explicit_annotation) annotation
+            produce_assignment_global
+              ~is_explicit:(Option.is_some explicit_annotation)
+              ~is_final
+              annotation
             |> fun annotation ->
             Some { Global.annotation; undecorated_signature = None; problem = None }
         | TupleAssign { value; index; total_length; _ } ->
@@ -4116,7 +4121,7 @@ class base class_metadata_environment dependency =
                   |> Option.value ~default:Type.Top
               | _ -> Type.Top
             in
-            produce_assignment_global ~is_explicit:false extracted
+            produce_assignment_global ~is_explicit:false ~is_final:false extracted
             |> fun annotation ->
             Some { Global.annotation; undecorated_signature = None; problem = None }
         | _ -> None

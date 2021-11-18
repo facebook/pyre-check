@@ -3707,23 +3707,32 @@ module State (Context : Context) = struct
                       | _ -> None)
                   | _ -> None
                 in
-                let is_global =
+                let name_reference =
                   match name with
-                  | Identifier identifier ->
-                      Resolution.is_global resolution ~reference:(Reference.create identifier)
+                  | Identifier identifier -> Reference.create identifier |> Option.some
                   | Attribute _ as name when is_simple_name name ->
-                      Resolution.is_global resolution ~reference:(name_to_reference_exn name)
-                  | _ -> false
+                      name_to_reference_exn name |> Option.some
+                  | _ -> None
+                in
+                let is_global =
+                  name_reference
+                  >>| (fun reference -> Resolution.is_global resolution ~reference)
+                  |> Option.value ~default:false
+                in
+                let is_local =
+                  let { Resolution.annotations; _ } = Resolution.annotation_store resolution in
+                  name_reference >>= Map.find annotations |> Option.is_some
                 in
                 let check_errors errors resolved =
                   match reference with
                   | Some reference ->
                       let modifying_read_only_error =
                         match attribute, original_annotation with
-                        | None, _ ->
+                        | None, _ when not (explicit && not is_local) ->
                             Option.some_if
                               (Annotation.is_final target_annotation)
                               (AnalysisError.FinalAttribute reference)
+                        | None, _ -> None
                         | Some _, Some _ ->
                             (* We presume assignments to annotated targets are valid re: Finality *)
                             None

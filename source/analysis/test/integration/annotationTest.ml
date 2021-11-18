@@ -1552,7 +1552,6 @@ let test_final_type context =
         x = 2
     |}
     ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
-  (* TODO(T84660869): Support final annotations for non-attributes. *)
   assert_type_errors
     {|
       from typing import Final
@@ -1562,24 +1561,17 @@ let test_final_type context =
         global x
         x = 2
     |}
-    [
-      "Incompatible variable type [9]: x is declared to have type `Final[int]` but is used as type \
-       `int`.";
-    ];
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
   assert_type_errors
     {|
       from typing import Final, List
-      x: Final[List[int]] = 3
+      x: Final[List[int]] = [3]
 
       def foo() -> None:
         global x
         x.append(4)
     |}
-    [
-      "Incompatible variable type [9]: x is declared to have type `List[int]` but is used as type \
-       `int`.";
-      "Undefined attribute [16]: `Final` has no attribute `append`.";
-    ];
+    [];
   assert_type_errors
     {|
       from typing import Final
@@ -1588,7 +1580,7 @@ let test_final_type context =
       def foo() -> int:
         return x
     |}
-    ["Incompatible return type [7]: Expected `int` but got `Final[int]`."];
+    [];
   ()
 
 
