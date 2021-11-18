@@ -10,3 +10,5 @@ open Statement
 open Expression
 
 val to_condition : subject:Expression.t -> case:Match.Case.t -> Expression.t
+
+val pattern_to_condition : subject:Expression.t -> Match.Pattern.t -> Expression.t
