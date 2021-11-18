@@ -9,6 +9,11 @@ open Core
 open Ast
 open Pyre
 
+type annotation_store = {
+  annotations: RefinementUnit.t Reference.Map.t;
+  temporary_annotations: RefinementUnit.t Reference.Map.t;
+}
+
 type t = {
   global_resolution: GlobalResolution.t;
   annotation_store: annotation_store;
@@ -16,11 +21,6 @@ type t = {
   resolve_expression: resolution:t -> Expression.t -> t * Annotation.t;
   resolve_statement: resolution:t -> Statement.t -> resolve_statement_result_t;
   parent: Reference.t option;
-}
-
-and annotation_store = {
-  annotations: RefinementUnit.t Reference.Map.t;
-  temporary_annotations: RefinementUnit.t Reference.Map.t;
 }
 
 and resolve_statement_result_t =
