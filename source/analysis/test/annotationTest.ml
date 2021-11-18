@@ -65,11 +65,124 @@ let test_less_or_equal context =
   ()
 
 
+let test_join context =
+  let type_join = GlobalResolution.join (global_resolution context) in
+  let assert_equal = assert_equal ~ctxt:context ~cmp:Annotation.equal in
+  (* Type order is preserved. *)
+  assert_equal
+    (join
+       ~type_join
+       (Annotation.create_mutable Type.integer)
+       (Annotation.create_mutable Type.integer))
+    (Annotation.create_mutable Type.integer);
+  assert_equal
+    (join
+       ~type_join
+       (Annotation.create_mutable Type.integer)
+       (Annotation.create_mutable Type.float))
+    (Annotation.create_mutable Type.float);
+  (* Mutability. *)
+  assert_equal
+    (join
+       ~type_join
+       (Annotation.create_mutable Type.integer)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (join
+       ~type_join
+       (Annotation.create_immutable Type.integer)
+       (Annotation.create_mutable Type.integer))
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (join
+       ~type_join
+       (Annotation.create_immutable Type.integer)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (join
+       ~type_join
+       (Annotation.create_immutable Type.float)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable Type.float);
+  assert_equal
+    (join
+       ~type_join
+       (Annotation.create_immutable Type.float)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable Type.float);
+  assert_equal
+    (join
+       ~type_join
+       (Annotation.create_immutable ~final:true Type.float)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable ~final:true Type.float);
+  ()
+
+
+let test_meet context =
+  let type_meet = GlobalResolution.meet (global_resolution context) in
+  let assert_equal = assert_equal ~ctxt:context ~cmp:Annotation.equal in
+  assert_equal
+    (meet
+       ~type_meet
+       (Annotation.create_mutable Type.integer)
+       (Annotation.create_mutable Type.integer))
+    (Annotation.create_mutable Type.integer);
+  assert_equal
+    (meet
+       ~type_meet
+       (Annotation.create_mutable Type.integer)
+       (Annotation.create_mutable Type.float))
+    (Annotation.create_mutable Type.integer);
+  (* Mutability. *)
+  assert_equal
+    (meet
+       ~type_meet
+       (Annotation.create_mutable Type.integer)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_mutable Type.integer);
+  assert_equal
+    (meet
+       ~type_meet
+       (Annotation.create_immutable Type.integer)
+       (Annotation.create_mutable Type.integer))
+    (Annotation.create_mutable Type.integer);
+  assert_equal
+    (meet
+       ~type_meet
+       (Annotation.create_immutable Type.integer)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (meet
+       ~type_meet
+       (Annotation.create_immutable Type.float)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (meet
+       ~type_meet
+       (Annotation.create_immutable ~final:true Type.float)
+       (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (meet
+       ~type_meet
+       (Annotation.create_immutable ~final:true Type.float)
+       (Annotation.create_immutable ~final:true Type.integer))
+    (Annotation.create_immutable ~final:true Type.integer);
+  ()
+
+
 let () =
   "annotation"
   >::: [
          "instantiate" >:: test_instantiate;
          "dequalify" >:: test_dequalify;
          "less_or_equal" >:: test_less_or_equal;
+         "join" >:: test_join;
+         "meet" >:: test_meet;
        ]
   |> Test.run
