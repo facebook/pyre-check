@@ -15,6 +15,8 @@ open AccessPath
 
 type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 
+module CallGraph = Interprocedural.CallGraph
+
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
 
@@ -26,7 +28,7 @@ module type FUNCTION_CONTEXT = sig
 
   val environment : TypeEnvironment.ReadOnly.t
 
-  val call_graph_of_define : Interprocedural.CallGraph.Callees.t Location.Map.t
+  val call_graph_of_define : CallGraph.Callees.t Location.Map.t
 
   val existing_model : TaintResult.call_model
 
@@ -70,21 +72,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let get_callees ~location ~call =
     let callees =
       match Map.find FunctionContext.call_graph_of_define location with
-      | Some (Interprocedural.CallGraph.Callees.Callees callees) -> Some callees
-      | Some (Interprocedural.CallGraph.Callees.SyntheticCallees name_to_callees) ->
-          String.Map.Tree.find name_to_callees (Interprocedural.CallGraph.call_name call)
+      | Some (CallGraph.Callees.Callees callees) -> Some callees
+      | Some (CallGraph.Callees.SyntheticCallees name_to_callees) ->
+          String.Map.Tree.find name_to_callees (CallGraph.call_name call)
       | None -> None
     in
-    let callees =
-      Option.bind ~f:Interprocedural.CallGraph.LegacyRawCallees.from_raw_callees callees
-    in
+    let callees = Option.bind ~f:CallGraph.LegacyRawCallees.from_raw_callees callees in
     log
       "Resolved callees for call `%a` at %a:@,%a"
       Expression.pp
       (Node.create_with_default_location (Expression.Call call))
       Location.pp
       location
-      Interprocedural.CallGraph.LegacyRawCallees.pp_option
+      CallGraph.LegacyRawCallees.pp_option
       callees;
     callees
 
@@ -92,14 +92,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let get_property_callees ~location ~attribute =
     let callees =
       match Map.find FunctionContext.call_graph_of_define location with
-      | Some (Interprocedural.CallGraph.Callees.Callees callees) -> Some callees
-      | Some (Interprocedural.CallGraph.Callees.SyntheticCallees name_to_callees) ->
+      | Some (CallGraph.Callees.Callees callees) -> Some callees
+      | Some (CallGraph.Callees.SyntheticCallees name_to_callees) ->
           String.Map.Tree.find name_to_callees attribute
       | None -> None
     in
-    let callees =
-      Option.bind ~f:Interprocedural.CallGraph.LegacyRawCallees.from_raw_callees callees
-    in
+    let callees = Option.bind ~f:CallGraph.LegacyRawCallees.from_raw_callees callees in
     let () =
       match callees with
       | Some callees ->
@@ -108,7 +106,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             attribute
             Location.pp
             location
-            Interprocedural.CallGraph.LegacyRawCallees.pp
+            CallGraph.LegacyRawCallees.pp
             callees
       | _ -> ()
     in
@@ -545,7 +543,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint
       ~state:initial_state
       {
-        Interprocedural.CallGraph.LegacyRegularTargets.implicit_self;
+        CallGraph.LegacyRegularTargets.implicit_self;
         targets = call_targets;
         collapse_tito;
         return_type;
@@ -696,10 +694,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   (* Lazy version of `analyze_callee` which only analyze what we need for a target. *)
   and analyze_callee_for_targets ~resolution ~state ~callee = function
-    | { Interprocedural.CallGraph.LegacyRegularTargets.targets = []; _ } ->
+    | { CallGraph.LegacyRegularTargets.targets = []; _ } ->
         (* We need both the taint on self and on the whole callee. *)
         analyze_callee ~resolution ~state ~callee
-    | { Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = true; _ } ->
+    | { CallGraph.LegacyRegularTargets.implicit_self = true; _ } ->
         (* We only need the taint of the receiver. *)
         let taint, state =
           match callee.Node.value with
@@ -862,7 +860,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~arguments_taint:new_arguments_taint
             ~state
             {
-              Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
+              CallGraph.LegacyRegularTargets.implicit_self = false;
               collapse_tito = true;
               return_type;
               targets = new_targets;
@@ -883,7 +881,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint:init_arguments_taint
       ~state
       {
-        Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
+        CallGraph.LegacyRegularTargets.implicit_self = false;
         collapse_tito = true;
         return_type;
         targets = init_targets;
@@ -1260,9 +1258,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           taint, state
       | _ ->
           let call = { Call.callee; arguments } in
-          let { Call.callee; arguments } =
-            Interprocedural.CallGraph.redirect_special_calls ~resolution call
-          in
+          let { Call.callee; arguments } = CallGraph.redirect_special_calls ~resolution call in
           let taint, state =
             match get_callees ~location ~call:{ Call.callee; arguments } with
             | Some (RegularTargets targets) ->
@@ -1352,7 +1348,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~arguments
                   ~state
                   {
-                    Interprocedural.CallGraph.LegacyRegularTargets.implicit_self = false;
+                    CallGraph.LegacyRegularTargets.implicit_self = false;
                     collapse_tito = false;
                     return_type = Type.Any;
                     targets = [];
@@ -1987,7 +1983,7 @@ let run
   if FunctionContext.debug || Statement.Define.dump_call_graph define.value then
     Map.to_alist call_graph_of_define
     |> List.map ~f:(fun (key, callees) ->
-           Format.asprintf "%a: %a" Location.pp key Interprocedural.CallGraph.Callees.pp callees)
+           Format.asprintf "%a: %a" Location.pp key CallGraph.Callees.pp callees)
     |> String.concat ~sep:"\n"
     |> Log.dump
          "Call graph of `%s`:\n %s"
