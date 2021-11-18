@@ -62,22 +62,18 @@ let resolution context = ScratchProject.setup ~context [] |> ScratchProject.buil
 
 let test_less_or_equal context =
   let global_resolution = resolution context in
-  (* Type order is preserved. *)
+  (* Bases are compared *)
   assert_true
     (less_or_equal
        ~global_resolution
        (create ~base:(Annotation.create_mutable Type.integer) ())
        (create ~base:(Annotation.create_mutable Type.integer) ()));
-  assert_true
-    (less_or_equal
-       ~global_resolution
-       (create ~base:(Annotation.create_mutable Type.integer) ())
-       (create ~base:(Annotation.create_mutable Type.float) ()));
   assert_false
     (less_or_equal
        ~global_resolution
        (create ~base:(Annotation.create_mutable Type.float) ())
        (create ~base:(Annotation.create_mutable Type.integer) ()));
+  (* Attributes are compared *)
   assert_true
     (less_or_equal
        ~global_resolution
@@ -103,6 +99,7 @@ let test_less_or_equal context =
        (create ~base:(Annotation.create_mutable Type.object_primitive) ()
        |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create_mutable Type.integer)
        ));
+  (* Nested attributes are compared *)
   assert_false
     (less_or_equal
        ~global_resolution
@@ -117,23 +114,6 @@ let test_less_or_equal context =
        |> add_attribute_refinement
             ~reference:!&"a.x.b"
             ~base:(Annotation.create_mutable Type.integer)));
-
-  (* Mutable <= Immutable. *)
-  assert_true
-    (less_or_equal
-       ~global_resolution
-       (create ~base:(Annotation.create_mutable Type.integer) ())
-       (create ~base:(Annotation.create_immutable Type.integer) ()));
-  assert_true
-    (less_or_equal
-       ~global_resolution
-       (create ~base:(Annotation.create_immutable Type.integer) ())
-       (create ~base:(Annotation.create_immutable Type.integer) ()));
-  assert_false
-    (less_or_equal
-       ~global_resolution
-       (create ~base:(Annotation.create_immutable Type.integer) ())
-       (create ~base:(Annotation.create_mutable Type.integer) ()));
   ()
 
 
