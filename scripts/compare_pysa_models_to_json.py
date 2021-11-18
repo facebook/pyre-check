@@ -259,8 +259,20 @@ def get_models_from_pysa_file(path: str) -> Dict[str, TargetModel]:
 
             if result:
                 name, model = result
+                for parameter in model["parameters"]:
+                    for model_type in model["parameters"][parameter]:
+                        # pyre-fixme[26]: TypedDict key must be a string literal.
+                        pysa_models[name]["parameters"][parameter][model_type].update(
+                            # pyre-fixme[26]: TypedDict key must be a string literal.
+                            model["parameters"][parameter][model_type]
+                        )
                 pysa_models[name]["parameters"].update(model["parameters"])
-                pysa_models[name]["return_model"].update(model["return_model"])
+                for model_type in model["return_model"]:
+                    # pyre-fixme[26]: TypedDict key must be a string literal.
+                    pysa_models[name]["return_model"][model_type].update(
+                        # pyre-fixme[26]: TypedDict key must be a string literal.
+                        model["return_model"][model_type]
+                    )
             else:
                 skipped += 1
 

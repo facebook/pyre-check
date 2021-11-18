@@ -440,8 +440,7 @@ class GetModelsFromJsonFileTest(unittest.TestCase):
             )
 
 
-TEST_PYSA_FILE = """
-def foo.bar.baz.fake_method1(a, b, c: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
+TEST_PYSA_FILE = """def foo.bar.baz.fake_method1(a, b, c: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method2(a, b: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method3(a, b: TaintSource[UserControlled, UserControlled_Parameter], c: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method4(a, b: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
@@ -451,6 +450,8 @@ def foo.bar.baz.fake_method5(a, b, c: TaintSource[UserControlled, UserControlled
 def foo.bar.baz.fake_method6(_a) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method7(a, b, c: TaintSource[UserControlled, UserControlled_Parameter], d: TaintSource[UserControlled, UserControlled_Parameter], e: TaintSource[UserControlled, UserControlled_Parameter], f: TaintSource[UserControlled, UserControlled_Parameter], g: TaintSource[UserControlled, UserControlled_Parameter], h: TaintSource[UserControlled, UserControlled_Parameter], i: TaintSource[UserControlled, UserControlled_Parameter], j: TaintSource[UserControlled, UserControlled_Parameter], k: TaintSource[UserControlled, UserControlled_Parameter], l: TaintSource[UserControlled, UserControlled_Parameter], m: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
 def foo.bar.baz.fake_method8(a, b, c: TaintSource[UserControlled, UserControlled_Parameter], d: TaintSource[UserControlled, UserControlled_Parameter], e: TaintSource[UserControlled, UserControlled_Parameter], f: TaintSource[UserControlled, UserControlled_Parameter], g: TaintSource[UserControlled, UserControlled_Parameter], h: TaintSource[UserControlled, UserControlled_Parameter], i: TaintSource[UserControlled, UserControlled_Parameter], j: TaintSource[UserControlled, UserControlled_Parameter], k: TaintSource[UserControlled, UserControlled_Parameter], l: TaintSource[UserControlled, UserControlled_Parameter], m: TaintSource[UserControlled, UserControlled_Parameter], n: TaintSource[UserControlled, UserControlled_Parameter], o: TaintSource[UserControlled, UserControlled_Parameter], p: TaintSource[UserControlled, UserControlled_Parameter], q: TaintSource[UserControlled, UserControlled_Parameter], r: TaintSource[UserControlled, UserControlled_Parameter], s: TaintSource[UserControlled, UserControlled_Parameter], t: TaintSource[UserControlled, UserControlled_Parameter]) -> TaintSink[ReturnedToUser]: ...
+def foo.bar.baz.fake_method9(a, b, c, d) -> TaintSink[ResponseAfterPOSTRateLimit]: ...
+def foo.bar.baz.fake_method9(a: TaintSource[UserControlled], b, c: TaintSource[UserControlled], d): ...
 """
 
 
@@ -853,6 +854,29 @@ class GetModelsFromPysaFileTest(unittest.TestCase):
                         "return_model": {
                             "sources": set(),
                             "sinks": {"ReturnedToUser"},
+                            "tito": set(),
+                        },
+                    },
+                    "foo.bar.baz.fake_method9": {
+                        "parameters": {
+                            "a": {
+                                "sources": {
+                                    "UserControlled",
+                                },
+                                "sinks": set(),
+                                "tito": set(),
+                            },
+                            "c": {
+                                "sources": {
+                                    "UserControlled",
+                                },
+                                "sinks": set(),
+                                "tito": set(),
+                            },
+                        },
+                        "return_model": {
+                            "sources": set(),
+                            "sinks": {"ResponseAfterPOSTRateLimit"},
                             "tito": set(),
                         },
                     },
