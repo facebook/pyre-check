@@ -560,7 +560,7 @@ module State (Context : Context) = struct
     in
     let annotation_store =
       {
-        Resolution.annotations =
+        Refinement.Store.annotations =
           Map.merge
             ~f:merge_annotation_stores
             (Resolution.annotations left_resolution)
@@ -634,7 +634,7 @@ module State (Context : Context) = struct
         in
         let annotation_store =
           {
-            Resolution.annotations =
+            Refinement.Store.annotations =
               Map.merge
                 ~f:widen_annotations
                 (Resolution.annotations previous_resolution)
@@ -3265,14 +3265,14 @@ module State (Context : Context) = struct
             in
             let merge_resolutions left_resolution right_resolution =
               let {
-                Resolution.annotations = left_annotations;
+                Refinement.Store.annotations = left_annotations;
                 temporary_annotations = left_temporary_annotations;
               }
                 =
                 Resolution.annotation_store left_resolution
               in
               let {
-                Resolution.annotations = right_annotations;
+                Refinement.Store.annotations = right_annotations;
                 temporary_annotations = right_temporary_annotations;
               }
                 =
@@ -3287,7 +3287,7 @@ module State (Context : Context) = struct
               let temporary_annotations =
                 Map.merge ~f:merge left_temporary_annotations right_temporary_annotations
               in
-              let annotation_store = { Resolution.annotations; temporary_annotations } in
+              let annotation_store = { Refinement.Store.annotations; temporary_annotations } in
               Resolution.with_annotation_store left_resolution ~annotation_store
             in
             let state =
@@ -3741,7 +3741,9 @@ module State (Context : Context) = struct
                   |> Option.value ~default:false
                 in
                 let is_local =
-                  let { Resolution.annotations; _ } = Resolution.annotation_store resolution in
+                  let { Refinement.Store.annotations; _ } =
+                    Resolution.annotation_store resolution
+                  in
                   name_reference >>= Map.find annotations |> Option.is_some
                 in
                 let check_errors errors resolved =
@@ -5082,7 +5084,7 @@ module State (Context : Context) = struct
         in
         let check_parameter
             index
-            (errors, { Resolution.annotations; temporary_annotations })
+            (errors, { Refinement.Store.annotations; temporary_annotations })
             { Node.location; value = { Parameter.name; value; annotation } }
           =
           let add_incompatible_variable_error ~errors annotation default =
@@ -5334,7 +5336,7 @@ module State (Context : Context) = struct
           in
           ( errors,
             {
-              Resolution.annotations =
+              Refinement.Store.annotations =
                 Map.set
                   annotations
                   ~key:(make_parameter_name name)
@@ -5384,7 +5386,7 @@ module State (Context : Context) = struct
                     }
                   =
                   {
-                    Resolution.annotations =
+                    Refinement.Store.annotations =
                       Resolution.annotations resolution
                       |> Map.set
                            ~key:(make_parameter_name first_name)
@@ -5990,7 +5992,7 @@ end
 
 let resolution
     global_resolution
-    ?(annotation_store = Resolution.empty_annotation_store)
+    ?(annotation_store = Refinement.Store.empty)
     (module Context : Context)
   =
   let module State = State (Context) in
@@ -6016,8 +6018,8 @@ let resolution_with_key ~global_resolution ~local_annotations ~parent ~statement
       local_annotations
       ~f:(fun map ->
         LocalAnnotationMap.ReadOnly.get_precondition map ~statement_key
-        |> Option.value ~default:Resolution.empty_annotation_store)
-      ~default:Resolution.empty_annotation_store
+        |> Option.value ~default:Refinement.Store.empty)
+      ~default:Refinement.Store.empty
   in
   resolution global_resolution ~annotation_store context |> Resolution.with_parent ~parent
 

@@ -9,11 +9,6 @@ open Ast
 
 type t [@@deriving show]
 
-type annotation_store = {
-  annotations: Refinement.Unit.t Reference.Map.t;
-  temporary_annotations: Refinement.Unit.t Reference.Map.t;
-}
-
 type resolve_statement_result_t =
   | Unreachable
   | Reachable of {
@@ -23,14 +18,12 @@ type resolve_statement_result_t =
 
 val create
   :  global_resolution:GlobalResolution.t ->
-  annotation_store:annotation_store ->
+  annotation_store:Refinement.Store.t ->
   resolve_expression:(resolution:t -> Expression.t -> t * Annotation.t) ->
   resolve_statement:(resolution:t -> Statement.t -> resolve_statement_result_t) ->
   ?parent:Reference.t ->
   unit ->
   t
-
-val empty_annotation_store : annotation_store
 
 val resolve_expression : t -> Expression.t -> t * Type.t
 
@@ -86,13 +79,13 @@ val type_variable_exists : t -> variable:Type.Variable.t -> bool
 
 val all_type_variables_in_scope : t -> Type.Variable.t list
 
-val annotation_store : t -> annotation_store
+val annotation_store : t -> Refinement.Store.t
 
 val annotations : t -> Refinement.Unit.t Reference.Map.t
 
 val temporary_annotations : t -> Refinement.Unit.t Reference.Map.t
 
-val with_annotation_store : t -> annotation_store:annotation_store -> t
+val with_annotation_store : t -> annotation_store:Refinement.Store.t -> t
 
 val parent : t -> Reference.t option
 

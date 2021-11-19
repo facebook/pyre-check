@@ -43,7 +43,7 @@ let create_annotation_store ?(immutables = []) annotations =
     !&name, annotation
   in
   {
-    Resolution.annotations = List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
+    Refinement.Store.annotations = List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
     temporary_annotations = Reference.Map.empty;
   }
 
@@ -52,11 +52,11 @@ let assert_annotation_store ~expected actual =
   let actual = Resolution.annotation_store actual in
   let compare_annotation_store
       {
-        Resolution.annotations = left_annotations;
+        Refinement.Store.annotations = left_annotations;
         temporary_annotations = left_temporary_annotations;
       }
       {
-        Resolution.annotations = right_annotations;
+        Refinement.Store.annotations = right_annotations;
         temporary_annotations = right_temporary_annotations;
       }
     =
@@ -64,7 +64,7 @@ let assert_annotation_store ~expected actual =
     equal_map left_annotations right_annotations
     && equal_map left_temporary_annotations right_temporary_annotations
   in
-  let pp_annotation_store formatter { Resolution.annotations; temporary_annotations } =
+  let pp_annotation_store formatter { Refinement.Store.annotations; temporary_annotations } =
     let annotation_to_string (name, refinement_unit) =
       Format.asprintf "%a -> %a" Reference.pp name Refinement.Unit.pp refinement_unit
     in

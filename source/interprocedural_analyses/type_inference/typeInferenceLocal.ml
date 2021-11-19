@@ -245,18 +245,19 @@ module State (Context : Context) = struct
           | _ -> None
         in
         let annotation_store =
-          {
-            Resolution.annotations =
-              Map.merge
-                ~f:widen_annotations
-                (Resolution.annotations previous.resolution)
-                (Resolution.annotations next.resolution);
-            temporary_annotations =
-              Map.merge
-                ~f:widen_annotations
-                (Resolution.temporary_annotations previous.resolution)
-                (Resolution.temporary_annotations next.resolution);
-          }
+          Refinement.Store.
+            {
+              annotations =
+                Map.merge
+                  ~f:widen_annotations
+                  (Resolution.annotations previous.resolution)
+                  (Resolution.annotations next.resolution);
+              temporary_annotations =
+                Map.merge
+                  ~f:widen_annotations
+                  (Resolution.temporary_annotations previous.resolution)
+                  (Resolution.temporary_annotations next.resolution);
+            }
         in
         let combine_errors ~key:_ left_error right_error =
           if iteration + 1 >= widening_threshold then
@@ -532,7 +533,7 @@ module State (Context : Context) = struct
     let annotation_store =
       let reset_parameter
           index
-          { Resolution.annotations; temporary_annotations }
+          Refinement.Store.{ annotations; temporary_annotations }
           { Node.value = { Parameter.name; value; annotation }; _ }
         =
         let annotations =
@@ -557,7 +558,7 @@ module State (Context : Context) = struct
                     ~data:(Refinement.Unit.create_mutable Type.Bottom)
               | _ -> annotations)
         in
-        { Resolution.annotations; temporary_annotations }
+        Refinement.Store.{ annotations; temporary_annotations }
       in
       List.foldi ~init:(Resolution.annotation_store resolution) ~f:reset_parameter parameters
     in
@@ -581,23 +582,22 @@ module State (Context : Context) = struct
             Resolution.with_annotation_store
               resolution
               ~annotation_store:
-                {
-                  Resolution.annotations =
-                    Reference.Map.of_alist_exn [return_reference, expected_return];
-                  temporary_annotations = Reference.Map.empty;
-                }
+                Refinement.Store.
+                  {
+                    annotations = Reference.Map.of_alist_exn [return_reference, expected_return];
+                    temporary_annotations = Reference.Map.empty;
+                  }
           in
           value_exn (create ~resolution ())
         in
         let combine_refinement_units
-            {
-              Resolution.annotations = left_annotations;
-              temporary_annotations = left_temporary_annotations;
-            }
-            {
-              Resolution.annotations = right_annotations;
-              temporary_annotations = right_temporary_annotations;
-            }
+            Refinement.Store.
+              { annotations = left_annotations; temporary_annotations = left_temporary_annotations }
+            Refinement.Store.
+              {
+                annotations = right_annotations;
+                temporary_annotations = right_temporary_annotations;
+              }
           =
           let add_refinement_unit ~key ~data map =
             match Refinement.Unit.base data with
@@ -612,15 +612,15 @@ module State (Context : Context) = struct
                   Map.set ~key ~data map
             | _ -> map
           in
-          {
-            Resolution.annotations =
-              Map.fold ~init:left_annotations ~f:add_refinement_unit right_annotations;
-            temporary_annotations =
-              Map.fold
-                ~init:left_temporary_annotations
-                ~f:add_refinement_unit
-                right_temporary_annotations;
-          }
+          Refinement.Store.
+            {
+              annotations = Map.fold ~init:left_annotations ~f:add_refinement_unit right_annotations;
+              temporary_annotations =
+                Map.fold
+                  ~init:left_temporary_annotations
+                  ~f:add_refinement_unit
+                  right_temporary_annotations;
+            }
         in
         let resolution =
           let annotation_store =
@@ -644,18 +644,19 @@ module State (Context : Context) = struct
         in
         let resolution =
           let annotation_store =
-            {
-              Resolution.annotations =
-                Map.fold
-                  ~init:(Resolution.annotations initial_state.resolution)
-                  ~f:update
-                  (Resolution.annotations new_state.resolution);
-              temporary_annotations =
-                Map.fold
-                  ~init:(Resolution.temporary_annotations initial_state.resolution)
-                  ~f:update
-                  (Resolution.temporary_annotations new_state.resolution);
-            }
+            Refinement.Store.
+              {
+                annotations =
+                  Map.fold
+                    ~init:(Resolution.annotations initial_state.resolution)
+                    ~f:update
+                    (Resolution.annotations new_state.resolution);
+                temporary_annotations =
+                  Map.fold
+                    ~init:(Resolution.temporary_annotations initial_state.resolution)
+                    ~f:update
+                    (Resolution.temporary_annotations new_state.resolution);
+              }
           in
           Resolution.with_annotation_store ~annotation_store resolution
         in

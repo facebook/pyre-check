@@ -74,13 +74,15 @@ let show map = Format.asprintf "%a" pp map
 
 let set
     ?(precondition =
-      { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
+      Refinement.Store.
+        { annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
     ?(postcondition =
-      { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
+      Refinement.Store.
+        { annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
     ~statement_key
     local_annotations
   =
-  let convert_to_tree { Resolution.annotations; temporary_annotations } =
+  let convert_to_tree Refinement.Store.{ annotations; temporary_annotations } =
     {
       Annotations.annotations = Reference.Map.to_tree annotations;
       temporary_annotations = Reference.Map.to_tree temporary_annotations;
@@ -100,10 +102,11 @@ module ReadOnly = struct
   type t = Annotations.t Int.Map.Tree.t
 
   let convert_to_map { Annotations.annotations; temporary_annotations } =
-    {
-      Resolution.annotations = Reference.Map.of_tree annotations;
-      temporary_annotations = Reference.Map.of_tree temporary_annotations;
-    }
+    Refinement.Store.
+      {
+        annotations = Reference.Map.of_tree annotations;
+        temporary_annotations = Reference.Map.of_tree temporary_annotations;
+      }
 
 
   let get_precondition local_annotations ~statement_key =

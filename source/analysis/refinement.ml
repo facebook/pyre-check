@@ -73,6 +73,12 @@ module IdentifierMap = MapLattice.Make (struct
   type key = Identifier.t
 end)
 
+module ReferenceMap = MapLattice.Make (struct
+  include Reference.Map
+
+  type key = Reference.t
+end)
+
 module Unit = struct
   type t = {
     base: Annotation.t option;
@@ -210,4 +216,30 @@ module Unit = struct
       create (Annotation.create_mutable Type.Top)
     else
       join ~global_resolution previous next
+end
+
+module Store = struct
+  type t = {
+    annotations: Unit.t Reference.Map.t;
+    temporary_annotations: Unit.t Reference.Map.t;
+  }
+  [@@deriving eq]
+
+  let empty = { annotations = ReferenceMap.empty; temporary_annotations = ReferenceMap.empty }
+
+  let pp format { annotations; temporary_annotations } =
+    let show_annotation (reference, unit) =
+      Format.asprintf "%a -> %a" Reference.pp reference Unit.pp unit
+    in
+    Map.to_alist annotations
+    |> List.map ~f:show_annotation
+    |> String.concat ~sep:", "
+    |> Format.fprintf format "Annotations: [%s]";
+    Map.to_alist temporary_annotations
+    |> List.map ~f:show_annotation
+    |> String.concat ~sep:", "
+    |> Format.fprintf format "Temporary Annotations: [%s]"
+
+
+  let show = Format.asprintf "%a" pp
 end

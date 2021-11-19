@@ -249,9 +249,9 @@ let create_of_module type_environment qualifier =
       let pre_annotations, post_annotations =
         let statement_key = [%hash: int * int] (node_id, statement_index) in
         ( LocalAnnotationMap.ReadOnly.get_precondition annotation_lookup ~statement_key
-          |> Option.value ~default:Resolution.empty_annotation_store,
+          |> Option.value ~default:Refinement.Store.empty,
           LocalAnnotationMap.ReadOnly.get_postcondition annotation_lookup ~statement_key
-          |> Option.value ~default:Resolution.empty_annotation_store )
+          |> Option.value ~default:Refinement.Store.empty )
       in
       let pre_resolution =
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)

@@ -9,14 +9,9 @@ open Core
 open Ast
 open Pyre
 
-type annotation_store = {
-  annotations: Refinement.Unit.t Reference.Map.t;
-  temporary_annotations: Refinement.Unit.t Reference.Map.t;
-}
-
 type t = {
   global_resolution: GlobalResolution.t;
-  annotation_store: annotation_store;
+  annotation_store: Refinement.Store.t;
   type_variables: Type.Variable.Set.t;
   resolve_expression: resolution:t -> Expression.t -> t * Annotation.t;
   resolve_statement: resolution:t -> Statement.t -> resolve_statement_result_t;
@@ -60,10 +55,6 @@ let pp format { annotation_store = { annotations; temporary_annotations }; type_
 
 
 let show resolution = Format.asprintf "%a" pp resolution
-
-let empty_annotation_store =
-  { annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty }
-
 
 let is_global { global_resolution; _ } ~reference =
   Reference.delocalize reference |> GlobalResolution.global global_resolution |> Option.is_some

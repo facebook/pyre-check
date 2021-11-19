@@ -40,3 +40,13 @@ module Unit : sig
     iteration:int ->
     t
 end
+
+module Store : sig
+  type t = {
+    annotations: Unit.t Reference.Map.t;
+    temporary_annotations: Unit.t Reference.Map.t;
+  }
+  [@@deriving eq, show]
+
+  val empty : t
+end
