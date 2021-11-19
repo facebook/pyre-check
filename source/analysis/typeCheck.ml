@@ -2020,6 +2020,35 @@ module State (Context : Context) = struct
                  expression = callee;
                })
           ~arguments
+    | Call
+        {
+          callee = { Node.value = Name (Name.Identifier "getattr"); _ };
+          arguments =
+            [{ Call.Argument.value = base; _ }; { Call.Argument.value = attribute_expression; _ }];
+        } -> (
+        let ({ Resolved.errors; resolution; _ } as base_resolved) =
+          forward_expression ~resolution ~expression:base
+        in
+        let resolution, errors, attribute_resolved =
+          forward_expression ~resolution ~expression:attribute_expression
+          |> fun { resolution; errors = attribute_errors; resolved = attribute_resolved; _ } ->
+          resolution, List.append attribute_errors errors, attribute_resolved
+        in
+        match attribute_resolved with
+        | Type.Literal (String (LiteralValue attribute)) ->
+            resolve_attribute_access
+              ~base_resolved:{ base_resolved with Resolved.resolution; errors }
+              ~base
+              ~special:false
+              ~attribute
+        | _ ->
+            {
+              Resolved.resolution;
+              errors;
+              resolved = Type.Any;
+              base = None;
+              resolved_annotation = None;
+            })
     | Call call ->
         let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
         let {

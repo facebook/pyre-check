@@ -695,6 +695,26 @@ let test_forward_expression context =
     Type.bool;
   assert_forward "undefined < 1" Type.bool;
   assert_forward "undefined == undefined" Type.Any;
+  assert_forward
+    ~environment:{|
+        class Foo:
+          field: int
+      |}
+    ~precondition:
+      ["x", Type.Primitive "test.Foo"; "y", Type.Literal (String (LiteralValue "field"))]
+    ~postcondition:
+      ["x", Type.Primitive "test.Foo"; "y", Type.Literal (String (LiteralValue "field"))]
+    "getattr(x, y)"
+    Type.integer;
+  assert_forward
+    ~environment:{|
+        class Foo:
+          field: int
+      |}
+    ~precondition:["x", Type.Primitive "test.Foo"; "y", Type.string]
+    ~postcondition:["x", Type.Primitive "test.Foo"; "y", Type.string]
+    "getattr(x, y)"
+    Type.Any;
 
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
