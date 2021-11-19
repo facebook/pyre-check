@@ -225,52 +225,62 @@ let build_source_databases buck_options targets =
   |> Lwt.return
 
 
-let load_build_maps target_and_source_database_paths =
-  Log.info "Loading Buck source databases from files...";
-  let load_build_map (target, source_database_path) =
-    let open Lwt.Infix in
-    load_partial_build_map source_database_path >>= fun build_map -> Lwt.return (target, build_map)
-  in
-  (* Make sure the targets are in a determinstic order. This is important to make the merging
-     process deterministic later. *)
-  List.sort target_and_source_database_paths ~compare:(fun (left_target, _) (right_target, _) ->
-      Target.compare left_target right_target)
-  |> List.map ~f:load_build_map
-  |> Lwt.all
-
-
-let merge_build_maps target_and_build_maps =
-  Log.info "Merging source databases...";
-  let merge (target_and_build_maps_sofar, build_map_sofar) (next_target, next_build_map) =
-    let open BuildMap.Partial in
-    match merge build_map_sofar next_build_map with
-    | MergeResult.Incompatible { MergeResult.IncompatibleItem.key; left_value; right_value } ->
-        Log.warning "Cannot include target for type checking: %s" (Target.show next_target);
-        (* For better error message, try to figure out which target casued the conflict. *)
-        let conflicting_target =
-          let match_target ~key (target, build_map) =
-            if contains ~key build_map then Some target else None
-          in
-          List.find_map target_and_build_maps_sofar ~f:(match_target ~key)
+let merge_target_and_build_map
+    (target_and_build_maps_sofar, build_map_sofar)
+    (next_target, next_build_map)
+  =
+  let open BuildMap.Partial in
+  match merge build_map_sofar next_build_map with
+  | MergeResult.Incompatible { MergeResult.IncompatibleItem.key; left_value; right_value } ->
+      Log.warning "Cannot include target for type checking: %s" (Target.show next_target);
+      (* For better error message, try to figure out which target casued the conflict. *)
+      let conflicting_target =
+        let match_target ~key (target, build_map) =
+          if contains ~key build_map then Some target else None
         in
-        Log.info
-          "... file `%s` has already been mapped to `%s`%s but the target maps it to `%s` instead. "
-          key
-          left_value
-          (Option.value_map conflicting_target ~default:"" ~f:(Format.sprintf " by `%s`"))
-          right_value;
-        target_and_build_maps_sofar, build_map_sofar
-    | MergeResult.Ok merged_build_map ->
-        (next_target, next_build_map) :: target_and_build_maps_sofar, merged_build_map
+        List.find_map target_and_build_maps_sofar ~f:(match_target ~key)
+      in
+      Log.info
+        "... file `%s` has already been mapped to `%s`%s but the target maps it to `%s` instead. "
+        key
+        left_value
+        (Option.value_map conflicting_target ~default:"" ~f:(Format.sprintf " by `%s`"))
+        right_value;
+      target_and_build_maps_sofar, build_map_sofar
+  | MergeResult.Ok merged_build_map ->
+      (next_target, next_build_map) :: target_and_build_maps_sofar, merged_build_map
+
+
+let load_and_merge_build_maps target_and_source_database_paths =
+  let open Lwt.Infix in
+  let number_of_targets_to_load = List.length target_and_source_database_paths in
+  Log.info "Loading source databases for %d targets..." number_of_targets_to_load;
+  let rec fold ~sofar = function
+    | [] -> Lwt.return sofar
+    | (next_target, next_build_map_path) :: rest ->
+        load_partial_build_map next_build_map_path
+        >>= fun next_build_map ->
+        let sofar = merge_target_and_build_map sofar (next_target, next_build_map) in
+        fold ~sofar rest
   in
-  let reversed_target_and_build_maps, merged_build_map =
-    List.fold target_and_build_maps ~init:([], BuildMap.Partial.empty) ~f:merge
-  in
+  fold target_and_source_database_paths ~sofar:([], BuildMap.Partial.empty)
+  >>= fun (reversed_target_and_build_maps, merged_build_map) ->
   let targets = List.rev_map reversed_target_and_build_maps ~f:fst in
-  if List.length targets < List.length target_and_build_maps then
+  if List.length targets < number_of_targets_to_load then
     Log.warning
       "One or more targets get dropped by Pyre due to potential conflicts. For more details, see \
        https://fburl.com/pyre-target-conflict";
+  Lwt.return (targets, BuildMap.create merged_build_map)
+
+
+(* Unlike [load_and_merge_build_maps], this function assumes build maps are already loaded into
+   memory and just try to merge them synchronously. Its main purpose is to facilitate testing of the
+   [merge_target_and_build_map] function. *)
+let merge_build_maps target_and_build_maps =
+  let reversed_target_and_build_maps, merged_build_map =
+    List.fold target_and_build_maps ~init:([], BuildMap.Partial.empty) ~f:merge_target_and_build_map
+  in
+  let targets = List.rev_map reversed_target_and_build_maps ~f:fst in
   targets, BuildMap.create merged_build_map
 
 
@@ -283,9 +293,12 @@ let merge_build_maps target_and_build_maps =
    a warning will be printed and the target will be dropped. If a target is dropped, it will not
    show up in the final target list returned from this API (alongside with the build map). *)
 let load_and_merge_source_databases target_and_source_database_paths =
-  let open Lwt.Infix in
-  load_build_maps target_and_source_database_paths
-  >>= fun target_and_build_maps -> Lwt.return (merge_build_maps target_and_build_maps)
+  (* Make sure the targets are in a determinstic order. This is important to make the merging
+     process deterministic later. Note that our dependency on the ordering of the target also
+     implies that the loading process is non-parallelizable. *)
+  List.sort target_and_source_database_paths ~compare:(fun (left_target, _) (right_target, _) ->
+      Target.compare left_target right_target)
+  |> load_and_merge_build_maps
 
 
 (* A convenient wrapper that stitches together [normalize_targets], [build_source_databases], and
