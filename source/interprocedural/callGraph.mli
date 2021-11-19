@@ -68,37 +68,6 @@ module RawCallees : sig
   val pp_option : Format.formatter -> t option -> unit
 end
 
-(* TODO(T105570363): Migrate to the new representation. *)
-module LegacyRegularTargets : sig
-  type t = {
-    implicit_self: bool;
-    collapse_tito: bool;
-    return_type: Type.t;
-    targets: Target.t list;
-  }
-  [@@deriving eq, show]
-end
-
-(* TODO(T105570363): Migrate to the new representation. *)
-module LegacyRawCallees : sig
-  type t =
-    | ConstructorTargets of {
-        new_targets: Target.t list;
-        init_targets: Target.t list;
-        return_type: Type.t;
-      }
-    | RegularTargets of LegacyRegularTargets.t
-    | HigherOrderTargets of {
-        higher_order_function: LegacyRegularTargets.t;
-        callable_argument: int * LegacyRegularTargets.t;
-      }
-  [@@deriving eq, show]
-
-  val pp_option : Format.formatter -> t option -> unit
-
-  val from_raw_callees : RawCallees.t -> t option
-end
-
 module Callees : sig
   type t =
     | Callees of RawCallees.t
