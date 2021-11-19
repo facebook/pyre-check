@@ -142,6 +142,23 @@ type jumps = {
   yield: Node.t;
 }
 
+let match_cases_refutable cases =
+  let is_case_refutable { Match.Case.guard; pattern; _ } =
+    let rec is_pattern_irrefutable { Ast.Node.value = pattern; _ } =
+      match pattern with
+      | Match.Pattern.MatchAs { pattern = None; _ }
+      | MatchWildcard ->
+          true
+      | Match.Pattern.MatchAs { pattern = Some pattern; _ } -> is_pattern_irrefutable pattern
+      | MatchOr patterns -> List.exists ~f:is_pattern_irrefutable patterns
+      | _ -> false
+    in
+    Option.is_some guard || not (is_pattern_irrefutable pattern)
+  in
+  (* The parser guarantees irrefutable case will only appear at the last one. *)
+  List.last cases >>| is_case_refutable |> Option.value ~default:true
+
+
 let pp format graph =
   let print_node index = Format.fprintf format "%a\n" Node.pp (Hashtbl.find_exn graph index) in
   Hashtbl.keys graph |> List.sort ~compare:Int.compare |> List.iter ~f:print_node
@@ -268,11 +285,6 @@ let create define =
          *      |           \           \                  \             v
          *      \-----------------------------------------------------> [join]
          *)
-        let is_refutable =
-          (* TODO(T102720335): Support match statetment. *)
-          let { Match.Case.guard; _ } = List.last_exn cases in
-          Option.is_some guard
-        in
         let join = Node.empty graph Node.Join in
         let from_case predecessor case =
           let test = MatchTranslate.to_condition ~subject ~case in
@@ -291,7 +303,7 @@ let create define =
           else_node
         in
         let final_else = List.fold cases ~init:predecessor ~f:from_case in
-        if is_refutable then Node.connect final_else join;
+        if match_cases_refutable cases then Node.connect final_else join;
         create statements jumps join
     | { Ast.Node.value = Try ({ Try.body; orelse; finally; handlers } as block); _ } :: statements
       ->

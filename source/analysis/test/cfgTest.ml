@@ -418,6 +418,70 @@ let test_match _ =
       node 8 expected_irrefutable_case_pass_block [7] [5];
       node 9 expected_irrefutable_case_fail_block [7] [];
     ];
+  assert_true
+    (match_cases_refutable
+       [{ Match.Case.pattern = +Match.Pattern.MatchWildcard; guard = Some !"guard"; body = [] }]);
+  assert_true
+    (match_cases_refutable
+       [
+         {
+           Match.Case.pattern = +Match.Pattern.MatchSingleton Ast.Expression.Constant.NoneLiteral;
+           guard = None;
+           body = [];
+         };
+       ]);
+  assert_true
+    (match_cases_refutable
+       [
+         { Match.Case.pattern = +Match.Pattern.MatchWildcard; guard = Some !"guard1"; body = [] };
+         { Match.Case.pattern = +Match.Pattern.MatchWildcard; guard = Some !"guard2"; body = [] };
+       ]);
+  assert_false
+    (match_cases_refutable
+       [{ Match.Case.pattern = +Match.Pattern.MatchWildcard; guard = None; body = [] }]);
+  assert_false
+    (match_cases_refutable
+       [
+         { Match.Case.pattern = +Match.Pattern.MatchWildcard; guard = Some !"guard"; body = [] };
+         { Match.Case.pattern = +Match.Pattern.MatchWildcard; guard = None; body = [] };
+       ]);
+  assert_false
+    (match_cases_refutable
+       [
+         {
+           Match.Case.pattern = +Match.Pattern.MatchAs { pattern = None; name = "x" };
+           guard = None;
+           body = [];
+         };
+       ]);
+  assert_false
+    (match_cases_refutable
+       [
+         {
+           Match.Case.pattern =
+             +Match.Pattern.MatchAs
+                {
+                  pattern = Some (+Match.Pattern.MatchAs { pattern = None; name = "y" });
+                  name = "x";
+                };
+           guard = None;
+           body = [];
+         };
+       ]);
+  assert_false
+    (match_cases_refutable
+       [
+         {
+           Match.Case.pattern =
+             +Match.Pattern.MatchOr
+                [
+                  +Match.Pattern.MatchSingleton Ast.Expression.Constant.NoneLiteral;
+                  +Match.Pattern.MatchWildcard;
+                ];
+           guard = None;
+           body = [];
+         };
+       ]);
   ()
 
 

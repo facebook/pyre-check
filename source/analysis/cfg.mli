@@ -62,3 +62,6 @@ val to_dot
 val create : Define.t -> t
 
 val node : t -> id:int -> Node.t
+
+(* Exposed for testing only *)
+val match_cases_refutable : Match.Case.t list -> bool
