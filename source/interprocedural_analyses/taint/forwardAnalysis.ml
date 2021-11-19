@@ -77,14 +77,26 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           String.Map.Tree.find name_to_callees (CallGraph.call_name call)
       | None -> None
     in
-    let callees = Option.bind ~f:CallGraph.LegacyRawCallees.from_raw_callees callees in
+    let callees =
+      match callees with
+      | Some callees -> callees
+      | None ->
+          (* TODO(T105570363): This should be a fatal error. *)
+          Log.warning
+            "Could not find callees for `%a` at `%a` in the call graph."
+            Expression.pp
+            (Node.create_with_default_location (Expression.Call call))
+            Location.pp
+            location;
+          CallGraph.RawCallees.create_unresolved Type.Any
+    in
     log
       "Resolved callees for call `%a` at %a:@,%a"
       Expression.pp
       (Node.create_with_default_location (Expression.Call call))
       Location.pp
       location
-      CallGraph.LegacyRawCallees.pp_option
+      CallGraph.RawCallees.pp
       callees;
     callees
 
@@ -97,7 +109,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           String.Map.Tree.find name_to_callees attribute
       | None -> None
     in
-    let callees = Option.bind ~f:CallGraph.LegacyRawCallees.from_raw_callees callees in
     let () =
       match callees with
       | Some callees ->
@@ -106,7 +117,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             attribute
             Location.pp
             location
-            CallGraph.LegacyRawCallees.pp
+            CallGraph.RawCallees.pp
             callees
       | _ -> ()
     in
@@ -232,13 +243,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~resolution
       ~triggered_sinks
       ~call_location
-      ~collapse_tito
+      ~self
+      ~self_taint
       ~arguments
       ~arguments_taint
       ~return_type_breadcrumbs
       ~state:initial_state
-      call_target
+      { CallGraph.CallTarget.target = call_target; implicit_self; collapse_tito }
     =
+    (* Add implicit self. *)
+    let arguments, arguments_taint =
+      if implicit_self then
+        ( { Call.Argument.name = None; value = Option.value_exn self } :: arguments,
+          Option.value_exn self_taint :: arguments_taint )
+      else
+        arguments, arguments_taint
+    in
     let ({ Model.model = { TaintResult.forward; backward; sanitizers; modes }; _ } as taint_model) =
       TaintProfiler.track_model_fetch
         ~profiler
@@ -533,7 +553,105 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     returned_taint, state
 
 
-  let apply_call_targets_with_arguments_taint
+  let apply_obscure_call ~callee ~callee_taint ~arguments ~arguments_taint ~state:initial_state =
+    log
+      "Forward analysis of obscure call to `%a` with arguments (%a)"
+      Expression.pp
+      callee
+      Ast.Expression.pp_expression_argument_list
+      arguments;
+    let callee_taint =
+      Option.value_exn callee_taint
+      |> ForwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:callee.Node.location
+    in
+    let analyze_argument taint_accumulator ({ Call.Argument.value = argument; _ }, argument_taint) =
+      let argument_taint =
+        match argument.Node.value with
+        | Starred (Starred.Once _)
+        | Starred (Starred.Twice _) ->
+            ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] argument_taint
+        | _ -> argument_taint
+      in
+      argument_taint
+      |> ForwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
+      |> ForwardState.Tree.join taint_accumulator
+    in
+    let taint =
+      List.zip_exn arguments arguments_taint
+      |> List.fold ~f:analyze_argument ~init:callee_taint
+      |> ForwardState.Tree.add_breadcrumb (Features.obscure ())
+    in
+    taint, initial_state
+
+
+  let apply_constructor_targets
+      ~resolution
+      ~triggered_sinks
+      ~call_location
+      ~callee
+      ~callee_taint
+      ~arguments
+      ~arguments_taint
+      ~new_targets
+      ~init_targets
+      ~return_type_breadcrumbs
+      ~state:initial_state
+    =
+    (* Call `__new__`. Add the `cls` implicit argument. *)
+    let new_return_taint, state =
+      match new_targets with
+      | [] -> ForwardState.Tree.bottom, initial_state
+      | [`Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" }] ->
+          ForwardState.Tree.bottom, initial_state
+      | new_targets ->
+          List.map new_targets ~f:(fun target ->
+              apply_call_target
+                ~resolution
+                ~triggered_sinks
+                ~call_location
+                ~self:(Some callee)
+                ~self_taint:callee_taint
+                ~arguments
+                ~arguments_taint
+                ~return_type_breadcrumbs
+                ~state:initial_state
+                { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+          |> List.fold
+               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
+               ~f:(fun (taint, state) (new_taint, new_state) ->
+                 ForwardState.Tree.join taint new_taint, join state new_state)
+    in
+
+    (* Call `__init__`. Add the `self` implicit argument. *)
+    let taint, state =
+      match init_targets with
+      | [] -> new_return_taint, state
+      | init_targets ->
+          let call_expression =
+            Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
+          in
+          List.map init_targets ~f:(fun target ->
+              apply_call_target
+                ~resolution
+                ~triggered_sinks
+                ~call_location
+                ~self:(Some call_expression)
+                ~self_taint:(Some new_return_taint)
+                ~arguments
+                ~arguments_taint
+                ~return_type_breadcrumbs
+                ~state
+                { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+          |> List.fold
+               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
+               ~f:(fun (taint, state) (new_taint, new_state) ->
+                 ForwardState.Tree.join taint new_taint, join state new_state)
+    in
+
+    taint, state
+
+
+  let apply_callees_with_arguments_taint
       ~resolution
       ~callee
       ~call_location
@@ -543,10 +661,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint
       ~state:initial_state
       {
-        CallGraph.LegacyRegularTargets.implicit_self;
-        targets = call_targets;
-        collapse_tito;
+        CallGraph.RawCallees.call_targets;
+        new_targets;
+        init_targets;
         return_type;
+        higher_order_parameter = _;
+        unresolved;
       }
     =
     (* We keep a table of kind -> set of triggered labels across all targets,
@@ -555,100 +675,97 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let call_targets =
       (* Special handling for the missing-flow analysis. *)
-      match call_targets with
-      | [] when TaintConfiguration.is_missing_flow_analysis Type ->
-          let callable =
-            Model.unknown_callee
-              ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
-              ~call:(Expression.Call { Call.callee; arguments })
-          in
-          if not (Interprocedural.FixpointState.has_model callable) then
-            Model.register_unknown_callee_model callable;
-          [callable]
-      | _ -> call_targets
-    in
-
-    (* Add implicit self. *)
-    let arguments, arguments_taint =
-      if implicit_self then
-        let receiver =
-          match callee.Node.value with
-          | Expression.Name (Name.Attribute { base; _ }) -> base
-          | _ ->
-              (* Default to a benign self if we don't understand/retain information of what self is. *)
-              Expression.Constant Constant.NoneLiteral |> Node.create ~location:callee.Node.location
+      if unresolved && TaintConfiguration.is_missing_flow_analysis Type then (
+        let callable =
+          Model.unknown_callee
+            ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
+            ~call:(Expression.Call { Call.callee; arguments })
         in
-        let receiver_taint = Option.value_exn self_taint in
-        ( { Call.Argument.name = None; value = receiver } :: arguments,
-          receiver_taint :: arguments_taint )
+        if not (Interprocedural.FixpointState.has_model callable) then
+          Model.register_unknown_callee_model callable;
+        let target =
+          { CallGraph.CallTarget.target = callable; implicit_self = false; collapse_tito = true }
+        in
+        target :: call_targets)
       else
-        arguments, arguments_taint
+        call_targets
     in
 
-    let taint, state =
-      match call_targets with
-      | [] ->
-          (* If we don't have a call target: propagate argument taint. *)
-          let callee_taint =
-            Option.value_exn callee_taint
-            |> ForwardState.Tree.transform
-                 Features.TitoPositionSet.Element
-                 Add
-                 ~f:callee.Node.location
-          in
-          let analyze_argument
-              taint_accumulator
-              ({ Call.Argument.value = argument; _ }, argument_taint)
-            =
-            let argument_taint =
-              match argument.Node.value with
-              | Starred (Starred.Once _)
-              | Starred (Starred.Twice _) ->
-                  ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] argument_taint
-              | _ -> argument_taint
-            in
-            argument_taint
-            |> ForwardState.Tree.transform
-                 Features.TitoPositionSet.Element
-                 Add
-                 ~f:argument.Node.location
-            |> ForwardState.Tree.join taint_accumulator
-          in
-          let taint =
-            List.zip_exn arguments arguments_taint
-            |> List.fold ~f:analyze_argument ~init:callee_taint
-            |> ForwardState.Tree.add_breadcrumb (Features.obscure ())
-          in
-          taint, initial_state
-      | call_targets ->
-          let return_type_breadcrumbs =
-            lazy
-              (let resolution = Resolution.global_resolution resolution in
-               Features.type_breadcrumbs ~resolution (Some return_type))
-          in
+    (* Extract the implicit self, if any *)
+    let self =
+      match callee.Node.value with
+      | Expression.Name (Name.Attribute { base; _ }) -> Some base
+      | _ ->
+          (* Default to a benign self if we don't understand/retain information of what self is. *)
+          Expression.Constant Constant.NoneLiteral
+          |> Node.create ~location:callee.Node.location
+          |> Option.some
+    in
 
-          List.map
-            call_targets
-            ~f:
-              (apply_call_target
-                 ~resolution
-                 ~triggered_sinks
-                 ~call_location
-                 ~collapse_tito
-                 ~arguments
-                 ~arguments_taint
-                 ~return_type_breadcrumbs
-                 ~state:initial_state)
-          |> List.fold
-               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
-               ~f:(fun (taint, state) (new_taint, new_state) ->
-                 ForwardState.Tree.join taint new_taint, join state new_state)
+    let return_type_breadcrumbs =
+      lazy
+        (let resolution = Resolution.global_resolution resolution in
+         Features.type_breadcrumbs ~resolution (Some return_type))
+    in
+
+    (* Apply regular call targets. *)
+    let taint, state =
+      List.map
+        call_targets
+        ~f:
+          (apply_call_target
+             ~resolution
+             ~triggered_sinks
+             ~call_location
+             ~self
+             ~self_taint
+             ~arguments
+             ~arguments_taint
+             ~return_type_breadcrumbs
+             ~state:initial_state)
+      |> List.fold
+           ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
+           ~f:(fun (taint, state) (new_taint, new_state) ->
+             ForwardState.Tree.join taint new_taint, join state new_state)
+    in
+
+    (* Apply an obscure call if the call was not fully resolved. *)
+    let taint, state =
+      if unresolved then
+        let obscure_taint, new_state =
+          apply_obscure_call ~callee ~callee_taint ~arguments ~arguments_taint ~state:initial_state
+        in
+        ForwardState.Tree.join taint obscure_taint, join state new_state
+      else
+        taint, state
+    in
+
+    (* Apply constructor calls, if any. *)
+    let taint, state =
+      match new_targets, init_targets with
+      | [], [] -> taint, state
+      | _ ->
+          let new_taint, new_state =
+            apply_constructor_targets
+              ~resolution
+              ~triggered_sinks
+              ~call_location
+              ~callee
+              ~callee_taint
+              ~arguments
+              ~arguments_taint
+              ~new_targets
+              ~init_targets
+              ~return_type_breadcrumbs
+              ~state:initial_state
+          in
+          ForwardState.Tree.join taint new_taint, join state new_state
     in
 
     let taint =
       (* Add index breadcrumb if appropriate. *)
       match Node.value callee, arguments with
-      | Expression.Name (Name.Attribute { attribute = "get"; _ }), _self :: index :: _ ->
+      | Expression.Name (Name.Attribute { attribute = "get"; _ }), index :: _ ->
           let label = get_index index.value in
           ForwardState.Tree.transform
             Features.FirstIndexSet.Self
@@ -692,12 +809,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         { self_taint = Some ForwardState.Tree.bottom; callee_taint = Some taint; state }
 
 
-  (* Lazy version of `analyze_callee` which only analyze what we need for a target. *)
-  and analyze_callee_for_targets ~resolution ~state ~callee = function
-    | { CallGraph.LegacyRegularTargets.targets = []; _ } ->
+  (* Lazy version of `analyze_callee` which only analyze what we need for a call site. *)
+  and analyze_callee_for_raw_callees ~resolution ~state ~callee = function
+    | { CallGraph.RawCallees.unresolved = true; _ }
+    | { CallGraph.RawCallees.new_targets = _ :: _; _ }
+    | { CallGraph.RawCallees.init_targets = _ :: _; _ } ->
         (* We need both the taint on self and on the whole callee. *)
         analyze_callee ~resolution ~state ~callee
-    | { CallGraph.LegacyRegularTargets.implicit_self = true; _ } ->
+    | { CallGraph.RawCallees.call_targets; _ }
+      when List.exists
+             ~f:(fun { CallGraph.CallTarget.implicit_self; _ } -> implicit_self)
+             call_targets ->
         (* We only need the taint of the receiver. *)
         let taint, state =
           match callee.Node.value with
@@ -721,25 +843,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Explicitly analyze arguments from left to right. *)
     let arguments_taint, state = List.fold ~init:([], state) ~f:compute_argument_taint arguments in
     List.rev arguments_taint, state
-
-
-  and apply_call_targets ~resolution ~callee ~call_location ~arguments ~state call_targets =
-    let { self_taint; callee_taint; state } =
-      analyze_callee_for_targets ~resolution ~state ~callee call_targets
-    in
-
-    let arguments_taint, state = analyze_arguments ~resolution ~state ~arguments in
-
-    apply_call_targets_with_arguments_taint
-      ~resolution
-      ~callee
-      ~call_location
-      ~arguments
-      ~self_taint
-      ~callee_taint
-      ~arguments_taint
-      ~state
-      call_targets
 
 
   and analyze_dictionary_entry ~resolution (taint, state) { Dictionary.Entry.key; value } =
@@ -826,80 +929,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ -> analyze_expression ~resolution ~state ~expression
 
 
-  and analyze_constructor_call
+  and analyze_arguments_for_lambda_call
       ~resolution
-      ~location
-      ~callee
       ~arguments
-      ~new_targets
-      ~init_targets
-      ~return_type
       ~state
-    =
-    (* Analyze arguments first. *)
-    let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
-    let arguments_taint, state = analyze_arguments ~resolution ~state ~arguments in
-
-    (* Call `__new__`. *)
-    let new_return_taint, state =
-      match new_targets with
-      | [] -> ForwardState.Tree.bottom, state
-      | [`Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" }] ->
-          ForwardState.Tree.bottom, state
-      | new_targets ->
-          (* Add the `cls` implicit argument. *)
-          let new_arguments = { Call.Argument.name = None; value = callee } :: arguments in
-          let new_arguments_taint = callee_taint :: arguments_taint in
-          apply_call_targets_with_arguments_taint
-            ~resolution
-            ~callee
-            ~call_location:location
-            ~arguments:new_arguments
-            ~self_taint:(Some ForwardState.Tree.bottom)
-            ~callee_taint:(Some ForwardState.Tree.bottom)
-            ~arguments_taint:new_arguments_taint
-            ~state
-            {
-              CallGraph.LegacyRegularTargets.implicit_self = false;
-              collapse_tito = true;
-              return_type;
-              targets = new_targets;
-            }
-    in
-
-    (* Call `__init__`. Add the `self` implicit argument. *)
-    let call_expression = Expression.Call { Call.callee; arguments } |> Node.create ~location in
-    let init_arguments = { Call.Argument.name = None; value = call_expression } :: arguments in
-    let init_arguments_taint = new_return_taint :: arguments_taint in
-    apply_call_targets_with_arguments_taint
-      ~resolution
-      ~callee
-      ~call_location:location
-      ~arguments:init_arguments
-      ~self_taint:(Some ForwardState.Tree.bottom)
-      ~callee_taint:(Some ForwardState.Tree.bottom)
-      ~arguments_taint:init_arguments_taint
-      ~state
-      {
-        CallGraph.LegacyRegularTargets.implicit_self = false;
-        collapse_tito = true;
-        return_type;
-        targets = init_targets;
-      }
-
-
-  and analyze_lambda_call
-      ~resolution
-      ~location
-      ~callee
       ~lambda_argument:
-        (( lambda_index,
-           { Call.Argument.value = { location = lambda_location; _ } as lambda_callee; _ } ) as
-        lambda_argument)
-      ~non_lambda_arguments
-      ~higher_order_function
-      ~callable_argument
-      ~state
+        { Call.Argument.value = { location = lambda_location; _ } as lambda_callee; _ }
+      { CallGraph.HigherOrderParameter.index = lambda_index; call_targets; return_type }
     =
     (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
      * hof(q, fn, x, y) gets translated into the following block: (analyzed forwards)
@@ -910,11 +946,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      *   $result = fn
      * hof(q, $result, x, y)
      *)
+    let non_lambda_arguments =
+      List.mapi ~f:(fun index value -> index, value) (List.take arguments lambda_index)
+      @ List.mapi
+          ~f:(fun relative_index value -> lambda_index + 1 + relative_index, value)
+          (List.drop arguments (lambda_index + 1))
+    in
 
     (* Analyze all arguments once. *)
-    let { self_taint; callee_taint; state } =
-      analyze_callee_for_targets ~resolution ~state ~callee higher_order_function
-    in
     let { self_taint = lambda_self_taint; callee_taint = lambda_taint; state } =
       analyze_callee ~resolution ~state ~callee:lambda_callee
     in
@@ -962,7 +1001,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let arguments_taint = [all_argument_taint; all_argument_taint] in
       let taint, state =
-        apply_call_targets_with_arguments_taint
+        apply_callees_with_arguments_taint
           ~resolution
           ~callee:lambda_callee
           ~call_location:lambda_location
@@ -971,7 +1010,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~callee_taint:(Some lambda_taint)
           ~arguments_taint
           ~state
-          callable_argument
+          (CallGraph.RawCallees.create ~call_targets ~return_type ())
       in
       let taint = ForwardState.Tree.add_breadcrumb (Features.lambda ()) taint in
       taint, state
@@ -982,25 +1021,51 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let result_taint = ForwardState.Tree.join if_branch_result_taint lambda_taint in
     let state = join state if_branch_state in
 
-    (* Simulate `hof(q, $result, x, y)`. *)
+    (* Return the arguments taint. The caller will simulate `hof(q, $result, x, y)`. *)
     let index_map_to_ordered_list map =
       let compare_by_index (left_index, _) (right_index, _) = Int.compare left_index right_index in
       map |> List.sort ~compare:compare_by_index |> List.map ~f:snd
     in
-    let arguments = index_map_to_ordered_list (lambda_argument :: non_lambda_arguments) in
     let arguments_taint =
       index_map_to_ordered_list ((lambda_index, result_taint) :: non_lambda_arguments_taint)
     in
-    apply_call_targets_with_arguments_taint
+    arguments_taint, state
+
+
+  and apply_callees ~resolution ~callee ~call_location ~arguments ~state raw_callees =
+    let { self_taint; callee_taint; state } =
+      analyze_callee_for_raw_callees ~resolution ~state ~callee raw_callees
+    in
+
+    let arguments_taint, state =
+      match raw_callees with
+      | {
+       higher_order_parameter =
+         Some ({ CallGraph.HigherOrderParameter.index; _ } as higher_order_parameter);
+       _;
+      } -> (
+          match List.nth arguments index with
+          | Some lambda_argument ->
+              analyze_arguments_for_lambda_call
+                ~resolution
+                ~arguments
+                ~state
+                ~lambda_argument
+                higher_order_parameter
+          | _ -> analyze_arguments ~resolution ~state ~arguments)
+      | _ -> analyze_arguments ~resolution ~state ~arguments
+    in
+
+    apply_callees_with_arguments_taint
       ~resolution
       ~callee
-      ~call_location:location
+      ~call_location
+      ~arguments
       ~self_taint
       ~callee_taint
-      ~arguments
       ~arguments_taint
       ~state
-      higher_order_function
+      raw_callees
 
 
   and analyze_call ~resolution ~location ~state ~callee ~arguments =
@@ -1075,7 +1140,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        callee =
          { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
        arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
-      } -> (
+      } ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in
           let state =
             analyze_assignment
@@ -1088,16 +1153,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body is
              tainted. *)
-          match get_callees ~location ~call:{ Call.callee; arguments } with
-          | Some (RegularTargets targets) ->
-              apply_call_targets
-                ~resolution
-                ~callee
-                ~call_location:location
-                ~arguments
-                ~state
-                targets
-          | _ -> taint, state)
+          let callees = get_callees ~location ~call:{ Call.callee; arguments } in
+          if CallGraph.RawCallees.is_partially_resolved callees then
+            apply_callees ~resolution ~callee ~call_location:location ~arguments ~state callees
+          else
+            taint, state
       (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
          being frozen post-initialization. *)
       | {
@@ -1256,103 +1316,41 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~f:add_root_taint
           in
           taint, state
+      | {
+       callee = { Node.value = Expression.Name (Name.Identifier "reveal_taint"); _ };
+       arguments = [{ Call.Argument.value = expression; _ }];
+      } ->
+          let taint, _ = analyze_expression ~resolution ~state ~expression in
+          let location =
+            Node.location callee |> Location.with_module ~qualifier:FunctionContext.qualifier
+          in
+          Log.dump
+            "%a: Revealed forward taint for `%s`: %s"
+            Location.WithModule.pp
+            location
+            (Transform.sanitize_expression expression |> Expression.show)
+            (ForwardState.Tree.show taint);
+          ForwardState.Tree.bottom, state
+      | {
+       callee = { Node.value = Expression.Name (Name.Identifier "reveal_type"); _ };
+       arguments = [{ Call.Argument.value = expression; _ }];
+      } ->
+          let location =
+            Node.location callee |> Location.with_module ~qualifier:FunctionContext.qualifier
+          in
+          Log.dump
+            "%a: Revealed type for %s: %s"
+            Location.WithModule.pp
+            location
+            (Transform.sanitize_expression expression |> Expression.show)
+            (Resolution.resolve_expression_to_type resolution expression |> Type.show);
+          ForwardState.Tree.bottom, state
       | _ ->
           let call = { Call.callee; arguments } in
           let { Call.callee; arguments } = CallGraph.redirect_special_calls ~resolution call in
+          let callees = get_callees ~location ~call:{ Call.callee; arguments } in
           let taint, state =
-            match get_callees ~location ~call:{ Call.callee; arguments } with
-            | Some (RegularTargets targets) ->
-                apply_call_targets
-                  ~resolution
-                  ~call_location:location
-                  ~callee
-                  ~arguments
-                  ~state
-                  targets
-            | Some
-                (HigherOrderTargets
-                  { higher_order_function; callable_argument = index, callable_argument }) -> (
-                let lambda_argument = index, List.nth arguments index in
-                match lambda_argument with
-                | index, Some lambda_argument ->
-                    let non_lambda_arguments =
-                      List.mapi ~f:(fun index value -> index, value) (List.take arguments index)
-                      @ List.mapi
-                          ~f:(fun relative_index value -> index + 1 + relative_index, value)
-                          (List.drop arguments (index + 1))
-                    in
-                    analyze_lambda_call
-                      ~resolution
-                      ~location
-                      ~callee
-                      ~lambda_argument:(index, lambda_argument)
-                      ~non_lambda_arguments
-                      ~higher_order_function
-                      ~callable_argument
-                      ~state
-                | _ ->
-                    apply_call_targets
-                      ~resolution
-                      ~call_location:location
-                      ~callee
-                      ~arguments
-                      ~state
-                      higher_order_function)
-            | Some (ConstructorTargets { new_targets; init_targets; return_type }) ->
-                analyze_constructor_call
-                  ~resolution
-                  ~location
-                  ~callee
-                  ~arguments
-                  ~new_targets
-                  ~init_targets
-                  ~return_type
-                  ~state
-            | None ->
-                (* No target, treat call as obscure *)
-                (* reveal_taint(). *)
-                begin
-                  match Node.value callee, arguments with
-                  | ( Expression.Name (Name.Identifier "reveal_taint"),
-                      [{ Call.Argument.value = expression; _ }] ) ->
-                      let taint, _ = analyze_expression ~resolution ~state ~expression in
-                      let location =
-                        Node.location callee
-                        |> Location.with_module ~qualifier:FunctionContext.qualifier
-                      in
-                      Log.dump
-                        "%a: Revealed forward taint for `%s`: %s"
-                        Location.WithModule.pp
-                        location
-                        (Transform.sanitize_expression expression |> Expression.show)
-                        (ForwardState.Tree.show taint)
-                  | ( Expression.Name (Name.Identifier "reveal_type"),
-                      [{ Call.Argument.value = expression; _ }] ) ->
-                      let location =
-                        Node.location callee
-                        |> Location.with_module ~qualifier:FunctionContext.qualifier
-                      in
-                      Log.dump
-                        "%a: Revealed type for %s: %s"
-                        Location.WithModule.pp
-                        location
-                        (Transform.sanitize_expression expression |> Expression.show)
-                        (Resolution.resolve_expression_to_type resolution expression |> Type.show)
-                  | _ -> ()
-                end;
-                (* TODO(T105570363): call graph should never return None. *)
-                apply_call_targets
-                  ~resolution
-                  ~callee
-                  ~call_location:location
-                  ~arguments
-                  ~state
-                  {
-                    CallGraph.LegacyRegularTargets.implicit_self = false;
-                    collapse_tito = false;
-                    return_type = Type.Any;
-                    targets = [];
-                  }
+            apply_callees ~resolution ~call_location:location ~callee ~arguments ~state callees
           in
           let taint =
             match Node.value callee with
@@ -1406,18 +1404,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if resolve_properties then get_property_callees ~location ~attribute else None
     in
     match properties with
-    | Some (RegularTargets targets) ->
+    | Some { call_targets = _ :: _ as call_targets; return_type; _ } ->
         let taint, state =
-          apply_call_targets_with_arguments_taint
+          apply_callees_with_arguments_taint
             ~resolution
             ~callee:expression
             ~call_location:location
             ~arguments:[]
             ~self_taint:(Some base_taint)
-            ~callee_taint:(Some ForwardState.Tree.bottom)
+            ~callee_taint:None
             ~arguments_taint:[]
             ~state
-            targets
+            (CallGraph.RawCallees.create ~call_targets ~return_type ())
         in
         { base_taint = ForwardState.Tree.bottom; attribute_taint = taint; state }
     | _ ->
@@ -1758,16 +1756,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
               match get_property_callees ~location ~attribute with
-              | Some (RegularTargets targets) ->
+              | Some { call_targets = _ :: _ as call_targets; return_type; _ } ->
                   (* Treat `a.property = x` as `a = a.property(x)` *)
                   let taint, state =
-                    apply_call_targets
+                    apply_callees
                       ~resolution
                       ~callee:target
                       ~call_location:location
                       ~arguments:[{ Call.Argument.name = None; value }]
                       ~state
-                      targets
+                      (CallGraph.RawCallees.create ~call_targets ~return_type ())
                   in
                   store_taint_option (AccessPath.of_expression ~resolution base) taint state
               | _ ->

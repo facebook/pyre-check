@@ -63,6 +63,8 @@ module RawCallees : sig
 
   val create_unresolved : Type.t -> t
 
+  val is_partially_resolved : t -> bool
+
   val pp_option : Format.formatter -> t option -> unit
 end
 
