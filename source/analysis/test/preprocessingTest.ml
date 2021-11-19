@@ -1762,6 +1762,119 @@ let test_qualify_ast _ =
         { pattern = Some (+Match.Pattern.MatchAs { pattern = None; name = "a" }); name = "x" })
     (+Match.Pattern.MatchAs
         { pattern = Some (+Match.Pattern.MatchAs { pattern = None; name = "b" }); name = "x" });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchClass
+        {
+          cls = Ast.Expression.create_name ~location:Location.any "a";
+          patterns = [];
+          keyword_attributes = [];
+          keyword_patterns = [];
+        })
+    (+Match.Pattern.MatchClass
+        {
+          cls = Ast.Expression.create_name ~location:Location.any "b";
+          patterns = [];
+          keyword_attributes = [];
+          keyword_patterns = [];
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchClass
+        {
+          cls = Ast.Expression.create_name ~location:Location.any "x";
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
+          keyword_attributes = [];
+          keyword_patterns = [];
+        })
+    (+Match.Pattern.MatchClass
+        {
+          cls = Ast.Expression.create_name ~location:Location.any "x";
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
+          keyword_attributes = [];
+          keyword_patterns = [];
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchClass
+        {
+          cls = Ast.Expression.create_name ~location:Location.any "x";
+          patterns = [];
+          keyword_attributes = ["a"];
+          keyword_patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
+        })
+    (+Match.Pattern.MatchClass
+        {
+          cls = Ast.Expression.create_name ~location:Location.any "x";
+          patterns = [];
+          keyword_attributes = ["a"];
+          keyword_patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"a"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "x" }];
+          rest = None;
+        })
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"b"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "x" }];
+          rest = None;
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"x"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
+          rest = None;
+        })
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"x"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
+          rest = None;
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"x"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "x" }];
+          rest = Some "a";
+        })
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"x"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "x" }];
+          rest = Some "b";
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchOr
+        [
+          +Match.Pattern.MatchAs { pattern = None; name = "x" };
+          +Match.Pattern.MatchAs { pattern = None; name = "a" };
+        ])
+    (+Match.Pattern.MatchOr
+        [
+          +Match.Pattern.MatchAs { pattern = None; name = "x" };
+          +Match.Pattern.MatchAs { pattern = None; name = "b" };
+        ]);
+  assert_qualify_pattern
+    (+Match.Pattern.MatchSequence
+        [
+          +Match.Pattern.MatchAs { pattern = None; name = "x" };
+          +Match.Pattern.MatchAs { pattern = None; name = "a" };
+        ])
+    (+Match.Pattern.MatchSequence
+        [
+          +Match.Pattern.MatchAs { pattern = None; name = "x" };
+          +Match.Pattern.MatchAs { pattern = None; name = "b" };
+        ]);
+  assert_qualify_pattern
+    (+Match.Pattern.MatchSingleton Ast.Expression.Constant.NoneLiteral)
+    (+Match.Pattern.MatchSingleton Ast.Expression.Constant.NoneLiteral);
+  assert_qualify_pattern (+Match.Pattern.MatchStar None) (+Match.Pattern.MatchStar None);
+  assert_qualify_pattern (+Match.Pattern.MatchStar (Some "a")) (+Match.Pattern.MatchStar (Some "b"));
+  assert_qualify_pattern (+Match.Pattern.MatchValue !"a") (+Match.Pattern.MatchValue !"b");
+
   ()
 
 

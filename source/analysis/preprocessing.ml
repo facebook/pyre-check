@@ -880,6 +880,7 @@ module Qualify (Context : QualifyContext) = struct
 
   and qualify_pattern ~scope { Node.value; location } =
     let qualify_pattern = qualify_pattern ~scope in
+    let qualify_expression = qualify_expression ~qualify_strings:DoNotQualify ~scope in
     let qualify_match_target name =
       match
         qualify_name
@@ -896,6 +897,32 @@ module Qualify (Context : QualifyContext) = struct
       | Match.Pattern.MatchAs { pattern; name } ->
           Match.Pattern.MatchAs
             { pattern = pattern >>| qualify_pattern; name = qualify_match_target name }
+      | MatchClass { cls; patterns; keyword_attributes; keyword_patterns } ->
+          MatchClass
+            {
+              cls = qualify_name ~qualify_strings:DoNotQualify ~scope ~location cls;
+              patterns = List.map patterns ~f:qualify_pattern;
+              keyword_attributes;
+              keyword_patterns = List.map keyword_patterns ~f:qualify_pattern;
+            }
+      | MatchMapping { keys; patterns; rest } ->
+          MatchMapping
+            {
+              keys = List.map keys ~f:qualify_expression;
+              patterns = List.map patterns ~f:qualify_pattern;
+              rest = rest >>| qualify_match_target;
+            }
+      | MatchOr patterns -> MatchOr (List.map patterns ~f:qualify_pattern)
+      | MatchSequence patterns -> MatchSequence (List.map patterns ~f:qualify_pattern)
+      | MatchSingleton constant -> (
+          let expression =
+            qualify_expression { Node.value = Expression.Constant constant; location }
+          in
+          match expression.value with
+          | Expression.Constant constant -> MatchSingleton constant
+          | _ -> MatchValue expression)
+      | MatchStar maybe_identifier -> MatchStar (maybe_identifier >>| qualify_match_target)
+      | MatchValue expression -> MatchValue (qualify_expression expression)
       | _ -> value
     in
     { Node.value; location }
