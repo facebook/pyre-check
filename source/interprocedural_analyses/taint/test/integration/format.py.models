@@ -1,5 +1,92 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "format.issue_in_format",
+    "callable_line": 30,
+    "code": 5002,
+    "line": 32,
+    "start": 25,
+    "end": 30,
+    "filename": "format.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "format.py",
+              "line": 31,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "format.py",
+              "line": 32,
+              "start": 25,
+              "end": 30
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "format.sink_in_format",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "format.py",
+              "line": 27,
+              "start": 18,
+              "end": 21
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "format.sink_via_format",
@@ -20,9 +107,40 @@
             ],
             "root": {
               "filename": "format.py",
-              "line": 19,
+              "line": 23,
               "start": 15,
               "end": 23
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "format.source_in_format",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "format-string" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "format.py",
+              "line": 15,
+              "start": 14,
+              "end": 28
             }
           }
         ]

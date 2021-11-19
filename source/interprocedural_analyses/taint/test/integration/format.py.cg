@@ -1,5 +1,8 @@
 @generated
 Call dependencies
+format.issue_in_format (fun) -> [_test_sink (fun) _test_source (fun)]
+format.sink_in_format (fun) -> [_test_sink (fun)]
 format.sink_via_format (fun) -> [_test_sink (fun)]
+format.source_in_format (fun) -> [_test_source (fun)]
 format.source_via_format (fun) -> [_test_source (fun)]
 format.tito_via_format (fun) -> []
