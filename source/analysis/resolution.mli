@@ -10,8 +10,8 @@ open Ast
 type t [@@deriving show]
 
 type annotation_store = {
-  annotations: RefinementUnit.t Reference.Map.t;
-  temporary_annotations: RefinementUnit.t Reference.Map.t;
+  annotations: Refinement.Unit.t Reference.Map.t;
+  temporary_annotations: Refinement.Unit.t Reference.Map.t;
 }
 
 type resolve_statement_result_t =
@@ -88,9 +88,9 @@ val all_type_variables_in_scope : t -> Type.Variable.t list
 
 val annotation_store : t -> annotation_store
 
-val annotations : t -> RefinementUnit.t Reference.Map.t
+val annotations : t -> Refinement.Unit.t Reference.Map.t
 
-val temporary_annotations : t -> RefinementUnit.t Reference.Map.t
+val temporary_annotations : t -> Refinement.Unit.t Reference.Map.t
 
 val with_annotation_store : t -> annotation_store:annotation_store -> t
 

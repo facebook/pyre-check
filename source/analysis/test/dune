@@ -7,7 +7,7 @@
    classMetadataEnvironmentTest constraintsSetTest customAnalysisTest
    dataClassTest environmentTest fixpointTest globalResolutionTest
    inlineDecoratorTest matchTranslateTest livenessCheckTest lookupTest moduleTrackerTest
-   newTypeTest namedTupleTest preprocessingTest refinementUnitTest
+   newTypeTest namedTupleTest preprocessingTest refinementTest
    resolutionTest resolvedCallableTest scopeTest sqlAlchemyTest typeCheckTest
    typeConstraintsTest typeOperationTest typeOrderTest typeTest
    unannotatedGlobalEnvironmentTest uninitializedLocalCheckTest

@@ -110,7 +110,7 @@ module State (Context : Context) = struct
         in
         let annotations =
           let annotation_to_string (name, refinement_unit) =
-            Format.asprintf "    %a -> %a" Reference.pp name RefinementUnit.pp refinement_unit
+            Format.asprintf "    %a -> %a" Reference.pp name Refinement.Unit.pp refinement_unit
           in
           Resolution.annotations resolution
           |> Map.to_alist
@@ -155,11 +155,11 @@ module State (Context : Context) = struct
     | Bottom, Bottom -> true
     | Value left, Value right ->
         Map.equal
-          RefinementUnit.equal
+          Refinement.Unit.equal
           (Resolution.annotations left.resolution)
           (Resolution.annotations right.resolution)
         && Map.equal
-             RefinementUnit.equal
+             Refinement.Unit.equal
              (Resolution.temporary_annotations left.resolution)
              (Resolution.temporary_annotations right.resolution)
     | _ -> false
@@ -206,7 +206,7 @@ module State (Context : Context) = struct
             ~f:
               (entry_less_or_equal
                  right
-                 (RefinementUnit.less_or_equal
+                 (Refinement.Unit.less_or_equal
                     ~global_resolution:(Resolution.global_resolution resolution)))
             left
         in
@@ -233,7 +233,7 @@ module State (Context : Context) = struct
           match annotation with
           | `Both (previous, next) ->
               Some
-                (RefinementUnit.widen
+                (Refinement.Unit.widen
                    ~global_resolution:(Resolution.global_resolution resolution)
                    ~widening_threshold
                    ~previous
@@ -545,7 +545,7 @@ module State (Context : Context) = struct
                   Map.set
                     annotations
                     ~key:(make_parameter_name name)
-                    ~data:(RefinementUnit.create_mutable Type.Bottom)
+                    ~data:(Refinement.Unit.create_mutable Type.Bottom)
               | Some annotation, None
                 when Type.is_any
                        (GlobalResolution.parse_annotation
@@ -554,7 +554,7 @@ module State (Context : Context) = struct
                   Map.set
                     annotations
                     ~key:(make_parameter_name name)
-                    ~data:(RefinementUnit.create_mutable Type.Bottom)
+                    ~data:(Refinement.Unit.create_mutable Type.Bottom)
               | _ -> annotations)
         in
         { Resolution.annotations; temporary_annotations }
@@ -573,7 +573,7 @@ module State (Context : Context) = struct
             GlobalResolution.annotation_parser (Resolution.global_resolution resolution)
           in
           let { Node.value = { Define.signature; _ }; _ } = Context.define in
-          RefinementUnit.create_mutable
+          Refinement.Unit.create_mutable
             (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser)
         in
         let backward_initial_state =
@@ -600,7 +600,7 @@ module State (Context : Context) = struct
             }
           =
           let add_refinement_unit ~key ~data map =
-            match RefinementUnit.base data with
+            match Refinement.Unit.base data with
             | Some annotation ->
                 if
                   Type.contains_unknown annotation.annotation

@@ -11,8 +11,8 @@ open Pyre
 
 module Annotations = struct
   type annotation_store = {
-    annotations: RefinementUnit.t Reference.Map.Tree.t;
-    temporary_annotations: RefinementUnit.t Reference.Map.Tree.t;
+    annotations: Refinement.Unit.t Reference.Map.Tree.t;
+    temporary_annotations: Refinement.Unit.t Reference.Map.Tree.t;
   }
   [@@deriving eq]
 
@@ -30,7 +30,7 @@ module Annotations = struct
         "\"%a\": \"%a\"%s, "
         Reference.pp
         key
-        RefinementUnit.pp
+        Refinement.Unit.pp
         data
         temporary_suffix
     in

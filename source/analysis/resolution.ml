@@ -10,8 +10,8 @@ open Ast
 open Pyre
 
 type annotation_store = {
-  annotations: RefinementUnit.t Reference.Map.t;
-  temporary_annotations: RefinementUnit.t Reference.Map.t;
+  annotations: Refinement.Unit.t Reference.Map.t;
+  temporary_annotations: Refinement.Unit.t Reference.Map.t;
 }
 
 type t = {
@@ -43,7 +43,7 @@ let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_sta
 
 let pp format { annotation_store = { annotations; temporary_annotations }; type_variables; _ } =
   let annotation_store_entry (reference, refinement_unit) =
-    Format.asprintf "%a -> %a" Reference.pp reference RefinementUnit.pp refinement_unit
+    Format.asprintf "%a -> %a" Reference.pp reference Refinement.Unit.pp refinement_unit
   in
   Type.Variable.Set.to_list type_variables
   |> List.map ~f:Type.Variable.show
@@ -145,9 +145,9 @@ let set_local
   let annotations, temporary_annotations =
     if temporary then
       ( annotations,
-        Map.set temporary_annotations ~key:reference ~data:(RefinementUnit.create annotation) )
+        Map.set temporary_annotations ~key:reference ~data:(Refinement.Unit.create annotation) )
     else
-      ( Map.set annotations ~key:reference ~data:(RefinementUnit.create annotation),
+      ( Map.set annotations ~key:reference ~data:(Refinement.Unit.create annotation),
         temporary_annotations )
   in
   { resolution with annotation_store = { annotations; temporary_annotations } }
@@ -161,8 +161,8 @@ let set_local_with_attributes
   =
   let object_reference, attribute_path, base = partition_name resolution ~name in
   let set_base refinement_unit ~base =
-    match RefinementUnit.base refinement_unit, base with
-    | None, Some base -> RefinementUnit.set_base refinement_unit ~base
+    match Refinement.Unit.base refinement_unit, base with
+    | None, Some base -> Refinement.Unit.set_base refinement_unit ~base
     | _ -> refinement_unit
   in
   let annotations, temporary_annotations =
@@ -174,8 +174,8 @@ let set_local_with_attributes
           ~data:
             (Map.find temporary_annotations object_reference
             |> (fun existing -> Option.first_some existing (Map.find annotations object_reference))
-            |> Option.value ~default:RefinementUnit.empty
-            |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~annotation
+            |> Option.value ~default:Refinement.Unit.empty
+            |> Refinement.Unit.add_attribute_refinement ~reference:attribute_path ~annotation
             |> set_base ~base) )
     else
       ( Map.set
@@ -183,8 +183,8 @@ let set_local_with_attributes
           ~key:object_reference
           ~data:
             (Map.find annotations object_reference
-            |> Option.value ~default:RefinementUnit.empty
-            |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~annotation
+            |> Option.value ~default:Refinement.Unit.empty
+            |> Refinement.Unit.add_attribute_refinement ~reference:attribute_path ~annotation
             |> set_base ~base),
         temporary_annotations )
   in
@@ -201,7 +201,7 @@ let get_local
     Option.first_some (Map.find temporary_annotations reference) (Map.find annotations reference)
   with
   | Some result when global_fallback || not (is_global resolution ~reference) ->
-      RefinementUnit.base result
+      Refinement.Unit.base result
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
       Reference.delocalize reference |> global >>| fun { annotation; _ } -> annotation
@@ -221,7 +221,7 @@ let get_local_with_attributes
       (Map.find annotations object_reference)
   with
   | Some result when global_fallback || not (is_global resolution ~reference:object_reference) ->
-      RefinementUnit.annotation result ~reference:attribute_path
+      Refinement.Unit.annotation result ~reference:attribute_path
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
       Reference.(combine object_reference attribute_path |> delocalize)

@@ -33,7 +33,7 @@ let assert_backward ~resolution precondition statement postcondition =
       let annotation_store =
         let annotify (name, annotation) =
           let annotation =
-            let create annotation = RefinementUnit.create (Annotation.create_mutable annotation) in
+            let create annotation = Refinement.Unit.create (Annotation.create_mutable annotation) in
             create annotation
           in
           !&name, annotation

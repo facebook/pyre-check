@@ -289,7 +289,7 @@ module State (Context : Context) = struct
         in
         let annotations =
           let annotation_to_string (name, refinement_unit) =
-            Format.asprintf "    %a -> %a" Reference.pp name RefinementUnit.pp refinement_unit
+            Format.asprintf "    %a -> %a" Reference.pp name Refinement.Unit.pp refinement_unit
           in
           Resolution.annotations resolution
           |> Map.to_alist
@@ -334,11 +334,11 @@ module State (Context : Context) = struct
     | Unreachable, Unreachable -> true
     | Value left_resolution, Value right_resolution ->
         Map.equal
-          RefinementUnit.equal
+          Refinement.Unit.equal
           (Resolution.annotations left_resolution)
           (Resolution.annotations right_resolution)
         && Map.equal
-             RefinementUnit.equal
+             Refinement.Unit.equal
              (Resolution.temporary_annotations left_resolution)
              (Resolution.temporary_annotations right_resolution)
     | _, _ -> false
@@ -523,10 +523,10 @@ module State (Context : Context) = struct
           | _ -> false
         in
         let annotation_map_less_or_equal left right =
-          Map.fold ~init:true ~f:(entry_less_or_equal right RefinementUnit.equal) left
+          Map.fold ~init:true ~f:(entry_less_or_equal right Refinement.Unit.equal) left
         in
         let temporary_annotation_map_less_or_equal left right =
-          Map.fold ~init:true ~f:(entry_less_or_equal left RefinementUnit.equal) right
+          Map.fold ~init:true ~f:(entry_less_or_equal left Refinement.Unit.equal) right
         in
         annotation_map_less_or_equal
           (Resolution.annotations left_resolution)
@@ -540,7 +540,7 @@ module State (Context : Context) = struct
     let merge_annotation_stores ~key:_ = function
       | `Both (left, right) ->
           Some
-            (RefinementUnit.join
+            (Refinement.Unit.join
                ~global_resolution:(Resolution.global_resolution left_resolution)
                left
                right)
@@ -550,7 +550,7 @@ module State (Context : Context) = struct
     let merge_temporary_annotation_stores ~key:_ = function
       | `Both (left, right) ->
           Some
-            (RefinementUnit.join
+            (Refinement.Unit.join
                ~global_resolution:(Resolution.global_resolution left_resolution)
                left
                right)
@@ -606,7 +606,7 @@ module State (Context : Context) = struct
           match annotation with
           | `Both (previous, next) ->
               Some
-                (RefinementUnit.widen
+                (Refinement.Unit.widen
                    ~global_resolution
                    ~widening_threshold
                    ~previous
@@ -621,7 +621,7 @@ module State (Context : Context) = struct
           match annotation with
           | `Both (previous, next) ->
               Some
-                (RefinementUnit.widen
+                (Refinement.Unit.widen
                    ~global_resolution
                    ~widening_threshold
                    ~previous
@@ -1220,11 +1220,11 @@ module State (Context : Context) = struct
               in
               let join sofar element =
                 let refined =
-                  RefinementUnit.join
+                  Refinement.Unit.join
                     ~global_resolution
-                    (RefinementUnit.create sofar)
-                    (RefinementUnit.create element)
-                  |> RefinementUnit.base
+                    (Refinement.Unit.create sofar)
+                    (Refinement.Unit.create element)
+                  |> Refinement.Unit.base
                   |> Option.value ~default:(Annotation.create_mutable Type.Bottom)
                 in
                 { refined with annotation = Type.union [sofar.annotation; element.annotation] }
@@ -3279,7 +3279,7 @@ module State (Context : Context) = struct
                 Resolution.annotation_store right_resolution
               in
               let merge ~key:_ = function
-                | `Both (left, right) -> Some (RefinementUnit.meet ~global_resolution left right)
+                | `Both (left, right) -> Some (Refinement.Unit.meet ~global_resolution left right)
                 | `Left left -> Some left
                 | `Right right -> Some right
               in
@@ -5338,7 +5338,7 @@ module State (Context : Context) = struct
                 Map.set
                   annotations
                   ~key:(make_parameter_name name)
-                  ~data:(RefinementUnit.create { Annotation.annotation; mutability });
+                  ~data:(Refinement.Unit.create { Annotation.annotation; mutability });
               temporary_annotations;
             } )
         in
@@ -5388,10 +5388,10 @@ module State (Context : Context) = struct
                       Resolution.annotations resolution
                       |> Map.set
                            ~key:(make_parameter_name first_name)
-                           ~data:(RefinementUnit.create_mutable positional_component)
+                           ~data:(Refinement.Unit.create_mutable positional_component)
                       |> Map.set
                            ~key:(make_parameter_name second_name)
-                           ~data:(RefinementUnit.create_mutable keyword_component);
+                           ~data:(Refinement.Unit.create_mutable keyword_component);
                     temporary_annotations = Resolution.temporary_annotations resolution;
                   }
                 in
@@ -6733,12 +6733,12 @@ let exit_state ~resolution (module Context : Context) =
              in
              let annotations_string =
                Resolution.annotations exit_resolution
-               |> Map.filter_map ~f:RefinementUnit.base
+               |> Map.filter_map ~f:Refinement.Unit.base
                |> Map.fold ~f:(stringify ~temporary:false) ~init:""
              in
              let temporary_annotations_string =
                Resolution.temporary_annotations exit_resolution
-               |> Map.filter_map ~f:RefinementUnit.base
+               |> Map.filter_map ~f:Refinement.Unit.base
                |> Map.fold ~f:(stringify ~temporary:true) ~init:""
              in
              if String.is_empty temporary_annotations_string then
