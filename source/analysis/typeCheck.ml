@@ -515,25 +515,9 @@ module State (Context : Context) = struct
     | Unreachable, _ -> true
     | _, Unreachable -> false
     | Value left_resolution, Value right_resolution ->
-        let entry_less_or_equal other less_or_equal ~key ~data sofar =
-          sofar
-          &&
-          match Map.find other key with
-          | Some other -> less_or_equal data other
-          | _ -> false
-        in
-        let annotation_map_less_or_equal left right =
-          Map.fold ~init:true ~f:(entry_less_or_equal right Refinement.Unit.equal) left
-        in
-        let temporary_annotation_map_less_or_equal left right =
-          Map.fold ~init:true ~f:(entry_less_or_equal left Refinement.Unit.equal) right
-        in
-        annotation_map_less_or_equal
-          (Resolution.annotations left_resolution)
-          (Resolution.annotations right_resolution)
-        && temporary_annotation_map_less_or_equal
-             (Resolution.temporary_annotations left_resolution)
-             (Resolution.temporary_annotations right_resolution)
+        Refinement.Store.less_or_equal_monotone
+          ~left:(Resolution.annotation_store left_resolution)
+          ~right:(Resolution.annotation_store right_resolution)
 
 
   let join_resolutions left_resolution right_resolution =

@@ -223,20 +223,21 @@ let test_less_or_equal context =
     Create.create ~resolution
   in
   let module State = State (DefaultContext) in
-  (* <= *)
+  (* == *)
   assert_true (State.less_or_equal ~left:(create []) ~right:(create []));
-  assert_true (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.integer]));
-  assert_true (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.Top]));
+  assert_true
+    (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create ["x", Type.integer]));
+  (* <= *)
+  assert_true (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create []));
+  assert_true (State.less_or_equal ~left:(create ["x", Type.Top]) ~right:(create []));
   assert_true
     (State.less_or_equal
-       ~left:(create ["x", Type.integer])
-       ~right:(create ["x", Type.integer; "y", Type.integer]));
-
+       ~left:(create ["x", Type.integer; "y", Type.integer])
+       ~right:(create ["x", Type.integer]));
   (* > *)
-  assert_false (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create []));
-  assert_false (State.less_or_equal ~left:(create ["x", Type.Top]) ~right:(create []));
-
-  (* partial order *)
+  assert_false (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.integer]));
+  assert_false (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.Top]));
+  (* not comparable *)
   assert_false
     (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create ["x", Type.string]));
   assert_false

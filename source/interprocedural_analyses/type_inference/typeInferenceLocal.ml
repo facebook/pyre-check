@@ -192,33 +192,19 @@ module State (Context : Context) = struct
     | Bottom, Bottom -> true
     | Bottom, Value _ -> true
     | Value _, Bottom -> false
-    | Value ({ resolution; _ } as left), Value right ->
-        let entry_less_or_equal other less_or_equal ~key ~data sofar =
-          sofar
-          &&
-          match Map.find other key with
-          | Some other -> less_or_equal data other
-          | _ -> false
+    | Value left, Value right ->
+        let errors_subset =
+          let left_errors = Map.data left.errors |> Error.Set.of_list in
+          let right_errors = Map.data right.errors |> Error.Set.of_list in
+          Set.is_subset left_errors ~of_:right_errors
         in
-        let annotation_map_less_or_equal left right =
-          Map.fold
-            ~init:true
-            ~f:
-              (entry_less_or_equal
-                 right
-                 (Refinement.Unit.less_or_equal
-                    ~global_resolution:(Resolution.global_resolution resolution)))
-            left
-        in
-        let left_errors = Map.data left.errors |> Error.Set.of_list in
-        let right_errors = Map.data right.errors |> Error.Set.of_list in
-        Set.is_subset left_errors ~of_:right_errors
-        && annotation_map_less_or_equal
-             (Resolution.annotations left.resolution)
-             (Resolution.annotations right.resolution)
-        && annotation_map_less_or_equal
-             (Resolution.temporary_annotations left.resolution)
-             (Resolution.temporary_annotations right.resolution)
+        errors_subset
+        &&
+        let global_resolution = Resolution.global_resolution left.resolution in
+        Refinement.Store.less_or_equal
+          ~global_resolution
+          ~left:(Resolution.annotation_store left.resolution)
+          ~right:(Resolution.annotation_store right.resolution)
 
 
   let widening_threshold = 3

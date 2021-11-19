@@ -49,4 +49,8 @@ module Store : sig
   [@@deriving eq, show]
 
   val empty : t
+
+  val less_or_equal : global_resolution:GlobalResolution.t -> left:t -> right:t -> bool
+
+  val less_or_equal_monotone : left:t -> right:t -> bool
 end

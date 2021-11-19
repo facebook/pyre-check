@@ -3018,9 +3018,6 @@ let test_fixpoint_threshold context =
     |}
     [
       "Undefined import [21]: Could not find a name `Set` defined in module `typing`.";
-      "Analysis failure [30]: Pyre gave up inferring types for some variables because function \
-       `test.foo` was too complex.";
-      "Illegal annotation target [35]: Target `s` cannot be annotated after it is first declared.";
       "Undefined or invalid type [11]: Annotation `Missing` is not defined as a type.";
       "Revealed type [-1]: Revealed type for `s` is `Set[Variable[_T]]`.";
     ];

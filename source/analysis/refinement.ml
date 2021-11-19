@@ -245,4 +245,24 @@ module Store = struct
 
 
   let show = Format.asprintf "%a" pp
+
+  let less_or_equal ~global_resolution ~left ~right =
+    let less_or_equal_one ~left ~right = Unit.less_or_equal ~global_resolution left right in
+    ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.annotations ~right:right.annotations
+    && ReferenceMap.less_or_equal
+         ~less_or_equal_one
+         ~left:left.temporary_annotations
+         ~right:right.temporary_annotations
+
+
+  (** Whenever we know for sure that right is pointwise less_or_equal to left, then we can save
+      computation by only checking for equality pointwise, which doesn't require type ordering
+      operations *)
+  let less_or_equal_monotone ~left ~right =
+    let less_or_equal_one ~left ~right = Unit.equal left right in
+    ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.annotations ~right:right.annotations
+    && ReferenceMap.less_or_equal
+         ~less_or_equal_one
+         ~left:left.temporary_annotations
+         ~right:right.temporary_annotations
 end
