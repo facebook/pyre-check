@@ -9,13 +9,77 @@ open Core
 open Ast
 open Annotation
 
+module MapLattice = struct
+  module type MapSignature = sig
+    type key
+
+    type 'data t
+
+    val empty : 'data t
+
+    val set : 'data t -> key:key -> data:'data -> 'data t
+
+    val fold2
+      :  'data t ->
+      'data t ->
+      init:'a ->
+      f:(key:key -> data:[ `Both of 'data * 'data | `Left of 'data | `Right of 'data ] -> 'a -> 'a) ->
+      'a
+  end
+
+  module Make (Map : MapSignature) = struct
+    include Map
+
+    (** Two lattice maps are comparable only if one contains the other *)
+    let less_or_equal ~less_or_equal_one ~left ~right =
+      let f ~key:_ ~data sofar =
+        sofar
+        &&
+        match data with
+        | `Both (left, right) -> less_or_equal_one ~left ~right
+        (* more data means more restrictions, so lower in the lattice *)
+        | `Left _ -> true
+        | `Right _ -> false
+      in
+      fold2 left right ~init:true ~f
+
+
+    let join ~join_one left right =
+      let f ~key ~data sofar =
+        match data with
+        | `Both (left, right) -> set sofar ~key ~data:(join_one left right)
+        | `Left _
+        | `Right _ ->
+            sofar
+      in
+      fold2 left right ~init:empty ~f
+
+
+    let meet ~meet_one left right =
+      let f ~key ~data sofar =
+        match data with
+        | `Both (left, right) -> set sofar ~key ~data:(meet_one left right)
+        | `Left data
+        | `Right data ->
+            set sofar ~key ~data
+      in
+      fold2 left right ~init:empty ~f
+  end
+end
+
+module IdentifierMap = MapLattice.Make (struct
+  include Identifier.Map.Tree
+
+  type key = Identifier.t
+end)
+
 type t = {
   base: Annotation.t option;
   attributes: t Identifier.Map.Tree.t;
 }
 [@@deriving eq]
 
-let empty = { base = None; attributes = Identifier.Map.Tree.empty }
+let empty = { base = None; attributes = IdentifierMap.empty }
 
 let create base = { empty with base = Some base }
 
@@ -53,7 +117,7 @@ let add_attribute_refinement refinement_unit ~reference ~annotation =
           refinement_unit with
           attributes =
             attributes
-            |> Identifier.Map.Tree.set
+            |> IdentifierMap.set
                  ~key:identifier
                  ~data:
                    (find attributes identifier
@@ -87,22 +151,9 @@ let rec less_or_equal ~global_resolution left right =
     | None, None -> true (* intermediate refinement units don't require computation *)
     | _ -> false
   in
-  let attributes_less_or_equal left_attributes right_attributes =
-    let compare_refinement_units ~key:_ ~data sofar =
-      match data with
-      | `Both (left, right) -> sofar && less_or_equal ~global_resolution left right
-      (* The "lower = more restrictive" RefinementUnit may have more attributes *)
-      | `Left _ -> true
-      | `Right _ -> false
-    in
-    Identifier.Map.Tree.fold2
-      left_attributes
-      right_attributes
-      ~init:true
-      ~f:compare_refinement_units
-  in
+  let less_or_equal_one ~left ~right = less_or_equal ~global_resolution left right in
   annotation_less_or_equal left.base right.base
-  && attributes_less_or_equal left.attributes right.attributes
+  && IdentifierMap.less_or_equal ~less_or_equal_one ~left:left.attributes ~right:right.attributes
 
 
 let rec join ~global_resolution left right =
@@ -121,21 +172,9 @@ let rec join ~global_resolution left right =
     in
     let attributes =
       if should_recurse then
-        let combine_one_attribute ~key ~data sofar =
-          match data with
-          | `Both (left, right) ->
-              Identifier.Map.Tree.set sofar ~key ~data:(join ~global_resolution left right)
-          | `Left _
-          | `Right _ ->
-              sofar
-        in
-        Identifier.Map.Tree.fold2
-          left.attributes
-          right.attributes
-          ~init:Identifier.Map.Tree.empty
-          ~f:combine_one_attribute
+        IdentifierMap.join ~join_one:(join ~global_resolution) left.attributes right.attributes
       else
-        Identifier.Map.Tree.empty
+        IdentifierMap.empty
     in
     { base; attributes }
 
@@ -153,21 +192,9 @@ let rec meet ~global_resolution left right =
   in
   let attributes =
     if should_recurse then
-      let combine_one_attribute ~key ~data sofar =
-        match data with
-        | `Both (left, right) ->
-            Identifier.Map.Tree.set sofar ~key ~data:(meet ~global_resolution left right)
-        | `Left refinement_unit
-        | `Right refinement_unit ->
-            Identifier.Map.Tree.set sofar ~key ~data:refinement_unit
-      in
-      Identifier.Map.Tree.fold2
-        left.attributes
-        right.attributes
-        ~init:Identifier.Map.Tree.empty
-        ~f:combine_one_attribute
+      IdentifierMap.meet ~meet_one:(meet ~global_resolution) left.attributes right.attributes
     else
-      Identifier.Map.Tree.empty
+      IdentifierMap.empty
   in
   { base; attributes }
 
