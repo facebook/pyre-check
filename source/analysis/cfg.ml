@@ -255,7 +255,7 @@ let create define =
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
         create statements jumps join
-    | { Ast.Node.value = Match { cases; _ }; _ } :: statements ->
+    | { Ast.Node.value = Match { subject; cases }; _ } :: statements ->
         (* The final else is optionally connected to the join node if it is refutable.
          *
          *  predecessor -> [else 1] -> [else 2] -> ... -> [else n-1] -> [else n]
@@ -268,13 +268,6 @@ let create define =
          *      |           \           \                  \             v
          *      \-----------------------------------------------------> [join]
          *)
-        let to_condition = function
-          (* TODO(T102720335): Support match statetment. *)
-          | { Match.Case.guard = None; _ } ->
-              Ast.Node.create_with_default_location
-                (Expression.Expression.Constant Expression.Constant.True)
-          | { Match.Case.guard = Some guard; _ } -> guard
-        in
         let is_refutable =
           (* TODO(T102720335): Support match statetment. *)
           let { Match.Case.guard; _ } = List.last_exn cases in
@@ -282,7 +275,7 @@ let create define =
         in
         let join = Node.empty graph Node.Join in
         let from_case predecessor case =
-          let test = to_condition case in
+          let test = MatchTranslate.to_condition ~subject ~case in
           let case_node =
             let test = Expression.normalize test in
             Node.empty graph (Node.Block [Statement.assume ~origin:Assert.Origin.Match test])

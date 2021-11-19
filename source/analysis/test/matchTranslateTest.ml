@@ -33,6 +33,25 @@ let test_as _ =
   ()
 
 
+let test_guard _ =
+  let parse_single_case case_string =
+    match parse_single_statement ("match subject:\n  case " ^ case_string ^ ":\n    pass") with
+    | { Node.value = Statement.Match { cases = [case]; _ }; _ } -> case
+    | _ -> failwith "Could not parse single case"
+  in
+  let assert_to_condition ~case ~expected =
+    assert_equal
+      ~cmp:(fun x y -> Int.equal (Expression.location_insensitive_compare x y) 0)
+      ~printer:Expression.show
+      (parse_single_expression expected)
+      (MatchTranslate.to_condition ~subject:!"subject" ~case:(parse_single_case case))
+  in
+  assert_to_condition ~case:"_ if guard" ~expected:"guard";
+  assert_to_condition ~case:"42" ~expected:"subject == 42";
+  assert_to_condition ~case:"x if x > 0" ~expected:"(x := subject) == x and x > 0";
+  ()
+
+
 let test_value _ =
   assert_pattern_to_condition ~pattern:"42" ~expected:"subject == 42";
   ()
@@ -45,5 +64,10 @@ let test_wildcard _ =
 
 let () =
   "match_translate"
-  >::: ["as" >:: test_as; "value" >:: test_value; "wildcard" >:: test_wildcard]
+  >::: [
+         "as" >:: test_as;
+         "guard" >:: test_guard;
+         "value" >:: test_value;
+         "wildcard" >:: test_wildcard;
+       ]
   |> Test.run

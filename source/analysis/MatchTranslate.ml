@@ -11,10 +11,6 @@ open Pyre
 open Expression
 open Statement
 
-let to_condition ~subject:_ ~case:_ =
-  Expression.Constant Constant.True |> Node.create_with_default_location
-
-
 let and_two left right =
   Expression.BooleanOperator { left; operator = BooleanOperator.And; right }
   |> Ast.Node.create_with_default_location
@@ -45,3 +41,10 @@ let rec pattern_to_condition ~subject { Ast.Node.location; value = pattern } =
   | MatchWildcard -> Expression.Constant Constant.True |> Ast.Node.create_with_default_location
   | _ -> Expression.Constant Constant.False |> Ast.Node.create_with_default_location)
   |> fun expression -> { expression with location }
+
+
+let to_condition ~subject ~case:{ Match.Case.pattern; guard; _ } =
+  match pattern_to_condition ~subject pattern, guard with
+  | pattern_condition, None -> pattern_condition
+  | { Node.value = Expression.Constant Constant.True; _ }, Some guard -> guard
+  | pattern_condition, Some guard -> and_two pattern_condition guard
