@@ -1346,6 +1346,33 @@ let test_call_graph_of_define context =
                ()) );
       ];
   ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+     class C:
+       def m(self) -> str:
+         return "world"
+
+     def foo(c: C) -> str:
+       return f"hello {c.m()}"
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "7:18-7:23",
+          CallGraph.Callees.Callees
+            (CallGraph.RawCallees.create
+               ~call_targets:
+                 [
+                   {
+                     target = `Method { Target.class_name = "test.C"; method_name = "m" };
+                     implicit_self = true;
+                     collapse_tito = true;
+                   };
+                 ]
+               ~return_type:(Type.Primitive "str")
+               ()) );
+      ];
   (* TODO(T105570363): Properly merge calls with different implicit_self values. *)
   assert_call_graph_of_define
     ~source:

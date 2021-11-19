@@ -322,6 +322,8 @@ let test_node_visitor _ =
 
 
     let visit_statement_children _ _ = true
+
+    let visit_format_string_children _ _ = true
   end
   in
   let module Visit = Visit.MakeNodeVisitor (Visitor) in
@@ -353,10 +355,15 @@ let test_node_visitor _ =
       |} in
   assert_counts source ["expression", 2; "statement", 2; "substring", 2];
   let source = parse {|
+        f"foo {bar}"
+      |} in
+  assert_counts source ["expression", 2; "substring", 2];
+  let source = parse {|
         class C:
           x = 1
       |} in
-  assert_counts source ["expression", 2; "reference", 1]
+  assert_counts source ["expression", 2; "reference", 1];
+  ()
 
 
 let test_statement_visitor _ =

@@ -947,6 +947,9 @@ struct
       | Statement.Class _ ->
           false
       | _ -> true
+
+
+    let visit_format_string_children _ _ = true
   end
 
   module CalleeVisitor = Visit.MakeNodeVisitor (NodeVisitor)

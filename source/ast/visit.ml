@@ -25,6 +25,8 @@ module type NodeVisitor = sig
   val node : t -> node -> t
 
   val visit_statement_children : t -> Statement.t -> bool
+
+  val visit_format_string_children : t -> Expression.t -> bool
 end
 
 module MakeNodeVisitor (Visitor : NodeVisitor) = struct
@@ -103,7 +105,13 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | FormatString substrings ->
           List.iter
             ~f:(fun substring -> visit_node ~state ~visitor (Substring substring))
-            substrings
+            substrings;
+          if Visitor.visit_format_string_children !state expression then
+            let visit_children = function
+              | Substring.Format expression -> visit_expression expression
+              | _ -> ()
+            in
+            List.iter ~f:visit_children substrings
       | Ternary { Ternary.target; test; alternative } ->
           visit_expression target;
           visit_expression test;
@@ -242,6 +250,8 @@ module Make (Visitor : Visitor) = struct
 
 
       let visit_statement_children _ _ = true
+
+      let visit_format_string_children _ _ = false
     end)
     in
     NodeVisitor.visit
@@ -360,6 +370,8 @@ struct
 
 
       let visit_statement_children _ _ = true
+
+      let visit_format_string_children _ _ = false
     end
     in
     let module CollectingVisit = MakeNodeVisitor (CollectingVisitor) in

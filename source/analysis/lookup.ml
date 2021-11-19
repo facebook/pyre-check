@@ -168,6 +168,8 @@ module NodeVisitor = struct
   let node_postcondition = node_base ~postcondition:true
 
   let visit_statement_children _ _ = true
+
+  let visit_format_string_children _ _ = false
 end
 
 module Visit = struct

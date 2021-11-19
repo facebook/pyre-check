@@ -23,6 +23,8 @@ module type NodeVisitor = sig
   val node : t -> node -> t
 
   val visit_statement_children : t -> Statement.t -> bool
+
+  val visit_format_string_children : t -> Expression.t -> bool
 end
 
 module MakeNodeVisitor (Visitor : NodeVisitor) : sig
