@@ -1373,7 +1373,7 @@ let test_call_graph_of_define context =
                ~return_type:(Type.Primitive "str")
                ()) );
       ];
-  (* TODO(T105570363): Properly merge calls with different implicit_self values. *)
+  (* TODO(T105570363): Resolve calls with mixed function and methods. *)
   assert_call_graph_of_define
     ~source:
       {|
@@ -1490,7 +1490,7 @@ let test_call_graph_of_define context =
                ()) );
       ];
   ();
-  (* TODO(T105570363): Properly merge constructor and regular targets. *)
+  (* TODO(T105570363): Resolve calls with mixed function and constructors. *)
   assert_call_graph_of_define
     ~source:
       {|
