@@ -236,6 +236,7 @@ module ClassDecorators = struct
     repr: bool;
     eq: bool;
     order: bool;
+    match_args: bool;
   }
 
   let extract_options
@@ -299,6 +300,12 @@ module ClassDecorators = struct
               else
                 default
             in
+            let default =
+              if String.equal argument_name "match_args" then
+                { default with match_args = recognize_value value ~default:default.match_args }
+              else
+                default
+            in
             default
         | _ -> default
       in
@@ -313,7 +320,7 @@ module ClassDecorators = struct
   let dataclass_options =
     extract_options
       ~names:["dataclasses.dataclass"; "dataclass"]
-      ~default:{ init = true; repr = true; eq = true; order = false }
+      ~default:{ init = true; repr = true; eq = true; order = false; match_args = true }
       ~init:"init"
       ~repr:"repr"
       ~eq:"eq"
@@ -323,7 +330,7 @@ module ClassDecorators = struct
   let attrs_attributes =
     extract_options
       ~names:["attr.s"; "attr.attrs"]
-      ~default:{ init = true; repr = true; eq = true; order = true }
+      ~default:{ init = true; repr = true; eq = true; order = true; match_args = false }
       ~init:"init"
       ~repr:"repr"
       ~eq:"cmp"
@@ -356,6 +363,22 @@ module ClassDecorators = struct
     let generate_attributes ~options =
       let already_in_table name =
         UninstantiatedAttributeTable.lookup_name table name |> Option.is_some
+      in
+      let make_attribute ~annotation ~attribute_name =
+        AnnotatedAttribute.create_uninstantiated
+          ~uninstantiated_annotation:
+            { UninstantiatedAnnotation.accessed_via_metaclass = false; kind = Attribute annotation }
+          ~abstract:false
+          ~async_property:false
+          ~class_variable:false
+          ~defined:true
+          ~initialized:OnClass
+          ~name:attribute_name
+          ~parent:(Reference.show name)
+          ~visibility:ReadWrite
+          ~property:false
+          ~undecorated_signature:None
+          ~problem:None
       in
       let make_method ~parameters ~annotation ~attribute_name =
         let parameters =
@@ -395,7 +418,7 @@ module ClassDecorators = struct
       in
       match options definition with
       | None -> []
-      | Some { init; repr; eq; order } ->
+      | Some { init; repr; eq; order; match_args } ->
           let init_parameters ~implicitly_initialize =
             let extract_dataclass_field_arguments (_, value) =
               match value with
@@ -640,6 +663,20 @@ module ClassDecorators = struct
             if order then
               ["__lt__"; "__le__"; "__gt__"; "__ge__"]
               |> List.fold ~init:methods ~f:add_order_method
+            else
+              methods
+          in
+          let methods =
+            if match_args && not (already_in_table "__match_args__") then
+              let parameter_name { Callable.RecordParameter.name; _ } = Identifier.sanitized name in
+              let init_parameter_names =
+                List.map ~f:parameter_name (init_parameters ~implicitly_initialize:false)
+              in
+              let literal_string_value_type name = Type.Literal (String (LiteralValue name)) in
+              let annotation =
+                Type.tuple (List.map ~f:literal_string_value_type init_parameter_names)
+              in
+              make_attribute ~annotation ~attribute_name:"__match_args__" :: methods
             else
               methods
           in

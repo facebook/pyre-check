@@ -823,7 +823,153 @@ let test_transform_environment context =
     ]
 
 
+let test_match_args context =
+  let assert_equivalent_attributes = assert_equivalent_attributes ~context in
+  assert_equivalent_attributes
+    {|
+      from dataclasses import dataclass
+      @dataclass
+      class Foo:
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+          __match_args__ = ("x",)
+      |};
+    ];
+  (* For remaining tests we disable repr and eq, to make them more consice as they don't interact
+     with match_args. *)
+  assert_equivalent_attributes
+    {|
+      from dataclasses import dataclass
+      @dataclass(repr=False, eq=False, match_args=True)
+      class Foo:
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+          __match_args__ = ("x",)
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      from dataclasses import dataclass
+      @dataclass(repr=False, eq=False, match_args=False)
+      class Foo:
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      from dataclasses import dataclass
+      @dataclass(repr=False, eq=False, init=False, match_args=True)
+      class Foo:
+        x: int
+    |}
+    [{|
+        class Foo:
+          x: int
+          __match_args__ = ("x",)
+      |}];
+  assert_equivalent_attributes
+    {|
+      from dataclasses import dataclass
+      @dataclass(repr=False, eq=False)
+      class Foo:
+        x: int
+        y: int
+        def __init__(self, y: int) -> None:
+          ...
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          y: int
+          def __init__(self, y: int) -> None:
+            ...
+          __match_args__ = ("x", "y")
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      from dataclasses import dataclass
+      @dataclass(repr=False, eq=False)
+      class Foo:
+        x: int
+        y: int
+        def __init__(self, y: int) -> None:
+          ...
+        __match_args__ = ("y",)
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          y: int
+          def __init__(self, y: int) -> None:
+            ...
+          __match_args__ = ("y",)
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      from dataclasses import dataclass
+      @dataclass(repr=False, eq=False)
+      class Base:
+        x: typing.Any
+        y: int
+      @dataclass(repr=False, eq=False)
+      class C(Base):
+        z: int
+        x: int
+    |}
+    [
+      {|
+        class C(Base):
+          z: int
+          x: int
+          def __init__(self, x: int, y: int, z: int) -> None:
+            self.x = x
+            self.z = z
+          __match_args__ = ("x", "y", "z")
+      |};
+      {|
+        class Base:
+          x: typing.Any
+          y: int
+          def __init__(self, x: typing.Any, y: int) -> None:
+            self.x = x
+            self.y = y
+          __match_args__ = ("x", "y")
+      |};
+    ];
+  ()
+
+
 let () =
   "dataClass"
-  >::: ["transform_environment" >: test_case ~length:Long test_transform_environment]
+  >::: [
+         "transform_environment" >: test_case ~length:Long test_transform_environment;
+         "match_args" >:: test_match_args;
+       ]
   |> Test.run
