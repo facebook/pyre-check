@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.TaintedGetterAndSetter.writes_to_property",
-    "callable_line": 73,
+    "callable_line": 72,
     "code": 5002,
-    "line": 74,
+    "line": 73,
     "start": 27,
     "end": 41,
     "filename": "properties.py",
@@ -24,7 +24,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 74,
+              "line": 73,
               "start": 27,
               "end": 41
             }
@@ -46,7 +46,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 74,
+                "line": 73,
                 "start": 27,
                 "end": 41
               },
@@ -69,9 +69,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.property_setter_in_constructor",
-    "callable_line": 160,
+    "callable_line": 159,
     "code": 5002,
-    "line": 162,
+    "line": 161,
     "start": 15,
     "end": 20,
     "filename": "properties.py",
@@ -92,12 +92,12 @@
               }
             ],
             "tito": [
-              { "line": 161, "start": 38, "end": 52 },
-              { "line": 162, "start": 15, "end": 18 }
+              { "line": 160, "start": 38, "end": 52 },
+              { "line": 161, "start": 15, "end": 18 }
             ],
             "root": {
               "filename": "properties.py",
-              "line": 161,
+              "line": 160,
               "start": 38,
               "end": 52
             }
@@ -117,7 +117,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 162,
+              "line": 161,
               "start": 15,
               "end": 20
             }
@@ -136,9 +136,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.property_setter_in_constructor",
-    "callable_line": 160,
+    "callable_line": 159,
     "code": 5002,
-    "line": 163,
+    "line": 162,
     "start": 15,
     "end": 29,
     "filename": "properties.py",
@@ -160,10 +160,10 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 161, "start": 38, "end": 52 } ],
+            "tito": [ { "line": 160, "start": 38, "end": 52 } ],
             "root": {
               "filename": "properties.py",
-              "line": 161,
+              "line": 160,
               "start": 38,
               "end": 52
             }
@@ -183,7 +183,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 163,
+              "line": 162,
               "start": 15,
               "end": 29
             }
@@ -204,9 +204,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.sets_tainted_value",
-    "callable_line": 97,
+    "callable_line": 96,
     "code": 5002,
-    "line": 98,
+    "line": 97,
     "start": 20,
     "end": 34,
     "filename": "properties.py",
@@ -225,7 +225,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 98,
+              "line": 97,
               "start": 20,
               "end": 34
             }
@@ -247,7 +247,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 98,
+                "line": 97,
                 "start": 20,
                 "end": 34
               },
@@ -270,9 +270,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.setters_are_simulated",
-    "callable_line": 114,
+    "callable_line": 113,
     "code": 5002,
-    "line": 120,
+    "line": 119,
     "start": 15,
     "end": 18,
     "filename": "properties.py",
@@ -293,12 +293,12 @@
               }
             ],
             "tito": [
-              { "line": 118, "start": 10, "end": 24 },
-              { "line": 120, "start": 15, "end": 16 }
+              { "line": 117, "start": 10, "end": 24 },
+              { "line": 119, "start": 15, "end": 16 }
             ],
             "root": {
               "filename": "properties.py",
-              "line": 118,
+              "line": 117,
               "start": 10,
               "end": 24
             }
@@ -318,7 +318,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 120,
+              "line": 119,
               "start": 15,
               "end": 18
             }
@@ -337,9 +337,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.test_issue_in_class_property",
-    "callable_line": 129,
+    "callable_line": 128,
     "code": 5002,
-    "line": 130,
+    "line": 129,
     "start": 15,
     "end": 46,
     "filename": "properties.py",
@@ -360,7 +360,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 130,
+              "line": 129,
               "start": 15,
               "end": 46
             }
@@ -380,7 +380,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 130,
+              "line": 129,
               "start": 15,
               "end": 46
             }
@@ -1224,7 +1224,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 84,
+              "line": 83,
               "start": 19,
               "end": 24
             }
@@ -1340,7 +1340,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": [ { "line": 149, "start": 17, "end": 18 } ],
+            "tito": [ { "line": 148, "start": 17, "end": 18 } ],
             "decl": null
           }
         ]
@@ -1356,7 +1356,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": [ { "line": 149, "start": 8, "end": 12 } ],
+            "tito": [ { "line": 148, "start": 8, "end": 12 } ],
             "decl": null
           }
         ]
@@ -1644,7 +1644,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "tito": [ { "line": 143, "start": 11, "end": 12 } ],
+            "tito": [ { "line": 142, "start": 11, "end": 12 } ],
             "decl": null
           }
         ]

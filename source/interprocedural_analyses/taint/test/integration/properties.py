@@ -69,7 +69,6 @@ class TaintedGetterAndSetter:
     def uses_property(self):
         return self.my_property
 
-    # TODO(T52657355): Handle the property write here.
     def writes_to_property(self):
         self.my_property = _test_source()
 
