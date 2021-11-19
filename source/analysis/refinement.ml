@@ -19,6 +19,10 @@ module MapLattice = struct
 
     val set : 'data t -> key:key -> data:'data -> 'data t
 
+    val find : 'data t -> key -> 'data option
+
+    val fold : 'data t -> init:'a -> f:(key:key -> data:'data -> 'a -> 'a) -> 'a
+
     val fold2
       :  'data t ->
       'data t ->
@@ -30,18 +34,17 @@ module MapLattice = struct
   module Make (Map : MapSignature) = struct
     include Map
 
-    (** Two lattice maps are comparable only if one contains the other *)
+    (** The keys of `right` have to be a subset of the keys of `left` for `left` to be less than or
+        equal to `right`, since more keys = more restrictions = lower in the lattice *)
     let less_or_equal ~less_or_equal_one ~left ~right =
-      let f ~key:_ ~data sofar =
+      let f ~key ~data:right_data sofar =
         sofar
         &&
-        match data with
-        | `Both (left, right) -> less_or_equal_one ~left ~right
-        (* more data means more restrictions, so lower in the lattice *)
-        | `Left _ -> true
-        | `Right _ -> false
+        match find left key with
+        | Some left_data -> less_or_equal_one ~left:left_data ~right:right_data
+        | None -> false
       in
-      fold2 left right ~init:true ~f
+      fold right ~init:true ~f
 
 
     let join ~join_one left right =
