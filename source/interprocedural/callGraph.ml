@@ -178,6 +178,48 @@ module UnprocessedCallees = struct
     | Synthetic of RawCallees.t String.Map.Tree.t
 end
 
+let call_name { Call.callee; _ } =
+  match Node.value callee with
+  | Name (Name.Attribute { attribute; _ }) -> attribute
+  | Name (Name.Identifier name) -> name
+  | _ ->
+      (* Fall back to something that hopefully identifies the call well. *)
+      Expression.show callee
+
+
+module DefineCallGraph = struct
+  type t = Callees.t Location.Map.t [@@deriving eq]
+
+  let pp formatter call_graph =
+    let pp_pair formatter (key, value) =
+      Format.fprintf formatter "@,%a -> %a" Location.pp key Callees.pp value
+    in
+    let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+    call_graph |> Location.Map.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
+
+
+  let show = Format.asprintf "%a" pp
+
+  let empty = Location.Map.empty
+
+  let add call_graph ~location ~callees = Location.Map.set call_graph ~key:location ~data:callees
+
+  let resolve_call call_graph ~location ~call =
+    match Location.Map.find call_graph location with
+    | Some (Callees.Callees callees) -> Some callees
+    | Some (Callees.SyntheticCallees name_to_callees) ->
+        String.Map.Tree.find name_to_callees (call_name call)
+    | None -> None
+
+
+  let resolve_property_call call_graph ~location ~attribute =
+    match Location.Map.find call_graph location with
+    | Some (Callees.Callees callees) -> Some callees
+    | Some (Callees.SyntheticCallees name_to_callees) ->
+        String.Map.Tree.find name_to_callees attribute
+    | None -> None
+end
+
 let defining_attribute ~resolution parent_type attribute =
   let global_resolution = Resolution.global_resolution resolution in
   Type.split parent_type
@@ -845,20 +887,11 @@ let resolve_property_targets ~resolution ~base ~attribute ~special ~setter =
       Some (RawCallees.create ~call_targets:targets ~return_type ())
 
 
-let call_name { Call.callee; _ } =
-  match Node.value callee with
-  | Name (Name.Attribute { attribute; _ }) -> attribute
-  | Name (Name.Identifier name) -> name
-  | _ ->
-      (* Fall back to something that hopefully identifies the call well. *)
-      Expression.show callee
-
-
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
    having to hackily recompute them. *)
-module DefineCallGraph (Context : sig
+module DefineCallGraphFixpoint (Context : sig
   val global_resolution : GlobalResolution.t
 
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
@@ -1000,7 +1033,7 @@ let call_graph_of_define
     ~define:({ Define.signature = { Define.Signature.name; parent; _ }; _ } as define)
   =
   let callees_at_location = Location.Table.create () in
-  let module DefineFixpoint = DefineCallGraph (struct
+  let module DefineFixpoint = DefineCallGraphFixpoint (struct
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let local_annotations = TypeEnvironment.ReadOnly.get_local_annotations environment name
@@ -1051,7 +1084,7 @@ module SharedMemory = struct
         let unmarshall value = Marshal.from_string value 0
       end)
 
-  let add ~callable ~callees = add callable (Location.Map.to_tree callees)
+  let add ~callable ~call_graph = add callable (Location.Map.to_tree call_graph)
 
   let get ~callable = get callable >>| Location.Map.of_tree
 
@@ -1059,9 +1092,9 @@ module SharedMemory = struct
     match get ~callable with
     | Some map -> map
     | None ->
-        let callees = call_graph_of_define ~environment ~define in
-        add ~callable ~callees;
-        callees
+        let call_graph = call_graph_of_define ~environment ~define in
+        add ~callable ~call_graph;
+        call_graph
 
 
   let remove callables = KeySet.of_list callables |> remove_batch

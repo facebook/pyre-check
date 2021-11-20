@@ -28,7 +28,7 @@ module type FUNCTION_CONTEXT = sig
 
   val environment : TypeEnvironment.ReadOnly.t
 
-  val call_graph_of_define : CallGraph.Callees.t Location.Map.t
+  val call_graph_of_define : CallGraph.DefineCallGraph.t
 
   val existing_model : TaintResult.call_model
 
@@ -71,14 +71,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let get_callees ~location ~call =
     let callees =
-      match Map.find FunctionContext.call_graph_of_define location with
-      | Some (CallGraph.Callees.Callees callees) -> Some callees
-      | Some (CallGraph.Callees.SyntheticCallees name_to_callees) ->
-          String.Map.Tree.find name_to_callees (CallGraph.call_name call)
-      | None -> None
-    in
-    let callees =
-      match callees with
+      match
+        CallGraph.DefineCallGraph.resolve_call FunctionContext.call_graph_of_define ~location ~call
+      with
       | Some callees -> callees
       | None ->
           (* TODO(T105570363): This should be a fatal error. *)
@@ -103,11 +98,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let get_property_callees ~location ~attribute =
     let callees =
-      match Map.find FunctionContext.call_graph_of_define location with
-      | Some (CallGraph.Callees.Callees callees) -> Some callees
-      | Some (CallGraph.Callees.SyntheticCallees name_to_callees) ->
-          String.Map.Tree.find name_to_callees attribute
-      | None -> None
+      CallGraph.DefineCallGraph.resolve_property_call
+        FunctionContext.call_graph_of_define
+        ~location
+        ~attribute
     in
     let () =
       match callees with
@@ -1979,13 +1973,12 @@ let run
   let module State = State (FunctionContext) in
   let module Fixpoint = Fixpoint.Make (State) in
   if FunctionContext.debug || Statement.Define.dump_call_graph define.value then
-    Map.to_alist call_graph_of_define
-    |> List.map ~f:(fun (key, callees) ->
-           Format.asprintf "%a: %a" Location.pp key CallGraph.Callees.pp callees)
-    |> String.concat ~sep:"\n"
-    |> Log.dump
-         "Call graph of `%s`:\n %s"
-         (Statement.Define.name (Node.value define) |> Reference.show);
+    Log.dump
+      "Call graph of `%a`:@,%a"
+      Reference.pp
+      (Statement.Define.name define.Node.value)
+      CallGraph.DefineCallGraph.pp
+      call_graph_of_define;
   State.log "Forward analysis of callable: `%a`" Reference.pp name;
   let timer = Timer.start () in
   let cfg = Cfg.create define.value in

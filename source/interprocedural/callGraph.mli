@@ -75,19 +75,37 @@ module Callees : sig
   [@@deriving eq, show]
 end
 
+module DefineCallGraph : sig
+  type t [@@deriving eq, show]
+
+  val empty : t
+
+  val add : t -> location:Ast.Location.t -> callees:Callees.t -> t
+
+  val resolve_call
+    :  t ->
+    location:Ast.Location.t ->
+    call:Ast.Expression.Call.t ->
+    RawCallees.t option
+
+  val resolve_property_call
+    :  t ->
+    location:Ast.Location.t ->
+    attribute:string ->
+    RawCallees.t option
+end
+
 val call_graph_of_define
   :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   define:Ast.Statement.Define.t ->
-  Callees.t Ast.Location.Map.t
-
-val call_name : Call.t -> string
+  DefineCallGraph.t
 
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
 
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 
 module SharedMemory : sig
-  val add : callable:Target.callable_t -> callees:Callees.t Location.Map.t -> unit
+  val add : callable:Target.callable_t -> call_graph:DefineCallGraph.t -> unit
 
   (* Attempts to read the call graph for the given callable from shared memory. If it doesn't exist,
      computes the call graph and writes to shard memory. *)
@@ -95,7 +113,7 @@ module SharedMemory : sig
     :  callable:Target.callable_t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     define:Ast.Statement.Define.t ->
-    Callees.t Ast.Location.Map.t
+    DefineCallGraph.t
 
   val remove : Target.callable_t list -> unit
 end

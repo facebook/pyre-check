@@ -29,8 +29,14 @@ let test_call_graph_of_define context =
           stop = parse_position (List.nth_exn positions 1);
         }
       in
-      List.map expected ~f:(fun (key, value) -> parse_location key, value)
-      |> Location.Map.of_alist_exn
+      List.fold
+        expected
+        ~init:CallGraph.DefineCallGraph.empty
+        ~f:(fun call_graph_of_define (location, callees) ->
+          CallGraph.DefineCallGraph.add
+            call_graph_of_define
+            ~location:(parse_location location)
+            ~callees)
     in
     let define, test_source, environment =
       let find_define = function
@@ -56,13 +62,8 @@ let test_call_graph_of_define context =
     let overrides = DependencyGraph.create_overrides ~environment ~source:test_source in
     let _ = DependencyGraphSharedMemory.record_overrides overrides in
     assert_equal
-      ~cmp:(Location.Map.equal CallGraph.Callees.equal)
-      ~printer:(fun map ->
-        map
-        |> Location.Map.to_alist
-        |> List.map ~f:(fun (key, value) ->
-               Format.asprintf "%a: %a" Location.pp key CallGraph.Callees.pp value)
-        |> String.concat ~sep:"\n")
+      ~cmp:CallGraph.DefineCallGraph.equal
+      ~printer:CallGraph.DefineCallGraph.show
       expected
       (CallGraph.call_graph_of_define ~environment ~define);
     DependencyGraphSharedMemory.remove_overriding_types (Reference.Map.keys overrides)
