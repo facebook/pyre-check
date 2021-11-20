@@ -1,0 +1,26 @@
+{
+    "name": "XML External Entities (XXE)",
+    "description": "High signal filter for 5007 XML External Entities",
+    "features":[
+        {
+            "mode":"none of",
+            "features":[
+                "always-type:scalar",
+                "always-type:bool",
+                "type:scalar",
+                "type:scalar"
+            ]
+        }
+    ],
+    "codes": [
+        5007
+    ],
+    "traceLengthFromSources": [
+        0,
+        3
+    ],
+    "traceLengthToSinks": [
+        0,
+        5
+    ]
+}
