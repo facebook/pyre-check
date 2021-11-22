@@ -75,49 +75,65 @@ module Unit = struct
     let global_resolution = resolution context in
     (* Bases are compared *)
     assert_true
-      (less_or_equal ~global_resolution (create_mutable Type.integer) (create_mutable Type.integer));
+      (less_or_equal
+         ~global_resolution
+         ~left:(create_mutable Type.integer)
+         ~right:(create_mutable Type.integer));
     assert_false
-      (less_or_equal ~global_resolution (create_mutable Type.float) (create_mutable Type.integer));
+      (less_or_equal
+         ~global_resolution
+         ~left:(create_mutable Type.float)
+         ~right:(create_mutable Type.integer));
     (* Attributes are compared *)
     assert_true
       (less_or_equal
          ~global_resolution
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.integer)
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.integer));
+         ~left:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.integer)
+         ~right:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.integer));
     assert_true
       (less_or_equal
          ~global_resolution
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.integer)
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.float));
+         ~left:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.integer)
+         ~right:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.float));
     assert_false
       (less_or_equal
          ~global_resolution
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.float)
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.integer));
+         ~left:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.float)
+         ~right:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.integer));
     (* If attributes differ at all, then left must be a subset of right because more data means more
        restrictions, so lower in the lattice *)
     assert_true
       (less_or_equal
          ~global_resolution
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x.b" Type.integer)
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive));
+         ~left:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x.b" Type.integer)
+         ~right:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive));
     assert_false
       (less_or_equal
          ~global_resolution
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive)
-         (create_mutable Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
-         |> add_mutable_attribute_refinement !&"a.x.b" Type.integer));
+         ~left:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive)
+         ~right:
+           (create_mutable Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x" Type.object_primitive
+           |> add_mutable_attribute_refinement !&"a.x.b" Type.integer));
     ()
 
 

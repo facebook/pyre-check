@@ -154,8 +154,8 @@ module Unit = struct
     annotation refinement_unit ~identifiers:(reference |> Reference.as_list)
 
 
-  let rec less_or_equal ~global_resolution left right =
-    let annotation_less_or_equal left_base right_base =
+  let rec less_or_equal ~global_resolution ~left ~right =
+    let base_less_or_equal left_base right_base =
       match left_base, right_base with
       | Some left, Some right ->
           Annotation.less_or_equal
@@ -165,8 +165,8 @@ module Unit = struct
       | None, None -> true (* intermediate refinement units don't require computation *)
       | _ -> false
     in
-    let less_or_equal_one ~left ~right = less_or_equal ~global_resolution left right in
-    annotation_less_or_equal left.base right.base
+    let less_or_equal_one = less_or_equal ~global_resolution in
+    base_less_or_equal left.base right.base
     && IdentifierMap.less_or_equal ~less_or_equal_one ~left:left.attributes ~right:right.attributes
 
 
@@ -247,7 +247,7 @@ module Store = struct
   let show = Format.asprintf "%a" pp
 
   let less_or_equal ~global_resolution ~left ~right =
-    let less_or_equal_one ~left ~right = Unit.less_or_equal ~global_resolution left right in
+    let less_or_equal_one = Unit.less_or_equal ~global_resolution in
     ReferenceMap.less_or_equal ~less_or_equal_one ~left:left.annotations ~right:right.annotations
     && ReferenceMap.less_or_equal
          ~less_or_equal_one

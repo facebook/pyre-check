@@ -26,7 +26,7 @@ module Unit : sig
 
   val annotation : t -> reference:Reference.t -> Annotation.t option
 
-  val less_or_equal : global_resolution:GlobalResolution.t -> t -> t -> bool
+  val less_or_equal : global_resolution:GlobalResolution.t -> left:t -> right:t -> bool
 
   val join : global_resolution:GlobalResolution.t -> t -> t -> t
 
