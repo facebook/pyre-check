@@ -204,10 +204,8 @@ class PersistentTest(testslide.TestCase):
         assert_not_parsed('{"body": [], "no_name": "foo"}')
         assert_not_parsed('{"name": "foo", "body": ["Malformed"]}')
         assert_not_parsed('{"name": "foo", "body": ["TypeErrors", {}]}')
+        assert_not_parsed('{"name": "foo", "body": ["StatusUpdate", 42]}')
         assert_not_parsed('{"name": "foo", "body": ["StatusUpdate", []]}')
-        assert_not_parsed(
-            '{"name": "foo", "body": ["StatusUpdate", { "no_messsage": 42 }]}'
-        )
 
         assert_parsed(
             json.dumps({"name": "foo", "body": ["TypeErrors", []]}),
@@ -256,15 +254,12 @@ class PersistentTest(testslide.TestCase):
             json.dumps(
                 {
                     "name": "foo",
-                    "body": [
-                        "StatusUpdate",
-                        {"message": "derp"},
-                    ],
+                    "body": ["StatusUpdate", ["derp"]],
                 }
             ),
             expected=SubscriptionResponse(
                 name="foo",
-                body=StatusUpdateSubscription(message="derp"),
+                body=StatusUpdateSubscription(kind="derp"),
             ),
         )
 

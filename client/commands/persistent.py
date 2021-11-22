@@ -716,20 +716,20 @@ def _parse_type_error_subscription(response: object) -> TypeErrorSubscription:
 
 @dataclasses.dataclass(frozen=True)
 class StatusUpdateSubscription:
-    message: str
+    kind: str
 
 
 def _parse_status_update_subscription(response: object) -> StatusUpdateSubscription:
-    if not isinstance(response, dict):
+    if not isinstance(response, list) or len(response) == 0:
         raise incremental.InvalidServerResponse(
-            f"Status update subscription must be a dict. Got {response}"
+            f"Status update subscription must be a nonempty list. Got {response}"
         )
-    message = response.get("message", None)
-    if message is None:
+    kind = response[0]
+    if not isinstance(kind, str):
         raise incremental.InvalidServerResponse(
-            f"Missing `message` field from status update subscription: {response}"
+            f"Response kind of a status update must be a string. Got {response}"
         )
-    return StatusUpdateSubscription(message=message)
+    return StatusUpdateSubscription(kind=kind)
 
 
 SubscriptionBody = Union[TypeErrorSubscription, StatusUpdateSubscription]
@@ -746,7 +746,7 @@ def parse_subscription_response(response: str) -> SubscriptionResponse:
         response_json = json.loads(response)
         # The response JSON is expected to have the following forms:
         # `{"name": "foo", "body": ["TypeErrors", [error_json, ...]]}`
-        # `{"name": "foo", "body": ["StatusUpdate", { "message": ... }]}`
+        # `{"name": "foo", "body": ["StatusUpdate", ["message_kind", ...]]}`
         if isinstance(response_json, dict):
             name = response_json.get("name", None)
             body = response_json.get("body", None)
