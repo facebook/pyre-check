@@ -90,7 +90,7 @@ let test_type_guard context =
       if is_str_list(obj.x):
         reveal_type(obj.x)
     |}
-    ["Revealed type [-1]: Revealed type for `obj.x` is `List[typing.Union[int, str]]`."];
+    ["Revealed type [-1]: Revealed type for `obj.x` is `List[str]`."];
   assert_type_errors
     {|
       from typing import TypeGuard, List

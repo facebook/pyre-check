@@ -1378,6 +1378,22 @@ let test_check_temporary_refinement context =
       "Revealed type [-1]: Revealed type for `a` is `Optional[int]` (inferred: `int`).";
       "Revealed type [-1]: Revealed type for `b` is `Optional[int]` (inferred: `int`).";
     ];
+  (* Make sure that refining globals from other modules is always temporary *)
+  assert_type_errors
+    {|
+      from typing import Any
+
+      def foo() -> None: ...
+
+      if isinstance(Any, int):
+          reveal_type(Any)  # temporary refinement is permitted
+          foo()
+          reveal_type(Any)  # but it is cleared as it shoudl be
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `typing.Any` is `int`.";
+      "Revealed type [-1]: Revealed type for `typing.Any` is `object`.";
+    ];
   ()
 
 

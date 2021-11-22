@@ -175,18 +175,17 @@ let set_local_with_attributes
 let get_local
     ?(global_fallback = true)
     ~reference
-    ({ annotation_store = { annotations; temporary_annotations }; global_resolution; _ } as
-    resolution)
+    { annotation_store = { annotations; temporary_annotations }; global_resolution; _ }
   =
   match
     Option.first_some (Map.find temporary_annotations reference) (Map.find annotations reference)
+    >>= Refinement.Unit.base
   with
-  | Some result when global_fallback || not (is_global resolution ~reference) ->
-      Refinement.Unit.base result
-  | _ when global_fallback ->
+  | Some _ as result -> result
+  | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
       Reference.delocalize reference |> global >>| fun { annotation; _ } -> annotation
-  | _ -> None
+  | None -> None
 
 
 let get_local_with_attributes
@@ -200,9 +199,9 @@ let get_local_with_attributes
     Option.first_some
       (Map.find temporary_annotations object_reference)
       (Map.find annotations object_reference)
+    >>= Refinement.Unit.get_attribute ~attribute_path
   with
-  | Some result when global_fallback || not (is_global resolution ~reference:object_reference) ->
-      Refinement.Unit.get_attribute result ~attribute_path
+  | Some _ as result -> result
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
       Reference.(combine object_reference attribute_path |> delocalize)
