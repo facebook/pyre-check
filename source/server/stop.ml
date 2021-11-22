@@ -18,14 +18,10 @@ let stop_waiting_server () =
 
 
 let log_stopped_server ~reason ~start_time () =
-  let version =
-    (* HACK: Use `Version.version ()` directly when all servers are migrated. *)
-    Format.sprintf "newserver-%s" (Version.version ())
-  in
   Statistics.event
     ~flush:true
     ~name:"stop server"
-    ~normals:["reason", reason; "server_version", version]
+    ~normals:["reason", reason; "server_version", Version.version ()]
     ~integers:["up_time", Timer.stop_in_ms start_time]
     ()
 

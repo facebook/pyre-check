@@ -48,13 +48,7 @@ let with_performance_logging ?(normals = []) ~name f =
   let timer = Timer.start () in
   f ()
   >>= fun result ->
-  let normals =
-    let version =
-      (* HACK: Use `Version.version ()` directly when all servers are migrated. *)
-      Format.sprintf "newserver-%s" (Version.version ())
-    in
-    ("binary_version", version) :: normals
-  in
+  let normals = ("binary_version", Version.version ()) :: normals in
   Statistics.performance ~name ~timer ~normals ();
   Lwt.return result
 
