@@ -22,9 +22,9 @@ module Unit : sig
 
   val set_base : t -> base:Annotation.t -> t
 
-  val add_attribute_refinement : t -> reference:Reference.t -> annotation:Annotation.t -> t
+  val set_attribute : t -> attribute_path:Reference.t -> annotation:Annotation.t -> t
 
-  val annotation : t -> reference:Reference.t -> Annotation.t option
+  val get_attribute : t -> attribute_path:Reference.t -> Annotation.t option
 
   val less_or_equal : global_resolution:GlobalResolution.t -> left:t -> right:t -> bool
 

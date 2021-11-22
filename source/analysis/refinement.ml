@@ -118,9 +118,8 @@ module Unit = struct
 
   let set_base refinement_unit ~base = { refinement_unit with base = Some base }
 
-  let add_attribute_refinement refinement_unit ~reference ~annotation =
-    let rec add_attribute_refinement ({ attributes; _ } as refinement_unit) ~annotation ~identifiers
-      =
+  let set_attribute refinement_unit ~attribute_path ~annotation =
+    let rec set_attribute ({ attributes; _ } as refinement_unit) ~annotation ~identifiers =
       match identifiers with
       | [] -> { refinement_unit with base = Some annotation }
       | identifier :: identifiers ->
@@ -133,16 +132,13 @@ module Unit = struct
                    ~data:
                      (find attributes identifier
                      |> Option.value ~default:empty
-                     |> add_attribute_refinement ~annotation ~identifiers);
+                     |> set_attribute ~annotation ~identifiers);
           }
     in
-    add_attribute_refinement
-      refinement_unit
-      ~annotation
-      ~identifiers:(reference |> Reference.as_list)
+    set_attribute refinement_unit ~annotation ~identifiers:(attribute_path |> Reference.as_list)
 
 
-  let annotation refinement_unit ~reference =
+  let get_attribute refinement_unit ~attribute_path =
     let rec annotation { base; attributes } ~identifiers =
       match identifiers with
       | [] -> base
@@ -151,7 +147,7 @@ module Unit = struct
           | Some refinement_unit -> annotation refinement_unit ~identifiers
           | None -> None)
     in
-    annotation refinement_unit ~identifiers:(reference |> Reference.as_list)
+    annotation refinement_unit ~identifiers:(attribute_path |> Reference.as_list)
 
 
   let rec less_or_equal ~global_resolution ~left ~right =

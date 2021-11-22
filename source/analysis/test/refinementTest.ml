@@ -27,35 +27,35 @@ module Unit = struct
     ()
 
 
-  let test_add_attribute_refinement _ =
-    let assert_attribute_refinement ~refinement_unit ~reference ~expected =
+  let test_set_attribute _ =
+    let assert_attribute_refinement ~refinement_unit ~attribute_path ~expected =
       assert_equal
         ~cmp:(Option.equal Annotation.equal)
-        (annotation refinement_unit ~reference)
+        (get_attribute refinement_unit ~attribute_path)
         expected
     in
     let refinement_unit =
-      add_attribute_refinement
+      set_attribute
         empty
-        ~reference:!&"a.b.c.d"
+        ~attribute_path:!&"a.b.c.d"
         ~annotation:(Annotation.create_mutable Type.integer)
     in
-    assert_attribute_refinement ~refinement_unit ~reference:!&"a" ~expected:None;
-    assert_attribute_refinement ~refinement_unit ~reference:!&"a.b" ~expected:None;
-    assert_attribute_refinement ~refinement_unit ~reference:!&"a.b.c" ~expected:None;
+    assert_attribute_refinement ~refinement_unit ~attribute_path:!&"a" ~expected:None;
+    assert_attribute_refinement ~refinement_unit ~attribute_path:!&"a.b" ~expected:None;
+    assert_attribute_refinement ~refinement_unit ~attribute_path:!&"a.b.c" ~expected:None;
     assert_attribute_refinement
       ~refinement_unit
-      ~reference:!&"a.b.c.d"
+      ~attribute_path:!&"a.b.c.d"
       ~expected:(Some (Annotation.create_mutable (Type.Primitive "int")));
-    assert_attribute_refinement ~refinement_unit ~reference:!&"a.b.c.d.e" ~expected:None;
+    assert_attribute_refinement ~refinement_unit ~attribute_path:!&"a.b.c.d.e" ~expected:None;
 
     assert_attribute_refinement
       ~refinement_unit:
-        (add_attribute_refinement
+        (set_attribute
            refinement_unit
-           ~reference:!&"a.b.c.d"
+           ~attribute_path:!&"a.b.c.d"
            ~annotation:(Annotation.create_mutable Type.bool))
-      ~reference:!&"a.b.c.d"
+      ~attribute_path:!&"a.b.c.d"
       ~expected:(Some (Annotation.create_mutable (Type.Primitive "bool")));
     ()
 
@@ -64,11 +64,8 @@ module Unit = struct
     ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
 
 
-  let add_mutable_attribute_refinement reference type_ refinement_unit =
-    add_attribute_refinement
-      refinement_unit
-      ~reference
-      ~annotation:(Annotation.create_mutable type_)
+  let add_mutable_attribute_refinement attribute_path type_ refinement_unit =
+    set_attribute refinement_unit ~attribute_path ~annotation:(Annotation.create_mutable type_)
 
 
   let test_less_or_equal context =
@@ -246,7 +243,7 @@ module Unit = struct
   let suite =
     [
       "create" >:: test_create;
-      "add_attribute_refinement" >:: test_add_attribute_refinement;
+      "set_attribute" >:: test_set_attribute;
       "less_or_equal" >:: test_less_or_equal;
       "join" >:: test_join;
       "meet" >:: test_meet;

@@ -156,7 +156,7 @@ let set_local_with_attributes
             (Map.find temporary_annotations object_reference
             |> (fun existing -> Option.first_some existing (Map.find annotations object_reference))
             |> Option.value ~default:Refinement.Unit.empty
-            |> Refinement.Unit.add_attribute_refinement ~reference:attribute_path ~annotation
+            |> Refinement.Unit.set_attribute ~attribute_path ~annotation
             |> set_base ~base) )
     else
       ( Map.set
@@ -165,7 +165,7 @@ let set_local_with_attributes
           ~data:
             (Map.find annotations object_reference
             |> Option.value ~default:Refinement.Unit.empty
-            |> Refinement.Unit.add_attribute_refinement ~reference:attribute_path ~annotation
+            |> Refinement.Unit.set_attribute ~attribute_path ~annotation
             |> set_base ~base),
         temporary_annotations )
   in
@@ -202,7 +202,7 @@ let get_local_with_attributes
       (Map.find annotations object_reference)
   with
   | Some result when global_fallback || not (is_global resolution ~reference:object_reference) ->
-      Refinement.Unit.annotation result ~reference:attribute_path
+      Refinement.Unit.get_attribute result ~attribute_path
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
       Reference.(combine object_reference attribute_path |> delocalize)
