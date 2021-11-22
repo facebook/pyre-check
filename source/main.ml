@@ -10,7 +10,6 @@ open Commands
 
 let commands =
   [
-    "analyze", Analyze.command;
     "newanalyze", NewAnalyze.command;
     "newcheck", NewCheck.command;
     "newinfer", NewInfer.command;
