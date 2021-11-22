@@ -36,22 +36,12 @@ let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_sta
   }
 
 
-let pp format { annotation_store = { annotations; temporary_annotations }; type_variables; _ } =
-  let annotation_store_entry (reference, refinement_unit) =
-    Format.asprintf "%a -> %a" Reference.pp reference Refinement.Unit.pp refinement_unit
-  in
+let pp format { annotation_store; type_variables; _ } =
   Type.Variable.Set.to_list type_variables
   |> List.map ~f:Type.Variable.show
   |> String.concat ~sep:", "
   |> Format.fprintf format "Type variables: [%s]\n";
-  Map.to_alist annotations
-  |> List.map ~f:annotation_store_entry
-  |> String.concat ~sep:", "
-  |> Format.fprintf format "Annotation Store: [%s]";
-  Map.to_alist temporary_annotations
-  |> List.map ~f:annotation_store_entry
-  |> String.concat ~sep:", "
-  |> Format.fprintf format "Temporary Annotation Store: [%s]"
+  Format.fprintf format "%a" Refinement.Store.pp annotation_store
 
 
 let show resolution = Format.asprintf "%a" pp resolution

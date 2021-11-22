@@ -237,7 +237,7 @@ module Store = struct
     Map.to_alist annotations
     |> List.map ~f:show_annotation
     |> String.concat ~sep:", "
-    |> Format.fprintf format "Annotations: [%s]";
+    |> Format.fprintf format "Annotations: [%s]\n";
     Map.to_alist temporary_annotations
     |> List.map ~f:show_annotation
     |> String.concat ~sep:", "
