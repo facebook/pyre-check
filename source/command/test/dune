@@ -1,6 +1,5 @@
 (tests
- (names baseConfigurationTest newAnalyzeTest newCheckTest newInferTest
-   newServerTest)
+ (names baseConfigurationTest AnalyzeTest CheckTest InferTest ServerTest)
  (preprocess
   (pps ppx_compare ppx_sexp_conv))
  (libraries oUnit pyrelib.test pyrelib.commands))

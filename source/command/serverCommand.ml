@@ -11,7 +11,7 @@ module Path = PyrePath
 
 module ServerConfiguration = struct
   type t = {
-    base: NewCommandStartup.BaseConfiguration.t;
+    base: CommandStartup.BaseConfiguration.t;
     socket_path: Path.t;
     strict: bool;
     show_error_traces: bool;
@@ -28,7 +28,7 @@ module ServerConfiguration = struct
     let open Yojson.Safe.Util in
     let open JsonParsing in
     try
-      match NewCommandStartup.BaseConfiguration.of_yojson json with
+      match CommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error
       | Result.Ok base ->
           let critial_file_list_member =
@@ -77,7 +77,7 @@ module ServerConfiguration = struct
 
   let start_options_of
       {
-        base = { NewCommandStartup.BaseConfiguration.source_paths; _ };
+        base = { CommandStartup.BaseConfiguration.source_paths; _ };
         socket_path;
         watchman_root;
         critical_files;
@@ -92,7 +92,7 @@ module ServerConfiguration = struct
       {
         base =
           {
-            NewCommandStartup.BaseConfiguration.source_paths;
+            CommandStartup.BaseConfiguration.source_paths;
             search_paths;
             excludes;
             checked_directory_allowlist;
@@ -158,9 +158,7 @@ module ServerConfiguration = struct
 end
 
 let run_server configuration_file =
-  match
-    NewCommandStartup.read_and_parse_json configuration_file ~f:ServerConfiguration.of_yojson
-  with
+  match CommandStartup.read_and_parse_json configuration_file ~f:ServerConfiguration.of_yojson with
   | Result.Error message ->
       Log.error "%s" message;
       exit 1
@@ -168,7 +166,7 @@ let run_server configuration_file =
       ({
          ServerConfiguration.base =
            {
-             NewCommandStartup.BaseConfiguration.log_path;
+             CommandStartup.BaseConfiguration.log_path;
              global_root;
              local_root;
              debug;
@@ -180,7 +178,7 @@ let run_server configuration_file =
          additional_logging_sections;
          _;
        } as server_configuration) ->
-      NewCommandStartup.setup_global_states
+      CommandStartup.setup_global_states
         ~global_root
         ~local_root
         ~debug

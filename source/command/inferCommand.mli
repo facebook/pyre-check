@@ -11,7 +11,7 @@ module InferConfiguration : sig
   type path_list = PyrePath.t list [@@deriving sexp, compare, hash]
 
   type t = {
-    base: NewCommandStartup.BaseConfiguration.t;
+    base: CommandStartup.BaseConfiguration.t;
     paths_to_modify: path_list option;
   }
   [@@deriving sexp, compare, hash]

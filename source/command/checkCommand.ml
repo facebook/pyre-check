@@ -25,7 +25,7 @@ end
 
 module CheckConfiguration = struct
   type t = {
-    base: NewCommandStartup.BaseConfiguration.t;
+    base: CommandStartup.BaseConfiguration.t;
     strict: bool;
     show_error_traces: bool;
     additional_logging_sections: string list;
@@ -37,7 +37,7 @@ module CheckConfiguration = struct
     let open JsonParsing in
     (* Parsing logic *)
     try
-      match NewCommandStartup.BaseConfiguration.of_yojson json with
+      match CommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error
       | Result.Ok base ->
           let strict = json |> bool_member "strict" ~default:false in
@@ -57,7 +57,7 @@ module CheckConfiguration = struct
       {
         base =
           {
-            NewCommandStartup.BaseConfiguration.source_paths;
+            CommandStartup.BaseConfiguration.source_paths;
             search_paths;
             excludes;
             checked_directory_allowlist;
@@ -168,7 +168,7 @@ let print_errors errors =
 
 
 let run_check check_configuration =
-  let { CheckConfiguration.base = { NewCommandStartup.BaseConfiguration.source_paths; _ }; _ } =
+  let { CheckConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ }; _ } =
     check_configuration
   in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
@@ -210,9 +210,7 @@ let on_exception = function
 
 let run_check configuration_file =
   let exit_status =
-    match
-      NewCommandStartup.read_and_parse_json configuration_file ~f:CheckConfiguration.of_yojson
-    with
+    match CommandStartup.read_and_parse_json configuration_file ~f:CheckConfiguration.of_yojson with
     | Result.Error message ->
         Log.error "%s" message;
         ExitStatus.PyreError
@@ -220,7 +218,7 @@ let run_check configuration_file =
         ({
            CheckConfiguration.base =
              {
-               NewCommandStartup.BaseConfiguration.global_root;
+               CommandStartup.BaseConfiguration.global_root;
                local_root;
                debug;
                remote_logging;
@@ -231,7 +229,7 @@ let run_check configuration_file =
            additional_logging_sections;
            _;
          } as check_configuration) ->
-        NewCommandStartup.setup_global_states
+        CommandStartup.setup_global_states
           ~global_root
           ~local_root
           ~debug

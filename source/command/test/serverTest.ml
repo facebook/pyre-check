@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Commands.NewServer
+open Commands.Server
 module Path = PyrePath
 
 let dummy_server_json =

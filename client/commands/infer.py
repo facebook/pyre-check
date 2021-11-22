@@ -33,7 +33,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class Arguments:
     """
     Data structure for configuration options the backend infer command can recognize.
-    Need to keep in sync with `pyre/command/newInferCommand.ml`
+    Need to keep in sync with `source/command/inferCommand.ml`
     """
 
     base_arguments: backend_arguments.BaseArguments
@@ -799,7 +799,7 @@ def _run_infer_command_get_output(command: Sequence[str]) -> str:
             return_code = result.returncode
 
             # Interpretation of the return code needs to be kept in sync with
-            # `command/newInferCommand.ml`.
+            # `source/command/inferCommand.ml`.
             if return_code == 0:
                 return result.stdout
             elif return_code == 1:

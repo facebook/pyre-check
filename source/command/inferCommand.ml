@@ -9,7 +9,7 @@ open Core
 open Pyre
 
 (* Infer command uses the same exit code scheme as check command. *)
-module ExitStatus = NewCheckCommand.ExitStatus
+module ExitStatus = CheckCommand.ExitStatus
 
 module InferConfiguration = struct
   type path_list = PyrePath.t list [@@deriving sexp, compare, hash]
@@ -17,7 +17,7 @@ module InferConfiguration = struct
   let path_list_of_raw raw_paths = List.map raw_paths ~f:PyrePath.create_absolute
 
   type t = {
-    base: NewCommandStartup.BaseConfiguration.t;
+    base: CommandStartup.BaseConfiguration.t;
     paths_to_modify: path_list option;
   }
   [@@deriving sexp, compare, hash]
@@ -26,7 +26,7 @@ module InferConfiguration = struct
     let open Yojson.Safe.Util in
     (* Parsing logic *)
     try
-      match NewCommandStartup.BaseConfiguration.of_yojson json with
+      match CommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error
       | Result.Ok base ->
           let paths_to_modify =
@@ -48,7 +48,7 @@ module InferConfiguration = struct
       {
         base =
           {
-            NewCommandStartup.BaseConfiguration.source_paths;
+            CommandStartup.BaseConfiguration.source_paths;
             search_paths;
             excludes;
             checked_directory_allowlist;
@@ -135,7 +135,7 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
 
 let run_infer infer_configuration =
   let {
-    InferConfiguration.base = { NewCommandStartup.BaseConfiguration.source_paths; _ };
+    InferConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ };
     paths_to_modify;
   }
     =
@@ -148,9 +148,7 @@ let run_infer infer_configuration =
 
 let run_infer configuration_file =
   let exit_status =
-    match
-      NewCommandStartup.read_and_parse_json configuration_file ~f:InferConfiguration.of_yojson
-    with
+    match CommandStartup.read_and_parse_json configuration_file ~f:InferConfiguration.of_yojson with
     | Result.Error message ->
         Log.error "%s" message;
         ExitStatus.PyreError
@@ -158,7 +156,7 @@ let run_infer configuration_file =
         ({
            InferConfiguration.base =
              {
-               NewCommandStartup.BaseConfiguration.global_root;
+               CommandStartup.BaseConfiguration.global_root;
                local_root;
                debug;
                remote_logging;
@@ -168,7 +166,7 @@ let run_infer configuration_file =
              };
            _;
          } as infer_configuration) ->
-        NewCommandStartup.setup_global_states
+        CommandStartup.setup_global_states
           ~global_root
           ~local_root
           ~debug
@@ -178,8 +176,7 @@ let run_infer configuration_file =
           ~memory_profiling_output
           ();
 
-        Lwt_main.run
-          (Lwt.catch (fun () -> run_infer infer_configuration) NewCheckCommand.on_exception)
+        Lwt_main.run (Lwt.catch (fun () -> run_infer infer_configuration) CheckCommand.on_exception)
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)

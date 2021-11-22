@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Commands.NewAnalyze
+open Commands.Analyze
 module Path = PyrePath
 
 let test_json_parsing context =

@@ -10,10 +10,10 @@ open Commands
 
 let commands =
   [
-    "newanalyze", NewAnalyze.command;
-    "newcheck", NewCheck.command;
-    "newinfer", NewInfer.command;
-    "newserver", NewServer.command;
+    "newanalyze", Analyze.command;
+    "newcheck", Check.command;
+    "newinfer", Infer.command;
+    "newserver", Server.command;
   ]
 
 

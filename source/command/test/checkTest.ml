@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Commands.NewCheck
+open Commands.Check
 
 let test_json_parsing context =
   let assert_parsed ~expected json =

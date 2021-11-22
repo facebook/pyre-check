@@ -124,7 +124,7 @@ SavedStateAction = Union[
 class Arguments:
     """
     Data structure for configuration options the backend server can recognize.
-    Need to keep in sync with `pyre/command/newServerCommand.ml`
+    Need to keep in sync with `source/command/serverCommand.ml`
     """
 
     base_arguments: backend_arguments.BaseArguments

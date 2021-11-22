@@ -9,11 +9,11 @@ open Core
 module Path = PyrePath
 
 (* Analyze command uses the same exit code scheme as check command. *)
-module ExitStatus = NewCheckCommand.ExitStatus
+module ExitStatus = CheckCommand.ExitStatus
 
 module AnalyzeConfiguration = struct
   type t = {
-    base: NewCommandStartup.BaseConfiguration.t;
+    base: CommandStartup.BaseConfiguration.t;
     dump_call_graph: Path.t option;
     dump_model_query_results: Path.t option;
     find_missing_flows: string option;
@@ -35,7 +35,7 @@ module AnalyzeConfiguration = struct
     let open JsonParsing in
     (* Parsing logic *)
     try
-      match NewCommandStartup.BaseConfiguration.of_yojson json with
+      match CommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error
       | Result.Ok base ->
           let dump_call_graph = optional_path_member "dump_call_graph" json in
@@ -85,7 +85,7 @@ module AnalyzeConfiguration = struct
       {
         base =
           {
-            NewCommandStartup.BaseConfiguration.source_paths;
+            CommandStartup.BaseConfiguration.source_paths;
             search_paths;
             excludes;
             checked_directory_allowlist;
@@ -270,7 +270,7 @@ let run_taint_analysis
 
 let run_analyze analyze_configuration =
   let {
-    AnalyzeConfiguration.base = { NewCommandStartup.BaseConfiguration.source_paths; _ };
+    AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ };
     inline_decorators;
     repository_root;
     _;
@@ -294,7 +294,7 @@ let run_analyze analyze_configuration =
 let run_analyze configuration_file =
   let exit_status =
     match
-      NewCommandStartup.read_and_parse_json configuration_file ~f:AnalyzeConfiguration.of_yojson
+      CommandStartup.read_and_parse_json configuration_file ~f:AnalyzeConfiguration.of_yojson
     with
     | Result.Error message ->
         Log.error "%s" message;
@@ -303,7 +303,7 @@ let run_analyze configuration_file =
         ({
            AnalyzeConfiguration.base =
              {
-               NewCommandStartup.BaseConfiguration.global_root;
+               CommandStartup.BaseConfiguration.global_root;
                local_root;
                debug;
                remote_logging;
@@ -313,7 +313,7 @@ let run_analyze configuration_file =
              };
            _;
          } as analyze_configuration) ->
-        NewCommandStartup.setup_global_states
+        CommandStartup.setup_global_states
           ~global_root
           ~local_root
           ~debug
@@ -323,7 +323,7 @@ let run_analyze configuration_file =
           ~memory_profiling_output
           ();
         Lwt_main.run
-          (Lwt.catch (fun () -> run_analyze analyze_configuration) NewCheckCommand.on_exception)
+          (Lwt.catch (fun () -> run_analyze analyze_configuration) CheckCommand.on_exception)
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)

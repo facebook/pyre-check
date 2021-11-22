@@ -26,7 +26,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class Arguments:
     """
     Data structure for configuration options the backend check command can recognize.
-    Need to keep in sync with `pyre/command/newCheckCommand.ml`
+    Need to keep in sync with `source/command/checkCommand.ml`
     """
 
     base_arguments: backend_arguments.BaseArguments
@@ -170,7 +170,7 @@ def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode
             return_code = result.returncode
 
             # Interpretation of the return code needs to be kept in sync with
-            # `command/newCheckCommand.ml`.
+            # `source/command/checkCommand.ml`.
             if return_code == 0:
                 type_errors = parse_type_error_response(result.stdout)
                 incremental.display_type_errors(type_errors, output=output)

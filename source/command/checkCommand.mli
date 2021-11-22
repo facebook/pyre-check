@@ -20,7 +20,7 @@ end
 
 module CheckConfiguration : sig
   type t = {
-    base: NewCommandStartup.BaseConfiguration.t;
+    base: CommandStartup.BaseConfiguration.t;
     strict: bool;
     show_error_traces: bool;
     additional_logging_sections: string list;

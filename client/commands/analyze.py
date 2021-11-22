@@ -26,7 +26,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class Arguments:
     """
     Data structure for configuration options the backend analyze command can recognize.
-    Need to keep in sync with `pyre/command/newAnalyzeCommand.ml`
+    Need to keep in sync with `source/command/analyzeCommand.ml`
     """
 
     base_arguments: backend_arguments.BaseArguments
