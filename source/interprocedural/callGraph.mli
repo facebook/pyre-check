@@ -33,7 +33,7 @@ module HigherOrderParameter : sig
 end
 
 (* An aggregate of all possible callees at a call site. *)
-module RawCallees : sig
+module CallCallees : sig
   type t = {
     (* Normal call targets. *)
     call_targets: CallTarget.t list;
@@ -68,10 +68,34 @@ module RawCallees : sig
   val pp_option : Format.formatter -> t option -> unit
 end
 
-module Callees : sig
+(* An aggregrate of all possible callees for a given attribute access. *)
+module AttributeAccessProperties : sig
+  type t = {
+    targets: Target.t list;
+    return_type: Type.t;
+  }
+  [@@deriving eq, show]
+end
+
+(* An aggregate of all possible callees for an arbitrary expression. *)
+module ExpressionCallees : sig
+  type t = {
+    call: CallCallees.t option;
+    attribute_access: AttributeAccessProperties.t option;
+  }
+  [@@deriving eq, show]
+
+  val from_call : CallCallees.t -> t
+
+  val from_attribute_access : AttributeAccessProperties.t -> t
+end
+
+(* An aggregate of all possible callees for an arbitrary location.
+ * Note that multiple expressions might have the same location. *)
+module LocationCallees : sig
   type t =
-    | Callees of RawCallees.t
-    | SyntheticCallees of RawCallees.t String.Map.Tree.t
+    | Singleton of ExpressionCallees.t
+    | Compound of ExpressionCallees.t String.Map.Tree.t
   [@@deriving eq, show]
 end
 
@@ -80,19 +104,19 @@ module DefineCallGraph : sig
 
   val empty : t
 
-  val add : t -> location:Ast.Location.t -> callees:Callees.t -> t
+  val add : t -> location:Ast.Location.t -> callees:LocationCallees.t -> t
 
   val resolve_call
     :  t ->
     location:Ast.Location.t ->
     call:Ast.Expression.Call.t ->
-    RawCallees.t option
+    CallCallees.t option
 
   val resolve_property_call
     :  t ->
     location:Ast.Location.t ->
     attribute:string ->
-    RawCallees.t option
+    AttributeAccessProperties.t option
 end
 
 val call_graph_of_define

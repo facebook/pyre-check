@@ -83,7 +83,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (Node.create_with_default_location (Expression.Call call))
             Location.pp
             location;
-          CallGraph.RawCallees.create_unresolved Type.Any
+          CallGraph.CallCallees.create_unresolved Type.Any
     in
     log
       "Resolved callees for call `%a` at %a:@,%a"
@@ -91,7 +91,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (Node.create_with_default_location (Expression.Call call))
       Location.pp
       location
-      CallGraph.RawCallees.pp
+      CallGraph.CallCallees.pp
       callees;
     callees
 
@@ -111,7 +111,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             attribute
             Location.pp
             location
-            CallGraph.RawCallees.pp
+            CallGraph.AttributeAccessProperties.pp
             callees
       | _ -> ()
     in
@@ -655,7 +655,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint
       ~state:initial_state
       {
-        CallGraph.RawCallees.call_targets;
+        CallGraph.CallCallees.call_targets;
         new_targets;
         init_targets;
         return_type;
@@ -805,12 +805,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   (* Lazy version of `analyze_callee` which only analyze what we need for a call site. *)
   and analyze_callee_for_raw_callees ~resolution ~state ~callee = function
-    | { CallGraph.RawCallees.unresolved = true; _ }
-    | { CallGraph.RawCallees.new_targets = _ :: _; _ }
-    | { CallGraph.RawCallees.init_targets = _ :: _; _ } ->
+    | { CallGraph.CallCallees.unresolved = true; _ }
+    | { CallGraph.CallCallees.new_targets = _ :: _; _ }
+    | { CallGraph.CallCallees.init_targets = _ :: _; _ } ->
         (* We need both the taint on self and on the whole callee. *)
         analyze_callee ~resolution ~state ~callee
-    | { CallGraph.RawCallees.call_targets; _ }
+    | { CallGraph.CallCallees.call_targets; _ }
       when List.exists
              ~f:(fun { CallGraph.CallTarget.implicit_self; _ } -> implicit_self)
              call_targets ->
@@ -1004,7 +1004,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~callee_taint:(Some lambda_taint)
           ~arguments_taint
           ~state
-          (CallGraph.RawCallees.create ~call_targets ~return_type ())
+          (CallGraph.CallCallees.create ~call_targets ~return_type ())
       in
       let taint = ForwardState.Tree.add_breadcrumb (Features.lambda ()) taint in
       taint, state
@@ -1148,7 +1148,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body is
              tainted. *)
           let callees = get_callees ~location ~call:{ Call.callee; arguments } in
-          if CallGraph.RawCallees.is_partially_resolved callees then
+          if CallGraph.CallCallees.is_partially_resolved callees then
             apply_callees ~resolution ~callee ~call_location:location ~arguments ~state callees
           else
             taint, state
@@ -1398,7 +1398,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if resolve_properties then get_property_callees ~location ~attribute else None
     in
     match properties with
-    | Some { call_targets = _ :: _ as call_targets; return_type; _ } ->
+    | Some { targets; return_type } ->
+        let call_targets =
+          List.map
+            ~f:(fun target ->
+              { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+            targets
+        in
         let taint, state =
           apply_callees_with_arguments_taint
             ~resolution
@@ -1409,7 +1415,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~callee_taint:None
             ~arguments_taint:[]
             ~state
-            (CallGraph.RawCallees.create ~call_targets ~return_type ())
+            (CallGraph.CallCallees.create ~call_targets ~return_type ())
         in
         { base_taint = ForwardState.Tree.bottom; attribute_taint = taint; state }
     | _ ->
@@ -1750,8 +1756,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
               match get_property_callees ~location ~attribute with
-              | Some { call_targets = _ :: _ as call_targets; return_type; _ } ->
+              | Some { targets; return_type } ->
                   (* Treat `a.property = x` as `a = a.property(x)` *)
+                  let call_targets =
+                    List.map
+                      ~f:(fun target ->
+                        { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+                      targets
+                  in
                   let taint, state =
                     apply_callees
                       ~resolution
@@ -1759,7 +1771,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       ~call_location:location
                       ~arguments:[{ Call.Argument.name = None; value }]
                       ~state
-                      (CallGraph.RawCallees.create ~call_targets ~return_type ())
+                      (CallGraph.CallCallees.create ~call_targets ~return_type ())
                   in
                   store_taint_option (AccessPath.of_expression ~resolution base) taint state
               | _ ->

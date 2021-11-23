@@ -78,7 +78,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (Node.create_with_default_location (Expression.Call call))
             Location.pp
             location;
-          CallGraph.RawCallees.create_unresolved Type.Any
+          CallGraph.CallCallees.create_unresolved Type.Any
     in
     log
       "Resolved callees for call `%a` at %a:@,%a"
@@ -86,7 +86,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (Node.create_with_default_location (Expression.Call call))
       Location.pp
       location
-      CallGraph.RawCallees.pp
+      CallGraph.CallCallees.pp
       callees;
     callees
 
@@ -106,7 +106,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             attribute
             Location.pp
             location
-            CallGraph.RawCallees.pp
+            CallGraph.AttributeAccessProperties.pp
             callees
       | _ -> ()
     in
@@ -651,7 +651,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state:initial_state
       ~call_taint
       {
-        CallGraph.RawCallees.call_targets;
+        CallGraph.CallCallees.call_targets;
         new_targets;
         init_targets;
         return_type;
@@ -847,7 +847,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if resolve_properties then get_property_callees ~location ~attribute else None
     in
     match properties with
-    | Some { call_targets = _ :: _ as call_targets; return_type; _ } ->
+    | Some { targets; return_type } ->
+        let call_targets =
+          List.map
+            ~f:(fun target ->
+              { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+            targets
+        in
         apply_callees
           ~resolution
           ~callee:expression
@@ -855,7 +861,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments:[]
           ~state
           ~call_taint:attribute_taint
-          (CallGraph.RawCallees.create ~call_targets ~return_type ())
+          (CallGraph.CallCallees.create ~call_targets ~return_type ())
     | _ ->
         let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
         let global_model = Model.get_global_model ~resolution ~expression ~location in
@@ -962,7 +968,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments
           ~call_taint:result_taint
           ~state
-          (CallGraph.RawCallees.create ~call_targets ~return_type ())
+          (CallGraph.CallCallees.create ~call_targets ~return_type ())
       in
       let state =
         analyze_callee ~resolution ~callee:lambda_callee ~self_taint ~callee_taint ~state
@@ -1102,7 +1108,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (* Ensure we simulate the body of __setitem__ in case the function contains taint. *)
         let state =
           let callees = get_callees ~location ~call:{ Call.callee; arguments } in
-          if CallGraph.RawCallees.is_partially_resolved callees then
+          if CallGraph.CallCallees.is_partially_resolved callees then
             apply_callees
               ~resolution
               ~call_location:location
@@ -1617,8 +1623,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
               match get_property_callees ~location ~attribute with
-              | Some { call_targets = _ :: _ as call_targets; return_type; _ } ->
+              | Some { targets; return_type } ->
                   (* Treat `a.property = x` as `a = a.property(x)` *)
+                  let call_targets =
+                    List.map
+                      ~f:(fun target ->
+                        { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+                      targets
+                  in
                   let taint = compute_assignment_taint ~resolution base state |> fst in
                   apply_callees
                     ~resolution
@@ -1627,7 +1639,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     ~arguments:[{ name = None; value }]
                     ~state
                     ~call_taint:taint
-                    (CallGraph.RawCallees.create ~call_targets ~return_type ())
+                    (CallGraph.CallCallees.create ~call_targets ~return_type ())
               | _ -> analyze_assignment ~resolution ~target ~value state)
           | _ -> analyze_assignment ~resolution ~target ~value state)
     | Assert _

@@ -45,7 +45,7 @@ module HigherOrderParameter = struct
     List.map ~f:(fun { CallTarget.target; _ } -> target) call_targets
 end
 
-module RawCallees = struct
+module CallCallees = struct
   type t = {
     call_targets: CallTarget.t list;
     new_targets: Target.t list;
@@ -147,17 +147,82 @@ module RawCallees = struct
          (higher_order_parameter >>| HigherOrderParameter.all_targets |> Option.value ~default:[])
 end
 
-module Callees = struct
+module AttributeAccessProperties = struct
+  type t = {
+    targets: Target.t list;
+    return_type: Type.t;
+  }
+  [@@deriving eq, show { with_path = false }]
+
+  let deduplicate { targets; return_type } =
+    { targets = List.dedup_and_sort ~compare:Target.compare targets; return_type }
+
+
+  let join { targets = left_targets; return_type } { targets = right_targets; return_type = _ } =
+    { targets = List.rev_append left_targets right_targets; return_type }
+
+
+  let all_targets { targets; _ } = targets
+end
+
+module ExpressionCallees = struct
+  type t = {
+    call: CallCallees.t option;
+    attribute_access: AttributeAccessProperties.t option;
+  }
+  [@@deriving eq, show { with_path = false }]
+
+  let from_call callees = { call = Some callees; attribute_access = None }
+
+  let from_attribute_access properties = { call = None; attribute_access = Some properties }
+
+  let join
+      { call = left_call; attribute_access = left_attribute_access }
+      { call = right_call; attribute_access = right_attribute_access }
+    =
+    let call =
+      match left_call, right_call with
+      | Some left, Some right -> Some (CallCallees.join left right)
+      | Some _, None -> left_call
+      | None, Some _ -> right_call
+      | None, None -> None
+    in
+    let attribute_access =
+      match left_attribute_access, right_attribute_access with
+      | Some left, Some right -> Some (AttributeAccessProperties.join left right)
+      | Some _, None -> left_attribute_access
+      | None, Some _ -> right_attribute_access
+      | None, None -> None
+    in
+    { call; attribute_access }
+
+
+  let deduplicate { call; attribute_access } =
+    {
+      call = call >>| CallCallees.deduplicate;
+      attribute_access = attribute_access >>| AttributeAccessProperties.deduplicate;
+    }
+
+
+  let all_targets { call; attribute_access } =
+    let call_targets = call >>| CallCallees.all_targets |> Option.value ~default:[] in
+    let attribute_access_targets =
+      attribute_access >>| AttributeAccessProperties.all_targets |> Option.value ~default:[]
+    in
+    List.rev_append call_targets attribute_access_targets
+end
+
+module LocationCallees = struct
   type t =
-    | Callees of RawCallees.t
-    | SyntheticCallees of RawCallees.t String.Map.Tree.t
+    | Singleton of ExpressionCallees.t
+    | Compound of ExpressionCallees.t String.Map.Tree.t
   [@@deriving eq]
 
   let pp formatter = function
-    | Callees callees -> Format.fprintf formatter "%a" RawCallees.pp callees
-    | SyntheticCallees map ->
+    | Singleton callees -> Format.fprintf formatter "%a" ExpressionCallees.pp callees
+    | Compound map ->
         String.Map.Tree.to_alist map
-        |> List.map ~f:(fun (key, value) -> Format.asprintf "%s: %a" key RawCallees.pp value)
+        |> List.map ~f:(fun (key, value) -> Format.asprintf "%s: %a" key ExpressionCallees.pp value)
         |> String.concat ~sep:", "
         |> Format.fprintf formatter "%s"
 
@@ -165,20 +230,24 @@ module Callees = struct
   let show callees = Format.asprintf "%a" pp callees
 
   let all_targets = function
-    | Callees raw_callees -> RawCallees.all_targets raw_callees
-    | SyntheticCallees map -> String.Map.Tree.data map |> List.concat_map ~f:RawCallees.all_targets
+    | Singleton raw_callees -> ExpressionCallees.all_targets raw_callees
+    | Compound map -> String.Map.Tree.data map |> List.concat_map ~f:ExpressionCallees.all_targets
 end
 
-module UnprocessedCallees = struct
-  type t =
-    | Named of {
-        callee_name: string;
-        callees: RawCallees.t;
-      }
-    | Synthetic of RawCallees.t String.Map.Tree.t
+module UnprocessedLocationCallees = struct
+  type t = ExpressionCallees.t String.Map.Tree.t
+
+  let singleton ~expression_identifier ~callees =
+    String.Map.Tree.singleton expression_identifier callees
+
+
+  let add map ~expression_identifier ~callees =
+    String.Map.Tree.update map expression_identifier ~f:(function
+        | Some existing_callees -> ExpressionCallees.join existing_callees callees
+        | None -> callees)
 end
 
-let call_name { Call.callee; _ } =
+let call_identifier { Call.callee; _ } =
   match Node.value callee with
   | Name (Name.Attribute { attribute; _ }) -> attribute
   | Name (Name.Identifier name) -> name
@@ -187,12 +256,18 @@ let call_name { Call.callee; _ } =
       Expression.show callee
 
 
+let expression_identifier = function
+  | Expression.Call call -> Some (call_identifier call)
+  | Expression.Name (Name.Attribute { attribute; _ }) -> Some attribute
+  | _ -> (* not a valid call site. *) None
+
+
 module DefineCallGraph = struct
-  type t = Callees.t Location.Map.t [@@deriving eq]
+  type t = LocationCallees.t Location.Map.t [@@deriving eq]
 
   let pp formatter call_graph =
     let pp_pair formatter (key, value) =
-      Format.fprintf formatter "@,%a -> %a" Location.pp key Callees.pp value
+      Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
     in
     let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
     call_graph |> Location.Map.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
@@ -204,20 +279,23 @@ module DefineCallGraph = struct
 
   let add call_graph ~location ~callees = Location.Map.set call_graph ~key:location ~data:callees
 
-  let resolve_call call_graph ~location ~call =
+  let resolve_expression call_graph ~location ~expression_identifier =
     match Location.Map.find call_graph location with
-    | Some (Callees.Callees callees) -> Some callees
-    | Some (Callees.SyntheticCallees name_to_callees) ->
-        String.Map.Tree.find name_to_callees (call_name call)
+    | Some (LocationCallees.Singleton callees) -> Some callees
+    | Some (LocationCallees.Compound name_to_callees) ->
+        String.Map.Tree.find name_to_callees expression_identifier
     | None -> None
+
+
+  let resolve_call call_graph ~location ~call =
+    expression_identifier (Expression.Call call)
+    >>= fun expression_identifier ->
+    resolve_expression call_graph ~location ~expression_identifier >>= fun { call; _ } -> call
 
 
   let resolve_property_call call_graph ~location ~attribute =
-    match Location.Map.find call_graph location with
-    | Some (Callees.Callees callees) -> Some callees
-    | Some (Callees.SyntheticCallees name_to_callees) ->
-        String.Map.Tree.find name_to_callees attribute
-    | None -> None
+    resolve_expression call_graph ~location ~expression_identifier:attribute
+    >>= fun { attribute_access; _ } -> attribute_access
 end
 
 let defining_attribute ~resolution parent_type attribute =
@@ -437,18 +515,18 @@ let rec resolve_callees_from_type
               ~f:(fun target -> { CallTarget.target; implicit_self = true; collapse_tito })
               targets
           in
-          RawCallees.create ~call_targets:targets ~return_type ()
+          CallCallees.create ~call_targets:targets ~return_type ()
       | None ->
           let target =
             match callee_kind with
             | Method _ -> Target.create_method name
             | _ -> Target.create_function name
           in
-          RawCallees.create
+          CallCallees.create
             ~call_targets:[{ CallTarget.target; implicit_self = false; collapse_tito }]
             ~return_type
             ())
-  | Type.Callable { kind = Anonymous; _ } -> RawCallees.create_unresolved return_type
+  | Type.Callable { kind = Anonymous; _ } -> CallCallees.create_unresolved return_type
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
       resolve_callees_from_type
@@ -476,10 +554,10 @@ let rec resolve_callees_from_type
             ~callee_kind
             ~collapse_tito
             new_target
-          |> RawCallees.join combined_targets)
+          |> CallCallees.join combined_targets)
   | Type.Parametric { name = "type"; _ } ->
       resolve_constructor_callee ~resolution ~return_type callable_type
-      |> Option.value ~default:(RawCallees.create_unresolved return_type)
+      |> Option.value ~default:(CallCallees.create_unresolved return_type)
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
          ignore it for now to make sure our constructor logic via `cls()` still works. *)
@@ -491,7 +569,7 @@ let rec resolve_callees_from_type
       with
       | Type.Any
       | Type.Top ->
-          RawCallees.create_unresolved return_type
+          CallCallees.create_unresolved return_type
       (* Callable protocol. *)
       | Type.Callable { kind = Anonymous; _ } ->
           Type.primitive_name callable_type
@@ -499,11 +577,11 @@ let rec resolve_callees_from_type
                 let target =
                   `Method { Target.class_name = primitive_callable_name; method_name = "__call__" }
                 in
-                RawCallees.create
+                CallCallees.create
                   ~call_targets:[{ CallTarget.target; implicit_self = true; collapse_tito }]
                   ~return_type
                   ())
-          |> Option.value ~default:(RawCallees.create_unresolved return_type)
+          |> Option.value ~default:(CallCallees.create_unresolved return_type)
       | annotation ->
           if not resolving_callable_class then
             resolve_callees_from_type
@@ -514,7 +592,7 @@ let rec resolve_callees_from_type
               ~collapse_tito
               annotation
           else
-            RawCallees.create_unresolved return_type)
+            CallCallees.create_unresolved return_type)
 
 
 and resolve_constructor_callee ~resolution ~return_type class_type =
@@ -553,7 +631,7 @@ and resolve_constructor_callee ~resolution ~return_type class_type =
         List.map ~f:(fun { CallTarget.target; _ } -> target) init_callees.call_targets
       in
       Some
-        (RawCallees.create
+        (CallCallees.create
            ~new_targets
            ~init_targets
            ~unresolved:(new_callees.unresolved || init_callees.unresolved)
@@ -707,7 +785,7 @@ let resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type =
       >>| Reference.show
       >>| fun name ->
       let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
-      RawCallees.create
+      CallCallees.create
         ~call_targets:[{ CallTarget.target = `Function name; implicit_self = false; collapse_tito }]
         ~return_type
         ()
@@ -784,9 +862,9 @@ let resolve_regular_callees ~resolution ~return_type ~callee =
   let callee_type = resolve_ignoring_optional ~resolution callee in
   let recognized_callees =
     resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type
-    |> Option.value ~default:(RawCallees.create_unresolved return_type)
+    |> Option.value ~default:(CallCallees.create_unresolved return_type)
   in
-  if RawCallees.is_partially_resolved recognized_callees then
+  if CallCallees.is_partially_resolved recognized_callees then
     recognized_callees
   else
     let callee_kind = callee_kind ~resolution callee callee_type in
@@ -794,12 +872,12 @@ let resolve_regular_callees ~resolution ~return_type ~callee =
     let calleees_from_type =
       resolve_callees_from_type ~resolution ~return_type ~callee_kind ~collapse_tito callee_type
     in
-    if RawCallees.is_partially_resolved calleees_from_type then
+    if CallCallees.is_partially_resolved calleees_from_type then
       calleees_from_type
     else
       resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee
-      >>| (fun target -> RawCallees.create ~call_targets:[target] ~return_type ())
-      |> Option.value ~default:(RawCallees.create_unresolved return_type)
+      >>| (fun target -> CallCallees.create ~call_targets:[target] ~return_type ())
+      |> Option.value ~default:(CallCallees.create_unresolved return_type)
 
 
 let resolve_callees ~resolution ~call =
@@ -812,7 +890,7 @@ let resolve_callees ~resolution ~call =
   let higher_order_parameter =
     let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
       match resolve_regular_callees ~resolution ~return_type:Type.none ~callee:argument with
-      | { RawCallees.call_targets = _ :: _ as regular_targets; _ } ->
+      | { CallCallees.call_targets = _ :: _ as regular_targets; _ } ->
           let return_type =
             Expression.Call { callee = argument; arguments = [] }
             |> Node.create_with_default_location
@@ -871,11 +949,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~special ~setter =
         else
           targets
       in
-      let targets =
-        List.concat_map defining_parents ~f:target_of_parent
-        |> List.map ~f:(fun target ->
-               { CallTarget.target; implicit_self = true; collapse_tito = true })
-      in
+      let targets = List.concat_map defining_parents ~f:target_of_parent in
       let return_type =
         if setter then
           Type.none
@@ -884,7 +958,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~special ~setter =
           |> Node.create_with_default_location
           |> Resolution.resolve_expression_to_type resolution
       in
-      Some (RawCallees.create ~call_targets:targets ~return_type ())
+      Some { AttributeAccessProperties.targets; return_type }
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -898,7 +972,7 @@ module DefineCallGraphFixpoint (Context : sig
 
   val parent : Reference.t option
 
-  val callees_at_location : UnprocessedCallees.t Location.Table.t
+  val callees_at_location : UnprocessedLocationCallees.t Location.Table.t
 end) =
 struct
   type assignment_target = { location: Location.t }
@@ -912,24 +986,17 @@ struct
     type nonrec t = visitor_t
 
     let expression_visitor ({ resolution; assignment_target } as state) { Node.value; location } =
-      let register_targets ~callee_name raw_callees =
-        let callees =
-          match Location.Table.find Context.callees_at_location location with
-          | Some (UnprocessedCallees.Named { callee_name = existing_callee_name; callees }) ->
-              UnprocessedCallees.Synthetic
-                (String.Map.Tree.of_alist_reduce
-                   ~f:(fun existing _ -> existing)
-                   [existing_callee_name, callees; callee_name, raw_callees])
-          | Some (UnprocessedCallees.Synthetic map) ->
-              UnprocessedCallees.Synthetic
-                (String.Map.Tree.set map ~key:callee_name ~data:raw_callees)
-          | None -> UnprocessedCallees.Named { callee_name; callees = raw_callees }
-        in
-        Location.Table.set Context.callees_at_location ~key:location ~data:callees
+      let register_targets ~expression_identifier callees =
+        Location.Table.update Context.callees_at_location location ~f:(function
+            | None -> UnprocessedLocationCallees.singleton ~expression_identifier ~callees
+            | Some existing_callees ->
+                UnprocessedLocationCallees.add existing_callees ~expression_identifier ~callees)
       in
       match value with
       | Expression.Call call ->
-          resolve_callees ~resolution ~call |> register_targets ~callee_name:(call_name call);
+          resolve_callees ~resolution ~call
+          |> ExpressionCallees.from_call
+          |> register_targets ~expression_identifier:(call_identifier call);
           state
       | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
           let setter =
@@ -938,15 +1005,17 @@ struct
                 Location.equal assignment_target_location location
             | None -> false
           in
-          let (_ : unit option) =
-            resolve_property_targets ~resolution ~base ~attribute ~special ~setter
-            >>| register_targets ~callee_name:attribute
-          in
+          resolve_property_targets ~resolution ~base ~attribute ~special ~setter
+          >>| ExpressionCallees.from_attribute_access
+          >>| register_targets ~expression_identifier:attribute
+          |> ignore;
           state
       | Expression.ComparisonOperator comparison -> (
           match ComparisonOperator.override ~location comparison with
           | Some { Node.value = Expression.Call call; _ } ->
-              resolve_callees ~resolution ~call |> register_targets ~callee_name:(call_name call);
+              resolve_callees ~resolution ~call
+              |> ExpressionCallees.from_call
+              |> register_targets ~expression_identifier:(call_identifier call);
               state
           | _ -> state)
       | _ -> state
@@ -1061,12 +1130,15 @@ let call_graph_of_define
 
   DefineFixpoint.forward ~cfg:(Cfg.create define) ~initial:() |> ignore;
   Location.Table.to_alist callees_at_location
-  |> List.map ~f:(fun (key, value) ->
-         match value with
-         | UnprocessedCallees.Synthetic map ->
-             key, Callees.SyntheticCallees (Core.String.Map.Tree.map ~f:RawCallees.deduplicate map)
-         | UnprocessedCallees.Named { callees; _ } ->
-             key, Callees.Callees (RawCallees.deduplicate callees))
+  |> List.map ~f:(fun (location, unprocessed_callees) ->
+         match String.Map.Tree.to_alist unprocessed_callees with
+         | [] -> failwith "unreachable"
+         | [(_, callees)] ->
+             location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
+         | _ ->
+             ( location,
+               LocationCallees.Compound
+                 (Core.String.Map.Tree.map ~f:ExpressionCallees.deduplicate unprocessed_callees) ))
   |> Location.Map.of_alist_exn
 
 
@@ -1075,7 +1147,7 @@ module SharedMemory = struct
     Memory.WithCache.Make
       (Target.CallableKey)
       (struct
-        type t = Callees.t Location.Map.Tree.t
+        type t = LocationCallees.t Location.Map.Tree.t
 
         let prefix = Prefix.make ()
 
@@ -1114,7 +1186,7 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
             call_graph_of_define ~environment ~define:(Node.value define)
         in
         Location.Map.data call_graph_of_define
-        |> List.concat_map ~f:Callees.all_targets
+        |> List.concat_map ~f:LocationCallees.all_targets
         |> List.dedup_and_sort ~compare:Target.compare
         |> fun callees ->
         Target.CallableMap.set dependencies ~key:(Target.create define) ~data:callees
