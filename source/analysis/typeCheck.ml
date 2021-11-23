@@ -325,14 +325,7 @@ module State (Context : Context) = struct
     match left, right with
     | Unreachable, Unreachable -> true
     | Value left_resolution, Value right_resolution ->
-        Map.equal
-          Refinement.Unit.equal
-          (Resolution.annotations left_resolution)
-          (Resolution.annotations right_resolution)
-        && Map.equal
-             Refinement.Unit.equal
-             (Resolution.temporary_annotations left_resolution)
-             (Resolution.temporary_annotations right_resolution)
+        Resolution.refinements_equal left_resolution right_resolution
     | _, _ -> false
 
 

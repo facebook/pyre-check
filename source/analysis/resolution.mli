@@ -94,6 +94,8 @@ val annotations : t -> Refinement.Unit.t Reference.Map.t
 
 val temporary_annotations : t -> Refinement.Unit.t Reference.Map.t
 
+val refinements_equal : t -> t -> bool
+
 val meet_refinements : t -> t -> t
 
 val outer_join_refinements : t -> t -> t

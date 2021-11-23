@@ -145,15 +145,7 @@ module State (Context : Context) = struct
     (* Ignore errors in unit tests. *)
     match left, right with
     | Bottom, Bottom -> true
-    | Value left, Value right ->
-        Map.equal
-          Refinement.Unit.equal
-          (Resolution.annotations left.resolution)
-          (Resolution.annotations right.resolution)
-        && Map.equal
-             Refinement.Unit.equal
-             (Resolution.temporary_annotations left.resolution)
-             (Resolution.temporary_annotations right.resolution)
+    | Value left, Value right -> Resolution.refinements_equal left.resolution right.resolution
     | _ -> false
 
 

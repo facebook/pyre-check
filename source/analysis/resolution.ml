@@ -242,6 +242,10 @@ let temporary_annotations { annotation_store = { temporary_annotations; _ }; _ }
   temporary_annotations
 
 
+let refinements_equal left right =
+  Refinement.Store.equal left.annotation_store right.annotation_store
+
+
 (** Meet refinements.
 
     Because the type variables in client code are always the same, we just take the left as an
