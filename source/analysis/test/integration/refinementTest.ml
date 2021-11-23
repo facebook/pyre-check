@@ -1394,6 +1394,80 @@ let test_check_temporary_refinement context =
       "Revealed type [-1]: Revealed type for `typing.Any` is `int`.";
       "Revealed type [-1]: Revealed type for `typing.Any` is `object`.";
     ];
+  (* Check whether the order of temporary / non-temporary refinements matters *)
+  assert_type_errors
+    {|
+      class A:
+          x: object = ""
+
+      class B(A):
+          pass
+
+
+      def foo(a: A) -> None:
+          if isinstance(a, B):
+              if isinstance(a.x, int):
+                  reveal_type(a)
+                  reveal_type(a.x)
+          if isinstance(a.x, int):
+              if isinstance(a, B):
+                  reveal_type(a)
+                  reveal_type(a.x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `B`.";
+      "Revealed type [-1]: Revealed type for `a.x` is `int`.";
+      "Revealed type [-1]: Revealed type for `a` is `A`.";
+      "Revealed type [-1]: Revealed type for `a.x` is `int`.";
+    ];
+  (* Tests illustrating whether an assignment properly wipes out the attribute subtree *)
+  assert_type_errors
+    {|
+    import typing
+    class A:
+        a: typing.Optional[A] = None
+        x: object = ""
+
+    class B(A):
+        pass
+
+    def f(a: A) -> None:
+        b = B()
+        if a.a is not None:
+            if isinstance(a.a.x, int):
+                reveal_type(a.a.x)
+                a.a = b
+                reveal_type(a.a)
+                reveal_type(a.a.x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a.a.x` is `int`.";
+      "Revealed type [-1]: Revealed type for `a.a` is `typing.Optional[A]` (inferred: `B`).";
+      "Revealed type [-1]: Revealed type for `a.a.x` is `int`.";
+    ];
+  assert_type_errors
+    {|
+    import typing
+    class A:
+        a: typing.Optional[A] = None
+        x: typing.Final[object] = ""
+
+    class B(A):
+        pass
+
+    def f(a: A) -> None:
+        if a.a is not None:
+            if isinstance(a.a.x, int):
+                reveal_type(a.a.x)
+                a.a = B()
+                reveal_type(a.a)
+                reveal_type(a.a.x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a.a.x` is `object` (final).";
+      "Revealed type [-1]: Revealed type for `a.a` is `typing.Optional[A]` (inferred: `B`).";
+      "Revealed type [-1]: Revealed type for `a.a.x` is `int`.";
+    ];
   ()
 
 
