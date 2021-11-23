@@ -140,6 +140,13 @@ let test_sequence _ =
   ()
 
 
+let test_singleton _ =
+  assert_pattern_to_condition ~pattern:"True" ~expected:"subject is True";
+  assert_pattern_to_condition ~pattern:"False" ~expected:"subject is False";
+  assert_pattern_to_condition ~pattern:"None" ~expected:"subject is None";
+  ()
+
+
 let test_value _ =
   assert_pattern_to_condition ~pattern:"42" ~expected:"subject == 42";
   ()
@@ -160,6 +167,7 @@ let () =
          "nested" >:: test_nested;
          "or" >:: test_or;
          "sequence" >:: test_sequence;
+         "singleton" >:: test_singleton;
          "value" >:: test_value;
          "wildcard" >:: test_wildcard;
        ]

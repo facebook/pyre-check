@@ -71,6 +71,46 @@ let test_simple context =
             return "Something's wrong with the Internet"
     |}
     [];
+  assert_type_errors
+    {|
+      def http_error(status: None | int) -> str:
+        match status:
+          case None:
+            return "No status"
+          case 418:
+            return "I'm a teapot"
+          case _:
+            reveal_type(status)
+            return "Something's wrong with the Internet"
+    |}
+    ["Revealed type [-1]: Revealed type for `status` is `typing.Optional[int]` (inferred: `int`)."];
+  assert_type_errors
+    {|
+      def test_capture(status: None | int) -> None:
+        match status:
+          case None:
+            pass
+          case x:
+            reveal_type(status)
+            reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `status` is `typing.Optional[int]` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      def test_bools(status: bool) -> None:
+        match status:
+          case True:
+            reveal_type(status)
+          case False:
+            reveal_type(status)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[True]`.";
+      "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[False]`.";
+    ];
   (* TODO(T102720335): Make assertions based on pattern's type. *)
   assert_type_errors
     {|
@@ -167,6 +207,23 @@ let test_pattern context =
     [
       "Revealed type [-1]: Revealed type for `first` is `int`.";
       "Revealed type [-1]: Revealed type for `last` is `float`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      def test_subpattern(point: Tuple[int, int] | None) -> None:
+        match point:
+          case None:
+            pass
+          case (x, y) as p:
+            reveal_type(x)
+            reveal_type(y)
+            reveal_type(p)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `p` is `Tuple[int, int]`.";
     ];
   (* TODO(T102720335): Make assertions based on pattern's type. *)
   assert_type_errors

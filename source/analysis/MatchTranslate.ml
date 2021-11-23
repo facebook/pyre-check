@@ -39,6 +39,11 @@ let create_comparison_equals ~location ~left ~right =
   |> Node.create ~location
 
 
+let create_comparison_is ~location left right =
+  Expression.ComparisonOperator { left; operator = ComparisonOperator.Is; right }
+  |> Node.create ~location
+
+
 let create_call ~location ~callee ~arguments =
   Expression.Call { callee; arguments } |> Node.create ~location
 
@@ -120,6 +125,8 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
   | MatchOr patterns ->
       List.map patterns ~f:(pattern_to_condition ~subject)
       |> List.reduce_exn ~f:(fun left right -> create_boolean_or ~location ~left ~right)
+  | MatchSingleton constant ->
+      create_comparison_is ~location subject (create_constant ~location constant)
   | MatchSequence patterns ->
       let prefix, _rest, suffix =
         let is_not_star_pattern = function
