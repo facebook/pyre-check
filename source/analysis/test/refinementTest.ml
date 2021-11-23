@@ -27,15 +27,15 @@ module Unit = struct
     ()
 
 
-  let test_set_attribute _ =
+  let test_set_annotation _ =
     let assert_attribute_refinement ~refinement_unit ~attribute_path ~expected =
       assert_equal
         ~cmp:(Option.equal Annotation.equal)
-        (get_attribute refinement_unit ~attribute_path)
+        (get_annotation refinement_unit ~attribute_path)
         expected
     in
     let refinement_unit =
-      set_attribute
+      set_annotation
         empty
         ~attribute_path:!&"a.b.c.d"
         ~annotation:(Annotation.create_mutable Type.integer)
@@ -51,7 +51,7 @@ module Unit = struct
 
     assert_attribute_refinement
       ~refinement_unit:
-        (set_attribute
+        (set_annotation
            refinement_unit
            ~attribute_path:!&"a.b.c.d"
            ~annotation:(Annotation.create_mutable Type.bool))
@@ -65,7 +65,7 @@ module Unit = struct
 
 
   let add_mutable_attribute_refinement attribute_path type_ refinement_unit =
-    set_attribute refinement_unit ~attribute_path ~annotation:(Annotation.create_mutable type_)
+    set_annotation refinement_unit ~attribute_path ~annotation:(Annotation.create_mutable type_)
 
 
   let test_less_or_equal context =
@@ -243,7 +243,7 @@ module Unit = struct
   let suite =
     [
       "create" >:: test_create;
-      "set_attribute" >:: test_set_attribute;
+      "set_annotation" >:: test_set_annotation;
       "less_or_equal" >:: test_less_or_equal;
       "join" >:: test_join;
       "meet" >:: test_meet;

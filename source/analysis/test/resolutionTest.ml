@@ -14,33 +14,15 @@ open Statement
 open Test
 open WeakenMutableLiterals
 
-let test_set_local context =
-  let assert_local ~resolution ~name ~expected =
+let test_new_and_refine context =
+  let create_name = Expression.create_name ~location:Location.any in
+  let assert_local ~name ~expected resolution =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
-      (Resolution.get_local resolution ~reference:!&name >>| Annotation.annotation)
+      (Resolution.get_local ~reference:!&name resolution >>| Annotation.annotation)
   in
-  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  assert_local ~resolution ~name:"local" ~expected:None;
-  let resolution =
-    Resolution.set_local
-      resolution
-      ~reference:!&"local"
-      ~annotation:(Annotation.create_mutable Type.integer)
-  in
-  assert_local ~resolution ~name:"local" ~expected:(Some "int");
-  let resolution =
-    Resolution.set_local
-      resolution
-      ~reference:!&"local"
-      ~annotation:(Annotation.create_mutable Type.float)
-  in
-  assert_local ~resolution ~name:"local" ~expected:(Some "float")
-
-
-let test_set_local_with_attributes context =
-  let assert_local_with_attributes ?(global_fallback = true) ~resolution ~name ~expected () =
+  let assert_local_with_attributes ?(global_fallback = true) ~name ~expected resolution =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
@@ -51,22 +33,69 @@ let test_set_local_with_attributes context =
       >>| Annotation.annotation)
   in
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  assert_local_with_attributes ~resolution ~name:"local" ~expected:None ();
+  (* nothing to start out with *)
+  assert_local ~name:"local" ~expected:None resolution;
+  (* create a local `local` and make sure the type is right *)
   let resolution =
-    Resolution.set_local_with_attributes
+    Resolution.new_local
       resolution
-      ~name:(Expression.create_name ~location:Location.any "local.a.x")
+      ~reference:!&"local"
+      ~annotation:(Annotation.create_mutable Type.object_primitive)
+  in
+  assert_local ~name:"local" ~expected:(Some "object") resolution;
+  (* create an attribute `local.x.y` and make sure the type is right, also refine it *)
+  assert_local_with_attributes ~name:"local.x.y" ~expected:None resolution;
+  let resolution =
+    Resolution.new_local_with_attributes
+      resolution
+      ~name:(create_name "local.x.y")
+      ~annotation:(Annotation.create_mutable Type.object_primitive)
+  in
+  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "object") resolution;
+  (* Make sure we can refine `local.x.y` *)
+  let resolution =
+    Resolution.refine_local_with_attributes
+      resolution
+      ~name:(create_name "local.x.y")
       ~annotation:(Annotation.create_mutable Type.integer)
   in
-  assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "int") ();
-  assert_local_with_attributes ~resolution ~name:"local.a.y" ~expected:None ();
+  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "int") resolution;
+  (* refine `local.x` and make sure it refines, and doesn't destroy `local.x.y` *)
   let resolution =
-    Resolution.set_local_with_attributes
+    Resolution.refine_local_with_attributes
       resolution
-      ~name:(Expression.create_name ~location:Location.any "local.a.x")
+      ~name:(create_name "local.x")
       ~annotation:(Annotation.create_mutable Type.float)
   in
-  assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "float") ();
+  assert_local_with_attributes ~name:"local.x" ~expected:(Some "float") resolution;
+  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "int") resolution;
+  (* bind a new type to `local.x`. This should destroy `local.x.y` *)
+  let resolution =
+    Resolution.new_local_with_attributes
+      resolution
+      ~name:(create_name "local.x")
+      ~annotation:(Annotation.create_mutable Type.integer)
+  in
+  assert_local_with_attributes ~name:"local.x" ~expected:(Some "int") resolution;
+  assert_local_with_attributes ~name:"local.x.y" ~expected:None resolution;
+  (* refine `local`. This should not destroy `local.x`. *)
+  let resolution =
+    Resolution.refine_local
+      resolution
+      ~reference:!&"local"
+      ~annotation:(Annotation.create_mutable Type.float)
+  in
+  assert_local ~name:"local" ~expected:(Some "float") resolution;
+  assert_local_with_attributes ~name:"local.x" ~expected:(Some "int") resolution;
+  (* bind a new type to `local`. This should destroy `local.x`. *)
+  let resolution =
+    Resolution.new_local
+      resolution
+      ~reference:!&"local"
+      ~annotation:(Annotation.create_mutable Type.integer)
+  in
+  assert_local ~name:"local" ~expected:(Some "int") resolution;
+  assert_local_with_attributes ~name:"local.x" ~expected:None resolution;
   ()
 
 
@@ -1560,8 +1589,7 @@ let test_fallback_attribute context =
 let () =
   "resolution"
   >::: [
-         "set_local" >:: test_set_local;
-         "set_local_with_attributes" >:: test_set_local_with_attributes;
+         "new_and_refine" >:: test_new_and_refine;
          "parse_annotation" >:: test_parse_annotation;
          "parse_reference" >:: test_parse_reference;
          "partition_name" >:: test_partition_name;

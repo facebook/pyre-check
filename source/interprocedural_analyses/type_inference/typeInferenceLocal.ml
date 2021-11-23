@@ -14,9 +14,9 @@ open Analysis
 module Error = AnalysisError
 open TypeInferenceData
 
-let add_local ~resolution ~name ~annotation =
+let refine_local ~resolution ~name ~annotation =
   match name_to_reference name with
-  | Some reference -> Resolution.set_local resolution ~reference ~annotation
+  | Some reference -> Resolution.refine_local resolution ~reference ~annotation
   | None -> resolution
 
 
@@ -387,7 +387,7 @@ module State (Context : Context) = struct
             }
           when is_simple_name name && Type.is_dictionary (resolve base) ->
             let resolution =
-              add_local
+              refine_local
                 ~resolution
                 ~name
                 ~annotation:
@@ -430,7 +430,7 @@ module State (Context : Context) = struct
               |> Type.list
               |> Annotation.create_mutable
             in
-            Value { state with resolution = add_local ~resolution ~name ~annotation }
+            Value { state with resolution = refine_local ~resolution ~name ~annotation }
         | Statement.Assign
             {
               value = { value = Dictionary { keywords = []; entries = [] }; _ };
@@ -439,7 +439,7 @@ module State (Context : Context) = struct
             }
           when is_simple_name name ->
             let resolution =
-              add_local
+              refine_local
                 ~resolution
                 ~name
                 ~annotation:
@@ -474,7 +474,7 @@ module State (Context : Context) = struct
             { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
           when is_simple_name name ->
             let resolution =
-              add_local
+              refine_local
                 ~resolution
                 ~name
                 ~annotation:(Annotation.create_mutable (Type.list Type.Bottom))
@@ -748,7 +748,7 @@ module State (Context : Context) = struct
                         let resolved = forward_expression ~state ~expression:argument in
                         resolve_assign parameter_annotation resolved
                         >>| (fun refined ->
-                              Resolution.set_local
+                              Resolution.refine_local
                                 resolution
                                 ~reference
                                 ~annotation:(Annotation.create_mutable refined))
@@ -791,7 +791,7 @@ module State (Context : Context) = struct
                       let resolved = forward_expression ~state ~expression:value in
                       resolve_assign target_annotation resolved
                       >>| (fun refined ->
-                            Resolution.set_local
+                            Resolution.refine_local
                               resolution
                               ~reference:(Reference.create identifier)
                               ~annotation:(Annotation.create_mutable refined))
@@ -813,7 +813,7 @@ module State (Context : Context) = struct
                     let resolution =
                       resolve_assign target_annotation (forward_expression ~state ~expression:value)
                       >>| (fun refined ->
-                            add_local
+                            refine_local
                               ~resolution
                               ~name
                               ~annotation:(Annotation.create_mutable refined))
@@ -863,7 +863,7 @@ module State (Context : Context) = struct
               let return_annotation =
                 Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
               in
-              add_local ~resolution ~name ~annotation:return_annotation
+              refine_local ~resolution ~name ~annotation:return_annotation
           | Return { Return.expression = Some { Node.value = Tuple expressions; _ }; _ } -> (
               let return_annotation =
                 Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
@@ -879,7 +879,7 @@ module State (Context : Context) = struct
                     ~f:(fun resolution annotation expression ->
                       match Node.value expression with
                       | Name name when is_simple_name name ->
-                          add_local
+                          refine_local
                             ~resolution
                             ~name
                             ~annotation:(Annotation.create_mutable annotation)

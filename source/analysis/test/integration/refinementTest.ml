@@ -1417,7 +1417,7 @@ let test_check_temporary_refinement context =
     [
       "Revealed type [-1]: Revealed type for `a` is `B`.";
       "Revealed type [-1]: Revealed type for `a.x` is `int`.";
-      "Revealed type [-1]: Revealed type for `a` is `A`.";
+      "Revealed type [-1]: Revealed type for `a` is `B`.";
       "Revealed type [-1]: Revealed type for `a.x` is `int`.";
     ];
   (* Tests illustrating whether an assignment properly wipes out the attribute subtree *)
@@ -1443,7 +1443,7 @@ let test_check_temporary_refinement context =
     [
       "Revealed type [-1]: Revealed type for `a.a.x` is `int`.";
       "Revealed type [-1]: Revealed type for `a.a` is `typing.Optional[A]` (inferred: `B`).";
-      "Revealed type [-1]: Revealed type for `a.a.x` is `int`.";
+      "Revealed type [-1]: Revealed type for `a.a.x` is `object`.";
     ];
   assert_type_errors
     {|
@@ -1464,9 +1464,9 @@ let test_check_temporary_refinement context =
                 reveal_type(a.a.x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `a.a.x` is `object` (final).";
-      "Revealed type [-1]: Revealed type for `a.a` is `typing.Optional[A]` (inferred: `B`).";
       "Revealed type [-1]: Revealed type for `a.a.x` is `int`.";
+      "Revealed type [-1]: Revealed type for `a.a` is `typing.Optional[A]` (inferred: `B`).";
+      "Revealed type [-1]: Revealed type for `a.a.x` is `object` (final).";
     ];
   ()
 

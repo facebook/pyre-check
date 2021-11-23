@@ -50,9 +50,18 @@ val resolve_attribute_access : t -> base_type:Type.t -> attribute:string -> Type
 
 val partition_name : t -> name:Expression.Name.t -> Reference.t * Reference.t * Annotation.t option
 
-val set_local : ?temporary:bool -> t -> reference:Reference.t -> annotation:Annotation.t -> t
+val new_local : ?temporary:bool -> t -> reference:Reference.t -> annotation:Annotation.t -> t
 
-val set_local_with_attributes
+val refine_local : ?temporary:bool -> t -> reference:Reference.t -> annotation:Annotation.t -> t
+
+val new_local_with_attributes
+  :  ?temporary:bool ->
+  t ->
+  name:Expression.Name.t ->
+  annotation:Annotation.t ->
+  t
+
+val refine_local_with_attributes
   :  ?temporary:bool ->
   t ->
   name:Expression.Name.t ->

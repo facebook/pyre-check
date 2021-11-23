@@ -21,6 +21,8 @@ module MapLattice = struct
 
     val find : 'data t -> key -> 'data option
 
+    val remove : 'data t -> key -> 'data t
+
     val fold : 'data t -> init:'a -> f:(key:key -> data:'data -> 'a -> 'a) -> 'a
 
     val fold2
@@ -122,10 +124,17 @@ module Unit = struct
     { refinement_unit with base = Option.first_some refinement_unit.base base }
 
 
-  let set_attribute refinement_unit ~attribute_path ~annotation =
-    let rec set_attribute ({ attributes; _ } as refinement_unit) ~annotation ~identifiers =
+  (** If `attribute_path` is empty, set the base annotation. Otherwise, find the appropriate
+      attribute (traversing intermediate units and constructing new ones as needed) and set the base
+      there. *)
+  let set_annotation ?(wipe_subtree = false) ~attribute_path ~annotation refinement_unit =
+    let rec recurse ~annotation ~identifiers ({ attributes; _ } as refinement_unit) =
       match identifiers with
-      | [] -> { refinement_unit with base = Some annotation }
+      | [] ->
+          if wipe_subtree then
+            { empty with base = Some annotation }
+          else
+            { refinement_unit with base = Some annotation }
       | identifier :: identifiers ->
           {
             refinement_unit with
@@ -136,22 +145,25 @@ module Unit = struct
                    ~data:
                      (find attributes identifier
                      |> Option.value ~default:empty
-                     |> set_attribute ~annotation ~identifiers);
+                     |> recurse ~annotation ~identifiers);
           }
     in
-    set_attribute refinement_unit ~annotation ~identifiers:(attribute_path |> Reference.as_list)
+    recurse ~annotation ~identifiers:(attribute_path |> Reference.as_list) refinement_unit
 
 
-  let get_attribute refinement_unit ~attribute_path =
-    let rec annotation { base; attributes } ~identifiers =
+  (** If `attribute_path` is empty, get the base annotation. Otherwise, find the appropriate
+      attribute (traversing intermediate units until we finish or hit a dead end) and return the
+      base found there, if any *)
+  let get_annotation ~attribute_path refinement_unit =
+    let rec recurse { base; attributes } ~identifiers =
       match identifiers with
       | [] -> base
       | identifier :: identifiers -> (
           match find attributes identifier with
-          | Some refinement_unit -> annotation refinement_unit ~identifiers
+          | Some refinement_unit -> recurse refinement_unit ~identifiers
           | None -> None)
     in
-    annotation refinement_unit ~identifiers:(attribute_path |> Reference.as_list)
+    recurse refinement_unit ~identifiers:(attribute_path |> Reference.as_list)
 
 
   let rec less_or_equal ~global_resolution ~left ~right =
@@ -261,31 +273,74 @@ module Store = struct
     Option.value ~default:Unit.empty found
 
 
+  (** Map an operation over what's at a given name. If there's nothing already existing, use
+      `empty`.
+
+      The way we handle temporary vs non-temporary is very particular:
+
+      - If `temporary` is truewe only apply this to `temporary_annotations`
+      - Otherwise, we apply it to `annotations` and also apply it to any *existing* data in
+        `temporary_annotations`, but we don't create any new `temporary_annotations`.
+      - The idea here is to minimize the amount of duplicated data, but ensure that `annotations`
+        and `temporary_annotations` always have a consistent view of (non-temporary) refinements. *)
+  let map_over_name ~temporary ~name ~f { annotations; temporary_annotations } =
+    let map_over_reference_map ~fallback reference_map =
+      match Option.first_some (ReferenceMap.find reference_map name) fallback with
+      | Some unit -> ReferenceMap.set ~key:name ~data:(f unit) reference_map
+      | None -> reference_map
+    in
+    if temporary then
+      {
+        annotations;
+        temporary_annotations =
+          map_over_reference_map ~fallback:(Some Unit.empty) temporary_annotations;
+      }
+    else
+      {
+        annotations = map_over_reference_map ~fallback:(Some Unit.empty) annotations;
+        temporary_annotations = map_over_reference_map ~fallback:None temporary_annotations;
+      }
+
+
   let get_base ~name store = get_unit ~name store |> Unit.base
 
-  let get_attribute ~name ~attribute_path store =
-    get_unit ~name store |> Unit.get_attribute ~attribute_path
+  let get_annotation ~name ~attribute_path store =
+    get_unit ~name store |> Unit.get_annotation ~attribute_path
 
 
-  let set_unit ?(temporary = false) ~name ~unit store =
-    let set = ReferenceMap.set ~key:name ~data:unit in
+  let set_base ?(temporary = false) ~name ~base store =
+    map_over_name ~temporary ~name ~f:(Unit.set_base ~base) store
+
+
+  let new_as_base ?(temporary = false) ~name ~base { annotations; temporary_annotations } =
     if temporary then
-      { store with temporary_annotations = set store.temporary_annotations }
+      {
+        annotations;
+        temporary_annotations =
+          ReferenceMap.set temporary_annotations ~key:name ~data:(Unit.create base);
+      }
     else
-      { store with annotations = set store.annotations }
+      {
+        annotations = ReferenceMap.set annotations ~key:name ~data:(Unit.create base);
+        temporary_annotations = ReferenceMap.remove temporary_annotations name;
+      }
 
 
-  let set_as_base ?(temporary = false) ~name ~base store =
-    set_unit ~temporary ~name ~unit:(Unit.create base) store
-
-
-  let set_attribute ?(temporary = false) ~name ~attribute_path ~base ~annotation store =
-    let unit =
-      get_unit ~include_temporary:temporary ~name store
-      |> Unit.set_attribute ~attribute_path ~annotation
+  let set_annotation
+      ?(temporary = false)
+      ?(wipe_subtree = false)
+      ~name
+      ~attribute_path
+      ~base
+      ~annotation
+      store
+    =
+    let set_unit_annotation unit =
+      unit
+      |> Unit.set_annotation ~wipe_subtree ~attribute_path ~annotation
       |> Unit.set_base_if_none ~base
     in
-    set_unit ~temporary ~name ~unit store
+    map_over_name ~temporary ~name ~f:set_unit_annotation store
 
 
   let less_or_equal ~global_resolution ~left ~right =

@@ -113,7 +113,7 @@ let test_unresolved_select context =
       in
       let resolution =
         TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
-        |> Resolution.set_local
+        |> Resolution.new_local
              ~reference:(Reference.create "optional")
              ~annotation:(Annotation.create_mutable (Type.optional Type.integer))
       in

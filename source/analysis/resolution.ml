@@ -117,24 +117,43 @@ let partition_name resolution ~name =
   | _ -> Reference.create_from_list identifiers, Reference.create "", None
 
 
-let set_local ?(temporary = false) resolution ~reference ~annotation =
+let new_local ?(temporary = false) resolution ~reference ~annotation =
   {
     resolution with
     annotation_store =
       resolution.annotation_store
-      |> Refinement.Store.set_as_base ~temporary ~name:reference ~base:annotation;
+      |> Refinement.Store.new_as_base ~temporary ~name:reference ~base:annotation;
   }
 
 
-let set_local_with_attributes ?(temporary = false) resolution ~name ~annotation =
+let refine_local ?(temporary = false) resolution ~reference ~annotation =
+  {
+    resolution with
+    annotation_store =
+      resolution.annotation_store
+      |> Refinement.Store.set_base ~temporary ~name:reference ~base:annotation;
+  }
+
+
+let set_local_with_attributes ~wipe_subtree ?(temporary = false) resolution ~name ~annotation =
   let name, attribute_path, base = partition_name resolution ~name in
   {
     resolution with
     annotation_store =
       resolution.annotation_store
-      |> Refinement.Store.set_attribute ~temporary ~name ~attribute_path ~base ~annotation;
+      |> Refinement.Store.set_annotation
+           ~temporary
+           ~wipe_subtree
+           ~name
+           ~attribute_path
+           ~base
+           ~annotation;
   }
 
+
+let new_local_with_attributes = set_local_with_attributes ~wipe_subtree:true
+
+let refine_local_with_attributes = set_local_with_attributes ~wipe_subtree:false
 
 let get_local ?(global_fallback = true) ~reference { annotation_store; global_resolution; _ } =
   match Refinement.Store.get_base ~name:reference annotation_store with
@@ -151,7 +170,7 @@ let get_local_with_attributes
     ({ annotation_store; global_resolution; _ } as resolution)
   =
   let name, attribute_path, _ = partition_name resolution ~name in
-  match Refinement.Store.get_attribute ~name ~attribute_path annotation_store with
+  match Refinement.Store.get_annotation ~name ~attribute_path annotation_store with
   | Some _ as result -> result
   | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
@@ -185,7 +204,7 @@ let clear_temporary_annotations ({ annotation_store; _ } as resolution) =
 let resolve_attribute_access resolution ~base_type ~attribute =
   let unique_name = Reference.create "$n" in
   let resolution =
-    set_local resolution ~reference:unique_name ~annotation:(Annotation.create_mutable base_type)
+    new_local resolution ~reference:unique_name ~annotation:(Annotation.create_mutable base_type)
   in
   let expression_to_analyze =
     Expression.from_reference
@@ -200,8 +219,8 @@ let resolve_expression_to_type_with_locals
     ~locals
     expression
   =
-  let add_local resolution (reference, annotation) = set_local resolution ~reference ~annotation in
-  let resolution_with_locals = List.fold ~init:resolution ~f:add_local locals in
+  let new_local resolution (reference, annotation) = new_local resolution ~reference ~annotation in
+  let resolution_with_locals = List.fold ~init:resolution ~f:new_local locals in
   resolve_expression ~resolution:resolution_with_locals expression |> snd |> Annotation.annotation
 
 
