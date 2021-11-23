@@ -239,6 +239,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~call_location
       ~self
       ~self_taint
+      ~callee
+      ~callee_taint
       ~arguments
       ~arguments_taint
       ~return_type_breadcrumbs
@@ -246,15 +248,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       {
         CallGraph.CallTarget.target = call_target;
         implicit_self;
-        implicit_dunder_call = _;
+        implicit_dunder_call;
         collapse_tito;
       }
     =
     (* Add implicit self. *)
     let arguments, arguments_taint =
-      if implicit_self then
+      if implicit_self && not implicit_dunder_call then
         ( { Call.Argument.name = None; value = Option.value_exn self } :: arguments,
           Option.value_exn self_taint :: arguments_taint )
+      else if implicit_self && implicit_dunder_call then
+        ( { Call.Argument.name = None; value = callee } :: arguments,
+          Option.value_exn callee_taint :: arguments_taint )
       else
         arguments, arguments_taint
     in
@@ -610,6 +615,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~call_location
                 ~self:(Some callee)
                 ~self_taint:callee_taint
+                ~callee
+                ~callee_taint:None
                 ~arguments
                 ~arguments_taint
                 ~return_type_breadcrumbs
@@ -641,6 +648,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~call_location
                 ~self:(Some call_expression)
                 ~self_taint:(Some new_return_taint)
+                ~callee
+                ~callee_taint:None
                 ~arguments
                 ~arguments_taint
                 ~return_type_breadcrumbs
@@ -733,6 +742,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~call_location
              ~self
              ~self_taint
+             ~callee
+             ~callee_taint
              ~arguments
              ~arguments_taint
              ~return_type_breadcrumbs
@@ -841,6 +852,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | { CallGraph.CallCallees.new_targets = _ :: _; _ }, _
     | { CallGraph.CallCallees.init_targets = _ :: _; _ }, _ ->
         (* We need both the taint on self and on the whole callee. *)
+        analyze_callee ~resolution ~is_property_call ~state ~callee
+    | { CallGraph.CallCallees.call_targets; _ }, _
+      when List.exists
+             ~f:(fun { CallGraph.CallTarget.implicit_self; implicit_dunder_call; _ } ->
+               implicit_self && implicit_dunder_call)
+             call_targets ->
+        (* We need the taint on the whole callee. *)
         analyze_callee ~resolution ~is_property_call ~state ~callee
     | { CallGraph.CallCallees.call_targets; _ }, _
       when List.exists

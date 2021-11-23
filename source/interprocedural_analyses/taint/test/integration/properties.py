@@ -184,5 +184,4 @@ class PropertyCallable:
 
 def test_property_callable():
     obj = PropertyCallable(_test_source())
-    # TODO(T105570363): Find the issue from `obj.attribute:result.x` to `PropertyCallableReturn.__call__:self.x`
     return obj.attribute(_test_source())

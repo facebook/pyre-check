@@ -235,6 +235,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~resolution
       ~call_location
       ~self
+      ~callee
       ~arguments
       ~return_type_breadcrumbs
       ~state:initial_state
@@ -242,13 +243,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       {
         CallGraph.CallTarget.target = call_target;
         implicit_self;
-        implicit_dunder_call = _;
+        implicit_dunder_call;
         collapse_tito = _;
       }
     =
     let arguments =
-      if implicit_self then
+      if implicit_self && not implicit_dunder_call then
         { Call.Argument.name = None; value = Option.value_exn self } :: arguments
+      else if implicit_self && implicit_dunder_call then
+        { Call.Argument.name = None; value = callee } :: arguments
       else
         arguments
     in
@@ -507,15 +510,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> List.fold ~f:(analyze_argument ~obscure_taint) ~init:([], initial_state)
     in
     (* Extract the taint for self. *)
-    let self_taint, arguments_taint =
-      if implicit_self then
+    let self_taint, callee_taint, arguments_taint =
+      if implicit_self && not implicit_dunder_call then
         match arguments_taint with
-        | self_taint :: arguments_taint -> Some self_taint, arguments_taint
+        | self_taint :: arguments_taint -> Some self_taint, None, arguments_taint
         | _ -> failwith "missing taint for self argument"
+      else if implicit_self && implicit_dunder_call then
+        match arguments_taint with
+        | callee_taint :: arguments_taint -> None, Some callee_taint, arguments_taint
+        | _ -> failwith "missing taint for callee argument"
       else
-        None, arguments_taint
+        None, None, arguments_taint
     in
-    { arguments_taint; self_taint; callee_taint = None; state }
+    { arguments_taint; self_taint; callee_taint; state }
 
 
   let apply_obscure_call ~callee ~arguments ~state:initial_state ~call_taint =
@@ -584,6 +591,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~resolution
                 ~call_location
                 ~self:(Some call_expression)
+                ~callee
                 ~arguments
                 ~return_type_breadcrumbs
                 ~state:initial_state
@@ -626,6 +634,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~resolution
                   ~call_location
                   ~self:(Some callee)
+                  ~callee
                   ~arguments
                   ~return_type_breadcrumbs
                   ~state
@@ -770,6 +779,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~resolution
              ~call_location
              ~self
+             ~callee
              ~arguments
              ~return_type_breadcrumbs
              ~state:initial_state

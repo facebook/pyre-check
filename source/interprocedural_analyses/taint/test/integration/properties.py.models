@@ -400,7 +400,7 @@
     "callable": "properties.test_property_callable",
     "callable_line": 185,
     "code": 5002,
-    "line": 188,
+    "line": 187,
     "start": 25,
     "end": 39,
     "filename": "properties.py",
@@ -419,7 +419,7 @@
             ],
             "root": {
               "filename": "properties.py",
-              "line": 188,
+              "line": 187,
               "start": 25,
               "end": 39
             }
@@ -441,7 +441,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 188,
+                "line": 187,
                 "start": 25,
                 "end": 39
               },
@@ -464,7 +464,7 @@
     "callable": "properties.test_property_callable",
     "callable_line": 185,
     "code": 5002,
-    "line": 188,
+    "line": 187,
     "start": 11,
     "end": 14,
     "filename": "properties.py",
@@ -509,12 +509,85 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 188,
+                "line": 187,
                 "start": 11,
                 "end": 14
               },
               "resolves_to": [ "properties.PropertyCallable.attribute" ],
               "port": "formal(self)[z]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_property_callable",
+    "callable_line": 185,
+    "code": 5002,
+    "line": 187,
+    "start": 11,
+    "end": 24,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "properties.py",
+                "line": 187,
+                "start": 11,
+                "end": 24
+              },
+              "resolves_to": [ "properties.PropertyCallable.attribute" ],
+              "port": "result[x]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "properties.py",
+                "line": 187,
+                "start": 11,
+                "end": 24
+              },
+              "resolves_to": [ "properties.PropertyCallableReturn.__call__" ],
+              "port": "formal(self)[x]"
             }
           }
         ]
