@@ -6562,27 +6562,7 @@ let exit_state ~resolution (module Context : Context) =
        let precondition { Fixpoint.preconditions; _ } id =
          match Hashtbl.find preconditions id with
          | Some (State.Value exit_resolution) ->
-             let stringify ~temporary ~key ~data label =
-               let annotation_string =
-                 Type.show (Annotation.annotation data) |> String.strip ~drop:(Char.equal '`')
-               in
-               let temporary_label = if temporary then "(temp)" else "" in
-               label ^ " " ^ Reference.show key ^ ": " ^ annotation_string ^ temporary_label
-             in
-             let annotations_string =
-               Resolution.annotations exit_resolution
-               |> Map.filter_map ~f:Refinement.Unit.base
-               |> Map.fold ~f:(stringify ~temporary:false) ~init:""
-             in
-             let temporary_annotations_string =
-               Resolution.temporary_annotations exit_resolution
-               |> Map.filter_map ~f:Refinement.Unit.base
-               |> Map.fold ~f:(stringify ~temporary:true) ~init:""
-             in
-             if String.is_empty temporary_annotations_string then
-               annotations_string
-             else
-               annotations_string ^ " " ^ temporary_annotations_string
+             Resolution.annotation_store exit_resolution |> Refinement.Store.show
          | _ -> ""
        in
        Log.dump
