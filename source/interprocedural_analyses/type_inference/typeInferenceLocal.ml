@@ -108,15 +108,6 @@ module State (Context : Context) = struct
           let { Node.value = { Define.signature; _ }; _ } = Context.define in
           Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
         in
-        let annotations =
-          let annotation_to_string (name, refinement_unit) =
-            Format.asprintf "    %a -> %a" Reference.pp name Refinement.Unit.pp refinement_unit
-          in
-          Resolution.annotations resolution
-          |> Map.to_alist
-          |> List.map ~f:annotation_to_string
-          |> String.concat ~sep:"\n"
-        in
         let errors =
           let error_to_string error =
             let error =
@@ -140,10 +131,11 @@ module State (Context : Context) = struct
         in
         Format.fprintf
           format
-          "  Expected return: %a\n  Types:\n%s\n  Errors:\n%s\n"
+          "  Expected return: %a\n  Resolution:\n%a\n  Errors:\n%s\n"
           Type.pp
           expected
-          annotations
+          Resolution.pp
+          resolution
           errors
 
 
