@@ -475,39 +475,30 @@ module State (Context : Context) = struct
              | _ -> true)
       |> Reference.create
     in
-    let annotation_store =
-      let reset_parameter
-          index
-          Refinement.Store.{ annotations; temporary_annotations }
-          { Node.value = { Parameter.name; value; annotation }; _ }
-        =
-        let annotations =
-          match index, parent with
-          | 0, Some _ when Define.is_method define && not (Define.is_static_method define) ->
-              annotations
-          | _ -> (
-              match annotation, value with
-              | None, None ->
-                  Map.set
-                    annotations
-                    ~key:(make_parameter_name name)
-                    ~data:(Refinement.Unit.create_mutable Type.Bottom)
-              | Some annotation, None
-                when Type.is_any
-                       (GlobalResolution.parse_annotation
-                          (Resolution.global_resolution resolution)
-                          annotation) ->
-                  Map.set
-                    annotations
-                    ~key:(make_parameter_name name)
-                    ~data:(Refinement.Unit.create_mutable Type.Bottom)
-              | _ -> annotations)
-        in
-        Refinement.Store.{ annotations; temporary_annotations }
-      in
-      List.foldi ~init:(Resolution.annotation_store resolution) ~f:reset_parameter parameters
+    let reset_parameter index resolution { Node.value = { Parameter.name; value; annotation }; _ } =
+      match index, parent with
+      | 0, Some _ when Define.is_method define && not (Define.is_static_method define) -> resolution
+      | _ ->
+          let reset =
+            match annotation, value with
+            | Some annotation, None
+              when Type.is_any
+                     (GlobalResolution.parse_annotation
+                        (Resolution.global_resolution resolution)
+                        annotation) ->
+                true
+            | None, None -> true
+            | _ -> false
+          in
+          if reset then
+            Resolution.new_local
+              resolution
+              ~reference:(make_parameter_name name)
+              ~annotation:(Annotation.create_mutable Type.Bottom)
+          else
+            resolution
     in
-    Value { state with resolution = Resolution.with_annotation_store resolution ~annotation_store }
+    Value { state with resolution = List.foldi ~init:resolution ~f:reset_parameter parameters }
 
 
   let initial_backward ~forward =
