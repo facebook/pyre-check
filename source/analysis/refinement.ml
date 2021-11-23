@@ -118,6 +118,10 @@ module Unit = struct
 
   let set_base refinement_unit ~base = { refinement_unit with base = Some base }
 
+  let set_base_if_none refinement_unit ~base =
+    { refinement_unit with base = Option.first_some refinement_unit.base base }
+
+
   let set_attribute refinement_unit ~attribute_path ~annotation =
     let rec set_attribute ({ attributes; _ } as refinement_unit) ~annotation ~identifiers =
       match identifiers with
@@ -241,6 +245,48 @@ module Store = struct
 
 
   let show = Format.asprintf "%a" pp
+
+  let get_unit ?(include_temporary = true) ~name { annotations; temporary_annotations } =
+    let temporary =
+      if include_temporary then
+        ReferenceMap.find temporary_annotations name
+      else
+        None
+    in
+    let found =
+      match temporary with
+      | Some _ -> temporary
+      | None -> ReferenceMap.find annotations name
+    in
+    Option.value ~default:Unit.empty found
+
+
+  let get_base ~name store = get_unit ~name store |> Unit.base
+
+  let get_attribute ~name ~attribute_path store =
+    get_unit ~name store |> Unit.get_attribute ~attribute_path
+
+
+  let set_unit ?(temporary = false) ~name ~unit store =
+    let set = ReferenceMap.set ~key:name ~data:unit in
+    if temporary then
+      { store with temporary_annotations = set store.temporary_annotations }
+    else
+      { store with annotations = set store.annotations }
+
+
+  let set_as_base ?(temporary = false) ~name ~base store =
+    set_unit ~temporary ~name ~unit:(Unit.create base) store
+
+
+  let set_attribute ?(temporary = false) ~name ~attribute_path ~base ~annotation store =
+    let unit =
+      get_unit ~include_temporary:temporary ~name store
+      |> Unit.set_attribute ~attribute_path ~annotation
+      |> Unit.set_base_if_none ~base
+    in
+    set_unit ~temporary ~name ~unit store
+
 
   let less_or_equal ~global_resolution ~left ~right =
     let less_or_equal_one = Unit.less_or_equal ~global_resolution in

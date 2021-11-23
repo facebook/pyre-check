@@ -117,70 +117,27 @@ let partition_name resolution ~name =
   | _ -> Reference.create_from_list identifiers, Reference.create "", None
 
 
-let set_local
-    ?(temporary = false)
-    ({ annotation_store = { annotations; temporary_annotations }; _ } as resolution)
-    ~reference
-    ~annotation
-  =
-  let annotations, temporary_annotations =
-    if temporary then
-      ( annotations,
-        Map.set temporary_annotations ~key:reference ~data:(Refinement.Unit.create annotation) )
-    else
-      ( Map.set annotations ~key:reference ~data:(Refinement.Unit.create annotation),
-        temporary_annotations )
-  in
-  { resolution with annotation_store = { annotations; temporary_annotations } }
+let set_local ?(temporary = false) resolution ~reference ~annotation =
+  {
+    resolution with
+    annotation_store =
+      resolution.annotation_store
+      |> Refinement.Store.set_as_base ~temporary ~name:reference ~base:annotation;
+  }
 
 
-let set_local_with_attributes
-    ?(temporary = false)
-    ({ annotation_store = { annotations; temporary_annotations }; _ } as resolution)
-    ~name
-    ~annotation
-  =
-  let object_reference, attribute_path, base = partition_name resolution ~name in
-  let set_base refinement_unit ~base =
-    match Refinement.Unit.base refinement_unit, base with
-    | None, Some base -> Refinement.Unit.set_base refinement_unit ~base
-    | _ -> refinement_unit
-  in
-  let annotations, temporary_annotations =
-    if temporary then
-      ( annotations,
-        Map.set
-          temporary_annotations
-          ~key:object_reference
-          ~data:
-            (Map.find temporary_annotations object_reference
-            |> (fun existing -> Option.first_some existing (Map.find annotations object_reference))
-            |> Option.value ~default:Refinement.Unit.empty
-            |> Refinement.Unit.set_attribute ~attribute_path ~annotation
-            |> set_base ~base) )
-    else
-      ( Map.set
-          annotations
-          ~key:object_reference
-          ~data:
-            (Map.find annotations object_reference
-            |> Option.value ~default:Refinement.Unit.empty
-            |> Refinement.Unit.set_attribute ~attribute_path ~annotation
-            |> set_base ~base),
-        temporary_annotations )
-  in
-  { resolution with annotation_store = { annotations; temporary_annotations } }
+let set_local_with_attributes ?(temporary = false) resolution ~name ~annotation =
+  let name, attribute_path, base = partition_name resolution ~name in
+  {
+    resolution with
+    annotation_store =
+      resolution.annotation_store
+      |> Refinement.Store.set_attribute ~temporary ~name ~attribute_path ~base ~annotation;
+  }
 
 
-let get_local
-    ?(global_fallback = true)
-    ~reference
-    { annotation_store = { annotations; temporary_annotations }; global_resolution; _ }
-  =
-  match
-    Option.first_some (Map.find temporary_annotations reference) (Map.find annotations reference)
-    >>= Refinement.Unit.base
-  with
+let get_local ?(global_fallback = true) ~reference { annotation_store; global_resolution; _ } =
+  match Refinement.Store.get_base ~name:reference annotation_store with
   | Some _ as result -> result
   | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
@@ -191,23 +148,17 @@ let get_local
 let get_local_with_attributes
     ?(global_fallback = true)
     ~name
-    ({ annotation_store = { annotations; temporary_annotations }; global_resolution; _ } as
-    resolution)
+    ({ annotation_store; global_resolution; _ } as resolution)
   =
-  let object_reference, attribute_path, _ = partition_name resolution ~name in
-  match
-    Option.first_some
-      (Map.find temporary_annotations object_reference)
-      (Map.find annotations object_reference)
-    >>= Refinement.Unit.get_attribute ~attribute_path
-  with
+  let name, attribute_path, _ = partition_name resolution ~name in
+  match Refinement.Store.get_attribute ~name ~attribute_path annotation_store with
   | Some _ as result -> result
-  | _ when global_fallback ->
+  | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
-      Reference.(combine object_reference attribute_path |> delocalize)
+      Reference.(combine name attribute_path |> delocalize)
       |> global
       >>| fun { annotation; _ } -> annotation
-  | _ -> None
+  | None -> None
 
 
 let unset_local

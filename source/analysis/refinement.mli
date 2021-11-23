@@ -50,6 +50,21 @@ module Store : sig
 
   val empty : t
 
+  val get_base : name:Reference.t -> t -> Annotation.t option
+
+  val get_attribute : name:Reference.t -> attribute_path:Reference.t -> t -> Annotation.t option
+
+  val set_as_base : ?temporary:bool -> name:Reference.t -> base:Annotation.t -> t -> t
+
+  val set_attribute
+    :  ?temporary:bool ->
+    name:Reference.t ->
+    attribute_path:Reference.t ->
+    base:Annotation.t option ->
+    annotation:Annotation.t ->
+    t ->
+    t
+
   val less_or_equal : global_resolution:GlobalResolution.t -> left:t -> right:t -> bool
 
   val less_or_equal_monotone : left:t -> right:t -> bool
