@@ -13,6 +13,10 @@ type t =
       root: Path.t;
       subdirectory: string;
     }
+  | Submodule of {
+      root: Path.t;
+      submodule: string;
+    }
 [@@deriving sexp, compare, hash, show, eq]
 
 type search_result = {

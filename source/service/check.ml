@@ -25,9 +25,20 @@ let check
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
   in
+  let check_path_exists path =
+    if not (Path.file_exists path) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a valid path" Path.pp path))
+  in
+  let check_search_path_exists search_path =
+    match search_path with
+    | SearchPath.Root _
+    | SearchPath.Subdirectory _ ->
+        check_directory_exists (SearchPath.to_path search_path)
+    | SearchPath.Submodule _ -> check_path_exists (SearchPath.to_path search_path)
+  in
   source_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   check_directory_exists project_root;
-  search_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
+  search_paths |> List.iter ~f:check_search_path_exists;
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
 
