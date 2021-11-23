@@ -1030,7 +1030,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments
       ~state:initial_state
       ~call_taint
-      raw_callees
+      callees
     =
     let { arguments_taint; self_taint; callee_taint; state } =
       apply_callees_and_return_arguments_taint
@@ -1040,11 +1040,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~arguments
         ~state:initial_state
         ~call_taint
-        raw_callees
+        callees
     in
 
     let state =
-      match raw_callees with
+      match callees with
       | {
        higher_order_parameter =
          Some ({ CallGraph.HigherOrderParameter.index; _ } as higher_order_parameter);

@@ -807,7 +807,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   (* Lazy version of `analyze_callee` which only analyze what we need for a call site. *)
-  and analyze_callee_for_raw_callees ~resolution ~is_property_call ~state ~callee callees =
+  and analyze_callee_for_callees ~resolution ~is_property_call ~state ~callee callees =
     (* Special case: `x.foo()` where foo is a property returning a callable. *)
     let callee_is_property =
       match is_property_call, callee.Node.value with
@@ -1038,18 +1038,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     arguments_taint, state
 
 
-  and apply_callees ~resolution ~is_property ~callee ~call_location ~arguments ~state raw_callees =
+  and apply_callees ~resolution ~is_property ~callee ~call_location ~arguments ~state callees =
     let { self_taint; callee_taint; state } =
-      analyze_callee_for_raw_callees
-        ~resolution
-        ~is_property_call:is_property
-        ~state
-        ~callee
-        raw_callees
+      analyze_callee_for_callees ~resolution ~is_property_call:is_property ~state ~callee callees
     in
 
     let arguments_taint, state =
-      match raw_callees with
+      match callees with
       | {
        higher_order_parameter =
          Some ({ CallGraph.HigherOrderParameter.index; _ } as higher_order_parameter);
@@ -1076,7 +1071,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee_taint
       ~arguments_taint
       ~state
-      raw_callees
+      callees
 
 
   and analyze_call ~resolution ~location ~state ~callee ~arguments =
