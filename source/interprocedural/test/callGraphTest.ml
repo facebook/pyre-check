@@ -329,6 +329,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
+                        ~implicit_dunder_call:true
                         (Target.create_method (Reference.create "test.C.__call__"));
                     ]
                   ~return_type:Type.Any
@@ -351,7 +352,35 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_call
                (CallCallees.create
                   ~call_targets:
-                    [CallTarget.create (Target.create_method (Reference.create "test.C.__call__"))]
+                    [
+                      CallTarget.create
+                        ~implicit_dunder_call:true
+                        (Target.create_method (Reference.create "test.C.__call__"));
+                    ]
+                  ~return_type:Type.Any
+                  ())) );
+      ];
+  assert_call_graph_of_define
+    ~source:
+      {|
+    class C:
+      def __call__(self, a: int): ...
+    def foo(c: C):
+       c.__call__(1)
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:3-5:16",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (Target.create_method (Reference.create "test.C.__call__"));
+                    ]
                   ~return_type:Type.Any
                   ())) );
       ];
@@ -375,6 +404,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
+                        ~implicit_dunder_call:true
                         (Target.create_method (Reference.create "test.C.__call__"));
                     ]
                   ~return_type:Type.Any
@@ -655,6 +685,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
+                        ~implicit_dunder_call:true
                         (`Method
                           { Target.class_name = "TestCallableTarget"; method_name = "__call__" });
                     ]
@@ -1954,6 +1985,7 @@ let test_call_graph_of_define context =
                         [
                           CallTarget.create
                             ~implicit_self:true
+                            ~implicit_dunder_call:true
                             (`Method
                               { Target.class_name = "test.CallableClass"; method_name = "__call__" });
                         ];

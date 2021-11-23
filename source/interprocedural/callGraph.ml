@@ -16,12 +16,14 @@ module CallTarget = struct
   type t = {
     target: Target.t;
     implicit_self: bool;
+    implicit_dunder_call: bool;
     collapse_tito: bool;
   }
   [@@deriving compare, eq, show { with_path = false }]
 
-  let create ?(implicit_self = false) ?(collapse_tito = true) target =
-    { target; implicit_self; collapse_tito }
+  let create ?(implicit_self = false) ?(implicit_dunder_call = false) ?(collapse_tito = true) target
+    =
+    { target; implicit_self; implicit_dunder_call; collapse_tito }
 end
 
 module HigherOrderParameter = struct
@@ -494,15 +496,15 @@ let collapse_tito ~resolution ~callee ~callable_type =
 
 let rec resolve_callees_from_type
     ~resolution
-    ?(resolving_callable_class = false)
+    ?(dunder_call = false)
     ?receiver_type
     ~return_type
     ~callee_kind
     ~collapse_tito
     callable_type
   =
-  let resolve_callees_from_type ?(resolving_callable_class = resolving_callable_class) =
-    resolve_callees_from_type ~resolving_callable_class
+  let resolve_callees_from_type ?(dunder_call = dunder_call) =
+    resolve_callees_from_type ~dunder_call
   in
   match callable_type with
   | Type.Callable { kind = Named name; _ } -> (
@@ -515,7 +517,13 @@ let rec resolve_callees_from_type
           in
           let targets =
             List.map
-              ~f:(fun target -> { CallTarget.target; implicit_self = true; collapse_tito })
+              ~f:(fun target ->
+                {
+                  CallTarget.target;
+                  implicit_self = true;
+                  implicit_dunder_call = dunder_call;
+                  collapse_tito;
+                })
               targets
           in
           CallCallees.create ~call_targets:targets ~return_type ()
@@ -526,7 +534,15 @@ let rec resolve_callees_from_type
             | _ -> Target.create_function name
           in
           CallCallees.create
-            ~call_targets:[{ CallTarget.target; implicit_self = false; collapse_tito }]
+            ~call_targets:
+              [
+                {
+                  CallTarget.target;
+                  implicit_self = false;
+                  implicit_dunder_call = dunder_call;
+                  collapse_tito;
+                };
+              ]
             ~return_type
             ())
   | Type.Callable { kind = Anonymous; _ } -> CallCallees.create_unresolved return_type
@@ -581,16 +597,24 @@ let rec resolve_callees_from_type
                   `Method { Target.class_name = primitive_callable_name; method_name = "__call__" }
                 in
                 CallCallees.create
-                  ~call_targets:[{ CallTarget.target; implicit_self = true; collapse_tito }]
+                  ~call_targets:
+                    [
+                      {
+                        CallTarget.target;
+                        implicit_self = true;
+                        implicit_dunder_call = true;
+                        collapse_tito;
+                      };
+                    ]
                   ~return_type
                   ())
           |> Option.value ~default:(CallCallees.create_unresolved return_type)
       | annotation ->
-          if not resolving_callable_class then
+          if not dunder_call then
             resolve_callees_from_type
               ~resolution
               ~return_type
-              ~resolving_callable_class:true
+              ~dunder_call:true
               ~callee_kind
               ~collapse_tito
               annotation
@@ -789,7 +813,15 @@ let resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type =
       >>| fun name ->
       let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
       CallCallees.create
-        ~call_targets:[{ CallTarget.target = `Function name; implicit_self = false; collapse_tito }]
+        ~call_targets:
+          [
+            {
+              CallTarget.target = `Function name;
+              implicit_self = false;
+              implicit_dunder_call = false;
+              collapse_tito;
+            };
+          ]
         ~return_type
         ()
   | _ -> None
@@ -811,6 +843,7 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
             {
               CallTarget.target = `Function (Reference.show name);
               implicit_self = false;
+              implicit_dunder_call = false;
               collapse_tito;
             }
       | Some
@@ -834,6 +867,7 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
                 {
                   CallTarget.target = `Method { Target.class_name; method_name = attribute };
                   implicit_self = not static;
+                  implicit_dunder_call = false;
                   collapse_tito;
                 }
           | _ -> None)
@@ -854,6 +888,7 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
                 {
                   CallTarget.target = `Method { Target.class_name; method_name = attribute };
                   implicit_self = true;
+                  implicit_dunder_call = false;
                   collapse_tito;
                 }
           | _ -> None)

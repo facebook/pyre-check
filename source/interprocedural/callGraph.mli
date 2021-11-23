@@ -16,12 +16,19 @@ module CallTarget : sig
     (* True if the call has an implicit receiver.
      * For instance, `x.foo()` should be treated as `C.foo(x)`. *)
     implicit_self: bool;
+    (* True if this is an implicit call to the `__call__` method. *)
+    implicit_dunder_call: bool;
     (* True if we should collapse the taint from arguments, cf. the taint analysis. *)
     collapse_tito: bool;
   }
   [@@deriving eq, show]
 
-  val create : ?implicit_self:bool -> ?collapse_tito:bool -> Target.t -> t
+  val create
+    :  ?implicit_self:bool ->
+    ?implicit_dunder_call:bool ->
+    ?collapse_tito:bool ->
+    Target.t ->
+    t
 end
 
 (* Information about an argument being a callable. *)

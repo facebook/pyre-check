@@ -243,7 +243,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint
       ~return_type_breadcrumbs
       ~state:initial_state
-      { CallGraph.CallTarget.target = call_target; implicit_self; collapse_tito }
+      {
+        CallGraph.CallTarget.target = call_target;
+        implicit_self;
+        implicit_dunder_call = _;
+        collapse_tito;
+      }
     =
     (* Add implicit self. *)
     let arguments, arguments_taint =
@@ -609,7 +614,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~arguments_taint
                 ~return_type_breadcrumbs
                 ~state:initial_state
-                { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+                {
+                  CallGraph.CallTarget.target;
+                  implicit_self = true;
+                  implicit_dunder_call = false;
+                  collapse_tito = true;
+                })
           |> List.fold
                ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
                ~f:(fun (taint, state) (new_taint, new_state) ->
@@ -635,7 +645,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~arguments_taint
                 ~return_type_breadcrumbs
                 ~state
-                { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+                {
+                  CallGraph.CallTarget.target;
+                  implicit_self = true;
+                  implicit_dunder_call = false;
+                  collapse_tito = true;
+                })
           |> List.fold
                ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
                ~f:(fun (taint, state) (new_taint, new_state) ->
@@ -678,7 +693,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         if not (Interprocedural.FixpointState.has_model callable) then
           Model.register_unknown_callee_model callable;
         let target =
-          { CallGraph.CallTarget.target = callable; implicit_self = false; collapse_tito = true }
+          {
+            CallGraph.CallTarget.target = callable;
+            implicit_self = false;
+            implicit_dunder_call = false;
+            collapse_tito = true;
+          }
         in
         target :: call_targets)
       else
@@ -1428,7 +1448,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let call_targets =
           List.map
             ~f:(fun target ->
-              { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+              {
+                CallGraph.CallTarget.target;
+                implicit_self = true;
+                implicit_dunder_call = false;
+                collapse_tito = true;
+              })
             targets
         in
         let taint, state =
@@ -1787,7 +1812,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   let call_targets =
                     List.map
                       ~f:(fun target ->
-                        { CallGraph.CallTarget.target; implicit_self = true; collapse_tito = true })
+                        {
+                          CallGraph.CallTarget.target;
+                          implicit_self = true;
+                          implicit_dunder_call = false;
+                          collapse_tito = true;
+                        })
                       targets
                   in
                   let taint, state =
