@@ -918,6 +918,72 @@ class ErrorsTest(unittest.TestCase):
             """,
         )
 
+    def test_suppress_errors__empty_fixme_code(self) -> None:
+        self.assertSuppressErrors(
+            {
+                2: [
+                    {
+                        "code": "0",
+                        "description": "Some error",
+                    }
+                ],
+            },
+            """
+            def foo() -> None:
+                # FIXME[]
+                unused_ignore: str = "hello"
+            """,
+            """
+            def foo() -> None:
+                unused_ignore: str = "hello"
+            """,
+        )
+        self.assertSuppressErrors(
+            {
+                2: [
+                    {
+                        "code": "0",
+                        "description": "Some error",
+                    },
+                ],
+                3: [
+                    {
+                        "code": "42",
+                        "description": "Some error",
+                    },
+                ],
+            },
+            """
+            def foo() -> None:
+                # FIXME[]
+                x: str = 1
+            """,
+            """
+            def foo() -> None:
+                # FIXME[42]: Some error
+                x: str = 1
+            """,
+        )
+        self.assertSuppressErrors(
+            {
+                2: [
+                    {
+                        "code": "0",
+                        "description": "Some error",
+                    }
+                ],
+            },
+            """
+            def foo() -> None:
+                # FIXME[,]
+                unused_ignore: str = "hello"
+            """,
+            """
+            def foo() -> None:
+                unused_ignore: str = "hello"
+            """,
+        )
+
     def assertLinesSpanned(
         self, source: str, expected_lines: List[Tuple[int, int]]
     ) -> None:
