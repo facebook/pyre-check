@@ -36,14 +36,6 @@ module Unit : sig
   val join : global_resolution:GlobalResolution.t -> t -> t -> t
 
   val meet : global_resolution:GlobalResolution.t -> t -> t -> t
-
-  val widen
-    :  global_resolution:GlobalResolution.t ->
-    widening_threshold:int ->
-    previous:t ->
-    next:t ->
-    iteration:int ->
-    t
 end
 
 module Store : sig
@@ -78,4 +70,14 @@ module Store : sig
   val less_or_equal_monotone : left:t -> right:t -> bool
 
   val meet : global_resolution:GlobalResolution.t -> t -> t -> t
+
+  val outer_join : global_resolution:GlobalResolution.t -> t -> t -> t
+
+  val outer_widen
+    :  global_resolution:GlobalResolution.t ->
+    iteration:int ->
+    widening_threshold:int ->
+    t ->
+    t ->
+    t
 end

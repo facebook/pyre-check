@@ -96,6 +96,10 @@ val temporary_annotations : t -> Refinement.Unit.t Reference.Map.t
 
 val meet_refinements : t -> t -> t
 
+val outer_join_refinements : t -> t -> t
+
+val outer_widen_refinements : iteration:int -> widening_threshold:int -> t -> t -> t
+
 val with_annotation_store : t -> annotation_store:Refinement.Store.t -> t
 
 val parent : t -> Reference.t option

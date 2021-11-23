@@ -255,6 +255,36 @@ let meet_refinements left right =
   }
 
 
+(** Merge refinements. This means we join type information but preserve new bindings from both sides
+    (which causes client code to be strict about type errors but permissive about uninstantiated
+    variables)
+
+    Because the type variables in client code are always the same, we just take the left as an
+    optimization *)
+let outer_join_refinements left right =
+  let global_resolution = left.global_resolution in
+  {
+    left with
+    annotation_store =
+      Refinement.Store.outer_join ~global_resolution left.annotation_store right.annotation_store;
+  }
+
+
+(** Similar to `outer_join_refinements`, but as a widening operation *)
+let outer_widen_refinements ~iteration ~widening_threshold left right =
+  let global_resolution = left.global_resolution in
+  {
+    left with
+    annotation_store =
+      Refinement.Store.outer_widen
+        ~global_resolution
+        ~iteration
+        ~widening_threshold
+        left.annotation_store
+        right.annotation_store;
+  }
+
+
 let with_annotation_store resolution ~annotation_store = { resolution with annotation_store }
 
 let parent { parent; _ } = parent

@@ -69,6 +69,18 @@ module MapLattice = struct
             set sofar ~key ~data
       in
       fold2 left right ~init:empty ~f
+
+
+    (** Merge maps (take the union of all keys) *)
+    let merge_with ~merge_one left right =
+      let f ~key ~data sofar =
+        match data with
+        | `Both (left, right) -> set sofar ~key ~data:(merge_one left right)
+        | `Left data
+        | `Right data ->
+            set sofar ~key ~data
+      in
+      fold2 left right ~init:empty ~f
   end
 end
 
@@ -226,11 +238,11 @@ module Unit = struct
     { base; attributes }
 
 
-  let widen ~global_resolution ~widening_threshold ~previous ~next ~iteration =
+  let widen ~global_resolution ~widening_threshold ~iteration left right =
     if iteration + 1 >= widening_threshold then
       create (Annotation.create_mutable Type.Top)
     else
-      join ~global_resolution previous next
+      join ~global_resolution left right
 end
 
 module Store = struct
@@ -371,4 +383,29 @@ module Store = struct
       temporary_annotations =
         ReferenceMap.meet ~meet_one left.temporary_annotations right.temporary_annotations;
     }
+
+
+  (** Use an "outer" join to join or widen stores, which means we are strict about types (a proper
+      join) but permissive about variables that might only be instantiated on one side.
+
+      This can be done as either a join or a widen depending whether we set `widening_threshod`,
+      which is applied at the `Refinement.Unit` level. *)
+  let widen_or_join ~merge_one left right =
+    {
+      (* Newly-instantiated locals live in `annotations`, so we merge with join *)
+      annotations = ReferenceMap.merge_with ~merge_one left.annotations right.annotations;
+      (* `temporary_annotations` only has type info, so we do a proper join *)
+      temporary_annotations =
+        ReferenceMap.join ~join_one:merge_one left.temporary_annotations right.temporary_annotations;
+    }
+
+
+  let outer_join ~global_resolution =
+    let merge_one = Unit.join ~global_resolution in
+    widen_or_join ~merge_one
+
+
+  let outer_widen ~global_resolution ~iteration ~widening_threshold =
+    let merge_one = Unit.widen ~global_resolution ~iteration ~widening_threshold in
+    widen_or_join ~merge_one
 end

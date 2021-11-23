@@ -206,37 +206,7 @@ module State (Context : Context) = struct
     | Bottom, Bottom -> Bottom
     | Value _, Bottom -> previous
     | Bottom, Value _ -> next
-    | Value ({ resolution; _ } as previous), Value next ->
-        let widen_annotations ~key:_ annotation =
-          match annotation with
-          | `Both (previous, next) ->
-              Some
-                (Refinement.Unit.widen
-                   ~global_resolution:(Resolution.global_resolution resolution)
-                   ~widening_threshold
-                   ~previous
-                   ~next
-                   ~iteration)
-          | `Left previous
-          | `Right previous ->
-              Some previous
-          | _ -> None
-        in
-        let annotation_store =
-          Refinement.Store.
-            {
-              annotations =
-                Map.merge
-                  ~f:widen_annotations
-                  (Resolution.annotations previous.resolution)
-                  (Resolution.annotations next.resolution);
-              temporary_annotations =
-                Map.merge
-                  ~f:widen_annotations
-                  (Resolution.temporary_annotations previous.resolution)
-                  (Resolution.temporary_annotations next.resolution);
-            }
-        in
+    | Value previous, Value next ->
         let combine_errors ~key:_ left_error right_error =
           if iteration + 1 >= widening_threshold then
             { left_error with Error.kind = Error.Top }
@@ -250,7 +220,12 @@ module State (Context : Context) = struct
           {
             previous with
             errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
-            resolution = Resolution.with_annotation_store ~annotation_store resolution;
+            resolution =
+              Resolution.outer_widen_refinements
+                ~iteration
+                ~widening_threshold
+                previous.resolution
+                next.resolution;
           }
 
 

@@ -520,45 +520,6 @@ module State (Context : Context) = struct
           ~right:(Resolution.annotation_store right_resolution)
 
 
-  let join_resolutions left_resolution right_resolution =
-    let merge_annotation_stores ~key:_ = function
-      | `Both (left, right) ->
-          Some
-            (Refinement.Unit.join
-               ~global_resolution:(Resolution.global_resolution left_resolution)
-               left
-               right)
-      | `Left left -> Some left
-      | `Right right -> Some right
-    in
-    let merge_temporary_annotation_stores ~key:_ = function
-      | `Both (left, right) ->
-          Some
-            (Refinement.Unit.join
-               ~global_resolution:(Resolution.global_resolution left_resolution)
-               left
-               right)
-      | `Left _
-      | `Right _ ->
-          None
-    in
-    let annotation_store =
-      {
-        Refinement.Store.annotations =
-          Map.merge
-            ~f:merge_annotation_stores
-            (Resolution.annotations left_resolution)
-            (Resolution.annotations right_resolution);
-        temporary_annotations =
-          Map.merge
-            ~f:merge_temporary_annotation_stores
-            (Resolution.temporary_annotations left_resolution)
-            (Resolution.temporary_annotations right_resolution);
-      }
-    in
-    Resolution.with_annotation_store left_resolution ~annotation_store
-
-
   let widening_threshold = 3
 
   let add_fixpoint_threshold_reached_error () =
@@ -585,54 +546,14 @@ module State (Context : Context) = struct
     | Unreachable, _ -> next
     | _, Unreachable -> previous
     | Value previous_resolution, Value next_resolution ->
-        let global_resolution = Resolution.global_resolution previous_resolution in
-        let widen_annotations ~key:_ annotation =
-          match annotation with
-          | `Both (previous, next) ->
-              Some
-                (Refinement.Unit.widen
-                   ~global_resolution
-                   ~widening_threshold
-                   ~previous
-                   ~next
-                   ~iteration)
-          | `Left previous
-          | `Right previous ->
-              Some previous
-          | _ -> None
-        in
-        let widen_temporary_annotations ~key:_ annotation =
-          match annotation with
-          | `Both (previous, next) ->
-              Some
-                (Refinement.Unit.widen
-                   ~global_resolution
-                   ~widening_threshold
-                   ~previous
-                   ~next
-                   ~iteration)
-          | `Left _
-          | `Right _ ->
-              None
-          | _ -> None
-        in
-        let annotation_store =
-          {
-            Refinement.Store.annotations =
-              Map.merge
-                ~f:widen_annotations
-                (Resolution.annotations previous_resolution)
-                (Resolution.annotations next_resolution);
-            temporary_annotations =
-              Map.merge
-                ~f:widen_temporary_annotations
-                (Resolution.temporary_annotations previous_resolution)
-                (Resolution.temporary_annotations next_resolution);
-          }
-        in
         if iteration + 1 >= widening_threshold then
           add_fixpoint_threshold_reached_error ();
-        Value (Resolution.with_annotation_store next_resolution ~annotation_store)
+        Value
+          (Resolution.outer_widen_refinements
+             ~iteration
+             ~widening_threshold
+             previous_resolution
+             next_resolution)
 
 
   let join left right = widen ~previous:left ~next:right ~iteration:0
@@ -1657,7 +1578,8 @@ module State (Context : Context) = struct
                     GlobalResolution.join global_resolution resolved_left resolved_right
               in
               {
-                Resolved.resolution = join_resolutions resolution_left resolution_right;
+                Resolved.resolution =
+                  Resolution.outer_join_refinements resolution_left resolution_right;
                 errors = List.append errors_left errors_right;
                 resolved;
                 resolved_annotation = None;
@@ -3252,10 +3174,7 @@ module State (Context : Context) = struct
               | Unreachable, _ -> Unreachable
               | _, Unreachable -> Unreachable
               | Value left_resolution, Value right_resolution ->
-                  Value
-                    (Resolution.meet_refinements
-                       left_resolution
-                       right_resolution)
+                  Value (Resolution.meet_refinements left_resolution right_resolution)
             in
             state
         | BooleanOperator.Or ->
@@ -3270,7 +3189,7 @@ module State (Context : Context) = struct
               update resolution (normalize (negate left))
               |> fun resolution -> update resolution right
             in
-            Value (join_resolutions left_resolution right_resolution))
+            Value (Resolution.outer_join_refinements left_resolution right_resolution))
     | ComparisonOperator
         {
           ComparisonOperator.left;
