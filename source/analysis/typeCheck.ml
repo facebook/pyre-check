@@ -3604,18 +3604,17 @@ module State (Context : Context) = struct
                   >>| (fun reference -> Resolution.is_global resolution ~reference)
                   |> Option.value ~default:false
                 in
-                let is_local =
-                  let { Refinement.Store.annotations; _ } =
-                    Resolution.annotation_store resolution
-                  in
-                  name_reference >>= Map.find annotations |> Option.is_some
+                let is_locally_initialized =
+                  match name_reference with
+                  | Some reference -> Resolution.has_nontemporary_annotation ~reference resolution
+                  | None -> false
                 in
                 let check_errors errors resolved =
                   match reference with
                   | Some reference ->
                       let modifying_read_only_error =
                         match attribute, original_annotation with
-                        | None, _ when not (explicit && not is_local) ->
+                        | None, _ when is_locally_initialized || not explicit ->
                             Option.some_if
                               (Annotation.is_final target_annotation)
                               (AnalysisError.FinalAttribute reference)

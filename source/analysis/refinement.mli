@@ -47,6 +47,8 @@ module Store : sig
 
   val empty : t
 
+  val has_nontemporary_annotation : name:Reference.t -> t -> bool
+
   val get_base : name:Reference.t -> t -> Annotation.t option
 
   val get_annotation : name:Reference.t -> attribute_path:Reference.t -> t -> Annotation.t option

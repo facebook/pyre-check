@@ -282,6 +282,8 @@ module Store = struct
 
   let show = Format.asprintf "%a" pp
 
+  let has_nontemporary_annotation ~name { annotations; _ } = ReferenceMap.mem annotations name
+
   let get_unit ?(include_temporary = true) ~name { annotations; temporary_annotations } =
     let temporary =
       if include_temporary then
