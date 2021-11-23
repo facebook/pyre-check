@@ -51,6 +51,7 @@ environment. `search_path` takes precendence over `source_directories` and the o
   + A plain string, representing the path to the directory from which Pyre will search for modules.
   + An object `{"import_root": "root", "source": "directory"}`, which can be used to control import root of the search path. See explaination for `source_directories`.
   + An object `{"site-package": "package_name"}`. It is equivalent to `{"import_root": "site_root", "source": "package_name"}`, where `site_root` is the return value of [`site.getsitepackages()`](https://docs.python.org/3/library/site.html#site.getsitepackages). This can be useful when you want to add installed `pip` packages as a dependency to your project.
+  + An object `{"site-package": "package_name", "is_toplevel_module": true}`, to specify the name as a singular toplevel module found in the site-root rather than as a package.
 
 - `exclude`: List of regular expressions such as `".*\/node_modules\/.*"` which
 specify files and directories that should be completely ignored by Pyre. The
