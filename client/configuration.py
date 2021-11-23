@@ -268,7 +268,7 @@ def get_site_roots() -> List[str]:
 
 
 def create_search_paths(
-    json: Union[str, Dict[str, str]], site_roots: Iterable[str]
+    json: Union[str, Dict[str, Union[str, bool]]], site_roots: Iterable[str]
 ) -> List[SearchPathElement]:
     if isinstance(json, str):
         return [SimpleSearchPathElement(json)]
@@ -276,24 +276,24 @@ def create_search_paths(
         if "root" in json and "subdirectory" in json:
             return [
                 SubdirectorySearchPathElement(
-                    root=json["root"], subdirectory=json["subdirectory"]
+                    root=str(json["root"]), subdirectory=str(json["subdirectory"])
                 )
             ]
         if "import_root" in json and "source" in json:
             return [
                 SubdirectorySearchPathElement(
-                    root=json["import_root"], subdirectory=json["source"]
+                    root=str(json["import_root"]), subdirectory=str(json["source"])
                 )
             ]
         elif "site-package" in json:
             is_toplevel_module = (
-                "is_toplevel_module" in json and json["is_toplevel_module"] == "true"
+                "is_toplevel_module" in json and json["is_toplevel_module"]
             )
             return [
                 SitePackageSearchPathElement(
                     site_root=root,
-                    package_name=json["site-package"],
-                    is_toplevel_module=is_toplevel_module,
+                    package_name=str(json["site-package"]),
+                    is_toplevel_module=bool(is_toplevel_module),
                 )
                 for root in site_roots
             ]
