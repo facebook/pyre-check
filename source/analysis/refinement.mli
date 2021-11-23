@@ -80,4 +80,6 @@ module Store : sig
     t ->
     t ->
     t
+
+  val update_existing : old_store:t -> new_store:t -> t
 end

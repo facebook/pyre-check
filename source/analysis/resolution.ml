@@ -236,12 +236,6 @@ let all_type_variables_in_scope { type_variables; _ } = Type.Variable.Set.to_lis
 
 let annotation_store { annotation_store; _ } = annotation_store
 
-let annotations { annotation_store = { annotations; _ }; _ } = annotations
-
-let temporary_annotations { annotation_store = { temporary_annotations; _ }; _ } =
-  temporary_annotations
-
-
 let refinements_equal left right =
   Refinement.Store.equal left.annotation_store right.annotation_store
 
@@ -286,6 +280,16 @@ let outer_widen_refinements ~iteration ~widening_threshold left right =
         ~widening_threshold
         left.annotation_store
         right.annotation_store;
+  }
+
+
+let update_existing_refinements ~old_resolution ~new_resolution =
+  {
+    old_resolution with
+    annotation_store =
+      Refinement.Store.update_existing
+        ~old_store:old_resolution.annotation_store
+        ~new_store:new_resolution.annotation_store;
   }
 
 

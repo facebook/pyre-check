@@ -580,32 +580,10 @@ module State (Context : Context) = struct
 
   let update_only_existing_annotations initial_state new_state =
     match initial_state, new_state with
-    | Value ({ resolution; _ } as initial_state), Value new_state ->
-        let update ~key ~data map =
-          if Map.mem map key then
-            Map.set ~key ~data map
-          else
-            map
-        in
-        let resolution =
-          let annotation_store =
-            Refinement.Store.
-              {
-                annotations =
-                  Map.fold
-                    ~init:(Resolution.annotations initial_state.resolution)
-                    ~f:update
-                    (Resolution.annotations new_state.resolution);
-                temporary_annotations =
-                  Map.fold
-                    ~init:(Resolution.temporary_annotations initial_state.resolution)
-                    ~f:update
-                    (Resolution.temporary_annotations new_state.resolution);
-              }
-          in
-          Resolution.with_annotation_store ~annotation_store resolution
-        in
-        Value { initial_state with resolution }
+    | ( Value ({ resolution = old_resolution; _ } as initial),
+        Value { resolution = new_resolution; _ } ) ->
+        let resolution = Resolution.update_existing_refinements ~old_resolution ~new_resolution in
+        Value { initial with resolution }
     | _ -> new_state
 
 

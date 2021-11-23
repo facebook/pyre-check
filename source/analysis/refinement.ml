@@ -17,6 +17,8 @@ module MapLattice = struct
 
     val empty : 'data t
 
+    val mem : 'data t -> key -> bool
+
     val set : 'data t -> key:key -> data:'data -> 'data t
 
     val find : 'data t -> key -> 'data option
@@ -81,6 +83,16 @@ module MapLattice = struct
             set sofar ~key ~data
       in
       fold2 left right ~init:empty ~f
+
+
+    let update_existing ~old_map ~new_map =
+      let update_unit ~key ~data map =
+        if mem map key then
+          set ~key ~data map
+        else
+          map
+      in
+      fold ~init:old_map ~f:update_unit new_map
   end
 end
 
@@ -408,4 +420,15 @@ module Store = struct
   let outer_widen ~global_resolution ~iteration ~widening_threshold =
     let merge_one = Unit.widen ~global_resolution ~iteration ~widening_threshold in
     widen_or_join ~merge_one
+
+
+  let update_existing ~old_store ~new_store =
+    {
+      annotations =
+        ReferenceMap.update_existing ~old_map:old_store.annotations ~new_map:new_store.annotations;
+      temporary_annotations =
+        ReferenceMap.update_existing
+          ~old_map:old_store.temporary_annotations
+          ~new_map:new_store.temporary_annotations;
+    }
 end

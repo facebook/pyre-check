@@ -90,10 +90,6 @@ val all_type_variables_in_scope : t -> Type.Variable.t list
 
 val annotation_store : t -> Refinement.Store.t
 
-val annotations : t -> Refinement.Unit.t Reference.Map.t
-
-val temporary_annotations : t -> Refinement.Unit.t Reference.Map.t
-
 val refinements_equal : t -> t -> bool
 
 val meet_refinements : t -> t -> t
@@ -101,6 +97,8 @@ val meet_refinements : t -> t -> t
 val outer_join_refinements : t -> t -> t
 
 val outer_widen_refinements : iteration:int -> widening_threshold:int -> t -> t -> t
+
+val update_existing_refinements : old_resolution:t -> new_resolution:t -> t
 
 val with_annotation_store : t -> annotation_store:Refinement.Store.t -> t
 
