@@ -191,15 +191,20 @@ class SubdirectorySearchPathElement(SearchPathElement):
 class SitePackageSearchPathElement(SearchPathElement):
     site_root: str
     package_name: str
+    is_toplevel_module: bool = False
+
+    def package_path(self) -> str:
+        module_suffix = ".py" if self.is_toplevel_module else ""
+        return self.package_name + module_suffix
 
     def path(self) -> str:
-        return os.path.join(self.site_root, self.package_name)
+        return os.path.join(self.site_root, self.package_path())
 
     def get_root(self) -> str:
         return self.site_root
 
     def command_line_argument(self) -> str:
-        return self.site_root + "$" + self.package_name
+        return self.site_root + "$" + self.package_path()
 
     def expand_global_root(self, global_root: str) -> SearchPathElement:
         # Site package does not participate in root expansion.
@@ -281,9 +286,14 @@ def create_search_paths(
                 )
             ]
         elif "site-package" in json:
+            is_toplevel_module = (
+                "is_toplevel_module" in json and json["is_toplevel_module"] == "true"
+            )
             return [
                 SitePackageSearchPathElement(
-                    site_root=root, package_name=json["site-package"]
+                    site_root=root,
+                    package_name=json["site-package"],
+                    is_toplevel_module=is_toplevel_module,
                 )
                 for root in site_roots
             ]

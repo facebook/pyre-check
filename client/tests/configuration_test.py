@@ -1566,6 +1566,13 @@ class SearchPathElementTest(unittest.TestCase):
             create_search_paths({"site-package": "foo"}, site_roots=["site1"]),
             [SitePackageSearchPathElement("site1", "foo")],
         )
+        self.assertListEqual(
+            create_search_paths(
+                {"site-package": "foo", "is_toplevel_module": "true"},
+                site_roots=["site1"],
+            ),
+            [SitePackageSearchPathElement("site1", "foo", True)],
+        )
 
         with self.assertRaises(InvalidConfiguration):
             create_search_paths({}, site_roots=[])
@@ -1593,6 +1600,10 @@ class SearchPathElementTest(unittest.TestCase):
         self.assertEqual(
             SitePackageSearchPathElement("foo", "bar").command_line_argument(),
             "foo$bar",
+        )
+        self.assertEqual(
+            SitePackageSearchPathElement("foo", "bar", True).command_line_argument(),
+            "foo$bar.py",
         )
 
     def test_expand_global_root(self) -> None:
