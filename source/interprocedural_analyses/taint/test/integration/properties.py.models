@@ -395,6 +395,139 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_property_callable",
+    "callable_line": 185,
+    "code": 5002,
+    "line": 188,
+    "start": 25,
+    "end": 39,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 188,
+              "start": 25,
+              "end": 39
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "properties.py",
+                "line": 188,
+                "start": 25,
+                "end": 39
+              },
+              "resolves_to": [ "properties.PropertyCallableReturn.__call__" ],
+              "port": "formal(y)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_property_callable",
+    "callable_line": 185,
+    "code": 5002,
+    "line": 188,
+    "start": 11,
+    "end": 14,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 186, "start": 27, "end": 41 } ],
+            "root": {
+              "filename": "properties.py",
+              "line": 186,
+              "start": 27,
+              "end": 41
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "properties.py",
+                "line": 188,
+                "start": 11,
+                "end": 14
+              },
+              "resolves_to": [ "properties.PropertyCallable.attribute" ],
+              "port": "formal(self)[z]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable":
@@ -434,6 +567,15 @@
     "callable": "Ovr{object::__init__}",
     "tito": [
       {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[z]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
         "port": "formal(y)",
         "taint": [
           {
@@ -445,6 +587,15 @@
                 "kind": "LocalReturn"
               }
             ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[x]" ], "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -767,6 +918,106 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{properties.PropertyCallable::__init__}",
+    "tito": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[z]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{properties.PropertyCallableReturn::__call__}",
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{properties.PropertyCallableReturn::__init__}",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[x]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{properties.PropertySetterInConstructor::__init__}",
     "tito": [
       {
@@ -916,6 +1167,54 @@
     "sinks": [
       {
         "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{type::__call__}",
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[x]",
         "taint": [
           {
             "kinds": [
@@ -1317,6 +1616,160 @@
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyCallable.__init__",
+    "tito": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[z]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyCallable.attribute",
+    "sources": [
+      {
+        "port": "result[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 182, "start": 38, "end": 52 } ],
+            "root": {
+              "filename": "properties.py",
+              "line": 182,
+              "start": 38,
+              "end": 52
+            }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self)[z]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 181,
+              "start": 19,
+              "end": 25
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyCallableReturn.__call__",
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 171,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 170,
+              "start": 19,
+              "end": 25
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyCallableReturn.__init__",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[x]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }

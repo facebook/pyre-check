@@ -805,28 +805,44 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            analyze_unstarred_expression ~resolution argument_taint argument state)
 
 
-  and analyze_callee ~resolution ~callee ~self_taint ~callee_taint ~state =
-    match self_taint, callee_taint with
-    | _, Some callee_taint -> (
+  and analyze_callee ~resolution ~is_property_call ~callee ~self_taint ~callee_taint ~state =
+    (* Special case: `x.foo()` where foo is a property returning a callable. *)
+    let callee_is_property =
+      match is_property_call, callee.Node.value with
+      | false, Expression.Name (Name.Attribute { attribute; _ }) ->
+          get_property_callees ~location:callee.Node.location ~attribute |> Option.is_some
+      | _ -> false
+    in
+    match self_taint, callee_taint, callee_is_property with
+    | _, _, true
+    | _, Some _, _ -> (
         match callee.Node.value with
         | Expression.Name (Name.Attribute { base; attribute; special }) ->
+            (* If we are already analyzing a call of a property, then ignore properties
+             * to avoid infinite recursion. *)
+            let resolve_properties = not is_property_call in
             analyze_attribute_access
               ~resolution
               ~location:callee.Node.location
-              ~resolve_properties:false (* We are already analyzing a call. *)
+              ~resolve_properties
               ~base
               ~attribute
               ~special
               ~base_taint:(Option.value self_taint ~default:BackwardState.Tree.bottom)
-              ~attribute_taint:callee_taint
+              ~attribute_taint:(Option.value callee_taint ~default:BackwardState.Tree.bottom)
               ~state
-        | _ -> analyze_expression ~resolution ~taint:callee_taint ~state ~expression:callee)
-    | Some self_taint, None -> (
+        | _ ->
+            analyze_expression
+              ~resolution
+              ~taint:(Option.value callee_taint ~default:BackwardState.Tree.bottom)
+              ~state
+              ~expression:callee)
+    | Some self_taint, None, _ -> (
         match callee.Node.value with
         | Expression.Name (Name.Attribute { base; _ }) ->
             analyze_expression ~resolution ~taint:self_taint ~state ~expression:base
         | _ -> state)
-    | None, None -> state
+    | None, None, _ -> state
 
 
   and analyze_attribute_access
@@ -856,6 +872,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         apply_callees
           ~resolution
+          ~is_property:true
           ~callee:expression
           ~call_location:location
           ~arguments:[]
@@ -971,7 +988,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (CallGraph.CallCallees.create ~call_targets ~return_type ())
       in
       let state =
-        analyze_callee ~resolution ~callee:lambda_callee ~self_taint ~callee_taint ~state
+        analyze_callee
+          ~resolution
+          ~is_property_call:false
+          ~callee:lambda_callee
+          ~self_taint
+          ~callee_taint
+          ~state
       in
       let all_taint =
         arguments_taint
@@ -1001,6 +1024,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and apply_callees
       ~resolution
+      ~is_property
       ~callee
       ~call_location
       ~arguments
@@ -1038,7 +1062,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ -> analyze_arguments ~resolution ~arguments ~arguments_taint ~state)
       | _ -> analyze_arguments ~resolution ~arguments ~arguments_taint ~state
     in
-    let state = analyze_callee ~resolution ~callee ~self_taint ~callee_taint ~state in
+    let state =
+      analyze_callee
+        ~resolution
+        ~is_property_call:is_property
+        ~callee
+        ~self_taint
+        ~callee_taint
+        ~state
+    in
     state
 
 
@@ -1111,6 +1143,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           if CallGraph.CallCallees.is_partially_resolved callees then
             apply_callees
               ~resolution
+              ~is_property:false
               ~call_location:location
               ~state
               ~callee
@@ -1367,6 +1400,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let callees = get_callees ~location ~call:{ Call.callee; arguments } in
         apply_callees
           ~resolution
+          ~is_property:false
           ~call_location:location
           ~state
           ~callee
@@ -1634,6 +1668,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   let taint = compute_assignment_taint ~resolution base state |> fst in
                   apply_callees
                     ~resolution
+                    ~is_property:true
                     ~callee:target
                     ~call_location:location
                     ~arguments:[{ name = None; value }]

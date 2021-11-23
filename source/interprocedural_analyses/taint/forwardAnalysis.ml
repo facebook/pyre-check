@@ -784,15 +784,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     state: t;
   }
 
-  let rec analyze_callee ~resolution ~state ~callee =
+  let rec analyze_callee ~resolution ~is_property_call ~state ~callee =
     match callee.Node.value with
     | Expression.Name (Name.Attribute { base; attribute; special }) ->
+        (* If we are already analyzing a call of a property, then ignore properties
+         * to avoid infinite recursion. *)
+        let resolve_properties = not is_property_call in
         let { base_taint; attribute_taint; state } =
           analyze_attribute_access
             ~resolution
             ~state
             ~location:callee.Node.location
-            ~resolve_properties:false (* We are already analyzing a call. *)
+            ~resolve_properties
             ~base
             ~attribute
             ~special
@@ -804,13 +807,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   (* Lazy version of `analyze_callee` which only analyze what we need for a call site. *)
-  and analyze_callee_for_raw_callees ~resolution ~state ~callee = function
-    | { CallGraph.CallCallees.unresolved = true; _ }
-    | { CallGraph.CallCallees.new_targets = _ :: _; _ }
-    | { CallGraph.CallCallees.init_targets = _ :: _; _ } ->
+  and analyze_callee_for_raw_callees ~resolution ~is_property_call ~state ~callee callees =
+    (* Special case: `x.foo()` where foo is a property returning a callable. *)
+    let callee_is_property =
+      match is_property_call, callee.Node.value with
+      | false, Expression.Name (Name.Attribute { attribute; _ }) ->
+          get_property_callees ~location:callee.Node.location ~attribute |> Option.is_some
+      | _ -> false
+    in
+    match callees, callee_is_property with
+    | _, true
+    | { CallGraph.CallCallees.unresolved = true; _ }, _
+    | { CallGraph.CallCallees.new_targets = _ :: _; _ }, _
+    | { CallGraph.CallCallees.init_targets = _ :: _; _ }, _ ->
         (* We need both the taint on self and on the whole callee. *)
-        analyze_callee ~resolution ~state ~callee
-    | { CallGraph.CallCallees.call_targets; _ }
+        analyze_callee ~resolution ~is_property_call ~state ~callee
+    | { CallGraph.CallCallees.call_targets; _ }, _
       when List.exists
              ~f:(fun { CallGraph.CallTarget.implicit_self; _ } -> implicit_self)
              call_targets ->
@@ -949,7 +961,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     (* Analyze all arguments once. *)
     let { self_taint = lambda_self_taint; callee_taint = lambda_taint; state } =
-      analyze_callee ~resolution ~state ~callee:lambda_callee
+      analyze_callee ~resolution ~is_property_call:false ~state ~callee:lambda_callee
     in
     let lambda_taint = Option.value_exn lambda_taint in
     let non_lambda_arguments_taint, state =
@@ -1026,9 +1038,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     arguments_taint, state
 
 
-  and apply_callees ~resolution ~callee ~call_location ~arguments ~state raw_callees =
+  and apply_callees ~resolution ~is_property ~callee ~call_location ~arguments ~state raw_callees =
     let { self_taint; callee_taint; state } =
-      analyze_callee_for_raw_callees ~resolution ~state ~callee raw_callees
+      analyze_callee_for_raw_callees
+        ~resolution
+        ~is_property_call:is_property
+        ~state
+        ~callee
+        raw_callees
     in
 
     let arguments_taint, state =
@@ -1149,7 +1166,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              tainted. *)
           let callees = get_callees ~location ~call:{ Call.callee; arguments } in
           if CallGraph.CallCallees.is_partially_resolved callees then
-            apply_callees ~resolution ~callee ~call_location:location ~arguments ~state callees
+            apply_callees
+              ~resolution
+              ~is_property:false
+              ~callee
+              ~call_location:location
+              ~arguments
+              ~state
+              callees
           else
             taint, state
       (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
@@ -1344,7 +1368,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let { Call.callee; arguments } = CallGraph.redirect_special_calls ~resolution call in
           let callees = get_callees ~location ~call:{ Call.callee; arguments } in
           let taint, state =
-            apply_callees ~resolution ~call_location:location ~callee ~arguments ~state callees
+            apply_callees
+              ~resolution
+              ~is_property:false
+              ~call_location:location
+              ~callee
+              ~arguments
+              ~state
+              callees
           in
           let taint =
             match Node.value callee with
@@ -1767,6 +1798,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   let taint, state =
                     apply_callees
                       ~resolution
+                      ~is_property:true
                       ~callee:target
                       ~call_location:location
                       ~arguments:[{ Call.Argument.name = None; value }]

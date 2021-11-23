@@ -160,3 +160,29 @@ def property_setter_in_constructor():
     obj = PropertySetterInConstructor(_test_source())
     _test_sink(obj.x)
     _test_sink(obj.underlying)
+
+
+class PropertyCallableReturn:
+    def __init__(self, x: str) -> None:
+        self.x = x
+
+    def __call__(self, y):
+        _test_sink(self.x)
+        _test_sink(y)
+        return x
+
+
+class PropertyCallable:
+    def __init__(self, z: str) -> None:
+        self.z = z
+
+    @property
+    def attribute(self) -> PropertyCallableReturn:
+        _test_sink(self.z)
+        return PropertyCallableReturn(_test_source())
+
+
+def test_property_callable():
+    obj = PropertyCallable(_test_source())
+    # TODO(T105570363): Find the issue from `obj.attribute:result.x` to `PropertyCallableReturn.__call__:self.x`
+    return obj.attribute(_test_source())
