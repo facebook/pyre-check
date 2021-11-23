@@ -242,6 +242,19 @@ let temporary_annotations { annotation_store = { temporary_annotations; _ }; _ }
   temporary_annotations
 
 
+(** Meet refinements.
+
+    Because the type variables in client code are always the same, we just take the left as an
+    optimization *)
+let meet_refinements left right =
+  let global_resolution = left.global_resolution in
+  {
+    left with
+    annotation_store =
+      Refinement.Store.meet ~global_resolution left.annotation_store right.annotation_store;
+  }
+
+
 let with_annotation_store resolution ~annotation_store = { resolution with annotation_store }
 
 let parent { parent; _ } = parent

@@ -94,6 +94,8 @@ val annotations : t -> Refinement.Unit.t Reference.Map.t
 
 val temporary_annotations : t -> Refinement.Unit.t Reference.Map.t
 
+val meet_refinements : t -> t -> t
+
 val with_annotation_store : t -> annotation_store:Refinement.Store.t -> t
 
 val parent : t -> Reference.t option

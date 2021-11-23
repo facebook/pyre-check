@@ -3247,39 +3247,15 @@ module State (Context : Context) = struct
               | Unreachable -> Unreachable
               | Value resolution -> refine_resolution_for_assert ~resolution right
             in
-            let merge_resolutions left_resolution right_resolution =
-              let {
-                Refinement.Store.annotations = left_annotations;
-                temporary_annotations = left_temporary_annotations;
-              }
-                =
-                Resolution.annotation_store left_resolution
-              in
-              let {
-                Refinement.Store.annotations = right_annotations;
-                temporary_annotations = right_temporary_annotations;
-              }
-                =
-                Resolution.annotation_store right_resolution
-              in
-              let merge ~key:_ = function
-                | `Both (left, right) -> Some (Refinement.Unit.meet ~global_resolution left right)
-                | `Left left -> Some left
-                | `Right right -> Some right
-              in
-              let annotations = Map.merge ~f:merge left_annotations right_annotations in
-              let temporary_annotations =
-                Map.merge ~f:merge left_temporary_annotations right_temporary_annotations
-              in
-              let annotation_store = { Refinement.Store.annotations; temporary_annotations } in
-              Resolution.with_annotation_store left_resolution ~annotation_store
-            in
             let state =
               match left_state, right_state with
               | Unreachable, _ -> Unreachable
               | _, Unreachable -> Unreachable
               | Value left_resolution, Value right_resolution ->
-                  Value (merge_resolutions left_resolution right_resolution)
+                  Value
+                    (Resolution.meet_refinements
+                       left_resolution
+                       right_resolution)
             in
             state
         | BooleanOperator.Or ->

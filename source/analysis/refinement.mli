@@ -76,4 +76,6 @@ module Store : sig
   val less_or_equal : global_resolution:GlobalResolution.t -> left:t -> right:t -> bool
 
   val less_or_equal_monotone : left:t -> right:t -> bool
+
+  val meet : global_resolution:GlobalResolution.t -> t -> t -> t
 end

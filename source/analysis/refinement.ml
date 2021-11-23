@@ -362,4 +362,13 @@ module Store = struct
          ~less_or_equal_one
          ~left:left.temporary_annotations
          ~right:right.temporary_annotations
+
+
+  let meet ~global_resolution left right =
+    let meet_one = Unit.meet ~global_resolution in
+    {
+      annotations = ReferenceMap.meet ~meet_one left.annotations right.annotations;
+      temporary_annotations =
+        ReferenceMap.meet ~meet_one left.temporary_annotations right.temporary_annotations;
+    }
 end
