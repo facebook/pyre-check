@@ -191,7 +191,7 @@ let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~roo
               sofar)
         else
           sofar
-    | _ when file_filter path -> create_relative ~root ~relative:path :: sofar
+    | _ when file_filter path -> create_absolute path :: sofar
     | _ -> sofar
   in
   list [] (absolute root)
