@@ -4933,368 +4933,345 @@ module State (Context : Context) = struct
       List.fold captures ~init:(resolution, errors) ~f:process_capture
     in
     let check_parameter_annotations resolution errors =
-      let errors, annotation_store =
-        let make_parameter_name name =
-          name
-          |> String.filter ~f:(function
-                 | '*' -> false
-                 | _ -> true)
-          |> Reference.create
-        in
-        let check_parameter
-            index
-            (errors, { Refinement.Store.annotations; temporary_annotations })
-            { Node.location; value = { Parameter.name; value; annotation } }
-          =
-          let add_incompatible_variable_error ~errors annotation default =
-            if
-              Type.is_any default
-              || GlobalResolution.less_or_equal global_resolution ~left:default ~right:annotation
-              || GlobalResolution.constraints_solution_exists
-                   global_resolution
-                   ~left:default
-                   ~right:annotation
-            then
-              errors
-            else
-              emit_error
-                ~errors
-                ~location
-                ~kind:
-                  (Error.IncompatibleVariableType
-                     {
-                       incompatible_type =
-                         {
-                           name = Reference.create name;
-                           mismatch =
-                             Error.create_mismatch
-                               ~resolution:global_resolution
-                               ~expected:annotation
-                               ~actual:default
-                               ~covariant:true;
-                         };
-                       declare_location = instantiate_path ~global_resolution location;
-                     })
-          in
-          let add_missing_parameter_annotation_error ~errors ~given_annotation annotation =
-            let name = name |> Identifier.sanitized in
-            let is_dunder_new_method_for_named_tuple =
-              Define.is_method define
-              && Reference.is_suffix ~suffix:(Reference.create ".__new__") define.signature.name
-              && Option.value_map
-                   ~default:false
-                   ~f:(name_is ~name:"typing.NamedTuple")
-                   return_annotation
-            in
-            if
-              String.equal name "*"
-              || String.is_prefix ~prefix:"_" name
-              || Option.is_some given_annotation
-                 && (String.is_prefix ~prefix:"**" name || String.is_prefix ~prefix:"*" name)
-              || is_dunder_new_method_for_named_tuple
-              || String.equal name "/"
-            then
-              errors
-            else
-              emit_error
-                ~errors
-                ~location
-                ~kind:
-                  (Error.MissingParameterAnnotation
-                     {
-                       name = Reference.create name;
-                       annotation;
-                       given_annotation;
-                       evidence_locations = [];
-                       thrown_at_source = true;
-                     })
-          in
-          let add_final_parameter_annotation_error ~errors =
-            emit_error ~errors ~location ~kind:(Error.InvalidType (FinalParameter name))
-          in
-          let add_variance_error errors annotation =
-            match annotation with
-            | Type.Variable variable
-              when (not (Define.is_constructor define)) && Type.Variable.Unary.is_covariant variable
-              ->
-                emit_error
-                  ~errors
-                  ~location
-                  ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
-            | _ -> errors
-          in
-          let parse_as_unary () =
-            let errors, annotation =
-              match index, parent with
-              | 0, Some parent
-              (* __new__ does not require an annotation for __cls__, even though it is a static
-                 method. *)
-                when not
-                       (Define.is_class_toplevel define
-                       || Define.is_static_method define
-                          && not (String.equal (Define.unqualified_name define) "__new__")) -> (
-                  let resolved, is_class_method =
-                    let parent_annotation = type_of_parent ~global_resolution parent in
-                    if Define.is_class_method define || Define.is_class_property define then
-                      (* First parameter of a method is a class object. *)
-                      Type.meta parent_annotation, true
-                    else (* First parameter of a method is the callee object. *)
-                      parent_annotation, false
-                  in
-                  match annotation with
-                  | Some annotation ->
-                      let errors, annotation =
-                        let annotation_errors, annotation =
-                          parse_and_check_annotation ~resolution ~bind_variables:false annotation
-                        in
-                        List.append annotation_errors errors, annotation
-                      in
-                      let enforce_here =
-                        let is_literal_classmethod decorator =
-                          match Decorator.from_expression decorator with
-                          | None -> false
-                          | Some { Decorator.name = { Node.value = name; _ }; _ } -> (
-                              match Reference.as_list name with
-                              | ["classmethod"] -> true
-                              | _ -> false)
-                        in
-                        match List.rev decorators with
-                        | [] -> true
-                        | last :: _ when is_literal_classmethod last -> true
-                        | _ :: _ -> false
-                      in
-                      let errors =
-                        if enforce_here then
-                          let name = Identifier.sanitized name in
-                          let kind =
-                            let compatible =
-                              GlobalResolution.constraints_solution_exists
-                                global_resolution
-                                ~left:resolved
-                                ~right:annotation
-                            in
-                            if compatible then
-                              None
-                            else if
-                              (is_class_method && String.equal name "cls")
-                              || ((not is_class_method) && String.equal name "self")
-                            then
-                              (* Assume the user incorrectly tried to type the implicit parameter *)
-                              Some
-                                (Error.InvalidMethodSignature { annotation = Some annotation; name })
-                            else (* Assume the user forgot to specify the implicit parameter *)
-                              Some
-                                (Error.InvalidMethodSignature
-                                   {
-                                     annotation = None;
-                                     name = (if is_class_method then "cls" else "self");
-                                   })
-                          in
-                          match kind with
-                          | Some kind -> emit_error ~errors ~location ~kind
-                          | None -> errors
-                        else
-                          errors
-                      in
-                      errors, Annotation.create_mutable annotation
-                  | None -> errors, Annotation.create_mutable resolved)
-              | _ -> (
-                  let errors, parsed_annotation =
-                    match annotation with
-                    | None -> errors, None
-                    | Some annotation ->
-                        let anntation_errors, annotation =
-                          parse_and_check_annotation ~resolution ~bind_variables:false annotation
-                        in
-                        let errors = List.append anntation_errors errors in
-                        let errors = add_variance_error errors annotation in
-                        errors, Some annotation
-                  in
-                  let contains_prohibited_any parsed_annotation =
-                    let contains_literal_any =
-                      annotation >>| Type.expression_contains_any |> Option.value ~default:false
-                    in
-                    contains_literal_any && Type.contains_prohibited_any parsed_annotation
-                  in
-                  let value_annotation =
-                    value
-                    >>| (fun expression -> forward_expression ~resolution ~expression)
-                    >>| fun { resolved; _ } -> resolved
-                  in
-                  let errors =
-                    match parsed_annotation, value_annotation with
-                    | Some annotation, Some value_annotation ->
-                        add_incompatible_variable_error ~errors annotation value_annotation
-                    | _ -> errors
-                  in
-                  match parsed_annotation, value_annotation with
-                  | Some annotation, Some _ when Type.contains_final annotation ->
-                      ( add_final_parameter_annotation_error ~errors,
-                        Annotation.create_immutable annotation )
-                  | Some annotation, Some value_annotation when contains_prohibited_any annotation
-                    ->
-                      ( add_missing_parameter_annotation_error
-                          ~errors
-                          ~given_annotation:(Some annotation)
-                          (Some value_annotation),
-                        Annotation.create_immutable annotation )
-                  | Some annotation, _ when Type.contains_final annotation ->
-                      ( add_final_parameter_annotation_error ~errors,
-                        Annotation.create_immutable annotation )
-                  | Some annotation, None when contains_prohibited_any annotation ->
-                      ( add_missing_parameter_annotation_error
-                          ~errors
-                          ~given_annotation:(Some annotation)
-                          None,
-                        Annotation.create_immutable annotation )
-                  | Some annotation, _ ->
-                      let errors =
-                        emit_invalid_enumeration_literal_errors
-                          ~resolution
-                          ~location
-                          ~errors
-                          annotation
-                      in
-                      errors, Annotation.create_immutable annotation
-                  | None, Some value_annotation ->
-                      ( add_missing_parameter_annotation_error
-                          ~errors
-                          ~given_annotation:None
-                          (Some value_annotation),
-                        Annotation.create_mutable Type.Any )
-                  | None, None ->
-                      ( add_missing_parameter_annotation_error ~errors ~given_annotation:None None,
-                        Annotation.create_mutable Type.Any ))
-            in
-            let apply_starred_annotations annotation =
-              if String.is_prefix ~prefix:"**" name then
-                Type.dictionary ~key:Type.string ~value:annotation
-              else if String.is_prefix ~prefix:"*" name then
-                Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation annotation)
-              else
-                annotation
-            in
-            let transform type_ =
-              Type.Variable.mark_all_variables_as_bound type_ |> apply_starred_annotations
-            in
-            errors, Annotation.transform_types ~f:transform annotation
-          in
-          let errors, { Annotation.annotation; mutability } =
-            if String.is_prefix ~prefix:"*" name && not (String.is_prefix ~prefix:"**" name) then
-              annotation
-              >>= Type.OrderedTypes.concatenation_from_unpack_expression
-                    ~parse_annotation:(GlobalResolution.parse_annotation global_resolution)
-              >>| (fun concatenation ->
-                    Type.Tuple (Concatenation concatenation)
-                    |> Type.Variable.mark_all_variables_as_bound
-                    |> Annotation.create_mutable
-                    |> fun annotation -> errors, annotation)
-              |> Option.value ~default:(parse_as_unary ())
-            else
-              parse_as_unary ()
-          in
-          ( errors,
-            {
-              Refinement.Store.annotations =
-                Map.set
-                  annotations
-                  ~key:(make_parameter_name name)
-                  ~data:(Refinement.Unit.create { Annotation.annotation; mutability });
-              temporary_annotations;
-            } )
-        in
-        let number_of_stars name = Identifier.split_star name |> fst |> String.length in
-        match List.rev parameters, parent with
-        | [], Some _ when not (Define.is_class_toplevel define || Define.is_static_method define) ->
-            let errors =
-              let name =
-                if Define.is_class_method define || Define.is_class_property define then
-                  "cls"
-                else
-                  "self"
-              in
-              emit_error
-                ~errors
-                ~location
-                ~kind:(Error.InvalidMethodSignature { annotation = None; name })
-            in
-            errors, Resolution.annotation_store resolution
-        | ( {
-              Node.value = { name = second_name; value = None; annotation = Some second_annotation };
-              _;
-            }
-            :: {
-                 Node.value =
-                   { name = first_name; value = None; annotation = Some first_annotation };
-                 _;
-               }
-               :: reversed_head,
-            _ )
-          when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
-            match
-              GlobalResolution.parse_as_parameter_specification_instance_annotation
-                global_resolution
-                ~variable_parameter_annotation:first_annotation
-                ~keywords_parameter_annotation:second_annotation
-            with
-            | Some variable ->
-                let add_annotations
-                    {
-                      Type.Variable.Variadic.Parameters.Components.positional_component;
-                      keyword_component;
-                    }
-                  =
-                  {
-                    Refinement.Store.annotations =
-                      Resolution.annotations resolution
-                      |> Map.set
-                           ~key:(make_parameter_name first_name)
-                           ~data:(Refinement.Unit.create_mutable positional_component)
-                      |> Map.set
-                           ~key:(make_parameter_name second_name)
-                           ~data:(Refinement.Unit.create_mutable keyword_component);
-                    temporary_annotations = Resolution.temporary_annotations resolution;
-                  }
-                in
-                if Resolution.type_variable_exists resolution ~variable:(ParameterVariadic variable)
-                then
-                  let annotations =
-                    Type.Variable.Variadic.Parameters.mark_as_bound variable
-                    |> Type.Variable.Variadic.Parameters.decompose
-                    |> add_annotations
-                  in
-                  List.rev reversed_head
-                  |> List.foldi ~init:(errors, annotations) ~f:check_parameter
-                else
-                  let errors =
-                    let origin =
-                      if Define.is_toplevel (Node.value Context.define) then
-                        Error.Toplevel
-                      else if Define.is_class_toplevel (Node.value Context.define) then
-                        Error.ClassToplevel
-                      else
-                        Error.Define
-                    in
-                    emit_error
-                      ~errors
-                      ~location
-                      ~kind:
-                        (Error.InvalidTypeVariable
-                           { annotation = ParameterVariadic variable; origin })
-                  in
-                  errors, add_annotations { positional_component = Top; keyword_component = Top }
-            | None ->
-                List.foldi
-                  ~init:(errors, Resolution.annotation_store resolution)
-                  ~f:check_parameter
-                  parameters)
-        | _ ->
-            List.foldi
-              ~init:(errors, Resolution.annotation_store resolution)
-              ~f:check_parameter
-              parameters
+      let make_parameter_name name =
+        name
+        |> String.filter ~f:(function
+               | '*' -> false
+               | _ -> true)
+        |> Reference.create
       in
-      Resolution.with_annotation_store resolution ~annotation_store, errors
+      let check_parameter
+          index
+          (new_resolution, errors)
+          { Node.location; value = { Parameter.name; value; annotation } }
+        =
+        let add_incompatible_variable_error ~errors annotation default =
+          if
+            Type.is_any default
+            || GlobalResolution.less_or_equal global_resolution ~left:default ~right:annotation
+            || GlobalResolution.constraints_solution_exists
+                 global_resolution
+                 ~left:default
+                 ~right:annotation
+          then
+            errors
+          else
+            emit_error
+              ~errors
+              ~location
+              ~kind:
+                (Error.IncompatibleVariableType
+                   {
+                     incompatible_type =
+                       {
+                         name = Reference.create name;
+                         mismatch =
+                           Error.create_mismatch
+                             ~resolution:global_resolution
+                             ~expected:annotation
+                             ~actual:default
+                             ~covariant:true;
+                       };
+                     declare_location = instantiate_path ~global_resolution location;
+                   })
+        in
+        let add_missing_parameter_annotation_error ~errors ~given_annotation annotation =
+          let name = name |> Identifier.sanitized in
+          let is_dunder_new_method_for_named_tuple =
+            Define.is_method define
+            && Reference.is_suffix ~suffix:(Reference.create ".__new__") define.signature.name
+            && Option.value_map
+                 ~default:false
+                 ~f:(name_is ~name:"typing.NamedTuple")
+                 return_annotation
+          in
+          if
+            String.equal name "*"
+            || String.is_prefix ~prefix:"_" name
+            || Option.is_some given_annotation
+               && (String.is_prefix ~prefix:"**" name || String.is_prefix ~prefix:"*" name)
+            || is_dunder_new_method_for_named_tuple
+            || String.equal name "/"
+          then
+            errors
+          else
+            emit_error
+              ~errors
+              ~location
+              ~kind:
+                (Error.MissingParameterAnnotation
+                   {
+                     name = Reference.create name;
+                     annotation;
+                     given_annotation;
+                     evidence_locations = [];
+                     thrown_at_source = true;
+                   })
+        in
+        let add_final_parameter_annotation_error ~errors =
+          emit_error ~errors ~location ~kind:(Error.InvalidType (FinalParameter name))
+        in
+        let add_variance_error errors annotation =
+          match annotation with
+          | Type.Variable variable
+            when (not (Define.is_constructor define)) && Type.Variable.Unary.is_covariant variable
+            ->
+              emit_error
+                ~errors
+                ~location
+                ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
+          | _ -> errors
+        in
+        let parse_as_unary () =
+          let errors, annotation =
+            match index, parent with
+            | 0, Some parent
+            (* __new__ does not require an annotation for __cls__, even though it is a static
+               method. *)
+              when not
+                     (Define.is_class_toplevel define
+                     || Define.is_static_method define
+                        && not (String.equal (Define.unqualified_name define) "__new__")) -> (
+                let resolved, is_class_method =
+                  let parent_annotation = type_of_parent ~global_resolution parent in
+                  if Define.is_class_method define || Define.is_class_property define then
+                    (* First parameter of a method is a class object. *)
+                    Type.meta parent_annotation, true
+                  else (* First parameter of a method is the callee object. *)
+                    parent_annotation, false
+                in
+                match annotation with
+                | Some annotation ->
+                    let errors, annotation =
+                      let annotation_errors, annotation =
+                        parse_and_check_annotation ~resolution ~bind_variables:false annotation
+                      in
+                      List.append annotation_errors errors, annotation
+                    in
+                    let enforce_here =
+                      let is_literal_classmethod decorator =
+                        match Decorator.from_expression decorator with
+                        | None -> false
+                        | Some { Decorator.name = { Node.value = name; _ }; _ } -> (
+                            match Reference.as_list name with
+                            | ["classmethod"] -> true
+                            | _ -> false)
+                      in
+                      match List.rev decorators with
+                      | [] -> true
+                      | last :: _ when is_literal_classmethod last -> true
+                      | _ :: _ -> false
+                    in
+                    let errors =
+                      if enforce_here then
+                        let name = Identifier.sanitized name in
+                        let kind =
+                          let compatible =
+                            GlobalResolution.constraints_solution_exists
+                              global_resolution
+                              ~left:resolved
+                              ~right:annotation
+                          in
+                          if compatible then
+                            None
+                          else if
+                            (is_class_method && String.equal name "cls")
+                            || ((not is_class_method) && String.equal name "self")
+                          then
+                            (* Assume the user incorrectly tried to type the implicit parameter *)
+                            Some
+                              (Error.InvalidMethodSignature { annotation = Some annotation; name })
+                          else (* Assume the user forgot to specify the implicit parameter *)
+                            Some
+                              (Error.InvalidMethodSignature
+                                 {
+                                   annotation = None;
+                                   name = (if is_class_method then "cls" else "self");
+                                 })
+                        in
+                        match kind with
+                        | Some kind -> emit_error ~errors ~location ~kind
+                        | None -> errors
+                      else
+                        errors
+                    in
+                    errors, Annotation.create_mutable annotation
+                | None -> errors, Annotation.create_mutable resolved)
+            | _ -> (
+                let errors, parsed_annotation =
+                  match annotation with
+                  | None -> errors, None
+                  | Some annotation ->
+                      let anntation_errors, annotation =
+                        parse_and_check_annotation ~resolution ~bind_variables:false annotation
+                      in
+                      let errors = List.append anntation_errors errors in
+                      let errors = add_variance_error errors annotation in
+                      errors, Some annotation
+                in
+                let contains_prohibited_any parsed_annotation =
+                  let contains_literal_any =
+                    annotation >>| Type.expression_contains_any |> Option.value ~default:false
+                  in
+                  contains_literal_any && Type.contains_prohibited_any parsed_annotation
+                in
+                let value_annotation =
+                  value
+                  >>| (fun expression -> forward_expression ~resolution ~expression)
+                  >>| fun { resolved; _ } -> resolved
+                in
+                let errors =
+                  match parsed_annotation, value_annotation with
+                  | Some annotation, Some value_annotation ->
+                      add_incompatible_variable_error ~errors annotation value_annotation
+                  | _ -> errors
+                in
+                match parsed_annotation, value_annotation with
+                | Some annotation, Some _ when Type.contains_final annotation ->
+                    ( add_final_parameter_annotation_error ~errors,
+                      Annotation.create_immutable annotation )
+                | Some annotation, Some value_annotation when contains_prohibited_any annotation ->
+                    ( add_missing_parameter_annotation_error
+                        ~errors
+                        ~given_annotation:(Some annotation)
+                        (Some value_annotation),
+                      Annotation.create_immutable annotation )
+                | Some annotation, _ when Type.contains_final annotation ->
+                    ( add_final_parameter_annotation_error ~errors,
+                      Annotation.create_immutable annotation )
+                | Some annotation, None when contains_prohibited_any annotation ->
+                    ( add_missing_parameter_annotation_error
+                        ~errors
+                        ~given_annotation:(Some annotation)
+                        None,
+                      Annotation.create_immutable annotation )
+                | Some annotation, _ ->
+                    let errors =
+                      emit_invalid_enumeration_literal_errors
+                        ~resolution
+                        ~location
+                        ~errors
+                        annotation
+                    in
+                    errors, Annotation.create_immutable annotation
+                | None, Some value_annotation ->
+                    ( add_missing_parameter_annotation_error
+                        ~errors
+                        ~given_annotation:None
+                        (Some value_annotation),
+                      Annotation.create_mutable Type.Any )
+                | None, None ->
+                    ( add_missing_parameter_annotation_error ~errors ~given_annotation:None None,
+                      Annotation.create_mutable Type.Any ))
+          in
+          let apply_starred_annotations annotation =
+            if String.is_prefix ~prefix:"**" name then
+              Type.dictionary ~key:Type.string ~value:annotation
+            else if String.is_prefix ~prefix:"*" name then
+              Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation annotation)
+            else
+              annotation
+          in
+          let transform type_ =
+            Type.Variable.mark_all_variables_as_bound type_ |> apply_starred_annotations
+          in
+          errors, Annotation.transform_types ~f:transform annotation
+        in
+        let errors, annotation =
+          if String.is_prefix ~prefix:"*" name && not (String.is_prefix ~prefix:"**" name) then
+            annotation
+            >>= Type.OrderedTypes.concatenation_from_unpack_expression
+                  ~parse_annotation:(GlobalResolution.parse_annotation global_resolution)
+            >>| (fun concatenation ->
+                  Type.Tuple (Concatenation concatenation)
+                  |> Type.Variable.mark_all_variables_as_bound
+                  |> Annotation.create_mutable
+                  |> fun annotation -> errors, annotation)
+            |> Option.value ~default:(parse_as_unary ())
+          else
+            parse_as_unary ()
+        in
+        ( Resolution.new_local ~reference:(make_parameter_name name) ~annotation new_resolution,
+          errors )
+      in
+      let number_of_stars name = Identifier.split_star name |> fst |> String.length in
+      match List.rev parameters, parent with
+      | [], Some _ when not (Define.is_class_toplevel define || Define.is_static_method define) ->
+          let errors =
+            let name =
+              if Define.is_class_method define || Define.is_class_property define then
+                "cls"
+              else
+                "self"
+            in
+            emit_error
+              ~errors
+              ~location
+              ~kind:(Error.InvalidMethodSignature { annotation = None; name })
+          in
+          resolution, errors
+      | ( {
+            Node.value = { name = second_name; value = None; annotation = Some second_annotation };
+            _;
+          }
+          :: {
+               Node.value = { name = first_name; value = None; annotation = Some first_annotation };
+               _;
+             }
+             :: reversed_head,
+          _ )
+        when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
+          match
+            GlobalResolution.parse_as_parameter_specification_instance_annotation
+              global_resolution
+              ~variable_parameter_annotation:first_annotation
+              ~keywords_parameter_annotation:second_annotation
+          with
+          | Some variable ->
+              let add_annotations_to_resolution
+                  {
+                    Type.Variable.Variadic.Parameters.Components.positional_component;
+                    keyword_component;
+                  }
+                =
+                resolution
+                |> Resolution.new_local
+                     ~reference:(make_parameter_name first_name)
+                     ~annotation:(Annotation.create_mutable positional_component)
+                |> Resolution.new_local
+                     ~reference:(make_parameter_name second_name)
+                     ~annotation:(Annotation.create_mutable keyword_component)
+              in
+              if Resolution.type_variable_exists resolution ~variable:(ParameterVariadic variable)
+              then
+                let new_resolution =
+                  Type.Variable.Variadic.Parameters.mark_as_bound variable
+                  |> Type.Variable.Variadic.Parameters.decompose
+                  |> add_annotations_to_resolution
+                in
+                List.rev reversed_head
+                |> List.foldi ~init:(new_resolution, errors) ~f:check_parameter
+              else
+                let errors =
+                  let origin =
+                    if Define.is_toplevel (Node.value Context.define) then
+                      Error.Toplevel
+                    else if Define.is_class_toplevel (Node.value Context.define) then
+                      Error.ClassToplevel
+                    else
+                      Error.Define
+                  in
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.InvalidTypeVariable { annotation = ParameterVariadic variable; origin })
+                in
+                ( add_annotations_to_resolution
+                    { positional_component = Top; keyword_component = Top },
+                  errors )
+          | None -> List.foldi ~init:(resolution, errors) ~f:check_parameter parameters)
+      | _ -> List.foldi ~init:(resolution, errors) ~f:check_parameter parameters
     in
     let check_base_annotations resolution errors =
       let current_class_name = parent >>| Reference.show in
