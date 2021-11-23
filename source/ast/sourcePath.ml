@@ -106,7 +106,7 @@ let should_type_check
 let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
   let absolute_path = Path.absolute path in
   let create ?extension path =
-    let search_paths = Configuration.Analysis.search_path configuration in
+    let search_paths = Configuration.Analysis.search_paths configuration in
     let is_external = not (should_type_check ~configuration path) in
     create_from_search_path ~is_external ~search_paths ?extension path
   in
@@ -131,7 +131,7 @@ let create_for_testing ~relative ~is_external ~priority =
 
 let full_path ~configuration { relative; priority; _ } =
   let root =
-    Configuration.Analysis.search_path configuration
+    Configuration.Analysis.search_paths configuration
     |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
   in
   Path.create_relative ~root ~relative

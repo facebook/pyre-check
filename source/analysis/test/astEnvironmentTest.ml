@@ -175,8 +175,8 @@ let test_parse_sources context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[SearchPath.Root local_root]
-        ~search_path:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
+        ~source_paths:[SearchPath.Root local_root]
+        ~search_paths:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
         ~filter_directories:[local_root]
         ()
     in
@@ -217,8 +217,8 @@ let test_parse_sources context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[SearchPath.Root local_root]
-        ~search_path:[SearchPath.Root stub_root]
+        ~source_paths:[SearchPath.Root local_root]
+        ~search_paths:[SearchPath.Root stub_root]
         ~filter_directories:[local_root]
         ()
     in
@@ -685,7 +685,7 @@ module IncrementalTest = struct
       List.filter_map setups ~f:(fun { handle; old_source; _ } ->
           old_source >>| fun source -> handle, source)
     in
-    let update_filesystem_state { Configuration.Analysis.local_root; search_path; _ } =
+    let update_filesystem_state { Configuration.Analysis.local_root; search_paths; _ } =
       let update_file ~root { handle; old_source; new_source } =
         let path = Path.create_relative ~root ~relative:handle in
         match old_source, new_source with
@@ -706,7 +706,7 @@ module IncrementalTest = struct
       in
       let paths = List.filter_map setups ~f:(update_file ~root:local_root) in
       let external_paths =
-        let external_root = List.hd_exn search_path |> SearchPath.get_root in
+        let external_root = List.hd_exn search_paths |> SearchPath.get_root in
         List.filter_map external_setups ~f:(update_file ~root:external_root)
       in
       List.append external_paths paths

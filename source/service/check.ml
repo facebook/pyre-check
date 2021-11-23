@@ -16,7 +16,8 @@ type result = {
 let check
     ~scheduler
     ~configuration:
-      ({ Configuration.Analysis.project_root; source_path; search_path; debug; _ } as configuration)
+      ({ Configuration.Analysis.project_root; source_paths; search_paths; debug; _ } as
+      configuration)
     ~call_graph_builder
   =
   (* Sanity check environment. *)
@@ -24,9 +25,9 @@ let check
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
   in
-  source_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
+  source_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   check_directory_exists project_root;
-  search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
+  search_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
 

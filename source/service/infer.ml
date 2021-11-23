@@ -16,7 +16,7 @@ type environment_data = {
 
 let build_environment_data
     ~configuration:
-      ({ Configuration.Analysis.project_root; source_path; search_path; _ } as configuration)
+      ({ Configuration.Analysis.project_root; source_paths; search_paths; _ } as configuration)
     ~scheduler
     ()
   =
@@ -25,9 +25,9 @@ let build_environment_data
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
   in
-  source_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
+  source_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   check_directory_exists project_root;
-  search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
+  search_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
 
   let module_tracker = ModuleTracker.create configuration in
   let ast_environment = AstEnvironment.create module_tracker in

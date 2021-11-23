@@ -307,8 +307,8 @@ let initialize_server_state
         Configuration.Analysis.analyze_external_sources = left_analyze_external_sources;
         filter_directories = left_filter_directories;
         ignore_all_errors = left_ignore_all_errors;
-        source_path = left_source_path;
-        search_path = left_search_path;
+        source_paths = left_source_paths;
+        search_paths = left_search_paths;
         taint_model_paths = left_taint_model_paths;
         strict = left_strict;
         excludes = left_excludes;
@@ -319,8 +319,8 @@ let initialize_server_state
         Configuration.Analysis.analyze_external_sources = right_analyze_external_sources;
         filter_directories = right_filter_directories;
         ignore_all_errors = right_ignore_all_errors;
-        source_path = right_source_path;
-        search_path = right_search_path;
+        source_paths = right_source_paths;
+        search_paths = right_search_paths;
         taint_model_paths = right_taint_model_paths;
         strict = right_strict;
         excludes = right_excludes;
@@ -338,8 +338,8 @@ let initialize_server_state
     Bool.equal left_analyze_external_sources right_analyze_external_sources
     && optional_list_length_equal left_filter_directories right_filter_directories
     && optional_list_length_equal left_ignore_all_errors right_ignore_all_errors
-    && list_length_equal left_source_path right_source_path
-    && list_length_equal left_search_path right_search_path
+    && list_length_equal left_source_paths right_source_paths
+    && list_length_equal left_search_paths right_search_paths
     && list_length_equal left_taint_model_paths right_taint_model_paths
     && Bool.equal left_strict right_strict
     && list_length_equal left_excludes right_excludes

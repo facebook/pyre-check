@@ -71,7 +71,7 @@ module InferConfiguration = struct
         _;
       }
     =
-    let source_path =
+    let source_paths =
       match source_paths with
       | Configuration.SourcePaths.Simple source_paths -> source_paths
       | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
@@ -84,7 +84,7 @@ module InferConfiguration = struct
       ~number_of_workers
       ~local_root:(Option.value local_root ~default:global_root)
       ~project_root:global_root
-      ~search_path:(List.map search_paths ~f:SearchPath.normalize)
+      ~search_paths:(List.map search_paths ~f:SearchPath.normalize)
       ~strict:false
       ~debug
       ~show_error_traces:false
@@ -99,7 +99,7 @@ module InferConfiguration = struct
       ~shared_memory_dependency_table_power:dependency_table_power
       ~shared_memory_hash_table_power:hash_table_power
       ~enable_type_comments
-      ~source_path
+      ~source_paths
       ()
 end
 

@@ -10,35 +10,36 @@ open OUnit2
 open Pyre
 
 let test_search_path _ =
-  let assert_search_path ?(search_path = []) ~source_path expected =
-    let search_path =
-      List.map search_path ~f:Path.create_absolute |> List.map ~f:(fun root -> SearchPath.Root root)
+  let assert_search_paths ?(search_paths = []) ~source_paths expected =
+    let search_paths =
+      List.map search_paths ~f:Path.create_absolute
+      |> List.map ~f:(fun root -> SearchPath.Root root)
     in
-    let source_path = List.map source_path ~f:Path.create_absolute in
+    let source_paths = List.map source_paths ~f:Path.create_absolute in
     let to_search_path root = SearchPath.Root root in
-    let search_path =
-      Configuration.Analysis.search_path
+    let search_paths =
+      Configuration.Analysis.search_paths
         (Configuration.Analysis.create
-           ~search_path
-           ~source_path:(List.map source_path ~f:to_search_path)
+           ~search_paths
+           ~source_paths:(List.map source_paths ~f:to_search_path)
            ())
       |> List.map ~f:SearchPath.show
     in
-    assert_equal ~printer:(List.to_string ~f:ident) expected search_path
+    assert_equal ~printer:(List.to_string ~f:ident) expected search_paths
   in
-  assert_search_path ~source_path:["/a"] ["/a"];
-  assert_search_path ~source_path:["/a"] ["/a"];
-  assert_search_path
-    ~search_path:["/other"; "/another"]
-    ~source_path:["/a"]
+  assert_search_paths ~source_paths:["/a"] ["/a"];
+  assert_search_paths ~source_paths:["/a"] ["/a"];
+  assert_search_paths
+    ~search_paths:["/other"; "/another"]
+    ~source_paths:["/a"]
     ["/other"; "/another"; "/a"];
-  assert_search_path
-    ~search_path:["/other"; "/another"]
-    ~source_path:["/a"]
+  assert_search_paths
+    ~search_paths:["/other"; "/another"]
+    ~source_paths:["/a"]
     ["/other"; "/another"; "/a"];
-  assert_search_path
-    ~search_path:["/other"; "/another"]
-    ~source_path:["/a"; "/b"]
+  assert_search_paths
+    ~search_paths:["/other"; "/another"]
+    ~source_paths:["/a"; "/b"]
     ["/other"; "/another"; "/a"; "/b"];
   ()
 

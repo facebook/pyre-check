@@ -13,7 +13,7 @@ open TypeInference.Data
 open Test
 module State = TypeInference.Local.State
 
-let configuration = Configuration.Analysis.create ~source_path:[] ()
+let configuration = Configuration.Analysis.create ~source_paths:[] ()
 
 let assert_backward ~resolution precondition statement postcondition =
   let module State = State (struct

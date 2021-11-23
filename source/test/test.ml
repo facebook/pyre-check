@@ -2745,8 +2745,8 @@ module ScratchProject = struct
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[SearchPath.Root local_root]
-        ~search_path:[SearchPath.Root external_root]
+        ~source_paths:[SearchPath.Root local_root]
+        ~search_paths:[SearchPath.Root external_root]
         ~log_directory
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
@@ -2770,20 +2770,20 @@ module ScratchProject = struct
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
      here. *)
   let add_source
-      { configuration = { Configuration.Analysis.source_path; search_path; _ }; _ }
+      { configuration = { Configuration.Analysis.source_paths; search_paths; _ }; _ }
       ~is_external
       (relative, content)
     =
     let path =
       let root =
         if is_external then
-          match search_path with
+          match search_paths with
           | SearchPath.Root root :: _ -> root
           | _ ->
               failwith
                 "Scratch projects should have the external root at the start of their search path."
         else
-          match source_path with
+          match source_paths with
           | SearchPath.Root root :: _ -> root
           | _ -> failwith "Scratch projects should have only one source path."
       in

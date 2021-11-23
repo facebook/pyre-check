@@ -13,7 +13,7 @@ open Test
 let assert_errors
     ?filter_directories
     ?(ignore_all_errors = [])
-    ?(search_path = [])
+    ?(search_paths = [])
     ~root
     ~files
     ~context
@@ -27,15 +27,15 @@ let assert_errors
   in
   List.iter (typeshed_stubs ()) ~f:(add_source ~root:external_root);
   let ignore_all_errors = external_root :: ignore_all_errors in
-  let search_path = SearchPath.Root external_root :: search_path in
+  let search_paths = SearchPath.Root external_root :: search_paths in
   let configuration =
     Configuration.Analysis.create
       ?filter_directories
       ~ignore_all_errors
-      ~search_path
+      ~search_paths
       ~project_root:root
       ~local_root:root
-      ~source_path:[SearchPath.Root root]
+      ~source_paths:[SearchPath.Root root]
       ()
   in
   let scheduler = Test.mock_scheduler () in
@@ -149,7 +149,7 @@ let test_filter_directories context =
   let root = Path.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
   assert_errors
     ~root
-    ~search_path:[SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
+    ~search_paths:[SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
     ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/search"]
     ~files:

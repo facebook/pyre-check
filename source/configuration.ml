@@ -229,8 +229,8 @@ module Analysis = struct
     local_root: Path.t;
     debug: bool;
     project_root: Path.t;
-    source_path: SearchPath.t list;
-    search_path: SearchPath.t list;
+    source_paths: SearchPath.t list;
+    search_paths: SearchPath.t list;
     taint_model_paths: Path.t list;
     strict: bool;
     show_error_traces: bool;
@@ -255,7 +255,7 @@ module Analysis = struct
       ?(number_of_workers = 4)
       ?(local_root = Path.current_working_directory ())
       ?(project_root = Path.create_absolute "/")
-      ?(search_path = [])
+      ?(search_paths = [])
       ?(taint_model_paths = [])
       ?(strict = false)
       ?(debug = false)
@@ -272,7 +272,7 @@ module Analysis = struct
       ?(shared_memory_dependency_table_power = default_shared_memory_dependency_table_power)
       ?(shared_memory_hash_table_power = default_shared_memory_hash_table_power)
       ?(enable_type_comments = true)
-      ~source_path
+      ~source_paths
       ()
     =
     {
@@ -284,8 +284,8 @@ module Analysis = struct
       local_root;
       debug;
       project_root;
-      source_path;
-      search_path;
+      source_paths;
+      search_paths;
       taint_model_paths;
       strict;
       show_error_traces;
@@ -318,10 +318,10 @@ module Analysis = struct
 
   let log_directory { log_directory; _ } = log_directory
 
-  let search_path { source_path; search_path; _ } =
+  let search_paths { source_paths; search_paths; _ } =
     (* Have an ordering of search_path > source_path with the parser. search_path precedes
      * local_root due to the possibility of having a subdirectory of the root in the search path. *)
-    search_path @ source_path
+    search_paths @ source_paths
 
 
   let extension_suffixes { extensions; _ } = List.map ~f:Extension.suffix extensions

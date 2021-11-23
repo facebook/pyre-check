@@ -195,16 +195,16 @@ let test_mode _ =
     let actual_mode = Source.mode ~configuration ~local_mode in
     assert_equal actual_mode expected_mode
   in
-  let configuration = Configuration.Analysis.create ~source_path:[] () in
+  let configuration = Configuration.Analysis.create ~source_paths:[] () in
   assert_mode ~configuration None Source.Unsafe;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Strict;
 
-  let configuration = Configuration.Analysis.create ~strict:true ~source_path:[] () in
+  let configuration = Configuration.Analysis.create ~strict:true ~source_paths:[] () in
   assert_mode ~configuration None Source.Strict;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Unsafe)) Source.Unsafe;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Strict;
 
-  let configuration = Configuration.Analysis.create ~debug:true ~source_path:[] () in
+  let configuration = Configuration.Analysis.create ~debug:true ~source_paths:[] () in
   assert_mode ~configuration None Source.Debug;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Debug;
   assert_mode ~configuration (Some (Node.create_with_default_location Source.Unsafe)) Source.Debug
@@ -238,7 +238,7 @@ let test_extension_suffix _ =
     Configuration.Analysis.create
       ~extensions:
         [{ Configuration.Extension.suffix = ".cinc"; include_suffix_in_module_qualifier = true }]
-      ~source_path:[SearchPath.Root root]
+      ~source_paths:[SearchPath.Root root]
       ()
   in
   assert_qualifier_equal ~configuration ~path:"test.py" "test";

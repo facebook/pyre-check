@@ -91,8 +91,8 @@ module Analysis : sig
     local_root: Path.t;
     debug: bool;
     project_root: Path.t;
-    source_path: SearchPath.t list;
-    search_path: SearchPath.t list;
+    source_paths: SearchPath.t list;
+    search_paths: SearchPath.t list;
     taint_model_paths: Path.t list;
     strict: bool;
     show_error_traces: bool;
@@ -117,7 +117,7 @@ module Analysis : sig
     ?number_of_workers:int ->
     ?local_root:Path.t ->
     ?project_root:Path.t ->
-    ?search_path:SearchPath.t list ->
+    ?search_paths:SearchPath.t list ->
     ?taint_model_paths:Path.t list ->
     ?strict:bool ->
     ?debug:bool ->
@@ -134,13 +134,13 @@ module Analysis : sig
     ?shared_memory_dependency_table_power:int ->
     ?shared_memory_hash_table_power:int ->
     ?enable_type_comments:bool ->
-    source_path:SearchPath.t list ->
+    source_paths:SearchPath.t list ->
     unit ->
     t
 
   val log_directory : t -> Path.t
 
-  val search_path : t -> SearchPath.t list
+  val search_paths : t -> SearchPath.t list
 
   val extension_suffixes : t -> string list
 

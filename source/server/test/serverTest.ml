@@ -124,7 +124,7 @@ module ScratchProject = struct
         ~number_of_workers:1
         ~local_root:source_root
         ~project_root:source_root
-        ~search_path:[SearchPath.Root external_root]
+        ~search_paths:[SearchPath.Root external_root]
         ~strict:false
         ~debug:false
         ~show_error_traces:false
@@ -133,7 +133,7 @@ module ScratchProject = struct
         ~store_type_check_resolution:false
         ~incremental_style:Configuration.Analysis.FineGrained
         ~log_directory:log_root
-        ~source_path:[SearchPath.Root source_root]
+        ~source_paths:[SearchPath.Root source_root]
         ()
     in
     let start_options =
