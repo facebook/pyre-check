@@ -19,6 +19,9 @@ module CallTarget = struct
     collapse_tito: bool;
   }
   [@@deriving compare, eq, show { with_path = false }]
+
+  let create ?(implicit_self = false) ?(collapse_tito = true) target =
+    { target; implicit_self; collapse_tito }
 end
 
 module HigherOrderParameter = struct

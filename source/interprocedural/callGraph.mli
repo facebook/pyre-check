@@ -20,6 +20,8 @@ module CallTarget : sig
     collapse_tito: bool;
   }
   [@@deriving eq, show]
+
+  val create : ?implicit_self:bool -> ?collapse_tito:bool -> Target.t -> t
 end
 
 (* Information about an argument being a callable. *)
