@@ -721,21 +721,35 @@ let create
   =
   let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths in
   let parse_configuration config_file =
+    try
     if not (Path.file_exists config_file) then
       raise
         (MalformedConfiguration { path = Path.absolute config_file; parse_error = "File not found" })
     else
-      try
+      let config_string =
         config_file
         |> File.create
         |> File.content
-        |> Option.value ~default:""
-        |> Json.from_string
+        |> Option.value ~default:"" in
+      let lexbuf = Bi_outbuf.create (String.length config_string) in
+      let last_line file last_line_number = List.nth_exn (String.split ~on:'\n' file) last_line_number in
+      let last_line_number file = List.length (String.split ~on:'\n' file) in
+      try
+        config_string
+        |> Json.from_string ~buf:lexbuf
         |> Option.some
       with
       | Yojson.Json_error parse_error
-      | Failure parse_error ->
-          raise (MalformedConfiguration { path = Path.absolute config_file; parse_error })
+      | Failure parse_error -> (
+          let line_number = last_line_number (Bi_outbuf.contents lexbuf) in
+          let line = last_line (Bi_outbuf.contents lexbuf) (line_number-1) in
+          let column = String.length line in
+          let path = (Format.sprintf "%s:%d:%d" (Path.absolute config_file) line_number column) in
+          raise (MalformedConfiguration { path; parse_error }))
+    with MalformedConfiguration {path; parse_error} -> (
+      Log.error "%s: %s" path parse_error;
+      failwith "Invalid taint.config file"
+    )
   in
   let configurations = file_paths |> List.filter_map ~f:parse_configuration in
   if List.is_empty configurations then
