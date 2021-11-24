@@ -111,7 +111,6 @@ let test_simple context =
       "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[True]`.";
       "Revealed type [-1]: Revealed type for `status` is `typing_extensions.Literal[False]`.";
     ];
-  (* TODO(T102720335): Make assertions based on pattern's type. *)
   assert_type_errors
     {|
       from typing import Tuple
@@ -120,7 +119,19 @@ let test_simple context =
           case "hello":
             reveal_type(subject)
     |}
-    ["Revealed type [-1]: Revealed type for `subject` is `typing.Union[int, str]`."];
+    ["Revealed type [-1]: Revealed type for `subject` is `typing_extensions.Literal['hello']`."];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      def print_point(subject: int) -> None:
+        match subject:
+          case "hello":
+            x = 5
+          case _:
+            x = 5.0
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `float`."];
   ()
 
 
@@ -225,7 +236,6 @@ let test_pattern context =
       "Revealed type [-1]: Revealed type for `y` is `int`.";
       "Revealed type [-1]: Revealed type for `p` is `Tuple[int, int]`.";
     ];
-  (* TODO(T102720335): Make assertions based on pattern's type. *)
   assert_type_errors
     {|
       from typing import Tuple
@@ -236,8 +246,21 @@ let test_pattern context =
             reveal_type(y)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Union[int, str]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['hello']`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      def print_point(point: Tuple[int, str] | Tuple[str, int]) -> None:
+        match point:
+          case (1 as x, "hello" as y):
+            reveal_type(x)
+            reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['hello']`.";
     ];
   (* TODO(T102720335): Make assertions on length. *)
   assert_type_errors
@@ -452,6 +475,7 @@ let test_enum context =
         match color:
           case Color.RED:
             print("I see red!")
+            reveal_type(color)
           case Color.GREEN:
             print("Grass is green")
           case Color.BLUE:
@@ -459,7 +483,10 @@ let test_enum context =
           case RED:
             reveal_type(RED)
     |}
-    ["Revealed type [-1]: Revealed type for `RED` is `Color`."];
+    [
+      "Revealed type [-1]: Revealed type for `color` is `typing_extensions.Literal[Color.RED]`.";
+      "Revealed type [-1]: Revealed type for `RED` is `Color`.";
+    ];
   (* TODO(T83684046): We should consider throwing a more direct error here about a non-exhaustive
      match. *)
   assert_type_errors

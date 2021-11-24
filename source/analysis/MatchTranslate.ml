@@ -165,7 +165,7 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
       :: List.mapi prefix ~f:of_prefix_pattern
       @ List.mapi suffix ~f:of_suffix_pattern
       |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
-  | MatchValue value -> create_comparison_equals ~location ~left:subject ~right:value
+  | MatchValue value -> create_comparison_is ~location subject value
   | MatchWildcard -> Expression.Constant Constant.True |> Node.create ~location
   | _ -> Expression.Constant Constant.False |> Node.create ~location
 
