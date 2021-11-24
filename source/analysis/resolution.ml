@@ -297,6 +297,19 @@ let update_existing_refinements ~old_resolution ~new_resolution =
   }
 
 
+(** Update the refinements in `old_resolution` to match `new_resolution`, except for locals where
+    `filter` applied to the new name + annotation returns false *)
+let update_refinements_with_filter ~old_resolution ~new_resolution ~filter =
+  {
+    old_resolution with
+    annotation_store =
+      Refinement.Store.update_with_filter
+        ~old_store:old_resolution.annotation_store
+        ~new_store:new_resolution.annotation_store
+        ~filter;
+  }
+
+
 let with_annotation_store resolution ~annotation_store = { resolution with annotation_store }
 
 let parent { parent; _ } = parent

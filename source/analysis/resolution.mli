@@ -102,6 +102,12 @@ val outer_widen_refinements : iteration:int -> widening_threshold:int -> t -> t 
 
 val update_existing_refinements : old_resolution:t -> new_resolution:t -> t
 
+val update_refinements_with_filter
+  :  old_resolution:t ->
+  new_resolution:t ->
+  filter:(Reference.t -> Annotation.t -> bool) ->
+  t
+
 val with_annotation_store : t -> annotation_store:Refinement.Store.t -> t
 
 val parent : t -> Reference.t option

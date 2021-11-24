@@ -84,4 +84,10 @@ module Store : sig
     t
 
   val update_existing : old_store:t -> new_store:t -> t
+
+  val update_with_filter
+    :  old_store:t ->
+    new_store:t ->
+    filter:(Reference.t -> Annotation.t -> bool) ->
+    t
 end

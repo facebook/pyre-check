@@ -151,11 +151,13 @@ module State (Context : Context) = struct
 
   let bottom = Bottom
 
+  let create_with_errors ~errors ~resolution = Value { resolution; errors }
+
   let create ?(bottom = false) ~resolution () =
     if bottom then
       Bottom
     else
-      Value { resolution; errors = ErrorMap.Map.empty }
+      create_with_errors ~errors:ErrorMap.Map.empty ~resolution
 
 
   let errors = function
@@ -510,63 +512,26 @@ module State (Context : Context) = struct
             GlobalResolution.annotation_parser (Resolution.global_resolution resolution)
           in
           let { Node.value = { Define.signature; _ }; _ } = Context.define in
-          Refinement.Unit.create_mutable
+          Annotation.create_mutable
             (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser)
         in
-        let backward_initial_state =
-          let resolution =
-            Resolution.with_annotation_store
-              resolution
-              ~annotation_store:
-                Refinement.Store.
-                  {
-                    annotations = Reference.Map.of_alist_exn [return_reference, expected_return];
-                    temporary_annotations = Reference.Map.empty;
-                  }
-          in
-          value_exn (create ~resolution ())
-        in
-        let combine_refinement_units
-            Refinement.Store.
-              { annotations = left_annotations; temporary_annotations = left_temporary_annotations }
-            Refinement.Store.
-              {
-                annotations = right_annotations;
-                temporary_annotations = right_temporary_annotations;
-              }
-          =
-          let add_refinement_unit ~key ~data map =
-            match Refinement.Unit.base data with
-            | Some annotation ->
-                if
-                  Type.contains_unknown annotation.annotation
-                  || Type.is_not_instantiated annotation.annotation
-                  || Reference.equal key return_reference
-                then
-                  map
-                else
-                  Map.set ~key ~data map
-            | _ -> map
-          in
-          Refinement.Store.
-            {
-              annotations = Map.fold ~init:left_annotations ~f:add_refinement_unit right_annotations;
-              temporary_annotations =
-                Map.fold
-                  ~init:left_temporary_annotations
-                  ~f:add_refinement_unit
-                  right_temporary_annotations;
-            }
-        in
         let resolution =
-          let annotation_store =
-            combine_refinement_units
-              (Resolution.annotation_store backward_initial_state.resolution)
-              (Resolution.annotation_store resolution)
+          let resolution_with_return =
+            Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty
+            |> Resolution.new_local ~reference:return_reference ~annotation:expected_return
           in
-          Resolution.with_annotation_store resolution ~annotation_store
+          let filter name (annotation : Annotation.t) =
+            not
+              (Type.contains_unknown annotation.annotation
+              || Type.is_not_instantiated annotation.annotation
+              || Reference.equal name return_reference)
+          in
+          Resolution.update_refinements_with_filter
+            ~old_resolution:resolution_with_return
+            ~new_resolution:resolution
+            ~filter
         in
-        Value { backward_initial_state with resolution; errors }
+        create_with_errors ~errors ~resolution
 
 
   let update_only_existing_annotations initial_state new_state =

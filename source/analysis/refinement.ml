@@ -433,4 +433,21 @@ module Store = struct
           ~old_map:old_store.temporary_annotations
           ~new_map:new_store.temporary_annotations;
     }
+
+
+  let update_with_filter ~old_store ~new_store ~filter =
+    let update_map old_map new_map =
+      let f ~key ~data sofar =
+        if Unit.base data |> Option.map ~f:(filter key) |> Option.value ~default:false then
+          sofar |> ReferenceMap.set ~key ~data
+        else
+          sofar
+      in
+      ReferenceMap.fold ~init:old_map ~f new_map
+    in
+    {
+      annotations = update_map old_store.annotations new_store.annotations;
+      temporary_annotations =
+        update_map old_store.temporary_annotations new_store.temporary_annotations;
+    }
 end
