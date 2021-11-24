@@ -86,6 +86,20 @@ let create_getattr ~location base attribute =
       ]
 
 
+let create_typing_sequence ~location =
+  create_attribute_name
+    ~location
+    ~base:(create_identifier_name ~location "typing")
+    ~attribute:"Sequence"
+
+
+let create_typing_mapping ~location =
+  create_attribute_name
+    ~location
+    ~base:(create_identifier_name ~location "typing")
+    ~attribute:"Mapping"
+
+
 let rec pattern_to_condition ~subject { Node.location; value = pattern } =
   match pattern with
   | Match.Pattern.MatchAs { pattern; name } -> (
@@ -120,7 +134,8 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
       let of_key_pattern key =
         pattern_to_condition ~subject:(create_getitem ~location ~container:subject ~key)
       in
-      List.map2_exn keys patterns ~f:of_key_pattern
+      create_isinstance ~location subject (create_typing_mapping ~location)
+      :: List.map2_exn keys patterns ~f:of_key_pattern
       |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
   | MatchOr patterns ->
       List.map patterns ~f:(pattern_to_condition ~subject)
@@ -146,7 +161,9 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
         pattern_to_condition
           ~subject:(create_getitem_index ~location ~sequence:subject ~index:(index - suffix_length))
       in
-      List.mapi prefix ~f:of_prefix_pattern @ List.mapi suffix ~f:of_suffix_pattern
+      create_isinstance ~location subject (create_typing_sequence ~location)
+      :: List.mapi prefix ~f:of_prefix_pattern
+      @ List.mapi suffix ~f:of_suffix_pattern
       |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
   | MatchValue value -> create_comparison_equals ~location ~left:subject ~right:value
   | MatchWildcard -> Expression.Constant Constant.True |> Node.create ~location

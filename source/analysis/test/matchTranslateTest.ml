@@ -80,12 +80,19 @@ let test_guard _ =
 
 
 let test_mapping _ =
-  assert_pattern_to_condition ~pattern:"{1:2}" ~expected:"subject[1] == 2";
-  assert_pattern_to_condition ~pattern:"{1:2, 3:4}" ~expected:"subject[1] == 2 and subject[3] == 4";
-  assert_pattern_to_condition ~pattern:"{1:x}" ~expected:"(x := subject[1]) == x";
+  assert_pattern_to_condition
+    ~pattern:"{1:2}"
+    ~expected:"isinstance(subject, typing.Mapping) and subject[1] == 2";
+  assert_pattern_to_condition
+    ~pattern:"{1:2, 3:4}"
+    ~expected:"isinstance(subject, typing.Mapping) and subject[1] == 2 and subject[3] == 4";
+  assert_pattern_to_condition
+    ~pattern:"{1:x}"
+    ~expected:"isinstance(subject, typing.Mapping) and (x := subject[1]) == x";
   assert_pattern_to_condition
     ~pattern:"{1:str() as x}"
-    ~expected:"(x := subject[1]) == x and isinstance(x, str)";
+    ~expected:
+      "isinstance(subject, typing.Mapping) and ((x := subject[1]) == x and isinstance(x, str))";
   ()
 
 
@@ -98,17 +105,33 @@ let test_nested _ =
       )|}
     ~expected:
       {|(
-          ( ( ((y := subject["text"]) == y and (y[0] == "hello" and (x := y[1]) == x))
+          ( isinstance(subject, typing.Mapping)
+            and
+            ( ( (y := subject["text"]) == y
+                and
+                (isinstance(y, typing.Sequence) and y[0] == "hello" and (x := y[1]) == x)
+              )
               or
-              ((y := subject["text"]) == y and (y[0] == "world" and (x := y[1]) == x))
+              ( (y := subject["text"]) == y
+                and
+                (isinstance(y, typing.Sequence) and y[0] == "world" and (x := y[1]) == x)
+              )
             )
             and
             (bar := subject["foo"]) == bar
           )
           or
-          ( ( ((y := subject["text2"]) == y and (y[0] == "hello" and (x := y[1]) == x))
+          ( isinstance(subject, typing.Mapping)
+            and
+            ( ( (y := subject["text2"]) == y
+                and
+                (isinstance(y, typing.Sequence) and y[0] == "hello" and (x := y[1]) == x)
+              )
               or
-              ((y := subject["text2"]) == y and (y[0] == "world" and (x := y[1]) == x))
+              ( (y := subject["text2"]) == y
+                and
+                (isinstance(y, typing.Sequence) and y[0] == "world" and (x := y[1]) == x)
+              )
             )
             and
             (bar := subject["foo"]) == bar
@@ -127,16 +150,23 @@ let test_or _ =
 let test_sequence _ =
   assert_pattern_to_condition
     ~pattern:"[7, 8, 9]"
-    ~expected:"subject[0] == 7 and subject[1] == 8 and subject[2] == 9";
+    ~expected:
+      "isinstance(subject, typing.Sequence) and subject[0] == 7 and subject[1] == 8 and subject[2] \
+       == 9";
   assert_pattern_to_condition
     ~pattern:"[x, y]"
-    ~expected:"(x := subject[0]) == x and (y := subject[1]) == y";
+    ~expected:
+      "isinstance(subject, typing.Sequence) and (x := subject[0]) == x and (y := subject[1]) == y";
   assert_pattern_to_condition
     ~pattern:"[7, 8, *_, 99, 100]"
-    ~expected:"subject[0] == 7 and subject[1] == 8 and subject[-2] == 99 and subject[-1] == 100";
+    ~expected:
+      "isinstance(subject, typing.Sequence) and subject[0] == 7 and subject[1] == 8 and \
+       subject[-2] == 99 and subject[-1] == 100";
   assert_pattern_to_condition
     ~pattern:"[first, *_, last]"
-    ~expected:"(first := subject[0]) == first and (last := subject[-1]) == last";
+    ~expected:
+      "isinstance(subject, typing.Sequence) and (first := subject[0]) == first and (last := \
+       subject[-1]) == last";
   ()
 
 

@@ -608,6 +608,43 @@ let test_syntax context =
   ()
 
 
+let test_isinstance context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import List, Dict
+      def foo(subject: List[str] | Dict[int, str]) -> None:
+        match subject:
+          case {1:"x", 2:"y"}:
+            reveal_type(subject)
+          case ["x", "y"]:
+            reveal_type(subject)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `subject` is `Dict[int, str]`.";
+      "Revealed type [-1]: Revealed type for `subject` is `List[str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Sequence, Mapping
+      class MySequence(Sequence[str]):
+        ...
+      class MyMapping(Mapping[int, str]):
+        ...
+      def foo(subject: MySequence | MyMapping) -> None:
+        match subject:
+          case {}:
+            reveal_type(subject)
+          case []:
+            reveal_type(subject)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `subject` is `MyMapping`.";
+      "Revealed type [-1]: Revealed type for `subject` is `MySequence`.";
+    ];
+  ()
+
+
 let () =
   "match"
   >::: [
@@ -619,5 +656,6 @@ let () =
          "enum" >:: test_enum;
          "match_args" >:: test_match_args;
          "syntax" >:: test_syntax;
+         "isinstance" >:: test_isinstance;
        ]
   |> Test.run
