@@ -322,5 +322,5 @@ def run(
         return run_statistics(configuration, statistics_arguments)
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during statistics collection: {error}"
+            f"Exception occurred during statistics collection: {error}"
         ) from error

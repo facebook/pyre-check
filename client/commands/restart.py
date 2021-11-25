@@ -24,5 +24,5 @@ def run(
         ).exit_code
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during pyre restart: {error}"
+            f"Exception occurred during pyre restart: {error}"
         ) from error

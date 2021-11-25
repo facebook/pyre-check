@@ -262,5 +262,5 @@ def run(
         return run_analyze(configuration, analyze_arguments)
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during pyre analyze: {error}"
+            f"Exception occurred during pyre analyze: {error}"
         ) from error

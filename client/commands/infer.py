@@ -1023,5 +1023,5 @@ def run(
     except Exception as error:
         traceback.print_exc(file=sys.stderr)
         raise commands.ClientException(
-            f"Exception occured during Pyre infer: {error}"
+            f"Exception occurred during Pyre infer: {error}"
         ) from error

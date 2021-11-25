@@ -84,5 +84,5 @@ def run(
         return run_coverage(configuration, working_directory, roots)
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during pyre coverage: {error}"
+            f"Exception occurred during pyre coverage: {error}"
         ) from error

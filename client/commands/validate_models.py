@@ -85,5 +85,5 @@ def run(
         return commands.ExitCode.SERVER_NOT_FOUND
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during model validation: {error}"
+            f"Exception occurred during model validation: {error}"
         ) from error

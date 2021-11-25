@@ -429,5 +429,5 @@ def run(
         return run_profile(configuration, output)
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during profile: {error}"
+            f"Exception occurred during profile: {error}"
         ) from error

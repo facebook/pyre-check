@@ -132,5 +132,5 @@ def run(
         return commands.ExitCode.SERVER_NOT_FOUND
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during pyre query: {error}"
+            f"Exception occurred during pyre query: {error}"
         ) from error

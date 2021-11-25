@@ -221,5 +221,5 @@ def run(
         return run_check(configuration, check_arguments)
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during Pyre check: {error}"
+            f"Exception occurred during Pyre check: {error}"
         ) from error

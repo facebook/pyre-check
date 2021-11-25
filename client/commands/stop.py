@@ -54,5 +54,5 @@ def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
         return run_stop(configuration)
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during server stop: {error}"
+            f"Exception occurred during server stop: {error}"
         ) from error

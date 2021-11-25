@@ -225,7 +225,7 @@ def run_list(output_format: str) -> commands.ExitCode:
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during server listing: {error}"
+            f"Exception occurred during server listing: {error}"
         ) from error
 
 
@@ -239,5 +239,5 @@ def run_stop() -> commands.ExitCode:
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during server stop: {error}"
+            f"Exception occurred during server stop: {error}"
         ) from error

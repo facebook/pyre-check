@@ -225,5 +225,5 @@ def run(
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during rage generation: {error}"
+            f"Exception occurred during rage generation: {error}"
         ) from error

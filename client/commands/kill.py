@@ -152,5 +152,5 @@ def run(
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(
-            f"Exception occured during `pyre kill`: {error}"
+            f"Exception occurred during `pyre kill`: {error}"
         ) from error
