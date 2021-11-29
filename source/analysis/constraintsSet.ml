@@ -108,7 +108,7 @@ let resolve_callable_protocol
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order
 
 module Make (OrderedConstraints : OrderedConstraintsType) = struct
-  (* TODO(T40105833): merge this with actual signature select *)
+  (* TODO(T41127207): merge this with actual signature select *)
   let rec simulate_signature_select
       order
       ~callable:{ Type.Callable.implementation; overloads; _ }
