@@ -2,6 +2,75 @@
 {
   "kind": "issue",
   "data": {
+    "callable":
+      "dataclass_taint.test_class_attr_model_tainted_in_constructor",
+    "callable_line": 108,
+    "code": 5002,
+    "line": 112,
+    "start": 56,
+    "end": 70,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 112,
+              "start": 56,
+              "end": 70
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name":
+                      "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 112,
+              "start": 56,
+              "end": 70
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-type": "integer" },
+      { "always-type": "scalar" },
+      { "always-via": "special_source" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dataclass_taint.issue_in_dataclass_constructor",
     "callable_line": 38,
     "code": 5002,
@@ -67,6 +136,161 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
+    "callable_line": 89,
+    "code": 5002,
+    "line": 99,
+    "start": 4,
+    "end": 25,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 99,
+              "start": 28,
+              "end": 42
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 99,
+              "start": 4,
+              "end": 25
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable":
+      "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable":
+      "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
+    "tito": [
+      {
+        "port": "formal(benign)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable":
+      "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(benign)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {

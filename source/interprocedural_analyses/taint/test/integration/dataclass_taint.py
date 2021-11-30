@@ -78,3 +78,45 @@ class DataClassWithOtherSource:
 def test_dataclass_with_other_source(context: DataClassWithOtherSource) -> None:
     _test_sink(context.tainted)
     _test_sink(context.not_tainted)
+
+
+@dataclass
+class DataClassWithClassAttributeTaintedDirectly:
+    bad: int
+    benign: str
+
+
+def test_class_attr_model_tainted_directly() -> None:
+    # not an issue
+    DataClassWithClassAttributeTaintedDirectly(bad=1, benign=_test_source())
+    # TODO(T106922147): should be an issue but not raised
+    DataClassWithClassAttributeTaintedDirectly(bad=_test_source(), benign="1")
+    # not an issue
+    data_object_no_issue = DataClassWithClassAttributeTaintedDirectly(bad=1, benign="1")
+    data_object_no_issue.benign = _test_source()
+    # is an issue and raised
+    data_object_issue = DataClassWithClassAttributeTaintedDirectly(bad=1, benign="1")
+    data_object_issue.bad = _test_source()
+
+
+@dataclass
+class DataClassWithClassAttributeTaintedInConstructor:
+    bad: int
+    benign: str
+
+
+def test_class_attr_model_tainted_in_constructor() -> None:
+    # not an issue
+    DataClassWithClassAttributeTaintedInConstructor(bad=1, benign=_test_source())
+    # is an issue and raised
+    DataClassWithClassAttributeTaintedInConstructor(bad=_test_source(), benign="1")
+    # not an issue
+    data_object_no_issue = DataClassWithClassAttributeTaintedInConstructor(
+        bad=1, benign="1"
+    )
+    data_object_no_issue.benign = _test_source()
+    # should be an issue but not raised
+    data_object_issue = DataClassWithClassAttributeTaintedInConstructor(
+        bad=1, benign="1"
+    )
+    data_object_issue.bad = _test_source()
