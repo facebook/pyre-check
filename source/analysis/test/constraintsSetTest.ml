@@ -1165,6 +1165,17 @@ let test_instantiate_protocol_parameters context =
     ~protocol:"P"
     (Some ![Type.integer]);
 
+  (* TODO(T101398005): Protocol implicitly implemented via `__getattr__` *)
+  assert_instantiate_protocol_parameters
+    ~source:{|
+      class P(): pass
+    |}
+    ~classes:["A", ["__getattr__", "typing.Callable[[], typing.Any]"]]
+    ~protocols:["P", ["method", "typing.Callable[[int], str]"; "prop", "int"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    None;
+
   (* Protocol depends on other protocol *)
   assert_instantiate_protocol_parameters
     ~source:{|
