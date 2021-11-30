@@ -209,6 +209,54 @@ let test_cfg context =
           return b
     |}
     [];
+  assert_uninitialized_errors
+    {|
+      def f():
+        try:
+          x = 1
+        except Exception:
+          x = 2
+        finally:
+          print(x)
+    |}
+    [];
+  (* TODO(T106611060): False positive due to CFG construction for `finally`. *)
+  assert_uninitialized_errors
+    {|
+      def f():
+        try:
+          x = 1
+          return
+        finally:
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  (* TODO(T106611060): False positive due to CFG construction for `finally`. *)
+  assert_uninitialized_errors
+    {|
+      def f():
+        try:
+          return (x := 1)
+        finally:
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      def may_raise() -> bool:
+        if 1 > 2:
+          raise Exception()
+        else:
+          return True
+
+      def f() -> bool:
+        try:
+          x = may_raise()
+          return x
+        finally:
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   ()
 
 

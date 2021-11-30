@@ -1334,7 +1334,6 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call (CallCallees.create_unresolved Type.Any)) );
       ];
-  (* TODO(T106611060): Resolve calls in `finally` block. *)
   assert_call_graph_of_define
     ~source:
       {|
@@ -1358,8 +1357,14 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.foo")]
                   ~return_type:Type.none
                   ())) );
+        ( "10:4-10:10",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create (`Function "test.bar")]
+                  ~return_type:Type.none
+                  ())) );
       ];
-  (* TODO(T106611060): Resolve calls in `finally` block. *)
   assert_call_graph_of_define
     ~source:
       {|
@@ -1383,6 +1388,13 @@ let test_call_graph_of_define context =
                   ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
                   ~init_targets:[`Method { Target.class_name = "object"; method_name = "__init__" }]
                   ~return_type:(Type.Primitive "Exception")
+                  ())) );
+        ( "10:4-10:10",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create (`Function "test.bar")]
+                  ~return_type:Type.none
                   ())) );
       ];
   (* TODO(T105570363): Resolve calls with mixed function and methods. *)

@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "exception_test.test_except_to_finally",
-    "callable_line": 58,
+    "callable_line": 56,
     "code": 5002,
-    "line": 65,
+    "line": 63,
     "start": 19,
     "end": 20,
     "filename": "exception_test.py",
@@ -24,7 +24,7 @@
             ],
             "root": {
               "filename": "exception_test.py",
-              "line": 63,
+              "line": 61,
               "start": 12,
               "end": 26
             }
@@ -44,7 +44,7 @@
             ],
             "root": {
               "filename": "exception_test.py",
-              "line": 65,
+              "line": 63,
               "start": 19,
               "end": 20
             }
@@ -120,16 +120,75 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 42, "start": 27, "end": 28 } ],
+            "tito": [ { "line": 41, "start": 27, "end": 28 } ],
             "root": {
               "filename": "exception_test.py",
-              "line": 40,
+              "line": 39,
               "start": 8,
               "end": 22
             }
           }
         ]
       }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "exception_test.test_before_try_to_finally",
+    "callable_line": 38,
+    "code": 5002,
+    "line": 43,
+    "start": 19,
+    "end": 20,
+    "filename": "exception_test.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "exception_test.py",
+              "line": 39,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "exception_test.py",
+              "line": 43,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -236,6 +295,28 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_sink_in_finally",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "exception_test.py",
+              "line": 35,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(x)",
@@ -276,10 +357,10 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 52, "start": 27, "end": 28 } ],
+            "tito": [ { "line": 50, "start": 27, "end": 28 } ],
             "root": {
               "filename": "exception_test.py",
-              "line": 51,
+              "line": 49,
               "start": 12,
               "end": 26
             }

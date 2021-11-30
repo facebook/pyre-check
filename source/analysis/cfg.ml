@@ -104,6 +104,8 @@ module Node = struct
     predecessor >>| (fun predecessor -> connect predecessor successor) |> ignore
 
 
+  let has_predecessors { predecessors; _ } = not (Set.is_empty predecessors)
+
   let description { kind; _ } =
     let add_newlines string =
       if String.length string > 100 then
@@ -355,9 +357,18 @@ let create define =
         in
         List.iter handlers ~f:handler;
 
-        (* `normal` might legitimately not have an exit point if there is a return in the `finally`
-           clause. *)
-        normal_exit >>= create statements jumps
+        (* If the `finally` block has no predecessor, this must be because the body
+         * and all error handlers always return or raise exceptions. *)
+        if not (Node.has_predecessors normal_entry) then (
+          (* Add an edge so we always consider the `finally` block. *)
+          Node.connect dispatch normal_entry;
+          (* If `finally` does not return, let's assume it re-raises exceptions. *)
+          Node.connect_option normal_exit jumps.error;
+          None)
+        else
+          (* `normal` might legitimately not have an exit point if there is a return in the
+             `finally` clause. *)
+          normal_exit >>= create statements jumps
     | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
         (* -> [split] -> [preamble; body] -> *)
         let split = Node.empty graph (Node.With block) in

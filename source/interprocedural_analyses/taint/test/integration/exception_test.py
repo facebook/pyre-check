@@ -32,7 +32,6 @@ def test_sink_in_finally(x):
     try:
         return none_throws(x)
     finally:
-        # TODO(T106611060): We do not find the sink here.
         _test_sink(x)
 
 
@@ -41,7 +40,6 @@ def test_before_try_to_finally():
     try:
         return none_throws(x)
     finally:
-        # TODO(T106611060): We do not find the issue here.
         _test_sink(x)
 
 

@@ -813,6 +813,78 @@ let test_try _ =
       node 8 (Node.Block [!!"body"]) [5] [7];
       node 9 (Node.Block [+Statement.Expression bool_handler; !!"handler"]) [6] [7];
     ];
+  let block =
+    {
+      Try.body = [+Statement.Return { is_implicit = false; expression = None }];
+      handlers = [];
+      orelse = [];
+      finally = [!!"finally"];
+    }
+  in
+  assert_cfg
+    [+Statement.Try block]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [8] [3];
+      node 2 Node.Error [6; 7] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block) [0] [6; 8];
+      node 6 Node.Dispatch [5] [2; 7];
+      node 7 (Node.Block [!!"finally"]) [6] [2];
+      node 8 (Node.Block [+Statement.Return { is_implicit = false; expression = None }]) [5] [1];
+    ];
+  let block =
+    {
+      Try.body =
+        [
+          +Statement.Return
+             { is_implicit = false; expression = Some (+Expression.Constant (Constant.Integer 1)) };
+        ];
+      handlers = [];
+      orelse = [];
+      finally =
+        [
+          +Statement.Return
+             { is_implicit = false; expression = Some (+Expression.Constant (Constant.Integer 2)) };
+        ];
+    }
+  in
+  assert_cfg
+    [+Statement.Try block]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [7; 8] [3];
+      node 2 Node.Error [6] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block) [0] [6; 8];
+      node 6 Node.Dispatch [5] [2; 7];
+      node
+        7
+        (Node.Block
+           [
+             +Statement.Return
+                {
+                  is_implicit = false;
+                  expression = Some (+Expression.Constant (Constant.Integer 2));
+                };
+           ])
+        [6]
+        [1];
+      node
+        8
+        (Node.Block
+           [
+             +Statement.Return
+                {
+                  is_implicit = false;
+                  expression = Some (+Expression.Constant (Constant.Integer 1));
+                };
+           ])
+        [5]
+        [1];
+    ];
   ()
 
 
