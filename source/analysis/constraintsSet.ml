@@ -1041,8 +1041,22 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             let attribute_type attribute =
               AnnotatedAttribute.annotation attribute |> Annotation.annotation
             in
-            attribute ~assumptions candidate ~name:(AnnotatedAttribute.name protocol_attribute)
-            >>| attribute_type
+            let attribute_type_with_getattr_fallback ~attribute_lookup ~name =
+              match attribute_lookup ~name with
+              | Some found -> Some (attribute_type found)
+              | None -> (
+                  match attribute_lookup ~name:"__getattr__" >>| attribute_type with
+                  | Some
+                      (Type.Parametric
+                        { name = "BoundMethod"; parameters = [Single (Type.Callable callable); _] })
+                  | Some (Type.Callable callable) ->
+                      Some callable.implementation.annotation
+                  | _ -> None)
+            in
+
+            attribute_type_with_getattr_fallback
+              ~attribute_lookup:(attribute ~assumptions candidate)
+              ~name:(AnnotatedAttribute.name protocol_attribute)
             >>| (fun left ->
                   let right =
                     match attribute_type protocol_attribute with
