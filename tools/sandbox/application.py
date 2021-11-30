@@ -175,7 +175,8 @@ class Pysa:
                     )
                     LOG.debug("\n".join(model_verification_errors))
                 LOG.debug(line)
-                emit("pysa_results_channel", {"type": "output", "line": line})
+                if "INFO" in line or "ERROR" in line:
+                    emit("pysa_results_channel", {"type": "output", "line": line})
 
             return_code = process.wait()
             if return_code != 0:
