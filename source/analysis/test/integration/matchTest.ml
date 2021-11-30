@@ -436,6 +436,24 @@ let test_mapping context =
       "Revealed type [-1]: Revealed type for `duration` is `int`.";
       "Revealed type [-1]: Revealed type for `url` is `str`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Dict
+      def process(action: Dict[str, int]) -> None:
+        match action:
+          case {"a": _, **rest}:
+            reveal_type(rest)
+    |}
+    ["Revealed type [-1]: Revealed type for `rest` is `Dict[str, int]`."];
+  assert_type_errors
+    {|
+      from typing import Mapping
+      def process(action: Mapping[str, int]) -> None:
+        match action:
+          case {"a": _, **rest}:
+            reveal_type(rest)
+    |}
+    ["Revealed type [-1]: Revealed type for `rest` is `typing.Dict[str, int]`."];
   ()
 
 
@@ -456,6 +474,75 @@ let test_guard context =
     [
       "Revealed type [-1]: Revealed type for `x` is `int`.";
       "Revealed type [-1]: Revealed type for `y` is `str`.";
+    ];
+  ()
+
+
+let test_star context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import List
+      def process(numbers: List[int]) -> None:
+        match numbers:
+          case [first, *rest, last]:
+            reveal_type(first)
+            reveal_type(rest)
+            reveal_type(last)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `first` is `int`.";
+      "Revealed type [-1]: Revealed type for `rest` is `List[int]`.";
+      "Revealed type [-1]: Revealed type for `last` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import List
+      def process(numbers: List[int]) -> None:
+        match numbers:
+          case [*_, last]:
+            reveal_type(last)
+    |}
+    ["Revealed type [-1]: Revealed type for `last` is `int`."];
+  assert_type_errors
+    {|
+      from typing import List
+      def process(numbers: List[int]) -> None:
+        match numbers:
+          case [first, *rest]:
+            reveal_type(first)
+            reveal_type(rest)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `first` is `int`.";
+      "Revealed type [-1]: Revealed type for `rest` is `List[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import List
+      def process(numbers: List[int]) -> None:
+        match numbers:
+          case [*rest]:
+            reveal_type(rest)
+    |}
+    ["Revealed type [-1]: Revealed type for `rest` is `List[int]`."];
+  (* TODO(T105342940): For rest, the imprecision comes from literal slice resolution. It should
+     technically be possible to resolve to List[bool, complex, float]. *)
+  assert_type_errors
+    {|
+      from typing import Tuple
+      def process(numbers: Tuple[int, float, complex, bool, str]) -> None:
+        match numbers:
+          case [first, *rest, last]:
+            reveal_type(first)
+            reveal_type(rest)
+            reveal_type(last)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `first` is `int`.";
+      "Revealed type [-1]: Revealed type for `rest` is `typing.List[typing.Union[bool, complex, \
+       float, int, str]]`.";
+      "Revealed type [-1]: Revealed type for `last` is `str`.";
     ];
   ()
 
@@ -680,6 +767,7 @@ let () =
          "class" >:: test_class;
          "mapping" >:: test_mapping;
          "guard" >:: test_guard;
+         "star" >:: test_star;
          "enum" >:: test_enum;
          "match_args" >:: test_match_args;
          "syntax" >:: test_syntax;

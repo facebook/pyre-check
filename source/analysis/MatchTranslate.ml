@@ -65,6 +65,23 @@ let create_getitem_index ~location ~sequence ~index =
     ~key:(create_constant ~location (Constant.Integer index))
 
 
+let create_slice ~location ~lower ~upper =
+  let to_constant = function
+    | None -> Constant.NoneLiteral
+    | Some index -> Constant.Integer index
+  in
+  let step = None in
+  create_call
+    ~location
+    ~callee:(create_identifier_name ~location "slice")
+    ~arguments:
+      [
+        { Call.Argument.value = create_constant ~location (to_constant lower); name = None };
+        { Call.Argument.value = create_constant ~location (to_constant upper); name = None };
+        { Call.Argument.value = create_constant ~location (to_constant step); name = None };
+      ]
+
+
 let create_isinstance ~location object_expression type_expression =
   create_call
     ~location
@@ -84,6 +101,20 @@ let create_getattr ~location base attribute =
       [
         { Call.Argument.value = base; name = None }; { Call.Argument.value = attribute; name = None };
       ]
+
+
+let create_list ~location expression =
+  create_call
+    ~location
+    ~callee:(create_identifier_name ~location "list")
+    ~arguments:[{ Call.Argument.value = expression; name = None }]
+
+
+let create_dict ~location expression =
+  create_call
+    ~location
+    ~callee:(create_identifier_name ~location "dict")
+    ~arguments:[{ Call.Argument.value = expression; name = None }]
 
 
 let create_typing_sequence ~location =
@@ -130,12 +161,24 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
       :: List.mapi ~f:of_positional_pattern patterns
       @ List.map2_exn ~f:of_attribute_pattern keyword_attributes keyword_patterns
       |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
-  | MatchMapping { keys; patterns; _ } ->
+  | MatchMapping { keys; patterns; rest } ->
       let of_key_pattern key =
         pattern_to_condition ~subject:(create_getitem ~location ~container:subject ~key)
       in
+      let of_rest rest =
+        let target = create_identifier_name ~location rest in
+        (* Translation is not semantic here: in the runtime, "keys" that are matched would be
+           removed from rest. We can skip doing that, as none of the current analyses are affected
+           by it. *)
+        let value = create_dict ~location subject in
+        create_comparison_equals
+          ~location
+          ~left:(create_walrus ~location ~target ~value)
+          ~right:target
+      in
       create_isinstance ~location subject (create_typing_mapping ~location)
       :: List.map2_exn keys patterns ~f:of_key_pattern
+      @ (Option.map rest ~f:of_rest |> Option.to_list)
       |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
   | MatchOr patterns ->
       List.map patterns ~f:(pattern_to_condition ~subject)
@@ -143,7 +186,7 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
   | MatchSingleton constant ->
       create_comparison_is ~location subject (create_constant ~location constant)
   | MatchSequence patterns ->
-      let prefix, _rest, suffix =
+      let prefix, rest, suffix =
         let is_not_star_pattern = function
           | { Ast.Node.value = Match.Pattern.MatchStar _; _ } -> false
           | _ -> true
@@ -153,7 +196,20 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
         | { Node.value = Match.Pattern.MatchStar rest; _ } :: suffix -> prefix, rest, suffix
         | _ -> prefix, None, []
       in
-      let suffix_length = List.length suffix in
+      let prefix_length, suffix_length = List.length prefix, List.length suffix in
+      let of_rest rest =
+        let target = create_identifier_name ~location rest in
+        let value =
+          let lower = if prefix_length == 0 then None else Some prefix_length in
+          let upper = if suffix_length == 0 then None else Some (-suffix_length) in
+          create_getitem ~location ~container:subject ~key:(create_slice ~location ~lower ~upper)
+          |> create_list ~location
+        in
+        create_comparison_equals
+          ~location
+          ~left:(create_walrus ~location ~target ~value)
+          ~right:target
+      in
       let of_prefix_pattern index =
         pattern_to_condition ~subject:(create_getitem_index ~location ~sequence:subject ~index)
       in
@@ -163,6 +219,7 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
       in
       create_isinstance ~location subject (create_typing_sequence ~location)
       :: List.mapi prefix ~f:of_prefix_pattern
+      @ (Option.map rest ~f:of_rest |> Option.to_list)
       @ List.mapi suffix ~f:of_suffix_pattern
       |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
   | MatchValue value -> create_comparison_is ~location subject value

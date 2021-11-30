@@ -93,6 +93,10 @@ let test_mapping _ =
     ~pattern:"{1:str() as x}"
     ~expected:
       "isinstance(subject, typing.Mapping) and ((x := subject[1]) == x and isinstance(x, str))";
+  assert_pattern_to_condition
+    ~pattern:"{1:2, **rest}"
+    ~expected:
+      "isinstance(subject, typing.Mapping) and subject[1] is 2 and (rest := dict(subject)) == rest";
   ()
 
 
@@ -151,22 +155,72 @@ let test_sequence _ =
   assert_pattern_to_condition
     ~pattern:"[7, 8, 9]"
     ~expected:
-      "isinstance(subject, typing.Sequence) and subject[0] is 7 and subject[1] is 8 and subject[2] \
-       is 9";
+      {|(
+        isinstance(subject, typing.Sequence) and
+        subject[0] is 7 and
+        subject[1] is 8 and
+        subject[2] is 9
+      )|};
   assert_pattern_to_condition
     ~pattern:"[x, y]"
     ~expected:
-      "isinstance(subject, typing.Sequence) and (x := subject[0]) == x and (y := subject[1]) == y";
+      {|(
+        isinstance(subject, typing.Sequence) and
+        (x := subject[0]) == x and
+        (y := subject[1]) == y
+      )|};
   assert_pattern_to_condition
     ~pattern:"[7, 8, *_, 99, 100]"
     ~expected:
-      "isinstance(subject, typing.Sequence) and subject[0] is 7 and subject[1] is 8 and \
-       subject[-2] is 99 and subject[-1] is 100";
+      {|(
+        isinstance(subject, typing.Sequence) and
+        subject[0] is 7 and
+        subject[1] is 8 and
+        subject[-2] is 99 and
+        subject[-1] is 100
+      )|};
   assert_pattern_to_condition
     ~pattern:"[first, *_, last]"
     ~expected:
-      "isinstance(subject, typing.Sequence) and (first := subject[0]) == first and (last := \
-       subject[-1]) == last";
+      {|(
+        isinstance(subject, typing.Sequence) and
+        (first := subject[0]) == first and
+        (last := subject[-1]) == last
+      )|};
+  assert_pattern_to_condition
+    ~pattern:"[first, 8, *rest, 99, last]"
+    ~expected:
+      {|(
+        isinstance(subject, typing.Sequence) and
+        (first := subject[0]) == first and
+        subject[1] is 8 and
+        (rest := list(subject[2:-2])) == rest and
+        subject[-2] is 99 and
+        (last := subject[-1]) == last
+      )|};
+  assert_pattern_to_condition
+    ~pattern:"[1, *rest]"
+    ~expected:
+      {|(
+        isinstance(subject, typing.Sequence) and
+        subject[0] is 1 and
+        (rest := list(subject[1:])) == rest
+      )|};
+  assert_pattern_to_condition
+    ~pattern:"[*rest, 100]"
+    ~expected:
+      {|(
+        isinstance(subject, typing.Sequence) and
+        (rest := list(subject[:-1])) == rest and
+        subject[-1] is 100
+      )|};
+  assert_pattern_to_condition
+    ~pattern:"[*rest]"
+    ~expected:
+      {|(
+        isinstance(subject, typing.Sequence) and
+        (rest := list(subject[:])) == rest
+      )|};
   ()
 
 
