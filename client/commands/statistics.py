@@ -197,6 +197,7 @@ def aggregate_statistics(data: Dict[str, StatisticsData]) -> AggregatedStatistic
         "annotated_parameter_count": 0,
         "attribute_count": 0,
         "annotated_attribute_count": 0,
+        "function_count": 0,
         "partially_annotated_function_count": 0,
         "fully_annotated_function_count": 0,
         "line_count": 0,

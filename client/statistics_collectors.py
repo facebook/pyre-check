@@ -256,6 +256,9 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
     def annotated_attributes_count(self) -> int:
         return len([a for a in self.attributes if a.is_annotated])
 
+    def function_count(self) -> int:
+        return len(self.functions)
+
     def partially_annotated_functions_count(self) -> int:
         return len([f for f in self.functions if f.is_partially_annotated])
 
@@ -272,6 +275,7 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
             "annotated_parameter_count": self.annotated_parameters_count(),
             "attribute_count": self.attributes_count(),
             "annotated_attribute_count": self.annotated_attributes_count(),
+            "function_count": self.function_count(),
             "partially_annotated_function_count": (
                 self.partially_annotated_functions_count()
             ),
