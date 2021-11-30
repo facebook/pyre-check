@@ -1038,17 +1038,17 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         match constraints_set with
         | [] -> []
         | _ ->
-            let attribute_annotation attribute =
+            let attribute_type attribute =
               AnnotatedAttribute.annotation attribute |> Annotation.annotation
             in
             attribute ~assumptions candidate ~name:(AnnotatedAttribute.name protocol_attribute)
-            >>| attribute_annotation
+            >>| attribute_type
             >>| (fun left ->
                   let right =
-                    match attribute_annotation protocol_attribute with
+                    match attribute_type protocol_attribute with
                     | Type.Parametric { name = "BoundMethod"; _ } as bound_method ->
                         attribute ~assumptions bound_method ~name:"__call__"
-                        >>| attribute_annotation
+                        >>| attribute_type
                         |> Option.value ~default:Type.object_primitive
                     | annotation -> annotation
                   in
