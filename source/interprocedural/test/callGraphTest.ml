@@ -1334,6 +1334,57 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call (CallCallees.create_unresolved Type.Any)) );
       ];
+  (* TODO(T106611060): Resolve calls in `finally` block. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+     def foo() -> None:
+       pass
+     def bar() -> None:
+       pass
+     def test(x) -> str:
+       try:
+         return foo()
+       finally:
+         bar(x)
+      |}
+    ~define_name:"test.test"
+    ~expected:
+      [
+        ( "8:11-8:16",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create (`Function "test.foo")]
+                  ~return_type:Type.none
+                  ())) );
+      ];
+  (* TODO(T106611060): Resolve calls in `finally` block. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+     def foo() -> None:
+       pass
+     def bar() -> None:
+       pass
+     def test(x) -> str:
+       try:
+         raise Exception()
+       finally:
+         bar(x)
+      |}
+    ~define_name:"test.test"
+    ~expected:
+      [
+        ( "8:10-8:21",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
+                  ~init_targets:[`Method { Target.class_name = "object"; method_name = "__init__" }]
+                  ~return_type:(Type.Primitive "Exception")
+                  ())) );
+      ];
   (* TODO(T105570363): Resolve calls with mixed function and methods. *)
   assert_call_graph_of_define
     ~source:
