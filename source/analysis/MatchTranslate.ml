@@ -132,15 +132,15 @@ let create_typing_mapping ~location =
 
 
 let rec pattern_to_condition ~subject { Node.location; value = pattern } =
+  let boolean_expression_capture ~location ~target ~value =
+    (* Since we are creating boolean expression, we use walrus for capture, and add a trivial
+       equality to make it a boolean expression that would always evaluate to True *)
+    create_comparison_equals ~location ~left:(create_walrus ~location ~target ~value) ~right:target
+  in
   match pattern with
   | Match.Pattern.MatchAs { pattern; name } -> (
       let name = create_identifier_name ~location name in
-      let capture =
-        create_comparison_equals
-          ~location
-          ~left:(create_walrus ~location ~target:name ~value:subject)
-          ~right:name
-      in
+      let capture = boolean_expression_capture ~location ~target:name ~value:subject in
       match pattern >>| pattern_to_condition ~subject:name with
       | Some condition -> create_boolean_and ~location ~left:capture ~right:condition
       | None -> capture)
@@ -171,10 +171,7 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
            removed from rest. We can skip doing that, as none of the current analyses are affected
            by it. *)
         let value = create_dict ~location subject in
-        create_comparison_equals
-          ~location
-          ~left:(create_walrus ~location ~target ~value)
-          ~right:target
+        boolean_expression_capture ~location ~target ~value
       in
       create_isinstance ~location subject (create_typing_mapping ~location)
       :: List.map2_exn keys patterns ~f:of_key_pattern
@@ -205,10 +202,7 @@ let rec pattern_to_condition ~subject { Node.location; value = pattern } =
           create_getitem ~location ~container:subject ~key:(create_slice ~location ~lower ~upper)
           |> create_list ~location
         in
-        create_comparison_equals
-          ~location
-          ~left:(create_walrus ~location ~target ~value)
-          ~right:target
+        boolean_expression_capture ~location ~target ~value
       in
       let of_prefix_pattern index =
         pattern_to_condition ~subject:(create_getitem_index ~location ~sequence:subject ~index)
