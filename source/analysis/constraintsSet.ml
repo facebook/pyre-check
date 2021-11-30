@@ -866,20 +866,24 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       |> Option.value ~default:impossible
 
 
-  (* Find parameters to instantiate `protocol` such that `candidate <: protocol[parameters]`, where
-     `<:` is `solve_candidate_less_or_equal_protocol`.
+  (** Find parameters to instantiate `protocol` such that `candidate <: protocol[parameters]`, where
+      `<:` is `solve_candidate_less_or_equal_protocol`.
 
-     This can handle recursive instances of (candidate <: protocol). The first time it sees a
-     candidate-protocol pair, it stores an assumed set of parameters. The next time it sees the same
-     pair, it returns the assumed parameters. When the protocol is not generic, the solution if it
-     exists will be [].
+      NOTE: unlike several of the other methods defined by this `let rec` block, here an empty list
+      does not mean failure, it means a success with no constraints due to generics. A failure is
+      indicated by an output of None.
 
-     We need this because Python protocols can refer to themselves. So, the subtyping relation for
-     protocols is the one for equirecursive types. See section 21.9 of Types and Programming
-     Languages for the subtyping algorithm.
+      This can handle recursive instances of (candidate <: protocol). The first time it sees a
+      candidate-protocol pair, it stores an assumed set of parameters. The next time it sees the
+      same pair, it returns the assumed parameters. When the protocol is not generic, the solution
+      if it exists will be [].
 
-     Note that classes that refer to themselves don't suffer from this since subtyping for two
-     classes just follows from the class hierarchy. *)
+      We need this because Python protocols can refer to themselves. So, the subtyping relation for
+      protocols is the one for equirecursive types. See section 21.9 of Types and Programming
+      Languages for the subtyping algorithm.
+
+      Note that classes that refer to themselves don't suffer from this since subtyping for two
+      classes just follows from the class hierarchy. *)
   and instantiate_protocol_parameters_with_solve
       ({
          class_hierarchy = { variables; _ };
@@ -1017,6 +1021,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             >>| instantiate_protocol_generics)
 
 
+  (** As with `instantiate_protocol_parameters_with_solve`, here `None` means a failure to match
+      `candidate` type with the protocol, whereas `Some []` means no generic constraints were
+      induced. *)
   and instantiate_protocol_parameters
       : order -> candidate:Type.t -> protocol:Ast.Identifier.t -> Type.Parameter.t list option
     =
