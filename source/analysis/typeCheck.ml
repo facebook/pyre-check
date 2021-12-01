@@ -3021,22 +3021,25 @@ module State (Context : Context) = struct
               _;
             };
         } -> (
-        let expected = parse_refinement_annotation annotation_expression in
+        let mismatched_type = parse_refinement_annotation annotation_expression in
         let contradiction =
-          if Type.contains_unknown expected || Type.is_any expected then
+          if Type.contains_unknown mismatched_type || Type.is_any mismatched_type then
             false
           else
             let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:value in
             (not (Type.is_unbound resolved))
             && (not (Type.contains_unknown resolved))
             && (not (Type.is_any resolved))
-            && GlobalResolution.less_or_equal global_resolution ~left:resolved ~right:expected
+            && GlobalResolution.less_or_equal
+                 global_resolution
+                 ~left:resolved
+                 ~right:mismatched_type
         in
         let resolve ~name =
           match Resolution.get_local_with_attributes resolution ~name with
           | Some { annotation = previous_annotation; _ } ->
               let { not_consistent_with_boundary; _ } =
-                partition previous_annotation ~boundary:expected
+                partition previous_annotation ~boundary:mismatched_type
               in
               not_consistent_with_boundary
               >>| Annotation.create_mutable
