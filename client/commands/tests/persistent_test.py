@@ -13,6 +13,7 @@ import testslide
 from libcst.metadata import CodeRange, CodePosition
 
 from ... import json_rpc, error, configuration as configuration_module
+from ...coverage_collector import CoveredAndUncoveredRanges
 from ...tests import setup
 from .. import language_server_protocol as lsp, start, backend_arguments
 from ..async_server_connection import (
@@ -44,6 +45,7 @@ from ..persistent import (
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
     uncovered_range_to_diagnostic,
+    coverage_ranges_to_coverage_result,
     PyreServerHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
 )
@@ -749,6 +751,23 @@ class PersistentTest(testslide.TestCase):
             ),
         )
 
+    def test_coverage_percentage(self) -> None:
+        coverage_result = coverage_ranges_to_coverage_result(
+            CoveredAndUncoveredRanges(
+                covered_ranges=[
+                    CodeRange(
+                        CodePosition(line=1, column=1), CodePosition(line=2, column=2)
+                    )
+                ],
+                uncovered_ranges=[
+                    CodeRange(
+                        CodePosition(line=3, column=3), CodePosition(line=4, column=4)
+                    )
+                ],
+            )
+        )
+        self.assertEqual(coverage_result.covered_percent, 50.0)
+
     @setup.async_test
     async def test_server_connection_lost(self) -> None:
         test_path = Path("/foo.py")
@@ -847,6 +866,7 @@ class PersistentTest(testslide.TestCase):
     async def test_type_coverage_request(self) -> None:
         with tempfile.NamedTemporaryFile() as tmpfile:
             tmpfile.write(b"def foo(x) -> None:\n  pass\n")
+            tmpfile.flush()
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
             fake_pyre_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -869,7 +889,7 @@ class PersistentTest(testslide.TestCase):
             )
             # A diagnostic update is sent via the output channel
             self.assertEqual(len(bytes_writer.items()), 1)
-            self.assertIn(b"consider adding type annotations", bytes_writer.items()[0])
+            self.assertIn(b"Consider adding type annotations", bytes_writer.items()[0])
 
 
 class PyreQueryStateTest(testslide.TestCase):

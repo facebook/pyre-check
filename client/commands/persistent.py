@@ -577,12 +577,7 @@ class PyreServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        uncovered_ranges = coverage_diagnostics(document_path)
-        result = lsp.TypeCoverageResult(
-            covered_percent=100.0,
-            uncovered_ranges=uncovered_ranges,
-            default_message="Please consider adding type annotations.",
-        )
+        result = path_to_coverage_result(document_path)
         await lsp.write_json_rpc(
             self.output_channel,
             json_rpc.SuccessResponse(
@@ -856,19 +851,37 @@ def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
     )
 
 
-def coverage_diagnostics(
+def coverage_ranges_to_coverage_result(
+    coverage_ranges: coverage_collector.CoveredAndUncoveredRanges,
+) -> lsp.TypeCoverageResult:
+    num_covered = len(coverage_ranges.covered_ranges)
+    num_uncovered = len(coverage_ranges.uncovered_ranges)
+    num_total = num_covered + num_uncovered
+    if num_total == 0:
+        return lsp.TypeCoverageResult(
+            covered_percent=100.0, uncovered_ranges=[], default_message=""
+        )
+    else:
+        return lsp.TypeCoverageResult(
+            covered_percent=100.0 * num_covered / num_total,
+            uncovered_ranges=[
+                uncovered_range_to_diagnostic(u)
+                for u in coverage_ranges.uncovered_ranges
+            ],
+            default_message="Consider adding type annotations.",
+        )
+
+
+def path_to_coverage_result(
     path: Path,
-) -> List[lsp.Diagnostic]:
+) -> lsp.TypeCoverageResult:
     module = statistics.parse_path_to_module(path)
     if module is None:
         raise lsp.RequestCancelledError(
             f"Unable to compute coverage information for {path}"
         )
     coverage_ranges = coverage_collector.coverage_ranges_for_module(str(path), module)
-    return [
-        uncovered_range_to_diagnostic(code_range)
-        for code_range in coverage_ranges.uncovered_ranges
-    ]
+    return coverage_ranges_to_coverage_result(coverage_ranges)
 
 
 @dataclasses.dataclass(frozen=True)
