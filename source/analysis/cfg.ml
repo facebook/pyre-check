@@ -309,66 +309,74 @@ let create define =
         create statements jumps join
     | { Ast.Node.value = Try ({ Try.body; orelse; finally; handlers } as block); _ } :: statements
       ->
-        (* We need to replicate the "finally" block three times because that block is always
+        (* We need to add edges to the "finally" block for all paths, because that block is always
            executed, regardless of the exit path (normal, return, or error), and we need to
            preserve the state that got us into the "finally".
 
-         * I.e., even if all three "finally" blocks jump to the global error in case of errors,
-           and jump to the global return in case of a return exit, their normal exit depends on
-           whether we are executing finally after dispatch, after body/orelse, or after the
-           return block.
-
-         * -> [split] -> [body] -> [orelse] -> [finally; exit node] -> next
-         *       |         |            |           ^                  statements
+         * -> [split] -> [body] -> [orelse] -> [finally_entry; finally_exit] -> next
+         *       |         |            |           ^                           statements
          *       |  -------/            | (on       |
          *       |  | (on error)        | error)    |
          *       V  V                   |           |
          *   [dispatch] --> [handler1] -+-----------|
          *       |      --> [handler2] -+-----------/
          *       |              |       |
-         *       |  ------------/       |     (from all nodes on normal exit)
-         *       |  V  (on error)       |               |
-         *       | <------/          [return exit]----- |
-         *       V                                     \|
-         *   [global error exit]                   [global normal exit]
+         *       | <------------/       |
+         *       |    (on error)        |
+         *       | <--------------------/
+         *       V
+         *   [global error exit]
          *)
-        let finally () =
-          let entry = Node.empty graph (Node.Block []) in
-          entry, create finally jumps entry
-        in
         (* Scaffolding. *)
         let split = Node.empty graph (Node.Try block) in
         Node.connect predecessor split;
         let dispatch = Node.empty graph Node.Dispatch in
         Node.connect split dispatch;
         Node.connect dispatch jumps.error;
-        let normal_entry, normal_exit = finally () in
+        let finally_entry = Node.empty graph (Node.Block []) in
+        let finally_exit = create finally jumps finally_entry in
         (* Normal execution. *)
         let body_orelse =
           let body_jumps = { jumps with error = dispatch } in
           create body body_jumps split >>= create orelse jumps
         in
-        Node.connect_option body_orelse normal_entry;
+        Node.connect_option body_orelse finally_entry;
 
         (* Exception handling. *)
         let handler ({ Try.Handler.body; _ } as handler) =
           let preamble = Try.preamble handler in
-          create (preamble @ body) jumps dispatch |> (Fn.flip Node.connect_option) normal_entry
+          create (preamble @ body) jumps dispatch |> (Fn.flip Node.connect_option) finally_entry
         in
         List.iter handlers ~f:handler;
 
-        (* If the `finally` block has no predecessor, this must be because the body
-         * and all error handlers always return or raise exceptions. *)
-        if not (Node.has_predecessors normal_entry) then (
-          (* Add an edge so we always consider the `finally` block. *)
-          Node.connect dispatch normal_entry;
-          (* If `finally` does not return, let's assume it re-raises exceptions. *)
-          Node.connect_option normal_exit jumps.error;
+        if not (Node.has_predecessors finally_entry) then (
+          (* If the `finally` block has no predecessor, this must be because the body
+             and all error handlers always return or raise exceptions. In that case,
+             we add an edge from dispatch to `finally_entry` to make it reachable.
+             We also assume `finally_exit` re-raises exceptions.
+
+           * -> [split] -> [body]                [finally_entry; finally_exit]-\
+           *       |         |                       ^                         |
+           *       |  -------/                       |                         |
+           *       |  | (on error)                   |                         |
+           *       V  V                              |                         |
+           *   [dispatch] --------------------------/                          |
+           *       |      --> [handler1]                                       |
+           *       |      --> [handler2]                                       |
+           *       |              |                                            |
+           *       | <------------/                                            |
+           *       |    (on error)                                             |
+           *       | <---------------------------------------------------------/
+           *       V
+           *   [global error exit]
+           *)
+          Node.connect dispatch finally_entry;
+          Node.connect_option finally_exit jumps.error;
           None)
         else
-          (* `normal` might legitimately not have an exit point if there is a return in the
-             `finally` clause. *)
-          normal_exit >>= create statements jumps
+          (* `finally_exit` might legitimately not have an exit point if there is
+           * a return in the `finally` clause. *)
+          finally_exit >>= create statements jumps
     | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
         (* -> [split] -> [preamble; body] -> *)
         let split = Node.empty graph (Node.With block) in
