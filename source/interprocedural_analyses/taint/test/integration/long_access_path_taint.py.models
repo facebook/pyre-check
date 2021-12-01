@@ -266,8 +266,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "via": "obscure" }
+                  { "via": "obscure:model" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [
                   "[app_id]", "[kind]", "[request]", "[timestamp]"

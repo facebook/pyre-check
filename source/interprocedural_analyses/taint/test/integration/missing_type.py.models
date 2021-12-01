@@ -61,7 +61,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "obscure" },
+                  { "always-via": "obscure:unknown-callee" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -98,7 +98,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "leaves": [
                   {
                     "name":
@@ -140,7 +140,7 @@
       }
     ],
     "features": [
-      { "always-via": "obscure" },
+      { "always-via": "obscure:unknown-callee" },
       { "always-via": "special_sink" }
     ]
   }
@@ -157,7 +157,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "obscure" },
+                  { "always-via": "obscure:unknown-callee" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],

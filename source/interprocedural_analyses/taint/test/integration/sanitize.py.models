@@ -3237,7 +3237,7 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "__add__" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
@@ -3254,7 +3254,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
               }
@@ -3291,7 +3291,7 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "__add__" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
@@ -3308,7 +3308,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
               }
@@ -3734,7 +3734,7 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "__add__" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
@@ -3751,7 +3751,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
               }
@@ -3798,7 +3798,7 @@
               {
                 "features": [
                   { "always-via": "tito" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
@@ -3838,7 +3838,7 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "__add__" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
@@ -3855,7 +3855,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
               }
@@ -3922,7 +3922,7 @@
               {
                 "features": [
                   { "always-via": "tito" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,

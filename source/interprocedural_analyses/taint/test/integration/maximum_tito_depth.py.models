@@ -161,7 +161,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:model" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }

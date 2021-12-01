@@ -495,7 +495,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let obscure_taint =
       if TaintResult.ModeSet.contains Obscure modes then
         let breadcrumbs =
-          Lazy.force return_type_breadcrumbs |> Features.BreadcrumbSet.add (Features.obscure ())
+          Lazy.force return_type_breadcrumbs
+          |> Features.BreadcrumbSet.add (Features.obscure_model ())
         in
         BackwardState.Tree.collapse
           ~transform:(BackwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
@@ -536,7 +537,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       BackwardState.Tree.collapse
         ~transform:(BackwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
         call_taint
-      |> BackwardTaint.add_breadcrumb (Features.obscure ())
+      |> BackwardTaint.add_breadcrumb (Features.obscure_unknown_callee ())
       |> BackwardState.Tree.create_leaf
     in
     let compute_argument_taint { Call.Argument.value = argument; _ } =

@@ -661,8 +661,8 @@
             "kinds": [
               {
                 "features": [
+                  { "via": "obscure:model" },
                   { "always-via": "tito" },
-                  { "via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -701,8 +701,8 @@
       }
     ],
     "features": [
+      { "via": "obscure:model" },
       { "always-via": "tito" },
-      { "via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -727,8 +727,8 @@
             "kinds": [
               {
                 "features": [
+                  { "via": "obscure:model" },
                   { "always-via": "tito" },
-                  { "via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -767,8 +767,8 @@
       }
     ],
     "features": [
+      { "via": "obscure:model" },
       { "always-via": "tito" },
-      { "via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -1014,8 +1014,8 @@
                 "features": [
                   { "has": "first-index" },
                   { "first-index": "<unknown>" },
-                  { "always-via": "tito" },
-                  { "via": "obscure" }
+                  { "via": "obscure:model" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
@@ -1044,7 +1044,7 @@
           {
             "kinds": [
               {
-                "features": [ { "via": "obscure" } ],
+                "features": [ { "via": "obscure:model" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }
@@ -1071,8 +1071,8 @@
                 "features": [
                   { "has": "first-index" },
                   { "first-index": "<unknown>" },
-                  { "always-via": "tito" },
-                  { "via": "obscure" }
+                  { "via": "obscure:model" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,

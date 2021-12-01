@@ -11,9 +11,9 @@
             "kinds": [
               {
                 "features": [
+                  { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
-                  { "always-via": "broadening" },
-                  { "always-via": "obscure" }
+                  { "always-via": "broadening" }
                 ],
                 "leaves": [ { "name": "getattr" } ],
                 "kind": "GetAttr"
@@ -32,10 +32,11 @@
               {
                 "features": [
                   { "always-via": "object" },
+                  { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
-                  { "always-via": "obscure" }
+                  { "via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "getattr" } ],
                 "length": 1,
@@ -59,10 +60,11 @@
               {
                 "features": [
                   { "via": "object" },
+                  { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
                   { "via": "tito" },
                   { "always-via": "broadening" },
-                  { "always-via": "obscure" }
+                  { "via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "getattr" } ],
                 "length": 1,
@@ -85,10 +87,11 @@
               {
                 "features": [
                   { "via": "object" },
+                  { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
                   { "via": "tito" },
                   { "always-via": "broadening" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "getattr" } ],
                 "length": 1,
@@ -111,10 +114,11 @@
               {
                 "features": [
                   { "via": "object" },
+                  { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
                   { "via": "tito" },
                   { "always-via": "broadening" },
-                  { "always-via": "obscure" }
+                  { "via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "getattr" } ],
                 "length": 1,
@@ -143,8 +147,9 @@
             "kinds": [
               {
                 "features": [
+                  { "via": "obscure:model" },
                   { "via": "tito" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
@@ -165,7 +170,7 @@
           {
             "kinds": [
               {
-                "features": [ { "via": "tito" }, { "via": "obscure" } ],
+                "features": [ { "via": "obscure:model" }, { "via": "tito" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }
@@ -195,10 +200,11 @@
               {
                 "features": [
                   { "via": "object" },
+                  { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
                   { "via": "tito" },
                   { "always-via": "broadening" },
-                  { "always-via": "obscure" }
+                  { "via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "getattr" } ],
                 "length": 1,
@@ -227,8 +233,9 @@
             "kinds": [
               {
                 "features": [
+                  { "via": "obscure:model" },
                   { "always-via": "tito" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
@@ -247,8 +254,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "via": "obscure" }
+                  { "via": "obscure:model" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
@@ -276,10 +283,11 @@
               {
                 "features": [
                   { "via": "object" },
+                  { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
                   { "via": "tito" },
                   { "always-via": "broadening" },
-                  { "always-via": "obscure" }
+                  { "via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "getattr" } ],
                 "length": 2,
@@ -308,8 +316,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "via": "obscure" }
+                  { "via": "obscure:model" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
                 "length": 2,
@@ -336,8 +344,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "obscure" },
-                  { "always-via": "special_source" }
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -361,7 +369,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [
+                  { "always-via": "obscure:model" },
+                  { "always-via": "obscure:unknown-callee" }
+                ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }

@@ -158,9 +158,9 @@
             "kinds": [
               {
                 "features": [
+                  { "always-via": "obscure:model" },
                   { "always-type": "bool" },
                   { "always-type": "scalar" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -199,9 +199,9 @@
       }
     ],
     "features": [
+      { "always-via": "obscure:model" },
       { "always-type": "bool" },
       { "always-type": "scalar" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -226,9 +226,9 @@
             "kinds": [
               {
                 "features": [
+                  { "always-via": "obscure:model" },
                   { "always-type": "bool" },
                   { "always-type": "scalar" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -272,9 +272,9 @@
       }
     ],
     "features": [
+      { "always-via": "obscure:model" },
       { "always-type": "bool" },
       { "always-type": "scalar" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -672,9 +672,9 @@
             "kinds": [
               {
                 "features": [
+                  { "always-via": "obscure:model" },
                   { "always-type": "integer" },
-                  { "always-type": "scalar" },
-                  { "always-via": "obscure" }
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"

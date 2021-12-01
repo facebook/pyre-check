@@ -157,8 +157,8 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
-                  { "always-via": "obscure" },
-                  { "always-via": "special_source" }
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
@@ -199,8 +199,8 @@
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
       { "always-via": "broadening" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
+      { "always-via": "obscure:unknown-callee" },
       { "always-via": "special_sink" }
     ]
   }
@@ -353,7 +353,7 @@
                   { "via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "via": "broadening" },
-                  { "via": "obscure" }
+                  { "via": "obscure:unknown-callee" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
@@ -700,7 +700,7 @@
           {
             "kinds": [
               {
-                "features": [ { "via": "obscure" } ],
+                "features": [ { "via": "obscure:unknown-callee" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }
@@ -727,7 +727,7 @@
                   { "always-via": "tito-broadening" },
                   { "via": "tito" },
                   { "always-via": "broadening" },
-                  { "always-via": "obscure" }
+                  { "always-via": "obscure:unknown-callee" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
@@ -1212,8 +1212,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "via": "obscure" }
+                  { "via": "obscure:model" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
@@ -1248,8 +1248,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "via": "obscure" }
+                  { "via": "obscure:model" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
                 "length": 2,
@@ -1346,8 +1346,8 @@
             "kinds": [
               {
                 "features": [
+                  { "via": "obscure:model" },
                   { "always-via": "tito" },
-                  { "via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],

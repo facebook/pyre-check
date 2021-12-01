@@ -726,7 +726,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }
@@ -742,7 +742,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }

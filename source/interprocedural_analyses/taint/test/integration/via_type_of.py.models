@@ -20,8 +20,8 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "x" },
+                  { "always-via": "obscure:model" },
                   { "always-via-type": "int" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -62,8 +62,8 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "x" },
+      { "always-via": "obscure:model" },
       { "always-via-type": "int" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -91,7 +91,7 @@
                   { "has": "first-field" },
                   { "first-field": "y" },
                   { "always-via-type": "str" },
-                  { "always-via": "obscure" },
+                  { "always-via": "obscure:model" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -133,7 +133,7 @@
       { "has": "first-field" },
       { "first-field": "y" },
       { "always-via-type": "str" },
-      { "always-via": "obscure" },
+      { "always-via": "obscure:model" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -160,8 +160,8 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "z" },
+                  { "always-via": "obscure:model" },
                   { "always-via-type": "typing.Annotated[str]" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -202,8 +202,8 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "z" },
+      { "always-via": "obscure:model" },
       { "always-via-type": "typing.Annotated[str]" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -233,9 +233,9 @@
                   { "first-field": "z" },
                   { "first-field": "x" },
                   { "via-type": "str" },
+                  { "always-via": "obscure:model" },
                   { "via-type": "int" },
                   { "via-type": "typing.Annotated[str]" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -279,9 +279,9 @@
       { "first-field": "z" },
       { "first-field": "x" },
       { "via-type": "str" },
+      { "always-via": "obscure:model" },
       { "via-type": "int" },
       { "via-type": "typing.Annotated[str]" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -308,7 +308,7 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "x" },
-                  { "always-via": "obscure" },
+                  { "always-via": "obscure:model" },
                   { "always-via": "special_source" },
                   { "always-via-type": "typing.Dict[str, int]" }
                 ],
@@ -350,7 +350,7 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "x" },
-      { "always-via": "obscure" },
+      { "always-via": "obscure:model" },
       { "always-via": "special_source" },
       { "always-via-type": "typing.Dict[str, int]" },
       { "always-via": "special_sink" }
@@ -378,8 +378,8 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "y" },
+                  { "always-via": "obscure:model" },
                   { "always-via-type": "typing.List[str]" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -420,8 +420,8 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "y" },
+      { "always-via": "obscure:model" },
       { "always-via-type": "typing.List[str]" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -448,8 +448,8 @@
                 "features": [
                   { "has": "first-field" },
                   { "first-field": "z" },
+                  { "always-via": "obscure:model" },
                   { "always-via-type": "typing.Annotated[float]" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -490,8 +490,8 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "z" },
+      { "always-via": "obscure:model" },
       { "always-via-type": "typing.Annotated[float]" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -520,9 +520,9 @@
                   { "first-field": "y" },
                   { "first-field": "z" },
                   { "first-field": "x" },
+                  { "always-via": "obscure:model" },
                   { "via-type": "typing.Annotated[float]" },
                   { "via-type": "typing.List[str]" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" },
                   { "via-type": "typing.Dict[str, int]" }
                 ],
@@ -566,9 +566,9 @@
       { "first-field": "y" },
       { "first-field": "z" },
       { "first-field": "x" },
+      { "always-via": "obscure:model" },
       { "via-type": "typing.Annotated[float]" },
       { "via-type": "typing.List[str]" },
-      { "always-via": "obscure" },
       { "always-via": "special_source" },
       { "via-type": "typing.Dict[str, int]" },
       { "always-via": "special_sink" }

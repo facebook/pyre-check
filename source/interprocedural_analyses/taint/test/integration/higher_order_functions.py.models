@@ -544,7 +544,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }
@@ -560,7 +560,7 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure" } ],
+                "features": [ { "always-via": "obscure:unknown-callee" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }
@@ -722,8 +722,8 @@
               {
                 "features": [
                   { "always-via": "tito" },
-                  { "always-via": "obscure" },
                   { "always-via": "special_source" },
+                  { "always-via": "obscure:unknown-callee" },
                   { "via": "lambda" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -759,7 +759,7 @@
               {
                 "features": [
                   { "always-via": "tito" },
-                  { "always-via": "obscure" },
+                  { "always-via": "obscure:unknown-callee" },
                   { "via": "lambda" }
                 ],
                 "return_paths": [ "" ],

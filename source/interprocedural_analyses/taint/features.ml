@@ -118,7 +118,8 @@ module Breadcrumb = struct
 
   type t =
     | FormatString (* Via f"{something}" *)
-    | Obscure
+    | ObscureModel
+    | ObscureUnknownCallee
     | Lambda
     | SimpleVia of string (* Declared breadcrumbs *)
     | ViaValue of {
@@ -147,7 +148,8 @@ module Breadcrumb = struct
     in
     match breadcrumb with
     | FormatString -> Format.fprintf formatter "FormatString"
-    | Obscure -> Format.fprintf formatter "Obscure"
+    | ObscureModel -> Format.fprintf formatter "ObscureModel"
+    | ObscureUnknownCallee -> Format.fprintf formatter "ObscureUnknownCallee"
     | Lambda -> Format.fprintf formatter "Lambda"
     | SimpleVia name -> Format.fprintf formatter "SimpleVia[%s]" name
     | ViaValue { tag; value } -> pp_via_value_or_type "ViaValue" tag value
@@ -171,7 +173,8 @@ module Breadcrumb = struct
     in
     match breadcrumb with
     | FormatString -> `Assoc [prefix ^ "via", `String "format-string"]
-    | Obscure -> `Assoc [prefix ^ "via", `String "obscure"]
+    | ObscureModel -> `Assoc [prefix ^ "via", `String "obscure:model"]
+    | ObscureUnknownCallee -> `Assoc [prefix ^ "via", `String "obscure:unknown-callee"]
     | Lambda -> `Assoc [prefix ^ "via", `String "lambda"]
     | SimpleVia name -> `Assoc [prefix ^ "via", `String name]
     | ViaValue { tag; value } -> via_value_or_type_annotation ~via_kind:"value" ~tag ~value
@@ -339,7 +342,9 @@ let memoize_breadcrumb_interned breadcrumb =
   memoize (lazy (breadcrumb |> BreadcrumbInterned.intern))
 
 
-let obscure = memoize_breadcrumb_interned Breadcrumb.Obscure
+let obscure_model = memoize_breadcrumb_interned Breadcrumb.ObscureModel
+
+let obscure_unknown_callee = memoize_breadcrumb_interned Breadcrumb.ObscureUnknownCallee
 
 let lambda = memoize_breadcrumb_interned Breadcrumb.Lambda
 

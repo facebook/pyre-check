@@ -405,7 +405,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~transform:(ForwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
               argument_taint
             |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
-            |> ForwardTaint.add_breadcrumb (Features.obscure ())
+            |> ForwardTaint.add_breadcrumb (Features.obscure_model ())
             |> ForwardState.Tree.create_leaf
           in
           (* Apply source- and sink- specific tito sanitizers for obscure models,
@@ -583,7 +583,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let taint =
       List.zip_exn arguments arguments_taint
       |> List.fold ~f:analyze_argument ~init:callee_taint
-      |> ForwardState.Tree.add_breadcrumb (Features.obscure ())
+      |> ForwardState.Tree.add_breadcrumb (Features.obscure_unknown_callee ())
     in
     taint, initial_state
 
