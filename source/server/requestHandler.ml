@@ -88,6 +88,14 @@ let process_display_type_error_request
          (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
 
 
+let notify_all_subscriptions ~with_response = function
+  | [] -> Lwt.return_unit
+  | _ as subscriptions ->
+      let response = with_response () in
+      List.map subscriptions ~f:(fun subscription -> Subscription.send ~response subscription)
+      |> Lwt.join
+
+
 let process_incremental_update_request
     ~state:
       ({
@@ -111,7 +119,22 @@ let process_incremental_update_request
         path
       |> StartupNotification.produce ~log_path:configuration.log_directory;
       Stop.log_and_stop_waiting_server ~reason:"critical file update" ~state ()
-  | None -> (
+  | None ->
+      let create_type_errors_response () =
+        let errors =
+          Hashtbl.data error_table
+          |> List.concat_no_order
+          |> List.sort ~compare:AnalysisError.compare
+        in
+        Response.TypeErrors
+          (instantiate_errors
+             errors
+             ~build_system
+             ~configuration
+             ~ast_environment:
+               (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
+      in
+      let subscriptions = ServerState.Subscriptions.all subscriptions in
       BuildSystem.update build_system paths
       >>= fun changed_paths_from_rebuild ->
       let changed_paths =
@@ -128,26 +151,8 @@ let process_incremental_update_request
               ~errors:error_table
               changed_paths)
       in
-      match ServerState.Subscriptions.all subscriptions with
-      | [] -> Lwt.return state
-      | _ as subscriptions ->
-          let response =
-            let errors =
-              Hashtbl.data error_table
-              |> List.concat_no_order
-              |> List.sort ~compare:AnalysisError.compare
-            in
-            Response.TypeErrors
-              (instantiate_errors
-                 errors
-                 ~build_system
-                 ~configuration
-                 ~ast_environment:
-                   (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
-          in
-          List.map subscriptions ~f:(fun subscription -> Subscription.send ~response subscription)
-          |> Lwt.join
-          >>= fun () -> Lwt.return state)
+      notify_all_subscriptions ~with_response:create_type_errors_response subscriptions
+      >>= fun () -> Lwt.return state
 
 
 let process_request
