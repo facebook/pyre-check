@@ -510,7 +510,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
-                 AttributeAccessProperties.targets =
+                 AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
                  return_type = Type.none;
                  is_attribute = false;
@@ -519,7 +519,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
-                 AttributeAccessProperties.targets =
+                 AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p" }];
                  return_type = Type.integer;
                  is_attribute = false;
@@ -1074,7 +1074,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
-                 AttributeAccessProperties.targets =
+                 AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p" }];
                  return_type = Type.Primitive "test.C";
                  is_attribute = false;
@@ -1083,7 +1083,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
-                 AttributeAccessProperties.targets =
+                 AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
                  return_type = Type.none;
                  is_attribute = false;
@@ -1153,7 +1153,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
-                 AttributeAccessProperties.targets =
+                 AttributeAccessCallees.property_targets =
                    [
                      `Method { Target.class_name = "test.C"; method_name = "foo" };
                      `Method { Target.class_name = "test.D"; method_name = "foo" };
@@ -1165,7 +1165,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
-                 AttributeAccessProperties.targets =
+                 AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "foo" }];
                  return_type = Type.integer;
                  is_attribute = true;
@@ -1196,7 +1196,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
-                 AttributeAccessProperties.targets =
+                 AttributeAccessCallees.property_targets =
                    [
                      `Method { Target.class_name = "test.C"; method_name = "foo" };
                      `Method { Target.class_name = "test.D"; method_name = "foo" };
@@ -1333,7 +1333,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
-                 AttributeAccessProperties.targets =
+                 AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "attribute" }];
                  return_type = Type.Top;
                  is_attribute = false;

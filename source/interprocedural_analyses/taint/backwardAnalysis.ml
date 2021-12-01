@@ -62,7 +62,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       Log.log ~section:`Taint format
 
 
-  let get_callees ~location ~call =
+  let get_call_callees ~location ~call =
     let callees =
       match
         CallGraph.DefineCallGraph.resolve_call FunctionContext.call_graph_of_define ~location ~call
@@ -89,9 +89,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     callees
 
 
-  let get_property_callees ~location ~attribute =
+  let get_attribute_access_callees ~location ~attribute =
     let callees =
-      CallGraph.DefineCallGraph.resolve_property_call
+      CallGraph.DefineCallGraph.resolve_attribute_access
         FunctionContext.call_graph_of_define
         ~location
         ~attribute
@@ -100,11 +100,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match callees with
       | Some callees ->
           log
-            "Resolved property callees for `%s` at %a:@,%a"
+            "Resolved attribute access callees for `%s` at %a:@,%a"
             attribute
             Location.pp
             location
-            CallGraph.AttributeAccessProperties.pp
+            CallGraph.AttributeAccessCallees.pp
             callees
       | _ -> ()
     in
@@ -839,7 +839,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let callee_is_property =
       match is_property_call, callee.Node.value with
       | false, Expression.Name (Name.Attribute { attribute; _ }) ->
-          get_property_callees ~location:callee.Node.location ~attribute |> Option.is_some
+          get_attribute_access_callees ~location:callee.Node.location ~attribute |> Option.is_some
       | _ -> false
     in
     match self_taint, callee_taint, callee_is_property with
@@ -888,13 +888,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let expression =
       Expression.Name (Name.Attribute { base; attribute; special }) |> Node.create ~location
     in
-    let properties =
-      if resolve_properties then get_property_callees ~location ~attribute else None
+    let attribute_access_callees =
+      if resolve_properties then get_attribute_access_callees ~location ~attribute else None
     in
 
     let base_taint_property_call, state_property_call =
-      match properties with
-      | Some { targets = _ :: _ as property_targets; return_type; _ } ->
+      match attribute_access_callees with
+      | Some { property_targets = _ :: _ as property_targets; return_type; _ } ->
           let call_targets =
             List.map
               ~f:(fun target ->
@@ -922,7 +922,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
 
     let base_taint_attribute, state_attribute =
-      match properties with
+      match attribute_access_callees with
       | Some { is_attribute = true; _ }
       | None ->
           let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
@@ -1192,7 +1192,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     } ->
         (* Ensure we simulate the body of __setitem__ in case the function contains taint. *)
         let state =
-          let callees = get_callees ~location ~call:{ Call.callee; arguments } in
+          let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
           if CallGraph.CallCallees.is_partially_resolved callees then
             apply_callees
               ~resolution
@@ -1450,7 +1450,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let { Call.callee; arguments } =
           CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
         in
-        let callees = get_callees ~location ~call:{ Call.callee; arguments } in
+        let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
         apply_callees
           ~resolution
           ~is_property:false
@@ -1709,11 +1709,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         else
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) ->
-              let properties = get_property_callees ~location ~attribute in
+              let attribute_access_callees = get_attribute_access_callees ~location ~attribute in
 
               let property_call_state =
-                match properties with
-                | Some { targets = _ :: _ as property_targets; return_type; _ } ->
+                match attribute_access_callees with
+                | Some { property_targets = _ :: _ as property_targets; return_type; _ } ->
                     (* Treat `a.property = x` as `a = a.property(x)` *)
                     let call_targets =
                       List.map
@@ -1740,7 +1740,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               in
 
               let attribute_state =
-                match properties with
+                match attribute_access_callees with
                 | Some { is_attribute = true; _ }
                 | None ->
                     analyze_assignment ~resolution ~target ~value state

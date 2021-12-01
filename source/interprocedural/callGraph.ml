@@ -152,36 +152,44 @@ module CallCallees = struct
          (higher_order_parameter >>| HigherOrderParameter.all_targets |> Option.value ~default:[])
 end
 
-module AttributeAccessProperties = struct
+module AttributeAccessCallees = struct
   type t = {
-    targets: Target.t list;
+    property_targets: Target.t list;
     return_type: Type.t;
     is_attribute: bool;
   }
   [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { targets; return_type; is_attribute } =
-    { targets = List.dedup_and_sort ~compare:Target.compare targets; return_type; is_attribute }
+  let deduplicate { property_targets; return_type; is_attribute } =
+    {
+      property_targets = List.dedup_and_sort ~compare:Target.compare property_targets;
+      return_type;
+      is_attribute;
+    }
 
 
   let join
-      { targets = left_targets; return_type; is_attribute = left_is_attribute }
-      { targets = right_targets; return_type = _; is_attribute = right_is_attribute }
+      { property_targets = left_property_targets; return_type; is_attribute = left_is_attribute }
+      {
+        property_targets = right_property_targets;
+        return_type = _;
+        is_attribute = right_is_attribute;
+      }
     =
     {
-      targets = List.rev_append left_targets right_targets;
+      property_targets = List.rev_append left_property_targets right_property_targets;
       return_type;
       is_attribute = left_is_attribute || right_is_attribute;
     }
 
 
-  let all_targets { targets; _ } = targets
+  let all_targets { property_targets; _ } = property_targets
 end
 
 module ExpressionCallees = struct
   type t = {
     call: CallCallees.t option;
-    attribute_access: AttributeAccessProperties.t option;
+    attribute_access: AttributeAccessCallees.t option;
   }
   [@@deriving eq, show { with_path = false }]
 
@@ -202,7 +210,7 @@ module ExpressionCallees = struct
     in
     let attribute_access =
       match left_attribute_access, right_attribute_access with
-      | Some left, Some right -> Some (AttributeAccessProperties.join left right)
+      | Some left, Some right -> Some (AttributeAccessCallees.join left right)
       | Some _, None -> left_attribute_access
       | None, Some _ -> right_attribute_access
       | None, None -> None
@@ -213,14 +221,14 @@ module ExpressionCallees = struct
   let deduplicate { call; attribute_access } =
     {
       call = call >>| CallCallees.deduplicate;
-      attribute_access = attribute_access >>| AttributeAccessProperties.deduplicate;
+      attribute_access = attribute_access >>| AttributeAccessCallees.deduplicate;
     }
 
 
   let all_targets { call; attribute_access } =
     let call_targets = call >>| CallCallees.all_targets |> Option.value ~default:[] in
     let attribute_access_targets =
-      attribute_access >>| AttributeAccessProperties.all_targets |> Option.value ~default:[]
+      attribute_access >>| AttributeAccessCallees.all_targets |> Option.value ~default:[]
     in
     List.rev_append call_targets attribute_access_targets
 end
@@ -306,7 +314,7 @@ module DefineCallGraph = struct
     resolve_expression call_graph ~location ~expression_identifier >>= fun { call; _ } -> call
 
 
-  let resolve_property_call call_graph ~location ~attribute =
+  let resolve_attribute_access call_graph ~location ~attribute =
     resolve_expression call_graph ~location ~expression_identifier:attribute
     >>= fun { attribute_access; _ } -> attribute_access
 end
@@ -969,7 +977,7 @@ let get_property_defining_parents ~resolution ~base ~attribute =
   get_defining_parents annotation
 
 
-let resolve_property_targets ~resolution ~base ~attribute ~special ~setter =
+let resolve_attribute_access ~resolution ~base ~attribute ~special ~setter =
   let defining_parents = get_property_defining_parents ~resolution ~base ~attribute in
   if List.for_all ~f:Option.is_none defining_parents then
     None
@@ -984,16 +992,16 @@ let resolve_property_targets ~resolution ~base ~attribute ~special ~setter =
     in
     let receiver_type = resolve_ignoring_optional ~resolution base in
     let property_of_parent = function
-      | None -> { AttributeAccessProperties.targets = []; return_type; is_attribute = true }
+      | None -> { AttributeAccessCallees.property_targets = []; return_type; is_attribute = true }
       | Some parent ->
-          let targets =
+          let property_targets =
             if Type.is_meta receiver_type then
               [Target.create_method (Reference.create ~prefix:parent attribute)]
             else
               let callee = Reference.create ~prefix:parent attribute in
               compute_indirect_targets ~resolution ~receiver_type callee
           in
-          let targets =
+          let property_targets =
             if setter then
               let to_setter target =
                 match target with
@@ -1003,17 +1011,17 @@ let resolve_property_targets ~resolution ~base ~attribute ~special ~setter =
                     `Method { Target.class_name; method_name = method_name ^ "$setter" }
                 | _ -> target
               in
-              List.map targets ~f:to_setter
+              List.map property_targets ~f:to_setter
             else
-              targets
+              property_targets
           in
-          { AttributeAccessProperties.targets; return_type; is_attribute = false }
+          { AttributeAccessCallees.property_targets; return_type; is_attribute = false }
     in
     defining_parents
     |> List.map ~f:property_of_parent
     |> List.fold
-         ~f:AttributeAccessProperties.join
-         ~init:{ AttributeAccessProperties.targets = []; return_type; is_attribute = false }
+         ~f:AttributeAccessCallees.join
+         ~init:{ AttributeAccessCallees.property_targets = []; return_type; is_attribute = false }
     |> Option.some
 
 
@@ -1061,7 +1069,7 @@ struct
                 Location.equal assignment_target_location location
             | None -> false
           in
-          resolve_property_targets ~resolution ~base ~attribute ~special ~setter
+          resolve_attribute_access ~resolution ~base ~attribute ~special ~setter
           >>| ExpressionCallees.from_attribute_access
           >>| register_targets ~expression_identifier:attribute
           |> ignore;

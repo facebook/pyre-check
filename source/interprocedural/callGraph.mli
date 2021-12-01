@@ -78,9 +78,9 @@ module CallCallees : sig
 end
 
 (* An aggregrate of all possible callees for a given attribute access. *)
-module AttributeAccessProperties : sig
+module AttributeAccessCallees : sig
   type t = {
-    targets: Target.t list;
+    property_targets: Target.t list;
     return_type: Type.t;
     (* True if the attribute access should also be considered a regular attribute.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
@@ -93,13 +93,13 @@ end
 module ExpressionCallees : sig
   type t = {
     call: CallCallees.t option;
-    attribute_access: AttributeAccessProperties.t option;
+    attribute_access: AttributeAccessCallees.t option;
   }
   [@@deriving eq, show]
 
   val from_call : CallCallees.t -> t
 
-  val from_attribute_access : AttributeAccessProperties.t -> t
+  val from_attribute_access : AttributeAccessCallees.t -> t
 end
 
 (* An aggregate of all possible callees for an arbitrary location.
@@ -124,11 +124,11 @@ module DefineCallGraph : sig
     call:Ast.Expression.Call.t ->
     CallCallees.t option
 
-  val resolve_property_call
+  val resolve_attribute_access
     :  t ->
     location:Ast.Location.t ->
     attribute:string ->
-    AttributeAccessProperties.t option
+    AttributeAccessCallees.t option
 end
 
 val call_graph_of_define
