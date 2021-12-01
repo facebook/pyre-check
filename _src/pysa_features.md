@@ -221,12 +221,13 @@ def subprocess.run(
 ### `via` Feature
 
 In addition to the manually specified `via` features, Pysa automatically adds
-some `via` features with special meaning such as `via:obscure`,
-`via:format-string`, and `via:tito`. `via:obscure` means that the flow passed
+some `via` features with special meaning such as `via:obscure:model`, `via:obscure:unknown-callee`,
+`via:format-string`, and `via:tito`. `via:obscure:model` means that the flow passed
 through code that Pysa does not have access to analyze, and thus some taint flow
-assumptions were made. This can be a useful to filter out flows that may be more
-noisy. `via:format-string` means that a flow passed through a [python
-f-string](https://www.python.org/dev/peps/pep-0498/) (`f"Variable:
+assumptions were made. This can be a useful feature to filter out flows that may be more
+noisy. `via:obscure:unknown-callee` means that a call cannot be resolved as the callee is
+unknown (most likely because of missing type information). `via:format-string` means that
+a flow passed through a [python f-string](https://www.python.org/dev/peps/pep-0498/) (`f"Variable:
 {variable_name}"`) or a `str.format`. Tito stands for taint-in-taint-out which refers to taint
 flows that enter a function via a parameter and then exit it in some form via
 the return value. The `via:tito` feature is attached automatically to all such
