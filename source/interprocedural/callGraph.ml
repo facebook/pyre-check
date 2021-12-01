@@ -156,15 +156,23 @@ module AttributeAccessProperties = struct
   type t = {
     targets: Target.t list;
     return_type: Type.t;
+    is_attribute: bool;
   }
   [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { targets; return_type } =
-    { targets = List.dedup_and_sort ~compare:Target.compare targets; return_type }
+  let deduplicate { targets; return_type; is_attribute } =
+    { targets = List.dedup_and_sort ~compare:Target.compare targets; return_type; is_attribute }
 
 
-  let join { targets = left_targets; return_type } { targets = right_targets; return_type = _ } =
-    { targets = List.rev_append left_targets right_targets; return_type }
+  let join
+      { targets = left_targets; return_type; is_attribute = left_is_attribute }
+      { targets = right_targets; return_type = _; is_attribute = right_is_attribute }
+    =
+    {
+      targets = List.rev_append left_targets right_targets;
+      return_type;
+      is_attribute = left_is_attribute || right_is_attribute;
+    }
 
 
   let all_targets { targets; _ } = targets
@@ -955,48 +963,58 @@ let get_property_defining_parents ~resolution ~base ~attribute =
     | _ -> (
         match defining_attribute ~resolution annotation attribute with
         | Some property when Annotated.Attribute.property property ->
-            [Annotated.Attribute.parent property |> Reference.create]
-        | _ -> [])
+            [Annotated.Attribute.parent property |> Reference.create |> Option.some]
+        | _ -> [None])
   in
   get_defining_parents annotation
 
 
 let resolve_property_targets ~resolution ~base ~attribute ~special ~setter =
-  match get_property_defining_parents ~resolution ~base ~attribute with
-  | [] -> None
-  | defining_parents ->
-      let target_of_parent parent =
-        let targets =
-          let receiver_type = resolve_ignoring_optional ~resolution base in
-          if Type.is_meta receiver_type then
-            [Target.create_method (Reference.create ~prefix:parent attribute)]
-          else
-            let callee = Reference.create ~prefix:parent attribute in
-            compute_indirect_targets ~resolution ~receiver_type callee
-        in
-        if setter then
-          let to_setter target =
-            match target with
-            | `OverrideTarget { Target.class_name; method_name } ->
-                `OverrideTarget { Target.class_name; method_name = method_name ^ "$setter" }
-            | `Method { Target.class_name; method_name } ->
-                `Method { Target.class_name; method_name = method_name ^ "$setter" }
-            | _ -> target
+  let defining_parents = get_property_defining_parents ~resolution ~base ~attribute in
+  if List.for_all ~f:Option.is_none defining_parents then
+    None
+  else
+    let return_type =
+      if setter then
+        Type.none
+      else
+        Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
+        |> Node.create_with_default_location
+        |> Resolution.resolve_expression_to_type resolution
+    in
+    let receiver_type = resolve_ignoring_optional ~resolution base in
+    let property_of_parent = function
+      | None -> { AttributeAccessProperties.targets = []; return_type; is_attribute = true }
+      | Some parent ->
+          let targets =
+            if Type.is_meta receiver_type then
+              [Target.create_method (Reference.create ~prefix:parent attribute)]
+            else
+              let callee = Reference.create ~prefix:parent attribute in
+              compute_indirect_targets ~resolution ~receiver_type callee
           in
-          List.map targets ~f:to_setter
-        else
-          targets
-      in
-      let targets = List.concat_map defining_parents ~f:target_of_parent in
-      let return_type =
-        if setter then
-          Type.none
-        else
-          Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
-          |> Node.create_with_default_location
-          |> Resolution.resolve_expression_to_type resolution
-      in
-      Some { AttributeAccessProperties.targets; return_type }
+          let targets =
+            if setter then
+              let to_setter target =
+                match target with
+                | `OverrideTarget { Target.class_name; method_name } ->
+                    `OverrideTarget { Target.class_name; method_name = method_name ^ "$setter" }
+                | `Method { Target.class_name; method_name } ->
+                    `Method { Target.class_name; method_name = method_name ^ "$setter" }
+                | _ -> target
+              in
+              List.map targets ~f:to_setter
+            else
+              targets
+          in
+          { AttributeAccessProperties.targets; return_type; is_attribute = false }
+    in
+    defining_parents
+    |> List.map ~f:property_of_parent
+    |> List.fold
+         ~f:AttributeAccessProperties.join
+         ~init:{ AttributeAccessProperties.targets = []; return_type; is_attribute = false }
+    |> Option.some
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the

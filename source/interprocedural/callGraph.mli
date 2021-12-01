@@ -82,6 +82,9 @@ module AttributeAccessProperties : sig
   type t = {
     targets: Target.t list;
     return_type: Type.t;
+    (* True if the attribute access should also be considered a regular attribute.
+     * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
+    is_attribute: bool;
   }
   [@@deriving eq, show]
 end

@@ -1462,7 +1462,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if resolve_properties then get_property_callees ~location ~attribute else None
     in
     match properties with
-    | Some { targets; return_type } ->
+    | Some { targets; return_type; is_attribute = _ } ->
         let call_targets =
           List.map
             ~f:(fun target ->
@@ -1825,7 +1825,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
               match get_property_callees ~location ~attribute with
-              | Some { targets; return_type } ->
+              | Some { targets; return_type; is_attribute = _ } ->
                   (* Treat `a.property = x` as `a = a.property(x)` *)
                   let call_targets =
                     List.map

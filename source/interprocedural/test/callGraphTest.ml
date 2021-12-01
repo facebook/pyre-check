@@ -513,6 +513,7 @@ let test_call_graph_of_define context =
                  AttributeAccessProperties.targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
                  return_type = Type.none;
+                 is_attribute = false;
                }) );
         ( "8:8-8:11",
           LocationCallees.Singleton
@@ -521,6 +522,7 @@ let test_call_graph_of_define context =
                  AttributeAccessProperties.targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p" }];
                  return_type = Type.integer;
+                 is_attribute = false;
                }) );
       ];
   assert_call_graph_of_define
@@ -1075,6 +1077,7 @@ let test_call_graph_of_define context =
                  AttributeAccessProperties.targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p" }];
                  return_type = Type.Primitive "test.C";
+                 is_attribute = false;
                }) );
         ( "11:2-11:7",
           LocationCallees.Singleton
@@ -1083,6 +1086,7 @@ let test_call_graph_of_define context =
                  AttributeAccessProperties.targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
                  return_type = Type.none;
+                 is_attribute = false;
                }) );
       ];
   assert_call_graph_of_define
@@ -1155,6 +1159,7 @@ let test_call_graph_of_define context =
                      `Method { Target.class_name = "test.D"; method_name = "foo" };
                    ];
                  return_type = Type.integer;
+                 is_attribute = false;
                }) );
         ( "17:6-17:16",
           LocationCallees.Singleton
@@ -1163,6 +1168,7 @@ let test_call_graph_of_define context =
                  AttributeAccessProperties.targets =
                    [`Method { Target.class_name = "test.C"; method_name = "foo" }];
                  return_type = Type.integer;
+                 is_attribute = true;
                }) );
       ];
   assert_call_graph_of_define
@@ -1196,6 +1202,7 @@ let test_call_graph_of_define context =
                      `Method { Target.class_name = "test.D"; method_name = "foo" };
                    ];
                  return_type = Type.integer;
+                 is_attribute = false;
                }) );
       ];
   assert_call_graph_of_define
@@ -1329,6 +1336,7 @@ let test_call_graph_of_define context =
                  AttributeAccessProperties.targets =
                    [`Method { Target.class_name = "test.C"; method_name = "attribute" }];
                  return_type = Type.Top;
+                 is_attribute = false;
                }) );
         ( "8:9-8:22",
           LocationCallees.Singleton
