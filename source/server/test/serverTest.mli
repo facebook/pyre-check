@@ -12,7 +12,11 @@ module Client : sig
 
   val current_server_state : t -> ServerState.t
 
+  val send_raw_request : t -> string -> string Lwt.t
+
   val send_request : t -> Request.t -> string Lwt.t
+
+  val assert_response_equal : expected:Response.t -> actual:string -> t -> unit
 
   val assert_response : request:Request.t -> expected:Response.t -> t -> unit Lwt.t
 

@@ -96,6 +96,23 @@ let notify_all_subscriptions ~with_response = function
       |> Lwt.join
 
 
+let create_info_response
+    {
+      ServerState.socket_path;
+      configuration = { Configuration.Analysis.project_root; local_root; _ };
+      _;
+    }
+  =
+  Response.Info
+    {
+      version = Version.version ();
+      pid = Unix.getpid () |> Pid.to_int;
+      socket = Pyre.Path.absolute socket_path;
+      global_root = Path.show project_root;
+      relative_local_root = Path.get_relative_to_root ~root:project_root ~path:local_root;
+    }
+
+
 let process_incremental_update_request
     ~state:
       ({
@@ -165,23 +182,10 @@ let process_incremental_update_request
 
 
 let process_request
-    ~state:({ ServerState.socket_path; configuration; type_environment; build_system; _ } as state)
+    ~state:({ ServerState.configuration; type_environment; build_system; _ } as state)
     request
   =
   match request with
-  | Request.GetInfo ->
-      let { Configuration.Analysis.project_root; local_root; _ } = configuration in
-      let response =
-        Response.Info
-          {
-            version = Version.version ();
-            pid = Unix.getpid () |> Pid.to_int;
-            socket = Pyre.Path.absolute socket_path;
-            global_root = Path.show project_root;
-            relative_local_root = Path.get_relative_to_root ~root:project_root ~path:local_root;
-          }
-      in
-      Lwt.return (state, response)
   | Request.DisplayTypeError paths ->
       let response = process_display_type_error_request ~state paths in
       Lwt.return (state, response)

@@ -19,4 +19,6 @@ val instantiate_error
   Analysis.AnalysisError.t ->
   Analysis.AnalysisError.Instantiated.t
 
+val create_info_response : ServerState.t -> Response.t
+
 val process_request : state:ServerState.t -> Request.t -> (ServerState.t * Response.t) Lwt.t

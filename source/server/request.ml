@@ -8,7 +8,6 @@
 open Core
 
 type t =
-  | GetInfo
   | DisplayTypeError of string list
   | IncrementalUpdate of string list
   | Query of string
@@ -16,7 +15,6 @@ type t =
 
 (* For some of the requests, use their legacy names for backward compatibility. *)
 let name_of = function
-  | GetInfo -> "GetInfo"
   | DisplayTypeError _ -> "DisplayTypeErrors"
   | IncrementalUpdate _ -> "IncrementalCheck"
   | Query _ -> "TypeQuery"

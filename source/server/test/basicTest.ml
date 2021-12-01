@@ -19,11 +19,11 @@ let test_basic client =
     Path.create_relative ~root ~relative:"test.py", Path.create_relative ~root ~relative:"test2.py"
   in
   (* Test if the `GetInfo` request works properly. *)
-  let request = Request.GetInfo in
-  RequestHandler.process_request ~state:(Client.current_server_state client) request
-  >>= fun (_, expected) ->
-  Client.assert_response client ~request ~expected
-  >>= fun () ->
+  let expected = RequestHandler.create_info_response (Client.current_server_state client) in
+  Client.send_raw_request client "[\"GetInfo\"]"
+  >>= fun actual ->
+  Client.assert_response_equal client ~expected ~actual;
+
   (* Test if we can get the initial type errors. *)
   let error_in_test =
     Analysis.AnalysisError.Instantiated.of_yojson

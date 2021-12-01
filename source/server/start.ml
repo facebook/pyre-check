@@ -55,6 +55,7 @@ let with_performance_logging ?(normals = []) ~name f =
 
 module ClientRequest = struct
   type t =
+    | GetInfo
     | StopServer
     | Request of Request.t
     | Subscription of Subscription.Request.t
@@ -65,6 +66,7 @@ module ClientRequest = struct
     try
       let json = Yojson.Safe.from_string input_string in
       match json with
+      | `List [`String "GetInfo"] -> GetInfo
       | `List [`String "Stop"] -> StopServer
       | _ -> (
           match Subscription.Request.of_yojson json with
@@ -157,6 +159,11 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
         let result =
           match ClientRequest.of_string message with
           | ClientRequest.Error message -> Lwt.return (connection_state, Response.Error message)
+          | ClientRequest.GetInfo ->
+              let response =
+                ExclusiveLock.unsafe_read server_state |> RequestHandler.create_info_response
+              in
+              Lwt.return (connection_state, response)
           | ClientRequest.StopServer ->
               (* The use of `unsafe_read` is justified for the same reason why `unsafe_read` is
                  needed in the signal handler: we do not want other threads to block the stop
