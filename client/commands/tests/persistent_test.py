@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Iterable
 
 import testslide
+from libcst.metadata import CodeRange, CodePosition
 
 from ... import json_rpc, error, configuration as configuration_module
 from ...tests import setup
@@ -41,6 +42,8 @@ from ..persistent import (
     SubscriptionResponse,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
+    uncovered_range_to_diagnostic,
+    coverage_to_diagnostics,
     PyreServerHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
 )
@@ -632,7 +635,7 @@ class PersistentTest(testslide.TestCase):
         assert_hover_response("")
         self.assertEqual(server.state.query_state.paths_to_be_queried.qsize(), 0)
 
-    def test_diagnostics(self) -> None:
+    def test_type_diagnostics(self) -> None:
         self.assertEqual(
             type_error_to_diagnostic(
                 error.Error(
@@ -728,6 +731,25 @@ class PersistentTest(testslide.TestCase):
                     )
                 ],
             },
+        )
+
+    def test_coverage_diagnostics(self) -> None:
+        self.assertEqual(
+            uncovered_range_to_diagnostic(
+                CodeRange(
+                    CodePosition(line=1, column=1), CodePosition(line=2, column=2)
+                )
+            ),
+            lsp.Diagnostic(
+                range=lsp.Range(
+                    start=lsp.Position(line=0, character=1),
+                    end=lsp.Position(line=1, character=2),
+                ),
+                message="Consider adding type annotations.",
+                severity=lsp.DiagnosticSeverity.INFORMATION,
+                code=None,
+                source="Pyre Coverage",
+            ),
         )
 
     @setup.async_test

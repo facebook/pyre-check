@@ -6,6 +6,7 @@
 import asyncio
 import dataclasses
 import enum
+import itertools
 import json
 import logging
 import os
@@ -25,6 +26,7 @@ from typing import (
 )
 
 import dataclasses_json
+from libcst.metadata import CodeRange
 
 from .. import (
     log,
@@ -34,6 +36,7 @@ from .. import (
     command_arguments,
     configuration as configuration_module,
     statistics_logger,
+    coverage_collector,
 )
 from . import (
     backend_arguments,
@@ -46,6 +49,7 @@ from . import (
     location_lookup,
     query,
     server_event,
+    statistics,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -88,6 +92,16 @@ def _log_lsp_event(
                     ),
                 },
             )
+
+
+def _merge_diagnostic_dicts(
+    left: Dict[Path, List[lsp.Diagnostic]],
+    right: Dict[Path, List[lsp.Diagnostic]],
+) -> Dict[Path, List[lsp.Diagnostic]]:
+    result = {}
+    for k, v in itertools.chain(left.items(), right.items()):
+        result.setdefault(k, []).extend(v)
+    return result
 
 
 def process_initialize_request(
@@ -799,6 +813,42 @@ def type_errors_to_diagnostics(
     return result
 
 
+def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
+    return lsp.Diagnostic(
+        range=lsp.Range(
+            start=lsp.Position(
+                line=uncovered_range.start.line - 1,
+                character=uncovered_range.start.column,
+            ),
+            end=lsp.Position(
+                line=uncovered_range.end.line - 1, character=uncovered_range.end.column
+            ),
+        ),
+        message="Consider adding type annotations.",
+        severity=lsp.DiagnosticSeverity.INFORMATION,
+        code=None,
+        source="Pyre Coverage",
+    )
+
+
+def coverage_to_diagnostics(
+    paths: Set[Path],
+) -> Dict[Path, List[lsp.Diagnostic]]:
+    result: Dict[Path, List[lsp.Diagnostic]] = {}
+    for path in paths:
+        module = statistics.parse_path_to_module(path)
+        if module is None:
+            continue
+        coverage_ranges = coverage_collector.coverage_ranges_for_module(
+            str(path), module
+        )
+        for code_range in coverage_ranges.uncovered_ranges:
+            result.setdefault(path, []).append(
+                uncovered_range_to_diagnostic(code_range)
+            )
+    return result
+
+
 @dataclasses.dataclass(frozen=True)
 class PyreServerStartOptions:
     binary: str
@@ -1063,7 +1113,13 @@ class PyreServerHandler(connection.BackgroundTask):
             "Refereshing type errors received from Pyre server. "
             f"Total number of type errors is {len(type_errors)}."
         )
-        self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
+        type_diagnostics = type_errors_to_diagnostics(type_errors)
+        coverage_diagnostics = coverage_to_diagnostics(
+            self.server_state.opened_documents
+        )
+        self.server_state.diagnostics = _merge_diagnostic_dicts(
+            type_diagnostics, coverage_diagnostics
+        )
 
     async def show_type_errors_to_client(self) -> None:
         for path in self.server_state.opened_documents:

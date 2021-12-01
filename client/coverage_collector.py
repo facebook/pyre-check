@@ -39,14 +39,20 @@ class FileCoverage:
     uncovered_lines: List[int]
 
 
-def collect_coverage_for_module(relative_path: str, module: cst.Module) -> FileCoverage:
+def coverage_ranges_for_module(
+    relative_path: str, module: cst.Module
+) -> CoveredAndUncoveredRanges:
     module_with_metadata = cst.MetadataWrapper(module)
     coverage_collector = CoverageCollector()
     try:
         module_with_metadata.visit(coverage_collector)
     except RecursionError:
         LOG.warning(f"LibCST encountered recursion error in `{relative_path}`")
-    covered_and_uncovered_ranges = coverage_collector.covered_and_uncovered_ranges()
+    return coverage_collector.covered_and_uncovered_ranges()
+
+
+def collect_coverage_for_module(relative_path: str, module: cst.Module) -> FileCoverage:
+    covered_and_uncovered_ranges = coverage_ranges_for_module(relative_path, module)
     covered_and_uncovered_lines = _covered_and_uncovered_ranges_to_lines(
         covered_and_uncovered_ranges
     )
