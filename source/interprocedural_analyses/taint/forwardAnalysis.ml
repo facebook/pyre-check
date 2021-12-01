@@ -809,6 +809,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     state: t;
   }
 
+  let join_analyze_attribute_access_result
+      { base_taint = left_base_taint; attribute_taint = left_attribute_taint; state = left_state }
+      {
+        base_taint = right_base_taint;
+        attribute_taint = right_attribute_taint;
+        state = right_state;
+      }
+    =
+    {
+      base_taint = ForwardState.Tree.join left_base_taint right_base_taint;
+      attribute_taint = ForwardState.Tree.join left_attribute_taint right_attribute_taint;
+      state = join left_state right_state;
+    }
+
+
   type analyze_callee_result = {
     self_taint: ForwardState.Tree.t option;
     callee_taint: ForwardState.Tree.t option;
@@ -1461,85 +1476,107 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let properties =
       if resolve_properties then get_property_callees ~location ~attribute else None
     in
-    match properties with
-    | Some { targets; return_type; is_attribute = _ } ->
-        let call_targets =
-          List.map
-            ~f:(fun target ->
-              {
-                CallGraph.CallTarget.target;
-                implicit_self = true;
-                implicit_dunder_call = false;
-                collapse_tito = true;
-              })
-            targets
-        in
-        let taint, state =
-          apply_callees_with_arguments_taint
-            ~resolution
-            ~callee:expression
-            ~call_location:location
-            ~arguments:[]
-            ~self_taint:(Some base_taint)
-            ~callee_taint:None
-            ~arguments_taint:[]
-            ~state
-            (CallGraph.CallCallees.create ~call_targets ~return_type ())
-        in
-        { base_taint = ForwardState.Tree.bottom; attribute_taint = taint; state }
-    | _ ->
-        let global_model =
-          Model.get_global_model
-            ~resolution
-            ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
-            ~expression
-        in
-        let attribute_taint = Model.GlobalModel.get_source global_model in
-        let add_tito_features taint =
-          let attribute_breadcrumbs =
-            global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
+
+    let property_call_result =
+      match properties with
+      | Some { targets = _ :: _ as property_targets; return_type; _ } ->
+          let call_targets =
+            List.map
+              ~f:(fun target ->
+                {
+                  CallGraph.CallTarget.target;
+                  implicit_self = true;
+                  implicit_dunder_call = false;
+                  collapse_tito = true;
+                })
+              property_targets
           in
-          ForwardState.Tree.add_breadcrumbs attribute_breadcrumbs taint
-        in
-        let apply_attribute_sanitizers taint =
-          let sanitizer = Model.GlobalModel.get_sanitize global_model in
-          let taint =
-            match sanitizer.sources with
-            | Some AllSources -> ForwardState.Tree.empty
-            | Some (SpecificSources sanitized_sources) ->
-                ForwardState.Tree.sanitize sanitized_sources taint
-            | None -> taint
+          let taint, state =
+            apply_callees_with_arguments_taint
+              ~resolution
+              ~callee:expression
+              ~call_location:location
+              ~arguments:[]
+              ~self_taint:(Some base_taint)
+              ~callee_taint:None
+              ~arguments_taint:[]
+              ~state
+              (CallGraph.CallCallees.create ~call_targets ~return_type ())
           in
-          let taint =
-            match sanitizer.sinks with
-            | Some (SpecificSinks sanitized_sinks) ->
-                let sanitized_sinks_transforms =
-                  Sinks.Set.to_sanitize_transforms_exn sanitized_sinks
-                in
-                taint
-                |> ForwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms
-                |> ForwardState.Tree.transform
-                     ForwardTaint.kind
-                     Filter
-                     ~f:Flow.source_can_match_rule
-            | _ -> taint
+          { base_taint = ForwardState.Tree.bottom; attribute_taint = taint; state }
+      | _ ->
+          {
+            base_taint = ForwardState.Tree.bottom;
+            attribute_taint = ForwardState.Tree.bottom;
+            state = { taint = ForwardState.empty };
+          }
+    in
+
+    let regular_attribute_result =
+      match properties with
+      | Some { is_attribute = true; _ }
+      | None ->
+          let global_model =
+            Model.get_global_model
+              ~resolution
+              ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+              ~expression
           in
-          taint
-        in
-        let attribute_taint =
-          base_taint
-          |> add_tito_features
-          |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index attribute]
-          |> ForwardState.Tree.transform
-               Features.FirstFieldSet.Self
-               Map
-               ~f:(add_first_field attribute)
-          (* This should be applied before the join with the attribute taint, so inferred taint
-           * is sanitized, but user-specified taint on the attribute is still propagated. *)
-          |> apply_attribute_sanitizers
-          |> ForwardState.Tree.join attribute_taint
-        in
-        { base_taint; attribute_taint; state }
+          let attribute_taint = Model.GlobalModel.get_source global_model in
+          let add_tito_features taint =
+            let attribute_breadcrumbs =
+              global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
+            in
+            ForwardState.Tree.add_breadcrumbs attribute_breadcrumbs taint
+          in
+          let apply_attribute_sanitizers taint =
+            let sanitizer = Model.GlobalModel.get_sanitize global_model in
+            let taint =
+              match sanitizer.sources with
+              | Some AllSources -> ForwardState.Tree.empty
+              | Some (SpecificSources sanitized_sources) ->
+                  ForwardState.Tree.sanitize sanitized_sources taint
+              | None -> taint
+            in
+            let taint =
+              match sanitizer.sinks with
+              | Some (SpecificSinks sanitized_sinks) ->
+                  let sanitized_sinks_transforms =
+                    Sinks.Set.to_sanitize_transforms_exn sanitized_sinks
+                  in
+                  taint
+                  |> ForwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms
+                  |> ForwardState.Tree.transform
+                       ForwardTaint.kind
+                       Filter
+                       ~f:Flow.source_can_match_rule
+              | _ -> taint
+            in
+            taint
+          in
+          let attribute_taint =
+            base_taint
+            |> add_tito_features
+            |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index attribute]
+            |> ForwardState.Tree.transform
+                 Features.FirstFieldSet.Self
+                 Map
+                 ~f:(add_first_field attribute)
+            (* This should be applied before the join with the attribute taint, so inferred taint
+             * is sanitized, but user-specified taint on the attribute is still propagated. *)
+            |> apply_attribute_sanitizers
+            |> ForwardState.Tree.join attribute_taint
+          in
+          { base_taint; attribute_taint; state }
+      | _ ->
+          {
+            base_taint = ForwardState.Tree.bottom;
+            attribute_taint = ForwardState.Tree.bottom;
+            state = { taint = ForwardState.empty };
+          }
+    in
+
+    join_analyze_attribute_access_result property_call_result regular_attribute_result
 
 
   and analyze_string_literal ~resolution ~state ~location ~nested_expressions value =
@@ -1823,35 +1860,48 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:value |> snd
         else
           match target_value with
-          | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-              match get_property_callees ~location ~attribute with
-              | Some { targets; return_type; is_attribute = _ } ->
-                  (* Treat `a.property = x` as `a = a.property(x)` *)
-                  let call_targets =
-                    List.map
-                      ~f:(fun target ->
-                        {
-                          CallGraph.CallTarget.target;
-                          implicit_self = true;
-                          implicit_dunder_call = false;
-                          collapse_tito = true;
-                        })
-                      targets
-                  in
-                  let taint, state =
-                    apply_callees
-                      ~resolution
-                      ~is_property:true
-                      ~callee:target
-                      ~call_location:location
-                      ~arguments:[{ Call.Argument.name = None; value }]
-                      ~state
-                      (CallGraph.CallCallees.create ~call_targets ~return_type ())
-                  in
-                  store_taint_option (AccessPath.of_expression ~resolution base) taint state
-              | _ ->
-                  let taint, state = analyze_expression ~resolution ~state ~expression:value in
-                  analyze_assignment ~resolution target taint taint state)
+          | Expression.Name (Name.Attribute { base; attribute; _ }) ->
+              let properties = get_property_callees ~location ~attribute in
+
+              let property_call_state =
+                match properties with
+                | Some { targets = _ :: _ as property_targets; return_type; _ } ->
+                    (* Treat `a.property = x` as `a = a.property(x)` *)
+                    let call_targets =
+                      List.map
+                        ~f:(fun target ->
+                          {
+                            CallGraph.CallTarget.target;
+                            implicit_self = true;
+                            implicit_dunder_call = false;
+                            collapse_tito = true;
+                          })
+                        property_targets
+                    in
+                    let taint, state =
+                      apply_callees
+                        ~resolution
+                        ~is_property:true
+                        ~callee:target
+                        ~call_location:location
+                        ~arguments:[{ Call.Argument.name = None; value }]
+                        ~state
+                        (CallGraph.CallCallees.create ~call_targets ~return_type ())
+                    in
+                    store_taint_option (AccessPath.of_expression ~resolution base) taint state
+                | _ -> { taint = ForwardState.empty }
+              in
+
+              let regular_attribute_state =
+                match properties with
+                | Some { is_attribute = true; _ }
+                | None ->
+                    let taint, state = analyze_expression ~resolution ~state ~expression:value in
+                    analyze_assignment ~resolution target taint taint state
+                | _ -> { taint = ForwardState.empty }
+              in
+
+              join property_call_state regular_attribute_state
           | _ ->
               let taint, state = analyze_expression ~resolution ~state ~expression:value in
               analyze_assignment ~resolution target taint taint state)

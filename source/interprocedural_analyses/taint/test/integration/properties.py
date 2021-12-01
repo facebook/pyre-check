@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, Union
 
 from pyre_extensions import classproperty
 
@@ -185,3 +185,17 @@ class PropertyCallable:
 def test_property_callable():
     obj = PropertyCallable(_test_source())
     return obj.attribute(_test_source())
+
+
+class RegularAttribute:
+    def __init__(self, my_property: str) -> None:
+        self.my_property = my_property
+
+
+def test_union_property_attribute_source():
+    obj: Union[TaintedGetterAndSetter, RegularAttribute]
+    if 1 > 2:
+        obj = TaintedGetterAndSetter()
+    else:
+        obj = RegularAttribute(_test_source())
+    return obj.my_property

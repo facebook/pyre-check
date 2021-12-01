@@ -674,6 +674,17 @@
         ]
       },
       {
+        "port": "formal(my_property)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[my_property]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
@@ -1120,6 +1131,34 @@
                 "kind": "LocalReturn"
               }
             ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{properties.RegularAttribute::__init__}",
+    "tito": [
+      {
+        "port": "formal(my_property)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[my_property]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -1938,6 +1977,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "properties.RegularAttribute.__init__",
+    "tito": [
+      {
+        "port": "formal(my_property)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[my_property]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "properties.SetterMutatesValue.__init__",
     "tito": [
       {
@@ -2175,6 +2242,131 @@
           }
         ]
       }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.test_union_property_attribute_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-field" },
+                  { "first-field": "my_property" },
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 200, "start": 31, "end": 45 } ],
+            "root": {
+              "filename": "properties.py",
+              "line": 200,
+              "start": 31,
+              "end": 45
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "properties.TaintedGetterAndSetter.my_property" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 201,
+              "start": 11,
+              "end": 26
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_union_property_attribute_source",
+    "callable_line": 195,
+    "code": 5002,
+    "line": 201,
+    "start": 11,
+    "end": 14,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "always-via": "issue-broadening" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 200, "start": 31, "end": 45 } ],
+            "root": {
+              "filename": "properties.py",
+              "line": 200,
+              "start": 31,
+              "end": 45
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "properties.py",
+                "line": 201,
+                "start": 11,
+                "end": 14
+              },
+              "resolves_to": [
+                "properties.TaintedGetterAndSetter.my_property"
+              ],
+              "port": "formal(self)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
     ]
   }
 }
