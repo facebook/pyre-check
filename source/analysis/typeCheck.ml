@@ -3216,7 +3216,7 @@ module State (Context : Context) = struct
                 Value resolution
             | _ -> Value resolution)
         | _ -> Value resolution)
-    | Call (* Not-entirely-sound "all => type var is not None" check *)
+    | Call
         {
           callee = { Node.value = Name (Name.Identifier "all"); _ };
           arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
@@ -3228,13 +3228,14 @@ module State (Context : Context) = struct
               {
                 Annotation.annotation =
                   Type.Parametric
-                    { name = parametric_name; parameters = [Single (Type.Union parameters)] };
+                    { name = parametric_name; parameters = [Single (Type.Union parameters)] } as
+                  annotation;
                 _;
-              } ->
-              (* Here we are assuming that any generic type with one type argument for which an
-                 `all` call is legal behaves like a container of that type variable. This is
-                 obviously not true, the generic type could play some other role, but it is useful
-                 enough to be worthwhile *)
+              }
+            when GlobalResolution.less_or_equal
+                   global_resolution
+                   ~left:annotation
+                   ~right:(Type.iterable (Type.Union parameters)) ->
               let parameters =
                 List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
               in

@@ -1219,10 +1219,10 @@ let test_forward_statement context =
     ["x", Type.list (Type.union [Type.none; Type.integer; Type.string])]
     "assert all(x)"
     ["x", Type.list (Type.union [Type.integer; Type.string])];
-  assert_forward (* TODO this should not refine, the type isn't iterable *)
+  assert_forward (* no refimenent: Awaitable is not iterable *)
     ["x", Type.awaitable (Type.union [Type.none; Type.integer])]
     "assert all(x)"
-    ["x", Type.awaitable Type.integer];
+    ["x", Type.awaitable (Type.union [Type.none; Type.integer])];
   assert_forward (* no refinement: dict is iterable, but with too many type parameters *)
     ["x", Type.dictionary ~key:(Type.optional Type.integer) ~value:Type.integer]
     "assert all(x)"
