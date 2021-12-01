@@ -2889,6 +2889,7 @@ module State (Context : Context) = struct
         ~annotation
     in
     match Node.value test with
+    (* Explicit asserting falsy values. *)
     | Expression.Constant Constant.(False | NoneLiteral)
     | Expression.Constant (Constant.Integer 0)
     | Expression.Constant (Constant.Float 0.0)
@@ -2897,8 +2898,8 @@ module State (Context : Context) = struct
     | Expression.List []
     | Expression.Tuple []
     | Expression.Dictionary { Dictionary.entries = []; keywords = [] } ->
-        (* Explicit asserting falsy values. *)
         Unreachable
+    (* Type is the same as `annotation_expression` *)
     | ComparisonOperator
         {
           left =
@@ -2913,7 +2914,7 @@ module State (Context : Context) = struct
               _;
             };
           operator = ComparisonOperator.Is;
-          right = annotation;
+          right = annotation_expression;
         }
     | ComparisonOperator
         {
@@ -2929,7 +2930,7 @@ module State (Context : Context) = struct
               _;
             };
           operator = ComparisonOperator.Equals;
-          right = annotation;
+          right = annotation_expression;
         }
     | Call
         {
@@ -2937,11 +2938,11 @@ module State (Context : Context) = struct
           arguments =
             [
               { Call.Argument.name = None; value = { Node.value = Name name; _ } };
-              { Call.Argument.name = None; value = annotation };
+              { Call.Argument.name = None; value = annotation_expression };
             ];
         }
       when is_simple_name name ->
-        let type_ = parse_refinement_annotation annotation in
+        let type_ = parse_refinement_annotation annotation_expression in
         let resolution =
           let refinement_unnecessary existing_annotation =
             annotation_less_or_equal
@@ -2973,6 +2974,7 @@ module State (Context : Context) = struct
                 Unreachable
         in
         resolution
+    (* Type is *not* the same as `annotation_expression` *)
     | ComparisonOperator
         {
           left =
@@ -3051,6 +3053,7 @@ module State (Context : Context) = struct
         | true, _ -> Unreachable
         | _, { Node.value = Name name; _ } when is_simple_name name -> Value (resolve ~name)
         | _ -> Value resolution)
+    (* Is/is not callable *)
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "callable"); _ };
@@ -3108,83 +3111,7 @@ module State (Context : Context) = struct
           | _ -> resolution
         in
         Value resolution
-    | Call
-        {
-          callee = { Node.value = Name (Name.Identifier "all"); _ };
-          arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
-        }
-      when is_simple_name name ->
-        let resolution =
-          match Resolution.get_local_with_attributes resolution ~name with
-          | Some
-              {
-                Annotation.annotation =
-                  Type.Parametric
-                    { name = parametric_name; parameters = [Single (Type.Union parameters)] };
-                _;
-              } ->
-              let parameters =
-                List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
-              in
-              refine_local
-                ~name
-                (Annotation.create_mutable
-                   (Type.parametric parametric_name [Single (Type.union parameters)]))
-          | _ -> resolution
-        in
-        Value resolution
-    | Name name when is_simple_name name -> (
-        match existing_annotation name with
-        | Some { Annotation.annotation = Type.NoneType; _ } -> Unreachable
-        | Some ({ Annotation.annotation = Type.Union parameters; _ } as annotation) ->
-            let refined_annotation =
-              List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
-            in
-            let resolution =
-              refine_local
-                ~name
-                { annotation with Annotation.annotation = Type.union refined_annotation }
-            in
-            Value resolution
-        | _ -> Value resolution)
-    | BooleanOperator { BooleanOperator.left; operator; right } -> (
-        match operator with
-        | BooleanOperator.And ->
-            let left_state = refine_resolution_for_assert ~resolution left in
-            let right_state =
-              left_state
-              |> function
-              | Unreachable -> Unreachable
-              | Value resolution -> refine_resolution_for_assert ~resolution right
-            in
-            let state =
-              match left_state, right_state with
-              | Unreachable, _ -> Unreachable
-              | _, Unreachable -> Unreachable
-              | Value left_resolution, Value right_resolution ->
-                  Value (Resolution.meet_refinements left_resolution right_resolution)
-            in
-            state
-        | BooleanOperator.Or ->
-            let update resolution expression =
-              refine_resolution_for_assert ~resolution expression
-              |> function
-              | Value post_resolution -> post_resolution
-              | Unreachable -> resolution
-            in
-            let left_resolution = update resolution left in
-            let right_resolution =
-              update resolution (normalize (negate left))
-              |> fun resolution -> update resolution right
-            in
-            Value (Resolution.outer_join_refinements left_resolution right_resolution))
-    | ComparisonOperator
-        {
-          ComparisonOperator.left;
-          operator = ComparisonOperator.IsNot;
-          right = { Node.value = Constant Constant.NoneLiteral; _ };
-        } ->
-        refine_resolution_for_assert ~resolution left
+    (* `is` and `in` refinement *)
     | ComparisonOperator
         {
           ComparisonOperator.left = { Node.value = Name name; _ };
@@ -3242,6 +3169,28 @@ module State (Context : Context) = struct
                 Value resolution
             | _ -> Value resolution)
         | _ -> Value resolution)
+    (* Not-none checks (including ones that work over containers) *)
+    | ComparisonOperator
+        {
+          ComparisonOperator.left;
+          operator = ComparisonOperator.IsNot;
+          right = { Node.value = Constant Constant.NoneLiteral; _ };
+        } ->
+        refine_resolution_for_assert ~resolution left
+    | Name name when is_simple_name name -> (
+        match existing_annotation name with
+        | Some { Annotation.annotation = Type.NoneType; _ } -> Unreachable
+        | Some ({ Annotation.annotation = Type.Union parameters; _ } as annotation) ->
+            let refined_annotation =
+              List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+            in
+            let resolution =
+              refine_local
+                ~name
+                { annotation with Annotation.annotation = Type.union refined_annotation }
+            in
+            Value resolution
+        | _ -> Value resolution)
     | ComparisonOperator
         {
           ComparisonOperator.left = { Node.value = Constant Constant.NoneLiteral; _ };
@@ -3267,7 +3216,36 @@ module State (Context : Context) = struct
                 Value resolution
             | _ -> Value resolution)
         | _ -> Value resolution)
-    | WalrusOperator { target; _ } -> refine_resolution_for_assert ~resolution target
+    | Call (* Not-entirely-sound "all => type var is not None" check *)
+        {
+          callee = { Node.value = Name (Name.Identifier "all"); _ };
+          arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+        }
+      when is_simple_name name ->
+        let resolution =
+          match Resolution.get_local_with_attributes resolution ~name with
+          | Some
+              {
+                Annotation.annotation =
+                  Type.Parametric
+                    { name = parametric_name; parameters = [Single (Type.Union parameters)] };
+                _;
+              } ->
+              (* Here we are assuming that any generic type with one type argument for which an
+                 `all` call is legal behaves like a container of that type variable. This is
+                 obviously not true, the generic type could play some other role, but it is useful
+                 enough to be worthwhile *)
+              let parameters =
+                List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+              in
+              refine_local
+                ~name
+                (Annotation.create_mutable
+                   (Type.parametric parametric_name [Single (Type.union parameters)]))
+          | _ -> resolution
+        in
+        Value resolution
+    (* TypeGuard support *)
     | Call
         { arguments = { Call.Argument.name = None; value = { Node.value = Name name; _ } } :: _; _ }
       when is_simple_name name -> (
@@ -3277,6 +3255,40 @@ module State (Context : Context) = struct
             let resolution = refine_local ~name (Annotation.create_mutable guard_type) in
             Value resolution
         | None -> Value resolution)
+    (* Compound assertions *)
+    | WalrusOperator { target; _ } -> refine_resolution_for_assert ~resolution target
+    | BooleanOperator { BooleanOperator.left; operator; right } -> (
+        match operator with
+        | BooleanOperator.And ->
+            let left_state = refine_resolution_for_assert ~resolution left in
+            let right_state =
+              left_state
+              |> function
+              | Unreachable -> Unreachable
+              | Value resolution -> refine_resolution_for_assert ~resolution right
+            in
+            let state =
+              match left_state, right_state with
+              | Unreachable, _ -> Unreachable
+              | _, Unreachable -> Unreachable
+              | Value left_resolution, Value right_resolution ->
+                  Value (Resolution.meet_refinements left_resolution right_resolution)
+            in
+            state
+        | BooleanOperator.Or ->
+            let update resolution expression =
+              refine_resolution_for_assert ~resolution expression
+              |> function
+              | Value post_resolution -> post_resolution
+              | Unreachable -> resolution
+            in
+            let left_resolution = update resolution left in
+            let right_resolution =
+              update resolution (normalize (negate left))
+              |> fun resolution -> update resolution right
+            in
+            Value (Resolution.outer_join_refinements left_resolution right_resolution))
+    (* Everything else has no refinement *)
     | _ -> Value resolution
 
 
