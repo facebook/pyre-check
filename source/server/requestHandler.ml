@@ -120,6 +120,7 @@ let process_incremental_update_request
       |> StartupNotification.produce ~log_path:configuration.log_directory;
       Stop.log_and_stop_waiting_server ~reason:"critical file update" ~state ()
   | None ->
+      let create_status_update_response status () = Response.StatusUpdate status in
       let create_type_errors_response () =
         let errors =
           Hashtbl.data error_table
@@ -135,8 +136,16 @@ let process_incremental_update_request
                (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
       in
       let subscriptions = ServerState.Subscriptions.all subscriptions in
+      notify_all_subscriptions
+        ~with_response:(create_status_update_response Response.ServerStatus.Rebuilding)
+        subscriptions
+      >>= fun () ->
       BuildSystem.update build_system paths
       >>= fun changed_paths_from_rebuild ->
+      notify_all_subscriptions
+        ~with_response:(create_status_update_response Response.ServerStatus.Rechecking)
+        subscriptions
+      >>= fun () ->
       let changed_paths =
         List.concat_map paths ~f:(BuildSystem.lookup_artifact build_system)
         |> List.append changed_paths_from_rebuild

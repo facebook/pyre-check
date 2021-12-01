@@ -384,6 +384,16 @@ let test_subscription_responses client =
      notification from the subscription. *)
   Client.assert_subscription_response
     client
+    ~expected:
+      { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Rebuilding) }
+  >>= fun () ->
+  Client.assert_subscription_response
+    client
+    ~expected:
+      { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Rechecking) }
+  >>= fun () ->
+  Client.assert_subscription_response
+    client
     ~expected:{ Subscription.Response.name = "foo"; body = Response.TypeErrors [error] }
 
 

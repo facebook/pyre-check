@@ -7,6 +7,13 @@
 
 open Core
 
+module ServerStatus = struct
+  type t =
+    | Rebuilding
+    | Rechecking
+  [@@deriving sexp, compare, to_yojson]
+end
+
 type t =
   | Ok
   | Error of string
@@ -18,6 +25,7 @@ type t =
       global_root: string;
       relative_local_root: string option;
     }
+  | StatusUpdate of ServerStatus.t
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Query of Query.Response.t
 [@@deriving sexp, compare, to_yojson]
