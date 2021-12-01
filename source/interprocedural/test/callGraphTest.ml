@@ -14,7 +14,7 @@ open Interprocedural
 open CallGraph
 
 let test_call_graph_of_define context =
-  let assert_call_graph_of_define ~source ~define_name ~expected =
+  let assert_call_graph_of_define ?(object_targets = []) ~source ~define_name ~expected () =
     let expected =
       let parse_location location =
         let parse_position position =
@@ -57,6 +57,13 @@ let test_call_graph_of_define context =
         test_source,
         TypeEnvironment.read_only type_environment )
     in
+    let register_model target =
+      FixpointState.add_predefined
+        FixpointState.Epoch.predefined
+        target
+        AnalysisResult.obscure_model
+    in
+    List.iter ~f:register_model object_targets;
     let overrides = DependencyGraph.create_overrides ~environment ~source:test_source in
     let _ = DependencyGraphSharedMemory.record_overrides overrides in
     assert_equal
@@ -84,7 +91,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.bar")]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -110,7 +118,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -164,7 +173,8 @@ let test_call_graph_of_define context =
                         ~return_type:Type.bool
                         ()) );
                ]) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -213,7 +223,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.bar")]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -241,7 +252,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -274,7 +286,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -309,7 +322,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -334,7 +348,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -359,7 +374,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -383,7 +399,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -409,7 +426,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -429,7 +447,8 @@ let test_call_graph_of_define context =
                   ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
                   ~return_type:(Type.Primitive "test.C")
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -449,7 +468,8 @@ let test_call_graph_of_define context =
                   ~new_targets:[`Method { Target.class_name = "test.C"; method_name = "__new__" }]
                   ~return_type:(Type.Primitive "test.C")
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -470,7 +490,8 @@ let test_call_graph_of_define context =
                   ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
                   ~return_type:(Type.Primitive "test.B")
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -491,7 +512,8 @@ let test_call_graph_of_define context =
                   ~new_targets:[`Method { Target.class_name = "test.B"; method_name = "__new__" }]
                   ~return_type:(Type.Primitive "test.B")
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -512,6 +534,7 @@ let test_call_graph_of_define context =
                {
                  AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
+                 global_targets = [];
                  return_type = Type.none;
                  is_attribute = false;
                }) );
@@ -521,10 +544,12 @@ let test_call_graph_of_define context =
                {
                  AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p" }];
+                 global_targets = [];
                  return_type = Type.integer;
                  is_attribute = false;
                }) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -547,7 +572,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.integer
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -572,7 +598,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.integer
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:{|
         def foo():
@@ -593,7 +620,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.bool
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -618,7 +646,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:(Type.Primitive "str")
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -639,7 +668,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.f")]
                   ~return_type:(Type.parametric "functools.partial" [Single Type.Any])
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -662,7 +692,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.callable_target")]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -693,7 +724,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.integer
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:{|
       def foo(x=bar()):
@@ -712,7 +744,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.bar")]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -750,7 +783,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.integer
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -778,7 +812,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.integer
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -810,7 +845,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.integer
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -839,7 +875,8 @@ let test_call_graph_of_define context =
                       call_targets = [CallTarget.create (`Function "test.bar")];
                     }
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -899,7 +936,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:(Type.Primitive "test.Builder")
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -921,8 +959,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.f")]
                   ~return_type:Type.integer
                   ())) );
-      ];
-
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -950,7 +988,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.integer
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -985,7 +1024,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:(Type.Primitive "str")
                   ())) );
-      ];
+      ]
+    ();
 
   (* Ensure we don't infinite loop when resolving callable classes. *)
   assert_call_graph_of_define
@@ -1009,7 +1049,8 @@ let test_call_graph_of_define context =
         ( "12:2-12:5",
           LocationCallees.Singleton
             (ExpressionCallees.from_call (CallCallees.create_unresolved Type.Any)) );
-      ];
+      ]
+    ();
 
   assert_call_graph_of_define
     ~source:
@@ -1051,7 +1092,8 @@ let test_call_graph_of_define context =
                           (Type.parametric "contextlib.ContextManager" [Single Type.integer])
                         ()) );
                ]) );
-      ];
+      ]
+    ();
   (* Only the last attribute is a setter for chained property setter calls. *)
   assert_call_graph_of_define
     ~source:
@@ -1076,6 +1118,7 @@ let test_call_graph_of_define context =
                {
                  AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p" }];
+                 global_targets = [];
                  return_type = Type.Primitive "test.C";
                  is_attribute = false;
                }) );
@@ -1085,10 +1128,12 @@ let test_call_graph_of_define context =
                {
                  AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
+                 global_targets = [];
                  return_type = Type.none;
                  is_attribute = false;
                }) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1125,7 +1170,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.integer
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1158,6 +1204,7 @@ let test_call_graph_of_define context =
                      `Method { Target.class_name = "test.C"; method_name = "foo" };
                      `Method { Target.class_name = "test.D"; method_name = "foo" };
                    ];
+                 global_targets = [];
                  return_type = Type.integer;
                  is_attribute = false;
                }) );
@@ -1167,10 +1214,12 @@ let test_call_graph_of_define context =
                {
                  AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "foo" }];
+                 global_targets = [];
                  return_type = Type.integer;
                  is_attribute = true;
                }) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1201,10 +1250,12 @@ let test_call_graph_of_define context =
                      `Method { Target.class_name = "test.C"; method_name = "foo" };
                      `Method { Target.class_name = "test.D"; method_name = "foo" };
                    ];
+                 global_targets = [];
                  return_type = Type.integer;
                  is_attribute = false;
                }) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1246,7 +1297,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1266,7 +1318,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "$local_test?outer$inner")]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1287,8 +1340,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "$local_test?Foo?outer$inner")]
                   ~return_type:Type.none
                   ())) );
-      ];
-  ();
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1314,7 +1367,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:(Type.Primitive "str")
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1335,13 +1389,15 @@ let test_call_graph_of_define context =
                {
                  AttributeAccessCallees.property_targets =
                    [`Method { Target.class_name = "test.C"; method_name = "attribute" }];
+                 global_targets = [];
                  return_type = Type.Top;
                  is_attribute = false;
                }) );
         ( "8:9-8:22",
           LocationCallees.Singleton
             (ExpressionCallees.from_call (CallCallees.create_unresolved Type.Any)) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1372,7 +1428,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.bar")]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1404,7 +1461,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.bar")]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   (* TODO(T105570363): Resolve calls with mixed function and methods. *)
   assert_call_graph_of_define
     ~source:
@@ -1518,8 +1576,8 @@ let test_call_graph_of_define context =
                   ~return_type:Type.none
                   ~unresolved:true
                   ())) );
-      ];
-  ();
+      ]
+    ();
   (* TODO(T105570363): Resolve calls with mixed function and constructors. *)
   assert_call_graph_of_define
     ~source:
@@ -1638,8 +1696,8 @@ let test_call_graph_of_define context =
                   ~return_type:Type.none
                   ~unresolved:true
                   ())) );
-      ];
-  ();
+      ]
+    ();
   (* Well-typed decorators are 'safely' ignored (when not inlined). *)
   assert_call_graph_of_define
     ~source:
@@ -1674,7 +1732,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.foo")]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1714,7 +1773,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   (* Partially-typed decorators are 'safely' ignored (when not inlined). *)
   assert_call_graph_of_define
     ~source:
@@ -1746,7 +1806,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.foo")]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1783,7 +1844,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   (* Untyped decorators are 'safely' ignored (when not inlined). *)
   assert_call_graph_of_define
     ~source:
@@ -1808,7 +1870,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.foo")]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1838,7 +1901,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   (* Well-typed decorators with @classmethod or @staticmethod. *)
   assert_call_graph_of_define
     ~source:
@@ -1880,7 +1944,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1920,7 +1985,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   assert_call_graph_of_define
     ~source:
       {|
@@ -1962,7 +2028,8 @@ let test_call_graph_of_define context =
                     ]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   (* Decorators with type errors. *)
   assert_call_graph_of_define
     ~source:
@@ -1995,7 +2062,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "test.foo")]
                   ~return_type:Type.Any
                   ())) );
-      ];
+      ]
+    ();
   (* Resolving __call__ via __getattr__ when a union including self type is involved. *)
   assert_call_graph_of_define
     ~source:
@@ -2020,7 +2088,8 @@ let test_call_graph_of_define context =
                   ~call_targets:[CallTarget.create (`Function "print")]
                   ~return_type:Type.none
                   ())) );
-      ];
+      ]
+    ();
   (* Detecting a __call__ picked up via __getattr__ redirection *)
   assert_call_graph_of_define
     ~source:
@@ -2062,7 +2131,128 @@ let test_call_graph_of_define context =
                         ];
                     }
                   ())) );
-      ];
+      ]
+    ();
+
+  assert_call_graph_of_define
+    ~object_targets:[`Object "test.Token.token"]
+    ~source:
+      {|
+      class Token:
+        token: str = ""
+
+      def foo(obj: Token):
+        return obj.token
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:9-6:18",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_attribute_access
+               {
+                 AttributeAccessCallees.property_targets = [];
+                 global_targets = [`Object "test.Token.token"];
+                 return_type = Type.Primitive "str";
+                 is_attribute = true;
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~object_targets:[`Object "test.A.attribute"; `Object "test.C.attribute"]
+    ~source:
+      {|
+      from typing import Union
+
+      class A:
+        attribute: str = ""
+
+      class B:
+        attribute: str = ""
+
+      class C:
+        attribute: str = ""
+
+      def foo(obj: Union[A, B, C]):
+        return obj.attribute
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "14:9-14:22",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_attribute_access
+               {
+                 AttributeAccessCallees.property_targets = [];
+                 global_targets = [`Object "test.A.attribute"; `Object "test.C.attribute"];
+                 return_type = Type.Primitive "str";
+                 is_attribute = true;
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~object_targets:[`Object "test.Token.token"]
+    ~source:
+      {|
+      from typing import Optional
+
+      class Token:
+        token: str = ""
+
+      class Request:
+        access_token: Optional[Token] = None
+
+      def foo(request: Request):
+        return request.access_token.token
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "11:9-11:35",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_attribute_access
+               {
+                 AttributeAccessCallees.property_targets = [];
+                 global_targets = [`Object "test.Token.token"];
+                 return_type = Type.Top;
+                 is_attribute = true;
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~object_targets:[`Object "test.Token.token"]
+    ~source:
+      {|
+      class Token:
+        token: str = ""
+
+      def foo(obj: Token):
+        return getattr(obj, "token", None)
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:9-6:36",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "getattr",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:[CallTarget.create (`Function "getattr")]
+                        ~return_type:Type.Any
+                        ()) );
+                 ( "token",
+                   ExpressionCallees.from_attribute_access
+                     {
+                       AttributeAccessCallees.property_targets = [];
+                       global_targets = [`Object "test.Token.token"];
+                       return_type = Type.Primitive "str";
+                       is_attribute = true;
+                     } );
+               ]) );
+      ]
+    ();
   ()
 
 

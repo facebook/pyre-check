@@ -1681,7 +1681,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~f:(analyze_list_element ~resolution)
             ~init:(ForwardState.Tree.empty, state)
       | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
-      | Name _ when AccessPath.is_global ~resolution expression ->
+      | Name _ when CallGraph.is_global_reference ~resolution expression ->
           let taint =
             Model.get_global_model
               ~resolution

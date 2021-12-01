@@ -192,7 +192,9 @@ let get_callsite_model ~resolution ~call_target ~arguments =
 
 let get_global_targets ~resolution ~expression =
   let global_resolution = Resolution.global_resolution resolution in
-  match Node.value expression, AccessPath.get_global ~resolution expression with
+  match
+    Node.value expression, Interprocedural.CallGraph.as_global_reference ~resolution expression
+  with
   | _, Some global -> [global]
   | Name (Name.Attribute { base; attribute; _ }), _ ->
       let rec find_targets targets = function

@@ -45,10 +45,6 @@ val get_index : Expression.t -> Abstract.TreeDomain.Label.t
 
 val to_json : t -> Yojson.Safe.json
 
-val get_global : resolution:Resolution.t -> Expression.t -> Reference.t option
-
-val is_global : resolution:Resolution.t -> Expression.t -> bool
-
 type argument_match = {
   root: Root.t;
   actual_path: Abstract.TreeDomain.Label.path;

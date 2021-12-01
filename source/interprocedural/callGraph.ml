@@ -155,35 +155,45 @@ end
 module AttributeAccessCallees = struct
   type t = {
     property_targets: Target.t list;
+    global_targets: Target.t list;
     return_type: Type.t;
     is_attribute: bool;
   }
   [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { property_targets; return_type; is_attribute } =
+  let deduplicate { property_targets; global_targets; return_type; is_attribute } =
     {
       property_targets = List.dedup_and_sort ~compare:Target.compare property_targets;
+      global_targets = List.dedup_and_sort ~compare:Target.compare global_targets;
       return_type;
       is_attribute;
     }
 
 
   let join
-      { property_targets = left_property_targets; return_type; is_attribute = left_is_attribute }
+      {
+        property_targets = left_property_targets;
+        global_targets = left_global_targets;
+        return_type;
+        is_attribute = left_is_attribute;
+      }
       {
         property_targets = right_property_targets;
+        global_targets = right_global_targets;
         return_type = _;
         is_attribute = right_is_attribute;
       }
     =
     {
       property_targets = List.rev_append left_property_targets right_property_targets;
+      global_targets = List.rev_append left_global_targets right_global_targets;
       return_type;
       is_attribute = left_is_attribute || right_is_attribute;
     }
 
 
-  let all_targets { property_targets; _ } = property_targets
+  let all_targets { property_targets; global_targets; _ } =
+    List.rev_append property_targets global_targets
 end
 
 module ExpressionCallees = struct
@@ -959,10 +969,7 @@ let resolve_callees ~resolution ~call =
   { regular_callees with higher_order_parameter }
 
 
-let get_property_defining_parents ~resolution ~base ~attribute =
-  let annotation =
-    Resolution.resolve_expression_to_type resolution base |> strip_meta |> strip_optional
-  in
+let get_property_defining_parents ~resolution ~base_annotation ~attribute =
   let rec get_defining_parents annotation =
     match annotation with
     | Type.Union annotations
@@ -974,55 +981,145 @@ let get_property_defining_parents ~resolution ~base ~attribute =
             [Annotated.Attribute.parent property |> Reference.create |> Option.some]
         | _ -> [None])
   in
-  get_defining_parents annotation
+  base_annotation |> strip_meta |> strip_optional |> get_defining_parents
+
+
+type attribute_access_properties = {
+  property_targets: Target.t list;
+  is_attribute: bool;
+}
+
+let resolve_attribute_access_properties ~resolution ~base_annotation ~attribute ~setter =
+  let defining_parents = get_property_defining_parents ~resolution ~base_annotation ~attribute in
+  let property_of_parent = function
+    | None -> []
+    | Some parent ->
+        let property_targets =
+          if Type.is_meta base_annotation then
+            [Target.create_method (Reference.create ~prefix:parent attribute)]
+          else
+            let callee = Reference.create ~prefix:parent attribute in
+            compute_indirect_targets ~resolution ~receiver_type:base_annotation callee
+        in
+        if setter then
+          let to_setter target =
+            match target with
+            | `OverrideTarget { Target.class_name; method_name } ->
+                `OverrideTarget { Target.class_name; method_name = method_name ^ "$setter" }
+            | `Method { Target.class_name; method_name } ->
+                `Method { Target.class_name; method_name = method_name ^ "$setter" }
+            | _ -> target
+          in
+          List.map property_targets ~f:to_setter
+        else
+          property_targets
+  in
+  let property_targets = List.concat_map ~f:property_of_parent defining_parents in
+  let is_attribute =
+    List.exists ~f:Option.is_none defining_parents || List.is_empty defining_parents
+  in
+  { property_targets; is_attribute }
+
+
+let as_global_reference ~resolution expression =
+  match Node.value expression with
+  | Expression.Name (Name.Identifier identifier) ->
+      let reference = Reference.delocalize (Reference.create identifier) in
+      if Resolution.is_global resolution ~reference then
+        Some reference
+      else
+        None
+  | Name name -> (
+      name_to_reference name
+      >>= fun reference ->
+      GlobalResolution.resolve_exports (Resolution.global_resolution resolution) reference
+      >>= function
+      | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
+          { from; name; remaining = []; _ } ->
+          Some (Reference.combine from (Reference.create name))
+      | _ -> None)
+  | _ -> None
+
+
+let is_global_reference ~resolution name = Option.is_some (as_global_reference ~resolution name)
+
+let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special =
+  let expression =
+    Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
+    |> Node.create_with_default_location
+  in
+  match as_global_reference ~resolution expression with
+  | Some global -> [global]
+  | None ->
+      let global_resolution = Resolution.global_resolution resolution in
+      let rec find_targets targets = function
+        | Type.Union annotations -> List.fold ~init:targets ~f:find_targets annotations
+        | Parametric { name = "type"; parameters = [Single annotation] } ->
+            (* Access on a class, i.e `Foo.bar`, translated into `Foo.__class__.bar`. *)
+            let parent =
+              let attribute =
+                Type.split annotation
+                |> fst
+                |> Type.primitive_name
+                >>= GlobalResolution.attribute_from_class_name
+                      ~transitive:true
+                      ~resolution:global_resolution
+                      ~name:attribute
+                      ~instantiated:annotation
+              in
+              match attribute with
+              | Some attribute when Annotated.Attribute.defined attribute ->
+                  Type.Primitive (Annotated.Attribute.parent attribute) |> Type.class_name
+              | _ -> Type.class_name annotation
+            in
+            let attribute = Format.sprintf "__class__.%s" attribute in
+            let target = Reference.create ~prefix:parent attribute in
+            target :: targets
+        | annotation ->
+            (* Access on an instance, i.e `self.foo`. *)
+            let parents =
+              let successors =
+                GlobalResolution.class_metadata (Resolution.global_resolution resolution) annotation
+                >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
+                |> Option.value ~default:[]
+                |> List.map ~f:(fun name -> Type.Primitive name)
+              in
+              annotation :: successors
+            in
+            let add_target targets parent =
+              let target = Reference.create ~prefix:(Type.class_name parent) attribute in
+              target :: targets
+            in
+            List.fold ~init:targets ~f:add_target parents
+      in
+      find_targets [] base_annotation
 
 
 let resolve_attribute_access ~resolution ~base ~attribute ~special ~setter =
-  let defining_parents = get_property_defining_parents ~resolution ~base ~attribute in
-  if List.for_all ~f:Option.is_none defining_parents then
-    None
-  else
-    let return_type =
-      if setter then
-        Type.none
-      else
-        Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
-        |> Node.create_with_default_location
-        |> Resolution.resolve_expression_to_type resolution
-    in
-    let receiver_type = resolve_ignoring_optional ~resolution base in
-    let property_of_parent = function
-      | None -> { AttributeAccessCallees.property_targets = []; return_type; is_attribute = true }
-      | Some parent ->
-          let property_targets =
-            if Type.is_meta receiver_type then
-              [Target.create_method (Reference.create ~prefix:parent attribute)]
-            else
-              let callee = Reference.create ~prefix:parent attribute in
-              compute_indirect_targets ~resolution ~receiver_type callee
-          in
-          let property_targets =
-            if setter then
-              let to_setter target =
-                match target with
-                | `OverrideTarget { Target.class_name; method_name } ->
-                    `OverrideTarget { Target.class_name; method_name = method_name ^ "$setter" }
-                | `Method { Target.class_name; method_name } ->
-                    `Method { Target.class_name; method_name = method_name ^ "$setter" }
-                | _ -> target
-              in
-              List.map property_targets ~f:to_setter
-            else
-              property_targets
-          in
-          { AttributeAccessCallees.property_targets; return_type; is_attribute = false }
-    in
-    defining_parents
-    |> List.map ~f:property_of_parent
-    |> List.fold
-         ~f:AttributeAccessCallees.join
-         ~init:{ AttributeAccessCallees.property_targets = []; return_type; is_attribute = false }
-    |> Option.some
+  let base_annotation = resolve_ignoring_optional ~resolution base in
+
+  let { property_targets; is_attribute } =
+    resolve_attribute_access_properties ~resolution ~base_annotation ~attribute ~setter
+  in
+
+  let global_targets =
+    resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special
+    |> List.map ~f:Target.create_object
+    |> List.filter ~f:FixpointState.has_model
+  in
+
+  match property_targets, global_targets, is_attribute with
+  | [], [], true -> None
+  | _ ->
+      let return_type =
+        if setter then
+          Type.none
+        else
+          Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
+          |> Node.create_with_default_location
+          |> Resolution.resolve_expression_to_type resolution
+      in
+      Some { AttributeAccessCallees.property_targets; global_targets; return_type; is_attribute }
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -1056,33 +1153,61 @@ struct
             | Some existing_callees ->
                 UnprocessedLocationCallees.add existing_callees ~expression_identifier ~callees)
       in
-      match value with
-      | Expression.Call call ->
-          resolve_callees ~resolution ~call
-          |> ExpressionCallees.from_call
-          |> register_targets ~expression_identifier:(call_identifier call);
-          state
-      | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
-          let setter =
-            match assignment_target with
-            | Some { location = assignment_target_location } ->
-                Location.equal assignment_target_location location
-            | None -> false
-          in
-          resolve_attribute_access ~resolution ~base ~attribute ~special ~setter
-          >>| ExpressionCallees.from_attribute_access
-          >>| register_targets ~expression_identifier:attribute
-          |> ignore;
-          state
-      | Expression.ComparisonOperator comparison -> (
-          match ComparisonOperator.override ~location comparison with
-          | Some { Node.value = Expression.Call call; _ } ->
-              resolve_callees ~resolution ~call
-              |> ExpressionCallees.from_call
-              |> register_targets ~expression_identifier:(call_identifier call);
-              state
-          | _ -> state)
-      | _ -> state
+      let () =
+        match value with
+        | Expression.Call call ->
+            resolve_callees ~resolution ~call
+            |> ExpressionCallees.from_call
+            |> register_targets ~expression_identifier:(call_identifier call)
+        | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
+            let setter =
+              match assignment_target with
+              | Some { location = assignment_target_location } ->
+                  Location.equal assignment_target_location location
+              | None -> false
+            in
+            resolve_attribute_access ~resolution ~base ~attribute ~special ~setter
+            >>| ExpressionCallees.from_attribute_access
+            >>| register_targets ~expression_identifier:attribute
+            |> ignore
+        | Expression.ComparisonOperator comparison -> (
+            match ComparisonOperator.override ~location comparison with
+            | Some { Node.value = Expression.Call call; _ } ->
+                resolve_callees ~resolution ~call
+                |> ExpressionCallees.from_call
+                |> register_targets ~expression_identifier:(call_identifier call)
+            | _ -> ())
+        | _ -> ()
+      in
+      (* Special-case `getattr()` for the taint analysis. *)
+      let () =
+        match value with
+        | Expression.Call
+            {
+              callee = { Node.value = Name (Name.Identifier "getattr"); _ };
+              arguments =
+                [
+                  { Call.Argument.value = base; _ };
+                  {
+                    Call.Argument.value =
+                      {
+                        Node.value =
+                          Expression.Constant
+                            (Constant.String { StringLiteral.value = attribute; _ });
+                        _;
+                      };
+                    _;
+                  };
+                  { Call.Argument.value = _; _ };
+                ];
+            } ->
+            resolve_attribute_access ~resolution ~base ~attribute ~special:false ~setter:false
+            >>| ExpressionCallees.from_attribute_access
+            >>| register_targets ~expression_identifier:attribute
+            |> ignore
+        | _ -> ()
+      in
+      state
 
 
     let statement_visitor state _ = state
@@ -1249,8 +1374,13 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
           else
             call_graph_of_define ~environment ~define:(Node.value define)
         in
+        let non_object_target = function
+          | `Object _ -> false
+          | _ -> true
+        in
         Location.Map.data call_graph_of_define
         |> List.concat_map ~f:LocationCallees.all_targets
+        |> List.filter ~f:non_object_target
         |> List.dedup_and_sort ~compare:Target.compare
         |> fun callees ->
         Target.CallableMap.set dependencies ~key:(Target.create define) ~data:callees

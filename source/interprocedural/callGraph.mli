@@ -81,6 +81,7 @@ end
 module AttributeAccessCallees : sig
   type t = {
     property_targets: Target.t list;
+    global_targets: Target.t list;
     return_type: Type.t;
     (* True if the attribute access should also be considered a regular attribute.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
@@ -135,6 +136,10 @@ val call_graph_of_define
   :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
+
+val as_global_reference : resolution:Resolution.t -> Ast.Expression.t -> Reference.t option
+
+val is_global_reference : resolution:Resolution.t -> Ast.Expression.t -> bool
 
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
 

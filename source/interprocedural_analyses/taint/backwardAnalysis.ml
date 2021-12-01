@@ -1552,7 +1552,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         List.rev list
         |> List.foldi ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
     | ListComprehension comprehension -> analyze_comprehension ~resolution taint comprehension state
-    | Name _ when AccessPath.is_global ~resolution expression -> state
+    | Name _ when CallGraph.is_global_reference ~resolution expression -> state
     | Name (Name.Identifier identifier) ->
         store_weak_taint ~root:(Root.Variable identifier) ~path:[] taint state
     | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->

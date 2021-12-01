@@ -7,9 +7,7 @@
 
 open Core
 open Ast
-open Analysis
 open Expression
-open Pyre
 
 (** Roots representing parameters, locals, and special return value in models. *)
 module Root = struct
@@ -263,31 +261,9 @@ let to_json { root; path } =
   `String (root_name root ^ Abstract.TreeDomain.Label.show_path path)
 
 
-let get_global ~resolution name =
-  match Node.value name with
-  | Expression.Name (Name.Identifier identifier) ->
-      let reference = Reference.delocalize (Reference.create identifier) in
-      if Resolution.is_global resolution ~reference then
-        Some reference
-      else
-        None
-  | Name name -> (
-      name_to_reference name
-      >>= fun reference ->
-      GlobalResolution.resolve_exports (Resolution.global_resolution resolution) reference
-      >>= function
-      | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
-          { from; name; remaining = []; _ } ->
-          Some (Reference.combine from (Reference.create name))
-      | _ -> None)
-  | _ -> None
-
-
-let is_global ~resolution name = Option.is_some (get_global ~resolution name)
-
 let of_expression ~resolution expression =
   let expression =
-    if is_global ~resolution expression then
+    if Interprocedural.CallGraph.is_global_reference ~resolution expression then
       Ast.Expression.delocalize expression
     else
       expression
