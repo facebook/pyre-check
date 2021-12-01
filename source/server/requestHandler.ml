@@ -50,7 +50,8 @@ let instantiate_errors ~build_system ~configuration ~ast_environment errors =
 
 
 let process_display_type_error_request
-    ~state:{ ServerState.configuration; type_environment; error_table; build_system; _ }
+    ~configuration
+    ~state:{ ServerState.type_environment; error_table; build_system; _ }
     paths
   =
   let modules =
@@ -98,7 +99,7 @@ let notify_all_subscriptions ~with_response = function
 
 let create_info_response
     {
-      ServerState.socket_path;
+      ServerProperties.socket_path;
       configuration = { Configuration.Analysis.project_root; local_root; _ };
       _;
     }
@@ -114,16 +115,8 @@ let create_info_response
 
 
 let process_incremental_update_request
-    ~state:
-      ({
-         ServerState.critical_files;
-         configuration;
-         type_environment;
-         error_table;
-         subscriptions;
-         build_system;
-         _;
-       } as state)
+    ~properties:({ ServerProperties.configuration; critical_files; _ } as properties)
+    ~state:({ ServerState.type_environment; error_table; subscriptions; build_system; _ } as state)
     paths
   =
   let open Lwt.Infix in
@@ -135,7 +128,7 @@ let process_incremental_update_request
         Path.pp
         path
       |> StartupNotification.produce ~log_path:configuration.log_directory;
-      Stop.log_and_stop_waiting_server ~reason:"critical file update" ~state ()
+      Stop.log_and_stop_waiting_server ~reason:"critical file update" ~properties ()
   | None ->
       let create_status_update_response status () = Response.StatusUpdate status in
       let create_type_errors_response () =
@@ -182,16 +175,17 @@ let process_incremental_update_request
 
 
 let process_request
-    ~state:({ ServerState.configuration; type_environment; build_system; _ } as state)
+    ~properties:({ ServerProperties.configuration; _ } as properties)
+    ~state:({ ServerState.type_environment; build_system; _ } as state)
     request
   =
   match request with
   | Request.DisplayTypeError paths ->
-      let response = process_display_type_error_request ~state paths in
+      let response = process_display_type_error_request ~configuration ~state paths in
       Lwt.return (state, response)
   | Request.IncrementalUpdate paths ->
       let open Lwt.Infix in
-      process_incremental_update_request ~state paths
+      process_incremental_update_request ~properties ~state paths
       >>= fun new_state -> Lwt.return (new_state, Response.Ok)
   | Request.Query query_text ->
       let response =

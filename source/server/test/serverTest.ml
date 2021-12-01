@@ -13,10 +13,13 @@ module Path = Pyre.Path
 module Client = struct
   type t = {
     context: test_ctxt;
+    server_properties: ServerProperties.t;
     server_state: ServerState.t;
     input_channel: Lwt_io.input_channel;
     output_channel: Lwt_io.output_channel;
   }
+
+  let get_server_properties { server_properties; _ } = server_properties
 
   let current_server_state { server_state; _ } = server_state
 
@@ -183,16 +186,13 @@ module ScratchProject = struct
         | exn ->
             Log.error "Uncaught exception: %s" (Exn.to_string exn);
             Lwt.return Start.ExitStatus.Error)
-      ~on_started:(fun server_state ->
+      ~on_started:(fun ({ ServerProperties.socket_path; _ } as server_properties) server_state ->
         (* Open a connection to the started server and send some test messages. *)
         ExclusiveLock.read server_state ~f:Lwt.return
         >>= fun server_state ->
-        let socket_address =
-          let { ServerState.socket_path; _ } = server_state in
-          Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path)
-        in
+        let socket_address = Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path) in
         let test_client (input_channel, output_channel) =
-          f { Client.context; server_state; input_channel; output_channel }
+          f { Client.context; server_properties; server_state; input_channel; output_channel }
           >>= fun () -> Lwt.return Start.ExitStatus.Ok
         in
         Lwt_io.with_connection socket_address test_client)

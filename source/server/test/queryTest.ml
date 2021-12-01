@@ -126,10 +126,10 @@ let assert_queries_with_local_root ~context ~sources queries_and_responses =
       Client.send_request client (Request.Query query)
       >>= fun actual_response ->
       let expected_response =
-        Client.current_server_state client
+        Client.get_server_properties client
         (* NOTE: Relativizing against `local_root` in query response is discouraged. We should
            migrate away from it at some point. *)
-        |> fun { ServerState.configuration = { Configuration.Analysis.local_root; _ }; _ } ->
+        |> fun { ServerProperties.configuration = { Configuration.Analysis.local_root; _ }; _ } ->
         build_expected_response local_root
       in
       assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;

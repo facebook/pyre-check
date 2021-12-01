@@ -10,6 +10,8 @@ open Server
 module Client : sig
   type t
 
+  val get_server_properties : t -> ServerProperties.t
+
   val current_server_state : t -> ServerState.t
 
   val send_raw_request : t -> string -> string Lwt.t

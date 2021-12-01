@@ -25,32 +25,14 @@ module Subscriptions = struct
 end
 
 type t = {
-  start_time: Timer.t;
-  socket_path: Path.t;
-  configuration: Configuration.Analysis.t;
-  critical_files: CriticalFile.t list;
   build_system: BuildSystem.t;
   type_environment: TypeEnvironment.t;
   error_table: AnalysisError.t list Reference.Table.t;
   subscriptions: Subscriptions.t;
 }
 
-let create
-    ?start_time
-    ?error_table
-    ?subscriptions
-    ~socket_path
-    ~configuration
-    ~critical_files
-    ~build_system
-    ~type_environment
-    ()
-  =
+let create ?error_table ?subscriptions ~build_system ~type_environment () =
   {
-    start_time = Option.value start_time ~default:(Timer.start ());
-    socket_path;
-    critical_files;
-    configuration;
     build_system;
     type_environment;
     error_table = Option.value error_table ~default:(Reference.Table.create ());
@@ -96,7 +78,7 @@ end)
 
 let load_stored_configuration = StoredConfiguration.load
 
-let load ~socket_path ~configuration ~critical_files ~build_system () =
+let load ~build_system () =
   let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
   let ast_environment = Analysis.AstEnvironment.load module_tracker in
   let type_environment =
@@ -104,10 +86,10 @@ let load ~socket_path ~configuration ~critical_files ~build_system () =
   in
   Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
   let error_table = ServerErrors.load () in
-  create ~socket_path ~critical_files ~configuration ~build_system ~type_environment ~error_table ()
+  create ~build_system ~type_environment ~error_table ()
 
 
-let store ~path { configuration; type_environment; error_table; build_system; _ } =
+let store ~path ~configuration { type_environment; error_table; build_system; _ } =
   Memory.SharedMemory.collect `aggressive;
   Analysis.TypeEnvironment.module_tracker type_environment
   |> Analysis.ModuleTracker.SharedMemory.store;

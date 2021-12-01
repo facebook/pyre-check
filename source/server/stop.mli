@@ -16,4 +16,4 @@ val stop_waiting_server : unit -> 'a Lwt.t
 val log_stopped_server : reason:string -> start_time:Timer.t -> unit -> unit
 
 (* Convenient wrapper around `log_stopped_server` followed by `stop_waiting_server`. *)
-val log_and_stop_waiting_server : reason:string -> state:ServerState.t -> unit -> 'a Lwt.t
+val log_and_stop_waiting_server : reason:string -> properties:ServerProperties.t -> unit -> 'a Lwt.t

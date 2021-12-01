@@ -61,7 +61,7 @@ let test_cleanup context =
     ~configuration
     ~build_system_initializer
     ~on_exception:(fun exn -> raise exn)
-    ~on_started:(fun _ ->
+    ~on_started:(fun _ _ ->
       (* Shutdown the server immediately after it is started. *)
       Lwt.return Start.ExitStatus.Ok)
   >>= fun _ ->
@@ -98,8 +98,8 @@ let test_type_errors context =
   let test_type_errors client =
     let open Lwt.Infix in
     let global_root =
-      Client.current_server_state client
-      |> fun { ServerState.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
+      Client.get_server_properties client
+      |> fun { ServerProperties.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
       project_root
     in
     test_source_path := Path.create_relative ~root:global_root ~relative:"test.py";
@@ -212,8 +212,8 @@ let test_update context =
   let test_update client =
     let open Lwt.Infix in
     let root =
-      Client.current_server_state client
-      |> fun { ServerState.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
+      Client.get_server_properties client
+      |> fun { ServerProperties.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
       project_root
     in
     test_artifact_path := Path.create_relative ~root ~relative:"test.py";

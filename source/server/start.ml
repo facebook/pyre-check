@@ -79,12 +79,12 @@ module ClientRequest = struct
     | Yojson.Json_error message -> Error message
 end
 
-let handle_request ~state request =
+let handle_request ~properties ~state request =
   let open Lwt.Infix in
   let on_uncaught_server_exception exn =
     Log.info "Uncaught server exception: %s" (Exn.to_string exn);
     let () =
-      let { ServerState.configuration; _ } = state in
+      let { ServerProperties.configuration; _ } = properties in
       StartupNotification.produce
         ~log_path:configuration.log_directory
         "Restarting Pyre server due to unexpected crash"
@@ -102,7 +102,7 @@ let handle_request ~state request =
       | _ -> "server"
     in
     Statistics.log_exception exn ~fatal:true ~origin;
-    Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~state ()
+    Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~properties ()
   in
   Lwt.catch
     (fun () ->
@@ -110,7 +110,7 @@ let handle_request ~state request =
       with_performance_logging
         ~normals:["request kind", Request.name_of request]
         ~name:"server request"
-        (fun () -> RequestHandler.process_request ~state request))
+        (fun () -> RequestHandler.process_request ~properties ~state request))
     on_uncaught_server_exception
   >>= fun (new_state, response) ->
   Log.log ~section:`Server "Request `%a` processed" Sexp.pp (Request.sexp_of_t request);
@@ -143,7 +143,12 @@ module ConnectionState = struct
         ServerState.Subscriptions.remove ~name subscriptions)
 end
 
-let handle_connection ~server_state _client_address (input_channel, output_channel) =
+let handle_connection
+    ~server_properties
+    ~server_state
+    _client_address
+    (input_channel, output_channel)
+  =
   let open Lwt.Infix in
   Log.log ~section:`Server "Connection established";
   (* Raw request messages are processed line-by-line. *)
@@ -160,19 +165,16 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
           match ClientRequest.of_string message with
           | ClientRequest.Error message -> Lwt.return (connection_state, Response.Error message)
           | ClientRequest.GetInfo ->
-              let response =
-                ExclusiveLock.unsafe_read server_state |> RequestHandler.create_info_response
-              in
+              let response = RequestHandler.create_info_response server_properties in
               Lwt.return (connection_state, response)
           | ClientRequest.StopServer ->
-              (* The use of `unsafe_read` is justified for the same reason why `unsafe_read` is
-                 needed in the signal handler: we do not want other threads to block the stop
-                 request, plus we are only retrieving the start time from the state. *)
-              let state = ExclusiveLock.unsafe_read server_state in
-              Stop.log_and_stop_waiting_server ~reason:"explicit request" ~state ()
+              Stop.log_and_stop_waiting_server
+                ~reason:"explicit request"
+                ~properties:server_properties
+                ()
           | ClientRequest.Request request ->
               ExclusiveLock.write server_state ~f:(fun state ->
-                  handle_request ~state request
+                  handle_request ~properties:server_properties ~state request
                   >>= fun (new_state, response) ->
                   Lwt.return (new_state, (connection_state, response)))
           | ClientRequest.Subscription subscription ->
@@ -180,7 +182,7 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
                   let subscription = handle_subscription ~state ~output_channel subscription in
                   (* We send back the initial set of type errors when a subscription first gets
                      established. *)
-                  handle_request ~state (Request.DisplayTypeError [])
+                  handle_request ~properties:server_properties ~state (Request.DisplayTypeError [])
                   >>= fun (new_state, response) ->
                   Lwt.return
                     ( new_state,
@@ -205,11 +207,20 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
   ConnectionState.create () |> handle_line
 
 
+let create_server_properties ~configuration { StartOptions.socket_path; critical_files; _ } =
+  ServerProperties.create ~socket_path ~critical_files ~configuration ()
+
+
 let initialize_server_state
     ?watchman_subscriber
     ?build_system_initializer
-    ~configuration:({ Configuration.Analysis.log_directory; _ } as configuration)
-    { StartOptions.socket_path; source_paths; saved_state_action; critical_files; _ }
+    ~saved_state_action
+    ~source_paths
+    ({
+       ServerProperties.configuration = { Configuration.Analysis.log_directory; _ } as configuration;
+       critical_files;
+       _;
+     } as server_properties)
   =
   (* This is needed to initialize shared memory. *)
   let _ = Memory.get_heap_handle configuration in
@@ -231,14 +242,7 @@ let initialize_server_state
       List.iter errors ~f:add_error;
       table
     in
-    ServerState.create
-      ~socket_path
-      ~critical_files
-      ~configuration
-      ~build_system
-      ~type_environment:environment
-      ~error_table
-      ()
+    ServerState.create ~build_system ~type_environment:environment ~error_table ()
   in
   let build_and_start_from_scratch ~build_system_initializer () =
     let open Lwt.Infix in
@@ -402,13 +406,11 @@ let initialize_server_state
                 let open Lwt.Infix in
                 BuildSystem.Initializer.load build_system_initializer
                 >>= fun build_system ->
-                let loaded_state =
-                  ServerState.load ~socket_path ~critical_files ~configuration ~build_system ()
-                in
+                let loaded_state = ServerState.load ~build_system () in
                 Log.info "Processing recent updates not included in saved state...";
                 Statistics.event ~name:"saved state success" ();
                 Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
-                |> RequestHandler.process_request ~state:loaded_state
+                |> RequestHandler.process_request ~properties:server_properties ~state:loaded_state
                 >>= fun (new_state, _) -> Lwt.return new_state))
   in
   let open Lwt.Infix in
@@ -442,7 +444,7 @@ let initialize_server_state
   let store_initial_state state =
     match saved_state_action with
     | Some (SavedStateAction.SaveToFile { shared_memory_path }) ->
-        ServerState.store ~path:shared_memory_path state;
+        ServerState.store ~path:shared_memory_path ~configuration state;
         Log.info "Initial server state written to %a" Path.pp shared_memory_path
     | _ -> ()
   in
@@ -487,11 +489,11 @@ let get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions
       Watchman.Subscriber.subscribe subscriber_setting >>= Lwt.return_some
 
 
-let on_watchman_update ~server_state paths =
+let on_watchman_update ~server_properties ~server_state paths =
   let open Lwt.Infix in
   let update_request = Request.IncrementalUpdate (List.map paths ~f:Path.absolute) in
   ExclusiveLock.write server_state ~f:(fun state ->
-      handle_request ~state update_request
+      handle_request ~properties:server_properties ~state update_request
       >>= fun (new_state, _ok_response) ->
       (* File watcher does not care about the content of the the response. *)
       Lwt.return (new_state, ()))
@@ -502,7 +504,8 @@ let with_server
     ?build_system_initializer
     ~configuration:({ Configuration.Analysis.extensions; _ } as configuration)
     ~f
-    ({ StartOptions.socket_path; source_paths; watchman_root; critical_files; _ } as start_options)
+    ({ StartOptions.socket_path; source_paths; watchman_root; critical_files; saved_state_action }
+    as start_options)
   =
   let open Lwt in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
@@ -513,22 +516,25 @@ let with_server
   >>= fun prepared_socket ->
   (* We do not want the expensive server initialization to happen before we start to accept client
      requests. *)
+  let server_properties = create_server_properties ~configuration start_options in
   initialize_server_state
     ?watchman_subscriber
     ?build_system_initializer
-    ~configuration
-    start_options
+    ~source_paths
+    ~saved_state_action
+    server_properties
   >>= fun server_state ->
-  LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_state)
+  LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_properties ~server_state)
   >>= fun server ->
-  let server_waiter () = f (socket_path, server_state) in
+  let server_waiter () = f (socket_path, server_properties, server_state) in
   let server_destructor () =
     Log.info "Server is going down. Cleaning up...";
     let build_system_cleanup () =
-      (* We can't use `ExclusiveLock.read` here because when we reach this point, some other thread
-         might still hold the lock on the server state (e.g. this can happen when the server
-         destructor is initiated from a request handler that received a `stop` request). In those
-         cases, trying to grab the lock on the server state would cause a deadlock. *)
+      (* We don't want to use `ExclusiveLock.read` here because when we reach this point, some other
+         thread might still hold the lock on the server state (e.g. this can happen when a `stop`
+         request is received concurrently while the build system is still busy). In those cases,
+         there's no point in waiting for that thread to release the lock as the server is going down
+         after that anyway. *)
       let { ServerState.build_system; _ } = ExclusiveLock.unsafe_read server_state in
       BuildSystem.cleanup build_system
     in
@@ -543,7 +549,9 @@ let with_server
           server_waiter ()
       | Some subscriber ->
           let watchman_waiter =
-            Watchman.Subscriber.listen ~f:(on_watchman_update ~server_state) subscriber
+            Watchman.Subscriber.listen
+              ~f:(on_watchman_update ~server_properties ~server_state)
+              subscriber
             >>= fun () ->
             (* Lost watchman connection is considered an error. *)
             return ExitStatus.Error
@@ -577,8 +585,8 @@ let start_server
     start_options
   =
   let open Lwt in
-  let f (socket_path, server_state) =
-    on_server_socket_ready socket_path >>= fun _ -> on_started server_state
+  let f (socket_path, server_properties, server_state) =
+    on_server_socket_ready socket_path >>= fun _ -> on_started server_properties server_state
   in
   catch
     (fun () -> with_server ?watchman ?build_system_initializer ~configuration start_options ~f)
@@ -605,7 +613,7 @@ let start_server_and_wait ?event_channel ~configuration start_options =
     ~on_server_socket_ready:(fun socket_path ->
       (* An empty message signals that server socket has been created. *)
       write_event (ServerEvent.SocketCreated socket_path))
-    ~on_started:(fun state ->
+    ~on_started:(fun { ServerProperties.start_time; _ } _ ->
       write_event ServerEvent.ServerInitialized
       >>= fun () ->
       choose
@@ -616,12 +624,6 @@ let start_server_and_wait ?event_channel ~configuration start_options =
           wait_on_signals
             [Signal.abrt; Signal.term; Signal.quit; Signal.segv]
             ~on_caught:(fun signal ->
-              let { ServerState.start_time; _ } =
-                (* The use of `unsafe_read` is justified because (1) we really do not want to block
-                   here, and (2) `start_time` is immutable anyway, which means no race condition can
-                   occur in the first place. *)
-                ExclusiveLock.unsafe_read state
-              in
               Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
               return ExitStatus.Error);
         ])

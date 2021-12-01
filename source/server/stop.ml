@@ -26,6 +26,6 @@ let log_stopped_server ~reason ~start_time () =
     ()
 
 
-let log_and_stop_waiting_server ~reason ~state:{ ServerState.start_time; _ } () =
+let log_and_stop_waiting_server ~reason ~properties:{ ServerProperties.start_time; _ } () =
   log_stopped_server ~reason ~start_time ();
   stop_waiting_server ()
