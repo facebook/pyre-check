@@ -39,8 +39,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let show = Format.asprintf "%a" pp
 
-  let create () = { taint = BackwardState.empty }
-
   let less_or_equal ~left:{ taint = left; _ } ~right:{ taint = right; _ } =
     BackwardState.less_or_equal ~left ~right
 
@@ -163,14 +161,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~root
             ~path:[]
             (BackwardState.Tree.create_leaf Domains.local_return_taint)
-            BackwardState.empty
-      | _ -> BackwardState.empty
+            BackwardState.bottom
+      | _ -> BackwardState.bottom
     else
       BackwardState.assign
         ~root:Root.LocalResult
         ~path:[]
         (BackwardState.Tree.create_leaf Domains.local_return_taint)
-        BackwardState.empty
+        BackwardState.bottom
 
 
   let transform_non_leaves path taint =
@@ -610,7 +608,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                    arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
                    self_taint = None;
                    callee_taint = None;
-                   state = create ();
+                   state = bottom;
                  }
     in
     let self_taint = Option.value_exn self_taint in
@@ -653,7 +651,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                      arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
                      self_taint = None;
                      callee_taint = None;
-                     state = create ();
+                     state = bottom;
                    }
           in
           {
@@ -792,7 +790,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
                self_taint = None;
                callee_taint = None;
-               state = create ();
+               state = bottom;
              }
     in
 

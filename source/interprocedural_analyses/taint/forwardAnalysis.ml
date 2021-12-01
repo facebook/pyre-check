@@ -628,7 +628,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   collapse_tito = true;
                 })
           |> List.fold
-               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
+               ~init:(ForwardState.Tree.empty, bottom)
                ~f:(fun (taint, state) (new_taint, new_state) ->
                  ForwardState.Tree.join taint new_taint, join state new_state)
     in
@@ -661,7 +661,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   collapse_tito = true;
                 })
           |> List.fold
-               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
+               ~init:(ForwardState.Tree.empty, bottom)
                ~f:(fun (taint, state) (new_taint, new_state) ->
                  ForwardState.Tree.join taint new_taint, join state new_state)
     in
@@ -749,7 +749,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~return_type_breadcrumbs
              ~state:initial_state)
       |> List.fold
-           ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
+           ~init:(ForwardState.Tree.empty, bottom)
            ~f:(fun (taint, state) (new_taint, new_state) ->
              ForwardState.Tree.join taint new_taint, join state new_state)
     in
@@ -1508,7 +1508,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           {
             base_taint = ForwardState.Tree.bottom;
             attribute_taint = ForwardState.Tree.bottom;
-            state = { taint = ForwardState.empty };
+            state = bottom;
           }
     in
 
@@ -1572,7 +1572,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           {
             base_taint = ForwardState.Tree.bottom;
             attribute_taint = ForwardState.Tree.bottom;
-            state = { taint = ForwardState.empty };
+            state = bottom;
           }
     in
 
@@ -1889,7 +1889,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                         (CallGraph.CallCallees.create ~call_targets ~return_type ())
                     in
                     store_taint_option (AccessPath.of_expression ~resolution base) taint state
-                | _ -> { taint = ForwardState.empty }
+                | _ -> bottom
               in
 
               let regular_attribute_state =
@@ -1898,7 +1898,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 | None ->
                     let taint, state = analyze_expression ~resolution ~state ~expression:value in
                     analyze_assignment ~resolution target taint taint state
-                | _ -> { taint = ForwardState.empty }
+                | _ -> bottom
               in
 
               join property_call_state regular_attribute_state
@@ -1981,7 +1981,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       { state with taint }
     in
-    List.fold parameters ~init:{ taint = ForwardState.empty } ~f:prime_parameter
+    List.fold parameters ~init:bottom ~f:prime_parameter
 
 
   let forward ~statement_key state ~statement =
@@ -2075,7 +2075,7 @@ let extract_source_model
     ForwardState.read ~root:return_variable ~path:[] exit_taint |> simplify
   in
 
-  ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
+  ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.bottom
   |> ForwardState.add_breadcrumbs breadcrumbs_to_attach
   |> ForwardState.add_via_features via_features_to_attach
 
