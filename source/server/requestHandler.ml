@@ -199,4 +199,3 @@ let process_request
              query_text)
       in
       Lwt.return (state, response)
-  | Request.Stop -> Stop.log_and_stop_waiting_server ~reason:"explicit request" ~state ()

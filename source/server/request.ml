@@ -12,7 +12,6 @@ type t =
   | DisplayTypeError of string list
   | IncrementalUpdate of string list
   | Query of string
-  | Stop
 [@@deriving sexp, compare, hash, yojson { strict = false }]
 
 (* For some of the requests, use their legacy names for backward compatibility. *)
@@ -21,4 +20,3 @@ let name_of = function
   | DisplayTypeError _ -> "DisplayTypeErrors"
   | IncrementalUpdate _ -> "IncrementalCheck"
   | Query _ -> "TypeQuery"
-  | Stop -> "Stop"

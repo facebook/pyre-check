@@ -55,6 +55,7 @@ let with_performance_logging ?(normals = []) ~name f =
 
 module ClientRequest = struct
   type t =
+    | StopServer
     | Request of Request.t
     | Subscription of Subscription.Request.t
     | Error of string
@@ -63,12 +64,15 @@ module ClientRequest = struct
   let of_string input_string =
     try
       let json = Yojson.Safe.from_string input_string in
-      match Subscription.Request.of_yojson json with
-      | Result.Ok subscription -> Subscription subscription
-      | Result.Error _ -> (
-          match Request.of_yojson json with
-          | Result.Ok request -> Request request
-          | Result.Error _ -> Error "Malformed JSON request")
+      match json with
+      | `List [`String "Stop"] -> StopServer
+      | _ -> (
+          match Subscription.Request.of_yojson json with
+          | Result.Ok subscription -> Subscription subscription
+          | Result.Error _ -> (
+              match Request.of_yojson json with
+              | Result.Ok request -> Request request
+              | Result.Error _ -> Error "Malformed JSON request"))
     with
     | Yojson.Json_error message -> Error message
 end
@@ -153,6 +157,12 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
         let result =
           match ClientRequest.of_string message with
           | ClientRequest.Error message -> Lwt.return (connection_state, Response.Error message)
+          | ClientRequest.StopServer ->
+              (* The use of `unsafe_read` is justified for the same reason why `unsafe_read` is
+                 needed in the signal handler: we do not want other threads to block the stop
+                 request, plus we are only retrieving the start time from the state. *)
+              let state = ExclusiveLock.unsafe_read server_state in
+              Stop.log_and_stop_waiting_server ~reason:"explicit request" ~state ()
           | ClientRequest.Request request ->
               ExclusiveLock.write server_state ~f:(fun state ->
                   handle_request ~state request
