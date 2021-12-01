@@ -152,18 +152,9 @@ class Pysa:
             text=True,
         ) as process:
             model_verification_errors = []
-            model_verification_errors_found = False
             for line in iter(process.stderr.readline, b""):
                 line = line.rstrip()
-                if line == "":
-                    break
-                elif "INFO" in line or "ERROR" in line:
-                    emit("pysa_results_channel", {"type": "output", "line": line})
-                elif "ERROR" in line and "is not part of the environment" in line:
-                    model_verification_errors.append(line)
-                    model_verification_errors_found = True
-                    continue
-                elif model_verification_errors_found:
+                if len(model_verification_errors) > 0:
                     # Emit all model verification lines together to prevent
                     # network overhead.
                     emit(
@@ -174,6 +165,12 @@ class Pysa:
                         },
                     )
                     LOG.debug("\n".join(model_verification_errors))
+                elif line == "":
+                    break
+                elif "ERROR" in line and "is not part of the environment" in line:
+                    model_verification_errors.append(line)
+                elif "INFO" in line or "ERROR" in line:
+                    emit("pysa_results_channel", {"type": "output", "line": line})
                 LOG.debug(line)
 
             return_code = process.wait()
