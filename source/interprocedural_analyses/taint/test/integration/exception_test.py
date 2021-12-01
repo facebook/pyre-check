@@ -61,3 +61,26 @@ def test_except_to_finally():
         x = _test_source()
     finally:
         _test_sink(x)
+
+
+def test_return_finally():
+    try:
+        print("test")
+    finally:
+        return _test_source()
+
+
+def test_return_twice_finally():
+    try:
+        return "hello"
+    finally:
+        return _test_source()
+
+
+def test_return_overrides_finally():
+    try:
+        # TODO(T106611060): We should discard the source here,
+        # since the return in `finally` overrides it.
+        return _test_source()
+    finally:
+        return "hello"
