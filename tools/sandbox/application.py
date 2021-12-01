@@ -157,11 +157,8 @@ class Pysa:
                 line = line.rstrip()
                 if line == "":
                     break
-                elif "DEBUG" in line:
-                    continue
                 elif "INFO" in line or "ERROR" in line:
                     emit("pysa_results_channel", {"type": "output", "line": line})
-                    continue
                 elif "ERROR" in line and "is not part of the environment" in line:
                     model_verification_errors.append(line)
                     model_verification_errors_found = True
