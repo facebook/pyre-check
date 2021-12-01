@@ -2248,6 +2248,121 @@
 {
   "kind": "model",
   "data": {
+    "callable": "properties.test_union_property_attribute_sink",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 209, "start": 31, "end": 32 } ],
+            "root": {
+              "filename": "properties.py",
+              "line": 210,
+              "start": 15,
+              "end": 30
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "tito": [ { "line": 209, "start": 31, "end": 32 } ],
+            "call": {
+              "position": {
+                "filename": "properties.py",
+                "line": 210,
+                "start": 15,
+                "end": 18
+              },
+              "resolves_to": [
+                "properties.TaintedGetterAndSetter.my_property"
+              ],
+              "port": "formal(self)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_union_property_attribute_sink",
+    "callable_line": 204,
+    "code": 5002,
+    "line": 210,
+    "start": 15,
+    "end": 30,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "properties.TaintedGetterAndSetter.my_property" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 210,
+              "start": 15,
+              "end": 30
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 210,
+              "start": 15,
+              "end": 30
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "properties.test_union_property_attribute_source",
     "sources": [
       {

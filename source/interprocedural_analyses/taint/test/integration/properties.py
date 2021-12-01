@@ -199,3 +199,12 @@ def test_union_property_attribute_source():
     else:
         obj = RegularAttribute(_test_source())
     return obj.my_property
+
+
+def test_union_property_attribute_sink(x):
+    obj: Union[TaintedGetterAndSetter, RegularAttribute]
+    if 1 > 2:
+        obj = TaintedGetterAndSetter()
+    else:
+        obj = RegularAttribute(x)
+    _test_sink(obj.my_property)
