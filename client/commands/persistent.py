@@ -94,16 +94,6 @@ def _log_lsp_event(
             )
 
 
-def _merge_diagnostic_dicts(
-    left: Dict[Path, List[lsp.Diagnostic]],
-    right: Dict[Path, List[lsp.Diagnostic]],
-) -> Dict[Path, List[lsp.Diagnostic]]:
-    result = {}
-    for k, v in itertools.chain(left.items(), right.items()):
-        result.setdefault(k, []).extend(v)
-    return result
-
-
 def process_initialize_request(
     parameters: lsp.InitializeParameters,
     ide_features: Optional[configuration_module.IdeFeatures],
@@ -439,6 +429,9 @@ class ServerState:
     consecutive_start_failure: int = 0
     opened_documents: Set[Path] = dataclasses.field(default_factory=set)
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
+        default_factory=dict
+    )
+    coverage_diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
     query_state: PyreQueryState = dataclasses.field(default_factory=PyreQueryState)
@@ -1113,12 +1106,9 @@ class PyreServerHandler(connection.BackgroundTask):
             "Refereshing type errors received from Pyre server. "
             f"Total number of type errors is {len(type_errors)}."
         )
-        type_diagnostics = type_errors_to_diagnostics(type_errors)
-        coverage_diagnostics = coverage_to_diagnostics(
+        self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
+        self.server_state.coverage_diagnostics = coverage_to_diagnostics(
             self.server_state.opened_documents
-        )
-        self.server_state.diagnostics = _merge_diagnostic_dicts(
-            type_diagnostics, coverage_diagnostics
         )
 
     async def show_type_errors_to_client(self) -> None:
