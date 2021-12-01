@@ -431,9 +431,6 @@ class ServerState:
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
-    coverage_diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
-        default_factory=dict
-    )
     query_state: PyreQueryState = dataclasses.field(default_factory=PyreQueryState)
 
 
@@ -570,6 +567,32 @@ class PyreServer:
             ),
         )
 
+    async def process_type_coverage_request(
+        self,
+        parameters: lsp.TypeCoverageTextDocumentParameters,
+        request_id: Union[int, str, None],
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        uncovered_ranges = coverage_diagnostics(document_path)
+        result = lsp.TypeCoverageResult(
+            covered_percent=100.0,
+            uncovered_ranges=uncovered_ranges,
+            default_message="Please consider adding type annotations.",
+        )
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                # pyre-ignore[16]: Pyre does not understand
+                # `dataclasses_json`.
+                result=result.to_dict(),
+            ),
+        )
+
     async def _run(self) -> int:
         while True:
             async with _read_lsp_request(
@@ -626,6 +649,18 @@ class PyreServer:
                         )
                     await self.process_hover_request(
                         lsp.HoverTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
+                    )
+                elif request.method == "textDocument/typeCoverage":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for typeCoverage method"
+                        )
+                    await self.process_type_coverage_request(
+                        lsp.TypeCoverageTextDocumentParameters.from_json_rpc_parameters(
                             parameters
                         ),
                         request.id,
@@ -818,28 +853,22 @@ def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
             ),
         ),
         message="Consider adding type annotations.",
-        severity=lsp.DiagnosticSeverity.INFORMATION,
-        code=None,
-        source="Pyre Coverage",
     )
 
 
-def coverage_to_diagnostics(
-    paths: Set[Path],
-) -> Dict[Path, List[lsp.Diagnostic]]:
-    result: Dict[Path, List[lsp.Diagnostic]] = {}
-    for path in paths:
-        module = statistics.parse_path_to_module(path)
-        if module is None:
-            continue
-        coverage_ranges = coverage_collector.coverage_ranges_for_module(
-            str(path), module
+def coverage_diagnostics(
+    path: Path,
+) -> List[lsp.Diagnostic]:
+    module = statistics.parse_path_to_module(path)
+    if module is None:
+        raise lsp.RequestCancelledError(
+            f"Unable to compute coverage information for {path}"
         )
-        for code_range in coverage_ranges.uncovered_ranges:
-            result.setdefault(path, []).append(
-                uncovered_range_to_diagnostic(code_range)
-            )
-    return result
+    coverage_ranges = coverage_collector.coverage_ranges_for_module(str(path), module)
+    return [
+        uncovered_range_to_diagnostic(code_range)
+        for code_range in coverage_ranges.uncovered_ranges
+    ]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1107,9 +1136,6 @@ class PyreServerHandler(connection.BackgroundTask):
             f"Total number of type errors is {len(type_errors)}."
         )
         self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
-        self.server_state.coverage_diagnostics = coverage_to_diagnostics(
-            self.server_state.opened_documents
-        )
 
     async def show_type_errors_to_client(self) -> None:
         for path in self.server_state.opened_documents:

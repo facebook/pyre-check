@@ -5,6 +5,7 @@
 
 import asyncio
 import json
+import tempfile
 from pathlib import Path
 from typing import Iterable
 
@@ -43,7 +44,6 @@ from ..persistent import (
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
     uncovered_range_to_diagnostic,
-    coverage_to_diagnostics,
     PyreServerHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
 )
@@ -746,9 +746,6 @@ class PersistentTest(testslide.TestCase):
                     end=lsp.Position(line=1, character=2),
                 ),
                 message="Consider adding type annotations.",
-                severity=lsp.DiagnosticSeverity.INFORMATION,
-                code=None,
-                source="Pyre Coverage",
             ),
         )
 
@@ -845,6 +842,34 @@ class PersistentTest(testslide.TestCase):
                 parameters=json_rpc.ByNameParameters({"type": 2, "message": "derp"}),
             ),
         )
+
+    @setup.async_test
+    async def test_type_coverage_request(self) -> None:
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            tmpfile.write(b"def foo(x) -> None:\n  pass\n")
+            test_path = Path(tmpfile.name)
+            bytes_writer = MemoryBytesWriter()
+            fake_pyre_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+            fake_pyre_query_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+            server = PyreServer(
+                input_channel=create_memory_text_reader(""),
+                output_channel=TextWriter(bytes_writer),
+                state=ServerState(),
+                pyre_manager=fake_pyre_manager,
+                pyre_query_manager=fake_pyre_query_manager,
+            )
+
+            await server.process_type_coverage_request(
+                lsp.TypeCoverageTextDocumentParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                    )
+                ),
+                request_id=1,
+            )
+            # A diagnostic update is sent via the output channel
+            self.assertEqual(len(bytes_writer.items()), 1)
+            self.assertIn(b"consider adding type annotations", bytes_writer.items()[0])
 
 
 class PyreQueryStateTest(testslide.TestCase):

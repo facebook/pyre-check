@@ -503,3 +503,31 @@ class HoverResponse:
     @staticmethod
     def empty() -> "HoverResponse":
         return HoverResponse(contents="")
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class TypeCoverageTextDocumentParameters:
+    text_document: TextDocumentIdentifier
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "TypeCoverageTextDocumentParameters":
+        return _parse_parameters(parameters, target=TypeCoverageTextDocumentParameters)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class TypeCoverageResult:
+    """Result for nuclide-vscode-lsp coverage feature."""
+
+    covered_percent: float
+    uncovered_ranges: List[Diagnostic]
+    default_message: str
