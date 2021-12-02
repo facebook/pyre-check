@@ -2292,6 +2292,23 @@ let test_call_graph_of_define context =
                ]) );
       ]
     ();
+  assert_call_graph_of_define
+    ~object_targets:[`Object "test.x"]
+    ~source:{|
+      x = "x"
+
+      def foo():
+        return x
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:9-5:10",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               { IdentifierCallees.global_targets = [`Object "test.x"] }) );
+      ]
+    ();
   ()
 
 

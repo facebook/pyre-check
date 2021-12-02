@@ -90,17 +90,25 @@ module AttributeAccessCallees : sig
   [@@deriving eq, show]
 end
 
+(* An aggregate of all possible callees for a given identifier expression. *)
+module IdentifierCallees : sig
+  type t = { global_targets: Target.t list } [@@deriving eq, show]
+end
+
 (* An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees : sig
   type t = {
     call: CallCallees.t option;
     attribute_access: AttributeAccessCallees.t option;
+    identifier: IdentifierCallees.t option;
   }
   [@@deriving eq, show]
 
   val from_call : CallCallees.t -> t
 
   val from_attribute_access : AttributeAccessCallees.t -> t
+
+  val from_identifier : IdentifierCallees.t -> t
 end
 
 (* An aggregate of all possible callees for an arbitrary location.
@@ -130,6 +138,12 @@ module DefineCallGraph : sig
     location:Ast.Location.t ->
     attribute:string ->
     AttributeAccessCallees.t option
+
+  val resolve_identifier
+    :  t ->
+    location:Ast.Location.t ->
+    identifier:string ->
+    IdentifierCallees.t option
 end
 
 val call_graph_of_define

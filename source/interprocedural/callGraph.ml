@@ -196,51 +196,71 @@ module AttributeAccessCallees = struct
     List.rev_append property_targets global_targets
 end
 
+module IdentifierCallees = struct
+  type t = { global_targets: Target.t list } [@@deriving eq, show { with_path = false }]
+
+  let deduplicate { global_targets } =
+    { global_targets = List.dedup_and_sort ~compare:Target.compare global_targets }
+
+
+  let join { global_targets = left_global_targets } { global_targets = right_global_targets } =
+    { global_targets = List.rev_append left_global_targets right_global_targets }
+
+
+  let all_targets { global_targets } = global_targets
+end
+
 module ExpressionCallees = struct
   type t = {
     call: CallCallees.t option;
     attribute_access: AttributeAccessCallees.t option;
+    identifier: IdentifierCallees.t option;
   }
   [@@deriving eq, show { with_path = false }]
 
-  let from_call callees = { call = Some callees; attribute_access = None }
+  let from_call callees = { call = Some callees; attribute_access = None; identifier = None }
 
-  let from_attribute_access properties = { call = None; attribute_access = Some properties }
+  let from_attribute_access properties =
+    { call = None; attribute_access = Some properties; identifier = None }
+
+
+  let from_identifier identifier =
+    { call = None; attribute_access = None; identifier = Some identifier }
+
 
   let join
-      { call = left_call; attribute_access = left_attribute_access }
-      { call = right_call; attribute_access = right_attribute_access }
+      { call = left_call; attribute_access = left_attribute_access; identifier = left_identifier }
+      {
+        call = right_call;
+        attribute_access = right_attribute_access;
+        identifier = right_identifier;
+      }
     =
-    let call =
-      match left_call, right_call with
-      | Some left, Some right -> Some (CallCallees.join left right)
-      | Some _, None -> left_call
-      | None, Some _ -> right_call
-      | None, None -> None
-    in
-    let attribute_access =
-      match left_attribute_access, right_attribute_access with
-      | Some left, Some right -> Some (AttributeAccessCallees.join left right)
-      | Some _, None -> left_attribute_access
-      | None, Some _ -> right_attribute_access
-      | None, None -> None
-    in
-    { call; attribute_access }
-
-
-  let deduplicate { call; attribute_access } =
     {
-      call = call >>| CallCallees.deduplicate;
-      attribute_access = attribute_access >>| AttributeAccessCallees.deduplicate;
+      call = Option.merge ~f:CallCallees.join left_call right_call;
+      attribute_access =
+        Option.merge ~f:AttributeAccessCallees.join left_attribute_access right_attribute_access;
+      identifier = Option.merge ~f:IdentifierCallees.join left_identifier right_identifier;
     }
 
 
-  let all_targets { call; attribute_access } =
+  let deduplicate { call; attribute_access; identifier } =
+    {
+      call = call >>| CallCallees.deduplicate;
+      attribute_access = attribute_access >>| AttributeAccessCallees.deduplicate;
+      identifier = identifier >>| IdentifierCallees.deduplicate;
+    }
+
+
+  let all_targets { call; attribute_access; identifier } =
     let call_targets = call >>| CallCallees.all_targets |> Option.value ~default:[] in
     let attribute_access_targets =
       attribute_access >>| AttributeAccessCallees.all_targets |> Option.value ~default:[]
     in
-    List.rev_append call_targets attribute_access_targets
+    let identifier_targets =
+      identifier >>| IdentifierCallees.all_targets |> Option.value ~default:[]
+    in
+    call_targets |> List.rev_append attribute_access_targets |> List.rev_append identifier_targets
 end
 
 module LocationCallees = struct
@@ -327,6 +347,11 @@ module DefineCallGraph = struct
   let resolve_attribute_access call_graph ~location ~attribute =
     resolve_expression call_graph ~location ~expression_identifier:attribute
     >>= fun { attribute_access; _ } -> attribute_access
+
+
+  let resolve_identifier call_graph ~location ~identifier =
+    resolve_expression call_graph ~location ~expression_identifier:identifier
+    >>= fun { identifier; _ } -> identifier
 end
 
 let defining_attribute ~resolution parent_type attribute =
@@ -1122,6 +1147,15 @@ let resolve_attribute_access ~resolution ~base ~attribute ~special ~setter =
       Some { AttributeAccessCallees.property_targets; global_targets; return_type; is_attribute }
 
 
+let resolve_identifier ~resolution ~identifier =
+  Expression.Name (Name.Identifier identifier)
+  |> Node.create_with_default_location
+  |> as_global_reference ~resolution
+  >>| Target.create_object
+  |> Option.filter ~f:FixpointState.has_model
+  >>| fun global -> { IdentifierCallees.global_targets = [global] }
+
+
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
@@ -1169,6 +1203,11 @@ struct
             resolve_attribute_access ~resolution ~base ~attribute ~special ~setter
             >>| ExpressionCallees.from_attribute_access
             >>| register_targets ~expression_identifier:attribute
+            |> ignore
+        | Expression.Name (Name.Identifier identifier) ->
+            resolve_identifier ~resolution ~identifier
+            >>| ExpressionCallees.from_identifier
+            >>| register_targets ~expression_identifier:identifier
             |> ignore
         | Expression.ComparisonOperator comparison -> (
             match ComparisonOperator.override ~location comparison with
