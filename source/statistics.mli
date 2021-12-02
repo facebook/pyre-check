@@ -65,5 +65,3 @@ val buck_event
   unit
 
 val log_worker_exception : pid:int -> origin:string -> Unix.process_status -> unit
-
-val server_telemetry : (string * string) list -> unit

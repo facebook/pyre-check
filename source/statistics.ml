@@ -297,8 +297,3 @@ let log_worker_exception ~pid ~origin status =
         "fatal", "true";
       ]
     ()
-
-
-let server_telemetry normals =
-  sample ~integers:["time", Unix.time () |> Int.of_float] ~normals ~metadata:false ()
-  |> log ~flush:true "perfpipe_pyre_server_telemetry"
