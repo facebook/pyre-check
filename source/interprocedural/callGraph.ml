@@ -1179,7 +1179,7 @@ struct
             | _ -> ())
         | _ -> ()
       in
-      (* Special-case `getattr()` for the taint analysis. *)
+      (* Special-case `getattr()` and `setattr()` for the taint analysis. *)
       let () =
         match value with
         | Expression.Call
@@ -1202,6 +1202,39 @@ struct
                 ];
             } ->
             resolve_attribute_access ~resolution ~base ~attribute ~special:false ~setter:false
+            >>| ExpressionCallees.from_attribute_access
+            >>| register_targets ~expression_identifier:attribute
+            |> ignore
+        | Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base = { Node.value = Name (Name.Identifier "object"); _ };
+                          attribute = "__setattr__";
+                          _;
+                        });
+                  _;
+                };
+              arguments =
+                [
+                  { Call.Argument.value = self; name = None };
+                  {
+                    Call.Argument.value =
+                      {
+                        Node.value =
+                          Expression.Constant (Constant.String { value = attribute; kind = String });
+                        _;
+                      };
+                    name = None;
+                  };
+                  { Call.Argument.value = _; name = None };
+                ];
+            } ->
+            resolve_attribute_access ~resolution ~base:self ~attribute ~special:true ~setter:true
             >>| ExpressionCallees.from_attribute_access
             >>| register_targets ~expression_identifier:attribute
             |> ignore

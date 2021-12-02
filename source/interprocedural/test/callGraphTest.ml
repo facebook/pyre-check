@@ -2253,6 +2253,45 @@ let test_call_graph_of_define context =
                ]) );
       ]
     ();
+  assert_call_graph_of_define
+    ~object_targets:[`Object "test.Token.token"]
+    ~source:
+      {|
+      class Token:
+        token: str = ""
+
+      def foo(obj: Token, x: str):
+        return object.__setattr__(obj, "token", x)
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:9-6:44",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__setattr__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              (`Method
+                                { Target.class_name = "object"; method_name = "__setattr__" });
+                          ]
+                        ~return_type:Type.none
+                        ()) );
+                 ( "token",
+                   ExpressionCallees.from_attribute_access
+                     {
+                       AttributeAccessCallees.property_targets = [];
+                       global_targets = [`Object "test.Token.token"];
+                       return_type = Type.none;
+                       is_attribute = true;
+                     } );
+               ]) );
+      ]
+    ();
   ()
 
 
