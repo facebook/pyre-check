@@ -76,11 +76,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       with
       | Some callees -> callees
       | None ->
-          (* TODO(T105570363): This should be a fatal error. *)
-          Log.warning
-            "Could not find callees for `%a` at `%a` in the call graph."
+          (* This is most likely a bug that should be fixed. *)
+          Log.error
+            "Could not find callees for `%a` at `%a:%a` in the call graph."
             Expression.pp
             (Node.create_with_default_location (Expression.Call call))
+            Reference.pp
+            FunctionContext.qualifier
             Location.pp
             location;
           CallGraph.CallCallees.create_unresolved Type.Any
