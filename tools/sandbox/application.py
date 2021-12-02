@@ -154,22 +154,23 @@ class Pysa:
             model_verification_errors = []
             for line in iter(process.stderr.readline, b""):
                 line = line.rstrip()
-                if len(model_verification_errors) > 0:
-                    # Emit all model verification lines together to prevent
-                    # network overhead.
-                    emit(
-                        "pysa_results_channel",
-                        {
-                            "type": "output",
-                            "line": "\n".join(model_verification_errors),
-                        },
-                    )
-                    LOG.debug("\n".join(model_verification_errors))
-                elif line == "":
+                if line == "":
                     break
                 elif "ERROR" in line and "is not part of the environment" in line:
                     model_verification_errors.append(line)
                 elif "INFO" in line or "ERROR" in line:
+                    if any(model_verification_errors):
+                        # Emit all model verification lines together to prevent
+                        # network overhead.
+                        emit(
+                            "pysa_results_channel",
+                            {
+                                "type": "output",
+                                "line": "\n".join(model_verification_errors),
+                            },
+                        )
+                        LOG.debug("\n".join(model_verification_errors))
+                        model_verification_errors = []
                     emit("pysa_results_channel", {"type": "output", "line": line})
                 LOG.debug(line)
 
