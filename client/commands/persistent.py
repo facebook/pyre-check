@@ -6,7 +6,6 @@
 import asyncio
 import dataclasses
 import enum
-import itertools
 import json
 import logging
 import os
