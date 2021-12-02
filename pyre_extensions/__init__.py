@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-ignore-all-errors
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Dict, List, TypeVar, Union
 
 from typing_extensions import Protocol
 
@@ -16,15 +16,16 @@ from .refinement import none_throws, assert_is_instance, safe_cast
 
 
 __all__ = [
-    "safe_json",
-    "type_variable_operators",
-    "tests",
-    "Generic",
-    "none_throws",
     "assert_is_instance",
-    "safe_cast",
-    "ParameterSpecification",
+    "Generic",
+    "JSON",
     "ListVariadic",
+    "none_throws",
+    "ParameterSpecification",
+    "safe_cast",
+    "safe_json",
+    "tests",
+    "type_variable_operators",
     "TypeVarTuple",
     "Unpack",
 ]
@@ -34,6 +35,7 @@ _T = TypeVar("_T")
 _R = TypeVar("_R")
 TClass = TypeVar("TClass")
 
+JSON = Union[bool, float, int, str, Dict[str, "JSON"], List["JSON"]]
 
 class ParameterSpecification(list):
     """This kind of type variable captures callable parameter specifications

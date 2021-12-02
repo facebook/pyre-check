@@ -150,6 +150,42 @@ class BasicTestCase(unittest.TestCase):
         except Exception:
             self.fail("Variadic tuples missing or broken")
 
+    def test_json(self) -> None:
+        try:
+            from .. import JSON
+        except Exception:
+            self.fail("JSON missing or broken")
+
+        def test_json(x: JSON) -> None:
+            try:
+                # pyre-fixme: Pyre should complain about this
+                y = x + 1
+            except TypeError:
+                # TypeError is anticipated for some instance where
+                # Pyre would alert us to an issue if it wasn't
+                # set to fixme
+                pass
+
+            # Pyre should not complain about these
+            if isinstance(x, int):
+                y = x + 1
+            elif isinstance(x, float):
+                y = x + 1.1
+            elif isinstance(x, bool):
+                y = x or True
+            elif isinstance(x, str):
+                y = x + "hello"
+            elif isinstance(x, list):
+                y = x + [4]
+            elif isinstance(x, dict):
+                x["key"] = "value"
+
+        test_json(3)
+        test_json(3.5)
+        test_json("test_string")
+        test_json({"test": "dict"})
+        test_json(["test_list"])
+
 
 if __name__ == "__main__":
     unittest.main()
