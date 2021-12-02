@@ -618,12 +618,6 @@ let initialize
     let _ = DependencyGraphSharedMemory.record_overrides overrides in
     DependencyGraph.from_overrides overrides
   in
-  let callgraph =
-    Service.StaticAnalysis.record_and_merge_call_graph
-      ~environment
-      ~call_graph:DependencyGraph.empty_callgraph
-      ~source
-  in
 
   let targets = List.rev_append (Target.Map.keys overrides) callable_targets in
   let callables_to_analyze = List.rev_append stub_targets targets in
@@ -637,5 +631,12 @@ let initialize
     initial_models
     |> Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind)
     |> Interprocedural.FixpointAnalysis.Testing.record_initial_models ~targets ~stubs
+  in
+  (* The call graph building depends on initial models for global targets. *)
+  let callgraph =
+    Service.StaticAnalysis.record_and_merge_call_graph
+      ~environment
+      ~call_graph:DependencyGraph.empty_callgraph
+      ~source
   in
   { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }

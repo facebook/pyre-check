@@ -516,14 +516,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* We also have to consider the cases when the updated parameter has a global model, in which
          case we need to capture the flow. *)
       let apply_argument_effect ~argument:{ Call.Argument.value = argument; _ } ~source_tree state =
-        let location =
-          Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
-        in
         let sink_tree =
-          Model.get_global_model ~resolution ~location ~expression:argument
+          Model.get_global_model
+            ~resolution
+            ~call_graph:FunctionContext.call_graph_of_define
+            ~qualifier:FunctionContext.qualifier
+            ~expression:argument
           |> Model.GlobalModel.get_sink
         in
-        check_flow ~location ~source_tree ~sink_tree;
+        check_flow
+          ~location:
+            (Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location)
+          ~source_tree
+          ~sink_tree;
         let access_path = AccessPath.of_expression ~resolution argument in
         log
           "Propagating taint to argument `%a`: %a"
@@ -1258,11 +1263,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let state =
             analyze_assignment
               ~resolution
-              {
-                Node.value =
-                  Expression.Name (Name.Attribute { base = self; attribute; special = false });
-                location = { Location.start = location.start; stop = location.stop };
-              }
+              (Expression.Name (Name.Attribute { base = self; attribute; special = true })
+              |> Node.create ~location)
               taint
               taint
               state
@@ -1270,7 +1272,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           taint, state
       (* `getattr(a, "field", default)` should evaluate to the join of `a.field` and `default`. *)
       | {
-       callee = { Node.value = Name (Name.Identifier "getattr"); location };
+       callee = { Node.value = Name (Name.Identifier "getattr"); _ };
        arguments =
          [
            { Call.Argument.value = base; _ };
@@ -1287,10 +1289,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          ];
       } ->
           let attribute_expression =
-            {
-              Node.location;
-              value = Expression.Name (Name.Attribute { base; attribute; special = false });
-            }
+            Expression.Name (Name.Attribute { base; attribute; special = false })
+            |> Node.create ~location
           in
           let attribute_taint, state =
             analyze_expression ~resolution ~state ~expression:attribute_expression
@@ -1519,7 +1519,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let global_model =
             Model.get_global_model
               ~resolution
-              ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+              ~call_graph:FunctionContext.call_graph_of_define
+              ~qualifier:FunctionContext.qualifier
               ~expression
           in
           let attribute_taint = Model.GlobalModel.get_source global_model in
@@ -1685,7 +1686,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint =
             Model.get_global_model
               ~resolution
-              ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+              ~call_graph:FunctionContext.call_graph_of_define
+              ~qualifier:FunctionContext.qualifier
               ~expression
             |> Model.GlobalModel.get_source
           in
@@ -1796,13 +1798,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           state
     | _ ->
         (* Check flows to tainted globals/attributes. *)
-        let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
         let source_tree = taint in
         let sink_tree =
-          Model.get_global_model ~resolution ~location ~expression:target
+          Model.get_global_model
+            ~resolution
+            ~call_graph:FunctionContext.call_graph_of_define
+            ~qualifier:FunctionContext.qualifier
+            ~expression:target
           |> Model.GlobalModel.get_sink
         in
-        check_flow ~location ~source_tree ~sink_tree;
+        check_flow
+          ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+          ~source_tree
+          ~sink_tree;
 
         (* Propagate taint. *)
         let access_path =
@@ -1844,19 +1852,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               state
         | _ -> state)
     | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
-        let target_is_sanitized =
-          (* Optimization: We only view names as being sanitizable to avoid unnecessary type
-             checking. *)
-          match Node.value target with
-          | Name (Name.Attribute _) ->
-              Model.get_global_model
-                ~resolution
-                ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
-                ~expression:target
-              |> Model.GlobalModel.is_sanitized
-          | _ -> false
+        let target_global_model =
+          Model.get_global_model
+            ~resolution
+            ~call_graph:FunctionContext.call_graph_of_define
+            ~qualifier:FunctionContext.qualifier
+            ~expression:target
         in
-        if target_is_sanitized then
+        if Model.GlobalModel.is_sanitized target_global_model then
           analyze_expression ~resolution ~state ~expression:value |> snd
         else
           match target_value with

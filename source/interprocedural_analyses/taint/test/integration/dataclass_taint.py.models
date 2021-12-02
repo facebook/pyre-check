@@ -948,7 +948,7 @@
               "filename": "dataclass_taint.py",
               "line": 52,
               "start": 8,
-              "end": 26
+              "end": 53
             }
           }
         ]

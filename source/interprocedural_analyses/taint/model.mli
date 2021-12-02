@@ -42,7 +42,8 @@ end
 
 val get_global_model
   :  resolution:Resolution.t ->
-  location:Location.WithModule.t ->
+  call_graph:CallGraph.DefineCallGraph.t ->
+  qualifier:Reference.t ->
   expression:Expression.t ->
   GlobalModel.t
 

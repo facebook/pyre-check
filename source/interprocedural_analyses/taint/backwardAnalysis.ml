@@ -314,8 +314,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let global_sink =
         Model.get_global_model
           ~resolution
-          ~location:
-            (Location.with_module ~qualifier:FunctionContext.qualifier (Node.location argument))
+          ~call_graph:FunctionContext.call_graph_of_define
+          ~qualifier:FunctionContext.qualifier
           ~expression:argument
         |> Model.GlobalModel.get_sink
       in
@@ -925,8 +925,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match attribute_access_callees with
       | Some { is_attribute = true; _ }
       | None ->
-          let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
-          let global_model = Model.get_global_model ~resolution ~expression ~location in
+          let global_model =
+            Model.get_global_model
+              ~resolution
+              ~call_graph:FunctionContext.call_graph_of_define
+              ~qualifier:FunctionContext.qualifier
+              ~expression
+          in
           let add_tito_features taint =
             let attribute_breadcrumbs =
               global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
@@ -1279,7 +1284,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  attribute = "__setattr__";
                  _;
                });
-         location;
+         _;
        };
      arguments =
        [
@@ -1299,15 +1304,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_assignment
           ~resolution
           ~target:
-            {
-              Node.value = Name (Name.Attribute { base = self; attribute; special = true });
-              location;
-            }
+            (Expression.Name (Name.Attribute { base = self; attribute; special = true })
+            |> Node.create ~location)
           ~value
           state
     (* `getattr(a, "field", default)` should evaluate to the join of `a.field` and `default`. *)
     | {
-     callee = { Node.value = Name (Name.Identifier "getattr"); location };
+     callee = { Node.value = Name (Name.Identifier "getattr"); _ };
      arguments =
        [
          { Call.Argument.value = base; _ };
@@ -1324,10 +1327,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        ];
     } ->
         let attribute_expression =
-          {
-            Node.location;
-            value = Expression.Name (Name.Attribute { base; attribute; special = false });
-          }
+          Expression.Name (Name.Attribute { base; attribute; special = false })
+          |> Node.create ~location
         in
         let state = analyze_expression ~resolution ~state ~expression:attribute_expression ~taint in
         analyze_expression ~resolution ~state ~expression:default ~taint
@@ -1653,10 +1654,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             get_taint access_path state
           in
           let global_taint =
-            let location =
-              Location.with_module ~qualifier:FunctionContext.qualifier target.Node.location
-            in
-            Model.get_global_model ~resolution ~location ~expression:target
+            Model.get_global_model
+              ~resolution
+              ~call_graph:FunctionContext.call_graph_of_define
+              ~qualifier:FunctionContext.qualifier
+              ~expression:target
             |> Model.GlobalModel.get_sink
           in
           BackwardState.Tree.join local_taint global_taint
@@ -1694,17 +1696,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         { value = { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
         state
     | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
-        let target_is_sanitized =
-          match target_value with
-          | Name (Name.Attribute _) ->
-              let location =
-                Location.with_module ~qualifier:FunctionContext.qualifier target.Node.location
-              in
-              Model.get_global_model ~resolution ~location ~expression:target
-              |> Model.GlobalModel.is_sanitized
-          | _ -> false
+        let target_global_model =
+          Model.get_global_model
+            ~resolution
+            ~call_graph:FunctionContext.call_graph_of_define
+            ~qualifier:FunctionContext.qualifier
+            ~expression:target
         in
-        if target_is_sanitized then
+        if Model.GlobalModel.is_sanitized target_global_model then
           analyze_expression ~resolution ~taint:BackwardState.Tree.bottom ~state ~expression:value
         else
           match target_value with

@@ -190,64 +190,20 @@ let get_callsite_model ~resolution ~call_target ~arguments =
       { call_target; model = taint_model }
 
 
-let get_global_targets ~resolution ~expression =
-  let global_resolution = Resolution.global_resolution resolution in
-  match
-    Node.value expression, Interprocedural.CallGraph.as_global_reference ~resolution expression
-  with
-  | _, Some global -> [global]
-  | Name (Name.Attribute { base; attribute; _ }), _ ->
-      let rec find_targets targets = function
-        | Type.Union annotations -> List.fold ~init:targets ~f:find_targets annotations
-        | Parametric { name = "type"; parameters = [Single annotation] } ->
-            (* Access on a class, i.e `Foo.bar`, translated into `Foo.__class__.bar`. *)
-            let parent =
-              let attribute =
-                Type.split annotation
-                |> fst
-                |> Type.primitive_name
-                >>= GlobalResolution.attribute_from_class_name
-                      ~transitive:true
-                      ~resolution:global_resolution
-                      ~name:attribute
-                      ~instantiated:annotation
-              in
-              match attribute with
-              | Some attribute when Annotated.Attribute.defined attribute ->
-                  Type.Primitive (Annotated.Attribute.parent attribute) |> Type.class_name
-              | _ -> Type.class_name annotation
-            in
-            let attribute = Format.sprintf "__class__.%s" attribute in
-            let target = Reference.create ~prefix:parent attribute in
-            target :: targets
-        | annotation ->
-            (* Access on an instance, i.e `self.foo`. *)
-            let parents =
-              let successors =
-                GlobalResolution.class_metadata (Resolution.global_resolution resolution) annotation
-                >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
-                |> Option.value ~default:[]
-                |> List.map ~f:(fun name -> Type.Primitive name)
-              in
-              annotation :: successors
-            in
-            let add_target targets parent =
-              let target = Reference.create ~prefix:(Type.class_name parent) attribute in
-              target :: targets
-            in
-            List.fold ~init:targets ~f:add_target parents
-      in
-      let annotation = Interprocedural.CallGraph.resolve_ignoring_optional ~resolution base in
-      find_targets [] annotation
+let get_global_targets ~resolution ~call_graph ~expression =
+  match Node.value expression with
+  | Expression.Name (Name.Identifier _) ->
+      Interprocedural.CallGraph.as_global_reference ~resolution expression
+      >>| (fun global -> [Target.create_object global])
+      |> Option.value ~default:[]
+  | Expression.Name (Name.Attribute { attribute; _ }) ->
+      Interprocedural.CallGraph.DefineCallGraph.resolve_attribute_access
+        call_graph
+        ~location:(Node.location expression)
+        ~attribute
+      >>| (fun { global_targets; _ } -> global_targets)
+      |> Option.value ~default:[]
   | _ -> []
-
-
-let get_global_models ~resolution ~expression =
-  let fetch_model target =
-    let call_target = Target.create_object target in
-    get_callsite_model ~resolution ~call_target ~arguments:[]
-  in
-  get_global_targets ~resolution ~expression |> List.map ~f:fetch_model
 
 
 let global_root =
@@ -338,8 +294,10 @@ module GlobalModel = struct
     List.exists ~f:is_sanitized_model models
 end
 
-let get_global_model ~resolution ~location ~expression =
-  let models = get_global_models ~resolution ~expression in
+let get_global_model ~resolution ~call_graph ~qualifier ~expression =
+  let fetch_model target = get_callsite_model ~resolution ~call_target:target ~arguments:[] in
+  let models = get_global_targets ~resolution ~call_graph ~expression |> List.map ~f:fetch_model in
+  let location = Node.location expression |> Location.with_module ~qualifier in
   { GlobalModel.models; location }
 
 
