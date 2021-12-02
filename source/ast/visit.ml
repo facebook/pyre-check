@@ -212,7 +212,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Import _
       | Nonlocal _
       | Global _
-      (* TODO(T102720335): Support match statement. *)
+      (* TODO(T107108860): Visitor for match statement. *)
       | Match _
       | Pass
       | Continue
@@ -280,7 +280,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | Expression _
         | Global _
         | Import _
-        (* TODO(T102720335): Support match statement. *)
+        (* TODO(T107108860): Visitor for match statement. *)
         | Match _
         | Pass
         | Raise _

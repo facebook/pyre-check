@@ -854,7 +854,7 @@ let test_define_local_bindings _ =
           pass
   |}
     ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 13) (4, 15)))];
-  (* TODO(T102720335): Add location to MatchMapping's rest for better location. *)
+  (* TODO(T107008455): Add location to MatchMapping's rest for better location. *)
   assert_bindings
     {|
     def foo():

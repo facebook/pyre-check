@@ -262,7 +262,7 @@ let test_pattern context =
       "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['hello']`.";
     ];
-  (* TODO(T102720335): Make assertions on length. *)
+  (* TODO(T105331662): Refinement on length needed. *)
   assert_type_errors
     {|
       from typing import Tuple
@@ -278,7 +278,7 @@ let test_pattern context =
       "Revealed type [-1]: Revealed type for `y` is `str`.";
       "Revealed type [-1]: Revealed type for `z` is `typing.Union[int, str]`.";
     ];
-  (* TODO(T102720335): Make assertions on length. *)
+  (* TODO(T105331662): Refinement on length needed. *)
   assert_type_errors
     {|
       from typing import Tuple
@@ -698,7 +698,7 @@ let test_match_args context =
 
 let test_syntax context =
   let assert_type_errors = assert_type_errors ~context in
-  (* TODO(T102720335): This should throw syntax error. *)
+  (* TODO(T106617941): This should throw syntax error. *)
   assert_type_errors
     {|
       def foo(subject: int) -> None:
@@ -709,7 +709,7 @@ let test_syntax context =
             pass
     |}
     [];
-  (* TODO(T102720335): This should throw syntax error. *)
+  (* TODO(T106617941): This should throw syntax error. *)
   assert_type_errors
     {|
       match subject:

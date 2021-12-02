@@ -1929,7 +1929,7 @@ let is_generator statements =
     | Define _
     | Global _
     | Import _
-    (* TODO(T102720335): Support match statement. *)
+    (* TODO(T107108539): Generator check in match statement. *)
     | Match _
     | Nonlocal _
     | Pass ->

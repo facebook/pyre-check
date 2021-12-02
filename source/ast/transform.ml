@@ -299,7 +299,7 @@ module Make (Transformer : Transformer) = struct
                 orelse = transform_list orelse ~f:transform_statement |> List.concat;
               }
         | Import _ -> value
-        (* TODO(T102720335): Support match statement. *)
+        (* TODO(T107108689): Transform for match statement. *)
         | Match _ -> value
         | Nonlocal _ -> value
         | Pass -> value
@@ -385,7 +385,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
         | Expression _
         | Global _
         | Import _
-        (* TODO(T102720335): Support match statement. *)
+        (* TODO(T107108689): Transform for match statement. *)
         | Match _
         | Pass
         | Raise _

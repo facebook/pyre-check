@@ -3123,7 +3123,7 @@ module AccessCollector = struct
     | Continue
     | Global _
     | Import _
-    (* TODO(T102720335): Support match statement. *)
+    (* TODO(T107105911): Handle access for match statement. *)
     | Match _
     | Nonlocal _
     | Pass ->
