@@ -1146,33 +1146,43 @@ class PyreServerHandler(connection.BackgroundTask):
         for path, diagnostics in self.server_state.diagnostics.items():
             await _publish_diagnostics(self.client_output_channel, path, diagnostics)
 
+    async def handle_type_error_subscription(
+        self, type_error_subscription: TypeErrorSubscription
+    ) -> None:
+        await self.clear_type_errors_for_client()
+        self.update_type_errors(type_error_subscription.errors)
+        await self.show_type_errors_to_client()
+        await self.log_and_show_status_message_to_client(
+            "Pyre has completed an incremental check and is currently "
+            "watching on futher source changes.",
+            short_message="Pyre Ready",
+            level=lsp.MessageType.INFO,
+        )
+
+    async def handle_status_update_subscription(
+        self, status_update_subscription: StatusUpdateSubscription
+    ) -> None:
+        await self.clear_type_errors_for_client()
+        if status_update_subscription.kind == "Rebuilding":
+            await self.log_and_show_status_message_to_client(
+                "Pyre is busy rebuilding the project for type checking...",
+                short_message="Pyre (waiting for Buck)",
+                level=lsp.MessageType.WARNING,
+            )
+        elif status_update_subscription.kind == "Rechecking":
+            await self.log_and_show_status_message_to_client(
+                "Pyre is busy re-type-checking the project...",
+                short_message="Pyre (checking)",
+                level=lsp.MessageType.WARNING,
+            )
+
     async def _handle_subscription_body(
         self, subscription_body: SubscriptionBody
     ) -> None:
         if isinstance(subscription_body, TypeErrorSubscription):
-            await self.clear_type_errors_for_client()
-            self.update_type_errors(subscription_body.errors)
-            await self.show_type_errors_to_client()
-            await self.log_and_show_status_message_to_client(
-                "Pyre has completed an incremental check and is currently "
-                "watching on futher source changes.",
-                short_message="Pyre Ready",
-                level=lsp.MessageType.INFO,
-            )
+            await self.handle_type_error_subscription(subscription_body)
         elif isinstance(subscription_body, StatusUpdateSubscription):
-            await self.clear_type_errors_for_client()
-            if subscription_body.kind == "Rebuilding":
-                await self.log_and_show_status_message_to_client(
-                    "Pyre is busy rebuilding the project for type checking...",
-                    short_message="Pyre (waiting for Buck)",
-                    level=lsp.MessageType.WARNING,
-                )
-            elif subscription_body.kind == "Rechecking":
-                await self.log_and_show_status_message_to_client(
-                    "Pyre is busy re-type-checking the project...",
-                    short_message="Pyre (checking)",
-                    level=lsp.MessageType.WARNING,
-                )
+            await self.handle_status_update_subscription(subscription_body)
 
     async def _subscribe_to_type_error(
         self,

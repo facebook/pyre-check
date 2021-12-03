@@ -336,6 +336,88 @@ class PersistentTest(testslide.TestCase):
         )
 
     @setup.async_test
+    async def test_subscription_protocol(self) -> None:
+        server_state = ServerState(
+            client_capabilities=lsp.ClientCapabilities(
+                window=lsp.WindowClientCapabilities(
+                    status=lsp.ShowStatusRequestClientCapabilities(),
+                ),
+            )
+        )
+        bytes_writer = MemoryBytesWriter()
+
+        def fake_server_start_options_reader() -> PyreServerStartOptions:
+            # Server start option is not relevant to this test
+            raise NotImplementedError
+
+        server_handler = PyreServerHandler(
+            server_start_options_reader=fake_server_start_options_reader,
+            client_output_channel=TextWriter(bytes_writer),
+            server_state=server_state,
+        )
+        await server_handler.handle_status_update_subscription(
+            StatusUpdateSubscription(kind="Rebuilding")
+        )
+        await server_handler.handle_status_update_subscription(
+            StatusUpdateSubscription(kind="Rechecking")
+        )
+        await server_handler.handle_type_error_subscription(
+            TypeErrorSubscription(
+                errors=[
+                    error.Error(
+                        line=1,
+                        column=1,
+                        stop_line=2,
+                        stop_column=2,
+                        path=Path("derp.py"),
+                        code=42,
+                        name="name",
+                        description="description",
+                    )
+                ]
+            )
+        )
+
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        self.assertTrue(len(client_messages) >= 4)
+        # Forward the rebuild status message
+        self.assertIn("window/showStatus", client_messages[0])
+        # Forward the recheck status message
+        self.assertIn("window/showStatus", client_messages[1])
+        # Clear out diagnostics for subsequent type errors
+        self.assertIn("textDocument/publishDiagnostics", client_messages[2])
+        # Notify the user that incremental check has finished
+        self.assertIn("window/showStatus", client_messages[3])
+
+    @setup.async_test
+    async def test_busy_status_clear_diagnostics(self) -> None:
+        path = Path("foo.py")
+        server_state = ServerState(diagnostics={path: []})
+        bytes_writer = MemoryBytesWriter()
+
+        def fake_server_start_options_reader() -> PyreServerStartOptions:
+            # Server start option is not relevant to this test
+            raise NotImplementedError
+
+        server_handler = PyreServerHandler(
+            server_start_options_reader=fake_server_start_options_reader,
+            client_output_channel=TextWriter(bytes_writer),
+            server_state=server_state,
+        )
+        await server_handler.handle_status_update_subscription(
+            StatusUpdateSubscription(kind="Rebuilding")
+        )
+        await server_handler.handle_status_update_subscription(
+            StatusUpdateSubscription(kind="Rechecking")
+        )
+
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        self.assertTrue(len(client_messages) >= 4)
+        # Clear out diagnostics for rebuilding status
+        self.assertIn('"diagnostics": []', client_messages[0])
+        self.assertIn('"diagnostics": []', client_messages[2])
+
+    @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
         fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
