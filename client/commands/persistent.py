@@ -487,13 +487,6 @@ class PyreServer:
         # Attempt to trigger a background Pyre server start on each file open
         if not self.pyre_manager.is_task_running():
             await self._try_restart_pyre_server()
-        else:
-            document_diagnostics = self.state.diagnostics.get(document_path, None)
-            if document_diagnostics is not None:
-                LOG.info(f"Update diagnostics for {document_path}")
-                await _publish_diagnostics(
-                    self.output_channel, document_path, document_diagnostics
-                )
 
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
@@ -507,10 +500,6 @@ class PyreServer:
             self.state.opened_documents.remove(document_path)
             self.state.query_state.path_to_location_type_lookup.pop(document_path, None)
             LOG.info(f"File closed: {document_path}")
-
-            if document_path in self.state.diagnostics:
-                LOG.info(f"Clear diagnostics for {document_path}")
-                await _publish_diagnostics(self.output_channel, document_path, [])
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
@@ -1149,19 +1138,19 @@ class PyreServerHandler(connection.BackgroundTask):
         )
         self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
 
-    async def show_type_errors_to_client(self) -> None:
-        for path in self.server_state.opened_documents:
+    async def clear_type_errors_for_client(self) -> None:
+        for path in self.server_state.diagnostics:
             await _publish_diagnostics(self.client_output_channel, path, [])
-            diagnostics = self.server_state.diagnostics.get(path, None)
-            if diagnostics is not None:
-                await _publish_diagnostics(
-                    self.client_output_channel, path, diagnostics
-                )
+
+    async def show_type_errors_to_client(self) -> None:
+        for path, diagnostics in self.server_state.diagnostics.items():
+            await _publish_diagnostics(self.client_output_channel, path, diagnostics)
 
     async def _handle_subscription_body(
         self, subscription_body: SubscriptionBody
     ) -> None:
         if isinstance(subscription_body, TypeErrorSubscription):
+            await self.clear_type_errors_for_client()
             self.update_type_errors(subscription_body.errors)
             await self.show_type_errors_to_client()
             await self.log_and_show_status_message_to_client(
@@ -1171,6 +1160,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 level=lsp.MessageType.INFO,
             )
         elif isinstance(subscription_body, StatusUpdateSubscription):
+            await self.clear_type_errors_for_client()
             if subscription_body.kind == "Rebuilding":
                 await self.log_and_show_status_message_to_client(
                     "Pyre is busy rebuilding the project for type checking...",
@@ -1228,8 +1218,8 @@ class PyreServerHandler(connection.BackgroundTask):
                 short_message="Pyre Stopped",
                 level=lsp.MessageType.ERROR,
             )
+            await self.clear_type_errors_for_client()
             self.server_state.diagnostics = {}
-            await self.show_type_errors_to_client()
 
     @staticmethod
     def _auxiliary_logging_info(

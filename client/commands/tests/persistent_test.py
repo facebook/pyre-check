@@ -336,63 +336,6 @@ class PersistentTest(testslide.TestCase):
         )
 
     @setup.async_test
-    async def test_open_close_with_diagnostics(self) -> None:
-        test_path = Path("/foo.py")
-        server_state = ServerState(
-            diagnostics={
-                test_path: [
-                    lsp.Diagnostic(
-                        range=lsp.Range(
-                            start=lsp.Position(line=0, character=1),
-                            end=lsp.Position(line=1, character=2),
-                        ),
-                        message="description",
-                        severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
-                        source="Pyre",
-                    ),
-                ]
-            }
-        )
-        bytes_writer = MemoryBytesWriter()
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
-        server = PyreServer(
-            input_channel=create_memory_text_reader(""),
-            output_channel=TextWriter(bytes_writer),
-            state=server_state,
-            pyre_manager=fake_task_manager,
-            pyre_query_manager=fake_task_manager2,
-        )
-
-        # Ensure the background task is running
-        await fake_task_manager.ensure_task_running()
-        await asyncio.sleep(0)
-
-        await server.process_open_request(
-            lsp.DidOpenTextDocumentParameters(
-                text_document=lsp.TextDocumentItem(
-                    language_id="python",
-                    text="",
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                    version=0,
-                )
-            )
-        )
-        # A diagnostic update is sent via the output channel
-        self.assertEqual(len(bytes_writer.items()), 1)
-
-        await server.process_close_request(
-            lsp.DidCloseTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse()
-                )
-            )
-        )
-        # Another diagnostic update is sent via the output channel
-        self.assertEqual(len(bytes_writer.items()), 2)
-
-    @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
         fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -772,7 +715,7 @@ class PersistentTest(testslide.TestCase):
     async def test_server_connection_lost(self) -> None:
         test_path = Path("/foo.py")
         server_state = ServerState(
-            opened_documents={test_path},
+            diagnostics={test_path: []},
         )
 
         bytes_writer = MemoryBytesWriter()
@@ -819,6 +762,7 @@ class PersistentTest(testslide.TestCase):
                 ),
             ),
         )
+        self.assertEqual(server_state.diagnostics, {})
 
     @setup.async_test
     async def test_send_message_to_status_bar(self) -> None:
