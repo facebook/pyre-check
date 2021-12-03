@@ -7,3 +7,4 @@ obscure_models.test_obscure_with_skip_obscure (fun) -> [_test_source (fun) obscu
 obscure_models.test_obscure_with_skip_obscure_and_tito (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_obscure_and_tito (method)]
 obscure_models.test_obscure_with_skip_overrides (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_overrides (method)]
 obscure_models.test_obscure_with_source (fun) -> [_test_source (fun) obscure_models.C::obscure_with_source (method)]
+obscure_models.test_obscure_with_tito (fun) -> [_test_sink (fun) _test_source (fun) obscure_models.C::obscure_with_tito (method)]

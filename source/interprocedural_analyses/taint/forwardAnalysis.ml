@@ -327,7 +327,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (tito_effects, state)
         (argument_taint, ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches))))
       =
-      let tito =
+      let tito_effects =
         let convert_tito_path kind (path, return_taint) accumulated_tito =
           let breadcrumbs =
             BackwardTaint.breadcrumbs return_taint |> Features.BreadcrumbSet.add (Features.tito ())
@@ -400,7 +400,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> Map.Poly.fold ~init:Map.Poly.empty ~f:convert_tito
         |> Map.Poly.merge tito_effects ~f:(merge_tito_effect ForwardState.Tree.join)
       in
-      let tito =
+      let tito_effects =
         if TaintResult.ModeSet.contains Obscure modes then
           let obscure_tito =
             ForwardState.Tree.collapse
@@ -436,14 +436,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                      ~f:Flow.source_can_match_rule
             | None -> obscure_tito
           in
-          let returned_tito =
-            match Map.Poly.find tito_effects Sinks.LocalReturn with
-            | Some regular_tito -> ForwardState.Tree.join regular_tito obscure_tito
-            | None -> obscure_tito
-          in
-          Map.Poly.set tito ~key:Sinks.LocalReturn ~data:returned_tito
+          Map.Poly.update tito_effects Sinks.LocalReturn ~f:(function
+              | Some regular_tito -> ForwardState.Tree.join regular_tito obscure_tito
+              | None -> obscure_tito)
         else
-          tito
+          tito_effects
       in
       let location =
         Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
@@ -475,7 +472,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | None -> state
       in
       check_flow ~location ~source_tree:argument_taint ~sink_tree;
-      tito, state
+      tito_effects, state
     in
     let tito_effects, state =
       List.fold
