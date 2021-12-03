@@ -208,3 +208,7 @@ def test_union_property_attribute_sink(x):
     else:
         obj = RegularAttribute(x)
     _test_sink(obj.my_property)
+
+
+def test_getattr_on_property(x: TaintedGetterAndSetter):
+    _test_sink(getattr(x, "my_property", ""))

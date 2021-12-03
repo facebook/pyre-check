@@ -33,6 +33,7 @@ properties.TaintedGetterAndSetter::writes_to_property (method) -> [_test_source 
 properties.property_setter_in_constructor (fun) -> [_test_sink (fun) _test_source (fun) object::__new__ (method) properties.PropertySetterInConstructor::__init__ (method) properties.PropertySetterInConstructor::x (method)]
 properties.sets_tainted_value (fun) -> [_test_source (fun) properties.TaintedGetterAndSetter::my_property$setter (override)]
 properties.setters_are_simulated (fun) -> [_test_sink (fun) _test_source (fun) object::__new__ (method) properties.SetterMutatesValue::__init__ (method) properties.SetterMutatesValue::p (method) properties.SetterMutatesValue::p$setter (method)]
+properties.test_getattr_on_property (fun) -> [_test_sink (fun) getattr (fun) properties.TaintedGetterAndSetter::my_property (override)]
 properties.test_issue_in_class_property (fun) -> [_test_sink (fun) properties.ClassProperty::my_class_property (method)]
 properties.test_property_callable (fun) -> [_test_source (fun) object::__new__ (method) properties.PropertyCallable::__init__ (method) properties.PropertyCallable::attribute (method) properties.PropertyCallableReturn::__call__ (method)]
 properties.test_type_variable_properties_are_resolved (fun) -> [properties.Class2::my_property (method) properties.Class::my_property (method)]
