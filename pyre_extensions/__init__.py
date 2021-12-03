@@ -37,6 +37,7 @@ TClass = TypeVar("TClass")
 
 JSON = Union[bool, float, int, str, Dict[str, "JSON"], List["JSON"]]
 
+
 class ParameterSpecification(list):
     """This kind of type variable captures callable parameter specifications
     (known as argspecs in the runtime and inspect library) instead of types,
