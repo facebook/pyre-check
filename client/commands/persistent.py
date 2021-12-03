@@ -1164,7 +1164,25 @@ class PyreServerHandler(connection.BackgroundTask):
         if isinstance(subscription_body, TypeErrorSubscription):
             self.update_type_errors(subscription_body.errors)
             await self.show_type_errors_to_client()
-        # TODO(T103746869): Surface status update from server to LSP client
+            await self.log_and_show_status_message_to_client(
+                "Pyre has completed an incremental check and is currently "
+                "watching on futher source changes.",
+                short_message="Pyre Ready",
+                level=lsp.MessageType.INFO,
+            )
+        elif isinstance(subscription_body, StatusUpdateSubscription):
+            if subscription_body.kind == "Rebuilding":
+                await self.log_and_show_status_message_to_client(
+                    "Pyre is busy rebuilding the project for type checking...",
+                    short_message="Pyre (waiting for Buck)",
+                    level=lsp.MessageType.WARNING,
+                )
+            elif subscription_body.kind == "Rechecking":
+                await self.log_and_show_status_message_to_client(
+                    "Pyre is busy re-type-checking the project...",
+                    short_message="Pyre (checking)",
+                    level=lsp.MessageType.WARNING,
+                )
 
     async def _subscribe_to_type_error(
         self,
