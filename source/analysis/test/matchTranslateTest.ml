@@ -8,6 +8,7 @@
 open Core
 open OUnit2
 open Analysis
+open Cfg
 open Ast
 open Statement
 open Expression

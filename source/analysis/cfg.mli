@@ -65,3 +65,11 @@ val node : t -> id:int -> Node.t
 
 (* Exposed for testing only *)
 val match_cases_refutable : Match.Case.t list -> bool
+
+module MatchTranslate : sig
+  open Expression
+
+  val to_condition : subject:Expression.t -> case:Match.Case.t -> Expression.t
+
+  val pattern_to_condition : subject:Expression.t -> Match.Pattern.t -> Expression.t
+end
