@@ -16,3 +16,15 @@ def inline_issue():
     a = _test_source()
     f"<{a}>"
     f"{a}"
+
+
+def str_format():
+    a = _test_source()
+    # TODO(T88183535): Should be caught, but isn't
+    "<{}>".format(a)
+
+
+def percent_format():
+    a = _test_source()
+    # TODO(T88183535): Should be caught, but isn't
+    "<%s>" % (a,)
