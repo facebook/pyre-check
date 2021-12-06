@@ -3915,13 +3915,13 @@ class base class_metadata_environment dependency =
         ~skip_marking_escapees =
       let order = self#full_order ~assumptions in
       let get_match signatures =
-        let arguments =
-          let arguments =
-            let add_index index { Argument.expression; kind; resolved } =
-              { Argument.WithPosition.position = index + 1; expression; kind; resolved }
-            in
-            List.mapi arguments ~f:add_index
+        let add_positions arguments =
+          let add_index index { Argument.expression; kind; resolved } =
+            { Argument.WithPosition.position = index + 1; expression; kind; resolved }
           in
+          List.mapi ~f:add_index arguments
+        in
+        let unpack_starred_arguments arguments =
           let unpack sofar argument =
             match argument with
             | {
@@ -3940,9 +3940,9 @@ class base class_metadata_environment dependency =
           let update_position index argument =
             Argument.WithPosition.{ argument with position = index + 1 }
           in
-          let arguments =
-            List.fold ~f:unpack ~init:[] arguments |> List.rev |> List.mapi ~f:update_position
-          in
+          List.fold ~f:unpack ~init:[] arguments |> List.rev |> List.mapi ~f:update_position
+        in
+        let separate_labeled_unlabeled_arguments arguments =
           let is_labeled = function
             | { Argument.WithPosition.kind = Named _; _ } -> true
             | _ -> false
@@ -3962,6 +3962,12 @@ class base class_metadata_environment dependency =
             |> Option.to_list
           in
           self_argument @ labeled_arguments @ unlabeled_arguments
+        in
+        let arguments =
+          arguments
+          |> add_positions
+          |> unpack_starred_arguments
+          |> separate_labeled_unlabeled_arguments
         in
         let check_arguments_against_signature =
           SignatureSelection.check_arguments_against_signature
