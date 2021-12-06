@@ -4,9 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import itertools
 import logging
 from dataclasses import dataclass
+from enum import Enum
 from typing import Set, Iterable, List
 
 import libcst as cst
@@ -20,10 +20,23 @@ from .statistics_collectors import (
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+class AnnotationKind(Enum):
+    RETURN = 0
+    PARAMETER = 1
+    GLOBAL = 2
+    ATTRIBUTE = 3
+
+
 @dataclass(frozen=True)
-class CoveredAndUncoveredRanges:
-    covered_ranges: List[CodeRange]
-    uncovered_ranges: List[CodeRange]
+class CodeRangeAndAnnotationKind:
+    code_range: CodeRange
+    kind: AnnotationKind
+
+
+@dataclass(frozen=True)
+class CoveredAndUncovered:
+    covered: List[CodeRangeAndAnnotationKind]
+    uncovered: List[CodeRangeAndAnnotationKind]
 
 
 @dataclass(frozen=True)
@@ -39,22 +52,19 @@ class FileCoverage:
     uncovered_lines: List[int]
 
 
-def coverage_ranges_for_module(
-    relative_path: str, module: cst.Module
-) -> CoveredAndUncoveredRanges:
+def coverage_for_module(relative_path: str, module: cst.Module) -> CoveredAndUncovered:
     module_with_metadata = cst.MetadataWrapper(module)
     coverage_collector = CoverageCollector()
     try:
         module_with_metadata.visit(coverage_collector)
     except RecursionError:
         LOG.warning(f"LibCST encountered recursion error in `{relative_path}`")
-    return coverage_collector.covered_and_uncovered_ranges()
+    return coverage_collector.covered_and_uncovered()
 
 
 def collect_coverage_for_module(relative_path: str, module: cst.Module) -> FileCoverage:
-    covered_and_uncovered_ranges = coverage_ranges_for_module(relative_path, module)
-    covered_and_uncovered_lines = _covered_and_uncovered_ranges_to_lines(
-        covered_and_uncovered_ranges
+    covered_and_uncovered_lines = _to_covered_and_uncovered_lines(
+        coverage_for_module(relative_path, module)
     )
     return FileCoverage(
         filepath=relative_path,
@@ -70,17 +80,26 @@ class CoverageCollector(AnnotationCollector):
     def uncovered_functions(self) -> List[FunctionAnnotationInfo]:
         return [f for f in self.functions if not f.is_annotated]
 
-    def covered_and_uncovered_ranges(self) -> CoveredAndUncoveredRanges:
-        covered_ranges = []
-        uncovered_ranges = []
-        for info in itertools.chain(
-            self.globals, self.attributes, self.parameters(), self.returns()
-        ):
-            if info.is_annotated:
-                covered_ranges.append(info.code_range)
-            else:
-                uncovered_ranges.append(info.code_range)
-        return CoveredAndUncoveredRanges(covered_ranges, uncovered_ranges)
+    def covered_and_uncovered(self) -> CoveredAndUncovered:
+        covered = []
+        uncovered = []
+        for info in self.globals:
+            (covered if info.is_annotated else uncovered).append(
+                CodeRangeAndAnnotationKind(info.code_range, AnnotationKind.GLOBAL)
+            )
+        for info in self.attributes:
+            (covered if info.is_annotated else uncovered).append(
+                CodeRangeAndAnnotationKind(info.code_range, AnnotationKind.ATTRIBUTE)
+            )
+        for info in self.parameters():
+            (covered if info.is_annotated else uncovered).append(
+                CodeRangeAndAnnotationKind(info.code_range, AnnotationKind.PARAMETER)
+            )
+        for info in self.returns():
+            (covered if info.is_annotated else uncovered).append(
+                CodeRangeAndAnnotationKind(info.code_range, AnnotationKind.RETURN)
+            )
+        return CoveredAndUncovered(covered, uncovered)
 
 
 def _code_ranges_to_lines(code_ranges: Iterable[CodeRange]) -> Set[int]:
@@ -90,12 +109,14 @@ def _code_ranges_to_lines(code_ranges: Iterable[CodeRange]) -> Set[int]:
     return lines
 
 
-def _covered_and_uncovered_ranges_to_lines(
-    covered_and_uncovered_ranges: CoveredAndUncoveredRanges,
+def _to_covered_and_uncovered_lines(
+    covered_and_uncovered: CoveredAndUncovered,
 ) -> CoveredAndUncoveredLines:
-    covered_lines = _code_ranges_to_lines(covered_and_uncovered_ranges.covered_ranges)
+    covered_lines = _code_ranges_to_lines(
+        c.code_range for c in covered_and_uncovered.covered
+    )
     uncovered_lines = _code_ranges_to_lines(
-        covered_and_uncovered_ranges.uncovered_ranges
+        u.code_range for u in covered_and_uncovered.uncovered
     )
     # We show partially covered lines as covered
     return CoveredAndUncoveredLines(covered_lines, uncovered_lines - covered_lines)

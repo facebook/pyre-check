@@ -13,7 +13,11 @@ import testslide
 from libcst.metadata import CodeRange, CodePosition
 
 from ... import json_rpc, error, configuration as configuration_module
-from ...coverage_collector import CoveredAndUncoveredRanges
+from ...coverage_collector import (
+    AnnotationKind,
+    CoveredAndUncovered,
+    CodeRangeAndAnnotationKind,
+)
 from ...tests import setup
 from .. import language_server_protocol as lsp, start, backend_arguments
 from ..async_server_connection import (
@@ -44,8 +48,8 @@ from ..persistent import (
     SubscriptionResponse,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
-    uncovered_range_to_diagnostic,
-    coverage_ranges_to_coverage_result,
+    uncovered_to_diagnostic,
+    to_coverage_result,
     PyreServerHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
 )
@@ -762,9 +766,13 @@ class PersistentTest(testslide.TestCase):
 
     def test_coverage_diagnostics(self) -> None:
         self.assertEqual(
-            uncovered_range_to_diagnostic(
-                CodeRange(
-                    CodePosition(line=1, column=1), CodePosition(line=2, column=2)
+            uncovered_to_diagnostic(
+                CodeRangeAndAnnotationKind(
+                    code_range=CodeRange(
+                        CodePosition(line=1, column=1),
+                        CodePosition(line=2, column=2),
+                    ),
+                    kind=AnnotationKind.RETURN,
                 )
             ),
             lsp.Diagnostic(
@@ -777,16 +785,24 @@ class PersistentTest(testslide.TestCase):
         )
 
     def test_coverage_percentage(self) -> None:
-        coverage_result = coverage_ranges_to_coverage_result(
-            CoveredAndUncoveredRanges(
-                covered_ranges=[
-                    CodeRange(
-                        CodePosition(line=1, column=1), CodePosition(line=2, column=2)
+        coverage_result = to_coverage_result(
+            CoveredAndUncovered(
+                covered=[
+                    CodeRangeAndAnnotationKind(
+                        code_range=CodeRange(
+                            CodePosition(line=1, column=1),
+                            CodePosition(line=2, column=2),
+                        ),
+                        kind=AnnotationKind.RETURN,
                     )
                 ],
-                uncovered_ranges=[
-                    CodeRange(
-                        CodePosition(line=3, column=3), CodePosition(line=4, column=4)
+                uncovered=[
+                    CodeRangeAndAnnotationKind(
+                        code_range=CodeRange(
+                            CodePosition(line=3, column=3),
+                            CodePosition(line=4, column=4),
+                        ),
+                        kind=AnnotationKind.RETURN,
                     )
                 ],
             )

@@ -824,26 +824,29 @@ def type_errors_to_diagnostics(
     return result
 
 
-def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
+def uncovered_to_diagnostic(
+    uncovered: coverage_collector.CodeRangeAndAnnotationKind,
+) -> lsp.Diagnostic:
     return lsp.Diagnostic(
         range=lsp.Range(
             start=lsp.Position(
-                line=uncovered_range.start.line - 1,
-                character=uncovered_range.start.column,
+                line=uncovered.code_range.start.line - 1,
+                character=uncovered.code_range.start.column,
             ),
             end=lsp.Position(
-                line=uncovered_range.end.line - 1, character=uncovered_range.end.column
+                line=uncovered.code_range.end.line - 1,
+                character=uncovered.code_range.end.column,
             ),
         ),
         message="Consider adding type annotations.",
     )
 
 
-def coverage_ranges_to_coverage_result(
-    coverage_ranges: coverage_collector.CoveredAndUncoveredRanges,
+def to_coverage_result(
+    covered_and_uncovered: coverage_collector.CoveredAndUncovered,
 ) -> lsp.TypeCoverageResult:
-    num_covered = len(coverage_ranges.covered_ranges)
-    num_uncovered = len(coverage_ranges.uncovered_ranges)
+    num_covered = len(covered_and_uncovered.covered)
+    num_uncovered = len(covered_and_uncovered.uncovered)
     num_total = num_covered + num_uncovered
     if num_total == 0:
         return lsp.TypeCoverageResult(
@@ -853,8 +856,7 @@ def coverage_ranges_to_coverage_result(
         return lsp.TypeCoverageResult(
             covered_percent=100.0 * num_covered / num_total,
             uncovered_ranges=[
-                uncovered_range_to_diagnostic(u)
-                for u in coverage_ranges.uncovered_ranges
+                uncovered_to_diagnostic(u) for u in covered_and_uncovered.uncovered
             ],
             default_message="Consider adding type annotations.",
         )
@@ -868,8 +870,8 @@ def path_to_coverage_result(
         raise lsp.RequestCancelledError(
             f"Unable to compute coverage information for {path}"
         )
-    coverage_ranges = coverage_collector.coverage_ranges_for_module(str(path), module)
-    return coverage_ranges_to_coverage_result(coverage_ranges)
+    covered_and_uncovered = coverage_collector.coverage_for_module(str(path), module)
+    return to_coverage_result(covered_and_uncovered)
 
 
 @dataclasses.dataclass(frozen=True)
