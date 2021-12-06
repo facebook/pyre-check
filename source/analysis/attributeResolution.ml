@@ -954,7 +954,8 @@ let check_arguments_against_parameters
     ~order
     ~resolve_mutable_literals
     ~resolve_with_locals
-    ({ parameter_argument_mapping; _ } as signature_match)
+    ~callable
+    { ParameterArgumentMapping.parameter_argument_mapping; reasons }
   =
   let open SignatureSelectionTypes in
   let open Type.Callable in
@@ -1351,6 +1352,15 @@ let check_arguments_against_parameters
               { signature_match with constraints_set = updated_constraints })
     in
     Map.fold ~init:signature_match ~f:update parameter_argument_mapping
+  in
+  let signature_match =
+    {
+      callable;
+      parameter_argument_mapping;
+      constraints_set = [TypeConstraints.empty];
+      ranks = { arity = 0; annotation = 0; position = 0 };
+      reasons;
+    }
   in
   Map.fold ~init:signature_match ~f:update parameter_argument_mapping
   |> special_case_dictionary_constructor
@@ -3774,9 +3784,10 @@ class base class_metadata_environment dependency =
       in
       let rec check_arity_and_annotations implementation ~(arguments : Argument.WithPosition.t list)
         =
+        let callable = { callable with Type.Callable.implementation; overloads = [] } in
         let base_signature_match =
           {
-            callable = { callable with Type.Callable.implementation; overloads = [] };
+            callable;
             parameter_argument_mapping = Parameter.Map.empty;
             constraints_set = [TypeConstraints.empty];
             ranks = { arity = 0; annotation = 0; position = 0 };
@@ -3793,9 +3804,7 @@ class base class_metadata_environment dependency =
         match all_parameters with
         | Defined parameters ->
             get_parameter_argument_mapping ~self_argument ~arguments ~parameters ~all_parameters
-            |> fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
-            { base_signature_match with parameter_argument_mapping; reasons }
-            |> check_arguments_against_parameters
+            |> check_arguments_against_parameters ~callable
             |> fun signature_match -> [signature_match]
         | Undefined -> [base_signature_match]
         | ParameterVariadicTypeVariable { head; variable }
@@ -3820,9 +3829,7 @@ class base class_metadata_environment dependency =
                 ~arguments:front
                 ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
                 ~all_parameters
-              |> (fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
-                   { base_signature_match with parameter_argument_mapping; reasons })
-              |> check_arguments_against_parameters
+              |> check_arguments_against_parameters ~callable
             in
             let solve_back parameters =
               let constraints_set =
@@ -3871,9 +3878,7 @@ class base class_metadata_environment dependency =
                   ~arguments
                   ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
                   ~all_parameters
-                |> fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
-                { base_signature_match with parameter_argument_mapping; reasons }
-                |> check_arguments_against_parameters
+                |> check_arguments_against_parameters ~callable
                 |> fun signature_match -> [signature_match]
             | _ ->
                 [
