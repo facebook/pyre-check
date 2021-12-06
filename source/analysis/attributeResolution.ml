@@ -1497,6 +1497,161 @@ module SignatureSelection = struct
                 reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
               };
             ])
+
+
+  let calculate_rank ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
+    let open SignatureSelectionTypes in
+    let arity_rank = List.length arity in
+    let positions, annotation_rank =
+      let count_unique (positions, count) = function
+        | Mismatches mismatches ->
+            let count_unique_mismatches (positions, count) mismatch =
+              match mismatch with
+              | Mismatch { Node.value = { position; _ }; _ } when not (Set.mem positions position)
+                ->
+                  Set.add positions position, count + 1
+              | Mismatch _ -> positions, count
+              | _ -> positions, count + 1
+            in
+            List.fold ~init:(positions, count) mismatches ~f:count_unique_mismatches
+        | _ -> positions, count + 1
+      in
+      List.fold ~init:(Int.Set.empty, 0) ~f:count_unique annotation
+    in
+    let position_rank =
+      Int.Set.min_elt positions >>| Int.neg |> Option.value ~default:Int.min_value
+    in
+    {
+      signature_match with
+      ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank };
+    }
+
+
+  let find_closest_signature ~order ~skip_marking_escapees ~callable signature_matches =
+    let open SignatureSelectionTypes in
+    let open Type.Callable in
+    let get_arity_rank { ranks = { arity; _ }; _ } = arity in
+    let get_annotation_rank { ranks = { annotation; _ }; _ } = annotation in
+    let get_position_rank { ranks = { position; _ }; _ } = position in
+    let rec get_best_rank ~best_matches ~best_rank ~getter = function
+      | [] -> best_matches
+      | head :: tail ->
+          let rank = getter head in
+          if rank < best_rank then
+            get_best_rank ~best_matches:[head] ~best_rank:rank ~getter tail
+          else if rank = best_rank then
+            get_best_rank ~best_matches:(head :: best_matches) ~best_rank ~getter tail
+          else
+            get_best_rank ~best_matches ~best_rank ~getter tail
+    in
+    let determine_reason
+        {
+          callable =
+            { implementation = { annotation = uninstantiated_return_annotation; _ }; _ } as callable;
+          constraints_set;
+          reasons = { arity; annotation; _ };
+          _;
+        }
+      =
+      let instantiated_return_annotation =
+        let local_free_variables = Type.Variable.all_free_variables (Type.Callable callable) in
+        let solution =
+          TypeOrder.OrderedConstraintsSet.solve
+            constraints_set
+            ~only_solve_for:local_free_variables
+            ~order
+          |> Option.value ~default:ConstraintsSet.Solution.empty
+        in
+        let instantiated =
+          ConstraintsSet.Solution.instantiate solution uninstantiated_return_annotation
+        in
+        if skip_marking_escapees then
+          instantiated
+        else
+          Type.Variable.mark_all_free_variables_as_escaped
+            ~specific:local_free_variables
+            instantiated
+          (* We need to do transformations of the form Union[T_escaped, int] => int in order to
+             properly handle some typeshed stubs which only sometimes bind type variables and expect
+             them to fall out in this way (see Mapping.get) *)
+          |> Type.Variable.collapse_all_escaped_variable_unions
+      in
+      let rev_filter_out_self_argument_errors reasons =
+        let filter_too_many_arguments = function
+          (* These would come from methods lacking a self argument called on an instance *)
+          | TooManyArguments { expected; _ } -> not (Int.equal expected (-1))
+          | _ -> true
+        in
+        let filter_mismatches reason =
+          match reason with
+          | Mismatches mismatches ->
+              Mismatches
+                (List.filter mismatches ~f:(function
+                    | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
+                    | _ -> true))
+          | _ -> reason
+        in
+        List.map (List.rev_filter ~f:filter_too_many_arguments reasons) ~f:filter_mismatches
+      in
+      match
+        rev_filter_out_self_argument_errors arity, rev_filter_out_self_argument_errors annotation
+      with
+      | [], [] -> Found { selected_return_annotation = instantiated_return_annotation }
+      | reason :: reasons, _
+      | [], reason :: reasons ->
+          let importance = function
+            | AbstractClassInstantiation _ -> 1
+            | CallingParameterVariadicTypeVariable -> 1
+            | InvalidKeywordArgument _ -> 0
+            | InvalidVariableArgument _ -> 0
+            | Mismatches _ -> -1
+            | MissingArgument _ -> 1
+            | MutuallyRecursiveTypeVariables -> 1
+            | ProtocolInstantiation _ -> 1
+            | TooManyArguments _ -> 1
+            | TypedDictionaryInitializationError _ -> 1
+            | UnexpectedKeyword _ -> 1
+          in
+          let get_most_important best_reason reason =
+            if importance reason > importance best_reason then
+              reason
+            else
+              match best_reason, reason with
+              | Mismatches mismatches, Mismatches other_mismatches ->
+                  Mismatches (List.append mismatches other_mismatches)
+              | _, _ -> best_reason
+          in
+          let sort_mismatches reason =
+            match reason with
+            | Mismatches mismatches ->
+                let compare_mismatches mismatch other_mismatch =
+                  match mismatch, other_mismatch with
+                  | ( Mismatch { Node.value = { position; _ }; _ },
+                      Mismatch { Node.value = { position = other_position; _ }; _ } ) ->
+                      position - other_position
+                  | _, _ -> 0
+                in
+                Mismatches (List.sort mismatches ~compare:compare_mismatches)
+            | _ -> reason
+          in
+          let reason =
+            Some (List.fold ~init:reason ~f:get_most_important reasons |> sort_mismatches)
+          in
+          NotFound { closest_return_annotation = instantiated_return_annotation; reason }
+    in
+    let { implementation = { annotation = default_return_annotation; _ }; _ } = callable in
+    signature_matches
+    |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank
+    |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_annotation_rank
+    |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_position_rank
+    (* Each get_best_rank reverses the list, because we have an odd number, we need an extra reverse
+       in order to prefer the first defined overload *)
+    |> List.rev
+    |> List.hd
+    >>| determine_reason
+    |> Option.value
+         ~default:
+           (NotFound { closest_return_annotation = default_return_annotation; reason = None })
 end
 
 class base class_metadata_environment dependency =
@@ -3758,161 +3913,7 @@ class base class_metadata_environment dependency =
         ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
         ~self_argument
         ~skip_marking_escapees =
-      let open SignatureSelectionTypes in
       let order = self#full_order ~assumptions in
-      let open Type.Callable in
-      let calculate_rank ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
-        let arity_rank = List.length arity in
-        let positions, annotation_rank =
-          let count_unique (positions, count) = function
-            | Mismatches mismatches ->
-                let count_unique_mismatches (positions, count) mismatch =
-                  match mismatch with
-                  | Mismatch { Node.value = { position; _ }; _ }
-                    when not (Set.mem positions position) ->
-                      Set.add positions position, count + 1
-                  | Mismatch _ -> positions, count
-                  | _ -> positions, count + 1
-                in
-                List.fold ~init:(positions, count) mismatches ~f:count_unique_mismatches
-            | _ -> positions, count + 1
-          in
-          List.fold ~init:(Int.Set.empty, 0) ~f:count_unique annotation
-        in
-        let position_rank =
-          Int.Set.min_elt positions >>| Int.neg |> Option.value ~default:Int.min_value
-        in
-        {
-          signature_match with
-          ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank };
-        }
-      in
-      let find_closest signature_matches =
-        let get_arity_rank { ranks = { arity; _ }; _ } = arity in
-        let get_annotation_rank { ranks = { annotation; _ }; _ } = annotation in
-        let get_position_rank { ranks = { position; _ }; _ } = position in
-        let rec get_best_rank ~best_matches ~best_rank ~getter = function
-          | [] -> best_matches
-          | head :: tail ->
-              let rank = getter head in
-              if rank < best_rank then
-                get_best_rank ~best_matches:[head] ~best_rank:rank ~getter tail
-              else if rank = best_rank then
-                get_best_rank ~best_matches:(head :: best_matches) ~best_rank ~getter tail
-              else
-                get_best_rank ~best_matches ~best_rank ~getter tail
-        in
-        let determine_reason
-            {
-              callable =
-                { implementation = { annotation = uninstantiated_return_annotation; _ }; _ } as
-                callable;
-              constraints_set;
-              reasons = { arity; annotation; _ };
-              _;
-            }
-          =
-          let instantiated_return_annotation =
-            let local_free_variables = Type.Variable.all_free_variables (Type.Callable callable) in
-            let solution =
-              TypeOrder.OrderedConstraintsSet.solve
-                constraints_set
-                ~only_solve_for:local_free_variables
-                ~order
-              |> Option.value ~default:ConstraintsSet.Solution.empty
-            in
-            let instantiated =
-              ConstraintsSet.Solution.instantiate solution uninstantiated_return_annotation
-            in
-            if skip_marking_escapees then
-              instantiated
-            else
-              Type.Variable.mark_all_free_variables_as_escaped
-                ~specific:local_free_variables
-                instantiated
-              (* We need to do transformations of the form Union[T_escaped, int] => int in order to
-                 properly handle some typeshed stubs which only sometimes bind type variables and
-                 expect them to fall out in this way (see Mapping.get) *)
-              |> Type.Variable.collapse_all_escaped_variable_unions
-          in
-          let rev_filter_out_self_argument_errors reasons =
-            let filter_too_many_arguments = function
-              (* These would come from methods lacking a self argument called on an instance *)
-              | TooManyArguments { expected; _ } -> not (Int.equal expected (-1))
-              | _ -> true
-            in
-            let filter_mismatches reason =
-              match reason with
-              | Mismatches mismatches ->
-                  Mismatches
-                    (List.filter mismatches ~f:(function
-                        | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
-                        | _ -> true))
-              | _ -> reason
-            in
-            List.map (List.rev_filter ~f:filter_too_many_arguments reasons) ~f:filter_mismatches
-          in
-          match
-            ( rev_filter_out_self_argument_errors arity,
-              rev_filter_out_self_argument_errors annotation )
-          with
-          | [], [] -> Found { selected_return_annotation = instantiated_return_annotation }
-          | reason :: reasons, _
-          | [], reason :: reasons ->
-              let importance = function
-                | AbstractClassInstantiation _ -> 1
-                | CallingParameterVariadicTypeVariable -> 1
-                | InvalidKeywordArgument _ -> 0
-                | InvalidVariableArgument _ -> 0
-                | Mismatches _ -> -1
-                | MissingArgument _ -> 1
-                | MutuallyRecursiveTypeVariables -> 1
-                | ProtocolInstantiation _ -> 1
-                | TooManyArguments _ -> 1
-                | TypedDictionaryInitializationError _ -> 1
-                | UnexpectedKeyword _ -> 1
-              in
-              let get_most_important best_reason reason =
-                if importance reason > importance best_reason then
-                  reason
-                else
-                  match best_reason, reason with
-                  | Mismatches mismatches, Mismatches other_mismatches ->
-                      Mismatches (List.append mismatches other_mismatches)
-                  | _, _ -> best_reason
-              in
-              let sort_mismatches reason =
-                match reason with
-                | Mismatches mismatches ->
-                    let compare_mismatches mismatch other_mismatch =
-                      match mismatch, other_mismatch with
-                      | ( Mismatch { Node.value = { position; _ }; _ },
-                          Mismatch { Node.value = { position = other_position; _ }; _ } ) ->
-                          position - other_position
-                      | _, _ -> 0
-                    in
-                    Mismatches (List.sort mismatches ~compare:compare_mismatches)
-                | _ -> reason
-              in
-              let reason =
-                Some (List.fold ~init:reason ~f:get_most_important reasons |> sort_mismatches)
-              in
-              NotFound { closest_return_annotation = instantiated_return_annotation; reason }
-        in
-        let { implementation = { annotation = default_return_annotation; _ }; _ } = callable in
-        signature_matches
-        |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank
-        |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_annotation_rank
-        |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_position_rank
-        (* Each get_best_rank reverses the list, because we have an odd number, we need an extra
-           reverse in order to prefer the first defined overload *)
-        |> List.rev
-        |> List.hd
-        >>| determine_reason
-        |> Option.value
-             ~default:
-               (NotFound { closest_return_annotation = default_return_annotation; reason = None })
-      in
       let get_match signatures =
         let arguments =
           let arguments =
@@ -3973,8 +3974,8 @@ class base class_metadata_environment dependency =
         in
         signatures
         |> List.concat_map ~f:check_arguments_against_signature
-        |> List.map ~f:calculate_rank
-        |> find_closest
+        |> List.map ~f:SignatureSelection.calculate_rank
+        |> SignatureSelection.find_closest_signature ~order ~skip_marking_escapees ~callable
       in
       if List.is_empty overloads then
         get_match [implementation]
