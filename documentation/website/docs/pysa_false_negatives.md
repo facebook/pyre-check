@@ -23,7 +23,7 @@ lost flows.
 #### Missing Sources/Sinks
 
 `HttpRequest.GET` is a common source of `UserControled` data in Django. If the
-`request` objects are not explicitly typed as `HttpRequst`, however, Pysa will
+`request` objects are not explicitly typed as `HttpRequest`, however, Pysa will
 fail to detect obvious issues:
 
 ```python
