@@ -86,7 +86,7 @@ type reasons = {
 
 type signature_match = {
   callable: Type.Callable.t;
-  argument_mapping: argument list Type.Callable.Parameter.Map.t;
+  parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
   constraints_set: TypeConstraints.t list;
   ranks: ranks;
   reasons: reasons;
@@ -3023,12 +3023,13 @@ class base class_metadata_environment dependency =
       let match_arity ~all_parameters signature_match ~arguments ~parameters =
         let all_arguments = arguments in
         let rec consume
-            ({ argument_mapping; reasons = { arity; _ } as reasons; _ } as signature_match)
+            ({ parameter_argument_mapping; reasons = { arity; _ } as reasons; _ } as
+            signature_match)
             ~arguments
             ~parameters
           =
           let update_mapping parameter argument =
-            Map.add_multi argument_mapping ~key:parameter ~data:argument
+            Map.add_multi parameter_argument_mapping ~key:parameter ~data:argument
           in
           let arity_mismatch ?(unreachable_parameters = []) ~arguments reasons =
             match all_parameters with
@@ -3083,30 +3084,30 @@ class base class_metadata_environment dependency =
           | [], (Parameter.PositionalOnly { default = true; _ } as parameter) :: parameters_tail
           | [], (Parameter.Named { default = true; _ } as parameter) :: parameters_tail ->
               (* Arguments empty, default parameter *)
-              let argument_mapping = update_mapping parameter Default in
+              let parameter_argument_mapping = update_mapping parameter Default in
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
           | [], parameter :: parameters_tail ->
               (* Arguments empty, parameter *)
-              let argument_mapping =
-                match Map.find argument_mapping parameter with
-                | Some _ -> argument_mapping
-                | None -> Map.set ~key:parameter ~data:[] argument_mapping
+              let parameter_argument_mapping =
+                match Map.find parameter_argument_mapping parameter with
+                | Some _ -> parameter_argument_mapping
+                | None -> Map.set ~key:parameter ~data:[] parameter_argument_mapping
               in
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
           | ( ({ kind = Named _; _ } as argument) :: arguments_tail,
               (Parameter.Keywords _ as parameter) :: _ ) ->
               (* Labeled argument, keywords parameter *)
-              let argument_mapping = update_mapping parameter (Argument argument) in
+              let parameter_argument_mapping = update_mapping parameter (Argument argument) in
               consume
                 ~arguments:arguments_tail
                 ~parameters
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
           | ({ kind = Named name; _ } as argument) :: arguments_tail, parameters ->
               (* Labeled argument *)
               let rec extract_matching_name searched to_search =
@@ -3123,51 +3124,52 @@ class base class_metadata_environment dependency =
                 | head :: tail -> extract_matching_name (head :: searched) tail
               in
               let matching_parameter, remaining_parameters = extract_matching_name [] parameters in
-              let argument_mapping, reasons =
+              let parameter_argument_mapping, reasons =
                 match matching_parameter with
                 | Some matching_parameter ->
                     update_mapping matching_parameter (Argument argument), reasons
                 | None ->
-                    argument_mapping, { reasons with arity = UnexpectedKeyword name.value :: arity }
+                    ( parameter_argument_mapping,
+                      { reasons with arity = UnexpectedKeyword name.value :: arity } )
               in
               consume
                 ~arguments:arguments_tail
                 ~parameters:remaining_parameters
-                { signature_match with argument_mapping; reasons }
+                { signature_match with parameter_argument_mapping; reasons }
           | ( ({ kind = DoubleStar; _ } as argument) :: arguments_tail,
               (Parameter.Keywords _ as parameter) :: _ )
           | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
               (Parameter.Variable _ as parameter) :: _ ) ->
               (* (Double) starred argument, (double) starred parameter *)
-              let argument_mapping = update_mapping parameter (Argument argument) in
+              let parameter_argument_mapping = update_mapping parameter (Argument argument) in
               consume
                 ~arguments:arguments_tail
                 ~parameters
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
           | { kind = SingleStar; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
               (* Starred argument, double starred parameter *)
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
           | { kind = Positional; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
               (* Unlabeled argument, double starred parameter *)
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
           | { kind = DoubleStar; _ } :: _, Parameter.Variable _ :: parameters_tail ->
               (* Double starred argument, starred parameter *)
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
           | ( ({ kind = Positional; _ } as argument) :: arguments_tail,
               (Parameter.Variable _ as parameter) :: _ ) ->
               (* Unlabeled argument, starred parameter *)
               let signature_match =
-                let argument_mapping = update_mapping parameter (Argument argument) in
-                { signature_match with argument_mapping }
+                let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+                { signature_match with parameter_argument_mapping }
               in
               consume ~arguments:arguments_tail ~parameters signature_match
           | { kind = SingleStar; _ } :: arguments_tail, Type.Callable.Parameter.KeywordOnly _ :: _
@@ -3177,11 +3179,11 @@ class base class_metadata_environment dependency =
           | ({ kind = DoubleStar; _ } as argument) :: _, parameter :: parameters_tail
           | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
               (* Double starred or starred argument, parameter *)
-              let argument_mapping = update_mapping parameter (Argument argument) in
+              let parameter_argument_mapping = update_mapping parameter (Argument argument) in
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
           | { kind = Positional; _ } :: _, (Parameter.KeywordOnly _ as parameter) :: parameters_tail
             ->
               (* Unlabeled argument, keyword only parameter *)
@@ -3195,15 +3197,15 @@ class base class_metadata_environment dependency =
           | ({ kind = Positional; _ } as argument) :: arguments_tail, parameter :: parameters_tail
             ->
               (* Unlabeled argument, parameter *)
-              let argument_mapping = update_mapping parameter (Argument argument) in
+              let parameter_argument_mapping = update_mapping parameter (Argument argument) in
               consume
                 ~arguments:arguments_tail
                 ~parameters:parameters_tail
-                { signature_match with argument_mapping }
+                { signature_match with parameter_argument_mapping }
         in
         consume signature_match ~arguments ~parameters
       in
-      let check_annotations ({ argument_mapping; _ } as signature_match) =
+      let check_annotations ({ parameter_argument_mapping; _ } as signature_match) =
         (* Check whether the parameter annotation is `Callable[[ParamVar], ReturnVar]`
          * and the argument is `lambda parameter: body` *)
         let is_generic_lambda parameter arguments =
@@ -3522,14 +3524,14 @@ class base class_metadata_environment dependency =
             }
         in
         let special_case_dictionary_constructor
-            ({ argument_mapping; callable; constraints_set; _ } as signature_match)
+            ({ parameter_argument_mapping; callable; constraints_set; _ } as signature_match)
           =
           let open Type.Record.Callable in
           let has_matched_keyword_parameter parameters =
             List.find parameters ~f:(function
                 | RecordParameter.Keywords _ -> true
                 | _ -> false)
-            >>= Type.Callable.Parameter.Map.find argument_mapping
+            >>= Type.Callable.Parameter.Map.find parameter_argument_mapping
             >>| List.is_empty
             >>| not
             |> Option.value ~default:false
@@ -3559,7 +3561,7 @@ class base class_metadata_environment dependency =
                 signature_match
           | _ -> signature_match
         in
-        let special_case_lambda_parameter ({ argument_mapping; _ } as signature_match) =
+        let special_case_lambda_parameter ({ parameter_argument_mapping; _ } as signature_match) =
           (* Special case: `Callable[[ParamVar], ReturnVar]` with `lambda parameter: body` *)
           let update ~key ~data ({ constraints_set; _ } as signature_match) =
             match is_generic_lambda key data with
@@ -3617,9 +3619,9 @@ class base class_metadata_environment dependency =
                     in
                     { signature_match with constraints_set = updated_constraints })
           in
-          Map.fold ~init:signature_match ~f:update argument_mapping
+          Map.fold ~init:signature_match ~f:update parameter_argument_mapping
         in
-        Map.fold ~init:signature_match ~f:update argument_mapping
+        Map.fold ~init:signature_match ~f:update parameter_argument_mapping
         |> special_case_dictionary_constructor
         |> special_case_lambda_parameter
         |> check_if_solution_exists
@@ -3781,7 +3783,7 @@ class base class_metadata_environment dependency =
         let base_signature_match =
           {
             callable = { callable with Type.Callable.implementation; overloads = [] };
-            argument_mapping = Parameter.Map.empty;
+            parameter_argument_mapping = Parameter.Map.empty;
             constraints_set = [TypeConstraints.empty];
             ranks = { arity = 0; annotation = 0; position = 0 };
             reasons = { arity = []; annotation = [] };
