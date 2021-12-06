@@ -3925,22 +3925,18 @@ class base class_metadata_environment dependency =
           let unpack sofar argument =
             match argument with
             | {
-             Argument.WithPosition.resolved = Tuple (Concrete tuple_parameters);
+             Argument.resolved = Tuple (Concrete tuple_parameters);
              kind = SingleStar;
-             position;
              expression;
             } ->
                 let unpacked_arguments =
                   List.map tuple_parameters ~f:(fun resolved ->
-                      { Argument.WithPosition.expression; kind = Positional; resolved; position })
+                      { Argument.expression; kind = Positional; resolved })
                 in
                 List.concat [List.rev unpacked_arguments; sofar]
             | _ -> argument :: sofar
           in
-          let update_position index argument =
-            Argument.WithPosition.{ argument with position = index + 1 }
-          in
-          List.fold ~f:unpack ~init:[] arguments |> List.rev |> List.mapi ~f:update_position
+          List.fold ~f:unpack ~init:[] arguments |> List.rev
         in
         let separate_labeled_unlabeled_arguments arguments =
           let is_labeled = function
@@ -3965,8 +3961,8 @@ class base class_metadata_environment dependency =
         in
         let arguments =
           arguments
-          |> add_positions
           |> unpack_starred_arguments
+          |> add_positions
           |> separate_labeled_unlabeled_arguments
         in
         let check_arguments_against_signature =
