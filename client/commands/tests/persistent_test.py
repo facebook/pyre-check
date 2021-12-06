@@ -780,7 +780,25 @@ class PersistentTest(testslide.TestCase):
                     start=lsp.Position(line=0, character=1),
                     end=lsp.Position(line=1, character=2),
                 ),
-                message="Consider adding type annotations.",
+                message="Consider adding return type annotation.",
+            ),
+        )
+        self.assertEqual(
+            uncovered_to_diagnostic(
+                CodeRangeAndAnnotationKind(
+                    code_range=CodeRange(
+                        CodePosition(line=1, column=1),
+                        CodePosition(line=2, column=2),
+                    ),
+                    kind=AnnotationKind.GLOBAL,
+                )
+            ),
+            lsp.Diagnostic(
+                range=lsp.Range(
+                    start=lsp.Position(line=0, character=1),
+                    end=lsp.Position(line=1, character=2),
+                ),
+                message="Consider adding type annotation to the global.",
             ),
         )
 

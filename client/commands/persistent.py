@@ -824,6 +824,21 @@ def type_errors_to_diagnostics(
     return result
 
 
+def _annotation_kind_to_diagnostic_message(
+    annoation_kind: coverage_collector.AnnotationKind,
+) -> str:
+    if annoation_kind == coverage_collector.AnnotationKind.RETURN:
+        return "Consider adding return type annotation."
+    elif annoation_kind == coverage_collector.AnnotationKind.PARAMETER:
+        return "Consider adding parameter type annotation."
+    elif annoation_kind == coverage_collector.AnnotationKind.GLOBAL:
+        return "Consider adding type annotation to the global."
+    elif annoation_kind == coverage_collector.AnnotationKind.ATTRIBUTE:
+        return "Consider adding type annotation to the attribute."
+    else:
+        return "Consider adding type annotations."
+
+
 def uncovered_to_diagnostic(
     uncovered: coverage_collector.CodeRangeAndAnnotationKind,
 ) -> lsp.Diagnostic:
@@ -838,7 +853,7 @@ def uncovered_to_diagnostic(
                 character=uncovered.code_range.end.column,
             ),
         ),
-        message="Consider adding type annotations.",
+        message=_annotation_kind_to_diagnostic_message(uncovered.kind),
     )
 
 
