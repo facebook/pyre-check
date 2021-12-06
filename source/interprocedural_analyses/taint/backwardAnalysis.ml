@@ -315,12 +315,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } =
       let global_sink =
-        Model.get_global_model
+        GlobalModel.from_expression
           ~resolution
           ~call_graph:FunctionContext.call_graph_of_define
           ~qualifier:FunctionContext.qualifier
           ~expression:argument
-        |> Model.GlobalModel.get_sink
+        |> GlobalModel.get_sink
       in
       let access_path = of_expression ~resolution argument in
       get_taint access_path initial_state |> BackwardState.Tree.join global_sink
@@ -929,7 +929,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Some { is_attribute = true; _ }
       | None ->
           let global_model =
-            Model.get_global_model
+            GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
@@ -937,13 +937,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let add_tito_features taint =
             let attribute_breadcrumbs =
-              global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
+              global_model |> GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
             in
             BackwardState.Tree.add_breadcrumbs attribute_breadcrumbs taint
           in
 
           let apply_attribute_sanitizers taint =
-            let sanitizer = Model.GlobalModel.get_sanitize global_model in
+            let sanitizer = GlobalModel.get_sanitize global_model in
             let taint =
               match sanitizer.sinks with
               | Some AllSinks -> BackwardState.Tree.empty
@@ -1657,12 +1657,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             get_taint access_path state
           in
           let global_taint =
-            Model.get_global_model
+            GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression:target
-            |> Model.GlobalModel.get_sink
+            |> GlobalModel.get_sink
           in
           BackwardState.Tree.join local_taint global_taint
         in
@@ -1700,13 +1700,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         state
     | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
         let target_global_model =
-          Model.get_global_model
+          GlobalModel.from_expression
             ~resolution
             ~call_graph:FunctionContext.call_graph_of_define
             ~qualifier:FunctionContext.qualifier
             ~expression:target
         in
-        if Model.GlobalModel.is_sanitized target_global_model then
+        if GlobalModel.is_sanitized target_global_model then
           analyze_expression ~resolution ~taint:BackwardState.Tree.bottom ~state ~expression:value
         else
           match target_value with

@@ -516,12 +516,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          case we need to capture the flow. *)
       let apply_argument_effect ~argument:{ Call.Argument.value = argument; _ } ~source_tree state =
         let sink_tree =
-          Model.get_global_model
+          GlobalModel.from_expression
             ~resolution
             ~call_graph:FunctionContext.call_graph_of_define
             ~qualifier:FunctionContext.qualifier
             ~expression:argument
-          |> Model.GlobalModel.get_sink
+          |> GlobalModel.get_sink
         in
         check_flow
           ~location:
@@ -1516,21 +1516,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Some { is_attribute = true; _ }
       | None ->
           let global_model =
-            Model.get_global_model
+            GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression
           in
-          let attribute_taint = Model.GlobalModel.get_source global_model in
+          let attribute_taint = GlobalModel.get_source global_model in
           let add_tito_features taint =
             let attribute_breadcrumbs =
-              global_model |> Model.GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
+              global_model |> GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
             in
             ForwardState.Tree.add_breadcrumbs attribute_breadcrumbs taint
           in
           let apply_attribute_sanitizers taint =
-            let sanitizer = Model.GlobalModel.get_sanitize global_model in
+            let sanitizer = GlobalModel.get_sanitize global_model in
             let taint =
               match sanitizer.sources with
               | Some AllSources -> ForwardState.Tree.empty
@@ -1683,12 +1683,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
       | Name _ when CallGraph.is_global_reference ~resolution expression ->
           let taint =
-            Model.get_global_model
+            GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression
-            |> Model.GlobalModel.get_source
+            |> GlobalModel.get_source
           in
           taint, state
       | Name (Name.Identifier identifier) ->
@@ -1799,12 +1799,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (* Check flows to tainted globals/attributes. *)
         let source_tree = taint in
         let sink_tree =
-          Model.get_global_model
+          GlobalModel.from_expression
             ~resolution
             ~call_graph:FunctionContext.call_graph_of_define
             ~qualifier:FunctionContext.qualifier
             ~expression:target
-          |> Model.GlobalModel.get_sink
+          |> GlobalModel.get_sink
         in
         check_flow
           ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
@@ -1852,13 +1852,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | _ -> state)
     | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
         let target_global_model =
-          Model.get_global_model
+          GlobalModel.from_expression
             ~resolution
             ~call_graph:FunctionContext.call_graph_of_define
             ~qualifier:FunctionContext.qualifier
             ~expression:target
         in
-        if Model.GlobalModel.is_sanitized target_global_model then
+        if GlobalModel.is_sanitized target_global_model then
           analyze_expression ~resolution ~state ~expression:value |> snd
         else
           match target_value with

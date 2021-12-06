@@ -24,29 +24,6 @@ val get_callsite_model
   arguments:Expression.Call.Argument.t list ->
   t
 
-module GlobalModel : sig
-  type t
-
-  val get_source : t -> Domains.ForwardState.Tree.t
-
-  val get_sink : t -> Domains.BackwardState.Tree.t
-
-  val get_tito : t -> Domains.BackwardState.Tree.t
-
-  val get_sanitize : t -> Domains.Sanitize.t
-
-  val get_modes : t -> TaintResult.ModeSet.t
-
-  val is_sanitized : t -> bool
-end
-
-val get_global_model
-  :  resolution:Resolution.t ->
-  call_graph:CallGraph.DefineCallGraph.t ->
-  qualifier:Reference.t ->
-  expression:Expression.t ->
-  GlobalModel.t
-
 val get_model_sources : paths:Path.t list -> (Path.t * string) list
 
 val infer_class_models
