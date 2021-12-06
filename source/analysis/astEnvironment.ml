@@ -128,19 +128,13 @@ let create_source ~metadata ~source_path statements =
 let parse_source
     ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
     ~context
-    ({ SourcePath.relative; qualifier; _ } as source_path)
+    ({ SourcePath.qualifier; _ } as source_path)
   =
   let parse content =
     let metadata = Source.Metadata.parse ~qualifier (String.split content ~on:'\n') in
-    match
-      PyreNewParser.parse_module
-        ~filename:relative
-        ~enable_type_comment:enable_type_comments
-        ~context
-        content
-    with
+    match PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context content with
     | Ok statements -> Success (create_source ~metadata ~source_path statements)
-    | Error { PyreNewParser.Error.line; column; message } ->
+    | Error { PyreNewParser.Error.line; column; message; _ } ->
         let is_suppressed =
           let { Source.Metadata.local_mode; ignore_codes; _ } = metadata in
           match Source.mode ~configuration ~local_mode with

@@ -491,12 +491,20 @@ let pattern =
       match Node.value cls with
       | Expression.Name name -> name
       | _ ->
-          let { Ast.Location.start = { line; column }; _ } = location in
+          let {
+            Ast.Location.start = { line; column };
+            stop = { line = end_line; column = end_column };
+          }
+            =
+            location
+          in
           raise
             (InternalError
                {
                  Error.line;
                  column;
+                 end_line;
+                 end_column;
                  message = "class pattern expects simple identifier or attribute accesses only";
                })
     in
@@ -508,12 +516,20 @@ let pattern =
   let match_as ~location ~pattern ~name =
     match name, pattern with
     | None, Some _ ->
-        let { Ast.Location.start = { line; column }; _ } = location in
+        let {
+          Ast.Location.start = { line; column };
+          stop = { line = end_line; column = end_column };
+        }
+          =
+          location
+        in
         raise
           (InternalError
              {
                Error.line;
                column;
+               end_line;
+               end_column;
                message = "as pattern expects non-wildcard pattern when name is `_`";
              })
     | None, None -> Node.create ~location Match.Pattern.MatchWildcard
@@ -678,8 +694,14 @@ let statement =
         type_comment
     with
     | Result.Error message ->
-        let { Ast.Location.start = { line; column }; _ } = location in
-        raise (InternalError { Error.line; column; message })
+        let {
+          Ast.Location.start = { line; column };
+          stop = { line = end_line; column = end_column };
+        }
+          =
+          location
+        in
+        raise (InternalError { Error.line; column; end_line; end_column; message })
     | Result.Ok (parameters, return_annotation) ->
         let signature =
           {
@@ -962,26 +984,21 @@ let specification =
 
 let with_context ?on_failure = PyreAst.Parser.with_context ?on_init_failure:on_failure
 
-let parse_module ?filename ?enable_type_comment ~context text =
+let parse_module ?enable_type_comment ~context text =
   try
     let open Result in
     let parse_function_signature text =
       PyreAst.Parser.TaglessFinal.parse_function_type ~context ~spec:specification text
     in
-    PyreAst.Parser.TaglessFinal.parse_module
-      ?filename
-      ?enable_type_comment
-      ~context
-      ~spec:specification
-      text
+    PyreAst.Parser.TaglessFinal.parse_module ?enable_type_comment ~context ~spec:specification text
     >>= fun module_builder ->
     Ok (module_builder ~context:{ StatementContext.parse_function_signature; parent = None })
   with
   | InternalError error -> Result.Error error
 
 
-let parse_module_exn ?filename ?enable_type_comment ~context text =
-  match parse_module ?filename ?enable_type_comment ~context text with
+let parse_module_exn ?enable_type_comment ~context text =
+  match parse_module ?enable_type_comment ~context text with
   | Result.Ok statements -> statements
   | Result.Error error -> raise (Exception error)
 

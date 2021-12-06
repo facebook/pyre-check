@@ -35,7 +35,7 @@ DEPENDENCIES = [
     "menhir.20210419",
     "lwt.5.4.2",
     "ounit2-lwt.2.2.4",
-    "pyre-ast.0.1.5",
+    "pyre-ast.0.1.7",
 ]
 
 

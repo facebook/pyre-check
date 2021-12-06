@@ -89,7 +89,7 @@ let run tests =
 
 let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
   let do_parse context =
-    match PyreNewParser.parse_module ~context ~filename:handle ~enable_type_comment:true source with
+    match PyreNewParser.parse_module ~context ~enable_type_comment:true source with
     | Result.Ok statements ->
         let metadata =
           let qualifier = SourcePath.qualifier_of_relative handle in
@@ -100,7 +100,7 @@ let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
           if coerce_special_methods then coerce_special_methods_source else Fn.id
         in
         source |> coerce_special_methods
-    | Result.Error { PyreNewParser.Error.line; column; message } ->
+    | Result.Error { PyreNewParser.Error.line; column; message; _ } ->
         let error =
           Format.asprintf
             "Could not parse test source at line %d, column %d.\nReason: %s. Test input:\n%s"

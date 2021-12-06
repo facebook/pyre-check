@@ -28,6 +28,8 @@ module Error : sig
     message: string;
     line: int;
     column: int;
+    end_line: int;
+    end_column: int;
   }
   (** Line numbers start from 1 and column numbers start from 0. *)
 end
@@ -45,8 +47,7 @@ val with_context : ?on_failure:(unit -> 'a) -> (Context.t -> 'a) -> 'a
     exception. *)
 
 val parse_module
-  :  ?filename:string ->
-  ?enable_type_comment:bool ->
+  :  ?enable_type_comment:bool ->
   context:Context.t ->
   string ->
   (Ast.Statement.t list, Error.t) Result.t
@@ -54,16 +55,12 @@ val parse_module
     represented by a list of {!type: Ast.Statement.t}. See documentation of {!type: Context.t} for
     the meaning of the [context] argument.
 
-    Optionally a [filename] argument can be specified. If there is a parse error, [filename] may
-    appear in the {!field: Error.message} field.
-
     Optionally an [enable_type_comment] argument can be specified. If it is true, the parser will
     attempt to populate the [type_comment] section of each AST node that has it. Otherwise, contents
     in comments will all get ignored and [type_comment] will always be unset. *)
 
 val parse_module_exn
-  :  ?filename:string ->
-  ?enable_type_comment:bool ->
+  :  ?enable_type_comment:bool ->
   context:Context.t ->
   string ->
   Ast.Statement.t list
