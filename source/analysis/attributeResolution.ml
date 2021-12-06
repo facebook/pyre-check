@@ -767,6 +767,189 @@ let callable_call_special_cases
   | _ -> None
 
 
+let get_parameter_argument_mapping ~all_parameters ~self_argument ~arguments ~parameters =
+  let open Type.Callable in
+  let all_arguments = arguments in
+  let rec consume
+      ({ ParameterArgumentMapping.parameter_argument_mapping; reasons = { arity; _ } as reasons } as
+      parameter_argument_mapping_with_reasons)
+      ~arguments
+      ~parameters
+    =
+    let update_mapping parameter argument =
+      Map.add_multi parameter_argument_mapping ~key:parameter ~data:argument
+    in
+    let arity_mismatch ?(unreachable_parameters = []) ~arguments reasons =
+      match all_parameters with
+      | Defined all_parameters ->
+          let matched_keyword_arguments =
+            let is_keyword_argument = function
+              | { Argument.WithPosition.kind = Named _; _ } -> true
+              | _ -> false
+            in
+            List.filter ~f:is_keyword_argument all_arguments
+          in
+          let positional_parameter_count =
+            List.length all_parameters
+            - List.length unreachable_parameters
+            - List.length matched_keyword_arguments
+          in
+          let self_argument_adjustment =
+            if Option.is_some self_argument then
+              1
+            else
+              0
+          in
+          let error =
+            SignatureSelectionTypes.TooManyArguments
+              {
+                expected = positional_parameter_count - self_argument_adjustment;
+                provided =
+                  positional_parameter_count + List.length arguments - self_argument_adjustment;
+              }
+          in
+          { reasons with arity = error :: arity }
+      | _ -> reasons
+    in
+    match arguments, parameters with
+    | [], [] ->
+        (* Both empty *)
+        parameter_argument_mapping_with_reasons
+    | { Argument.WithPosition.kind = SingleStar; _ } :: arguments_tail, []
+    | { kind = DoubleStar; _ } :: arguments_tail, [] ->
+        (* Starred or double starred arguments; parameters empty *)
+        consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
+    | { kind = Named name; _ } :: _, [] ->
+        (* Named argument; parameters empty *)
+        let reasons = { reasons with arity = UnexpectedKeyword name.value :: arity } in
+        { parameter_argument_mapping_with_reasons with reasons }
+    | _, [] ->
+        (* Positional argument; parameters empty *)
+        { parameter_argument_mapping_with_reasons with reasons = arity_mismatch ~arguments reasons }
+    | [], (Parameter.KeywordOnly { default = true; _ } as parameter) :: parameters_tail
+    | [], (Parameter.PositionalOnly { default = true; _ } as parameter) :: parameters_tail
+    | [], (Parameter.Named { default = true; _ } as parameter) :: parameters_tail ->
+        (* Arguments empty, default parameter *)
+        let parameter_argument_mapping = update_mapping parameter Default in
+        consume
+          ~arguments
+          ~parameters:parameters_tail
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+    | [], parameter :: parameters_tail ->
+        (* Arguments empty, parameter *)
+        let parameter_argument_mapping =
+          match Map.find parameter_argument_mapping parameter with
+          | Some _ -> parameter_argument_mapping
+          | None -> Map.set ~key:parameter ~data:[] parameter_argument_mapping
+        in
+        consume
+          ~arguments
+          ~parameters:parameters_tail
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+    | ( ({ kind = Named _; _ } as argument) :: arguments_tail,
+        (Parameter.Keywords _ as parameter) :: _ ) ->
+        (* Labeled argument, keywords parameter *)
+        let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+        consume
+          ~arguments:arguments_tail
+          ~parameters
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+    | ({ kind = Named name; _ } as argument) :: arguments_tail, parameters ->
+        (* Labeled argument *)
+        let rec extract_matching_name searched to_search =
+          match to_search with
+          | [] -> None, List.rev searched
+          | (Parameter.KeywordOnly { name = parameter_name; _ } as head) :: tail
+          | (Parameter.Named { name = parameter_name; _ } as head) :: tail
+            when Identifier.equal_sanitized parameter_name name.value ->
+              Some head, List.rev searched @ tail
+          | (Parameter.Keywords _ as head) :: tail ->
+              let matching, parameters = extract_matching_name (head :: searched) tail in
+              let matching = Some (Option.value matching ~default:head) in
+              matching, parameters
+          | head :: tail -> extract_matching_name (head :: searched) tail
+        in
+        let matching_parameter, remaining_parameters = extract_matching_name [] parameters in
+        let parameter_argument_mapping, reasons =
+          match matching_parameter with
+          | Some matching_parameter ->
+              update_mapping matching_parameter (Argument argument), reasons
+          | None ->
+              ( parameter_argument_mapping,
+                { reasons with arity = UnexpectedKeyword name.value :: arity } )
+        in
+        consume
+          ~arguments:arguments_tail
+          ~parameters:remaining_parameters
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping; reasons }
+    | ( ({ kind = DoubleStar; _ } as argument) :: arguments_tail,
+        (Parameter.Keywords _ as parameter) :: _ )
+    | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
+        (Parameter.Variable _ as parameter) :: _ ) ->
+        (* (Double) starred argument, (double) starred parameter *)
+        let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+        consume
+          ~arguments:arguments_tail
+          ~parameters
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+    | { kind = SingleStar; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
+        (* Starred argument, double starred parameter *)
+        consume
+          ~arguments
+          ~parameters:parameters_tail
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+    | { kind = Positional; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
+        (* Unlabeled argument, double starred parameter *)
+        consume
+          ~arguments
+          ~parameters:parameters_tail
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+    | { kind = DoubleStar; _ } :: _, Parameter.Variable _ :: parameters_tail ->
+        (* Double starred argument, starred parameter *)
+        consume
+          ~arguments
+          ~parameters:parameters_tail
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+    | ( ({ kind = Positional; _ } as argument) :: arguments_tail,
+        (Parameter.Variable _ as parameter) :: _ ) ->
+        (* Unlabeled argument, starred parameter *)
+        let parameter_argument_mapping_with_reasons =
+          let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+        in
+        consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
+    | { kind = SingleStar; _ } :: arguments_tail, Type.Callable.Parameter.KeywordOnly _ :: _ ->
+        (* Starred argument, keyword only parameter *)
+        consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
+    | ({ kind = DoubleStar; _ } as argument) :: _, parameter :: parameters_tail
+    | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
+        (* Double starred or starred argument, parameter *)
+        let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+        consume
+          ~arguments
+          ~parameters:parameters_tail
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+    | { kind = Positional; _ } :: _, (Parameter.KeywordOnly _ as parameter) :: parameters_tail ->
+        (* Unlabeled argument, keyword only parameter *)
+        let reasons =
+          arity_mismatch reasons ~unreachable_parameters:(parameter :: parameters_tail) ~arguments
+        in
+        { parameter_argument_mapping_with_reasons with reasons }
+    | ({ kind = Positional; _ } as argument) :: arguments_tail, parameter :: parameters_tail ->
+        (* Unlabeled argument, parameter *)
+        let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+        consume
+          ~arguments:arguments_tail
+          ~parameters:parameters_tail
+          { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+  in
+  {
+    ParameterArgumentMapping.parameter_argument_mapping = Parameter.Map.empty;
+    reasons = empty_reasons;
+  }
+  |> consume ~arguments ~parameters
+
+
 class base class_metadata_environment dependency =
   object (self)
     method get_typed_dictionary ~assumptions annotation =
@@ -3029,200 +3212,6 @@ class base class_metadata_environment dependency =
       let open SignatureSelectionTypes in
       let order = self#full_order ~assumptions in
       let open Type.Callable in
-      let get_parameter_argument_mapping ~all_parameters ~arguments ~parameters =
-        let all_arguments = arguments in
-        let rec consume
-            ({
-               ParameterArgumentMapping.parameter_argument_mapping;
-               reasons = { arity; _ } as reasons;
-             } as parameter_argument_mapping_with_reasons)
-            ~arguments
-            ~parameters
-          =
-          let update_mapping parameter argument =
-            Map.add_multi parameter_argument_mapping ~key:parameter ~data:argument
-          in
-          let arity_mismatch ?(unreachable_parameters = []) ~arguments reasons =
-            match all_parameters with
-            | Defined all_parameters ->
-                let matched_keyword_arguments =
-                  let is_keyword_argument = function
-                    | { Argument.WithPosition.kind = Named _; _ } -> true
-                    | _ -> false
-                  in
-                  List.filter ~f:is_keyword_argument all_arguments
-                in
-                let positional_parameter_count =
-                  List.length all_parameters
-                  - List.length unreachable_parameters
-                  - List.length matched_keyword_arguments
-                in
-                let self_argument_adjustment =
-                  if Option.is_some self_argument then
-                    1
-                  else
-                    0
-                in
-                let error =
-                  TooManyArguments
-                    {
-                      expected = positional_parameter_count - self_argument_adjustment;
-                      provided =
-                        positional_parameter_count
-                        + List.length arguments
-                        - self_argument_adjustment;
-                    }
-                in
-                { reasons with arity = error :: arity }
-            | _ -> reasons
-          in
-          match arguments, parameters with
-          | [], [] ->
-              (* Both empty *)
-              parameter_argument_mapping_with_reasons
-          | { Argument.WithPosition.kind = SingleStar; _ } :: arguments_tail, []
-          | { kind = DoubleStar; _ } :: arguments_tail, [] ->
-              (* Starred or double starred arguments; parameters empty *)
-              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-          | { kind = Named name; _ } :: _, [] ->
-              (* Named argument; parameters empty *)
-              let reasons = { reasons with arity = UnexpectedKeyword name.value :: arity } in
-              { parameter_argument_mapping_with_reasons with reasons }
-          | _, [] ->
-              (* Positional argument; parameters empty *)
-              {
-                parameter_argument_mapping_with_reasons with
-                reasons = arity_mismatch ~arguments reasons;
-              }
-          | [], (Parameter.KeywordOnly { default = true; _ } as parameter) :: parameters_tail
-          | [], (Parameter.PositionalOnly { default = true; _ } as parameter) :: parameters_tail
-          | [], (Parameter.Named { default = true; _ } as parameter) :: parameters_tail ->
-              (* Arguments empty, default parameter *)
-              let parameter_argument_mapping = update_mapping parameter Default in
-              consume
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | [], parameter :: parameters_tail ->
-              (* Arguments empty, parameter *)
-              let parameter_argument_mapping =
-                match Map.find parameter_argument_mapping parameter with
-                | Some _ -> parameter_argument_mapping
-                | None -> Map.set ~key:parameter ~data:[] parameter_argument_mapping
-              in
-              consume
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | ( ({ kind = Named _; _ } as argument) :: arguments_tail,
-              (Parameter.Keywords _ as parameter) :: _ ) ->
-              (* Labeled argument, keywords parameter *)
-              let parameter_argument_mapping = update_mapping parameter (Argument argument) in
-              consume
-                ~arguments:arguments_tail
-                ~parameters
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | ({ kind = Named name; _ } as argument) :: arguments_tail, parameters ->
-              (* Labeled argument *)
-              let rec extract_matching_name searched to_search =
-                match to_search with
-                | [] -> None, List.rev searched
-                | (Parameter.KeywordOnly { name = parameter_name; _ } as head) :: tail
-                | (Parameter.Named { name = parameter_name; _ } as head) :: tail
-                  when Identifier.equal_sanitized parameter_name name.value ->
-                    Some head, List.rev searched @ tail
-                | (Parameter.Keywords _ as head) :: tail ->
-                    let matching, parameters = extract_matching_name (head :: searched) tail in
-                    let matching = Some (Option.value matching ~default:head) in
-                    matching, parameters
-                | head :: tail -> extract_matching_name (head :: searched) tail
-              in
-              let matching_parameter, remaining_parameters = extract_matching_name [] parameters in
-              let parameter_argument_mapping, reasons =
-                match matching_parameter with
-                | Some matching_parameter ->
-                    update_mapping matching_parameter (Argument argument), reasons
-                | None ->
-                    ( parameter_argument_mapping,
-                      { reasons with arity = UnexpectedKeyword name.value :: arity } )
-              in
-              consume
-                ~arguments:arguments_tail
-                ~parameters:remaining_parameters
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping; reasons }
-          | ( ({ kind = DoubleStar; _ } as argument) :: arguments_tail,
-              (Parameter.Keywords _ as parameter) :: _ )
-          | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
-              (Parameter.Variable _ as parameter) :: _ ) ->
-              (* (Double) starred argument, (double) starred parameter *)
-              let parameter_argument_mapping = update_mapping parameter (Argument argument) in
-              consume
-                ~arguments:arguments_tail
-                ~parameters
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | { kind = SingleStar; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
-              (* Starred argument, double starred parameter *)
-              consume
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | { kind = Positional; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
-              (* Unlabeled argument, double starred parameter *)
-              consume
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | { kind = DoubleStar; _ } :: _, Parameter.Variable _ :: parameters_tail ->
-              (* Double starred argument, starred parameter *)
-              consume
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | ( ({ kind = Positional; _ } as argument) :: arguments_tail,
-              (Parameter.Variable _ as parameter) :: _ ) ->
-              (* Unlabeled argument, starred parameter *)
-              let parameter_argument_mapping_with_reasons =
-                let parameter_argument_mapping = update_mapping parameter (Argument argument) in
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-              in
-              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-          | { kind = SingleStar; _ } :: arguments_tail, Type.Callable.Parameter.KeywordOnly _ :: _
-            ->
-              (* Starred argument, keyword only parameter *)
-              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
-          | ({ kind = DoubleStar; _ } as argument) :: _, parameter :: parameters_tail
-          | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
-              (* Double starred or starred argument, parameter *)
-              let parameter_argument_mapping = update_mapping parameter (Argument argument) in
-              consume
-                ~arguments
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-          | { kind = Positional; _ } :: _, (Parameter.KeywordOnly _ as parameter) :: parameters_tail
-            ->
-              (* Unlabeled argument, keyword only parameter *)
-              let reasons =
-                arity_mismatch
-                  reasons
-                  ~unreachable_parameters:(parameter :: parameters_tail)
-                  ~arguments
-              in
-              { parameter_argument_mapping_with_reasons with reasons }
-          | ({ kind = Positional; _ } as argument) :: arguments_tail, parameter :: parameters_tail
-            ->
-              (* Unlabeled argument, parameter *)
-              let parameter_argument_mapping = update_mapping parameter (Argument argument) in
-              consume
-                ~arguments:arguments_tail
-                ~parameters:parameters_tail
-                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
-        in
-        {
-          ParameterArgumentMapping.parameter_argument_mapping = Parameter.Map.empty;
-          reasons = empty_reasons;
-        }
-        |> consume ~arguments ~parameters
-      in
       let check_annotations ({ parameter_argument_mapping; _ } as signature_match) =
         (* Check whether the parameter annotation is `Callable[[ParamVar], ReturnVar]`
          * and the argument is `lambda parameter: body` *)
@@ -3810,7 +3799,7 @@ class base class_metadata_environment dependency =
         let { parameters = all_parameters; _ } = implementation in
         match all_parameters with
         | Defined parameters ->
-            get_parameter_argument_mapping ~arguments ~parameters ~all_parameters
+            get_parameter_argument_mapping ~self_argument ~arguments ~parameters ~all_parameters
             |> fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
             { base_signature_match with parameter_argument_mapping; reasons }
             |> check_annotations
@@ -3834,6 +3823,7 @@ class base class_metadata_environment dependency =
                  } as head_signature)
               =
               get_parameter_argument_mapping
+                ~self_argument
                 ~arguments:front
                 ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
                 ~all_parameters
@@ -3884,6 +3874,7 @@ class base class_metadata_environment dependency =
               when combines_into_variable ~positional_component ~keyword_component ->
                 let arguments = List.rev reversed_arguments_head in
                 get_parameter_argument_mapping
+                  ~self_argument
                   ~arguments
                   ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
                   ~all_parameters
