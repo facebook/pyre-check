@@ -1381,6 +1381,122 @@ module SignatureSelection = struct
     |> special_case_dictionary_constructor
     |> special_case_lambda_parameter
     |> check_if_solution_exists
+
+
+  let rec check_arguments_against_signature
+      ~order
+      ~resolve_mutable_literals
+      ~resolve_with_locals
+      ~callable
+      ~self_argument
+      ~(arguments : Argument.WithPosition.t list)
+      implementation
+    =
+    let open SignatureSelectionTypes in
+    let open Type.Callable in
+    let callable = { callable with Type.Callable.implementation; overloads = [] } in
+    let base_signature_match =
+      {
+        callable;
+        parameter_argument_mapping = Parameter.Map.empty;
+        constraints_set = [TypeConstraints.empty];
+        ranks = { arity = 0; annotation = 0; position = 0 };
+        reasons = empty_reasons;
+      }
+    in
+    let { parameters = all_parameters; _ } = implementation in
+    let check_arguments_against_parameters =
+      check_arguments_against_parameters ~order ~resolve_mutable_literals ~resolve_with_locals
+    in
+    match all_parameters with
+    | Defined parameters ->
+        get_parameter_argument_mapping ~self_argument ~arguments ~parameters ~all_parameters
+        |> check_arguments_against_parameters ~callable
+        |> fun signature_match -> [signature_match]
+    | Undefined -> [base_signature_match]
+    | ParameterVariadicTypeVariable { head; variable }
+      when Type.Variable.Variadic.Parameters.is_free variable -> (
+        let front, back =
+          let is_labeled = function
+            | { Argument.WithPosition.kind = Named _; _ } -> true
+            | _ -> false
+          in
+          let labeled, unlabeled = List.partition_tf arguments ~f:is_labeled in
+          let first_unlabeled, remainder = List.split_n unlabeled (List.length head) in
+          first_unlabeled, labeled @ remainder
+        in
+        let ({ constraints_set; reasons = { arity = head_arity; annotation = head_annotation }; _ }
+            as head_signature)
+          =
+          get_parameter_argument_mapping
+            ~self_argument
+            ~arguments:front
+            ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
+            ~all_parameters
+          |> check_arguments_against_parameters ~callable
+        in
+        let solve_back parameters =
+          let constraints_set =
+            (* If we use this option, we have to commit to it as to not move away from it later *)
+            TypeOrder.OrderedConstraintsSet.add
+              constraints_set
+              ~new_constraint:(VariableIsExactly (ParameterVariadicPair (variable, parameters)))
+              ~order
+          in
+          check_arguments_against_signature
+            ~order
+            ~resolve_mutable_literals
+            ~resolve_with_locals
+            ~callable
+            ~self_argument
+            ~arguments:back
+            { implementation with parameters }
+          |> List.map
+               ~f:(fun { reasons = { arity = tail_arity; annotation = tail_annotation }; _ } ->
+                 {
+                   base_signature_match with
+                   constraints_set;
+                   reasons =
+                     {
+                       arity = head_arity @ tail_arity;
+                       annotation = head_annotation @ tail_annotation;
+                     };
+                 })
+        in
+        TypeOrder.OrderedConstraintsSet.get_parameter_specification_possibilities
+          constraints_set
+          ~parameter_specification:variable
+          ~order
+        |> List.concat_map ~f:solve_back
+        |> function
+        | [] -> [head_signature]
+        | nonempty -> nonempty)
+    | ParameterVariadicTypeVariable { head; variable } -> (
+        let combines_into_variable ~positional_component ~keyword_component =
+          Type.Variable.Variadic.Parameters.Components.combine
+            { positional_component; keyword_component }
+          >>| Type.Variable.Variadic.Parameters.equal variable
+          |> Option.value ~default:false
+        in
+        match List.rev arguments with
+        | { kind = DoubleStar; resolved = keyword_component; _ }
+          :: { kind = SingleStar; resolved = positional_component; _ } :: reversed_arguments_head
+          when combines_into_variable ~positional_component ~keyword_component ->
+            let arguments = List.rev reversed_arguments_head in
+            get_parameter_argument_mapping
+              ~self_argument
+              ~arguments
+              ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
+              ~all_parameters
+            |> check_arguments_against_parameters ~callable
+            |> fun signature_match -> [signature_match]
+        | _ ->
+            [
+              {
+                base_signature_match with
+                reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
+              };
+            ])
 end
 
 class base class_metadata_environment dependency =
@@ -3797,116 +3913,6 @@ class base class_metadata_environment dependency =
              ~default:
                (NotFound { closest_return_annotation = default_return_annotation; reason = None })
       in
-      let rec check_arity_and_annotations implementation ~(arguments : Argument.WithPosition.t list)
-        =
-        let callable = { callable with Type.Callable.implementation; overloads = [] } in
-        let base_signature_match =
-          {
-            callable;
-            parameter_argument_mapping = Parameter.Map.empty;
-            constraints_set = [TypeConstraints.empty];
-            ranks = { arity = 0; annotation = 0; position = 0 };
-            reasons = empty_reasons;
-          }
-        in
-        let { parameters = all_parameters; _ } = implementation in
-        let check_arguments_against_parameters =
-          SignatureSelection.check_arguments_against_parameters
-            ~order
-            ~resolve_mutable_literals:(self#resolve_mutable_literals ~assumptions)
-            ~resolve_with_locals
-        in
-        match all_parameters with
-        | Defined parameters ->
-            SignatureSelection.get_parameter_argument_mapping
-              ~self_argument
-              ~arguments
-              ~parameters
-              ~all_parameters
-            |> check_arguments_against_parameters ~callable
-            |> fun signature_match -> [signature_match]
-        | Undefined -> [base_signature_match]
-        | ParameterVariadicTypeVariable { head; variable }
-          when Type.Variable.Variadic.Parameters.is_free variable -> (
-            let front, back =
-              let is_labeled = function
-                | { Argument.WithPosition.kind = Named _; _ } -> true
-                | _ -> false
-              in
-              let labeled, unlabeled = List.partition_tf arguments ~f:is_labeled in
-              let first_unlabeled, remainder = List.split_n unlabeled (List.length head) in
-              first_unlabeled, labeled @ remainder
-            in
-            let ({
-                   constraints_set;
-                   reasons = { arity = head_arity; annotation = head_annotation };
-                   _;
-                 } as head_signature)
-              =
-              SignatureSelection.get_parameter_argument_mapping
-                ~self_argument
-                ~arguments:front
-                ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
-                ~all_parameters
-              |> check_arguments_against_parameters ~callable
-            in
-            let solve_back parameters =
-              let constraints_set =
-                (* If we use this option, we have to commit to it as to not move away from it later *)
-                TypeOrder.OrderedConstraintsSet.add
-                  constraints_set
-                  ~new_constraint:(VariableIsExactly (ParameterVariadicPair (variable, parameters)))
-                  ~order
-              in
-              check_arity_and_annotations { implementation with parameters } ~arguments:back
-              |> List.map
-                   ~f:(fun { reasons = { arity = tail_arity; annotation = tail_annotation }; _ } ->
-                     {
-                       base_signature_match with
-                       constraints_set;
-                       reasons =
-                         {
-                           arity = head_arity @ tail_arity;
-                           annotation = head_annotation @ tail_annotation;
-                         };
-                     })
-            in
-            TypeOrder.OrderedConstraintsSet.get_parameter_specification_possibilities
-              constraints_set
-              ~parameter_specification:variable
-              ~order
-            |> List.concat_map ~f:solve_back
-            |> function
-            | [] -> [head_signature]
-            | nonempty -> nonempty)
-        | ParameterVariadicTypeVariable { head; variable } -> (
-            let combines_into_variable ~positional_component ~keyword_component =
-              Type.Variable.Variadic.Parameters.Components.combine
-                { positional_component; keyword_component }
-              >>| Type.Variable.Variadic.Parameters.equal variable
-              |> Option.value ~default:false
-            in
-            match List.rev arguments with
-            | { kind = DoubleStar; resolved = keyword_component; _ }
-              :: { kind = SingleStar; resolved = positional_component; _ }
-                 :: reversed_arguments_head
-              when combines_into_variable ~positional_component ~keyword_component ->
-                let arguments = List.rev reversed_arguments_head in
-                SignatureSelection.get_parameter_argument_mapping
-                  ~self_argument
-                  ~arguments
-                  ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
-                  ~all_parameters
-                |> check_arguments_against_parameters ~callable
-                |> fun signature_match -> [signature_match]
-            | _ ->
-                [
-                  {
-                    base_signature_match with
-                    reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
-                  };
-                ])
-      in
       let get_match signatures =
         let arguments =
           let arguments =
@@ -3956,8 +3962,17 @@ class base class_metadata_environment dependency =
           in
           self_argument @ labeled_arguments @ unlabeled_arguments
         in
+        let check_arguments_against_signature =
+          SignatureSelection.check_arguments_against_signature
+            ~order
+            ~resolve_mutable_literals:(self#resolve_mutable_literals ~assumptions)
+            ~resolve_with_locals
+            ~callable
+            ~self_argument
+            ~arguments
+        in
         signatures
-        |> List.concat_map ~f:(check_arity_and_annotations ~arguments)
+        |> List.concat_map ~f:check_arguments_against_signature
         |> List.map ~f:calculate_rank
         |> find_closest
       in
