@@ -6,17 +6,27 @@
 import json
 import logging
 from pathlib import Path
-from typing import Iterable, Dict, Sequence, List
+from typing import Iterable, Dict, Sequence, List, Optional
 
 from .. import (
     command_arguments,
     configuration as configuration_module,
     error,
+    statistics_logger,
 )
-from . import commands, server_connection, server_event, start, remote_logging
+from . import (
+    commands,
+    server_connection,
+    server_event,
+    start,
+    remote_logging as remote_logging_module,
+    backend_arguments,
+)
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+COMMAND_NAME = "incremental"
 
 
 class InvalidServerResponse(Exception):
@@ -74,6 +84,31 @@ def compute_error_statistics_per_code(
         yield {"code": code, "count": len(errors)}
 
 
+def log_error_statistics(
+    remote_logging: Optional[backend_arguments.RemoteLogging],
+    type_errors: Sequence[error.Error],
+    command_name: str,
+) -> None:
+    if remote_logging is None:
+        return
+    logger = remote_logging.logger
+    if logger is None:
+        return
+    log_identifier = remote_logging.identifier
+    for integers in compute_error_statistics_per_code(type_errors):
+        statistics_logger.log(
+            category=statistics_logger.LoggerCategory.ERROR_STATISTICS,
+            logger=logger,
+            integers=integers,
+            normals={
+                "command": command_name,
+                **(
+                    {"identifier": log_identifier} if log_identifier is not None else {}
+                ),
+            },
+        )
+
+
 def display_type_errors(errors: List[error.Error], output: str) -> None:
     error.print_errors(
         [error.relativize_path(against=Path.cwd()) for error in errors],
@@ -81,12 +116,20 @@ def display_type_errors(errors: List[error.Error], output: str) -> None:
     )
 
 
-def _show_progress_and_display_type_errors(
-    log_path: Path, socket_path: Path, output: str
+def _show_progress_log_and_display_type_errors(
+    log_path: Path,
+    socket_path: Path,
+    output: str,
+    remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> commands.ExitCode:
     LOG.info("Waiting for server...")
     with start.background_logging(log_path):
         type_errors = _read_type_errors(socket_path)
+        log_error_statistics(
+            remote_logging=remote_logging,
+            type_errors=type_errors,
+            command_name=COMMAND_NAME,
+        )
         display_type_errors(type_errors, output=output)
         return (
             commands.ExitCode.SUCCESS
@@ -98,7 +141,7 @@ def _show_progress_and_display_type_errors(
 def run_incremental(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
-) -> remote_logging.ExitCodeWithAdditionalLogging:
+) -> remote_logging_module.ExitCodeWithAdditionalLogging:
     socket_path = server_connection.get_default_socket_path(
         project_root=Path(configuration.project_root),
         relative_local_root=Path(configuration.relative_local_root)
@@ -108,11 +151,15 @@ def run_incremental(
     # Need to be consistent with the log symlink location in start command
     log_path = Path(configuration.log_directory) / "new_server" / "server.stderr"
     output = incremental_arguments.output
+    remote_logging = backend_arguments.RemoteLogging.create(
+        configuration.logger,
+        incremental_arguments.start_arguments.log_identifier,
+    )
     try:
-        exit_code = _show_progress_and_display_type_errors(
-            log_path, socket_path, output
+        exit_code = _show_progress_log_and_display_type_errors(
+            log_path, socket_path, output, remote_logging
         )
-        return remote_logging.ExitCodeWithAdditionalLogging(
+        return remote_logging_module.ExitCodeWithAdditionalLogging(
             exit_code=exit_code,
             additional_logging={
                 "connected_to": "already_running_server",
@@ -130,10 +177,10 @@ def run_incremental(
             raise commands.ClientException(
                 f"`pyre start` failed with non-zero exit code: {start_status}"
             )
-        exit_code = _show_progress_and_display_type_errors(
-            log_path, socket_path, output
+        exit_code = _show_progress_log_and_display_type_errors(
+            log_path, socket_path, output, remote_logging
         )
-        return remote_logging.ExitCodeWithAdditionalLogging(
+        return remote_logging_module.ExitCodeWithAdditionalLogging(
             exit_code=exit_code,
             additional_logging={
                 "connected_to": "newly_started_server",
@@ -151,11 +198,11 @@ def _exit_code_from_error_kind(error_kind: server_event.ErrorKind) -> commands.E
     return commands.ExitCode.FAILURE
 
 
-@remote_logging.log_usage_with_additional_info(command_name="incremental")
+@remote_logging_module.log_usage_with_additional_info(command_name=COMMAND_NAME)
 def run(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
-) -> remote_logging.ExitCodeWithAdditionalLogging:
+) -> remote_logging_module.ExitCodeWithAdditionalLogging:
     try:
         return run_incremental(configuration, incremental_arguments)
     except server_event.ServerStartException as error:

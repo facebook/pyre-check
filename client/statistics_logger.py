@@ -21,6 +21,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class LoggerCategory(Enum):
     ANNOTATION_COUNTS = "perfpipe_pyre_annotation_counts"
     BUCK_EVENTS = "perfpipe_pyre_buck_events"
+    ERROR_STATISTICS = "perfpipe_pyre_error_statistics"
     FBCODE_COVERAGE = "perfpipe_pyre_fbcode_coverage"
     FIXME_COUNTS = "perfpipe_pyre_fixme_counts"
     LSP_EVENTS = "perfpipe_pyre_lsp_events"
