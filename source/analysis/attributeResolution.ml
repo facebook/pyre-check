@@ -84,6 +84,15 @@ type reasons = {
   annotation: SignatureSelectionTypes.reason list;
 }
 
+let empty_reasons = { arity = []; annotation = [] }
+
+module ParameterArgumentMapping = struct
+  type t = {
+    parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
+    reasons: reasons;
+  }
+end
+
 type signature_match = {
   callable: Type.Callable.t;
   parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
@@ -3023,8 +3032,10 @@ class base class_metadata_environment dependency =
       let match_arity ~all_parameters signature_match ~arguments ~parameters =
         let all_arguments = arguments in
         let rec consume
-            ({ parameter_argument_mapping; reasons = { arity; _ } as reasons; _ } as
-            signature_match)
+            ({
+               ParameterArgumentMapping.parameter_argument_mapping;
+               reasons = { arity; _ } as reasons;
+             } as parameter_argument_mapping_with_reasons)
             ~arguments
             ~parameters
           =
@@ -3068,18 +3079,21 @@ class base class_metadata_environment dependency =
           match arguments, parameters with
           | [], [] ->
               (* Both empty *)
-              signature_match
+              parameter_argument_mapping_with_reasons
           | { Argument.WithPosition.kind = SingleStar; _ } :: arguments_tail, []
           | { kind = DoubleStar; _ } :: arguments_tail, [] ->
               (* Starred or double starred arguments; parameters empty *)
-              consume ~arguments:arguments_tail ~parameters signature_match
+              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
           | { kind = Named name; _ } :: _, [] ->
               (* Named argument; parameters empty *)
               let reasons = { reasons with arity = UnexpectedKeyword name.value :: arity } in
-              { signature_match with reasons }
+              { parameter_argument_mapping_with_reasons with reasons }
           | _, [] ->
               (* Positional argument; parameters empty *)
-              { signature_match with reasons = arity_mismatch ~arguments reasons }
+              {
+                parameter_argument_mapping_with_reasons with
+                reasons = arity_mismatch ~arguments reasons;
+              }
           | [], (Parameter.KeywordOnly { default = true; _ } as parameter) :: parameters_tail
           | [], (Parameter.PositionalOnly { default = true; _ } as parameter) :: parameters_tail
           | [], (Parameter.Named { default = true; _ } as parameter) :: parameters_tail ->
@@ -3088,7 +3102,7 @@ class base class_metadata_environment dependency =
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           | [], parameter :: parameters_tail ->
               (* Arguments empty, parameter *)
               let parameter_argument_mapping =
@@ -3099,7 +3113,7 @@ class base class_metadata_environment dependency =
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           | ( ({ kind = Named _; _ } as argument) :: arguments_tail,
               (Parameter.Keywords _ as parameter) :: _ ) ->
               (* Labeled argument, keywords parameter *)
@@ -3107,7 +3121,7 @@ class base class_metadata_environment dependency =
               consume
                 ~arguments:arguments_tail
                 ~parameters
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           | ({ kind = Named name; _ } as argument) :: arguments_tail, parameters ->
               (* Labeled argument *)
               let rec extract_matching_name searched to_search =
@@ -3135,7 +3149,7 @@ class base class_metadata_environment dependency =
               consume
                 ~arguments:arguments_tail
                 ~parameters:remaining_parameters
-                { signature_match with parameter_argument_mapping; reasons }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping; reasons }
           | ( ({ kind = DoubleStar; _ } as argument) :: arguments_tail,
               (Parameter.Keywords _ as parameter) :: _ )
           | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
@@ -3145,37 +3159,37 @@ class base class_metadata_environment dependency =
               consume
                 ~arguments:arguments_tail
                 ~parameters
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           | { kind = SingleStar; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
               (* Starred argument, double starred parameter *)
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           | { kind = Positional; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
               (* Unlabeled argument, double starred parameter *)
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           | { kind = DoubleStar; _ } :: _, Parameter.Variable _ :: parameters_tail ->
               (* Double starred argument, starred parameter *)
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           | ( ({ kind = Positional; _ } as argument) :: arguments_tail,
               (Parameter.Variable _ as parameter) :: _ ) ->
               (* Unlabeled argument, starred parameter *)
-              let signature_match =
+              let parameter_argument_mapping_with_reasons =
                 let parameter_argument_mapping = update_mapping parameter (Argument argument) in
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
               in
-              consume ~arguments:arguments_tail ~parameters signature_match
+              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
           | { kind = SingleStar; _ } :: arguments_tail, Type.Callable.Parameter.KeywordOnly _ :: _
             ->
               (* Starred argument, keyword only parameter *)
-              consume ~arguments:arguments_tail ~parameters signature_match
+              consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
           | ({ kind = DoubleStar; _ } as argument) :: _, parameter :: parameters_tail
           | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
               (* Double starred or starred argument, parameter *)
@@ -3183,7 +3197,7 @@ class base class_metadata_environment dependency =
               consume
                 ~arguments
                 ~parameters:parameters_tail
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           | { kind = Positional; _ } :: _, (Parameter.KeywordOnly _ as parameter) :: parameters_tail
             ->
               (* Unlabeled argument, keyword only parameter *)
@@ -3193,7 +3207,7 @@ class base class_metadata_environment dependency =
                   ~unreachable_parameters:(parameter :: parameters_tail)
                   ~arguments
               in
-              { signature_match with reasons }
+              { parameter_argument_mapping_with_reasons with reasons }
           | ({ kind = Positional; _ } as argument) :: arguments_tail, parameter :: parameters_tail
             ->
               (* Unlabeled argument, parameter *)
@@ -3201,9 +3215,15 @@ class base class_metadata_environment dependency =
               consume
                 ~arguments:arguments_tail
                 ~parameters:parameters_tail
-                { signature_match with parameter_argument_mapping }
+                { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
         in
-        consume signature_match ~arguments ~parameters
+        {
+          ParameterArgumentMapping.parameter_argument_mapping = Parameter.Map.empty;
+          reasons = empty_reasons;
+        }
+        |> consume ~arguments ~parameters
+        |> fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
+        { signature_match with parameter_argument_mapping; reasons }
       in
       let check_annotations ({ parameter_argument_mapping; _ } as signature_match) =
         (* Check whether the parameter annotation is `Callable[[ParamVar], ReturnVar]`
@@ -3786,7 +3806,7 @@ class base class_metadata_environment dependency =
             parameter_argument_mapping = Parameter.Map.empty;
             constraints_set = [TypeConstraints.empty];
             ranks = { arity = 0; annotation = 0; position = 0 };
-            reasons = { arity = []; annotation = [] };
+            reasons = empty_reasons;
           }
         in
         let { parameters = all_parameters; _ } = implementation in
