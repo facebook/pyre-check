@@ -3029,7 +3029,7 @@ class base class_metadata_environment dependency =
       let open SignatureSelectionTypes in
       let order = self#full_order ~assumptions in
       let open Type.Callable in
-      let match_arity ~all_parameters signature_match ~arguments ~parameters =
+      let get_parameter_argument_mapping ~all_parameters ~arguments ~parameters =
         let all_arguments = arguments in
         let rec consume
             ({
@@ -3222,8 +3222,6 @@ class base class_metadata_environment dependency =
           reasons = empty_reasons;
         }
         |> consume ~arguments ~parameters
-        |> fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
-        { signature_match with parameter_argument_mapping; reasons }
       in
       let check_annotations ({ parameter_argument_mapping; _ } as signature_match) =
         (* Check whether the parameter annotation is `Callable[[ParamVar], ReturnVar]`
@@ -3812,7 +3810,9 @@ class base class_metadata_environment dependency =
         let { parameters = all_parameters; _ } = implementation in
         match all_parameters with
         | Defined parameters ->
-            match_arity base_signature_match ~arguments ~parameters ~all_parameters
+            get_parameter_argument_mapping ~arguments ~parameters ~all_parameters
+            |> fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
+            { base_signature_match with parameter_argument_mapping; reasons }
             |> check_annotations
             |> fun signature_match -> [signature_match]
         | Undefined -> [base_signature_match]
@@ -3833,11 +3833,12 @@ class base class_metadata_environment dependency =
                    _;
                  } as head_signature)
               =
-              match_arity
-                base_signature_match
+              get_parameter_argument_mapping
                 ~arguments:front
                 ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
                 ~all_parameters
+              |> (fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
+                   { base_signature_match with parameter_argument_mapping; reasons })
               |> check_annotations
             in
             let solve_back parameters =
@@ -3882,11 +3883,12 @@ class base class_metadata_environment dependency =
                  :: reversed_arguments_head
               when combines_into_variable ~positional_component ~keyword_component ->
                 let arguments = List.rev reversed_arguments_head in
-                match_arity
-                  base_signature_match
+                get_parameter_argument_mapping
                   ~arguments
                   ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
                   ~all_parameters
+                |> fun { ParameterArgumentMapping.parameter_argument_mapping; reasons } ->
+                { base_signature_match with parameter_argument_mapping; reasons }
                 |> check_annotations
                 |> fun signature_match -> [signature_match]
             | _ ->
