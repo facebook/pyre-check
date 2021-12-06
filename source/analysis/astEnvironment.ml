@@ -134,7 +134,7 @@ let parse_source
     let metadata = Source.Metadata.parse ~qualifier (String.split content ~on:'\n') in
     match PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context content with
     | Ok statements -> Success (create_source ~metadata ~source_path statements)
-    | Error { PyreNewParser.Error.line; column; message; _ } ->
+    | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
         let is_suppressed =
           let { Source.Metadata.local_mode; ignore_codes; _ } = metadata in
           match Source.mode ~configuration ~local_mode with
@@ -144,8 +144,15 @@ let parse_source
               List.exists ignore_codes ~f:(Int.equal 404)
         in
         let location =
-          let error_position = { Location.line; column } in
-          { Location.start = error_position; stop = error_position }
+          let start = { Location.line; column } in
+          let stop =
+            (* Work around CPython bug where the end location sometimes precedes start location. *)
+            if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
+              start
+            else
+              { Location.line = end_line; column = end_column }
+          in
+          { Location.start; stop }
         in
         Error { location; message; is_suppressed }
   in
