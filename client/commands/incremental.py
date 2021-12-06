@@ -6,7 +6,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import List
+from typing import Iterable, Dict, Sequence, List
 
 from .. import (
     command_arguments,
@@ -61,6 +61,17 @@ def _read_type_errors(socket_path: Path) -> List[error.Error]:
         # The empty list argument means we want all type errors from the server.
         output_channel.write('["DisplayTypeError", []]\n')
         return parse_type_error_response(input_channel.readline())
+
+
+def compute_error_statistics_per_code(
+    type_errors: Sequence[error.Error],
+) -> Iterable[Dict[str, int]]:
+    errors_grouped_by_code: Dict[int, List[error.Error]] = {}
+    for type_error in type_errors:
+        errors_grouped_by_code.setdefault(type_error.code, []).append(type_error)
+
+    for code, errors in errors_grouped_by_code.items():
+        yield {"code": code, "count": len(errors)}
 
 
 def display_type_errors(errors: List[error.Error], output: str) -> None:
