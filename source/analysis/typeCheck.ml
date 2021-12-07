@@ -1424,13 +1424,26 @@ module State (Context : Context) = struct
         | SignatureSelectionTypes.NotFound _, _ -> true
         | _ -> false
       in
-      let resolve_signatures = function
-        (* Prioritize missing signatures for union type checking. *)
+      let join_return_annotations not_found_and_found_return_annotations =
+        match not_found_and_found_return_annotations with
+        | Some ([], head :: tail) ->
+            let resolved =
+              let extract = function
+                | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
+                    selected_return_annotation
+                | _ -> failwith "Not all signatures were found."
+              in
+              List.map tail ~f:extract
+              |> List.fold ~f:(GlobalResolution.join global_resolution) ~init:(extract head)
+            in
+            { Resolved.resolution; errors; resolved; resolved_annotation = None; base = None }
         | Some
             ( ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
                 unpacked_callable_and_self_argument )
               :: _,
               _ ) ->
+            (* For a union of callables, we prioritize mismatched signatures even if some of the
+               callables matched correctly. *)
             let errors =
               let error_kinds =
                 let { TypeOperation.callable; self_argument } =
@@ -1452,23 +1465,12 @@ module State (Context : Context) = struct
               List.fold error_kinds ~init:errors ~f:emit
             in
             {
-              Resolved.resolution;
+              resolution;
               errors;
               resolved = closest_return_annotation;
               resolved_annotation = None;
               base = None;
             }
-        | Some ([], head :: tail) ->
-            let resolved =
-              let extract = function
-                | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
-                    selected_return_annotation
-                | _ -> failwith "Not all signatures were found."
-              in
-              List.map tail ~f:extract
-              |> List.fold ~f:(GlobalResolution.join global_resolution) ~init:(extract head)
-            in
-            { resolution; errors; resolved; resolved_annotation = None; base = None }
         | _ ->
             let errors =
               let resolved_callee = Callee.resolved callee in
@@ -1520,7 +1522,7 @@ module State (Context : Context) = struct
 
             { input with resolved = Type.Any; errors = new_errors }
       in
-      signatures >>| List.partition_tf ~f:not_found |> resolve_signatures |> check_for_error
+      signatures >>| List.partition_tf ~f:not_found |> join_return_annotations |> check_for_error
     in
     match value with
     | Await expression -> (
