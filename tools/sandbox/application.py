@@ -159,17 +159,20 @@ class Pysa:
                 elif "ERROR" in line and "is not part of the environment" in line:
                     model_verification_errors.append(line)
                 elif "INFO" in line or "ERROR" in line:
-                    if any(model_verification_errors):
+                    if model_verification_errors:
                         # Emit all model verification lines together to prevent
                         # network overhead.
+                        model_verification_error_output = "\n".join(
+                            model_verification_errors
+                        )
                         emit(
                             "pysa_results_channel",
                             {
                                 "type": "output",
-                                "line": "\n".join(model_verification_errors),
+                                "line": model_verification_error_output,
                             },
                         )
-                        LOG.debug("\n".join(model_verification_errors))
+                        LOG.debug(model_verification_error_output)
                         model_verification_errors = []
                     emit("pysa_results_channel", {"type": "output", "line": line})
                 LOG.debug(line)
