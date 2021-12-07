@@ -1652,6 +1652,44 @@ module SignatureSelection = struct
     |> Option.value
          ~default:
            (NotFound { closest_return_annotation = default_return_annotation; reason = None })
+
+
+  let prepare_arguments_for_signature_selection ~self_argument arguments =
+    let add_positions arguments =
+      let add_index index { Argument.expression; kind; resolved } =
+        { Argument.WithPosition.position = index + 1; expression; kind; resolved }
+      in
+      List.mapi ~f:add_index arguments
+    in
+    let unpack_starred_arguments arguments =
+      let unpack sofar argument =
+        match argument with
+        | { Argument.resolved = Tuple (Concrete tuple_parameters); kind = SingleStar; expression }
+          ->
+            let unpacked_arguments =
+              List.map tuple_parameters ~f:(fun resolved ->
+                  { Argument.expression; kind = Positional; resolved })
+            in
+            List.concat [List.rev unpacked_arguments; sofar]
+        | _ -> argument :: sofar
+      in
+      List.fold ~f:unpack ~init:[] arguments |> List.rev
+    in
+    let separate_labeled_unlabeled_arguments arguments =
+      let is_labeled = function
+        | { Argument.WithPosition.kind = Named _; _ } -> true
+        | _ -> false
+      in
+      let labeled_arguments, unlabeled_arguments = arguments |> List.partition_tf ~f:is_labeled in
+      let self_argument =
+        self_argument
+        >>| (fun resolved ->
+              { Argument.WithPosition.position = 0; expression = None; kind = Positional; resolved })
+        |> Option.to_list
+      in
+      self_argument @ labeled_arguments @ unlabeled_arguments
+    in
+    arguments |> unpack_starred_arguments |> add_positions |> separate_labeled_unlabeled_arguments
 end
 
 class base class_metadata_environment dependency =
@@ -3915,56 +3953,6 @@ class base class_metadata_environment dependency =
         ~skip_marking_escapees =
       let order = self#full_order ~assumptions in
       let get_match signatures =
-        let add_positions arguments =
-          let add_index index { Argument.expression; kind; resolved } =
-            { Argument.WithPosition.position = index + 1; expression; kind; resolved }
-          in
-          List.mapi ~f:add_index arguments
-        in
-        let unpack_starred_arguments arguments =
-          let unpack sofar argument =
-            match argument with
-            | {
-             Argument.resolved = Tuple (Concrete tuple_parameters);
-             kind = SingleStar;
-             expression;
-            } ->
-                let unpacked_arguments =
-                  List.map tuple_parameters ~f:(fun resolved ->
-                      { Argument.expression; kind = Positional; resolved })
-                in
-                List.concat [List.rev unpacked_arguments; sofar]
-            | _ -> argument :: sofar
-          in
-          List.fold ~f:unpack ~init:[] arguments |> List.rev
-        in
-        let separate_labeled_unlabeled_arguments arguments =
-          let is_labeled = function
-            | { Argument.WithPosition.kind = Named _; _ } -> true
-            | _ -> false
-          in
-          let labeled_arguments, unlabeled_arguments =
-            arguments |> List.partition_tf ~f:is_labeled
-          in
-          let self_argument =
-            self_argument
-            >>| (fun resolved ->
-                  {
-                    Argument.WithPosition.position = 0;
-                    expression = None;
-                    kind = Positional;
-                    resolved;
-                  })
-            |> Option.to_list
-          in
-          self_argument @ labeled_arguments @ unlabeled_arguments
-        in
-        let arguments =
-          arguments
-          |> unpack_starred_arguments
-          |> add_positions
-          |> separate_labeled_unlabeled_arguments
-        in
         let check_arguments_against_signature =
           SignatureSelection.check_arguments_against_signature
             ~order
@@ -3972,7 +3960,10 @@ class base class_metadata_environment dependency =
             ~resolve_with_locals
             ~callable
             ~self_argument
-            ~arguments
+            ~arguments:
+              (SignatureSelection.prepare_arguments_for_signature_selection
+                 ~self_argument
+                 arguments)
         in
         signatures
         |> List.concat_map ~f:check_arguments_against_signature
