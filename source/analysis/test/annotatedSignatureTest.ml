@@ -29,9 +29,9 @@ let variable_r, escaped_variable_r =
   make_normal_and_escaped_variable ~constraints:(Explicit [Type.integer; Type.float]) "_R"
 
 
-let compare_sig_t left right =
+let compare_instantiated_return_annotation left right =
   let open SignatureSelectionTypes in
-  let default = [%compare.equal: sig_t] left right in
+  let default = [%compare.equal: instantiated_return_annotation] left right in
   match left, right with
   | ( NotFound { reason = Some left_reason; closest_return_annotation = left_closest },
       NotFound { reason = Some right_reason; closest_return_annotation = right_closest } )
@@ -259,7 +259,11 @@ let test_unresolved_select context =
       | `NotFound (closest, reason) ->
           NotFound { closest_return_annotation = parse_return closest; reason }
     in
-    assert_equal ~printer:SignatureSelectionTypes.show_sig_t ~cmp:compare_sig_t expected signature
+    assert_equal
+      ~printer:SignatureSelectionTypes.show_instantiated_return_annotation
+      ~cmp:compare_instantiated_return_annotation
+      expected
+      signature
   in
   let assert_select_direct ~arguments ~callable expected =
     Type.Variable.Namespace.reset ();
@@ -283,8 +287,10 @@ let test_unresolved_select context =
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
     in
-    let printer x = SignatureSelectionTypes.sexp_of_sig_t x |> Sexp.to_string_hum in
-    assert_equal ~cmp:compare_sig_t ~printer expected signature
+    let printer x =
+      SignatureSelectionTypes.sexp_of_instantiated_return_annotation x |> Sexp.to_string_hum
+    in
+    assert_equal ~cmp:compare_instantiated_return_annotation ~printer expected signature
   in
   (* Undefined callables always match. *)
   assert_select ~allow_undefined:true "[..., int]" "()" (`Found "int");
@@ -813,8 +819,10 @@ let test_resolved_select context =
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
     in
-    let printer x = SignatureSelectionTypes.sexp_of_sig_t x |> Sexp.to_string_hum in
-    assert_equal ~cmp:compare_sig_t ~printer expected signature
+    let printer x =
+      SignatureSelectionTypes.sexp_of_instantiated_return_annotation x |> Sexp.to_string_hum
+    in
+    assert_equal ~cmp:compare_instantiated_return_annotation ~printer expected signature
   in
   assert_select
     ~arguments:[{ expression = None; kind = Positional; resolved = Type.string }]

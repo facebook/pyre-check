@@ -223,7 +223,7 @@ val signature_select
   arguments:AttributeResolution.Argument.t list ->
   callable:Type.Callable.t ->
   self_argument:Type.t option ->
-  SignatureSelectionTypes.sig_t
+  SignatureSelectionTypes.instantiated_return_annotation
 
 val resolve_define
   :  resolution:t ->

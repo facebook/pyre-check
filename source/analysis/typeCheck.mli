@@ -58,7 +58,7 @@ val unpack_callable_and_self_argument
        (arguments:AttributeResolution.Argument.t list ->
        callable:Type.Callable.t ->
        self_argument:Type.t option ->
-       SignatureSelectionTypes.sig_t) ->
+       SignatureSelectionTypes.instantiated_return_annotation) ->
   global_resolution:GlobalResolution.t ->
   Type.t ->
   TypeOperation.callable_and_self_argument option

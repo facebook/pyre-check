@@ -76,7 +76,7 @@ let equal_closest (left : closest) (right : closest) =
   && Option.equal [%compare.equal: reason] left.reason right.reason
 
 
-type sig_t =
+type instantiated_return_annotation =
   | Found of { selected_return_annotation: Type.t }
   | NotFound of closest
 [@@deriving show, sexp, compare]

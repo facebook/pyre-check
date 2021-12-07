@@ -18,7 +18,7 @@ module TypeOperation : sig
            (arguments:AttributeResolution.Argument.t list ->
            callable:Type.Callable.t ->
            self_argument:Type.t option ->
-           SignatureSelectionTypes.sig_t) ->
+           SignatureSelectionTypes.instantiated_return_annotation) ->
       callable_and_self_argument list ->
       callable_and_self_argument option
   end

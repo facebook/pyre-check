@@ -148,7 +148,7 @@ module AttributeReadOnly : sig
     arguments:Argument.t list ->
     callable:Type.Callable.t ->
     self_argument:Type.t option ->
-    SignatureSelectionTypes.sig_t
+    SignatureSelectionTypes.instantiated_return_annotation
 
   val resolve_mutable_literals
     :  t ->
