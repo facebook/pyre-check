@@ -8,22 +8,21 @@
 open Core
 open Interprocedural
 open Domains
-open TaintResult
 
 type t = {
   call_target: Target.t;
-  model: TaintResult.call_model;
+  model: Model.t;
 }
 [@@deriving show]
 
 let at_callsite ~resolution ~call_target ~arguments =
   let call_target = (call_target :> Target.t) in
   match Interprocedural.FixpointState.get_model call_target with
-  | None -> { call_target; model = TaintResult.obscure_model }
+  | None -> { call_target; model = Model.obscure_model }
   | Some model ->
       let expand_via_value_of
           {
-            forward = { source_taint };
+            Model.forward = { source_taint };
             backward = { sink_taint; taint_in_taint_out };
             sanitizers;
             modes;
@@ -74,7 +73,7 @@ let at_callsite ~resolution ~call_target ~arguments =
           BackwardState.transform Frame.Self Map ~f:expand taint_in_taint_out
         in
         {
-          forward = { source_taint };
+          Model.forward = { source_taint };
           backward = { sink_taint; taint_in_taint_out };
           sanitizers;
           modes;
@@ -82,12 +81,12 @@ let at_callsite ~resolution ~call_target ~arguments =
       in
       let taint_model =
         Interprocedural.AnalysisResult.get_model TaintResult.kind model
-        |> Option.value ~default:TaintResult.empty_model
+        |> Option.value ~default:Model.empty_model
         |> expand_via_value_of
       in
       let taint_model =
         if model.is_obscure then
-          { taint_model with modes = ModeSet.add Obscure taint_model.modes }
+          { taint_model with modes = Model.ModeSet.add Obscure taint_model.modes }
         else
           taint_model
       in

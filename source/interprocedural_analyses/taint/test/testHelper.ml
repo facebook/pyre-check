@@ -17,17 +17,17 @@ open Interprocedural
 
 type parameter_taint = {
   name: string;
-  sinks: Taint.Sinks.t list;
+  sinks: Sinks.t list;
 }
 
 type parameter_source_taint = {
   name: string;
-  sources: Taint.Sources.t list;
+  sources: Sources.t list;
 }
 
 type parameter_sanitize = {
   name: string;
-  sanitize: Taint.Domains.Sanitize.t;
+  sanitize: Domains.Sanitize.t;
 }
 
 type error_expectation = {
@@ -41,14 +41,14 @@ type expectation = {
   source_parameters: parameter_source_taint list;
   sink_parameters: parameter_taint list;
   tito_parameters: string list;
-  returns: Taint.Sources.t list;
+  returns: Sources.t list;
   errors: error_expectation list;
   obscure: bool option;
-  global_sanitizer: Taint.Domains.Sanitize.t;
-  parameters_sanitizer: Taint.Domains.Sanitize.t;
-  return_sanitizer: Taint.Domains.Sanitize.t;
+  global_sanitizer: Domains.Sanitize.t;
+  parameters_sanitizer: Domains.Sanitize.t;
+  return_sanitizer: Domains.Sanitize.t;
   parameter_sanitizers: parameter_sanitize list;
-  analysis_modes: Taint.Result.ModeSet.t;
+  analysis_modes: Model.ModeSet.t;
 }
 
 let outcome
@@ -59,11 +59,11 @@ let outcome
     ?(returns = [])
     ?(errors = [])
     ?obscure
-    ?(global_sanitizer = Taint.Domains.Sanitize.empty)
-    ?(parameters_sanitizer = Taint.Domains.Sanitize.empty)
-    ?(return_sanitizer = Taint.Domains.Sanitize.empty)
+    ?(global_sanitizer = Domains.Sanitize.empty)
+    ?(parameters_sanitizer = Domains.Sanitize.empty)
+    ?(return_sanitizer = Domains.Sanitize.empty)
     ?(parameter_sanitizers = [])
-    ?(analysis_modes = Taint.Result.ModeSet.empty)
+    ?(analysis_modes = Model.ModeSet.empty)
     define_name
   =
   {
@@ -91,9 +91,7 @@ let get_model callable =
   let model =
     FixpointState.get_model callable |> Option.value_exn ?here:None ~error ?message:None
   in
-  ( model
-    |> AnalysisResult.get_model Taint.Result.kind
-    |> Option.value ~default:Taint.Result.empty_model,
+  ( model |> AnalysisResult.get_model Taint.Result.kind |> Option.value ~default:Model.empty_model,
     model.is_obscure )
 
 
@@ -127,7 +125,6 @@ let check_expectation
     }
   =
   let callable = create_callable kind define_name in
-  let open Taint.Result in
   let extract_sinks_by_parameter_name (root, sink_tree) sink_map =
     match AccessPath.Root.parameter_name root with
     | Some name ->
@@ -139,7 +136,7 @@ let check_expectation
           String.Map.find sink_map name
           |> Option.value ~default:[]
           |> List.rev_append sinks
-          |> List.dedup_and_sort ~compare:Taint.Sinks.compare
+          |> List.dedup_and_sort ~compare:Sinks.compare
         in
         String.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
@@ -155,13 +152,13 @@ let check_expectation
           String.Map.find sink_map name
           |> Option.value ~default:[]
           |> List.rev_append sinks
-          |> List.dedup_and_sort ~compare:Taint.Sources.compare
+          |> List.dedup_and_sort ~compare:Sources.compare
         in
         String.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let { backward; forward; sanitizers; modes }, is_obscure = get_model callable in
-  assert_equal ~printer:Taint.Result.ModeSet.show modes expected_analysis_modes;
+  let { Model.backward; forward; sanitizers; modes }, is_obscure = get_model callable in
+  assert_equal ~printer:Model.ModeSet.show modes expected_analysis_modes;
   let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue
@@ -215,15 +212,15 @@ let check_expectation
     match data with
     | `Both (expected, actual) ->
         assert_equal
-          ~cmp:(List.equal Taint.Sinks.equal)
-          ~printer:(print_list ~show:Taint.Sinks.show)
+          ~cmp:(List.equal Sinks.equal)
+          ~printer:(print_list ~show:Sinks.show)
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           actual
     | `Left expected ->
         assert_equal
-          ~cmp:(List.equal Taint.Sinks.equal)
-          ~printer:(print_list ~show:Taint.Sinks.show)
+          ~cmp:(List.equal Sinks.equal)
+          ~printer:(print_list ~show:Sinks.show)
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           []
@@ -235,15 +232,15 @@ let check_expectation
     match data with
     | `Both (expected, actual) ->
         assert_equal
-          ~cmp:(List.equal Taint.Sources.equal)
-          ~printer:(print_list ~show:Taint.Sources.show)
+          ~cmp:(List.equal Sources.equal)
+          ~printer:(print_list ~show:Sources.show)
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           actual
     | `Left expected ->
         assert_equal
-          ~cmp:(List.equal Taint.Sources.equal)
-          ~printer:(print_list ~show:Taint.Sources.show)
+          ~cmp:(List.equal Sources.equal)
+          ~printer:(print_list ~show:Sources.show)
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           []
@@ -456,7 +453,7 @@ let run_with_taint_models tests ~name =
     assert_bool
       (Format.sprintf
          "The models shouldn't have any parsing errors: %s."
-         (List.to_string errors ~f:Taint.ModelVerificationError.display))
+         (List.to_string errors ~f:ModelVerificationError.display))
       (List.is_empty errors);
     Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
     |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
@@ -585,22 +582,20 @@ let initialize
             ~stubs:(Target.HashSet.of_list stub_targets)
             ~environment
         in
-        let remove_sinks models = Target.Map.map ~f:Taint.Result.remove_sinks models in
+        let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
         let add_obscure_sinks models =
           let add_obscure_sink models callable =
             let model =
               Target.Map.find models callable
-              |> Option.value ~default:Taint.Result.empty_model
-              |> Taint.Result.add_obscure_sink ~resolution ~call_target:callable
-              |> Taint.Result.remove_obscureness
+              |> Option.value ~default:Model.empty_model
+              |> Model.add_obscure_sink ~resolution ~call_target:callable
+              |> Model.remove_obscureness
             in
             Target.Map.set models ~key:callable ~data:model
           in
           stub_targets
           |> List.filter ~f:(fun stub ->
-                 Target.Map.find models stub
-                 >>| Taint.Result.is_obscure
-                 |> Option.value ~default:true)
+                 Target.Map.find models stub >>| Model.is_obscure |> Option.value ~default:true)
           |> List.fold ~init:models ~f:add_obscure_sink
         in
         let models =

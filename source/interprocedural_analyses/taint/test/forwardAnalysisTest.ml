@@ -68,9 +68,9 @@ let assert_taint ?models ?models_source ~context source expect =
         ~qualifier
         ~define
         ~call_graph_of_define
-        ~existing_model:Taint.Result.empty_model
+        ~existing_model:Model.empty_model
     in
-    let model = { Taint.Result.empty_model with forward } in
+    let model = { Model.empty_model with forward } in
     AnalysisResult.empty_model
     |> AnalysisResult.with_model Taint.Result.kind model
     |> FixpointState.add_predefined FixpointState.Epoch.predefined call_target

@@ -5,6 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val infer
-  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  TaintResult.call_model Interprocedural.Target.Map.t
+val infer : environment:Analysis.TypeEnvironment.ReadOnly.t -> Model.t Interprocedural.Target.Map.t

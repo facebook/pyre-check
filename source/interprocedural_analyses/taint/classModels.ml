@@ -11,7 +11,6 @@ open Ast
 open Analysis
 open Interprocedural
 open Domains
-open TaintResult
 
 let infer ~environment =
   Log.info "Computing inferred models...";
@@ -47,15 +46,15 @@ let infer ~environment =
     [
       ( `Method { Target.class_name; method_name = "__init__" },
         {
-          forward = Forward.empty;
+          Model.forward = Model.Forward.empty;
           backward =
             {
-              Backward.taint_in_taint_out =
+              Model.Backward.taint_in_taint_out =
                 List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
               sink_taint = BackwardState.empty;
             };
-          sanitizers = Sanitizers.empty;
-          modes = ModeSet.empty;
+          sanitizers = Model.Sanitizers.empty;
+          modes = Model.ModeSet.empty;
         } );
     ]
   in
@@ -79,15 +78,15 @@ let infer ~environment =
               [
                 ( `Method { Target.class_name; method_name = "__init__" },
                   {
-                    forward = Forward.empty;
+                    Model.forward = Model.Forward.empty;
                     backward =
                       {
-                        Backward.taint_in_taint_out =
+                        Model.Backward.taint_in_taint_out =
                           List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
                         sink_taint = BackwardState.empty;
                       };
-                    sanitizers = Sanitizers.empty;
-                    modes = ModeSet.empty;
+                    sanitizers = Model.Sanitizers.empty;
+                    modes = Model.ModeSet.empty;
                   } );
               ])
         |> Option.value ~default:[]
@@ -98,10 +97,10 @@ let infer ~environment =
       else
         ( `Method { Target.class_name; method_name = "__new__" },
           {
-            forward = Forward.empty;
-            backward = Backward.empty;
-            sanitizers = Sanitizers.empty;
-            modes = ModeSet.empty;
+            Model.forward = Model.Forward.empty;
+            backward = Model.Backward.empty;
+            sanitizers = Model.Sanitizers.empty;
+            modes = Model.ModeSet.empty;
           } )
         :: models
     in
@@ -138,8 +137,7 @@ let infer ~environment =
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
   let models =
-    List.concat_map all_classes ~f:inferred_models
-    |> Target.Map.of_alist_reduce ~f:(join ~iteration:0)
+    List.concat_map all_classes ~f:inferred_models |> Target.Map.of_alist_reduce ~f:Model.join
   in
   Statistics.performance
     ~name:"Computed inferred models"

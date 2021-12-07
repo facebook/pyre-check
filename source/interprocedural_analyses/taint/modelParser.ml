@@ -14,7 +14,6 @@ open PyreParser
 open Interprocedural
 open Statement
 open Domains
-open TaintResult
 
 module Internal = struct
   type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, compare]
@@ -198,7 +197,7 @@ module Internal = struct
   end
 
   type parse_result = {
-    models: TaintResult.call_model Interprocedural.Target.Map.t;
+    models: Model.t Interprocedural.Target.Map.t;
     queries: ModelQuery.rule list;
     skip_overrides: Reference.Set.t;
     errors: ModelVerificationError.t list;
@@ -923,7 +922,7 @@ let introduce_sink_taint
     ~path
     ~leaf_names
     ~leaf_name_provided
-    ({ TaintResult.backward = { sink_taint; _ }; _ } as taint)
+    ({ Model.backward = { sink_taint; _ }; _ } as taint)
     taint_sink_kind
     via_features
     breadcrumbs
@@ -980,7 +979,7 @@ let introduce_sink_taint
 let introduce_taint_in_taint_out
     ~root
     ~path
-    ({ TaintResult.backward = { taint_in_taint_out; _ }; _ } as taint)
+    ({ Model.backward = { taint_in_taint_out; _ }; _ } as taint)
     taint_sink_kind
     via_features
     breadcrumbs
@@ -1031,7 +1030,7 @@ let introduce_source_taint
     ~path
     ~leaf_names
     ~leaf_name_provided
-    ({ TaintResult.forward = { source_taint }; _ } as taint)
+    ({ Model.forward = { source_taint }; _ } as taint)
     taint_source_kind
     via_features
     breadcrumbs
@@ -1111,7 +1110,7 @@ let sanitize_from_annotations annotations =
 let introduce_sanitize ~root model annotations =
   let roots =
     Domains.SanitizeRootMap.of_list [root, sanitize_from_annotations annotations]
-    |> Domains.SanitizeRootMap.join model.sanitizers.roots
+    |> Domains.SanitizeRootMap.join model.Model.sanitizers.roots
   in
   let sanitizers = { model.sanitizers with roots } in
   { model with sanitizers }
@@ -2159,7 +2158,7 @@ let adjust_sanitize_and_modes_and_skipped_override
       | _ -> failwith "impossible case"
     in
     match arguments with
-    | None -> Ok { sanitizers with Sanitizers.global = Sanitize.all }
+    | None -> Ok { sanitizers with Model.Sanitizers.global = Sanitize.all }
     | Some
         [
           {
@@ -2208,17 +2207,17 @@ let adjust_sanitize_and_modes_and_skipped_override
     | "Sanitize" ->
         join_with_sanitize_decorator ~sanitizers ~decorator_location arguments
         >>| fun sanitizers -> sanitizers, modes, skipped_override
-    | "SkipAnalysis" -> Ok (sanitizers, ModeSet.add SkipAnalysis modes, skipped_override)
+    | "SkipAnalysis" -> Ok (sanitizers, Model.ModeSet.add SkipAnalysis modes, skipped_override)
     | "SkipDecoratorWhenInlining" ->
-        Ok (sanitizers, ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
-    | "SkipOverrides" -> Ok (sanitizers, ModeSet.add SkipOverrides modes, Some define_name)
-    | "SkipObscure" -> Ok (sanitizers, ModeSet.remove Obscure modes, skipped_override)
+        Ok (sanitizers, Model.ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
+    | "SkipOverrides" -> Ok (sanitizers, Model.ModeSet.add SkipOverrides modes, Some define_name)
+    | "SkipObscure" -> Ok (sanitizers, Model.ModeSet.remove Obscure modes, skipped_override)
     | _ -> Ok (sanitizers, modes, skipped_override)
   in
   List.fold_result
     top_level_decorators
     ~f:join_with_decorator
-    ~init:(model.sanitizers, model.modes, None)
+    ~init:(model.Model.sanitizers, model.Model.modes, None)
   >>| fun (sanitizers, modes, skipped_override) ->
   { model with sanitizers; modes }, skipped_override
 
@@ -2775,7 +2774,7 @@ let create_model_from_signature
     >>= fun () ->
     annotations ()
     >>= fun annotations ->
-    let default_model = if is_obscure then TaintResult.obscure_model else TaintResult.empty_model in
+    let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
     List.fold_result
       annotations
       ~init:default_model
@@ -2855,7 +2854,7 @@ let create_model_from_attribute
   >>= fun annotations ->
   List.fold_result
     annotations
-    ~init:TaintResult.empty_model
+    ~init:Model.empty_model
     ~f:(fun accumulator (annotation, annotation_kind) ->
       add_taint_annotation_to_model
         ~path
@@ -2956,9 +2955,9 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stub
   {
     models =
       List.map new_models ~f:(fun (model, _) -> model.call_target, model.model)
-      |> Target.Map.of_alist_reduce ~f:(join ~iteration:0)
+      |> Target.Map.of_alist_reduce ~f:Model.join
       |> Target.Map.merge models ~f:(fun ~key:_ -> function
-           | `Both (a, b) -> Some (join ~iteration:0 a b)
+           | `Both (a, b) -> Some (Model.join a b)
            | `Left model
            | `Right model ->
                Some model);
@@ -3006,9 +3005,7 @@ let create_callable_model_from_annotations
                 Some t
             | _ -> None)
       >>= fun callable_annotation ->
-      let default_model =
-        if is_obscure then TaintResult.obscure_model else TaintResult.empty_model
-      in
+      let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
       List.fold
         annotations
         ~init:(Ok default_model)
@@ -3037,7 +3034,7 @@ let create_attribute_model_from_annotations
   =
   let open Core.Result in
   let global_resolution = Resolution.global_resolution resolution in
-  List.fold annotations ~init:(Ok TaintResult.empty_model) ~f:(fun accumulator annotation ->
+  List.fold annotations ~init:(Ok Model.empty_model) ~f:(fun accumulator annotation ->
       accumulator
       >>= fun accumulator ->
       let annotation_kind =

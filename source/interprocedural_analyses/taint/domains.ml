@@ -76,7 +76,7 @@ module CallInfo = struct
   let show = Format.asprintf "%a" pp
 
   (* Breaks recursion among trace info and overall taint domain. *)
-  (* See implementation in TaintResult. *)
+  (* See implementation in taintResult.ml. *)
   let has_significant_summary =
     ref
       (fun

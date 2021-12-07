@@ -21,10 +21,10 @@ include Taint.Result.Register (struct
     (* In order to save time, sanity check models before starting the analysis. *)
     Log.info "Verifying model syntax and configuration.";
     let timer = Timer.start () in
-    Taint.ModelParser.get_model_sources ~paths:taint_model_paths
-    |> List.iter ~f:(fun (path, source) -> Taint.ModelParser.verify_model_syntax ~path ~source);
-    let (_ : Taint.TaintConfiguration.t) =
-      Taint.TaintConfiguration.create
+    ModelParser.get_model_sources ~paths:taint_model_paths
+    |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source);
+    let (_ : TaintConfiguration.t) =
+      TaintConfiguration.create
         ~rule_filter:None
         ~find_missing_flows:None
         ~dump_model_query_results_path:None
@@ -46,13 +46,12 @@ include Taint.Result.Register (struct
 
 
   type model_query_data = {
-    queries: Taint.ModelParser.Internal.ModelQuery.rule list;
+    queries: ModelParser.Internal.ModelQuery.rule list;
     taint_configuration: TaintConfiguration.t;
   }
 
   type parse_sources_result = {
-    initialize_result:
-      call_model Interprocedural.AnalysisResult.InitializedModels.initialize_result;
+    initialize_result: Model.t Interprocedural.AnalysisResult.InitializedModels.initialize_result;
     query_data: model_query_data option;
   }
 
@@ -93,22 +92,20 @@ include Taint.Result.Register (struct
           ~environment
           ~models
       in
-      let remove_sinks models = Target.Map.map ~f:Taint.Result.remove_sinks models in
+      let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
       let add_obscure_sinks models =
         let add_obscure_sink models callable =
           let model =
             Target.Map.find models callable
-            |> Option.value ~default:Taint.Result.empty_model
-            |> Taint.Result.add_obscure_sink ~resolution ~call_target:callable
-            |> Taint.Result.remove_obscureness
+            |> Option.value ~default:Model.empty_model
+            |> Model.add_obscure_sink ~resolution ~call_target:callable
+            |> Model.remove_obscureness
           in
           Target.Map.set models ~key:callable ~data:model
         in
         stubs
         |> Hash_set.filter ~f:(fun callable ->
-               Target.Map.find models callable
-               >>| Taint.Result.is_obscure
-               |> Option.value ~default:true)
+               Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
         |> Hash_set.fold ~f:add_obscure_sink ~init:models
       in
       let find_missing_flows =
@@ -216,21 +213,21 @@ include Taint.Result.Register (struct
         in
         TaintConfiguration.register taint_configuration;
         let models, errors, skip_overrides, queries =
-          Taint.ModelParser.get_model_sources ~paths:taint_model_paths
+          ModelParser.get_model_sources ~paths:taint_model_paths
           |> create_models ~taint_configuration ~initial_models
         in
-        Taint.ModelVerificationError.register errors;
+        ModelVerificationError.register errors;
         let () =
           if not (List.is_empty errors) then
             (* Exit or log errors, depending on whether models need to be verified. *)
             if not verify_models then begin
               Log.error "Found %d model verification errors!" (List.length errors);
               List.iter errors ~f:(fun error ->
-                  Log.error "%s" (Taint.ModelVerificationError.display error))
+                  Log.error "%s" (ModelVerificationError.display error))
             end
             else begin
               Yojson.Safe.pretty_to_string
-                (`Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)])
+                (`Assoc ["errors", `List (List.map errors ~f:ModelVerificationError.to_json)])
               |> Log.print "%s";
               exit 0
             end
@@ -246,7 +243,7 @@ include Taint.Result.Register (struct
       with
       | exception_ -> log_and_reraise_taint_model_exception exception_
     in
-    let initial_models = Taint.ClassModels.infer ~environment in
+    let initial_models = ClassModels.infer ~environment in
     match taint_model_paths with
     | [] ->
         {
@@ -302,244 +299,6 @@ include Taint.Result.Register (struct
     Interprocedural.AnalysisResult.InitializedModels.create get_taint_models
 
 
-  let apply_sanitizers
-      {
-        forward = { source_taint };
-        backward = { taint_in_taint_out; sink_taint };
-        sanitizers = { global; parameters; roots } as sanitizers;
-        modes;
-      }
-    =
-    let open Domains in
-    let kinds_to_sanitize_transforms ~sources ~sinks =
-      let source_transforms = Sources.Set.to_sanitize_transforms_exn sources in
-      let sink_transforms = Sinks.Set.to_sanitize_transforms_exn sinks in
-      SanitizeTransform.Set.union source_transforms sink_transforms
-    in
-    let sanitize_tito ?(sources = Sources.Set.empty) ?(sinks = Sinks.Set.empty) taint_in_taint_out =
-      let transforms = kinds_to_sanitize_transforms ~sources ~sinks in
-      BackwardState.apply_sanitize_transforms transforms taint_in_taint_out
-    in
-    let sanitize_tito_parameter
-        parameter
-        ?(sources = Sources.Set.empty)
-        ?(sinks = Sinks.Set.empty)
-        taint_in_taint_out
-      =
-      let sanitize_tito_taint_tree = function
-        | None -> BackwardState.Tree.bottom
-        | Some taint_tree ->
-            let transforms = kinds_to_sanitize_transforms ~sources ~sinks in
-            BackwardState.Tree.apply_sanitize_transforms transforms taint_tree
-      in
-      BackwardState.update taint_in_taint_out parameter ~f:sanitize_tito_taint_tree
-    in
-
-    (* Apply the global sanitizer. *)
-    (* Here, we are applying the legacy behavior of sanitizers, where we only
-     * sanitize the forward trace or the backward trace. *)
-    let source_taint =
-      (* @Sanitize(TaintSource[...]) *)
-      match global.sources with
-      | Some Sanitize.AllSources -> ForwardState.empty
-      | Some (Sanitize.SpecificSources sanitized_sources) ->
-          ForwardState.sanitize sanitized_sources source_taint
-      | None -> source_taint
-    in
-    let taint_in_taint_out =
-      (* @Sanitize(TaintInTaintOut[...]) *)
-      match global.tito with
-      | Some AllTito -> BackwardState.empty
-      | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-          sanitize_tito
-            ~sources:sanitized_tito_sources
-            ~sinks:sanitized_tito_sinks
-            taint_in_taint_out
-      | None -> taint_in_taint_out
-    in
-    let sink_taint =
-      (* @Sanitize(TaintSink[...]) *)
-      match global.sinks with
-      | Some Sanitize.AllSinks -> BackwardState.empty
-      | Some (Sanitize.SpecificSinks sanitized_sinks) ->
-          BackwardState.sanitize sanitized_sinks sink_taint
-      | None -> sink_taint
-    in
-
-    (* Apply the parameters sanitizer. *)
-    (* Here, we apply sanitizers both in the forward and backward trace. *)
-    (* Note that by design, sanitizing a specific source or sink also sanitizes
-     * taint-in-taint-out for that source/sink. *)
-    let sink_taint, taint_in_taint_out =
-      (* Sanitize(Parameters[TaintSource[...]]) *)
-      match parameters.sources with
-      | Some Sanitize.AllSources -> sink_taint, taint_in_taint_out
-      | Some (Sanitize.SpecificSources sanitized_sources) ->
-          let sanitized_sources_transforms =
-            Sources.Set.to_sanitize_transforms_exn sanitized_sources
-          in
-          let sink_taint =
-            sink_taint
-            |> BackwardState.apply_sanitize_transforms sanitized_sources_transforms
-            |> BackwardState.transform BackwardTaint.kind Filter ~f:Flow.sink_can_match_rule
-          in
-          let taint_in_taint_out = sanitize_tito ~sources:sanitized_sources taint_in_taint_out in
-          sink_taint, taint_in_taint_out
-      | None -> sink_taint, taint_in_taint_out
-    in
-    let taint_in_taint_out =
-      (* Sanitize(Parameters[TaintInTaintOut[...]]) *)
-      match parameters.tito with
-      | Some AllTito -> BackwardState.empty
-      | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-          sanitize_tito
-            ~sources:sanitized_tito_sources
-            ~sinks:sanitized_tito_sinks
-            taint_in_taint_out
-      | _ -> taint_in_taint_out
-    in
-    let sink_taint, taint_in_taint_out =
-      (* Sanitize(Parameters[TaintSink[...]]) *)
-      match parameters.sinks with
-      | Some Sanitize.AllSinks ->
-          let sink_taint = BackwardState.empty in
-          sink_taint, taint_in_taint_out
-      | Some (Sanitize.SpecificSinks sanitized_sinks) ->
-          let sink_taint = BackwardState.sanitize sanitized_sinks sink_taint in
-          let taint_in_taint_out = sanitize_tito ~sinks:sanitized_sinks taint_in_taint_out in
-          sink_taint, taint_in_taint_out
-      | None -> sink_taint, taint_in_taint_out
-    in
-
-    (* Apply the return sanitizer. *)
-    let sanitize_return sanitize (source_taint, taint_in_taint_out, sink_taint) =
-      let root = AccessPath.Root.LocalResult in
-      let source_taint, taint_in_taint_out =
-        (* def foo() -> Sanitize[TaintSource[...]] *)
-        match sanitize.Sanitize.sources with
-        | Some Sanitize.AllSources ->
-            let source_taint = ForwardState.remove root source_taint in
-            source_taint, taint_in_taint_out
-        | Some (Sanitize.SpecificSources sanitized_sources) ->
-            let filter_sources = function
-              | None -> ForwardState.Tree.bottom
-              | Some taint_tree -> ForwardState.Tree.sanitize sanitized_sources taint_tree
-            in
-            let source_taint = ForwardState.update source_taint root ~f:filter_sources in
-            let taint_in_taint_out = sanitize_tito ~sources:sanitized_sources taint_in_taint_out in
-            source_taint, taint_in_taint_out
-        | None -> source_taint, taint_in_taint_out
-      in
-      let taint_in_taint_out =
-        (* def foo() -> Sanitize[TaintInTaintOut[...]] *)
-        match sanitize.Sanitize.tito with
-        | Some AllTito -> BackwardState.remove root taint_in_taint_out
-        | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-            sanitize_tito
-              ~sources:sanitized_tito_sources
-              ~sinks:sanitized_tito_sinks
-              taint_in_taint_out
-        | _ -> taint_in_taint_out
-      in
-      let source_taint, taint_in_taint_out =
-        (* def foo() -> Sanitize[TaintSink[...]] *)
-        match sanitize.Sanitize.sinks with
-        | Some Sanitize.AllSinks -> source_taint, taint_in_taint_out
-        | Some (Sanitize.SpecificSinks sanitized_sinks) ->
-            let sanitized_sinks_transforms = Sinks.Set.to_sanitize_transforms_exn sanitized_sinks in
-            let source_taint =
-              source_taint
-              |> ForwardState.apply_sanitize_transforms sanitized_sinks_transforms
-              |> ForwardState.transform ForwardTaint.kind Filter ~f:Flow.source_can_match_rule
-            in
-            let taint_in_taint_out = sanitize_tito ~sinks:sanitized_sinks taint_in_taint_out in
-            source_taint, taint_in_taint_out
-        | None -> source_taint, taint_in_taint_out
-      in
-      source_taint, taint_in_taint_out, sink_taint
-    in
-
-    (* Apply the parameter-specific sanitizers. *)
-    let sanitize_parameter (parameter, sanitize) (source_taint, taint_in_taint_out, sink_taint) =
-      let sink_taint, taint_in_taint_out =
-        (* def foo(x: Sanitize[TaintSource[...]]): ... *)
-        match sanitize.Sanitize.sources with
-        | Some Sanitize.AllSources -> sink_taint, taint_in_taint_out
-        | Some (Sanitize.SpecificSources sanitized_sources) ->
-            let apply_taint_transforms = function
-              | None -> BackwardState.Tree.bottom
-              | Some taint_tree ->
-                  let sanitized_sources_transforms =
-                    Sources.Set.to_sanitize_transforms_exn sanitized_sources
-                  in
-                  taint_tree
-                  |> BackwardState.Tree.apply_sanitize_transforms sanitized_sources_transforms
-                  |> BackwardState.Tree.transform
-                       BackwardTaint.kind
-                       Filter
-                       ~f:Flow.sink_can_match_rule
-            in
-            let sink_taint = BackwardState.update sink_taint parameter ~f:apply_taint_transforms in
-            let taint_in_taint_out =
-              sanitize_tito_parameter parameter ~sources:sanitized_sources taint_in_taint_out
-            in
-            sink_taint, taint_in_taint_out
-        | None -> sink_taint, taint_in_taint_out
-      in
-      let taint_in_taint_out =
-        (* def foo(x: Sanitize[TaintInTaintOut[...]]): ... *)
-        match sanitize.Sanitize.tito with
-        | Some AllTito -> BackwardState.remove parameter taint_in_taint_out
-        | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-            sanitize_tito_parameter
-              parameter
-              ~sources:sanitized_tito_sources
-              ~sinks:sanitized_tito_sinks
-              taint_in_taint_out
-        | None -> taint_in_taint_out
-      in
-      let sink_taint, taint_in_taint_out =
-        (* def foo(x: Sanitize[TaintSink[...]]): ... *)
-        match sanitize.Sanitize.sinks with
-        | Some Sanitize.AllSinks ->
-            let sink_taint = BackwardState.remove parameter sink_taint in
-            sink_taint, taint_in_taint_out
-        | Some (Sanitize.SpecificSinks sanitized_sinks) ->
-            let filter_sinks = function
-              | None -> BackwardState.Tree.bottom
-              | Some taint_tree -> BackwardState.Tree.sanitize sanitized_sinks taint_tree
-            in
-            let sink_taint = BackwardState.update sink_taint parameter ~f:filter_sinks in
-            let taint_in_taint_out =
-              sanitize_tito_parameter parameter ~sinks:sanitized_sinks taint_in_taint_out
-            in
-            sink_taint, taint_in_taint_out
-        | None -> sink_taint, taint_in_taint_out
-      in
-      source_taint, taint_in_taint_out, sink_taint
-    in
-
-    let sanitize_root (root, sanitize) (source_taint, taint_in_taint_out, sink_taint) =
-      match root with
-      | AccessPath.Root.LocalResult ->
-          sanitize_return sanitize (source_taint, taint_in_taint_out, sink_taint)
-      | PositionalParameter _
-      | NamedParameter _
-      | StarParameter _
-      | StarStarParameter _ ->
-          sanitize_parameter (root, sanitize) (source_taint, taint_in_taint_out, sink_taint)
-      | Variable _ -> failwith "unexpected"
-    in
-    let source_taint, taint_in_taint_out, sink_taint =
-      SanitizeRootMap.fold
-        SanitizeRootMap.KeyValue
-        ~f:sanitize_root
-        ~init:(source_taint, taint_in_taint_out, sink_taint)
-        roots
-    in
-    { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
-
-
   let analyze ~environment ~callable ~qualifier ~define ~sanitizers ~modes existing_model =
     let profiler =
       if Ast.Statement.Define.dump_perf (Ast.Node.value define) then
@@ -575,14 +334,15 @@ include Taint.Result.Register (struct
             ~triggered_sinks)
     in
     let forward, backward =
-      if ModeSet.contains Mode.SkipAnalysis modes then
+      if Model.ModeSet.contains Model.Mode.SkipAnalysis modes then
         empty_model.forward, empty_model.backward
       else
         forward, backward
     in
-    let model = { forward; backward; sanitizers; modes } in
+    let model = { Model.forward; backward; sanitizers; modes } in
     let model =
-      TaintProfiler.track_duration ~profiler ~name:"Sanitize" ~f:(fun () -> apply_sanitizers model)
+      TaintProfiler.track_duration ~profiler ~name:"Sanitize" ~f:(fun () ->
+          Model.apply_sanitizers model)
     in
     TaintProfiler.dump profiler;
     result, model
@@ -614,7 +374,8 @@ include Taint.Result.Register (struct
     in
     let qualifier = Option.value ~default:qualifier module_reference in
     match existing with
-    | Some ({ modes; _ } as model) when ModeSet.contains Mode.SkipAnalysis modes ->
+    | Some ({ Model.modes; _ } as model) when Model.ModeSet.contains Model.Mode.SkipAnalysis modes
+      ->
         let () = Log.info "Skipping taint analysis of %a" Target.pretty_print callable in
         [], model
     | Some ({ sanitizers; modes; _ } as model) ->
@@ -625,8 +386,8 @@ include Taint.Result.Register (struct
           ~environment
           ~qualifier
           ~define
-          ~sanitizers:Sanitizers.empty
-          ~modes:ModeSet.empty
+          ~sanitizers:Model.Sanitizers.empty
+          ~modes:Model.ModeSet.empty
           empty_model
 
 

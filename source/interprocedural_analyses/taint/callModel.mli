@@ -11,7 +11,7 @@ open Interprocedural
 
 type t = {
   call_target: Target.t;
-  model: TaintResult.call_model;
+  model: Model.t;
 }
 [@@deriving show]
 

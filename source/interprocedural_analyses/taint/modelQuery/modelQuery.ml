@@ -19,7 +19,7 @@ module ModelParser = struct
 end
 
 module DumpModelQueryResults : sig
-  val dump : path:Path.t -> models:Taint.Result.call_model Target.Map.t -> unit
+  val dump : path:Path.t -> models:Model.t Target.Map.t -> unit
 end = struct
   let dump ~path ~models =
     Log.warning "Emitting the model query results to `%s`" (Path.absolute path);
@@ -642,8 +642,7 @@ let apply_all_rules
       ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
     in
     let merge_models new_models models =
-      Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-          Taint.Result.join ~iteration:0 left right)
+      Map.merge_skewed new_models models ~combine:(fun ~key:_ left right -> Model.join left right)
     in
     let attribute_rules, callable_rules =
       List.partition_tf
@@ -678,7 +677,7 @@ let apply_all_rules
             let models =
               let model =
                 match Target.Map.find models (callable :> Target.t) with
-                | Some existing_model -> Taint.Result.join ~iteration:0 existing_model model
+                | Some existing_model -> Model.join existing_model model
                 | None -> model
               in
               Target.Map.set models ~key:(callable :> Target.t) ~data:model
@@ -708,7 +707,7 @@ let apply_all_rules
         ~map:(fun models callables -> List.fold callables ~init:models ~f:apply_rules_for_callable)
         ~reduce:(fun new_models models ->
           Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-              Taint.Result.join ~iteration:0 left right))
+              Model.join left right))
         ~inputs:callables
         ()
     in
@@ -738,7 +737,7 @@ let apply_all_rules
             let models =
               let model =
                 match Target.Map.find models (callable :> Target.t) with
-                | Some existing_model -> Taint.Result.join ~iteration:0 existing_model model
+                | Some existing_model -> Model.join existing_model model
                 | None -> model
               in
               Target.Map.set models ~key:(callable :> Target.t) ~data:model
@@ -773,7 +772,7 @@ let apply_all_rules
             List.fold attributes ~init:models ~f:apply_rules_for_attribute)
           ~reduce:(fun new_models models ->
             Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-                Taint.Result.join ~iteration:0 left right))
+                Model.join left right))
           ~inputs:attributes
           ()
       else

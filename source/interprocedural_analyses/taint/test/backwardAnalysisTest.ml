@@ -44,10 +44,10 @@ let assert_taint ~context source expected =
         ~qualifier
         ~define
         ~call_graph_of_define
-        ~existing_model:Taint.Result.empty_model
+        ~existing_model:Model.empty_model
         ~triggered_sinks:(Ast.Location.Table.create ())
     in
-    let model = { Taint.Result.empty_model with backward } in
+    let model = { Model.empty_model with backward } in
     AnalysisResult.empty_model
     |> AnalysisResult.with_model Taint.Result.kind model
     |> FixpointState.add_predefined FixpointState.Epoch.predefined call_target

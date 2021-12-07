@@ -29,7 +29,7 @@ module type FUNCTION_CONTEXT = sig
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
-  val existing_model : TaintResult.call_model
+  val existing_model : Model.t
 
   val triggered_sinks : triggered_sinks
 end
@@ -189,14 +189,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       BackwardState.read
         ~root:AccessPath.Root.LocalResult
         ~path:[]
-        FunctionContext.existing_model.TaintResult.backward.sink_taint
+        FunctionContext.existing_model.Model.backward.sink_taint
       |> BackwardState.Tree.apply_call return_location ~callees:[] ~port:AccessPath.Root.LocalResult
     in
     let breadcrumbs_to_attach, via_features_to_attach =
       BackwardState.extract_features_to_attach
         ~root:AccessPath.Root.LocalResult
         ~attach_to_kind:Sinks.Attach
-        FunctionContext.existing_model.TaintResult.backward.sink_taint
+        FunctionContext.existing_model.Model.backward.sink_taint
     in
     taint
     |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_attach
@@ -264,9 +264,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         arguments, arguments_taint
     in
-    let ({ CallModel.model = { TaintResult.forward; backward; sanitizers; modes }; _ } as
-        taint_model)
-      =
+    let ({ CallModel.model = { Model.forward; backward; sanitizers; modes }; _ } as taint_model) =
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Forward
@@ -402,7 +400,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> Map.Poly.merge tito_effects ~f:(merge_tito_effect ForwardState.Tree.join)
       in
       let tito_effects =
-        if TaintResult.ModeSet.contains Obscure modes then
+        if Model.ModeSet.contains Obscure modes then
           let obscure_tito =
             ForwardState.Tree.collapse
               ~transform:(ForwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
@@ -553,7 +551,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let returned_taint = ForwardState.Tree.join result_taint tito in
     let returned_taint =
-      if TaintResult.ModeSet.contains Obscure modes then
+      if Model.ModeSet.contains Obscure modes then
         ForwardState.Tree.add_breadcrumbs (Lazy.force return_type_breadcrumbs) returned_taint
       else
         returned_taint
@@ -700,12 +698,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* Special handling for the missing-flow analysis. *)
       if unresolved && TaintConfiguration.is_missing_flow_analysis Type then (
         let callable =
-          TaintResult.unknown_callee
+          MissingFlow.unknown_callee
             ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
             ~call:(Expression.Call { Call.callee; arguments })
         in
         if not (Interprocedural.FixpointState.has_model callable) then
-          TaintResult.register_unknown_callee_model callable;
+          MissingFlow.register_unknown_callee_model callable;
         let target =
           {
             CallGraph.CallTarget.target = callable;
@@ -1936,7 +1934,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let create ~existing_model parameters =
     (* Use primed sources to populate initial state of parameters *)
-    let forward_primed_taint = existing_model.TaintResult.forward.source_taint in
+    let forward_primed_taint = existing_model.Model.forward.source_taint in
     let prime_parameter
         state
         (parameter_root, name, { Node.location; value = { Parameter.value; _ } })
@@ -2139,12 +2137,12 @@ let run
         ~via_features_to_attach
         taint
     in
-    let model = TaintResult.Forward.{ source_taint } in
-    let () = State.log "Forward Model:@,%a" TaintResult.Forward.pp_model model in
+    let model = Model.Forward.{ source_taint } in
+    let () = State.log "Forward Model:@,%a" Model.Forward.pp model in
     model
   in
   let issues = State.generate_issues () in
-  let model = exit_state >>| extract_model |> Option.value ~default:TaintResult.Forward.empty in
+  let model = exit_state >>| extract_model |> Option.value ~default:Model.Forward.empty in
   Statistics.performance
     ~randomly_log_every:1000
     ~always_log_time_threshold:1.0 (* Seconds *)

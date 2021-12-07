@@ -16,6 +16,7 @@ module TaintProfiler = TaintProfiler
 module Features = Features
 module Flow = Flow
 module ForwardAnalysis = ForwardAnalysis
+module Model = Model
 module ModelParser = ModelParser
 module ModelVerifier = ModelVerifier
 module ModelVerificationError = ModelVerificationError

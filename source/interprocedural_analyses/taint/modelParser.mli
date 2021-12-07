@@ -178,7 +178,7 @@ end
 val get_model_sources : paths:Path.t list -> (Path.t * string) list
 
 type parse_result = {
-  models: TaintResult.call_model Interprocedural.Target.Map.t;
+  models: Model.t Interprocedural.Target.Map.t;
   queries: Internal.ModelQuery.rule list;
   skip_overrides: Ast.Reference.Set.t;
   errors: ModelVerificationError.t list;
@@ -192,7 +192,7 @@ val parse
   configuration:TaintConfiguration.t ->
   callables:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->
-  TaintResult.call_model Interprocedural.Target.Map.t ->
+  Model.t Interprocedural.Target.Map.t ->
   parse_result
 
 exception InvalidModel of string
@@ -212,7 +212,7 @@ val create_callable_model_from_annotations
   sinks_to_keep:Sinks.Set.t option ->
   is_obscure:bool ->
   (Internal.annotation_kind * Internal.taint_annotation) list ->
-  (TaintResult.call_model, ModelVerificationError.t) result
+  (Model.t, ModelVerificationError.t) result
 
 (* Exposed for model queries. *)
 val create_attribute_model_from_annotations
@@ -221,4 +221,4 @@ val create_attribute_model_from_annotations
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   Internal.taint_annotation list ->
-  (TaintResult.call_model, ModelVerificationError.t) result
+  (Model.t, ModelVerificationError.t) result

@@ -17,5 +17,5 @@ val run
   qualifier:Reference.t ->
   define:Define.t Node.t ->
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
-  existing_model:TaintResult.call_model ->
-  TaintResult.Forward.model * TaintResult.result * triggered_sinks
+  existing_model:Model.t ->
+  Model.Forward.t * Flow.issue list * triggered_sinks

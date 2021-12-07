@@ -11,8 +11,8 @@ module Json = Yojson.Safe
 val externalize
   :  filename_lookup:(Ast.Reference.t -> string option) ->
   Target.t ->
-  TaintResult.result option ->
-  TaintResult.call_model ->
+  Flow.issue list option ->
+  Model.t ->
   Yojson.Safe.json list
 
 val fetch_and_externalize

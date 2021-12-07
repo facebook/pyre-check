@@ -281,7 +281,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       CallModel.pp
       taint_model;
-    let { TaintResult.backward; sanitizers; modes; _ } = taint_model.model in
+    let { Model.backward; sanitizers; modes; _ } = taint_model.model in
     let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
     let sink_argument_matches =
       BackwardState.roots sink_taint
@@ -493,7 +493,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       taint :: arguments_taint, state
     in
     let obscure_taint =
-      if TaintResult.ModeSet.contains Obscure modes then
+      if Model.ModeSet.contains Obscure modes then
         let breadcrumbs =
           Lazy.force return_type_breadcrumbs
           |> Features.BreadcrumbSet.add (Features.obscure_model ())
@@ -735,12 +735,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* Special handling for the missing-flow analysis. *)
       if unresolved && TaintConfiguration.is_missing_flow_analysis Type then (
         let callable =
-          TaintResult.unknown_callee
+          MissingFlow.unknown_callee
             ~location:(Location.with_module call_location ~qualifier:FunctionContext.qualifier)
             ~call:(Expression.Call { Call.callee; arguments })
         in
         if not (Interprocedural.FixpointState.has_model callable) then
-          TaintResult.register_unknown_callee_model callable;
+          MissingFlow.register_unknown_callee_model callable;
         let target =
           {
             CallGraph.CallTarget.target = callable;
@@ -1866,7 +1866,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
         BackwardState.extract_features_to_attach
           ~root:parameter
           ~attach_to_kind:Sinks.Attach
-          existing_backward.TaintResult.Backward.taint_in_taint_out
+          existing_backward.Model.Backward.taint_in_taint_out
       in
       let candidate_tree =
         Map.Poly.find partition Sinks.LocalReturn
@@ -1923,20 +1923,20 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
         BackwardState.extract_features_to_attach
           ~root:parameter
           ~attach_to_kind:Sinks.Attach
-          existing_backward.TaintResult.Backward.sink_taint
+          existing_backward.Model.Backward.sink_taint
       in
       sink_taint
       |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_attach
       |> BackwardState.Tree.add_via_features via_features_to_attach
     in
-    TaintResult.Backward.
+    Model.Backward.
       {
         taint_in_taint_out =
           BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out model.taint_in_taint_out;
         sink_taint = BackwardState.assign ~root:parameter ~path:[] sink_taint model.sink_taint;
       }
   in
-  List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty
+  List.fold normalized_parameters ~f:split_and_simplify ~init:Model.Backward.empty
 
 
 let run
@@ -1992,10 +1992,10 @@ let run
         ~is_constructor:(State.is_constructor ())
         define.value
         ~resolution
-        ~existing_backward:existing_model.TaintResult.backward
+        ~existing_backward:existing_model.Model.backward
         taint
     in
-    let () = State.log "Backward Model:@,%a" TaintResult.Backward.pp_model model in
+    let () = State.log "Backward Model:@,%a" Model.Backward.pp model in
     model
   in
   Statistics.performance
@@ -2007,4 +2007,4 @@ let run
     ~timer
     ();
 
-  entry_state >>| extract_model |> Option.value ~default:TaintResult.Backward.empty
+  entry_state >>| extract_model |> Option.value ~default:Model.Backward.empty
