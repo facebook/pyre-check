@@ -1424,6 +1424,26 @@ module State (Context : Context) = struct
         | SignatureSelectionTypes.NotFound _, _ -> true
         | _ -> false
       in
+      let resolved_for_bad_callable () =
+        let errors =
+          let resolved_callee = Callee.resolved callee in
+          match resolved_callee, potential_missing_operator_error with
+          | Type.Top, Some kind -> emit_error ~errors ~location ~kind
+          | Parametric { name = "type"; parameters = [Single Any] }, _
+          | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
+          | Type.Any, _
+          | Type.Top, _ ->
+              errors
+          | _ -> emit_error ~errors ~location ~kind:(Error.NotCallable resolved_callee)
+        in
+        {
+          Resolved.resolution;
+          errors;
+          resolved = Type.Any;
+          resolved_annotation = None;
+          base = None;
+        }
+      in
       let join_return_annotations not_found_and_found_return_annotations =
         match not_found_and_found_return_annotations with
         | Some ([], head :: tail) ->
@@ -1471,19 +1491,7 @@ module State (Context : Context) = struct
               resolved_annotation = None;
               base = None;
             }
-        | _ ->
-            let errors =
-              let resolved_callee = Callee.resolved callee in
-              match resolved_callee, potential_missing_operator_error with
-              | Type.Top, Some kind -> emit_error ~errors ~location ~kind
-              | Parametric { name = "type"; parameters = [Single Any] }, _
-              | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
-              | Type.Any, _
-              | Type.Top, _ ->
-                  errors
-              | _ -> emit_error ~errors ~location ~kind:(Error.NotCallable resolved_callee)
-            in
-            { resolution; errors; resolved = Type.Any; resolved_annotation = None; base = None }
+        | _ -> resolved_for_bad_callable ()
       in
       let check_for_error ({ Resolved.resolved; errors; _ } as input) =
         let is_broadcast_error = function
