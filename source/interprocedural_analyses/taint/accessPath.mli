@@ -6,7 +6,6 @@
  *)
 
 open Ast
-open Analysis
 open Expression
 
 (** Roots representing parameters, locals, and special return value in models. *)
@@ -39,7 +38,7 @@ val create : Root.t -> Abstract.TreeDomain.Label.path -> t
 
 val extend : t -> path:Abstract.TreeDomain.Label.path -> t
 
-val of_expression : resolution:Resolution.t -> Expression.t -> t option
+val of_expression : Expression.t -> t option
 
 val get_index : Expression.t -> Abstract.TreeDomain.Label.t
 

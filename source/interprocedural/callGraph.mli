@@ -151,10 +151,6 @@ val call_graph_of_define
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
 
-val as_global_reference : resolution:Resolution.t -> Ast.Expression.t -> Reference.t option
-
-val is_global_reference : resolution:Resolution.t -> Ast.Expression.t -> bool
-
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
 
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t

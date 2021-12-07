@@ -1066,8 +1066,6 @@ let as_global_reference ~resolution expression =
   | _ -> None
 
 
-let is_global_reference ~resolution name = Option.is_some (as_global_reference ~resolution name)
-
 let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special =
   let expression =
     Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })

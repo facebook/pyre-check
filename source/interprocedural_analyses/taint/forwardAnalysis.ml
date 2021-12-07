@@ -11,7 +11,6 @@ open Ast
 open Expression
 open Pyre
 open Domains
-open AccessPath
 
 type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 
@@ -305,7 +304,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> List.zip_exn sink_argument_matches
       |> List.zip_exn arguments_taint
     in
-    let combine_sink_taint location taint_tree { root; actual_path; formal_path } =
+    let combine_sink_taint location taint_tree { AccessPath.root; actual_path; formal_path } =
       BackwardState.read ~root ~path:[] backward.sink_taint
       |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
       |> BackwardState.Tree.read formal_path
@@ -457,7 +456,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
       (* Add features to arguments. *)
       let state =
-        match AccessPath.of_expression ~resolution argument with
+        match AccessPath.of_expression argument with
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_tree
@@ -530,7 +529,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location)
           ~source_tree
           ~sink_tree;
-        let access_path = AccessPath.of_expression ~resolution argument in
+        let access_path = AccessPath.of_expression argument in
         log
           "Propagating taint to argument `%a`: %a"
           Expression.pp
@@ -797,7 +796,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* Add index breadcrumb if appropriate. *)
       match Node.value callee, arguments with
       | Expression.Name (Name.Attribute { attribute = "get"; _ }), index :: _ ->
-          let label = get_index index.value in
+          let label = AccessPath.get_index index.value in
           ForwardState.Tree.transform
             Features.FirstIndexSet.Self
             Map
@@ -1683,16 +1682,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~f:(analyze_list_element ~resolution)
             ~init:(ForwardState.Tree.empty, state)
       | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
-      | Name _ when CallGraph.is_global_reference ~resolution expression ->
-          let taint =
-            GlobalModel.from_expression
-              ~resolution
-              ~call_graph:FunctionContext.call_graph_of_define
-              ~qualifier:FunctionContext.qualifier
-              ~expression
-            |> GlobalModel.get_source
-          in
-          taint, state
       | Name (Name.Identifier identifier) ->
           ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
       (* __dict__ reveals an object's underlying data structure, so we should analyze the base under
@@ -1814,9 +1803,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~sink_tree;
 
         (* Propagate taint. *)
-        let access_path =
-          AccessPath.of_expression ~resolution target >>| AccessPath.extend ~path:fields
-        in
+        let access_path = AccessPath.of_expression target >>| AccessPath.extend ~path:fields in
         store_taint_option access_path taint state
 
 
@@ -1842,7 +1829,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         state
     | Assign { value = { Node.value = Expression.Constant Constant.NoneLiteral; _ }; target; _ }
       -> (
-        match AccessPath.of_expression ~resolution target with
+        match AccessPath.of_expression target with
         | Some { AccessPath.root; path } ->
             (* We need to take some care to ensure we clear existing taint, without adding new
                taint. *)
@@ -1892,7 +1879,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                         ~state
                         (CallGraph.CallCallees.create ~call_targets ~return_type ())
                     in
-                    store_taint_option (AccessPath.of_expression ~resolution base) taint state
+                    store_taint_option (AccessPath.of_expression base) taint state
                 | _ -> bottom
               in
 
@@ -1917,7 +1904,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Define define -> analyze_definition ~define state
     | Delete expressions ->
         let process_expression state expression =
-          match AccessPath.of_expression ~resolution expression with
+          match AccessPath.of_expression expression with
           | Some { AccessPath.root; path } ->
               { taint = ForwardState.assign ~root ~path ForwardState.Tree.bottom state.taint }
           | _ -> state

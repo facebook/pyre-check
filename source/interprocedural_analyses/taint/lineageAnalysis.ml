@@ -65,8 +65,8 @@ let analyze_dataFrame_getitem base_taint argument =
   | _ -> collapsed_taint
 
 
-let analyze_dataFrame_setitem resolution base taint index state =
-  let root_path = AccessPath.of_expression ~resolution base in
+let analyze_dataFrame_setitem base taint index state =
+  let root_path = AccessPath.of_expression base in
   match index.Node.value with
   | Expression.Constant (Constant.String _) ->
       let access_path = root_path >>| AccessPath.extend ~path:[AccessPath.get_index index] in
@@ -158,7 +158,7 @@ let analyze_dataFrame analyze_expression resolution callee arguments taint state
       match arguments with
       | [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in
-          let state = analyze_dataFrame_setitem resolution base taint index state in
+          let state = analyze_dataFrame_setitem base taint index state in
           ForwardState.Tree.empty, state
       | _ -> taint, state)
   | { Node.value = Expression.Name (Name.Attribute { base; attribute = "apply"; _ }); _ } -> (

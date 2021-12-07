@@ -261,13 +261,7 @@ let to_json { root; path } =
   `String (root_name root ^ Abstract.TreeDomain.Label.show_path path)
 
 
-let of_expression ~resolution expression =
-  let expression =
-    if Interprocedural.CallGraph.is_global_reference ~resolution expression then
-      Ast.Expression.delocalize expression
-    else
-      expression
-  in
+let of_expression expression =
   let rec of_expression path = function
     | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
         Some { root = Root.Variable identifier; path }
