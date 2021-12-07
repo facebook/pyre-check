@@ -9,12 +9,13 @@ open Pyre
 open Core
 open OUnit2
 open Test
-module Global = Taint.Model.Global
 open Ast
+open Taint
+module Global = ModelVerifier.Global
 
 let assert_resolve ~context sources name ~expect =
   let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in
-  let actual = Taint.Model.resolve_global ~resolution (Ast.Reference.create name) in
+  let actual = ModelVerifier.resolve_global ~resolution (Ast.Reference.create name) in
   let printer = function
     | None -> "None"
     | Some global -> Global.show global

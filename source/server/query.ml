@@ -118,7 +118,7 @@ module Response = struct
       | FoundPath of string
       | FunctionDefinition of Statement.Define.t
       | Help of string
-      | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
+      | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | Success of string
       | Superclasses of superclasses_mapping list
       | Type of Type.t
@@ -159,7 +159,7 @@ module Response = struct
             ]
       | Help string -> `Assoc ["help", `String string]
       | ModelVerificationErrors errors ->
-          `Assoc ["errors", `List (List.map errors ~f:Taint.Model.verification_error_to_json)]
+          `Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)]
       | FoundAttributes attributes ->
           let attribute_to_yojson { name; annotation; kind; final } =
             let kind =
@@ -763,7 +763,7 @@ let rec process_request ~environment ~build_system ~configuration request =
           in
           let get_model_errors sources =
             let model_errors (path, source) =
-              Taint.Model.parse
+              Taint.ModelParser.parse
                 ~resolution:
                   (TypeCheck.resolution
                      global_resolution
@@ -775,11 +775,11 @@ let rec process_request ~environment ~build_system ~configuration request =
                 ~callables:None
                 ~stubs:(Interprocedural.Target.HashSet.create ())
                 Interprocedural.Target.Map.empty
-              |> fun { Taint.Model.errors; _ } -> errors
+              |> fun { Taint.ModelParser.errors; _ } -> errors
             in
             List.concat_map sources ~f:model_errors
           in
-          let errors = Taint.Model.get_model_sources ~paths |> get_model_errors in
+          let errors = Taint.ModelParser.get_model_sources ~paths |> get_model_errors in
           if List.is_empty errors then
             Single
               (Base.Success

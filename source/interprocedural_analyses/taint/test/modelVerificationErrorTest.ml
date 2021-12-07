@@ -8,7 +8,11 @@
 open Pyre
 open Core
 open OUnit2
-open Taint
+
+module ModelVerificationError = struct
+  include Taint.ModelVerificationError
+  include Taint.ModelVerificationError.T
+end
 
 let test_to_json _ =
   let assert_json ~expected error =
@@ -16,7 +20,7 @@ let test_to_json _ =
       ~printer:Yojson.Safe.pretty_to_string
       ~cmp:Yojson.Safe.equal
       (Yojson.Safe.from_string expected)
-      (Model.verification_error_to_json error)
+      (ModelVerificationError.to_json error)
   in
   assert_json
     ~expected:
@@ -32,8 +36,8 @@ let test_to_json _ =
         }
         |}
     {
-      Model.ModelVerificationError.kind =
-        Model.ModelVerificationError.NotInEnvironment { module_name = "foo"; name = "foo.bar" };
+      ModelVerificationError.kind =
+        ModelVerificationError.NotInEnvironment { module_name = "foo"; name = "foo.bar" };
       location =
         {
           Ast.Location.start = { Ast.Location.line = 1; column = 2 };

@@ -172,14 +172,16 @@ module T : sig
     }
     [@@deriving show, compare]
   end
-
-  type parse_result = {
-    models: TaintResult.call_model Interprocedural.Target.Map.t;
-    queries: ModelQuery.rule list;
-    skip_overrides: Ast.Reference.Set.t;
-    errors: ModelVerificationError.t list;
-  }
 end
+
+val get_model_sources : paths:Path.t list -> (Path.t * string) list
+
+type parse_result = {
+  models: TaintResult.call_model Interprocedural.Target.Map.t;
+  queries: T.ModelQuery.rule list;
+  skip_overrides: Ast.Reference.Set.t;
+  errors: ModelVerificationError.t list;
+}
 
 val parse
   :  resolution:Analysis.Resolution.t ->
@@ -190,7 +192,9 @@ val parse
   callables:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->
   TaintResult.call_model Interprocedural.Target.Map.t ->
-  T.parse_result
+  parse_result
+
+exception InvalidModel of string
 
 val verify_model_syntax : path:Path.t -> source:string -> unit
 

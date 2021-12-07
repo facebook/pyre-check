@@ -265,12 +265,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         arguments, arguments_taint
     in
-    let ({ Model.model = { TaintResult.forward; backward; sanitizers; modes }; _ } as taint_model) =
+    let ({ CallModel.model = { TaintResult.forward; backward; sanitizers; modes }; _ } as
+        taint_model)
+      =
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Forward
         ~call_target
-        ~f:(fun () -> Model.get_callsite_model ~resolution ~call_target ~arguments)
+        ~f:(fun () -> CallModel.at_callsite ~resolution ~call_target ~arguments)
     in
     log
       "Forward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
@@ -278,7 +280,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       call_target
       Ast.Expression.pp_expression_argument_list
       arguments
-      Model.pp
+      CallModel.pp
       taint_model;
     let sink_argument_matches =
       BackwardState.roots backward.sink_taint
@@ -699,12 +701,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* Special handling for the missing-flow analysis. *)
       if unresolved && TaintConfiguration.is_missing_flow_analysis Type then (
         let callable =
-          Model.unknown_callee
+          TaintResult.unknown_callee
             ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
             ~call:(Expression.Call { Call.callee; arguments })
         in
         if not (Interprocedural.FixpointState.has_model callable) then
-          Model.register_unknown_callee_model callable;
+          TaintResult.register_unknown_callee_model callable;
         let target =
           {
             CallGraph.CallTarget.target = callable;

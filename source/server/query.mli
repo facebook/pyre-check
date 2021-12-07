@@ -111,7 +111,7 @@ module Response : sig
       | FoundPath of string
       | FunctionDefinition of Statement.Define.t
       | Help of string
-      | ModelVerificationErrors of Taint.Model.ModelVerificationError.t list
+      | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | Success of string
       | Superclasses of superclasses_mapping list
       | Type of Type.t

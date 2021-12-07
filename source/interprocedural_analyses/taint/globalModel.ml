@@ -13,7 +13,7 @@ open Domains
 open TaintResult
 
 type t = {
-  models: Model.t list;
+  models: CallModel.t list;
   location: Location.WithModule.t;
 }
 
@@ -37,7 +37,7 @@ let get_global_targets ~call_graph ~expression =
 
 
 let from_expression ~resolution ~call_graph ~qualifier ~expression =
-  let fetch_model target = Model.get_callsite_model ~resolution ~call_target:target ~arguments:[] in
+  let fetch_model target = CallModel.at_callsite ~resolution ~call_target:target ~arguments:[] in
   let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in
   let location = Node.location expression |> Location.with_module ~qualifier in
   { models; location }
@@ -51,7 +51,7 @@ let get_source { models; location } =
   let to_source
       existing
       {
-        Model.call_target;
+        CallModel.call_target;
         model = { TaintResult.forward = { TaintResult.Forward.source_taint }; _ };
         _;
       }
@@ -70,7 +70,7 @@ let get_sink { models; location } =
   let to_sink
       existing
       {
-        Model.call_target;
+        CallModel.call_target;
         model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ };
         _;
       }
@@ -89,7 +89,8 @@ let get_tito { models; _ } =
   let to_tito
       existing
       {
-        Model.model = { TaintResult.backward = { TaintResult.Backward.taint_in_taint_out; _ }; _ };
+        CallModel.model =
+          { TaintResult.backward = { TaintResult.Backward.taint_in_taint_out; _ }; _ };
         _;
       }
     =
@@ -102,7 +103,7 @@ let get_tito { models; _ } =
 let get_sanitize { models; _ } =
   let get_sanitize
       existing
-      { Model.model = { TaintResult.sanitizers = { global = sanitize; _ }; _ }; _ }
+      { CallModel.model = { TaintResult.sanitizers = { global = sanitize; _ }; _ }; _ }
     =
     Sanitize.join sanitize existing
   in
@@ -110,7 +111,7 @@ let get_sanitize { models; _ } =
 
 
 let get_modes { models; _ } =
-  let get_modes existing { Model.model = { TaintResult.modes; _ }; _ } =
+  let get_modes existing { CallModel.model = { TaintResult.modes; _ }; _ } =
     ModeSet.join modes existing
   in
   List.fold ~init:ModeSet.empty ~f:get_modes models
@@ -118,7 +119,7 @@ let get_modes { models; _ } =
 
 let is_sanitized { models; _ } =
   let is_sanitized_model
-      { Model.model = { TaintResult.sanitizers = { global = sanitize; _ }; _ }; _ }
+      { CallModel.model = { TaintResult.sanitizers = { global = sanitize; _ }; _ }; _ }
     =
     match sanitize with
     | {

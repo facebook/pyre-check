@@ -109,7 +109,7 @@ module T : sig
   [@@deriving sexp, compare, show]
 end
 
-type t = T.t
+type t = T.t [@@deriving sexp, compare, show]
 
 val to_json : t -> Yojson.Safe.t
 

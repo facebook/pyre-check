@@ -6,12 +6,17 @@
  *)
 
 open Core
+open Pyre
 open Ast
 open Analysis
 open Interprocedural
 open Taint
-open Model
-open Pyre
+module ModelQuery = ModelParser.T.ModelQuery
+
+module ModelParser = struct
+  include ModelParser.T
+  include ModelParser
+end
 
 module DumpModelQueryResults : sig
   val dump : path:Path.t -> models:Taint.Result.call_model Target.Map.t -> unit
@@ -361,28 +366,28 @@ let apply_callable_productions ~resolution ~productions ~callable =
         in
         let update_placeholder_via_features taint_annotation =
           match parameter, taint_annotation with
-          | Some actual_parameter, Source source ->
+          | Some actual_parameter, ModelParser.Source source ->
               let via_features =
                 List.map ~f:(update_placeholder_via_feature ~actual_parameter) source.via_features
               in
-              Source { source with via_features }
-          | Some actual_parameter, Sink sink ->
+              ModelParser.Source { source with via_features }
+          | Some actual_parameter, ModelParser.Sink sink ->
               let via_features =
                 List.map ~f:(update_placeholder_via_feature ~actual_parameter) sink.via_features
               in
-              Sink { sink with via_features }
-          | Some actual_parameter, Tito tito ->
+              ModelParser.Sink { sink with via_features }
+          | Some actual_parameter, ModelParser.Tito tito ->
               let via_features =
                 List.map ~f:(update_placeholder_via_feature ~actual_parameter) tito.via_features
               in
-              Tito { tito with via_features }
-          | Some actual_parameter, AddFeatureToArgument annotation ->
+              ModelParser.Tito { tito with via_features }
+          | Some actual_parameter, ModelParser.AddFeatureToArgument annotation ->
               let via_features =
                 List.map
                   ~f:(update_placeholder_via_feature ~actual_parameter)
                   annotation.via_features
               in
-              AddFeatureToArgument { annotation with via_features }
+              ModelParser.AddFeatureToArgument { annotation with via_features }
           | _ -> taint_annotation
         in
         match production with
@@ -391,7 +396,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
         | ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind } ->
             get_subkind_from_annotation ~pattern:source_pattern annotation
             >>| fun subkind ->
-            Source
+            ModelParser.Source
               {
                 source = Sources.ParametricSource { source_name = kind; subkind };
                 breadcrumbs = [];
@@ -403,7 +408,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
         | ModelQuery.ParametricSinkFromAnnotation { sink_pattern; kind } ->
             get_subkind_from_annotation ~pattern:sink_pattern annotation
             >>| fun subkind ->
-            Sink
+            ModelParser.Sink
               {
                 sink = Sinks.ParametricSink { sink_name = kind; subkind };
                 breadcrumbs = [];
@@ -418,7 +423,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
         | ModelQuery.ReturnTaint productions ->
             List.filter_map productions ~f:(fun production ->
                 production_to_taint return_annotation ~production
-                >>| fun taint -> ReturnAnnotation, taint)
+                >>| fun taint -> ModelParser.ReturnAnnotation, taint)
         | ModelQuery.NamedParameterTaint { name; taint = productions } -> (
             let parameter =
               List.find_map
@@ -437,7 +442,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             | Some (parameter, annotation) ->
                 List.filter_map productions ~f:(fun production ->
                     production_to_taint annotation ~production
-                    >>| fun taint -> ParameterAnnotation parameter, taint)
+                    >>| fun taint -> ModelParser.ParameterAnnotation parameter, taint)
             | None -> [])
         | ModelQuery.PositionalParameterTaint { index; taint = productions } -> (
             let parameter =
@@ -453,7 +458,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             | Some (parameter, annotation) ->
                 List.filter_map productions ~f:(fun production ->
                     production_to_taint annotation ~production
-                    >>| fun taint -> ParameterAnnotation parameter, taint)
+                    >>| fun taint -> ModelParser.ParameterAnnotation parameter, taint)
             | None -> [])
         | ModelQuery.AllParametersTaint { excludes; taint } ->
             let apply_parameter_production
@@ -467,7 +472,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 None
               else
                 production_to_taint annotation ~production
-                >>| fun taint -> ParameterAnnotation root, taint
+                >>| fun taint -> ModelParser.ParameterAnnotation root, taint
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
@@ -484,7 +489,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
               then
                 let parameter, _, _ = parameter in
                 production_to_taint annotation ~production ~parameter:(Some parameter)
-                >>| fun taint -> ParameterAnnotation root, taint
+                >>| fun taint -> ModelParser.ParameterAnnotation root, taint
               else
                 None
             in
@@ -680,9 +685,7 @@ let apply_all_rules
             in
             models
         | Error error ->
-            Log.error
-              "Error while executing model query: %s"
-              (Model.display_verification_error error);
+            Log.error "Error while executing model query: %s" (ModelVerificationError.display error);
             models)
       else
         models
@@ -742,9 +745,7 @@ let apply_all_rules
             in
             models
         | Error error ->
-            Log.error
-              "Error while executing model query: %s"
-              (Model.display_verification_error error);
+            Log.error "Error while executing model query: %s" (ModelVerificationError.display error);
             models)
       else
         models

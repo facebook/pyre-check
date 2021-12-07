@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Ast
+open Analysis
+open Interprocedural
 open Domains
 
 module Backward : sig
@@ -72,6 +75,18 @@ val is_empty_model : with_modes:ModeSet.t -> call_model -> bool
 
 val empty_skip_model : call_model (* Skips analysis *)
 
+val is_obscure : call_model -> bool
+
+val remove_obscureness : call_model -> call_model
+
+val remove_sinks : call_model -> call_model
+
+val add_obscure_sink
+  :  resolution:Resolution.t ->
+  call_target:[< Target.t ] ->
+  call_model ->
+  call_model
+
 val should_externalize_model : call_model -> bool
 
 type result = Flow.issue list
@@ -86,3 +101,10 @@ val model_to_json
   Interprocedural.Target.t ->
   call_model ->
   Yojson.Safe.t
+
+(* Create a symbolic callable representing an unknown callee at a call site. *)
+val unknown_callee : location:Location.WithModule.t -> call:Expression.expression -> Target.t
+
+(* Register a model with sinks on all parameters for a symbolic callable that
+ * represents an unknown callee, in order to find missing flows. *)
+val register_unknown_callee_model : [< Target.t ] -> unit

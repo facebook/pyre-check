@@ -440,8 +440,8 @@ let run_with_taint_models tests ~name =
     let global_resolution =
       Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_resolution
     in
-    let { Taint.Model.models; errors; _ } =
-      Model.parse
+    let { ModelParser.models; errors; _ } =
+      ModelParser.parse
         ~resolution:
           (TypeCheck.resolution
              global_resolution
@@ -456,7 +456,7 @@ let run_with_taint_models tests ~name =
     assert_bool
       (Format.sprintf
          "The models shouldn't have any parsing errors: %s."
-         (List.to_string errors ~f:Taint.Model.display_verification_error))
+         (List.to_string errors ~f:Taint.ModelVerificationError.display))
       (List.is_empty errors);
     Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
     |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
@@ -551,12 +551,12 @@ let initialize
   let callable_targets = (callables :> Target.t list) in
   let stub_targets = (stubs :> Target.t list) in
   let initial_models, skip_overrides =
-    let inferred_models = Model.infer_class_models ~environment in
+    let inferred_models = ClassModels.infer ~environment in
     match models with
     | None -> inferred_models, Ast.Reference.Set.empty
     | Some source ->
-        let { Taint.Model.models; errors; skip_overrides; queries = rules } =
-          Model.parse
+        let { ModelParser.models; errors; skip_overrides; queries = rules } =
+          ModelParser.parse
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
@@ -567,7 +567,7 @@ let initialize
         assert_bool
           (Format.sprintf
              "The models shouldn't have any parsing errors: %s."
-             (List.to_string errors ~f:Taint.Model.display_verification_error))
+             (List.to_string errors ~f:ModelVerificationError.display))
           (List.is_empty errors);
 
         let models =
@@ -585,20 +585,22 @@ let initialize
             ~stubs:(Target.HashSet.of_list stub_targets)
             ~environment
         in
-        let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
+        let remove_sinks models = Target.Map.map ~f:Taint.Result.remove_sinks models in
         let add_obscure_sinks models =
           let add_obscure_sink models callable =
             let model =
               Target.Map.find models callable
               |> Option.value ~default:Taint.Result.empty_model
-              |> Model.add_obscure_sink ~resolution ~call_target:callable
-              |> Model.remove_obscureness
+              |> Taint.Result.add_obscure_sink ~resolution ~call_target:callable
+              |> Taint.Result.remove_obscureness
             in
             Target.Map.set models ~key:callable ~data:model
           in
           stub_targets
           |> List.filter ~f:(fun stub ->
-                 Target.Map.find models stub >>| Model.is_obscure |> Option.value ~default:true)
+                 Target.Map.find models stub
+                 >>| Taint.Result.is_obscure
+                 |> Option.value ~default:true)
           |> List.fold ~init:models ~f:add_obscure_sink
         in
         let models =

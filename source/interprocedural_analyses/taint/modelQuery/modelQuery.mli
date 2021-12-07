@@ -8,24 +8,24 @@
 val apply_callable_query_rule
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
-  rule:Taint.Model.ModelQuery.rule ->
+  rule:Taint.ModelParser.T.ModelQuery.rule ->
   callable:Interprocedural.Target.callable_t ->
-  (Taint.Model.annotation_kind * Taint.Model.taint_annotation) list
+  (Taint.ModelParser.T.annotation_kind * Taint.ModelParser.T.taint_annotation) list
 
 val apply_attribute_query_rule
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
-  rule:Taint.Model.ModelQuery.rule ->
+  rule:Taint.ModelParser.T.ModelQuery.rule ->
   name:Ast.Reference.t ->
   annotation:Ast.Expression.t option ->
-  Taint.Model.taint_annotation list
+  Taint.ModelParser.T.taint_annotation list
 
 val apply_all_rules
   :  resolution:Analysis.Resolution.t ->
   scheduler:Scheduler.t ->
   configuration:Taint.TaintConfiguration.t ->
   rule_filter:int list option ->
-  rules:Taint.Model.ModelQuery.rule list ->
+  rules:Taint.ModelParser.T.ModelQuery.rule list ->
   callables:Interprocedural.Target.callable_t list ->
   stubs:Interprocedural.Target.HashSet.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->

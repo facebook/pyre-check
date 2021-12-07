@@ -6,8 +6,12 @@
  *)
 
 open Core
-open Domains
 open Pyre
+open Analysis
+open Ast
+open Expression
+open Interprocedural
+open Domains
 
 let json_to_string ~indent json =
   let lines = Yojson.Safe.to_string json |> Yojson.Safe.prettify |> String.split ~on:'\n' in
@@ -224,6 +228,52 @@ let empty_skip_model =
   }
 
 
+let is_obscure { modes; _ } = ModeSet.contains Obscure modes
+
+let remove_obscureness ({ modes; _ } as model) = { model with modes = ModeSet.remove Obscure modes }
+
+let remove_sinks model =
+  { model with backward = { model.backward with sink_taint = BackwardState.empty } }
+
+
+let add_obscure_sink ~resolution ~call_target model =
+  match Target.get_callable_t call_target with
+  | None -> model
+  | Some real_target -> (
+      match
+        Target.get_module_and_definition
+          ~resolution:(Resolution.global_resolution resolution)
+          real_target
+      with
+      | None ->
+          let () = Log.warning "Found no definition for %s" (Target.show call_target) in
+          model
+      | Some (_, { value = { signature = { parameters; _ }; _ }; _ }) ->
+          let open Domains in
+          let sink =
+            BackwardState.Tree.create_leaf (BackwardTaint.singleton (Sinks.NamedSink "Obscure"))
+          in
+          let parameters = AccessPath.Root.normalize_parameters parameters in
+          let add_parameter_sink sink_taint (root, _, _) =
+            BackwardState.assign ~root ~path:[] sink sink_taint
+          in
+          let sink_taint =
+            List.fold_left ~init:model.backward.sink_taint ~f:add_parameter_sink parameters
+          in
+          { model with backward = { model.backward with sink_taint } })
+
+
+let unknown_callee ~location ~call =
+  let callee =
+    match call with
+    | Expression.Call { callee; _ } -> callee
+    | _ -> Node.create ~location:(Location.strip_module location) call
+  in
+  Interprocedural.Target.create_function
+    (Reference.create
+       (Format.asprintf "%a:%a" Location.WithModule.pp location Expression.pp callee))
+
+
 module ResultArgument = struct
   let name = "taint"
 
@@ -406,3 +456,44 @@ let has_significant_summary root path target =
 
 
 let () = CallInfo.has_significant_summary := has_significant_summary
+
+let register_unknown_callee_model callable =
+  (* Add a model with sinks on *args and **kwargs. *)
+  let sink_leaf =
+    BackwardState.Tree.create_leaf (BackwardTaint.singleton (Sinks.NamedSink "UnknownCallee"))
+  in
+  let sink_taint =
+    BackwardState.assign
+      ~root:(AccessPath.Root.StarParameter { position = 0 })
+      ~path:[]
+      sink_leaf
+      BackwardState.empty
+    |> BackwardState.assign
+         ~root:(AccessPath.Root.StarStarParameter { excluded = [] })
+         ~path:[]
+         sink_leaf
+  in
+  (* Add taint-in-taint-out for all parameters. *)
+  let local_return = BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn) in
+  let taint_in_taint_out =
+    BackwardState.assign
+      ~root:(AccessPath.Root.StarParameter { position = 0 })
+      ~path:[]
+      local_return
+      BackwardState.empty
+    |> BackwardState.assign
+         ~root:(AccessPath.Root.StarStarParameter { excluded = [] })
+         ~path:[]
+         local_return
+  in
+  Interprocedural.FixpointState.add_predefined
+    Interprocedural.FixpointState.Epoch.predefined
+    callable
+    (Interprocedural.AnalysisResult.make_model
+       kind
+       {
+         forward = Forward.empty;
+         backward = { sink_taint; taint_in_taint_out };
+         sanitizers = Sanitizers.empty;
+         modes = ModeSet.singleton Mode.SkipAnalysis;
+       })

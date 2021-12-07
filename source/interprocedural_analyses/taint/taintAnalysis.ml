@@ -21,8 +21,8 @@ include Taint.Result.Register (struct
     (* In order to save time, sanity check models before starting the analysis. *)
     Log.info "Verifying model syntax and configuration.";
     let timer = Timer.start () in
-    Taint.Model.get_model_sources ~paths:taint_model_paths
-    |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
+    Taint.ModelParser.get_model_sources ~paths:taint_model_paths
+    |> List.iter ~f:(fun (path, source) -> Taint.ModelParser.verify_model_syntax ~path ~source);
     let (_ : Taint.TaintConfiguration.t) =
       Taint.TaintConfiguration.create
         ~rule_filter:None
@@ -46,7 +46,7 @@ include Taint.Result.Register (struct
 
 
   type model_query_data = {
-    queries: Model.ModelQuery.rule list;
+    queries: Taint.ModelParser.T.ModelQuery.rule list;
     taint_configuration: TaintConfiguration.t;
   }
 
@@ -93,20 +93,22 @@ include Taint.Result.Register (struct
           ~environment
           ~models
       in
-      let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
+      let remove_sinks models = Target.Map.map ~f:Taint.Result.remove_sinks models in
       let add_obscure_sinks models =
         let add_obscure_sink models callable =
           let model =
             Target.Map.find models callable
             |> Option.value ~default:Taint.Result.empty_model
-            |> Model.add_obscure_sink ~resolution ~call_target:callable
-            |> Model.remove_obscureness
+            |> Taint.Result.add_obscure_sink ~resolution ~call_target:callable
+            |> Taint.Result.remove_obscureness
           in
           Target.Map.set models ~key:callable ~data:model
         in
         stubs
         |> Hash_set.filter ~f:(fun callable ->
-               Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
+               Target.Map.find models callable
+               >>| Taint.Result.is_obscure
+               |> Option.value ~default:true)
         |> Hash_set.fold ~f:add_obscure_sink ~init:models
       in
       let find_missing_flows =
@@ -153,7 +155,7 @@ include Taint.Result.Register (struct
           ~init:state
           ~f:(fun (models, errors, skip_overrides, queries) (path, source) ->
             let {
-              ModelParser.T.models;
+              ModelParser.models;
               errors = new_errors;
               skip_overrides = new_skip_overrides;
               queries = new_queries;
@@ -214,22 +216,21 @@ include Taint.Result.Register (struct
         in
         TaintConfiguration.register taint_configuration;
         let models, errors, skip_overrides, queries =
-          Model.get_model_sources ~paths:taint_model_paths
+          Taint.ModelParser.get_model_sources ~paths:taint_model_paths
           |> create_models ~taint_configuration ~initial_models
         in
-        Model.register_verification_errors errors;
+        Taint.ModelVerificationError.register errors;
         let () =
           if not (List.is_empty errors) then
             (* Exit or log errors, depending on whether models need to be verified. *)
             if not verify_models then begin
               Log.error "Found %d model verification errors!" (List.length errors);
               List.iter errors ~f:(fun error ->
-                  Log.error "%s" (Taint.Model.display_verification_error error))
+                  Log.error "%s" (Taint.ModelVerificationError.display error))
             end
             else begin
               Yojson.Safe.pretty_to_string
-                (`Assoc
-                  ["errors", `List (List.map errors ~f:Taint.Model.verification_error_to_json)])
+                (`Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)])
               |> Log.print "%s";
               exit 0
             end
@@ -245,7 +246,7 @@ include Taint.Result.Register (struct
       with
       | exception_ -> log_and_reraise_taint_model_exception exception_
     in
-    let initial_models = Model.infer_class_models ~environment in
+    let initial_models = Taint.ClassModels.infer ~environment in
     match taint_model_paths with
     | [] ->
         {

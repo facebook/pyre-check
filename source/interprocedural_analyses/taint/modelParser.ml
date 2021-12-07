@@ -15,7 +15,6 @@ open Interprocedural
 open Statement
 open Domains
 open TaintResult
-open Model
 
 module T = struct
   type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, compare]
@@ -2093,7 +2092,7 @@ type parsed_statement =
   | ParsedQuery of ModelQuery.rule
 
 type model_or_query =
-  | Model of (Model.t * Reference.t option)
+  | Model of (CallModel.t * Reference.t option)
   | Query of ModelQuery.rule
 
 let resolve_global_callable
@@ -2929,6 +2928,19 @@ let create ~resolution ~path ~configuration ~rule_filter ~callables ~stubs sourc
     (List.map signatures_and_queries ~f:create_model_or_query)
 
 
+let get_model_sources ~paths =
+  let path_and_content file =
+    match File.content file with
+    | Some content -> Some (File.path file, content)
+    | None -> None
+  in
+  let model_files = Path.get_matching_files_recursively ~suffix:".pysa" ~paths in
+  Log.info
+    "Finding taint models in `%s`."
+    (paths |> List.map ~f:Path.show |> String.concat ~sep:", ");
+  model_files |> List.map ~f:File.create |> List.filter_map ~f:path_and_content
+
+
 let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stubs models =
   let new_models_and_queries, errors =
     create ~resolution ~path ~rule_filter ~configuration ~callables ~stubs source
@@ -3060,10 +3072,12 @@ let create_attribute_model_from_annotations
         annotation)
 
 
+exception InvalidModel of string
+
 let verify_model_syntax ~path ~source =
   try String.split ~on:'\n' source |> Parser.parse |> ignore with
   | exn ->
       Log.error "Unable to parse model at `%s`: %s" (Path.show path) (Exn.to_string exn);
       raise
-        (Model.InvalidModel
+        (InvalidModel
            (Format.sprintf "Invalid model at `%s`: %s" (Path.show path) (Exn.to_string exn)))

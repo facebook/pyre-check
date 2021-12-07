@@ -321,7 +321,7 @@ let parse_and_save_decorators_to_skip
   if inline_decorators then (
     let timer = Timer.start () in
     Log.info "Getting decorators to skip when inlining...";
-    let model_sources = Taint.Model.get_model_sources ~paths:taint_model_paths in
+    let model_sources = Taint.ModelParser.get_model_sources ~paths:taint_model_paths in
     let decorators_to_skip =
       List.concat_map model_sources ~f:(fun (path, source) ->
           Analysis.InlineDecorator.decorators_to_skip ~path source)

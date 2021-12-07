@@ -12,7 +12,6 @@ open Test
 open TestHelper
 module Target = Interprocedural.Target
 open Taint
-open Model.ModelQuery
 
 let set_up_environment ?source ?rules ~context ~model_source () =
   let source =
@@ -69,8 +68,8 @@ let set_up_environment ?source ?rules ~context ~model_source () =
     | Some rules -> Some (List.map rules ~f:(fun { Taint.TaintConfiguration.Rule.code; _ } -> code))
     | None -> None
   in
-  let ({ Taint.Model.errors; skip_overrides; _ } as parse_result) =
-    Taint.Model.parse
+  let ({ ModelParser.errors; skip_overrides; _ } as parse_result) =
+    ModelParser.parse
       ~resolution
       ?rule_filter
       ~source
@@ -82,7 +81,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
   assert_bool
     (Format.sprintf
        "Models have parsing errors: %s"
-       (List.to_string errors ~f:Taint.Model.display_verification_error))
+       (List.to_string errors ~f:ModelVerificationError.display))
     (List.is_empty errors);
 
   let environment =
@@ -92,7 +91,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
 
 
 let assert_model ?source ?rules ?expected_skipped_overrides ~context ~model_source ~expect () =
-  let { Taint.Model.models; _ }, environment, skip_overrides =
+  let { ModelParser.models; _ }, environment, skip_overrides =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   begin
@@ -145,7 +144,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
   in
   let error_message =
     let path = path >>| Path.create_absolute in
-    Model.parse
+    ModelParser.parse
       ~resolution
       ~configuration
       ?path
@@ -153,19 +152,19 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ~callables:None
       ~stubs:(Target.HashSet.create ())
       Target.Map.empty
-    |> fun { Taint.Model.errors; _ } ->
-    List.hd errors >>| Taint.Model.display_verification_error |> Option.value ~default:"no failure"
+    |> fun { ModelParser.errors; _ } ->
+    List.hd errors >>| ModelVerificationError.display |> Option.value ~default:"no failure"
   in
   assert_equal ~printer:ident expect error_message
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
-  let { Taint.Model.queries; _ }, _, _ =
+  let { ModelParser.queries; _ }, _, _ =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   assert_equal
-    ~cmp:(List.equal (fun left right -> compare_rule left right = 0))
-    ~printer:(List.to_string ~f:show_rule)
+    ~cmp:(List.equal (fun left right -> ModelParser.T.ModelQuery.compare_rule left right = 0))
+    ~printer:(List.to_string ~f:ModelParser.T.ModelQuery.show_rule)
     queries
     expect
 
@@ -3231,7 +3230,7 @@ let test_invalid_models context =
 
 let test_demangle_class_attributes _ =
   let assert_demangle ~expected name =
-    assert_equal expected (Model.demangle_class_attribute name)
+    assert_equal expected (ModelVerifier.demangle_class_attribute name)
   in
   assert_demangle ~expected:"a.B" "a.B";
   assert_demangle ~expected:"a.B" "a.__class__.B";
@@ -3339,6 +3338,8 @@ let test_filter_by_rules context =
 
 
 let test_query_parsing context =
+  let module Model = ModelParser.T in
+  let open ModelParser.T.ModelQuery in
   assert_queries
     ~context
     ~model_source:
@@ -3360,7 +3361,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3395,7 +3396,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
