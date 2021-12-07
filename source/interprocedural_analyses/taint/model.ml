@@ -622,3 +622,11 @@ let to_json
       model_json
   in
   `Assoc ["kind", `String "model"; "data", `Assoc model_json]
+
+
+module WithTarget = struct
+  type nonrec t = {
+    model: t;
+    target: Target.t;
+  }
+end

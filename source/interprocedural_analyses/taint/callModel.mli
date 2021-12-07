@@ -9,14 +9,8 @@ open Ast
 open Analysis
 open Interprocedural
 
-type t = {
-  call_target: Target.t;
-  model: Model.t;
-}
-[@@deriving show]
-
 val at_callsite
   :  resolution:Resolution.t ->
   call_target:[< Target.t ] ->
   arguments:Expression.Call.Argument.t list ->
-  t
+  Model.t

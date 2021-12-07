@@ -2089,7 +2089,7 @@ type parsed_statement =
   | ParsedQuery of ModelQuery.rule
 
 type model_or_query =
-  | Model of (CallModel.t * Reference.t option)
+  | Model of (Model.WithTarget.t * Reference.t option)
   | Query of ModelQuery.rule
 
 let resolve_global_callable
@@ -2799,7 +2799,8 @@ let create_model_from_signature
         ~top_level_decorators
         ~define_name:callable_name
         ~is_object_target
-  >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
+  >>| fun (model, skipped_override) ->
+  Model ({ Model.WithTarget.model; target = call_target }, skipped_override)
 
 
 let create_model_from_attribute
@@ -2874,7 +2875,8 @@ let create_model_from_attribute
         ~top_level_decorators:decorators
         ~define_name:name
         ~is_object_target
-  >>| fun (model, skipped_override) -> Model ({ model; call_target }, skipped_override)
+  >>| fun (model, skipped_override) ->
+  Model ({ Model.WithTarget.model; target = call_target }, skipped_override)
 
 
 let create ~resolution ~path ~configuration ~rule_filter ~callables ~stubs source =
@@ -2954,7 +2956,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stub
   in
   {
     models =
-      List.map new_models ~f:(fun (model, _) -> model.call_target, model.model)
+      List.map new_models ~f:(fun (model, _) -> model.target, model.model)
       |> Target.Map.of_alist_reduce ~f:Model.join
       |> Target.Map.merge models ~f:(fun ~key:_ -> function
            | `Both (a, b) -> Some (Model.join a b)

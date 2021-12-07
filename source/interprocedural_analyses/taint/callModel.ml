@@ -9,16 +9,10 @@ open Core
 open Interprocedural
 open Domains
 
-type t = {
-  call_target: Target.t;
-  model: Model.t;
-}
-[@@deriving show]
-
 let at_callsite ~resolution ~call_target ~arguments =
   let call_target = (call_target :> Target.t) in
   match Interprocedural.FixpointState.get_model call_target with
-  | None -> { call_target; model = Model.obscure_model }
+  | None -> Model.obscure_model
   | Some model ->
       let expand_via_value_of
           {
@@ -90,4 +84,4 @@ let at_callsite ~resolution ~call_target ~arguments =
         else
           taint_model
       in
-      { call_target; model = taint_model }
+      taint_model

@@ -12,7 +12,7 @@ open Pyre
 open Domains
 
 type t = {
-  models: CallModel.t list;
+  models: Model.WithTarget.t list;
   location: Location.WithModule.t;
 }
 
@@ -36,7 +36,10 @@ let get_global_targets ~call_graph ~expression =
 
 
 let from_expression ~resolution ~call_graph ~qualifier ~expression =
-  let fetch_model target = CallModel.at_callsite ~resolution ~call_target:target ~arguments:[] in
+  let fetch_model target =
+    let model = CallModel.at_callsite ~resolution ~call_target:target ~arguments:[] in
+    { Model.WithTarget.model; target }
+  in
   let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in
   let location = Node.location expression |> Location.with_module ~qualifier in
   { models; location }
@@ -49,13 +52,10 @@ let global_root =
 let get_source { models; location } =
   let to_source
       existing
-      { CallModel.call_target; model = { Model.forward = { Model.Forward.source_taint }; _ }; _ }
+      { Model.WithTarget.target; model = { Model.forward = { Model.Forward.source_taint }; _ }; _ }
     =
     ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
-    |> ForwardState.Tree.apply_call
-         location
-         ~callees:[call_target]
-         ~port:AccessPath.Root.LocalResult
+    |> ForwardState.Tree.apply_call location ~callees:[target] ~port:AccessPath.Root.LocalResult
     |> ForwardState.Tree.join existing
   in
   List.fold ~init:ForwardState.Tree.bottom ~f:to_source models
@@ -64,13 +64,14 @@ let get_source { models; location } =
 let get_sink { models; location } =
   let to_sink
       existing
-      { CallModel.call_target; model = { Model.backward = { Model.Backward.sink_taint; _ }; _ }; _ }
+      {
+        Model.WithTarget.target;
+        model = { Model.backward = { Model.Backward.sink_taint; _ }; _ };
+        _;
+      }
     =
     BackwardState.read ~root:global_root ~path:[] sink_taint
-    |> BackwardState.Tree.apply_call
-         location
-         ~callees:[call_target]
-         ~port:AccessPath.Root.LocalResult
+    |> BackwardState.Tree.apply_call location ~callees:[target] ~port:AccessPath.Root.LocalResult
     |> BackwardState.Tree.join existing
   in
   List.fold ~init:BackwardState.Tree.bottom ~f:to_sink models
@@ -79,7 +80,10 @@ let get_sink { models; location } =
 let get_tito { models; _ } =
   let to_tito
       existing
-      { CallModel.model = { Model.backward = { Model.Backward.taint_in_taint_out; _ }; _ }; _ }
+      {
+        Model.WithTarget.model = { Model.backward = { Model.Backward.taint_in_taint_out; _ }; _ };
+        _;
+      }
     =
     BackwardState.read ~root:global_root ~path:[] taint_in_taint_out
     |> BackwardState.Tree.join existing
@@ -90,7 +94,7 @@ let get_tito { models; _ } =
 let get_sanitize { models; _ } =
   let get_sanitize
       existing
-      { CallModel.model = { Model.sanitizers = { global = sanitize; _ }; _ }; _ }
+      { Model.WithTarget.model = { Model.sanitizers = { global = sanitize; _ }; _ }; _ }
     =
     Sanitize.join sanitize existing
   in
@@ -98,14 +102,15 @@ let get_sanitize { models; _ } =
 
 
 let get_modes { models; _ } =
-  let get_modes existing { CallModel.model = { Model.modes; _ }; _ } =
+  let get_modes existing { Model.WithTarget.model = { Model.modes; _ }; _ } =
     Model.ModeSet.join modes existing
   in
   List.fold ~init:Model.ModeSet.empty ~f:get_modes models
 
 
 let is_sanitized { models; _ } =
-  let is_sanitized_model { CallModel.model = { Model.sanitizers = { global = sanitize; _ }; _ }; _ }
+  let is_sanitized_model
+      { Model.WithTarget.model = { Model.sanitizers = { global = sanitize; _ }; _ }; _ }
     =
     match sanitize with
     | {

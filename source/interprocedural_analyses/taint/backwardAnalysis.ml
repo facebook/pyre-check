@@ -266,7 +266,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~init:BackwardState.bottom
       | None -> BackwardState.bottom
     in
-    let taint_model =
+    let ({ Model.backward; sanitizers; modes; _ } as taint_model) =
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Backward
@@ -279,9 +279,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       call_target
       Ast.Expression.pp_expression_argument_list
       arguments
-      CallModel.pp
+      Model.pp
       taint_model;
-    let { Model.backward; sanitizers; modes; _ } = taint_model.model in
     let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
     let sink_argument_matches =
       BackwardState.roots sink_taint

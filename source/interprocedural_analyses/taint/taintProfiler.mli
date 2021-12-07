@@ -31,7 +31,7 @@ val track_model_fetch
   :  profiler:t ->
   analysis:analysis ->
   call_target:Interprocedural.Target.t ->
-  f:(unit -> CallModel.t) ->
-  CallModel.t
+  f:(unit -> Model.t) ->
+  Model.t
 
 val dump : t -> unit
