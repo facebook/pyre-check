@@ -46,7 +46,7 @@ include Taint.Result.Register (struct
 
 
   type model_query_data = {
-    queries: Taint.ModelParser.T.ModelQuery.rule list;
+    queries: Taint.ModelParser.Internal.ModelQuery.rule list;
     taint_configuration: TaintConfiguration.t;
   }
 

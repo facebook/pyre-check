@@ -13,11 +13,10 @@ open Taint
 
 module ModelParser = struct
   include Taint.ModelParser
-  include Taint.ModelParser.T
+  include Taint.ModelParser.Internal
 end
 
-module Model = Taint.ModelParser.T
-open Taint.ModelParser.T.ModelQuery
+open Taint.ModelParser.Internal.ModelQuery
 
 type query_rule_element = ModelParser.annotation_kind * ModelParser.taint_annotation
 [@@deriving show, compare]
@@ -29,7 +28,7 @@ let test_apply_rule context =
       | None -> Sources.NamedSource name
       | Some subkind -> Sources.ParametricSource { source_name = name; subkind }
     in
-    Model.Source
+    ModelParser.Source
       {
         source;
         breadcrumbs = [];
@@ -41,7 +40,7 @@ let test_apply_rule context =
   in
   let sink name =
     let sink = Sinks.NamedSink name in
-    Model.Sink
+    ModelParser.Sink
       {
         sink;
         breadcrumbs = [];
@@ -997,7 +996,7 @@ let test_apply_rule context =
         ( ModelParser.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "b"; positional_only = false }),
-          Model.Sink
+          ModelParser.Sink
             {
               sink = Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" };
               breadcrumbs = [];
@@ -1366,7 +1365,7 @@ let test_apply_rule context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                    (ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name = None;
@@ -1405,7 +1404,7 @@ let test_apply_rule context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                    (ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name = None;
@@ -1444,7 +1443,7 @@ let test_apply_rule context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                    (ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1484,7 +1483,7 @@ let test_apply_rule context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                    (ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1524,7 +1523,7 @@ let test_apply_rule context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Contains
+                    (ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1571,7 +1570,7 @@ let test_apply_rule context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Equals
+                    (ArgumentsConstraint.Equals
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1618,7 +1617,7 @@ let test_apply_rule context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ModelParser.T.ModelQuery.ArgumentsConstraint.Equals
+                    (ArgumentsConstraint.Equals
                        [
                          {
                            Ast.Expression.Call.Argument.name =

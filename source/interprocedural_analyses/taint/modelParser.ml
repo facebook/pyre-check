@@ -16,7 +16,7 @@ open Statement
 open Domains
 open TaintResult
 
-module T = struct
+module Internal = struct
   type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, compare]
 
   type via_features = Features.ViaFeature.t list [@@deriving show, compare]
@@ -205,7 +205,7 @@ module T = struct
   }
 end
 
-include T
+include Internal
 
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 

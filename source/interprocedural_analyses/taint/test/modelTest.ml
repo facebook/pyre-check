@@ -163,8 +163,9 @@ let assert_queries ?source ?rules ~context ~model_source ~expect () =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   assert_equal
-    ~cmp:(List.equal (fun left right -> ModelParser.T.ModelQuery.compare_rule left right = 0))
-    ~printer:(List.to_string ~f:ModelParser.T.ModelQuery.show_rule)
+    ~cmp:
+      (List.equal (fun left right -> ModelParser.Internal.ModelQuery.compare_rule left right = 0))
+    ~printer:(List.to_string ~f:ModelParser.Internal.ModelQuery.show_rule)
     queries
     expect
 
@@ -2782,8 +2783,9 @@ let test_invalid_models context =
       def test.foo(x): ...
     |}
     ~expect:
-      {|`Sanitize[TaintSource[(A, Via[featureA])]]` is an invalid taint annotation: `ModelParser.T.Source {source = A; breadcrumbs = [SimpleVia[featureA]];
-   via_features = []; path = ; leaf_names = []; leaf_name_provided = false}` is not supported within `Sanitize[...]`|}
+      {|`Sanitize[TaintSource[(A, Via[featureA])]]` is an invalid taint annotation: `ModelParser.Internal.Source {source = A;
+   breadcrumbs = [SimpleVia[featureA]]; via_features = []; path = ;
+   leaf_names = []; leaf_name_provided = false}` is not supported within `Sanitize[...]`|}
     ();
   assert_invalid_model
     ~model_source:
@@ -3338,8 +3340,8 @@ let test_filter_by_rules context =
 
 
 let test_query_parsing context =
-  let module Model = ModelParser.T in
-  let open ModelParser.T.ModelQuery in
+  let open ModelParser.Internal.ModelQuery in
+  let module ModelParser = ModelParser.Internal in
   assert_queries
     ~context
     ~model_source:
@@ -3435,7 +3437,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3470,7 +3472,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3480,7 +3482,7 @@ let test_query_parsing context =
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
-                    (Model.Sink
+                    (ModelParser.Sink
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
@@ -3515,7 +3517,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3525,7 +3527,7 @@ let test_query_parsing context =
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
-                    (Model.Sink
+                    (ModelParser.Sink
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
@@ -3561,7 +3563,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3571,7 +3573,7 @@ let test_query_parsing context =
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
-                    (Model.Sink
+                    (ModelParser.Sink
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
@@ -3607,7 +3609,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3643,7 +3645,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3689,7 +3691,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3735,7 +3737,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3775,7 +3777,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (Model.Source
+                        (ModelParser.Source
                            {
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
@@ -3815,7 +3817,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (Model.Source
+                        (ModelParser.Source
                            {
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
@@ -3855,7 +3857,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (Model.Source
+                        (ModelParser.Source
                            {
                              source = Sources.NamedSource "Test";
                              breadcrumbs = [];
@@ -3962,7 +3964,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -3972,7 +3974,7 @@ let test_query_parsing context =
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
-                    (Model.Sink
+                    (ModelParser.Sink
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
@@ -4007,7 +4009,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -4017,7 +4019,7 @@ let test_query_parsing context =
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
-                    (Model.Sink
+                    (ModelParser.Sink
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
@@ -4052,7 +4054,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -4087,7 +4089,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -4122,7 +4124,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -4132,7 +4134,7 @@ let test_query_parsing context =
                          leaf_name_provided = false;
                        });
                   TaintAnnotation
-                    (Model.Sink
+                    (ModelParser.Sink
                        {
                          sink = Sinks.NamedSink "Test";
                          breadcrumbs = [];
@@ -4172,7 +4174,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Model.Source
+                    (ModelParser.Source
                        {
                          source = Sources.NamedSource "Test";
                          breadcrumbs = [];
@@ -4244,7 +4246,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (Model.Sink
+                        (ModelParser.Sink
                            {
                              sink = Sinks.NamedSink "Test";
                              breadcrumbs = [];

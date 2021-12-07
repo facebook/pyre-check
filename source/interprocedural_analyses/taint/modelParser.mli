@@ -11,7 +11,8 @@ module ClassDefinitionsCache : sig
   val invalidate : unit -> unit
 end
 
-module T : sig
+(* Exposed for model queries. *)
+module Internal : sig
   type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, compare]
 
   type via_features = Features.ViaFeature.t list [@@deriving show, compare]
@@ -178,7 +179,7 @@ val get_model_sources : paths:Path.t list -> (Path.t * string) list
 
 type parse_result = {
   models: TaintResult.call_model Interprocedural.Target.Map.t;
-  queries: T.ModelQuery.rule list;
+  queries: Internal.ModelQuery.rule list;
   skip_overrides: Ast.Reference.Set.t;
   errors: ModelVerificationError.t list;
 }
@@ -203,19 +204,21 @@ val compute_sources_and_sinks_to_keep
   rule_filter:int list option ->
   Sources.Set.t option * Sinks.Set.t option
 
+(* Exposed for model queries. *)
 val create_callable_model_from_annotations
   :  resolution:Analysis.Resolution.t ->
   callable:Interprocedural.Target.callable_t ->
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
   is_obscure:bool ->
-  (T.annotation_kind * T.taint_annotation) list ->
+  (Internal.annotation_kind * Internal.taint_annotation) list ->
   (TaintResult.call_model, ModelVerificationError.t) result
 
+(* Exposed for model queries. *)
 val create_attribute_model_from_annotations
   :  resolution:Analysis.Resolution.t ->
   name:Ast.Reference.t ->
   sources_to_keep:Sources.Set.t option ->
   sinks_to_keep:Sinks.Set.t option ->
-  T.taint_annotation list ->
+  Internal.taint_annotation list ->
   (TaintResult.call_model, ModelVerificationError.t) result

@@ -11,10 +11,10 @@ open Ast
 open Analysis
 open Interprocedural
 open Taint
-module ModelQuery = ModelParser.T.ModelQuery
+module ModelQuery = ModelParser.Internal.ModelQuery
 
 module ModelParser = struct
-  include ModelParser.T
+  include ModelParser.Internal
   include ModelParser
 end
 
