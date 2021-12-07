@@ -1420,9 +1420,10 @@ module State (Context : Context) = struct
         in
         callables >>| List.map ~f:signature_with_unpacked_callable_and_self_argument
       in
-      let not_found = function
-        | SignatureSelectionTypes.NotFound _, _ -> true
-        | _ -> false
+      let extract_found_not_found = function
+        | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
+            First selected_return_annotation
+        | not_found -> Second not_found
       in
       let resolved_for_bad_callable () =
         let errors =
@@ -1444,23 +1445,21 @@ module State (Context : Context) = struct
           base = None;
         }
       in
-      let join_return_annotations (not_found_return_annotations, found_return_annotations) =
-        match not_found_return_annotations, found_return_annotations with
-        | [], head :: tail ->
-            let resolved =
-              let extract = function
-                | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
-                    selected_return_annotation
-                | _ -> failwith "Not all signatures were found."
-              in
-              List.map tail ~f:extract
-              |> List.fold ~f:(GlobalResolution.join global_resolution) ~init:(extract head)
-            in
-            Some { Resolved.resolution; errors; resolved; resolved_annotation = None; base = None }
-        | ( ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
+      let join_return_annotations (found_return_annotations, not_found_return_annotations) =
+        match found_return_annotations, not_found_return_annotations with
+        | head :: tail, [] ->
+            Some
+              {
+                Resolved.resolution;
+                errors;
+                resolved = List.fold ~f:(GlobalResolution.join global_resolution) ~init:head tail;
+                resolved_annotation = None;
+                base = None;
+              }
+        | ( _,
+            ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
               unpacked_callable_and_self_argument )
-            :: _,
-            _ ) ->
+            :: _ ) ->
             (* For a union of callables, we prioritize mismatched signatures even if some of the
                callables matched correctly. *)
             let errors =
@@ -1531,7 +1530,7 @@ module State (Context : Context) = struct
             { input with resolved = Type.Any; errors = new_errors }
       in
       signatures
-      >>| List.partition_tf ~f:not_found
+      >>| List.partition_map ~f:extract_found_not_found
       >>= join_return_annotations
       |> (function
            | Some resolved -> resolved
