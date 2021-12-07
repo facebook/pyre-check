@@ -1641,6 +1641,7 @@ module SignatureSelection = struct
     in
     let { implementation = { annotation = default_return_annotation; _ }; _ } = callable in
     signature_matches
+    |> List.map ~f:calculate_rank
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_annotation_rank
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_position_rank
@@ -3967,7 +3968,6 @@ class base class_metadata_environment dependency =
         in
         signatures
         |> List.concat_map ~f:check_arguments_against_signature
-        |> List.map ~f:SignatureSelection.calculate_rank
         |> SignatureSelection.find_closest_signature ~order ~skip_marking_escapees ~callable
       in
       if List.is_empty overloads then
