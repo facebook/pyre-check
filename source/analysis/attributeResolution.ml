@@ -768,7 +768,7 @@ let callable_call_special_cases
 
 
 module SignatureSelection = struct
-  let get_parameter_argument_mapping ~all_parameters ~self_argument ~arguments ~parameters =
+  let get_parameter_argument_mapping ~all_parameters ~parameters ~self_argument arguments =
     let open Type.Callable in
     let all_arguments = arguments in
     let rec consume
@@ -1410,7 +1410,7 @@ module SignatureSelection = struct
     in
     match all_parameters with
     | Defined parameters ->
-        get_parameter_argument_mapping ~self_argument ~arguments ~parameters ~all_parameters
+        get_parameter_argument_mapping ~parameters ~all_parameters ~self_argument arguments
         |> check_arguments_against_parameters ~callable
         |> fun signature_match -> [signature_match]
     | Undefined -> [base_signature_match]
@@ -1429,10 +1429,10 @@ module SignatureSelection = struct
             as head_signature)
           =
           get_parameter_argument_mapping
-            ~self_argument
-            ~arguments:front
-            ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
             ~all_parameters
+            ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
+            ~self_argument
+            front
           |> check_arguments_against_parameters ~callable
         in
         let solve_back parameters =
@@ -1484,10 +1484,10 @@ module SignatureSelection = struct
           when combines_into_variable ~positional_component ~keyword_component ->
             let arguments = List.rev reversed_arguments_head in
             get_parameter_argument_mapping
-              ~self_argument
-              ~arguments
               ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
               ~all_parameters
+              ~self_argument
+              arguments
             |> check_arguments_against_parameters ~callable
             |> fun signature_match -> [signature_match]
         | _ ->
