@@ -207,9 +207,7 @@ end
 
 include T
 
-let model_verification_error ~path ~location kind =
-  { ModelVerificationError.T.kind; path; location }
-
+let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 
 module ClassDefinitionsCache = ModelVerifier.ClassDefinitionsCache
 
@@ -2646,7 +2644,7 @@ let create_model_from_signature
     { location with start }
   in
   (* Make sure we know about what we model. *)
-  let model_verification_error kind = Error { ModelVerificationError.T.kind; path; location } in
+  let model_verification_error kind = Error { ModelVerificationError.kind; path; location } in
   let callable_annotation =
     resolve_global_callable ~path ~location ~verify_decorators:true ~resolution define
     >>= function
@@ -2717,7 +2715,7 @@ let create_model_from_signature
               | None ->
                   Error
                     {
-                      ModelVerificationError.T.kind =
+                      ModelVerificationError.kind =
                         IncompatibleModelError
                           {
                             name = Reference.show callable_name;

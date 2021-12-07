@@ -8,11 +8,7 @@
 open Pyre
 open Core
 open OUnit2
-
-module ModelVerificationError = struct
-  include Taint.ModelVerificationError
-  include Taint.ModelVerificationError.T
-end
+open Taint
 
 let test_to_json _ =
   let assert_json ~expected error =
