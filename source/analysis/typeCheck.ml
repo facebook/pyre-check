@@ -1203,13 +1203,43 @@ module State (Context : Context) = struct
         List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
       in
       let arguments = List.rev reversed_arguments in
-      let signature_select ~arguments ~callable ~self_argument =
-        GlobalResolution.signature_select
-          ~arguments
-          ~global_resolution
-          ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+      let signature_select_bidirectional
+          ~all_parameters
+          ~parameters
           ~callable
           ~self_argument
+          arguments
+        =
+        let open AttributeResolution.SignatureSelection in
+        prepare_arguments_for_signature_selection ~self_argument arguments
+        |> get_parameter_argument_mapping ~all_parameters ~parameters ~self_argument
+        |> check_arguments_against_parameters
+             ~order:(GlobalResolution.full_order global_resolution)
+             ~resolve_mutable_literals:(GlobalResolution.resolve_mutable_literals global_resolution)
+             ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+             ~callable
+        |> instantiate_return_annotation ~order:(GlobalResolution.full_order global_resolution)
+      in
+      let signature_select
+          ~arguments
+          ~callable:({ Type.Callable.implementation = { parameters; _ }; overloads; _ } as callable)
+          ~self_argument
+        =
+        match parameters, overloads with
+        | Type.Callable.Defined record_parameters, [] ->
+            signature_select_bidirectional
+              ~all_parameters:parameters
+              ~parameters:record_parameters
+              ~callable
+              ~self_argument
+              arguments
+        | _ ->
+            GlobalResolution.signature_select
+              ~arguments
+              ~global_resolution
+              ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+              ~callable
+              ~self_argument
       in
       let find_method ~parent ~name ~special_method =
         GlobalResolution.attribute_from_annotation global_resolution ~parent ~name ~special_method

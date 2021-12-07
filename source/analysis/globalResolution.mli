@@ -42,6 +42,8 @@ module ConstraintsSet : sig
 
   val solve : ConstraintsSet.t -> global_resolution:t -> ConstraintsSet.Solution.t option
 
+  type order = ConstraintsSet.order
+
   module Solution : sig
     type t = ConstraintsSet.Solution.t
   end
@@ -103,6 +105,8 @@ val is_protocol : t -> Type.t -> bool
 val function_definitions : t -> Reference.t -> Define.t Node.t list option
 
 val is_suppressed_module : t -> Reference.t -> bool
+
+val full_order : t -> ConstraintsSet.order
 
 val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
