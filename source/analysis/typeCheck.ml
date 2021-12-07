@@ -1444,9 +1444,9 @@ module State (Context : Context) = struct
           base = None;
         }
       in
-      let join_return_annotations not_found_and_found_return_annotations =
-        match not_found_and_found_return_annotations with
-        | Some ([], head :: tail) ->
+      let join_return_annotations (not_found_return_annotations, found_return_annotations) =
+        match not_found_return_annotations, found_return_annotations with
+        | [], head :: tail ->
             let resolved =
               let extract = function
                 | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
@@ -1456,12 +1456,11 @@ module State (Context : Context) = struct
               List.map tail ~f:extract
               |> List.fold ~f:(GlobalResolution.join global_resolution) ~init:(extract head)
             in
-            { Resolved.resolution; errors; resolved; resolved_annotation = None; base = None }
-        | Some
-            ( ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
-                unpacked_callable_and_self_argument )
-              :: _,
-              _ ) ->
+            Some { Resolved.resolution; errors; resolved; resolved_annotation = None; base = None }
+        | ( ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
+              unpacked_callable_and_self_argument )
+            :: _,
+            _ ) ->
             (* For a union of callables, we prioritize mismatched signatures even if some of the
                callables matched correctly. *)
             let errors =
@@ -1484,14 +1483,15 @@ module State (Context : Context) = struct
               in
               List.fold error_kinds ~init:errors ~f:emit
             in
-            {
-              resolution;
-              errors;
-              resolved = closest_return_annotation;
-              resolved_annotation = None;
-              base = None;
-            }
-        | _ -> resolved_for_bad_callable ()
+            Some
+              {
+                resolution;
+                errors;
+                resolved = closest_return_annotation;
+                resolved_annotation = None;
+                base = None;
+              }
+        | _ -> None
       in
       let check_for_error ({ Resolved.resolved; errors; _ } as input) =
         let is_broadcast_error = function
@@ -1530,7 +1530,13 @@ module State (Context : Context) = struct
 
             { input with resolved = Type.Any; errors = new_errors }
       in
-      signatures >>| List.partition_tf ~f:not_found |> join_return_annotations |> check_for_error
+      signatures
+      >>| List.partition_tf ~f:not_found
+      >>= join_return_annotations
+      |> (function
+           | Some resolved -> resolved
+           | None -> resolved_for_bad_callable ())
+      |> check_for_error
     in
     match value with
     | Await expression -> (
