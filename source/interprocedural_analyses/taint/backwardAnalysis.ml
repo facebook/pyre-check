@@ -282,28 +282,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       Model.pp
       taint_model;
     let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
-    let sink_argument_matches =
-      BackwardState.roots sink_taint
-      |> AccessPath.match_actuals_to_formals arguments
-      |> List.map ~f:(fun (argument, argument_match) ->
-             argument.Call.Argument.value, argument_match)
-    in
-    let tito_argument_matches =
-      BackwardState.roots backward.taint_in_taint_out
-      |> AccessPath.match_actuals_to_formals arguments
-      |> List.map ~f:(fun (argument, argument_match) ->
-             argument.Call.Argument.value, argument_match)
-    in
-    let sanitize_argument_matches =
-      SanitizeRootMap.roots sanitizers.roots
-      |> AccessPath.match_actuals_to_formals arguments
-      |> List.map ~f:(fun (argument, argument_match) ->
-             argument.Call.Argument.value, argument_match)
-    in
-    let combined_matches =
-      List.zip_exn tito_argument_matches sanitize_argument_matches
-      |> List.zip_exn sink_argument_matches
-    in
+    let taint_model = { taint_model with backward = { taint_model.backward with sink_taint } } in
     let combine_sink_taint location taint_tree { AccessPath.root; actual_path; formal_path } =
       BackwardState.read ~transform_non_leaves ~root ~path:[] sink_taint
       |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
@@ -414,7 +393,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let analyze_argument
         ~obscure_taint
         (arguments_taint, state)
-        ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches)))
+        { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches }
       =
       let location =
         Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
@@ -506,7 +485,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         BackwardState.Tree.bottom
     in
     let arguments_taint, state =
-      List.rev combined_matches
+      CallModel.match_actuals_to_formals ~model:taint_model ~arguments
+      |> List.rev
       |> List.fold ~f:(analyze_argument ~obscure_taint) ~init:([], initial_state)
     in
     (* Extract the taint for self. *)

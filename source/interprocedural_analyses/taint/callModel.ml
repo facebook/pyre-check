@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Ast
 open Interprocedural
 open Domains
 
@@ -85,3 +86,37 @@ let at_callsite ~resolution ~call_target ~arguments =
           taint_model
       in
       taint_model
+
+
+module ArgumentMatches = struct
+  type t = {
+    argument: Expression.t;
+    sink_matches: AccessPath.argument_match list;
+    tito_matches: AccessPath.argument_match list;
+    sanitize_matches: AccessPath.argument_match list;
+  }
+end
+
+let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments =
+  let sink_argument_matches =
+    BackwardState.roots backward.sink_taint
+    |> AccessPath.match_actuals_to_formals arguments
+    |> List.map ~f:(fun (argument, argument_match) ->
+           argument.Expression.Call.Argument.value, argument_match)
+  in
+  let tito_argument_matches =
+    BackwardState.roots backward.taint_in_taint_out
+    |> AccessPath.match_actuals_to_formals arguments
+    |> List.map ~f:(fun (argument, argument_match) ->
+           argument.Expression.Call.Argument.value, argument_match)
+  in
+  let sanitize_argument_matches =
+    SanitizeRootMap.roots sanitizers.roots
+    |> AccessPath.match_actuals_to_formals arguments
+    |> List.map ~f:(fun (argument, argument_match) ->
+           argument.Expression.Call.Argument.value, argument_match)
+  in
+  List.zip_exn tito_argument_matches sanitize_argument_matches
+  |> List.zip_exn sink_argument_matches
+  |> List.map ~f:(fun ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches))) ->
+         { ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches })

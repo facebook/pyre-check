@@ -279,29 +279,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       Model.pp
       taint_model;
-    let sink_argument_matches =
-      BackwardState.roots backward.sink_taint
-      |> AccessPath.match_actuals_to_formals arguments
-      |> List.map ~f:(fun (argument, argument_match) ->
-             argument.Call.Argument.value, argument_match)
-    in
-    let tito_argument_matches =
-      BackwardState.roots backward.taint_in_taint_out
-      |> AccessPath.match_actuals_to_formals arguments
-      |> List.map ~f:(fun (argument, argument_match) ->
-             argument.Call.Argument.value, argument_match)
-    in
-    let sanitize_argument_matches =
-      SanitizeRootMap.roots sanitizers.roots
-      |> AccessPath.match_actuals_to_formals arguments
-      |> List.map ~f:(fun (argument, argument_match) ->
-             argument.Call.Argument.value, argument_match)
-    in
-    let combined_matches =
-      List.zip_exn tito_argument_matches sanitize_argument_matches
-      |> List.zip_exn sink_argument_matches
-      |> List.zip_exn arguments_taint
-    in
     let combine_sink_taint location taint_tree { AccessPath.root; actual_path; formal_path } =
       BackwardState.read ~root ~path:[] backward.sink_taint
       |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
@@ -324,7 +301,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let compute_argument_tito_effect
         (tito_effects, state)
-        (argument_taint, ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches))))
+        ( argument_taint,
+          { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches } )
       =
       let tito_effects =
         let convert_tito_path kind (path, return_taint) accumulated_tito =
@@ -474,10 +452,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       tito_effects, state
     in
     let tito_effects, state =
-      List.fold
-        ~f:compute_argument_tito_effect
-        combined_matches
-        ~init:(Map.Poly.empty, initial_state)
+      CallModel.match_actuals_to_formals ~model:taint_model ~arguments
+      |> List.zip_exn arguments_taint
+      |> List.fold ~f:compute_argument_tito_effect ~init:(Map.Poly.empty, initial_state)
     in
     let result_taint =
       ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
