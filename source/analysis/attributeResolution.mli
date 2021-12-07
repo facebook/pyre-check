@@ -52,6 +52,82 @@ module Argument : sig
     kind: Ast.Expression.Call.Argument.kind;
     resolved: Type.t;
   }
+
+  module WithPosition : sig
+    type t = {
+      position: int;
+      expression: Expression.t option;
+      kind: Ast.Expression.Call.Argument.kind;
+      resolved: Type.t;
+    }
+  end
+end
+
+type argument =
+  | Argument of Argument.WithPosition.t
+  | Default
+
+type reasons = {
+  arity: SignatureSelectionTypes.reason list;
+  annotation: SignatureSelectionTypes.reason list;
+}
+
+module ParameterArgumentMapping : sig
+  type t = {
+    parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
+    reasons: reasons;
+  }
+end
+
+type ranks = {
+  arity: int;
+  annotation: int;
+  position: int;
+}
+
+type signature_match = {
+  callable: Type.Callable.t;
+  parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
+  constraints_set: TypeConstraints.t list;
+  ranks: ranks;
+  reasons: reasons;
+}
+
+module SignatureSelection : sig
+  val get_parameter_argument_mapping
+    :  all_parameters:Type.t Type.Callable.record_parameters ->
+    parameters:Type.t Type.Callable.RecordParameter.t list ->
+    self_argument:Type.t option ->
+    Argument.WithPosition.t list ->
+    ParameterArgumentMapping.t
+
+  val check_arguments_against_parameters
+    :  order:ConstraintsSet.order ->
+    resolve_mutable_literals:
+      (resolve:(Expression.t -> Type.t) ->
+      expression:Expression.t option ->
+      resolved:Type.t ->
+      expected:Type.t ->
+      WeakenMutableLiterals.weakened_type) ->
+    resolve_with_locals:(locals:(Reference.t * Annotation.t) list -> Expression.t -> Type.t) ->
+    callable:Type.Callable.t ->
+    ParameterArgumentMapping.t ->
+    signature_match
+
+  val prepare_arguments_for_signature_selection
+    :  self_argument:Type.t option ->
+    Argument.t list ->
+    Argument.WithPosition.t list
+
+  val find_closest_signature : signature_match list -> signature_match option
+
+  val default_signature : Type.Callable.t -> SignatureSelectionTypes.instantiated_return_annotation
+
+  val instantiate_return_annotation
+    :  ?skip_marking_escapees:bool ->
+    order:ConstraintsSet.order ->
+    signature_match ->
+    SignatureSelectionTypes.instantiated_return_annotation
 end
 
 type uninstantiated
