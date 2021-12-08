@@ -25,7 +25,6 @@ from typing import (
 )
 
 import dataclasses_json
-from libcst.metadata import CodeRange
 
 from .. import (
     log,
