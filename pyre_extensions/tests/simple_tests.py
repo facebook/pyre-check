@@ -176,7 +176,7 @@ class BasicTestCase(unittest.TestCase):
             elif isinstance(x, str):
                 y = x + "hello"
             elif isinstance(x, list):
-                y = x + [4]
+                y = x + [4]  # noqa
             elif isinstance(x, dict):
                 x["key"] = "value"
 
