@@ -37,6 +37,8 @@ let send ~response { name; output_channel } =
     |> Yojson.Safe.to_string
     |> Lwt_io.write_line output_channel
     >>= fun () ->
+    Lwt_io.flush output_channel
+    >>= fun () ->
     Log.log ~section:`Server "Update sent to subscription `%s`" name;
     Lwt.return_unit)
   else (
