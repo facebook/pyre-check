@@ -181,13 +181,21 @@ class ArgumentsTest(testslide.TestCase):
 
             expected_root = root_path / "foo/bar"
             self.assertEqual(
-                find_watchman_root(root_path / "foo/bar/baz"), expected_root
+                find_watchman_root(root_path / "foo/bar/baz", stop_search_after=3),
+                expected_root,
             )
-            self.assertEqual(find_watchman_root(root_path / "foo/bar"), expected_root)
+            self.assertEqual(
+                find_watchman_root(root_path / "foo/bar", stop_search_after=2),
+                expected_root,
+            )
 
-            self.assertIsNone(find_watchman_root(root_path / "foo/qux"))
-            self.assertIsNone(find_watchman_root(root_path / "foo"))
-            self.assertIsNone(find_watchman_root(root_path))
+            self.assertIsNone(
+                find_watchman_root(root_path / "foo/qux", stop_search_after=2)
+            )
+            self.assertIsNone(
+                find_watchman_root(root_path / "foo", stop_search_after=1)
+            )
+            self.assertIsNone(find_watchman_root(root_path, stop_search_after=0))
 
     def test_find_buck_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -198,12 +206,20 @@ class ArgumentsTest(testslide.TestCase):
             )
 
             expected_root = root_path / "foo/bar"
-            self.assertEqual(find_buck_root(root_path / "foo/bar/baz"), expected_root)
-            self.assertEqual(find_buck_root(root_path / "foo/bar"), expected_root)
+            self.assertEqual(
+                find_buck_root(root_path / "foo/bar/baz", stop_search_after=3),
+                expected_root,
+            )
+            self.assertEqual(
+                find_buck_root(root_path / "foo/bar", stop_search_after=2),
+                expected_root,
+            )
 
-            self.assertIsNone(find_buck_root(root_path / "foo/qux"))
-            self.assertIsNone(find_buck_root(root_path / "foo"))
-            self.assertIsNone(find_buck_root(root_path))
+            self.assertIsNone(
+                find_buck_root(root_path / "foo/qux", stop_search_after=2)
+            )
+            self.assertIsNone(find_buck_root(root_path / "foo", stop_search_after=1))
+            self.assertIsNone(find_buck_root(root_path, stop_search_after=0))
 
     def test_get_simple_source_path__exists(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -311,7 +327,9 @@ class ArgumentsTest(testslide.TestCase):
             )
 
     def test_get_buck_source_path__no_buck_root(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
+        # Specify an explicit base directory to make sure the content of parent
+        # directories will not intervene.
+        with tempfile.TemporaryDirectory(dir="/tmp") as root:
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "project"])
             with self.assertRaises(configuration.InvalidConfiguration):

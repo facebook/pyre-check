@@ -116,7 +116,8 @@ def spawn_unix_stream_server_with_socket(
 def spawn_unix_stream_server(
     handler: Type[socketserver.BaseRequestHandler],
 ) -> Generator[Path, None, None]:
-    with tempfile.TemporaryDirectory() as socket_root:
+    # Force /tmp as the temporary root, so path length would be under control
+    with tempfile.TemporaryDirectory(dir="/tmp") as socket_root:
         socket_path = Path(socket_root) / "test.socket"
         with spawn_unix_stream_server_with_socket(handler, socket_path):
             yield socket_path

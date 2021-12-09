@@ -158,7 +158,7 @@ class ServersTest(testslide.TestCase):
         )
 
     def test_find_all_servers(self) -> None:
-        with tempfile.TemporaryDirectory() as socket_root:
+        with tempfile.TemporaryDirectory(dir="/tmp") as socket_root:
             socket_root_path = Path(socket_root)
             good_socket = socket_root_path / "good.sock"
             with setup.spawn_unix_stream_server_with_socket(

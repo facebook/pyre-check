@@ -173,14 +173,22 @@ class BaseArguments:
         }
 
 
-def find_watchman_root(base: Path) -> Optional[Path]:
+def find_watchman_root(
+    base: Path,
+    stop_search_after: Optional[int] = None,
+) -> Optional[Path]:
     return find_directories.find_parent_directory_containing_file(
-        base, ".watchmanconfig"
+        base, ".watchmanconfig", stop_search_after
     )
 
 
-def find_buck_root(base: Path) -> Optional[Path]:
-    return find_directories.find_parent_directory_containing_file(base, ".buckconfig")
+def find_buck_root(
+    base: Path,
+    stop_search_after: Optional[int] = None,
+) -> Optional[Path]:
+    return find_directories.find_parent_directory_containing_file(
+        base, ".buckconfig", stop_search_after
+    )
 
 
 def get_source_path(

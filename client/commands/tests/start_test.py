@@ -378,7 +378,7 @@ class StartTest(testslide.TestCase):
             )
 
     def test_create_server_arguments_watchman_not_found(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
+        with tempfile.TemporaryDirectory(dir="/tmp") as root:
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "src"])
             setup.write_configuration_file(
