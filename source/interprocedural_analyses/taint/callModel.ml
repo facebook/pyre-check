@@ -156,3 +156,20 @@ let return_paths ~kind ~tito_taint =
   | _ ->
       (* No special handling of paths for side effects *)
       [[]]
+
+
+let sink_tree_of_argument
+    ~transform_non_leaves
+    ~model:{ Model.backward; _ }
+    ~location
+    ~call_target
+    ~sink_matches
+  =
+  let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path } =
+    BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
+    |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
+    |> BackwardState.Tree.read ~transform_non_leaves formal_path
+    |> BackwardState.Tree.prepend actual_path
+    |> BackwardState.Tree.join taint_tree
+  in
+  List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.Tree.empty

@@ -279,13 +279,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       Model.pp
       taint_model;
-    let combine_sink_taint location taint_tree { AccessPath.root; actual_path; formal_path } =
-      BackwardState.read ~root ~path:[] backward.sink_taint
-      |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
-      |> BackwardState.Tree.read formal_path
-      |> BackwardState.Tree.prepend actual_path
-      |> BackwardState.Tree.join taint_tree
-    in
     let merge_tito_effect join ~key:_ = function
       | `Left left -> Some left
       | `Right right -> Some right
@@ -412,7 +405,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
       in
       let sink_tree =
-        List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
+        CallModel.sink_tree_of_argument
+          ~transform_non_leaves:(fun _ tree -> tree)
+          ~model:taint_model
+          ~location
+          ~call_target
+          ~sink_matches
       in
       (* Compute triggered partial sinks, if any. *)
       let () =

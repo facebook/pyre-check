@@ -283,13 +283,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       taint_model;
     let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
     let taint_model = { taint_model with backward = { taint_model.backward with sink_taint } } in
-    let combine_sink_taint location taint_tree { AccessPath.root; actual_path; formal_path } =
-      BackwardState.read ~transform_non_leaves ~root ~path:[] sink_taint
-      |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
-      |> read_tree formal_path
-      |> BackwardState.Tree.prepend actual_path
-      |> BackwardState.Tree.join taint_tree
-    in
     let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } =
       let global_sink =
         GlobalModel.from_expression
@@ -377,7 +370,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
       in
       let sink_taint =
-        List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
+        CallModel.sink_tree_of_argument
+          ~transform_non_leaves
+          ~model:taint_model
+          ~location
+          ~call_target
+          ~sink_matches
       in
       let taint_in_taint_out =
         CallModel.taint_in_taint_out_mapping ~transform_non_leaves ~model:taint_model ~tito_matches
