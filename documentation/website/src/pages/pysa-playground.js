@@ -24,13 +24,13 @@ if (ExecutionEnvironment.canUseDOM) {
 }
 
 const default_code = `import subprocess
-from flask import Flask
+ from flask import Flask
 
-app = Flask(__name__)
+ app = Flask(__name__)
 
-@app.route("/rce/<string:payload>")
-def definite_rce(payload: str) -> None:
-    subprocess.run(payload, shell=True)`;
+ @app.route("/rce/<string:payload>")
+ def definite_rce(payload: str) -> None:
+     subprocess.run(payload, shell=True)`;
 const default_model = "#Define your custom models here";
 
 function Code(props) {
@@ -87,9 +87,24 @@ function Results(props) {
   var content = results;
   if (results) {
     if (results.errors !== undefined) {
-      content = results.errors.join("\n");
+      content = results.errors.map((error) => (
+        <div className={classnames(styles.card, styles.error)}>{error}</div>
+      ));
     } else {
-      content = results.data.join("\n");
+      content = results.data.map((result) => {
+        if (result.includes(" ERROR "))
+          return (
+            <div className={classnames(styles.card, styles.error)}>
+              {result}
+            </div>
+          );
+        if (result.includes(" INFO "))
+          return (
+            <div className={classnames(styles.card, styles.result)}>
+              {result}
+            </div>
+          );
+      });
     }
   }
 

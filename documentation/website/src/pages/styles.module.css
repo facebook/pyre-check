@@ -100,6 +100,19 @@
   float: right;
   width: 38%;
 }
+.error,
+.result {
+  width: 98%;
+  margin: 5px auto;
+}
+
+.error {
+  background-color: rgb(255, 19, 19);
+  color: white;
+}
+.result {
+  background-color: rgb(255, 253, 208);
+}
 
 @media screen and (max-width: 768px) {
   .card,
