@@ -19,6 +19,12 @@ type class_name_and_is_abstract_and_is_protocol = {
   is_protocol: bool;
 }
 
+type callable_data = {
+  callable: TypeOperation.callable_and_self_argument;
+  arguments: AttributeResolution.Argument.t list;
+  is_inverted_operator: bool;
+}
+
 module LocalErrorMap = struct
   type t = Error.t list Int.Table.t
 
@@ -1280,7 +1286,7 @@ module State (Context : Context) = struct
         | _ -> None
       in
       let selected_return_annotations =
-        let callables, arguments, was_operator_inverted =
+        let callable_data_list =
           let callable resolved =
             match
               unpack_callable_and_self_argument ~signature_select ~global_resolution resolved
@@ -1297,30 +1303,37 @@ module State (Context : Context) = struct
                 | [{ AttributeResolution.Argument.resolved; _ }] ->
                     inverse_operator name
                     >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
-                    >>= (fun found_callable ->
-                          let inverted_arguments =
-                            [
-                              {
-                                AttributeResolution.Argument.expression = Some expression;
-                                resolved = resolved_base;
-                                kind = Positional;
-                              };
-                            ]
-                          in
-                          if Type.is_any resolved_base || Type.is_unbound resolved_base then
-                            callable resolved >>| fun callable -> [callable], arguments, false
-                          else
-                            Some ([found_callable], inverted_arguments, true))
-                    |> Option.value_map
-                         ~default:(None, arguments, false)
-                         ~f:(fun (callables, arguments, was_operator_inverted) ->
-                           Some callables, arguments, was_operator_inverted)
-                | _ -> None, arguments, false)
+                    >>= fun found_callable ->
+                    let inverted_arguments =
+                      [
+                        {
+                          AttributeResolution.Argument.expression = Some expression;
+                          resolved = resolved_base;
+                          kind = Positional;
+                        };
+                      ]
+                    in
+                    if Type.is_any resolved_base || Type.is_unbound resolved_base then
+                      callable resolved
+                      >>| fun callable -> [{ callable; arguments; is_inverted_operator = false }]
+                    else
+                      Some
+                        [
+                          {
+                            callable = found_callable;
+                            arguments = inverted_arguments;
+                            is_inverted_operator = true;
+                          };
+                        ]
+                | _ -> None)
             | Callee.Attribute { attribute = { resolved; _ }; _ }
             | Callee.NonAttribute { resolved; _ } -> (
                 match resolved with
                 | Type.Union annotations ->
-                    List.map annotations ~f:callable |> Option.all, arguments, false
+                    List.map annotations ~f:(fun annotation ->
+                        callable annotation
+                        >>| fun callable -> { callable; arguments; is_inverted_operator = false })
+                    |> Option.all
                 | Type.Variable { constraints = Type.Variable.Bound parent; _ } ->
                     let callee =
                       match callee with
@@ -1332,21 +1345,29 @@ module State (Context : Context) = struct
                     in
                     get_callables callee
                 | annotation ->
-                    (callable annotation >>| fun callable -> [callable]), arguments, false)
+                    callable annotation
+                    >>| fun callable -> [{ callable; arguments; is_inverted_operator = false }])
           in
           get_callables callee
         in
         Context.Builder.add_callee
           ~global_resolution
           ~target
-          ~callables:(callables >>| List.map ~f:(fun { TypeOperation.callable; _ } -> callable))
+          ~callables:
+            (callable_data_list
+            >>| List.map ~f:(fun { callable = { TypeOperation.callable; _ }; _ } -> callable))
           ~arguments:original_arguments
           ~dynamic
           ~qualifier:Context.qualifier
           ~callee_type:(Callee.resolved callee)
           ~callee:(Callee.expression callee);
         let return_annotation_with_callable_and_self
-            ({ TypeOperation.callable; self_argument } as unpacked_callable_and_self_argument)
+            {
+              callable =
+                { TypeOperation.callable; self_argument } as unpacked_callable_and_self_argument;
+              arguments;
+              is_inverted_operator;
+            }
           =
           let signature = signature_select ~arguments ~callable ~self_argument in
           match signature, callable with
@@ -1355,7 +1376,7 @@ module State (Context : Context) = struct
               | ( Callee.Attribute { base = { expression; resolved_base }; _ },
                   { Type.Callable.kind = Type.Callable.Named name; _ },
                   [{ AttributeResolution.Argument.resolved; _ }] )
-                when not was_operator_inverted ->
+                when not is_inverted_operator ->
                   inverse_operator (Reference.last name)
                   >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
                   >>| (fun ({ TypeOperation.callable; self_argument } as
@@ -1418,7 +1439,7 @@ module State (Context : Context) = struct
               |> fun signature -> signature, unpacked_callable_and_self_argument
           | _ -> signature, unpacked_callable_and_self_argument
         in
-        callables >>| List.map ~f:return_annotation_with_callable_and_self
+        callable_data_list >>| List.map ~f:return_annotation_with_callable_and_self
       in
       let extract_found_not_found = function
         | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
