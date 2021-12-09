@@ -311,21 +311,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let breadcrumbs =
         BackwardTaint.breadcrumbs tito_taint |> Features.BreadcrumbSet.add (Features.tito ())
       in
-      let add_features_and_position leaf_taint =
-        leaf_taint
-        |> Frame.add_tito_position argument.Node.location
-        |> Frame.add_breadcrumbs breadcrumbs
-      in
       let taint_to_propagate =
         if collapse_tito then
           ForwardState.Tree.read path argument_taint
           |> ForwardState.Tree.collapse
                ~transform:(ForwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
-          |> ForwardTaint.transform Frame.Self Map ~f:add_features_and_position
+          |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
+          |> ForwardTaint.add_breadcrumbs breadcrumbs
           |> ForwardState.Tree.create_leaf
         else
           ForwardState.Tree.read path argument_taint
-          |> ForwardState.Tree.transform Frame.Self Map ~f:add_features_and_position
+          |> ForwardState.Tree.transform
+               Features.TitoPositionSet.Element
+               Add
+               ~f:argument.Node.location
+          |> ForwardState.Tree.add_breadcrumbs breadcrumbs
       in
       let taint_to_propagate =
         match kind with

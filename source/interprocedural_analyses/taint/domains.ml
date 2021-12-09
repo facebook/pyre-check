@@ -176,13 +176,12 @@ module Frame = struct
       | ViaFeature : Features.ViaFeatureSet.t slot
       | ReturnAccessPath : Features.ReturnAccessPathSet.t slot
       | TraceLength : TraceLength.t slot
-      | TitoPosition : Features.TitoPositionSet.t slot
       | LeafName : Features.LeafNameSet.t slot
       | FirstIndex : Features.FirstIndexSet.t slot
       | FirstField : Features.FirstFieldSet.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 8
+    let slots = 7
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -190,7 +189,6 @@ module Frame = struct
       | ViaFeature -> "ViaFeature"
       | ReturnAccessPath -> "ReturnAccessPath"
       | TraceLength -> "TraceLength"
-      | TitoPosition -> "TitoPosition"
       | LeafName -> "LeafName"
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
@@ -203,7 +201,6 @@ module Frame = struct
       | ReturnAccessPath ->
           (module Features.ReturnAccessPathSet : Abstract.Domain.S with type t = a)
       | TraceLength -> (module TraceLength : Abstract.Domain.S with type t = a)
-      | TitoPosition -> (module Features.TitoPositionSet : Abstract.Domain.S with type t = a)
       | LeafName -> (module Features.LeafNameSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
@@ -218,12 +215,6 @@ module Frame = struct
     create
       [Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty); Part (TraceLength.Self, 0)]
 
-
-  let strip_tito_positions =
-    transform Features.TitoPositionSet.Self Map ~f:(fun _ -> Features.TitoPositionSet.bottom)
-
-
-  let add_tito_position position = transform Features.TitoPositionSet.Element Add ~f:position
 
   let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
 
@@ -315,17 +306,69 @@ module type KIND_ARG = sig
   module Set : Stdlib.Set.S with type elt = t
 end
 
-module KindTaint (Kind : KIND_ARG) = struct
+(* Represents a map from a taint kind (`Sources.t` or `Sinks.t`) to a frame. *)
+module MakeKindTaint (Kind : KIND_ARG) = struct
   module Key = struct
     include Kind
 
     let absence_implicitly_maps_to_bottom = false
   end
 
-  module Map = Abstract.MapDomain.Make (Key) (Frame)
-  include Map
+  include Abstract.MapDomain.Make (Key) (Frame)
+end
 
-  let singleton kind = Map.set Map.bottom ~key:kind ~data:Frame.initial
+(* Represents taint originating from a specific call. *)
+module MakeLocalTaint (Kind : KIND_ARG) = struct
+  module KindTaintDomain = MakeKindTaint (Kind)
+
+  module Slots = struct
+    let name = "local taint"
+
+    type 'a slot =
+      | Kinds : KindTaintDomain.t slot
+      | TitoPosition : Features.TitoPositionSet.t slot
+
+    (* Must be consistent with above variants *)
+    let slots = 2
+
+    let slot_name (type a) (slot : a slot) =
+      match slot with
+      | Kinds -> "Kinds"
+      | TitoPosition -> "TitoPosition"
+
+
+    let slot_domain (type a) (slot : a slot) =
+      match slot with
+      | Kinds -> (module KindTaintDomain : Abstract.Domain.S with type t = a)
+      | TitoPosition -> (module Features.TitoPositionSet : Abstract.Domain.S with type t = a)
+
+
+    let strict (type a) (slot : a slot) =
+      match slot with
+      | Kinds -> true
+      | _ -> false
+  end
+
+  include Abstract.ProductDomain.Make (Slots)
+
+  let singleton kind = create [Part (KindTaintDomain.KeyValue, (kind, Frame.initial))]
+
+  let product_pp = pp (* shadow *)
+
+  let pp formatter = Format.fprintf formatter "LocalTaint(%a)" product_pp
+
+  let show = Format.asprintf "%a" pp
+
+  let subtract to_remove ~from =
+    (* Do not partially subtract slots, since this is unsound. *)
+    if to_remove == from then
+      bottom
+    else if is_bottom to_remove then
+      from
+    else if less_or_equal ~left:from ~right:to_remove then
+      bottom
+    else
+      from
 end
 
 module MakeTaint (Kind : KIND_ARG) : sig
@@ -345,20 +388,21 @@ end = struct
     let absence_implicitly_maps_to_bottom = true
   end
 
-  module KindTaintDomain = KindTaint (Kind)
-  module Map = Abstract.MapDomain.Make (CallInfoKey) (KindTaintDomain)
+  module LocalTaintDomain = MakeLocalTaint (Kind)
+  module KindTaintDomain = LocalTaintDomain.KindTaintDomain
+  module Map = Abstract.MapDomain.Make (CallInfoKey) (LocalTaintDomain)
   include Map
 
   let add ?location map kind =
-    let trace =
+    let call_info =
       match location with
       | None -> CallInfo.Declaration { leaf_name_provided = false }
       | Some location -> CallInfo.Origin location
     in
-    let kind_taint = KindTaintDomain.singleton kind in
-    Map.update map trace ~f:(function
-        | None -> kind_taint
-        | Some existing -> KindTaintDomain.join kind_taint existing)
+    let local_taint = LocalTaintDomain.singleton kind in
+    Map.update map call_info ~f:(function
+        | None -> local_taint
+        | Some existing -> LocalTaintDomain.join local_taint existing)
 
 
   let singleton ?location kind = add ?location Map.bottom kind
@@ -380,16 +424,12 @@ end = struct
       else
         (key, `List list) :: assoc
     in
-    let trace_to_json (trace_info, kind_taint) =
+    let trace_to_json (trace_info, local_taint) =
       let open Features in
       let json = [call_info_to_json trace_info] in
 
       let tito_positions =
-        KindTaintDomain.fold
-          TitoPositionSet.Self
-          kind_taint
-          ~f:TitoPositionSet.join
-          ~init:TitoPositionSet.bottom
+        LocalTaintDomain.get LocalTaintDomain.Slots.TitoPosition local_taint
         |> TitoPositionSet.elements
         |> List.map ~f:location_to_json
       in
@@ -455,7 +495,11 @@ end = struct
 
         `Assoc json
       in
-      let kinds = KindTaintDomain.to_alist kind_taint |> List.map ~f:add_kind in
+      let kinds =
+        LocalTaintDomain.get LocalTaintDomain.Slots.Kinds local_taint
+        |> KindTaintDomain.to_alist
+        |> List.map ~f:add_kind
+      in
       let json = cons_if_non_empty "kinds" kinds json in
 
       `Assoc json
@@ -550,30 +594,32 @@ end = struct
 
 
   let apply_call location ~callees ~port ~path ~element:taint =
-    let apply (call_info, kind_taint) =
+    let apply (call_info, local_taint) =
       let apply_frame frame =
-        frame
-        |> Frame.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
-               Features.TitoPositionSet.bottom)
-        |> Frame.transform Features.ViaFeatureSet.Self Map ~f:(fun _ ->
-               Features.ViaFeatureSet.bottom)
+        Frame.transform
+          Features.ViaFeatureSet.Self
+          Map
+          ~f:(fun _ -> Features.ViaFeatureSet.bottom)
+          frame
       in
-      let kind_taint =
-        kind_taint
-        |> KindTaintDomain.transform KindTaintDomain.Key Filter ~f:(fun kind ->
+      let local_taint =
+        local_taint
+        |> LocalTaintDomain.transform KindTaintDomain.Key Filter ~f:(fun kind ->
                not (Kind.ignore_kind_at_call kind))
-        |> KindTaintDomain.transform KindTaintDomain.Key Map ~f:Kind.apply_call
-        |> KindTaintDomain.transform Frame.Self Map ~f:apply_frame
+        |> LocalTaintDomain.transform KindTaintDomain.Key Map ~f:Kind.apply_call
+        |> LocalTaintDomain.transform Frame.Self Map ~f:apply_frame
+        |> LocalTaintDomain.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
+               Features.TitoPositionSet.bottom)
       in
       match call_info with
       | CallInfo.Origin _
       | CallInfo.CallSite _ ->
           let increase_length n = if n < max_int then n + 1 else n in
           let call_info = CallInfo.CallSite { location; callees; port; path } in
-          let kind_taint =
-            kind_taint |> KindTaintDomain.transform TraceLength.Self Map ~f:increase_length
+          let local_taint =
+            local_taint |> LocalTaintDomain.transform TraceLength.Self Map ~f:increase_length
           in
-          call_info, kind_taint
+          call_info, local_taint
       | CallInfo.Declaration { leaf_name_provided } ->
           let call_info = CallInfo.Origin location in
           let new_leaf_names =
@@ -587,10 +633,10 @@ end = struct
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
           in
-          let kind_taint =
-            KindTaintDomain.transform Features.LeafNameSet.Self Add ~f:new_leaf_names kind_taint
+          let local_taint =
+            LocalTaintDomain.transform Features.LeafNameSet.Self Add ~f:new_leaf_names local_taint
           in
-          call_info, kind_taint
+          call_info, local_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
 end

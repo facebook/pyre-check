@@ -362,17 +362,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~init:argument_taint
     in
     let convert_tito_tree_to_taint ~argument ~kind ~tito_tree taint_tree =
-      let add_tito_feature_and_position leaf_taint =
-        leaf_taint
-        |> Frame.add_tito_position argument.Node.location
-        |> Frame.add_breadcrumb (Features.tito ())
-      in
       BackwardState.Tree.fold
         BackwardState.Tree.Path
         tito_tree
         ~init:BackwardState.Tree.bottom
         ~f:(convert_tito_path_to_taint ~kind)
-      |> BackwardState.Tree.transform Frame.Self Map ~f:add_tito_feature_and_position
+      |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
+      |> BackwardState.Tree.add_breadcrumb (Features.tito ())
       |> BackwardState.Tree.join taint_tree
     in
     let analyze_argument
