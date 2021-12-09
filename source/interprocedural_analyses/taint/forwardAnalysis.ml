@@ -335,22 +335,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                      ~f:Flow.source_can_match_rule
             | _ -> taint_to_propagate
           in
-          let return_paths =
-            match Sinks.discard_transforms kind with
-            | Sinks.LocalReturn ->
-                BackwardTaint.fold
-                  Features.ReturnAccessPathSet.Element
-                  tito_taint
-                  ~f:List.cons
-                  ~init:[]
-            | _ ->
-                (* No special handling of paths for side effects *)
-                [[]]
-          in
           let create_tito_return_paths tito return_path =
             ForwardState.Tree.prepend return_path taint_to_propagate |> ForwardState.Tree.join tito
           in
-          List.fold return_paths ~f:create_tito_return_paths ~init:accumulated_tito
+          CallModel.return_paths ~kind ~tito_taint
+          |> List.fold ~f:create_tito_return_paths ~init:accumulated_tito
         in
         let convert_tito ~kind ~tito_tree tito_map =
           let tito_tree =

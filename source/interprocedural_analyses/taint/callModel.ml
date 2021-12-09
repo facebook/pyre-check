@@ -147,3 +147,12 @@ let taint_in_taint_out_mapping ~transform_non_leaves ~model:{ Model.backward; _ 
     |> TaintInTaintOutMap.join sofar
   in
   List.fold tito_matches ~f:combine_tito ~init:TaintInTaintOutMap.empty
+
+
+let return_paths ~kind ~tito_taint =
+  match Sinks.discard_transforms kind with
+  | Sinks.LocalReturn ->
+      BackwardTaint.fold Features.ReturnAccessPathSet.Element tito_taint ~f:List.cons ~init:[]
+  | _ ->
+      (* No special handling of paths for side effects *)
+      [[]]

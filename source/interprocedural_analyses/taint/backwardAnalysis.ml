@@ -303,14 +303,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       get_taint access_path initial_state |> BackwardState.Tree.join global_sink
     in
     let convert_tito_path kind (tito_path, tito_taint) argument_taint =
-      let extra_paths =
-        match Sinks.discard_transforms kind with
-        | Sinks.LocalReturn ->
-            BackwardTaint.fold Features.ReturnAccessPathSet.Element tito_taint ~f:List.cons ~init:[]
-        | _ ->
-            (* No special path handling for side effect taint *)
-            [[]]
-      in
       let breadcrumbs = BackwardTaint.breadcrumbs tito_taint in
       let tito_depth =
         BackwardTaint.fold TraceLength.Self tito_taint ~f:TraceLength.join ~init:TraceLength.bottom
@@ -346,21 +338,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Sinks.LocalReturn -> max depth (1 + tito_depth)
         | _ -> depth
       in
-      List.fold
-        extra_paths
-        ~f:(fun taint extra_path ->
-          read_tree extra_path taint_to_propagate
-          |> BackwardState.Tree.collapse
-               ~transform:(BackwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
-          |> BackwardTaint.add_breadcrumbs breadcrumbs
-          |> BackwardTaint.transform
-               TraceLength.Self
-               (Context (BackwardTaint.kind, Map))
-               ~f:compute_tito_depth
-          |> BackwardState.Tree.create_leaf
-          |> BackwardState.Tree.prepend tito_path
-          |> BackwardState.Tree.join taint)
-        ~init:argument_taint
+      CallModel.return_paths ~kind ~tito_taint
+      |> List.fold
+           ~f:(fun taint return_path ->
+             read_tree return_path taint_to_propagate
+             |> BackwardState.Tree.collapse
+                  ~transform:(BackwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
+             |> BackwardTaint.add_breadcrumbs breadcrumbs
+             |> BackwardTaint.transform
+                  TraceLength.Self
+                  (Context (BackwardTaint.kind, Map))
+                  ~f:compute_tito_depth
+             |> BackwardState.Tree.create_leaf
+             |> BackwardState.Tree.prepend tito_path
+             |> BackwardState.Tree.join taint)
+           ~init:argument_taint
     in
     let convert_tito location ~kind ~tito_tree taint_tree =
       let add_tito_feature_and_position leaf_taint =
