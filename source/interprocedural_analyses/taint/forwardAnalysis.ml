@@ -291,23 +291,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | `Right right -> Some right
       | `Both (left, right) -> Some (join left right)
     in
-    let combine_tito tito_map { AccessPath.root; actual_path; formal_path } =
-      let new_tito_map =
-        BackwardState.read ~root ~path:formal_path backward.taint_in_taint_out
-        |> BackwardState.Tree.prepend actual_path
-        |> BackwardState.Tree.partition Domains.BackwardTaint.kind By ~f:Fn.id
-      in
-      Map.Poly.merge tito_map new_tito_map ~f:(merge_tito_effect BackwardState.Tree.join)
-    in
     let compute_argument_tito_effect
         (tito_effects, state)
         ( argument_taint,
           { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches } )
       =
       let tito_effects =
-        let convert_tito_path kind (path, return_taint) accumulated_tito =
+        let convert_tito_path kind (path, tito_taint) accumulated_tito =
           let breadcrumbs =
-            BackwardTaint.breadcrumbs return_taint |> Features.BreadcrumbSet.add (Features.tito ())
+            BackwardTaint.breadcrumbs tito_taint |> Features.BreadcrumbSet.add (Features.tito ())
           in
           let add_features_and_position leaf_taint =
             leaf_taint
@@ -348,7 +340,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             | Sinks.LocalReturn ->
                 BackwardTaint.fold
                   Features.ReturnAccessPathSet.Element
-                  return_taint
+                  tito_taint
                   ~f:List.cons
                   ~init:[]
             | _ ->
@@ -360,7 +352,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           List.fold return_paths ~f:create_tito_return_paths ~init:accumulated_tito
         in
-        let convert_tito ~key:kind ~data:tito_tree tito_map =
+        let convert_tito ~kind ~tito_tree tito_map =
           let tito_tree =
             BackwardState.Tree.fold
               BackwardState.Tree.Path
@@ -373,8 +365,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               | None -> tito_tree
               | Some previous -> ForwardState.Tree.join previous tito_tree)
         in
-        List.fold tito_matches ~f:combine_tito ~init:Map.Poly.empty
-        |> Map.Poly.fold ~init:Map.Poly.empty ~f:convert_tito
+        CallModel.taint_in_taint_out_mapping
+          ~transform_non_leaves:(fun _ tito -> tito)
+          ~model:taint_model
+          ~tito_matches
+        |> CallModel.TaintInTaintOutMap.fold ~init:Map.Poly.empty ~f:convert_tito
         |> Map.Poly.merge tito_effects ~f:(merge_tito_effect ForwardState.Tree.join)
       in
       let tito_effects =

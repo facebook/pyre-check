@@ -120,3 +120,30 @@ let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments
   |> List.zip_exn sink_argument_matches
   |> List.map ~f:(fun ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches))) ->
          { ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches })
+
+
+module TaintInTaintOutMap = struct
+  type t = (Sinks.t, BackwardState.Tree.t) Map.Poly.t
+
+  let empty = Map.Poly.empty
+
+  let join left right =
+    let join ~key:_ = function
+      | `Left left -> Some left
+      | `Right right -> Some right
+      | `Both (left, right) -> Some (BackwardState.Tree.join left right)
+    in
+    Map.Poly.merge left right ~f:join
+
+
+  let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~tito_tree:data)
+end
+
+let taint_in_taint_out_mapping ~transform_non_leaves ~model:{ Model.backward; _ } ~tito_matches =
+  let combine_tito sofar { AccessPath.root; actual_path; formal_path } =
+    BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
+    |> BackwardState.Tree.prepend actual_path
+    |> BackwardState.Tree.partition Domains.BackwardTaint.kind By ~f:Fn.id
+    |> TaintInTaintOutMap.join sofar
+  in
+  List.fold tito_matches ~f:combine_tito ~init:TaintInTaintOutMap.empty

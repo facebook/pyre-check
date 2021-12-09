@@ -5,9 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
 open Ast
 open Analysis
 open Interprocedural
+open Domains
 
 val at_callsite
   :  resolution:Resolution.t ->
@@ -28,3 +30,17 @@ val match_actuals_to_formals
   :  model:Model.t ->
   arguments:Expression.Call.Argument.t list ->
   ArgumentMatches.t list
+
+(* A mapping from a taint-in-taint-out kind (e.g, `Sinks.LocalReturn`, `Sinks.ParameterUpdate` or
+   `Sinks.AddFeatureToArgument`) to a tito taint (including features, return paths, depth). *)
+module TaintInTaintOutMap : sig
+  type t = (Sinks.t, BackwardState.Tree.t) Map.Poly.t
+
+  val fold : t -> init:'a -> f:(kind:Sinks.t -> tito_tree:BackwardState.Tree.t -> 'a -> 'a) -> 'a
+end
+
+val taint_in_taint_out_mapping
+  :  transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
+  model:Model.t ->
+  tito_matches:AccessPath.argument_match list ->
+  TaintInTaintOutMap.t
