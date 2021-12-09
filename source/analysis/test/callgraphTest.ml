@@ -103,6 +103,25 @@ let test_default_builder context =
     ~callables:(Some [make_named "foo.a"; make_named "foo.b"])
     ~callee:"foo.a if 1 else foo.b"
     [Function !&"foo.a"; Function !&"foo.b"];
+  assert_registers
+    ~source:{|
+      from typing import Callable
+      class Foo:
+        not_callable: int
+    |}
+    ~target:(Type.optional (Primitive "test.Foo"))
+    ~callables:(Some [])
+    ~callee:"foo.not_callable"
+    [];
+  assert_registers
+    ~source:{|
+      from typing import Callable
+      class Foo: ...
+    |}
+    ~target:(Type.optional (Primitive "test.Foo"))
+    ~callables:None
+    ~callee:"foo.non_existent"
+    [];
   ()
 
 
