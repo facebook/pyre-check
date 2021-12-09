@@ -190,8 +190,10 @@ module DefaultBuilder : Builder = struct
       in
       match target, callable_kinds with
       | Some (Type.Union elements), Some callables when List.length elements = List.length callables
-        ->
-          List.map2_exn elements callables ~f:method_callee |> List.concat
+        -> (
+          match List.map2 elements callables ~f:method_callee with
+          | Ok callees_list -> List.concat callees_list
+          | Unequal_lengths -> [])
       | Some annotation, Some callables -> List.concat_map callables ~f:(method_callee annotation)
       | Some (Type.Union ([Type.NoneType; annotation] | [annotation; Type.NoneType])), _ -> (
           match Node.value callee with
