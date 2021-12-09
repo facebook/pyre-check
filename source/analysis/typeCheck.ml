@@ -1279,7 +1279,7 @@ module State (Context : Context) = struct
                      }))
         | _ -> None
       in
-      let signatures =
+      let selected_return_annotations =
         let callables, arguments, was_operator_inverted =
           let callable resolved =
             match
@@ -1345,7 +1345,7 @@ module State (Context : Context) = struct
           ~qualifier:Context.qualifier
           ~callee_type:(Callee.resolved callee)
           ~callee:(Callee.expression callee);
-        let signature_with_unpacked_callable_and_self_argument
+        let return_annotation_with_callable_and_self
             ({ TypeOperation.callable; self_argument } as unpacked_callable_and_self_argument)
           =
           let signature = signature_select ~arguments ~callable ~self_argument in
@@ -1418,7 +1418,7 @@ module State (Context : Context) = struct
               |> fun signature -> signature, unpacked_callable_and_self_argument
           | _ -> signature, unpacked_callable_and_self_argument
         in
-        callables >>| List.map ~f:signature_with_unpacked_callable_and_self_argument
+        callables >>| List.map ~f:return_annotation_with_callable_and_self
       in
       let extract_found_not_found = function
         | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
@@ -1529,7 +1529,7 @@ module State (Context : Context) = struct
 
             { input with resolved = Type.Any; errors = new_errors }
       in
-      signatures
+      selected_return_annotations
       >>| List.partition_map ~f:extract_found_not_found
       >>= join_return_annotations
       |> (function
