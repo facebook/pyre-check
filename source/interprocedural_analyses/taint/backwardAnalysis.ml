@@ -302,7 +302,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let access_path = AccessPath.of_expression argument in
       get_taint access_path initial_state |> BackwardState.Tree.join global_sink
     in
-    let convert_tito_path kind (tito_path, tito_taint) argument_taint =
+    let convert_tito_path_to_taint ~kind (tito_path, tito_taint) argument_taint =
       let breadcrumbs = BackwardTaint.breadcrumbs tito_taint in
       let tito_depth =
         BackwardTaint.fold TraceLength.Self tito_taint ~f:TraceLength.join ~init:TraceLength.bottom
@@ -354,15 +354,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              |> BackwardState.Tree.join taint)
            ~init:argument_taint
     in
-    let convert_tito location ~kind ~tito_tree taint_tree =
+    let convert_tito_tree_to_taint ~argument ~kind ~tito_tree taint_tree =
       let add_tito_feature_and_position leaf_taint =
-        leaf_taint |> Frame.add_tito_position location |> Frame.add_breadcrumb (Features.tito ())
+        leaf_taint
+        |> Frame.add_tito_position argument.Node.location
+        |> Frame.add_breadcrumb (Features.tito ())
       in
       BackwardState.Tree.fold
         BackwardState.Tree.Path
         tito_tree
         ~init:BackwardState.Tree.bottom
-        ~f:(convert_tito_path kind)
+        ~f:(convert_tito_path_to_taint ~kind)
       |> BackwardState.Tree.transform Frame.Self Map ~f:add_tito_feature_and_position
       |> BackwardState.Tree.join taint_tree
     in
@@ -381,7 +383,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         CallModel.taint_in_taint_out_mapping ~transform_non_leaves ~model:taint_model ~tito_matches
         |> CallModel.TaintInTaintOutMap.fold
              ~init:BackwardState.Tree.empty
-             ~f:(convert_tito argument.Node.location)
+             ~f:(convert_tito_tree_to_taint ~argument)
       in
       let taint_in_taint_out =
         if not (BackwardState.Tree.is_bottom obscure_taint) then

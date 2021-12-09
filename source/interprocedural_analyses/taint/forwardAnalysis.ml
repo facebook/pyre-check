@@ -291,74 +291,79 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | `Right right -> Some right
       | `Both (left, right) -> Some (join left right)
     in
+    let convert_tito_path_to_taint
+        ~argument
+        ~argument_taint
+        ~kind
+        (path, tito_taint)
+        accumulated_tito
+      =
+      let breadcrumbs =
+        BackwardTaint.breadcrumbs tito_taint |> Features.BreadcrumbSet.add (Features.tito ())
+      in
+      let add_features_and_position leaf_taint =
+        leaf_taint
+        |> Frame.add_tito_position argument.Node.location
+        |> Frame.add_breadcrumbs breadcrumbs
+      in
+      let taint_to_propagate =
+        if collapse_tito then
+          ForwardState.Tree.read path argument_taint
+          |> ForwardState.Tree.collapse
+               ~transform:(ForwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
+          |> ForwardTaint.transform Frame.Self Map ~f:add_features_and_position
+          |> ForwardState.Tree.create_leaf
+        else
+          ForwardState.Tree.read path argument_taint
+          |> ForwardState.Tree.transform Frame.Self Map ~f:add_features_and_position
+      in
+      let taint_to_propagate =
+        match kind with
+        | Sinks.Transform { sanitize_local; sanitize_global; _ } ->
+            (* Apply source- and sink- specific tito sanitizers. *)
+            let transforms = SanitizeTransform.Set.union sanitize_local sanitize_global in
+            let sanitized_tito_sources =
+              Sources.extract_sanitized_sources_from_transforms transforms
+            in
+            let sanitized_tito_sinks = SanitizeTransform.Set.filter_sinks transforms in
+            taint_to_propagate
+            |> ForwardState.Tree.sanitize sanitized_tito_sources
+            |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
+            |> ForwardState.Tree.transform ForwardTaint.kind Filter ~f:Flow.source_can_match_rule
+        | _ -> taint_to_propagate
+      in
+      let create_tito_return_paths tito return_path =
+        ForwardState.Tree.prepend return_path taint_to_propagate |> ForwardState.Tree.join tito
+      in
+      CallModel.return_paths ~kind ~tito_taint
+      |> List.fold ~f:create_tito_return_paths ~init:accumulated_tito
+    in
+    let convert_tito_tree_to_taint ~argument ~argument_taint ~kind ~tito_tree tito_map =
+      let tito_tree =
+        BackwardState.Tree.fold
+          BackwardState.Tree.Path
+          tito_tree
+          ~init:ForwardState.Tree.empty
+          ~f:(convert_tito_path_to_taint ~argument ~argument_taint ~kind)
+      in
+      let kind = Sinks.discard_transforms kind in
+      Map.Poly.update tito_map kind ~f:(function
+          | None -> tito_tree
+          | Some previous -> ForwardState.Tree.join previous tito_tree)
+    in
     let compute_argument_tito_effect
         (tito_effects, state)
         ( argument_taint,
           { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches } )
       =
       let tito_effects =
-        let convert_tito_path kind (path, tito_taint) accumulated_tito =
-          let breadcrumbs =
-            BackwardTaint.breadcrumbs tito_taint |> Features.BreadcrumbSet.add (Features.tito ())
-          in
-          let add_features_and_position leaf_taint =
-            leaf_taint
-            |> Frame.add_tito_position argument.Node.location
-            |> Frame.add_breadcrumbs breadcrumbs
-          in
-          let taint_to_propagate =
-            if collapse_tito then
-              ForwardState.Tree.read path argument_taint
-              |> ForwardState.Tree.collapse
-                   ~transform:(ForwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
-              |> ForwardTaint.transform Frame.Self Map ~f:add_features_and_position
-              |> ForwardState.Tree.create_leaf
-            else
-              ForwardState.Tree.read path argument_taint
-              |> ForwardState.Tree.transform Frame.Self Map ~f:add_features_and_position
-          in
-          let taint_to_propagate =
-            match kind with
-            | Sinks.Transform { sanitize_local; sanitize_global; _ } ->
-                (* Apply source- and sink- specific tito sanitizers. *)
-                let transforms = SanitizeTransform.Set.union sanitize_local sanitize_global in
-                let sanitized_tito_sources =
-                  Sources.extract_sanitized_sources_from_transforms transforms
-                in
-                let sanitized_tito_sinks = SanitizeTransform.Set.filter_sinks transforms in
-                taint_to_propagate
-                |> ForwardState.Tree.sanitize sanitized_tito_sources
-                |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
-                |> ForwardState.Tree.transform
-                     ForwardTaint.kind
-                     Filter
-                     ~f:Flow.source_can_match_rule
-            | _ -> taint_to_propagate
-          in
-          let create_tito_return_paths tito return_path =
-            ForwardState.Tree.prepend return_path taint_to_propagate |> ForwardState.Tree.join tito
-          in
-          CallModel.return_paths ~kind ~tito_taint
-          |> List.fold ~f:create_tito_return_paths ~init:accumulated_tito
-        in
-        let convert_tito ~kind ~tito_tree tito_map =
-          let tito_tree =
-            BackwardState.Tree.fold
-              BackwardState.Tree.Path
-              tito_tree
-              ~init:ForwardState.Tree.empty
-              ~f:(convert_tito_path kind)
-          in
-          let kind = Sinks.discard_transforms kind in
-          Map.Poly.update tito_map kind ~f:(function
-              | None -> tito_tree
-              | Some previous -> ForwardState.Tree.join previous tito_tree)
-        in
         CallModel.taint_in_taint_out_mapping
           ~transform_non_leaves:(fun _ tito -> tito)
           ~model:taint_model
           ~tito_matches
-        |> CallModel.TaintInTaintOutMap.fold ~init:Map.Poly.empty ~f:convert_tito
+        |> CallModel.TaintInTaintOutMap.fold
+             ~init:Map.Poly.empty
+             ~f:(convert_tito_tree_to_taint ~argument ~argument_taint)
         |> Map.Poly.merge tito_effects ~f:(merge_tito_effect ForwardState.Tree.join)
       in
       let tito_effects =
