@@ -7,20 +7,20 @@
  * @format
  */
 
-import React, {useEffect, useState} from 'react';
-import Layout from '@theme/Layout';
-import classnames from 'classnames';
-import Link from '@docusaurus/Link';
-import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
-import {Controlled as CodeMirror} from 'react-codemirror2';
-import 'codemirror/lib/codemirror.css';
-import styles from './styles.module.css';
+import React, { useEffect, useState } from "react";
+import Layout from "@theme/Layout";
+import classnames from "classnames";
+import Link from "@docusaurus/Link";
+import ExecutionEnvironment from "@docusaurus/ExecutionEnvironment";
+import { Controlled as CodeMirror } from "react-codemirror2";
+import "codemirror/lib/codemirror.css";
+import styles from "./styles.module.css";
 
 let socketIOClient = () => {};
 
 if (ExecutionEnvironment.canUseDOM) {
-  require('codemirror/mode/python/python.js');
-  socketIOClient = require('socket.io-client')
+  require("codemirror/mode/python/python.js");
+  socketIOClient = require("socket.io-client");
 }
 
 const default_code = `import subprocess
@@ -34,16 +34,16 @@ def definite_rce(payload: str) -> None:
 const default_model = "#Define your custom models here";
 
 function Code(props) {
-   return (
+  return (
     <div className={styles.card}>
       <h4>Code</h4>
       <CheckButton check={props.check} busy={props.busy} />
       <CodeMirror
         value={props.code}
         options={{
-          mode: 'text/x-python',
+          mode: "text/x-python",
           lineNumbers: true,
-          readOnly: props.busy ? 'nocursor' : false,
+          readOnly: props.busy ? "nocursor" : false,
         }}
         onBeforeChange={(editor, data, value) => {
           props.setCode(value);
@@ -54,26 +54,27 @@ function Code(props) {
 }
 
 function getStorageValue(key, defaultValue) {
-    let saved = null;
-    if (typeof window !== 'undefined') {
-      saved = localStorage.getItem(key);
-    }
-    return saved || defaultValue;
+  let saved = null;
+  if (typeof window !== "undefined") {
+    saved = localStorage.getItem(key);
+  }
+  return saved || defaultValue;
 }
 
 function CheckButton(props) {
-  const style = props.busy ? {color: 'lightgrey', cursor: 'default'} : null;
+  const style = props.busy ? { color: "lightgrey", cursor: "default" } : null;
 
   return (
-    <div style={{textAlign: 'right'}}>
+    <div style={{ textAlign: "right" }}>
       <div
         className={classnames(
-          'button button--outline button--secondary',
+          "button button--outline button--secondary",
           styles.getStarted,
-          styles.runPysa,
+          styles.runPysa
         )}
         style={style}
-        onClick={props.check}>
+        onClick={props.check}
+      >
         {props.busy ? <div className={styles.spinner} /> : null}
         Run Pysa
       </div>
@@ -86,16 +87,16 @@ function Results(props) {
   var content = results;
   if (results) {
     if (results.errors !== undefined) {
-      content = results.errors.join('\n');
+      content = results.errors.join("\n");
     } else {
-      content = results.data.join('\n');
+      content = results.data.join("\n");
     }
   }
 
   return (
-    <div className={classnames(styles.card,styles.resultsCard)}>
+    <div className={classnames(styles.card, styles.resultsCard)}>
       <h4>Results</h4>
-      <div style={{fontFamily: 'monospace'}}>
+      <div style={{ fontFamily: "monospace" }}>
         {content || "Run Pysa to get results"}
       </div>
     </div>
@@ -109,9 +110,9 @@ function Models(props) {
       <CodeMirror
         value={props.model}
         options={{
-          mode: 'text/x-python',
+          mode: "text/x-python",
           lineNumbers: true,
-          theme: 'default height100',
+          theme: "default height100",
         }}
         onBeforeChange={(editor, data, value) => {
           props.setModel(value);
@@ -138,29 +139,31 @@ function Sandbox() {
   let synchronous_results = [];
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.setItem("code", code);
       localStorage.setItem("model", model);
     }
-    socket.on("pysa_results_channel", data => {
+    socket.on("pysa_results_channel", (data) => {
       if (data["type"] === undefined) {
-        setResults({errors: ["Invalid data received from the server."]});
+        setResults({ errors: ["Invalid data received from the server."] });
         setBusy(false);
-      } else if(data["type"] === "finished") {
+      } else if (data["type"] === "finished") {
         setBusy(false);
-      } else if(data["type"] === "output") {
-        if(data["line"] === undefined){
-          setResults({errors: ["Invalid data received from the server."]});
+      } else if (data["type"] === "output") {
+        if (data["line"] === undefined) {
+          setResults({ errors: ["Invalid data received from the server."] });
           setBusy(false);
         } else {
           synchronous_results.push(data["line"]);
         }
-        setResults({data: synchronous_results});
+        setResults({ data: synchronous_results });
       }
     });
     socket.on("connect_error", () => {
       setBusy(false);
-      setResults({errors: ["Error establishing a connection to the server."]})
+      setResults({
+        errors: ["Error establishing a connection to the server."],
+      });
     });
   }, [results]);
 
@@ -181,14 +184,10 @@ function Sandbox() {
           model={model}
           setModel={setModel}
           useOSModels={useOSModels}
-          setUseOSModels={setUseOSModels}/>
-        <Results results={results} />
-        <Code
-          code={code}
-          setCode={setCode}
-          busy={busy}
-          check={check}
+          setUseOSModels={setUseOSModels}
         />
+        <Results results={results} />
+        <Code code={code} setCode={setCode} busy={busy} check={check} />
       </main>
     </Layout>
   );

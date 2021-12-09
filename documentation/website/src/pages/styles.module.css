@@ -39,7 +39,7 @@
 .media {
   display: flex;
   justify-content: center;
-  align-Items: center;
+  align-items: center;
 }
 
 .featureImage {
@@ -73,14 +73,18 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .card {
   background-color: #fff;
   border-radius: 2px;
-  box-shadow: 1px 1px 4px rgba(0,0,0,.25), 1px 1px 1px rgba(0,0,0,.1);
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.25), 1px 1px 1px rgba(0, 0, 0, 0.1);
   margin: 0 auto;
   margin-bottom: 20px;
   padding: 10px;
@@ -98,7 +102,8 @@
 }
 
 @media screen and (max-width: 768px) {
-  .card, .resultsCard {
+  .card,
+  .resultsCard {
     float: none;
     width: 98%;
   }
