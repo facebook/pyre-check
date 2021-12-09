@@ -234,6 +234,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       fields
 
 
+  (* A mapping from a taint-in-taint-out kind (e.g, `Sinks.LocalReturn`, `Sinks.ParameterUpdate` or
+     `Sinks.AddFeatureToArgument`) to a source taint that must be propagated. *)
+  module TaintInTaintOutEffects = struct
+    type t = (Sinks.t, ForwardState.Tree.t) Map.Poly.t
+
+    let empty = (Map.Poly.empty : t) (* use t to silence a warning. *)
+
+    let add map ~kind ~taint =
+      Map.Poly.update map kind ~f:(function
+          | None -> taint
+          | Some previous -> ForwardState.Tree.join previous taint)
+
+
+    let get map ~kind = Map.Poly.find map kind |> Option.value ~default:ForwardState.Tree.empty
+
+    let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~taint:data)
+  end
+
   let apply_call_target
       ~resolution
       ~triggered_sinks
@@ -279,11 +297,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       Model.pp
       taint_model;
-    let merge_tito_effect join ~key:_ = function
-      | `Left left -> Some left
-      | `Right right -> Some right
-      | `Both (left, right) -> Some (join left right)
-    in
     let convert_tito_path_to_taint
         ~argument
         ~argument_taint
@@ -331,7 +344,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       CallModel.return_paths ~kind ~tito_taint
       |> List.fold ~f:create_tito_return_paths ~init:accumulated_tito
     in
-    let convert_tito_tree_to_taint ~argument ~argument_taint ~kind ~tito_tree tito_map =
+    let convert_tito_tree_to_taint ~argument ~argument_taint ~kind ~tito_tree tito_effects =
       let tito_tree =
         BackwardState.Tree.fold
           BackwardState.Tree.Path
@@ -339,10 +352,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~init:ForwardState.Tree.empty
           ~f:(convert_tito_path_to_taint ~argument ~argument_taint ~kind)
       in
-      let kind = Sinks.discard_transforms kind in
-      Map.Poly.update tito_map kind ~f:(function
-          | None -> tito_tree
-          | Some previous -> ForwardState.Tree.join previous tito_tree)
+      TaintInTaintOutEffects.add tito_effects ~kind:(Sinks.discard_transforms kind) ~taint:tito_tree
     in
     let compute_argument_tito_effect
         (tito_effects, state)
@@ -355,9 +365,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~model:taint_model
           ~tito_matches
         |> CallModel.TaintInTaintOutMap.fold
-             ~init:Map.Poly.empty
+             ~init:tito_effects
              ~f:(convert_tito_tree_to_taint ~argument ~argument_taint)
-        |> Map.Poly.merge tito_effects ~f:(merge_tito_effect ForwardState.Tree.join)
       in
       let tito_effects =
         if Model.ModeSet.contains Obscure modes then
@@ -390,9 +399,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                      ~f:Flow.source_can_match_rule
             | None -> obscure_tito
           in
-          Map.Poly.update tito_effects Sinks.LocalReturn ~f:(function
-              | Some regular_tito -> ForwardState.Tree.join regular_tito obscure_tito
-              | None -> obscure_tito)
+          TaintInTaintOutEffects.add tito_effects ~kind:Sinks.LocalReturn ~taint:obscure_tito
         else
           tito_effects
       in
@@ -436,7 +443,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let tito_effects, state =
       CallModel.match_actuals_to_formals ~model:taint_model ~arguments
       |> List.zip_exn arguments_taint
-      |> List.fold ~f:compute_argument_tito_effect ~init:(Map.Poly.empty, initial_state)
+      |> List.fold
+           ~f:compute_argument_tito_effect
+           ~init:(TaintInTaintOutEffects.empty, initial_state)
     in
     let result_taint =
       ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
@@ -445,9 +454,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~callees:[call_target]
            ~port:AccessPath.Root.LocalResult
     in
-    let tito =
-      Map.Poly.find tito_effects Sinks.LocalReturn |> Option.value ~default:ForwardState.Tree.empty
-    in
+    let tito = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     (if not (Hash_set.is_empty triggered_sinks) then
        let add_sink (key, taint) roots_and_sinks =
          let add roots_and_sinks sink =
@@ -495,7 +502,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           source_tree;
         store_taint_option ~weak:true access_path source_tree state
       in
-      let for_each_target ~key:target ~data:taint state =
+      let for_each_target ~kind:target ~taint state =
         match target with
         | Sinks.LocalReturn -> state (* This is regular tito which was computed above *)
         | ParameterUpdate n -> (
@@ -506,7 +513,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Attach -> state (* These synthetic nodes should be ignored for analysis.*)
         | _ -> Format.asprintf "unexpected sink `%a` in tito" Sinks.pp target |> failwith
       in
-      Map.Poly.fold tito_effects ~f:for_each_target ~init:state
+      TaintInTaintOutEffects.fold tito_effects ~f:for_each_target ~init:state
     in
     let returned_taint = ForwardState.Tree.join result_taint tito in
     let returned_taint =
