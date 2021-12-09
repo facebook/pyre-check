@@ -54,3 +54,8 @@ val sink_tree_of_argument
   call_target:Target.t ->
   sink_matches:AccessPath.argument_match list ->
   BackwardState.Tree.t
+
+val sanitize_of_argument
+  :  model:Model.t ->
+  sanitize_matches:AccessPath.argument_match list ->
+  Sanitize.sanitize

@@ -266,7 +266,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~init:BackwardState.bottom
       | None -> BackwardState.bottom
     in
-    let ({ Model.backward; sanitizers; modes; _ } as taint_model) =
+    let ({ Model.modes; _ } as taint_model) =
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Backward
@@ -281,8 +281,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       Model.pp
       taint_model;
-    let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
-    let taint_model = { taint_model with backward = { taint_model.backward with sink_taint } } in
+    let taint_model =
+      {
+        taint_model with
+        backward =
+          {
+            taint_model.backward with
+            sink_taint = BackwardState.join taint_model.backward.sink_taint triggered_taint;
+          };
+      }
+    in
     let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } =
       let global_sink =
         GlobalModel.from_expression
@@ -386,12 +394,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let taint_in_taint_out =
         if not (BackwardState.Tree.is_bottom obscure_taint) then
           let obscure_sanitize =
-            List.map
-              ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
-              sanitize_matches
-            |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
-            |> Sanitize.join sanitizers.global
-            |> Sanitize.join sanitizers.parameters
+            CallModel.sanitize_of_argument ~model:taint_model ~sanitize_matches
           in
           (* Apply source- and sink- specific tito sanitizers for obscure models,
            * since the tito is not materialized in `backward.taint_in_taint_out`. *)

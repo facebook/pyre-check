@@ -173,3 +173,12 @@ let sink_tree_of_argument
     |> BackwardState.Tree.join taint_tree
   in
   List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.Tree.empty
+
+
+let sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
+  List.map
+    ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
+    sanitize_matches
+  |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
+  |> Sanitize.join sanitizers.global
+  |> Sanitize.join sanitizers.parameters

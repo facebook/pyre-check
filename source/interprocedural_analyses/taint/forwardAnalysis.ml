@@ -264,7 +264,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         arguments, arguments_taint
     in
-    let ({ Model.forward; backward; sanitizers; modes } as taint_model) =
+    let ({ Model.forward; backward; modes; _ } as taint_model) =
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Forward
@@ -372,12 +372,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Apply source- and sink- specific tito sanitizers for obscure models,
            * since the tito is not materialized in `backward.taint_in_taint_out`. *)
           let obscure_sanitize =
-            List.map
-              ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
-              sanitize_matches
-            |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
-            |> Sanitize.join sanitizers.global
-            |> Sanitize.join sanitizers.parameters
+            CallModel.sanitize_of_argument ~model:taint_model ~sanitize_matches
           in
           let obscure_tito =
             match obscure_sanitize.tito with
