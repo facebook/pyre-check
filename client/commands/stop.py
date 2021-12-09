@@ -28,6 +28,14 @@ def remove_socket_if_exists(socket_path: Path) -> None:
         socket_path.unlink()
     except FileNotFoundError:
         pass
+    except OSError as error:
+        LOG.warning(f"Failed to remove socket file at `{socket_path}`: {error}")
+    try:
+        socket_path.with_suffix(socket_path.suffix + ".lock").unlink()
+    except FileNotFoundError:
+        pass
+    except OSError as error:
+        LOG.warning(f"Failed to remove lock file at `{socket_path}.lock`: {error}")
 
 
 def run_stop(configuration: configuration_module.Configuration) -> commands.ExitCode:

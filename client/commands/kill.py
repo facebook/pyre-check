@@ -16,7 +16,7 @@ from .. import (
     find_directories,
     recently_used_configurations,
 )
-from . import commands, remote_logging, servers, server_connection
+from . import commands, remote_logging, servers, server_connection, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -98,18 +98,7 @@ def _delete_server_files(configuration: configuration_module.Configuration) -> N
     socket_root = server_connection.get_default_socket_root()
     LOG.info(f"Deleting socket files and lock files under {socket_root}")
     for socket_path in servers.get_pyre_socket_files(socket_root):
-        try:
-            socket_path.unlink()
-        except FileNotFoundError:
-            pass
-        except OSError as error:
-            LOG.warning(f"Failed to remove socket file at `{socket_path}`: {error}")
-        try:
-            socket_path.with_suffix(socket_path.suffix + ".lock").unlink()
-        except FileNotFoundError:
-            pass
-        except OSError as error:
-            LOG.warning(f"Failed to remove lock file at `{socket_path}.lock`: {error}")
+        stop.remove_socket_if_exists(socket_path)
 
     log_directory = Path(configuration.log_directory) / "new_server"
     LOG.info(f"Deleting server logs under {log_directory}")
