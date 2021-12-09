@@ -152,30 +152,30 @@ class Pysa:
             text=True,
         ) as process:
             model_verification_errors = []
-            model_verification_errors_found = False
             for line in iter(process.stderr.readline, b""):
                 line = line.rstrip()
                 if line == "":
                     break
-                elif "DEBUG" in line:
-                    continue
                 elif "ERROR" in line and "is not part of the environment" in line:
                     model_verification_errors.append(line)
-                    model_verification_errors_found = True
-                    continue
-                elif model_verification_errors_found:
-                    # Emit all model verification lines together to prevent
-                    # network overhead.
-                    emit(
-                        "pysa_results_channel",
-                        {
-                            "type": "output",
-                            "line": "\n".join(model_verification_errors),
-                        },
-                    )
-                    LOG.debug("\n".join(model_verification_errors))
+                elif "INFO" in line or "ERROR" in line:
+                    if model_verification_errors:
+                        # Emit all model verification lines together to prevent
+                        # network overhead.
+                        model_verification_error_output = "\n".join(
+                            model_verification_errors
+                        )
+                        emit(
+                            "pysa_results_channel",
+                            {
+                                "type": "output",
+                                "line": model_verification_error_output,
+                            },
+                        )
+                        LOG.debug(model_verification_error_output)
+                        model_verification_errors = []
+                    emit("pysa_results_channel", {"type": "output", "line": line})
                 LOG.debug(line)
-                emit("pysa_results_channel", {"type": "output", "line": line})
 
             return_code = process.wait()
             if return_code != 0:
