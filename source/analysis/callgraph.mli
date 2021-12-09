@@ -60,7 +60,7 @@ module type Builder = sig
   val add_callee
     :  global_resolution:GlobalResolution.t ->
     target:Type.t option ->
-    callables:Type.Callable.t list option ->
+    callables:Type.Callable.t list ->
     arguments:Expression.Call.Argument.t list ->
     dynamic:bool ->
     qualifier:Reference.t ->

@@ -1355,7 +1355,8 @@ module State (Context : Context) = struct
           ~target
           ~callables:
             (callable_data_list
-            >>| List.map ~f:(fun { callable = { TypeOperation.callable; _ }; _ } -> callable))
+            >>| List.map ~f:(fun { callable = { TypeOperation.callable; _ }; _ } -> callable)
+            |> Option.value ~default:[])
           ~arguments:original_arguments
           ~dynamic
           ~qualifier:Context.qualifier
@@ -1806,8 +1807,8 @@ module State (Context : Context) = struct
         let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:callee in
         let callables =
           match resolved with
-          | Type.Callable callable -> Some [callable]
-          | _ -> None
+          | Type.Callable callable -> [callable]
+          | _ -> []
         in
         Context.Builder.add_callee
           ~global_resolution

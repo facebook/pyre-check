@@ -44,7 +44,7 @@ let test_default_builder context =
   assert_registers
     ~source:""
     ~target:Type.integer
-    ~callables:(Some [make_named "callable"])
+    ~callables:[make_named "callable"]
     ~callee:"expression"
     [
       Method
@@ -63,7 +63,7 @@ let test_default_builder context =
         method: Callable("named")[[int], str]
     |}
     ~target:(Type.optional (Primitive "test.Foo"))
-    ~callables:None
+    ~callables:[]
     ~callee:"foo.method"
     [
       Method
@@ -82,7 +82,7 @@ let test_default_builder context =
         bound_method: BoundMethod[Callable("named")[[int], str], Foo]
     |}
     ~target:(Type.optional (Primitive "test.Foo"))
-    ~callables:None
+    ~callables:[]
     ~callee:"foo.bound_method"
     [
       Method
@@ -100,7 +100,7 @@ let test_default_builder context =
         def b():
           pass
       |}
-    ~callables:(Some [make_named "foo.a"; make_named "foo.b"])
+    ~callables:[make_named "foo.a"; make_named "foo.b"]
     ~callee:"foo.a if 1 else foo.b"
     [Function !&"foo.a"; Function !&"foo.b"];
   assert_registers
@@ -110,7 +110,7 @@ let test_default_builder context =
         not_callable: int
     |}
     ~target:(Type.optional (Primitive "test.Foo"))
-    ~callables:(Some [])
+    ~callables:[]
     ~callee:"foo.not_callable"
     [];
   assert_registers
@@ -119,7 +119,7 @@ let test_default_builder context =
       class Foo: ...
     |}
     ~target:(Type.optional (Primitive "test.Foo"))
-    ~callables:None
+    ~callables:[]
     ~callee:"foo.non_existent"
     [];
   ()
