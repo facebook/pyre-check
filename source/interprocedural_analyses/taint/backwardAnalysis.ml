@@ -291,6 +291,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           };
       }
     in
+    let call_taint =
+      if Model.ModeSet.contains Obscure modes then
+        BackwardState.Tree.add_breadcrumbs (Lazy.force return_type_breadcrumbs) call_taint
+      else
+        call_taint
+    in
     let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } =
       let global_sink =
         GlobalModel.from_expression
@@ -370,7 +376,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.join taint_tree
     in
     let analyze_argument
-        ~obscure_taint
         (arguments_taint, state)
         { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches }
       =
@@ -392,40 +397,27 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~f:(convert_tito_tree_to_taint ~argument)
       in
       let taint_in_taint_out =
-        if not (BackwardState.Tree.is_bottom obscure_taint) then
+        if Model.ModeSet.contains Obscure modes then
           let obscure_sanitize =
             CallModel.sanitize_of_argument ~model:taint_model ~sanitize_matches
           in
           (* Apply source- and sink- specific tito sanitizers for obscure models,
            * since the tito is not materialized in `backward.taint_in_taint_out`. *)
-          let obscure_taint =
-            match obscure_sanitize.tito with
-            | Some AllTito -> BackwardState.Tree.bottom
-            | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-                let sanitized_tito_sources =
-                  Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources
-                in
-                let sanitized_tito_sinks_transforms =
-                  Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
-                in
-                obscure_taint
-                |> BackwardState.Tree.sanitize sanitized_tito_sinks
-                |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
-                |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
-                |> BackwardState.Tree.transform
-                     BackwardTaint.kind
-                     Filter
-                     ~f:Flow.sink_can_match_rule
-            | None -> obscure_taint
-          in
-          let obscure_taint =
-            BackwardState.Tree.transform
-              Features.TitoPositionSet.Element
-              Add
-              ~f:argument.Node.location
-              obscure_taint
-          in
-          BackwardState.Tree.join taint_in_taint_out obscure_taint
+          match obscure_sanitize.tito with
+          | Some AllTito -> BackwardState.Tree.bottom
+          | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
+              let sanitized_tito_sources =
+                Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources
+              in
+              let sanitized_tito_sinks_transforms =
+                Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
+              in
+              taint_in_taint_out
+              |> BackwardState.Tree.sanitize sanitized_tito_sinks
+              |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
+              |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
+              |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Flow.sink_can_match_rule
+          | None -> taint_in_taint_out
         else
           taint_in_taint_out
       in
@@ -449,24 +441,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       taint :: arguments_taint, state
     in
-    let obscure_taint =
-      if Model.ModeSet.contains Obscure modes then
-        let breadcrumbs =
-          Lazy.force return_type_breadcrumbs
-          |> Features.BreadcrumbSet.add (Features.obscure_model ())
-        in
-        BackwardState.Tree.collapse
-          ~transform:(BackwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
-          call_taint
-        |> BackwardTaint.add_breadcrumbs breadcrumbs
-        |> BackwardState.Tree.create_leaf
-      else
-        BackwardState.Tree.bottom
-    in
     let arguments_taint, state =
       CallModel.match_actuals_to_formals ~model:taint_model ~arguments
       |> List.rev
-      |> List.fold ~f:(analyze_argument ~obscure_taint) ~init:([], initial_state)
+      |> List.fold ~f:analyze_argument ~init:([], initial_state)
     in
     (* Extract the taint for self. *)
     let self_taint, callee_taint, arguments_taint =

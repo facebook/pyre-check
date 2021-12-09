@@ -68,6 +68,7 @@
               {
                 "features": [
                   { "always-via": "obscure:model" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],

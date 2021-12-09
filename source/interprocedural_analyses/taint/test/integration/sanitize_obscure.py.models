@@ -58,7 +58,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure:model" } ],
+                "features": [
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "sanitize_obscure.b_sink" } ],
                 "kind": "TestB"
               }
@@ -87,7 +90,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure:model" } ],
+                "features": [
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "sanitize_obscure.b_source" } ],
                 "kind": "TestB"
               }
@@ -116,7 +122,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure:model" } ],
+                "features": [
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "sanitize_obscure.b_source" } ],
                 "kind": "TestB"
               }

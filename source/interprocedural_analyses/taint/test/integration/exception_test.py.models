@@ -278,8 +278,12 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "obscure:model" } ],
+                "features": [
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito" }
+                ],
                 "return_paths": [ "" ],
+                "length": 1,
                 "kind": "LocalReturn"
               }
             ],

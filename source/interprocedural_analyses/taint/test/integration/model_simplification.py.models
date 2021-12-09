@@ -13,6 +13,7 @@
                 "features": [
                   { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
                   { "always-via": "broadening" }
                 ],
                 "leaves": [ { "name": "getattr" } ],
@@ -62,7 +63,7 @@
                   { "via": "object" },
                   { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
-                  { "via": "tito" },
+                  { "always-via": "tito" },
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
@@ -89,7 +90,7 @@
                   { "via": "object" },
                   { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
-                  { "via": "tito" },
+                  { "always-via": "tito" },
                   { "always-via": "broadening" },
                   { "always-via": "obscure:unknown-callee" }
                 ],
@@ -116,7 +117,7 @@
                   { "via": "object" },
                   { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
-                  { "via": "tito" },
+                  { "always-via": "tito" },
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
@@ -202,7 +203,7 @@
                   { "via": "object" },
                   { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
-                  { "via": "tito" },
+                  { "always-via": "tito" },
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
@@ -285,7 +286,7 @@
                   { "via": "object" },
                   { "always-via": "obscure:model" },
                   { "always-via": "tito-broadening" },
-                  { "via": "tito" },
+                  { "always-via": "tito" },
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
@@ -371,9 +372,11 @@
               {
                 "features": [
                   { "always-via": "obscure:model" },
+                  { "always-via": "tito" },
                   { "always-via": "obscure:unknown-callee" }
                 ],
                 "return_paths": [ "" ],
+                "length": 1,
                 "kind": "LocalReturn"
               }
             ],

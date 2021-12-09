@@ -1044,7 +1044,7 @@
           {
             "kinds": [
               {
-                "features": [ { "via": "obscure:model" } ],
+                "features": [ { "via": "obscure:model" }, { "via": "tito" } ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
               }

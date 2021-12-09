@@ -161,6 +161,7 @@
                   { "always-via": "obscure:model" },
                   { "always-type": "bool" },
                   { "always-type": "scalar" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -202,6 +203,7 @@
       { "always-via": "obscure:model" },
       { "always-type": "bool" },
       { "always-type": "scalar" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -229,6 +231,7 @@
                   { "always-via": "obscure:model" },
                   { "always-type": "bool" },
                   { "always-type": "scalar" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -275,6 +278,7 @@
       { "always-via": "obscure:model" },
       { "always-type": "bool" },
       { "always-type": "scalar" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -674,9 +678,11 @@
                 "features": [
                   { "always-via": "obscure:model" },
                   { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "scalar" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
+                "length": 1,
                 "kind": "LocalReturn"
               }
             ],

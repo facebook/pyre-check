@@ -241,11 +241,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let empty = (Map.Poly.empty : t) (* use t to silence a warning. *)
 
+    let update map ~kind ~f = Map.Poly.update map kind ~f
+
     let add map ~kind ~taint =
-      Map.Poly.update map kind ~f:(function
+      update map ~kind ~f:(function
           | None -> taint
           | Some previous -> ForwardState.Tree.join previous taint)
 
+
+    let remove map ~kind = Map.Poly.remove map kind
 
     let get map ~kind = Map.Poly.find map kind |> Option.value ~default:ForwardState.Tree.empty
 
@@ -370,36 +374,33 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let tito_effects =
         if Model.ModeSet.contains Obscure modes then
-          let obscure_tito =
-            ForwardState.Tree.collapse
-              ~transform:(ForwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
-              argument_taint
-            |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
-            |> ForwardTaint.add_breadcrumb (Features.obscure_model ())
-            |> ForwardState.Tree.create_leaf
-          in
           (* Apply source- and sink- specific tito sanitizers for obscure models,
            * since the tito is not materialized in `backward.taint_in_taint_out`. *)
           let obscure_sanitize =
             CallModel.sanitize_of_argument ~model:taint_model ~sanitize_matches
           in
-          let obscure_tito =
-            match obscure_sanitize.tito with
-            | Some AllTito -> ForwardState.Tree.bottom
-            | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-                let sanitized_tito_sinks =
-                  Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
-                in
-                obscure_tito
-                |> ForwardState.Tree.sanitize sanitized_tito_sources
-                |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
-                |> ForwardState.Tree.transform
-                     ForwardTaint.kind
-                     Filter
-                     ~f:Flow.source_can_match_rule
-            | None -> obscure_tito
-          in
-          TaintInTaintOutEffects.add tito_effects ~kind:Sinks.LocalReturn ~taint:obscure_tito
+          match obscure_sanitize.tito with
+          | Some AllTito -> TaintInTaintOutEffects.remove tito_effects ~kind:Sinks.LocalReturn
+          | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
+              let apply_taint_transforms = function
+                | None -> ForwardState.Tree.bottom
+                | Some taint_tree ->
+                    let sanitized_tito_sinks =
+                      Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
+                    in
+                    taint_tree
+                    |> ForwardState.Tree.sanitize sanitized_tito_sources
+                    |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
+                    |> ForwardState.Tree.transform
+                         ForwardTaint.kind
+                         Filter
+                         ~f:Flow.source_can_match_rule
+              in
+              TaintInTaintOutEffects.update
+                tito_effects
+                ~kind:Sinks.LocalReturn
+                ~f:apply_taint_transforms
+          | None -> tito_effects
         else
           tito_effects
       in

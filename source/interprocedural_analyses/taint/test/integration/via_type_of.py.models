@@ -22,6 +22,7 @@
                   { "first-field": "x" },
                   { "always-via": "obscure:model" },
                   { "always-via-type": "int" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -64,6 +65,7 @@
       { "first-field": "x" },
       { "always-via": "obscure:model" },
       { "always-via-type": "int" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -92,6 +94,7 @@
                   { "first-field": "y" },
                   { "always-via-type": "str" },
                   { "always-via": "obscure:model" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -134,6 +137,7 @@
       { "first-field": "y" },
       { "always-via-type": "str" },
       { "always-via": "obscure:model" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -162,6 +166,7 @@
                   { "first-field": "z" },
                   { "always-via": "obscure:model" },
                   { "always-via-type": "typing.Annotated[str]" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -204,6 +209,7 @@
       { "first-field": "z" },
       { "always-via": "obscure:model" },
       { "always-via-type": "typing.Annotated[str]" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -236,6 +242,7 @@
                   { "always-via": "obscure:model" },
                   { "via-type": "int" },
                   { "via-type": "typing.Annotated[str]" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -282,6 +289,7 @@
       { "always-via": "obscure:model" },
       { "via-type": "int" },
       { "via-type": "typing.Annotated[str]" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -309,6 +317,7 @@
                   { "has": "first-field" },
                   { "first-field": "x" },
                   { "always-via": "obscure:model" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" },
                   { "always-via-type": "typing.Dict[str, int]" }
                 ],
@@ -351,6 +360,7 @@
       { "has": "first-field" },
       { "first-field": "x" },
       { "always-via": "obscure:model" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via-type": "typing.Dict[str, int]" },
       { "always-via": "special_sink" }
@@ -379,6 +389,7 @@
                   { "has": "first-field" },
                   { "first-field": "y" },
                   { "always-via": "obscure:model" },
+                  { "always-via": "tito" },
                   { "always-via-type": "typing.List[str]" },
                   { "always-via": "special_source" }
                 ],
@@ -421,6 +432,7 @@
       { "has": "first-field" },
       { "first-field": "y" },
       { "always-via": "obscure:model" },
+      { "always-via": "tito" },
       { "always-via-type": "typing.List[str]" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
@@ -450,6 +462,7 @@
                   { "first-field": "z" },
                   { "always-via": "obscure:model" },
                   { "always-via-type": "typing.Annotated[float]" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -492,6 +505,7 @@
       { "first-field": "z" },
       { "always-via": "obscure:model" },
       { "always-via-type": "typing.Annotated[float]" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
@@ -522,6 +536,7 @@
                   { "first-field": "x" },
                   { "always-via": "obscure:model" },
                   { "via-type": "typing.Annotated[float]" },
+                  { "always-via": "tito" },
                   { "via-type": "typing.List[str]" },
                   { "always-via": "special_source" },
                   { "via-type": "typing.Dict[str, int]" }
@@ -568,6 +583,7 @@
       { "first-field": "x" },
       { "always-via": "obscure:model" },
       { "via-type": "typing.Annotated[float]" },
+      { "always-via": "tito" },
       { "via-type": "typing.List[str]" },
       { "always-via": "special_source" },
       { "via-type": "typing.Dict[str, int]" },

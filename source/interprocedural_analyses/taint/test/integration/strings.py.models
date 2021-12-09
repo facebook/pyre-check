@@ -554,6 +554,7 @@
                 "features": [
                   { "always-via": "obscure:model" },
                   { "always-via": "format-string" },
+                  { "always-via": "tito" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -587,6 +588,7 @@
                 "features": [
                   { "always-via": "obscure:model" },
                   { "always-via": "format-string" },
+                  { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -619,9 +621,11 @@
               {
                 "features": [
                   { "always-via": "obscure:model" },
-                  { "always-via": "format-string" }
+                  { "always-via": "format-string" },
+                  { "always-via": "tito" }
                 ],
                 "return_paths": [ "" ],
+                "length": 1,
                 "kind": "LocalReturn"
               }
             ],
