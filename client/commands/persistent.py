@@ -52,6 +52,8 @@ from . import (
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
+COMMAND_NAME = "persistent"
+
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
 
 
@@ -1151,6 +1153,11 @@ class PyreServerHandler(connection.BackgroundTask):
         LOG.info(
             "Refereshing type errors received from Pyre server. "
             f"Total number of type errors is {len(type_errors)}."
+        )
+        incremental.log_error_statistics(
+            remote_logging=self.remote_logging,
+            type_errors=type_errors,
+            command_name=COMMAND_NAME,
         )
         self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
 
