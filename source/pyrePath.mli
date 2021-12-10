@@ -28,10 +28,6 @@ val equal : t -> t -> bool
 
 val absolute : t -> path
 
-val relative : t -> path option
-
-val uri : t -> path
-
 val last : t -> path
 
 val create_absolute : ?follow_symbolic_links:bool -> path -> t
@@ -44,17 +40,9 @@ val ensure_parent_directory_exists : ?permission:int -> t -> (unit, string) Resu
 
 val get_relative_to_root : root:t -> path:t -> path option
 
-val from_uri : path -> t option
-
 val current_working_directory : unit -> t
 
 val append : t -> element:path -> t
-
-module AppendOperator : sig
-  val ( ^| ) : t -> path -> t
-end
-
-val real_path : t -> t
 
 val follow_symbolic_link : t -> t option
 
@@ -65,10 +53,6 @@ val get_suffix_path : t -> string
 val is_path_python_stub : string -> bool
 
 val is_path_python_init : string -> bool
-
-val is_python_stub : t -> bool
-
-val is_python_init : t -> bool
 
 val file_exists : t -> bool
 
@@ -93,24 +77,16 @@ val remove : t -> unit
 
 val remove_if_exists : t -> unit
 
-val remove_recursively : t -> unit
-
 (* Remove every file under the given directory, but not the directory itself. *)
 val remove_contents_of_directory : t -> (unit, string) Result.t
-
-val readlink : t -> path option
 
 module Map : Map.S with type Key.t = t
 
 module Set : Set.S with type Elt.t = t
 
-val build_symlink_map : links:t list -> t Map.t
-
 val with_suffix : t -> suffix:string -> t
 
 val get_directory : t -> t
-
-val project_directory : local_root:string -> filter_directories:string list -> string
 
 (* paths can be files or directories *)
 val get_matching_files_recursively : suffix:string -> paths:t list -> t list
