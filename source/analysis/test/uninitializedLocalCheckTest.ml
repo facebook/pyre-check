@@ -162,6 +162,13 @@ let test_simple context =
   assert_uninitialized_errors
     {|
       def f():
+        y = [x for x in x]
+        x = []
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      def f():
         _  = [(x, y) for x,y in []]
         x = None
         _ = x, y
