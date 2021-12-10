@@ -5285,9 +5285,51 @@ let test_populate_unbound_names _ =
   assert_unbound_names
     {|
       def foo():
+        return [y for x in range(42)]
+    |}
+    ~expected:[!&"foo", ["y", location (3, 10) (3, 11)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x, y in range(42)]
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo():
         return [y for x in range(42) for y in x]
     |}
     ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x in range(42) if y > 0 for y in x]
+    |}
+    ~expected:[!&"foo", ["y", location (3, 34) (3, 35)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x in range(42) if x > 0 for y in x if x > 0 and y > 0]
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo():
+        return [x for x in x]
+    |}
+    ~expected:[!&"foo", ["x", location (3, 21) (3, 22)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x in x for y in x]
+    |}
+    ~expected:[!&"foo", ["x", location (3, 21) (3, 22)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x in y for y in x]
+    |}
+    ~expected:[!&"foo", ["y", location (3, 21) (3, 22)]];
   assert_unbound_names
     {|
       def bar() -> None: ...

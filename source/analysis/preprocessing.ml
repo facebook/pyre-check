@@ -3021,29 +3021,35 @@ module AccessCollector = struct
         NameAccessSet.t
     =
    fun from_element collected { Comprehension.element; generators } ->
-    let bound_names =
-      List.fold
-        generators
-        ~init:Identifier.Set.empty
-        ~f:(fun sofar { Comprehension.Generator.target; _ } ->
+    let remove_bound_names ~bound_names =
+      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Identifier.Set.mem bound_names name))
+    in
+    let bound_names, collected =
+      let from_generator
+          (bound_names, accesses_sofar)
+          { Comprehension.Generator.target; iterator; conditions; _ }
+        =
+        let iterator_accesses =
+          from_expression NameAccessSet.empty iterator |> remove_bound_names ~bound_names
+        in
+        let bound_names =
+          let add_bound_name bound_names { Define.NameAccess.name; _ } = Set.add bound_names name in
           from_expression NameAccessSet.empty target
-          |> Set.fold ~init:sofar ~f:(fun sofar { Define.NameAccess.name; _ } -> Set.add sofar name))
+          |> NameAccessSet.fold ~init:bound_names ~f:add_bound_name
+        in
+        let condition_accesses =
+          List.fold conditions ~init:NameAccessSet.empty ~f:from_expression
+          |> remove_bound_names ~bound_names
+        in
+        ( bound_names,
+          NameAccessSet.union_list [accesses_sofar; iterator_accesses; condition_accesses] )
+      in
+      List.fold generators ~init:(Identifier.Set.empty, collected) ~f:from_generator
     in
-    let names =
-      from_element NameAccessSet.empty element
-      |> fun init ->
-      List.fold
-        generators
-        ~init
-        ~f:(fun sofar { Comprehension.Generator.iterator; conditions; _ } ->
-          let sofar = from_expression sofar iterator in
-          List.fold conditions ~init:sofar ~f:from_expression)
+    let element_accesses =
+      from_element NameAccessSet.empty element |> remove_bound_names ~bound_names
     in
-    let unbound_names =
-      Set.filter names ~f:(fun { Define.NameAccess.name; _ } ->
-          not (Identifier.Set.mem bound_names name))
-    in
-    Set.union unbound_names collected
+    NameAccessSet.union collected element_accesses
 
 
   and from_statement collected { Node.value; location = statement_location } =
