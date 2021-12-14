@@ -27,8 +27,18 @@ Available commands:
   callables_matching(r'foo\..*')  Find all callables matching the given regular expression.
   get_model('foo.bar')            Get the model for the given callable.
   print_model('foo.bar')          Pretty print the model for the given callable.
+                                  Optional parameters:
+                                    kind='UserControlled'      Filter by taint kind.
+                                    caller_port='result'       Filter by caller port.
+                                    remove_sources=False
+                                    remove_sinks=False
+                                    remove_tito=False
+                                    remove_tito_positions=True
+                                    remove_features=True
+                                    remove_leaf_names=True
   get_issues('foo.bar')           Get all issues within the given callable.
   print_issues('foo.bar')         Pretty print the issues within the given callable.
+  print_json({'a': 'b'})          Pretty print json objects with syntax highlighting.
 ```
 ```python
 >>> index('/tmp/output_dir')
@@ -60,7 +70,7 @@ Let's take a look at `body`, a slightly more interesting function. We'll also sw
       "taint": [
         {
           "decl": null,
-          "leaves": [
+          "kinds": [
             {
               "kind": "UserControlled"
             }
@@ -80,16 +90,16 @@ You can also use the `get_issues`, and corresponding pretty-printing `print_issu
 Note that the `get_issues` and `get_models` functions return Python objects that you can manipulate:
 
 ```python
->>> print(get_issues('foo.bar.log_errors')[0]) # This is valid, will print first issue!
+>>> print_json(get_issues('foo.bar.log_errors')[0]) # This is valid, will print first issue!
 ...
->>> json.dumps(get_model('django.http.request.HttpRequest.body')["sources"], indent = 2) # Pretty print only the sources.
+>>> print_json(get_model('django.http.request.HttpRequest.body')["sources"]) # Pretty print only the sources.
 [
   {
     "port": "result",
     "taint": [
       {
         "decl": null,
-        "leaves": [
+        "kinds": [
           {
             "kind": "UserControlled"
           }
