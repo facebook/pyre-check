@@ -10,7 +10,6 @@ open Core
 exception ParserError of string
 
 module Log = Log
-module Path = PyrePath
 
 let ( >>| ) = Option.( >>| )
 

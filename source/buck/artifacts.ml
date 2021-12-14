@@ -6,12 +6,11 @@
  *)
 
 open Base
-module Path = Pyre.Path
 
 let ensure_parent_directory_exists path =
   (* The directory creation part is intentionally using a sequential API, since if we call
      `Lwt_unix.mkdir` instead it would lead to race conditions among the prefix `mkdir` invocations. *)
-  Path.ensure_parent_directory_exists path |> Lwt.return
+  PyrePath.ensure_parent_directory_exists path |> Lwt.return
 
 
 let catch_unix_error f =
@@ -30,13 +29,13 @@ let catch_unix_error f =
 
 
 let create_symlink ~target link =
-  catch_unix_error (fun () -> Lwt_unix.symlink (Path.absolute target) (Path.absolute link))
+  catch_unix_error (fun () -> Lwt_unix.symlink (PyrePath.absolute target) (PyrePath.absolute link))
 
 
 let remove_if_exists path =
   catch_unix_error (fun () ->
       Lwt.catch
-        (fun () -> Lwt_unix.unlink (Path.absolute path))
+        (fun () -> Lwt_unix.unlink (PyrePath.absolute path))
         (function
           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_unit
           | _ as exn -> Lwt.fail exn))
@@ -51,16 +50,18 @@ let create_parent_directory_and_symlink ~target link =
 
 
 let populate ~source_root ~artifact_root build_map =
-  if not (Path.is_directory source_root) then
-    let message = Format.asprintf "Source root is not a directory: %a" Path.pp source_root in
+  if not (PyrePath.is_directory source_root) then
+    let message = Format.asprintf "Source root is not a directory: %a" PyrePath.pp source_root in
     Lwt.return (Result.Error message)
-  else if not (Path.is_directory artifact_root) then
-    let message = Format.asprintf "Artifact root is not a directory: %a" Path.pp artifact_root in
+  else if not (PyrePath.is_directory artifact_root) then
+    let message =
+      Format.asprintf "Artifact root is not a directory: %a" PyrePath.pp artifact_root
+    in
     Lwt.return (Result.Error message)
   else
     let create_symlink (artifact, source) =
-      let source_path = Path.create_relative ~root:source_root ~relative:source in
-      let artifact_path = Path.create_relative ~root:artifact_root ~relative:artifact in
+      let source_path = PyrePath.create_relative ~root:source_root ~relative:source in
+      let artifact_path = PyrePath.create_relative ~root:artifact_root ~relative:artifact in
       create_parent_directory_and_symlink ~target:source_path artifact_path
     in
     let open Lwt.Infix in
@@ -71,16 +72,18 @@ let populate ~source_root ~artifact_root build_map =
 
 
 let update ~source_root ~artifact_root difference =
-  if not (Path.is_directory source_root) then
-    let message = Format.asprintf "Source root is not a directory: %a" Path.pp source_root in
+  if not (PyrePath.is_directory source_root) then
+    let message = Format.asprintf "Source root is not a directory: %a" PyrePath.pp source_root in
     Lwt.return (Result.Error message)
-  else if not (Path.is_directory artifact_root) then
-    let message = Format.asprintf "Artifact root is not a directory: %a" Path.pp artifact_root in
+  else if not (PyrePath.is_directory artifact_root) then
+    let message =
+      Format.asprintf "Artifact root is not a directory: %a" PyrePath.pp artifact_root
+    in
     Lwt.return (Result.Error message)
   else
     let open Lwt.Infix in
     let process_update (artifact, kind) =
-      let artifact_path = Path.create_relative ~root:artifact_root ~relative:artifact in
+      let artifact_path = PyrePath.create_relative ~root:artifact_root ~relative:artifact in
       match kind with
       | BuildMap.Difference.Kind.Deleted -> remove_if_exists artifact_path
       | New source
@@ -89,7 +92,7 @@ let update ~source_root ~artifact_root difference =
           >>= function
           | Result.Error _ as error -> Lwt.return error
           | Result.Ok () ->
-              let source_path = Path.create_relative ~root:source_root ~relative:source in
+              let source_path = PyrePath.create_relative ~root:source_root ~relative:source in
               create_parent_directory_and_symlink ~target:source_path artifact_path)
     in
     BuildMap.Difference.to_alist difference

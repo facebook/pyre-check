@@ -22,12 +22,12 @@ let check
   =
   (* Sanity check environment. *)
   let check_directory_exists directory =
-    if not (Path.is_directory directory) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
+    if not (PyrePath.is_directory directory) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" PyrePath.pp directory))
   in
   let check_path_exists path =
-    if not (Path.file_exists path) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a valid path" Path.pp path))
+    if not (PyrePath.file_exists path) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a valid path" PyrePath.pp path))
   in
   let check_search_path_exists search_path =
     match search_path with
@@ -73,11 +73,11 @@ let check
     in
     if Log.is_enabled `Dotty then (
       let type_order_file =
-        Path.create_relative
+        PyrePath.create_relative
           ~root:(Configuration.Analysis.log_directory configuration)
           ~relative:"type_order.dot"
       in
-      Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
+      Log.info "Emitting type order dotty file to %s" (PyrePath.absolute type_order_file);
       let class_hierarchy_dot =
         ClassHierarchy.to_dot
           (GlobalResolution.class_hierarchy global_resolution)

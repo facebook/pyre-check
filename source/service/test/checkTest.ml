@@ -7,7 +7,6 @@
 
 open Core
 open OUnit2
-open Pyre
 open Test
 
 let assert_errors
@@ -19,10 +18,12 @@ let assert_errors
     ~context
     expected_errors
   =
-  let external_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+  let external_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
   let add_source ~root (relative, content) =
     let content = trim_extra_indentation content in
-    let file = File.create ~content (Path.create_relative ~root ~relative) in
+    let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
     File.write file
   in
   List.iter (typeshed_stubs ()) ~f:(add_source ~root:external_root);
@@ -84,11 +85,11 @@ let type_check_sources_list_test context =
     [
       File.create
         ~content:(default_content ^ "\n" ^ (content |> trim_extra_indentation))
-        (Path.create_relative ~root ~relative:"test.py");
+        (PyrePath.create_relative ~root ~relative:"test.py");
     ]
   in
   let check _ =
-    let root = Path.current_working_directory () in
+    let root = PyrePath.current_working_directory () in
     let files = {|
         def foo() -> str:
           return 1
@@ -117,13 +118,16 @@ let test_filter_directories context =
     |}
     |> Test.trim_extra_indentation
   in
-  let root = Path.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
-  let check_path = Path.create_relative ~root ~relative:"check/a.py" in
-  let ignore_path = Path.create_relative ~root ~relative:"ignore/b.py" in
+  let root = PyrePath.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
+  let check_path = PyrePath.create_relative ~root ~relative:"check/a.py" in
+  let ignore_path = PyrePath.create_relative ~root ~relative:"ignore/b.py" in
   let files = [File.create ~content check_path; File.create ~content ignore_path] in
   assert_errors
     ~filter_directories:
-      [Path.create_relative ~root ~relative:"check"; Path.create_relative ~root ~relative:"ignore"]
+      [
+        PyrePath.create_relative ~root ~relative:"check";
+        PyrePath.create_relative ~root ~relative:"ignore";
+      ]
     ~root
     ~files
     [
@@ -131,14 +135,14 @@ let test_filter_directories context =
       "Incompatible return type [7]: Expected `C` but got `D`.";
     ];
 
-  let root = Path.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
-  let check_path = Path.create_relative ~root ~relative:"check/a.py" in
-  let ignore_path = Path.create_relative ~root ~relative:"ignore/b.py" in
+  let root = PyrePath.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
+  let check_path = PyrePath.create_relative ~root ~relative:"check/a.py" in
+  let ignore_path = PyrePath.create_relative ~root ~relative:"ignore/b.py" in
   let files = [File.create ~content check_path; File.create ~content ignore_path] in
   assert_errors
     ~root
-    ~filter_directories:[Path.create_relative ~root ~relative:"check"]
-    ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/search"]
+    ~filter_directories:[PyrePath.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[PyrePath.create_relative ~root ~relative:"check/search"]
     ~files
     ["Incompatible return type [7]: Expected `C` but got `D`."];
 
@@ -146,24 +150,24 @@ let test_filter_directories context =
    *  /root/check <- pyre is meant to analyze here
    *  /root/check/search <- this is added to the search path, handles are relative to here instead
    *                       of check. The practical case here is resource_cache/typeshed. *)
-  let root = Path.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
+  let root = PyrePath.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
   assert_errors
     ~root
-    ~search_paths:[SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
-    ~filter_directories:[Path.create_relative ~root ~relative:"check"]
-    ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/search"]
+    ~search_paths:[SearchPath.Root (PyrePath.create_relative ~root ~relative:"check/search")]
+    ~filter_directories:[PyrePath.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[PyrePath.create_relative ~root ~relative:"check/search"]
     ~files:
       [
-        File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
-        File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py");
+        File.create ~content (PyrePath.create_relative ~root ~relative:"check/file.py");
+        File.create ~content (PyrePath.create_relative ~root ~relative:"check/search/file.py");
       ]
     ["Incompatible return type [7]: Expected `C` but got `D`."];
-  let root = Path.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
+  let root = PyrePath.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
   assert_errors
     ~root
-    ~filter_directories:[Path.create_relative ~root ~relative:"check"]
-    ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/ignore"]
-    ~files:[File.create ~content (Path.create_relative ~root ~relative:"check/ignore/file.py")]
+    ~filter_directories:[PyrePath.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[PyrePath.create_relative ~root ~relative:"check/ignore"]
+    ~files:[File.create ~content (PyrePath.create_relative ~root ~relative:"check/ignore/file.py")]
     []
 
 

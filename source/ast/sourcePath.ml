@@ -68,7 +68,7 @@ let qualifier_of_relative relative =
 let create_from_search_path ~is_external ~search_paths ?extension path =
   SearchPath.search_for_path ~search_paths path
   >>= fun SearchPath.{ relative_path; priority } ->
-  let relative = Path.RelativePath.relative relative_path in
+  let relative = PyrePath.RelativePath.relative relative_path in
   let qualifier =
     match extension with
     | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
@@ -77,8 +77,8 @@ let create_from_search_path ~is_external ~search_paths ?extension path =
         qualifier_of_relative (relative ^ ".py")
     | _ -> qualifier_of_relative relative
   in
-  let is_stub = Path.is_path_python_stub relative in
-  let is_init = Path.is_path_python_init relative in
+  let is_stub = PyrePath.is_path_python_stub relative in
+  let is_init = PyrePath.is_path_python_init relative in
   Some { relative; qualifier; priority; is_stub; is_external; is_init }
 
 
@@ -86,9 +86,9 @@ let is_internal_path
     ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
     path
   =
-  let path = Path.follow_symbolic_link path |> Option.value ~default:path in
+  let path = PyrePath.follow_symbolic_link path |> Option.value ~default:path in
   let path_is_covered ~path item =
-    Path.equal item path || Path.directory_contains ~directory:item path
+    PyrePath.equal item path || PyrePath.directory_contains ~directory:item path
   in
   let filter_directories = Option.value filter_directories ~default:[] in
   let ignore_all_errors = Option.value ignore_all_errors ~default:[] in
@@ -104,7 +104,7 @@ let should_type_check
 
 
 let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
-  let absolute_path = Path.absolute path in
+  let absolute_path = PyrePath.absolute path in
   let create ?extension path =
     let search_paths = Configuration.Analysis.search_paths configuration in
     let is_external = not (should_type_check ~configuration path) in
@@ -124,8 +124,8 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
 
 let create_for_testing ~relative ~is_external ~priority =
   let qualifier = qualifier_of_relative relative in
-  let is_stub = Path.is_path_python_stub relative in
-  let is_init = Path.is_path_python_init relative in
+  let is_stub = PyrePath.is_path_python_stub relative in
+  let is_init = PyrePath.is_path_python_init relative in
   { relative; qualifier; priority; is_stub; is_external; is_init }
 
 
@@ -134,7 +134,7 @@ let full_path ~configuration { relative; priority; _ } =
     Configuration.Analysis.search_paths configuration
     |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
   in
-  Path.create_relative ~root ~relative
+  PyrePath.create_relative ~root ~relative
 
 
 (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module

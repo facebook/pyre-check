@@ -6,7 +6,6 @@
  *)
 
 open Core
-module Path = PyrePath
 
 module ExitStatus = struct
   type t =
@@ -102,7 +101,7 @@ module CheckConfiguration = struct
       ~excludes
       ~extensions
       ~incremental_style:Configuration.Analysis.Shallow
-      ~log_directory:(Path.absolute log_path)
+      ~log_directory:(PyrePath.absolute log_path)
       ~python_major_version:major
       ~python_minor_version:minor
       ~python_micro_version:micro

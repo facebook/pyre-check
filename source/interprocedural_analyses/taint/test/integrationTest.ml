@@ -7,13 +7,12 @@
 
 open Core
 open OUnit2
-open Pyre
 open Analysis
 open Interprocedural
 open TestHelper
 
 type mismatch_file = {
-  path: Path.t;
+  path: PyrePath.t;
   suffix: string;
   expected: string;
   actual: string;
@@ -24,23 +23,23 @@ let test_integration path context =
   let create_expected_and_actual_files ~suffix actual =
     let output_filename ~suffix ~initial =
       if initial then
-        Path.with_suffix path ~suffix
+        PyrePath.with_suffix path ~suffix
       else
-        Path.with_suffix path ~suffix:(suffix ^ ".actual")
+        PyrePath.with_suffix path ~suffix:(suffix ^ ".actual")
     in
     let write_output ~suffix ?(initial = false) content =
       try output_filename ~suffix ~initial |> File.create ~content |> File.write with
       | Unix.Unix_error _ ->
-          failwith (Format.asprintf "Could not write `%s` file for %a" suffix Path.pp path)
+          failwith (Format.asprintf "Could not write `%s` file for %a" suffix PyrePath.pp path)
     in
     let remove_old_output ~suffix =
-      try output_filename ~suffix ~initial:false |> Path.show |> Sys.remove with
+      try output_filename ~suffix ~initial:false |> PyrePath.show |> Sys.remove with
       | Sys_error _ ->
           (* be silent *)
           ()
     in
     let get_expected ~suffix =
-      try Path.with_suffix path ~suffix |> File.create |> File.content with
+      try PyrePath.with_suffix path ~suffix |> File.create |> File.content with
       | Unix.Unix_error _ -> None
     in
     match get_expected ~suffix with
@@ -62,7 +61,7 @@ let test_integration path context =
       (Format.asprintf
          "Expectations differ for %s %s\n%a"
          suffix
-         (Path.show path)
+         (PyrePath.show path)
          (Test.diff ~print:String.pp)
          (expected, actual))
   in
@@ -70,14 +69,14 @@ let test_integration path context =
     let source = File.create path |> File.content |> fun content -> Option.value_exn content in
     let model_source =
       try
-        let model_path = Path.with_suffix path ~suffix:".pysa" in
+        let model_path = PyrePath.with_suffix path ~suffix:".pysa" in
         File.create model_path |> File.content
       with
       | Unix.Unix_error _ -> None
     in
     let taint_configuration =
       try
-        let path = Path.with_suffix path ~suffix:".config" in
+        let path = PyrePath.with_suffix path ~suffix:".config" in
         File.create path
         |> File.content
         |> Option.map ~f:(fun content ->
@@ -86,7 +85,7 @@ let test_integration path context =
       with
       | Unix.Unix_error _ -> Taint.TaintConfiguration.default
     in
-    let handle = Path.show path |> String.split ~on:'/' |> List.last_exn in
+    let handle = PyrePath.show path |> String.split ~on:'/' |> List.last_exn in
     let create_call_graph_files call_graph =
       let dependencies = DependencyGraph.from_callgraph call_graph in
       let actual =
@@ -146,7 +145,7 @@ let test_integration path context =
   if not (List.is_empty divergent_files) then
     let message =
       List.map divergent_files ~f:(fun { path; suffix; _ } ->
-          Format.asprintf "%a%s" Path.pp path suffix)
+          Format.asprintf "%a%s" PyrePath.pp path suffix)
       |> String.concat ~sep:", "
       |> Format.sprintf "Found differences in %s."
     in
@@ -159,15 +158,15 @@ let test_paths =
     && (not (String.contains name '#'))
     && not (String.contains name '~')
   in
-  Path.current_working_directory ()
+  PyrePath.current_working_directory ()
   |> (fun path ->
-       Path.search_upwards ~target:"source" ~target_type:Path.FileType.Directory ~root:path
+       PyrePath.search_upwards ~target:"source" ~target_type:PyrePath.FileType.Directory ~root:path
        |> Option.value ~default:path)
   |> (fun root ->
-       Path.create_relative
+       PyrePath.create_relative
          ~root
          ~relative:"source/interprocedural_analyses/taint/test/integration/")
-  |> fun root -> Path.list ~file_filter ~root ()
+  |> fun root -> PyrePath.list ~file_filter ~root ()
 
 
 let test_paths_found _ =
@@ -177,6 +176,6 @@ let test_paths_found _ =
 
 let () =
   test_paths
-  |> List.map ~f:(fun path -> Path.last path, test_integration path)
+  |> List.map ~f:(fun path -> PyrePath.last path, test_integration path)
   |> List.cons ("paths_found", test_paths_found)
   |> TestHelper.run_with_taint_models ~name:"taint"

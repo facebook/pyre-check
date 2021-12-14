@@ -19,10 +19,10 @@ module ModelParser = struct
 end
 
 module DumpModelQueryResults : sig
-  val dump : path:Path.t -> models:Model.t Target.Map.t -> unit
+  val dump : path:PyrePath.t -> models:Model.t Target.Map.t -> unit
 end = struct
   let dump ~path ~models =
-    Log.warning "Emitting the model query results to `%s`" (Path.absolute path);
+    Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
     let content =
       let to_json (callable, model) =
         `Assoc

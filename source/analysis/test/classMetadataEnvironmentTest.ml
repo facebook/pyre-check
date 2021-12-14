@@ -163,7 +163,7 @@ let test_updates context =
         { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
         relative
       =
-      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+      PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
     in
     let add_file
         { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
@@ -171,7 +171,7 @@ let test_updates context =
         content
       =
       let content = trim_extra_indentation content in
-      let file = File.create ~content (Path.create_relative ~root:local_root ~relative) in
+      let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
       File.write file
     in
     List.iter original_sources ~f:(fun (path, _) -> delete_file project path);
@@ -181,7 +181,7 @@ let test_updates context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       let paths =
         List.map new_sources ~f:(fun (relative, _) ->
-            Path.create_relative ~root:local_root ~relative)
+            PyrePath.create_relative ~root:local_root ~relative)
       in
       ModuleTracker.update ~configuration ~paths module_tracker
       |> (fun updates -> AstEnvironment.Update updates)

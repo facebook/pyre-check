@@ -31,10 +31,10 @@ let test_compute_locally_changed_files context =
     let { Configuration.Analysis.local_root; _ } = configuration in
     let write_new_file { relative; new_content; _ } =
       (* Write new content to the file system if necessary. *)
-      let path = Path.create_relative ~root:local_root ~relative in
+      let path = PyrePath.create_relative ~root:local_root ~relative in
       match new_content with
       | Some content -> File.write (File.create ~content path)
-      | None -> Sys.remove (Path.absolute path)
+      | None -> Sys.remove (PyrePath.absolute path)
     in
     List.iter files ~f:write_new_file;
     let actual =
@@ -43,7 +43,7 @@ let test_compute_locally_changed_files context =
         ~configuration
         ~module_tracker
         ~ast_environment:(Analysis.AstEnvironment.read_only ast_environment)
-      |> List.filter_map ~f:(fun path -> Path.get_relative_to_root ~root:local_root ~path)
+      |> List.filter_map ~f:(fun path -> PyrePath.get_relative_to_root ~root:local_root ~path)
     in
     assert_equal
       ~printer:(List.to_string ~f:ident)

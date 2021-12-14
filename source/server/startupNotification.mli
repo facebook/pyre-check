@@ -12,8 +12,8 @@
 (* Write to a file under `log_path` that can be later read by `consume`. *)
 (* If this API is invoked multiple times for the same log path, later invocations would overwrite
    the contents for earlier invocations. *)
-val produce : log_path:Pyre.Path.t -> string -> unit
+val produce : log_path:PyrePath.t -> string -> unit
 
 (* If there's a file under `log_path` that's been written by `produce` before, return the content
    and remove the file. *)
-val consume : log_path:Pyre.Path.t -> unit -> string option
+val consume : log_path:PyrePath.t -> unit -> string option

@@ -1284,14 +1284,14 @@ let test_update_and_compute_dependencies context =
         ~relative
       =
       let content = trim_extra_indentation content in
-      let file = File.create ~content (Path.create_relative ~root:local_root ~relative) in
+      let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
       File.write file
     in
     let delete_file
         { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
         relative
       =
-      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+      PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
     in
     let dependents =
       delete_file project "source.py";
@@ -1300,7 +1300,7 @@ let test_update_and_compute_dependencies context =
       let _, update_result =
         let { ScratchProject.configuration; _ } = project in
         let { Configuration.Analysis.local_root; _ } = configuration in
-        let path = Path.create_relative ~root:local_root ~relative:"source.py" in
+        let path = PyrePath.create_relative ~root:local_root ~relative:"source.py" in
         let ast_environment = AnnotatedGlobalEnvironment.ast_environment environment in
         let module_tracker = AstEnvironment.module_tracker ast_environment in
         ModuleTracker.update ~configuration ~paths:[path] module_tracker

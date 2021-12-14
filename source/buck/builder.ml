@@ -6,7 +6,6 @@
  *)
 
 open Base
-module Path = Pyre.Path
 
 exception JsonError of string
 
@@ -39,8 +38,8 @@ end
 
 type t = {
   buck_options: BuckOptions.t;
-  source_root: Path.t;
-  artifact_root: Path.t;
+  source_root: PyrePath.t;
+  artifact_root: PyrePath.t;
 }
 
 let create ?mode ?isolation_prefix ~source_root ~artifact_root raw =
@@ -102,7 +101,7 @@ let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_p
                    dependencies of our targets. *)
                 Format.sprintf "owner(%%s) ^ deps(set(%s))" target_string;
               ];
-              List.map source_paths ~f:Path.show;
+              List.map source_paths ~f:PyrePath.show;
               (* These attributes are all we need to locate the source and artifact relative paths. *)
               ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
             ]
@@ -176,7 +175,7 @@ let load_partial_build_map_from_json json =
 
 let load_partial_build_map path =
   let open Lwt.Infix in
-  let path = Path.absolute path in
+  let path = PyrePath.absolute path in
   Lwt_io.(with_file ~mode:Input path read)
   >>= fun content ->
   try
@@ -221,7 +220,7 @@ let build_source_databases buck_options targets =
   parse_buck_build_output build_output
   |> List.map ~f:(fun (target, path) ->
          ( String.drop_suffix target source_database_suffix_length |> Target.of_string,
-           Path.create_absolute path ))
+           PyrePath.create_absolute path ))
   |> Lwt.return
 
 
@@ -338,7 +337,7 @@ let update_artifacts ~source_root ~artifact_root difference =
   >>= function
   | Result.Error message -> raise (LinkTreeConstructionError message)
   | Result.Ok () ->
-      let to_artifact_path (relative, _) = Path.create_relative ~root:artifact_root ~relative in
+      let to_artifact_path (relative, _) = PyrePath.create_relative ~root:artifact_root ~relative in
       BuildMap.Difference.to_alist difference |> List.map ~f:to_artifact_path |> Lwt.return
 
 
@@ -448,7 +447,7 @@ let parse_buck_changed_targets_query_output query_output =
       raise (JsonError message)
 
 
-let to_relative_path ~root path = Path.get_relative_to_root ~root ~path
+let to_relative_path ~root path = PyrePath.get_relative_to_root ~root ~path
 
 let to_relative_paths ~root paths = List.filter_map paths ~f:(to_relative_path ~root)
 
@@ -570,7 +569,7 @@ let incremental_build_with_unchanged_build_map
   let changed_artifacts =
     to_relative_paths ~root:source_root changed_sources
     |> List.concat_map ~f:(BuildMap.Indexed.lookup_artifact build_map_index)
-    |> List.map ~f:(fun relative -> Path.create_relative ~root:artifact_root ~relative)
+    |> List.map ~f:(fun relative -> PyrePath.create_relative ~root:artifact_root ~relative)
   in
   Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
 
@@ -580,7 +579,7 @@ let do_lookup_source ~index ~source_root ~artifact_root path =
   | None -> None
   | Some relative_artifact_path ->
       BuildMap.Indexed.lookup_source index relative_artifact_path
-      |> Option.map ~f:(fun relative -> Path.create_relative ~root:source_root ~relative)
+      |> Option.map ~f:(fun relative -> PyrePath.create_relative ~root:source_root ~relative)
 
 
 let lookup_source ~index ~builder:{ source_root; artifact_root; _ } path =
@@ -592,7 +591,7 @@ let do_lookup_artifact ~index ~source_root ~artifact_root path =
   | None -> []
   | Some relative_source_path ->
       BuildMap.Indexed.lookup_artifact index relative_source_path
-      |> List.map ~f:(fun relative -> Path.create_relative ~root:artifact_root ~relative)
+      |> List.map ~f:(fun relative -> PyrePath.create_relative ~root:artifact_root ~relative)
 
 
 let lookup_artifact ~index ~builder:{ source_root; artifact_root; _ } path =
@@ -600,6 +599,6 @@ let lookup_artifact ~index ~builder:{ source_root; artifact_root; _ } path =
 
 
 let cleanup { artifact_root; _ } =
-  match Path.remove_contents_of_directory artifact_root with
+  match PyrePath.remove_contents_of_directory artifact_root with
   | Result.Error message -> Log.warning "Encountered error during buck builder cleanup: %s" message
   | Result.Ok () -> ()

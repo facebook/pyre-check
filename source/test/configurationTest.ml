@@ -7,15 +7,14 @@
 
 open Core
 open OUnit2
-open Pyre
 
 let test_search_path _ =
   let assert_search_paths ?(search_paths = []) ~source_paths expected =
     let search_paths =
-      List.map search_paths ~f:Path.create_absolute
+      List.map search_paths ~f:PyrePath.create_absolute
       |> List.map ~f:(fun root -> SearchPath.Root root)
     in
-    let source_paths = List.map source_paths ~f:Path.create_absolute in
+    let source_paths = List.map source_paths ~f:PyrePath.create_absolute in
     let to_search_path root = SearchPath.Root root in
     let search_paths =
       Configuration.Analysis.search_paths

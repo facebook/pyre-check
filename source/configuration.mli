@@ -5,17 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Pyre
-
 module Buck : sig
   type t = {
     mode: string option;
     isolation_prefix: string option;
     targets: string list;
     (* This is the buck root of the source directory, i.e. output of `buck root`. *)
-    source_root: Path.t;
+    source_root: PyrePath.t;
     (* This is the root of directory where built artifacts will be placed. *)
-    artifact_root: Path.t;
+    artifact_root: PyrePath.t;
   }
   [@@deriving sexp, compare, hash, yojson]
 end
@@ -85,22 +83,22 @@ module Analysis : sig
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
-    filter_directories: Path.t list option;
-    ignore_all_errors: Path.t list option;
+    filter_directories: PyrePath.t list option;
+    ignore_all_errors: PyrePath.t list option;
     number_of_workers: int;
-    local_root: Path.t;
+    local_root: PyrePath.t;
     debug: bool;
-    project_root: Path.t;
+    project_root: PyrePath.t;
     source_paths: SearchPath.t list;
     search_paths: SearchPath.t list;
-    taint_model_paths: Path.t list;
+    taint_model_paths: PyrePath.t list;
     strict: bool;
     show_error_traces: bool;
     excludes: Str.regexp list;
     extensions: Extension.t list;
     store_type_check_resolution: bool;
     incremental_style: incremental_style;
-    log_directory: Path.t;
+    log_directory: PyrePath.t;
     python_major_version: int;
     python_minor_version: int;
     python_micro_version: int;
@@ -112,13 +110,13 @@ module Analysis : sig
   val create
     :  ?parallel:bool ->
     ?analyze_external_sources:bool ->
-    ?filter_directories:Path.t list ->
-    ?ignore_all_errors:Path.t list ->
+    ?filter_directories:PyrePath.t list ->
+    ?ignore_all_errors:PyrePath.t list ->
     ?number_of_workers:int ->
-    ?local_root:Path.t ->
-    ?project_root:Path.t ->
+    ?local_root:PyrePath.t ->
+    ?project_root:PyrePath.t ->
     ?search_paths:SearchPath.t list ->
-    ?taint_model_paths:Path.t list ->
+    ?taint_model_paths:PyrePath.t list ->
     ?strict:bool ->
     ?debug:bool ->
     ?show_error_traces:bool ->
@@ -138,19 +136,19 @@ module Analysis : sig
     unit ->
     t
 
-  val log_directory : t -> Path.t
+  val log_directory : t -> PyrePath.t
 
   val search_paths : t -> SearchPath.t list
 
   val extension_suffixes : t -> string list
 
-  val find_extension : t -> Path.t -> Extension.t option
+  val find_extension : t -> PyrePath.t -> Extension.t option
 end
 
 module Server : sig
   type load_parameters = {
-    shared_memory_path: Path.t;
-    changed_files_path: Path.t option;
+    shared_memory_path: PyrePath.t;
+    changed_files_path: PyrePath.t option;
   }
 
   type load =
@@ -165,9 +163,9 @@ module Server : sig
     | Load of load
 
   type socket_path = {
-    path: Path.t;
+    path: PyrePath.t;
     (* actual path to socket (OCaml has limits on socket path length) *)
-    link: Path.t; (* symbolic link to path in pyre directory *)
+    link: PyrePath.t; (* symbolic link to path in pyre directory *)
   }
 
   type t = {
@@ -175,9 +173,9 @@ module Server : sig
     socket: socket_path;
     json_socket: socket_path;
     adapter_socket: socket_path;
-    lock_path: Path.t;
-    pid_path: Path.t;
-    log_path: Path.t;
+    lock_path: PyrePath.t;
+    pid_path: PyrePath.t;
+    log_path: PyrePath.t;
     daemonize: bool;
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
@@ -192,14 +190,14 @@ end
 module StaticAnalysis : sig
   type t = {
     (* A directory to write files in. *)
-    result_json_path: Path.t option;
-    dump_call_graph: Path.t option;
+    result_json_path: PyrePath.t option;
+    dump_call_graph: PyrePath.t option;
     verify_models: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
     find_missing_flows: string option;
-    dump_model_query_results: Path.t option;
+    dump_model_query_results: PyrePath.t option;
     use_cache: bool;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;

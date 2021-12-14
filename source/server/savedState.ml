@@ -7,14 +7,13 @@
 
 open Core
 open Lwt.Infix
-module Path = Pyre.Path
 
 module Queried = struct
   type t = {
     bucket: string;
     path: string;
-    target: Path.t;
-    changed_files: Path.t list;
+    target: PyrePath.t;
+    changed_files: PyrePath.t list;
     (* For informational purpose only *)
     commit_id: string option;
   }
@@ -23,21 +22,21 @@ end
 
 module Fetched = struct
   type t = {
-    path: Path.t;
-    changed_files: Path.t list;
+    path: PyrePath.t;
+    changed_files: PyrePath.t list;
   }
   [@@deriving sexp, compare]
 end
 
 module Setting = struct
   type t = {
-    watchman_root: Path.t;
+    watchman_root: PyrePath.t;
     watchman_filter: Watchman.Filter.t;
     watchman_connection: Watchman.Raw.Connection.t;
     project_name: string;
     project_metadata: string option;
     critical_files: CriticalFile.t list;
-    target: Path.t;
+    target: PyrePath.t;
   }
 end
 
@@ -61,12 +60,15 @@ let query_exn
     | Some { Watchman.SinceQuery.Response.SavedState.bucket; path; commit_id } -> (
         let changed_files =
           List.map relative_paths ~f:(fun relative ->
-              Path.create_relative ~root:watchman_root ~relative)
+              PyrePath.create_relative ~root:watchman_root ~relative)
         in
         match CriticalFile.find critical_files ~within:changed_files with
         | Some critical_file ->
             let message =
-              Format.asprintf "Watchman detects changes in critical file `%a`" Path.pp critical_file
+              Format.asprintf
+                "Watchman detects changes in critical file `%a`"
+                PyrePath.pp
+                critical_file
             in
             raise (SavedStateQueryFailure message)
         | None -> { Queried.bucket; path; changed_files; target; commit_id })

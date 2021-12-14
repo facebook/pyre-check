@@ -2933,10 +2933,10 @@ let get_model_sources ~paths =
     | Some content -> Some (File.path file, content)
     | None -> None
   in
-  let model_files = Path.get_matching_files_recursively ~suffix:".pysa" ~paths in
+  let model_files = PyrePath.get_matching_files_recursively ~suffix:".pysa" ~paths in
   Log.info
     "Finding taint models in `%s`."
-    (paths |> List.map ~f:Path.show |> String.concat ~sep:", ");
+    (paths |> List.map ~f:PyrePath.show |> String.concat ~sep:", ");
   model_files |> List.map ~f:File.create |> List.filter_map ~f:path_and_content
 
 
@@ -3074,7 +3074,7 @@ exception InvalidModel of string
 let verify_model_syntax ~path ~source =
   try String.split ~on:'\n' source |> Parser.parse |> ignore with
   | exn ->
-      Log.error "Unable to parse model at `%s`: %s" (Path.show path) (Exn.to_string exn);
+      Log.error "Unable to parse model at `%s`: %s" (PyrePath.show path) (Exn.to_string exn);
       raise
         (InvalidModel
-           (Format.sprintf "Invalid model at `%s`: %s" (Path.show path) (Exn.to_string exn)))
+           (Format.sprintf "Invalid model at `%s`: %s" (PyrePath.show path) (Exn.to_string exn)))

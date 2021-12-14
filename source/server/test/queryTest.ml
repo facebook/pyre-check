@@ -10,7 +10,6 @@ open Core
 open Ast
 open Server
 open ServerTest
-module Path = PyrePath
 
 let test_parse_query context =
   let assert_parses serialized query =
@@ -90,7 +89,7 @@ let test_parse_query context =
   assert_fails_to_parse "types('a.py', 1, 2)";
   assert_parses "attributes(C)" (Attributes !&"C");
   assert_fails_to_parse "attributes(C, D)";
-  assert_parses "save_server_state('state')" (SaveServerState (Path.create_absolute "state"));
+  assert_parses "save_server_state('state')" (SaveServerState (PyrePath.create_absolute "state"));
   assert_fails_to_parse "save_server_state(state)";
   assert_parses "path_of_module(a.b.c)" (PathOfModule !&"a.b.c");
   assert_fails_to_parse "path_of_module('a.b.c')";
@@ -355,7 +354,8 @@ let test_handle_query_basic context =
     ~query:"path_of_module(test)"
     (fun local_root ->
       Single
-        (Base.FoundPath (Path.create_relative ~root:local_root ~relative:"test.py" |> Path.absolute)))
+        (Base.FoundPath
+           (PyrePath.create_relative ~root:local_root ~relative:"test.py" |> PyrePath.absolute)))
   >>= fun () ->
   assert_type_query_response_with_local_root
     ~handle:"test.pyi"
@@ -363,7 +363,8 @@ let test_handle_query_basic context =
     ~query:"path_of_module(test)"
     (fun local_root ->
       Single
-        (Base.FoundPath (Path.create_relative ~root:local_root ~relative:"test.pyi" |> Path.absolute)))
+        (Base.FoundPath
+           (PyrePath.create_relative ~root:local_root ~relative:"test.pyi" |> PyrePath.absolute)))
   >>= fun () ->
   assert_type_query_response
     ~source:"a = 2"
@@ -901,12 +902,12 @@ let test_handle_query_basic context =
 
 let test_handle_types_query_with_build_system context =
   let custom_source_root =
-    bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
   let build_system_initializer =
     let initialize () =
       let lookup_artifact _ =
-        [Path.create_relative ~root:custom_source_root ~relative:"redirected.py"]
+        [PyrePath.create_relative ~root:custom_source_root ~relative:"redirected.py"]
       in
       Lwt.return (BuildSystem.create_for_testing ~lookup_artifact ())
     in

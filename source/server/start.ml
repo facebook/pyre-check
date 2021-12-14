@@ -6,7 +6,6 @@
  *)
 
 open Core
-module Path = Pyre.Path
 
 module ServerEvent = struct
   module ErrorKind = struct
@@ -20,7 +19,7 @@ module ServerEvent = struct
   end
 
   type t =
-    | SocketCreated of Path.t
+    | SocketCreated of PyrePath.t
     | ServerInitialized
     | Exception of string * ErrorKind.t
   [@@deriving sexp, compare, hash, to_yojson]
@@ -257,7 +256,7 @@ let initialize_server_state
         >>| File.create
         >>= File.content
         >>| String.split_lines
-        >>| List.map ~f:Path.create_absolute
+        >>| List.map ~f:PyrePath.create_absolute
         |> Option.value ~default:[]
       in
       Lwt.return (Result.Ok { SavedState.Fetched.path = shared_memory_path; changed_files })
@@ -293,7 +292,7 @@ let initialize_server_state
             in
             Watchman.Raw.with_connection raw ~f:(fun watchman_connection ->
                 let target =
-                  Path.create_relative ~root:log_directory ~relative:"new_server/server.state"
+                  PyrePath.create_relative ~root:log_directory ~relative:"new_server/server.state"
                 in
                 SavedState.query_and_fetch_exn
                   {
@@ -367,7 +366,7 @@ let initialize_server_state
     && list_length_equal left_extensions right_extensions
   in
   let load_from_shared_memory path =
-    try Result.Ok (Memory.load_shared_memory ~path:(Path.absolute path) ~configuration) with
+    try Result.Ok (Memory.load_shared_memory ~path:(PyrePath.absolute path) ~configuration) with
     | Memory.SavedStateLoadingFailure message -> Result.Error message
   in
   let load_from_saved_state ~build_system_initializer = function
@@ -409,7 +408,7 @@ let initialize_server_state
                 let loaded_state = ServerState.load ~build_system () in
                 Log.info "Processing recent updates not included in saved state...";
                 Statistics.event ~name:"saved state success" ();
-                Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
+                Request.IncrementalUpdate (List.map changed_files ~f:PyrePath.absolute)
                 |> RequestHandler.process_request ~properties:server_properties ~state:loaded_state
                 >>= fun (new_state, _) -> Lwt.return new_state))
   in
@@ -445,7 +444,7 @@ let initialize_server_state
     match saved_state_action with
     | Some (SavedStateAction.SaveToFile { shared_memory_path }) ->
         ServerState.store ~path:shared_memory_path ~configuration state;
-        Log.info "Initial server state written to %a" Path.pp shared_memory_path
+        Log.info "Initial server state written to %a" PyrePath.pp shared_memory_path
     | _ -> ()
   in
   let build_system_initializer =
@@ -491,7 +490,7 @@ let get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions
 
 let on_watchman_update ~server_properties ~server_state paths =
   let open Lwt.Infix in
-  let update_request = Request.IncrementalUpdate (List.map paths ~f:Path.absolute) in
+  let update_request = Request.IncrementalUpdate (List.map paths ~f:PyrePath.absolute) in
   ExclusiveLock.write server_state ~f:(fun state ->
       handle_request ~properties:server_properties ~state update_request
       >>= fun (new_state, _ok_response) ->
@@ -542,7 +541,7 @@ let with_server
   in
   finalize
     (fun () ->
-      Log.info "Server has started listening on socket `%a`" Path.pp socket_path;
+      Log.info "Server has started listening on socket `%a`" PyrePath.pp socket_path;
       match watchman_subscriber with
       | None ->
           (* Only wait for the server if we do not have a watchman subscriber. *)

@@ -9,7 +9,6 @@ open Core
 open OUnit2
 open Lwt.Infix
 open Server
-module Path = Pyre.Path
 
 let test_configuration_parsing context =
   let assert_parsed ~expected json_string =
@@ -48,7 +47,7 @@ let test_configuration_parsing context =
     |}
     ~expected:
       (SavedStateAction.LoadFromFile
-         { shared_memory_path = Path.create_absolute "/some/path"; changed_files_path = None });
+         { shared_memory_path = PyrePath.create_absolute "/some/path"; changed_files_path = None });
   assert_parsed
     {|
       [
@@ -62,8 +61,8 @@ let test_configuration_parsing context =
     ~expected:
       (SavedStateAction.LoadFromFile
          {
-           shared_memory_path = Path.create_absolute "/some/path";
-           changed_files_path = Some (Path.create_absolute "/some/other/path");
+           shared_memory_path = PyrePath.create_absolute "/some/path";
+           changed_files_path = Some (PyrePath.create_absolute "/some/other/path");
          });
   assert_parsed
     {|
@@ -75,7 +74,7 @@ let test_configuration_parsing context =
       ]
     |}
     ~expected:
-      (SavedStateAction.SaveToFile { shared_memory_path = Path.create_absolute "/some/path" });
+      (SavedStateAction.SaveToFile { shared_memory_path = PyrePath.create_absolute "/some/path" });
   assert_parsed
     {|
       [
@@ -104,8 +103,8 @@ let test_configuration_parsing context =
 
 
 let test_query context =
-  let watchman_root = Path.create_absolute "/fake/root" in
-  let target = Path.create_absolute "/fake/target" in
+  let watchman_root = PyrePath.create_absolute "/fake/root" in
+  let target = PyrePath.create_absolute "/fake/target" in
   let critical_files = [CriticalFile.BaseName ".pyre_configuration"] in
   let watchman_filter =
     { Watchman.Filter.base_names = [".pyre_configuration"]; suffixes = [".py"] }
@@ -182,7 +181,7 @@ let test_query context =
       (`List
         [
           `String "query";
-          `String (Path.absolute watchman_root);
+          `String (PyrePath.absolute watchman_root);
           `Assoc
             [
               "expression", Watchman.Filter.watchman_expression_of watchman_filter;
@@ -222,8 +221,8 @@ let test_query context =
            target;
            changed_files =
              [
-               Path.create_relative ~root:watchman_root ~relative:"a.py";
-               Path.create_relative ~root:watchman_root ~relative:"subdirectory/b.py";
+               PyrePath.create_relative ~root:watchman_root ~relative:"a.py";
+               PyrePath.create_relative ~root:watchman_root ~relative:"subdirectory/b.py";
              ];
            commit_id = None;
          })

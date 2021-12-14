@@ -7,7 +7,6 @@
 
 open Core
 open OUnit2
-module Path = Pyre.Path
 module BaseConfiguration = Commands.BaseConfiguration
 
 let dummy_base_json =
@@ -21,14 +20,14 @@ let dummy_base_json =
 let dummy_base_configuration =
   {
     BaseConfiguration.source_paths =
-      Configuration.SourcePaths.Simple [SearchPath.Root (Path.create_absolute "/source")];
+      Configuration.SourcePaths.Simple [SearchPath.Root (PyrePath.create_absolute "/source")];
     search_paths = [];
     excludes = [];
     checked_directory_allowlist = [];
     checked_directory_blocklist = [];
     extensions = [];
-    log_path = Path.create_absolute "/log";
-    global_root = Path.create_absolute "/project";
+    log_path = PyrePath.create_absolute "/log";
+    global_root = PyrePath.create_absolute "/project";
     local_root = None;
     debug = false;
     enable_type_comments = true;
@@ -119,8 +118,8 @@ let test_json_parsing context =
               Configuration.Buck.targets = ["//my:target"];
               mode = Some "@mode/opt";
               isolation_prefix = Some "prefix";
-              source_root = Path.create_absolute "/buck/root";
-              artifact_root = Path.create_absolute "/build/root";
+              source_root = PyrePath.create_absolute "/buck/root";
+              artifact_root = PyrePath.create_absolute "/build/root";
             };
       };
 
@@ -140,10 +139,10 @@ let test_json_parsing context =
     ~expected:
       {
         dummy_base_configuration with
-        local_root = Some (Path.create_absolute "/project/local");
+        local_root = Some (PyrePath.create_absolute "/project/local");
         excludes = ["/excludes"];
-        checked_directory_allowlist = [Path.create_absolute "/allows"];
-        checked_directory_blocklist = [Path.create_absolute "/blocks"];
+        checked_directory_allowlist = [PyrePath.create_absolute "/allows"];
+        checked_directory_blocklist = [PyrePath.create_absolute "/blocks"];
         extensions =
           [
             { Configuration.Extension.suffix = ".typsy"; include_suffix_in_module_qualifier = false };

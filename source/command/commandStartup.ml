@@ -6,7 +6,6 @@
  *)
 
 open Core
-module Path = PyrePath
 
 (* These configurations are essential in setting up global states and triggering full type checking. *)
 module BaseConfiguration = struct
@@ -15,13 +14,13 @@ module BaseConfiguration = struct
     source_paths: Configuration.SourcePaths.t;
     search_paths: SearchPath.t list;
     excludes: string list;
-    checked_directory_allowlist: Path.t list;
-    checked_directory_blocklist: Path.t list;
+    checked_directory_allowlist: PyrePath.t list;
+    checked_directory_blocklist: PyrePath.t list;
     extensions: Configuration.Extension.t list;
     (* Auxiliary paths *)
-    log_path: Path.t;
-    global_root: Path.t;
-    local_root: Path.t option;
+    log_path: PyrePath.t;
+    global_root: PyrePath.t;
+    local_root: PyrePath.t option;
     (* Type checking controls *)
     debug: bool;
     enable_type_comments: bool;

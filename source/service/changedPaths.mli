@@ -5,11 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Pyre
-
 val compute_locally_changed_paths
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   module_tracker:Analysis.ModuleTracker.t ->
   ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
-  Path.t list
+  PyrePath.t list

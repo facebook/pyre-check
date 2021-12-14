@@ -6,7 +6,6 @@
  *)
 
 open Base
-module Path = Pyre.Path
 
 module Partial = struct
   type t = string Hashtbl.M(String).t [@@deriving sexp]

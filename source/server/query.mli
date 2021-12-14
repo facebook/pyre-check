@@ -6,7 +6,6 @@
  *)
 
 open Ast
-open Pyre
 
 module Request : sig
   type t =
@@ -20,7 +19,7 @@ module Request : sig
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | PathOfModule of Reference.t
-    | SaveServerState of Path.t
+    | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
     | Type of Expression.t
     | TypesInFiles of string list

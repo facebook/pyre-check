@@ -143,7 +143,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       }
   in
   let error_message =
-    let path = path >>| Path.create_absolute in
+    let path = path >>| PyrePath.create_absolute in
     ModelParser.parse
       ~resolution
       ~configuration

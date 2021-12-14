@@ -75,21 +75,21 @@ end = struct
   let is_initialized = ref false
 
   let get_save_directory ~configuration =
-    Path.create_relative
+    PyrePath.create_relative
       ~root:(Configuration.Analysis.log_directory configuration)
       ~relative:".pysa_cache"
 
 
   let get_shared_memory_save_path ~configuration =
-    Path.append (get_save_directory ~configuration) ~element:"sharedmem"
+    PyrePath.append (get_save_directory ~configuration) ~element:"sharedmem"
 
 
   let get_overrides_save_path ~configuration =
-    Path.append (get_save_directory ~configuration) ~element:"overrides"
+    PyrePath.append (get_save_directory ~configuration) ~element:"overrides"
 
 
   let get_callgraph_save_path ~configuration =
-    Path.append (get_save_directory ~configuration) ~element:"callgraph"
+    PyrePath.append (get_save_directory ~configuration) ~element:"callgraph"
 
 
   let invalidate_cache ~configuration =
@@ -102,16 +102,16 @@ end = struct
           ()
     in
     Memory.reset_shared_memory ();
-    List.iter ~f:Path.remove (Path.list ~root:directory ());
-    remove_if_exists (Path.absolute directory)
+    List.iter ~f:PyrePath.remove (PyrePath.list ~root:directory ());
+    remove_if_exists (PyrePath.absolute directory)
 
 
-  let is_pysa_model path = String.is_suffix ~suffix:".pysa" (Path.get_suffix_path path)
+  let is_pysa_model path = String.is_suffix ~suffix:".pysa" (PyrePath.get_suffix_path path)
 
-  let is_taint_config path = String.is_suffix ~suffix:"taint.config" (Path.absolute path)
+  let is_taint_config path = String.is_suffix ~suffix:"taint.config" (PyrePath.absolute path)
 
   let ensure_save_directory_exists ~configuration =
-    let directory = Path.absolute (get_save_directory ~configuration) in
+    let directory = PyrePath.absolute (get_save_directory ~configuration) in
     try Core.Unix.mkdir directory with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
     | Core.Unix.Unix_error ((EEXIST | EISDIR), _, _) -> ()
@@ -123,12 +123,12 @@ end = struct
       let path = get_shared_memory_save_path ~configuration in
       try
         let _ = Memory.get_heap_handle configuration in
-        Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
+        Memory.load_shared_memory ~path:(PyrePath.absolute path) ~configuration;
         is_initialized := true;
         Log.warning
           "Loaded cached state. Please try deleting the cache folder at %s and running Pysa again \
            if unexpected results occur."
-          (Path.absolute (get_save_directory ~configuration))
+          (PyrePath.absolute (get_save_directory ~configuration))
       with
       | error ->
           is_initialized := false;
@@ -140,10 +140,10 @@ end = struct
     try
       Log.info "Saving shared memory state to cache file...";
       ensure_save_directory_exists ~configuration;
-      Memory.save_shared_memory ~path:(Path.absolute path) ~configuration;
-      Log.info "Saved shared memory state to cache file: %s" (Path.absolute path)
+      Memory.save_shared_memory ~path:(PyrePath.absolute path) ~configuration;
+      Log.info "Saved shared memory state to cache file: %s" (PyrePath.absolute path)
     with
-    | error when not (Path.file_exists path) ->
+    | error when not (PyrePath.file_exists path) ->
         Log.error "Error saving cached state to file: %s" (Exn.to_string error)
     | _ -> ()
 
@@ -177,7 +177,7 @@ end = struct
           invalidate_cache ~configuration;
           None
     with
-    | error when Path.file_exists path ->
+    | error when PyrePath.file_exists path ->
         Log.error
           "Error loading cached type environment from shared memory: %s"
           (Exn.to_string error);
@@ -198,7 +198,7 @@ end = struct
       Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
       Log.info "Saved type environment to cache shared memory."
     with
-    | error when not (Path.file_exists path) ->
+    | error when not (PyrePath.file_exists path) ->
         Log.error "Error saving type environment to cache shared memory: %s" (Exn.to_string error)
     | _ -> ()
 
@@ -210,7 +210,7 @@ end = struct
       Log.info "Loaded initial callables from cache shared memory.";
       Some initial_callables
     with
-    | error when Path.file_exists path ->
+    | error when PyrePath.file_exists path ->
         Log.error
           "Error loading cached initial callables from shared memory: %s"
           (Exn.to_string error);
@@ -229,7 +229,7 @@ end = struct
          sexps to separate files. *)
       save_shared_memory ~configuration
     with
-    | error when not (Path.file_exists path) ->
+    | error when not (PyrePath.file_exists path) ->
         Log.error "Error saving initial callables to cache shared memory: %s" (Exn.to_string error)
     | _ -> ()
 
@@ -237,12 +237,12 @@ end = struct
   let load_overrides ~configuration =
     let path = get_overrides_save_path ~configuration in
     try
-      let sexp = Sexplib.Sexp.load_sexp (Path.absolute path) in
+      let sexp = Sexplib.Sexp.load_sexp (PyrePath.absolute path) in
       let overrides = Reference.Map.t_of_sexp (Core.List.t_of_sexp Reference.t_of_sexp) sexp in
       Log.info "Loaded overrides from cache.";
       Some overrides
     with
-    | error when Path.file_exists path ->
+    | error when PyrePath.file_exists path ->
         Log.error "Error loading overrides from cache: %s" (Exn.to_string error);
         None
     | _ -> None
@@ -253,10 +253,10 @@ end = struct
     try
       let data = Reference.Map.sexp_of_t (Core.List.sexp_of_t Reference.sexp_of_t) overrides in
       ensure_save_directory_exists ~configuration;
-      Sexplib.Sexp.save (Path.absolute path) data;
-      Log.info "Saved overrides to cache file: %s" (Path.absolute path)
+      Sexplib.Sexp.save (PyrePath.absolute path) data;
+      Log.info "Saved overrides to cache file: %s" (PyrePath.absolute path)
     with
-    | error when not (Path.file_exists path) ->
+    | error when not (PyrePath.file_exists path) ->
         Log.error "Error saving overrides to cache: %s" (Exn.to_string error)
     | _ -> ()
 
@@ -264,12 +264,12 @@ end = struct
   let load_call_graph ~configuration =
     let path = get_callgraph_save_path ~configuration in
     try
-      let sexp = Sexplib.Sexp.load_sexp (Path.absolute path) in
+      let sexp = Sexplib.Sexp.load_sexp (PyrePath.absolute path) in
       let callgraph = Target.CallableMap.t_of_sexp (Core.List.t_of_sexp Target.t_of_sexp) sexp in
       Log.info "Loaded call graph from cache.";
       Some callgraph
     with
-    | error when Path.file_exists path ->
+    | error when PyrePath.file_exists path ->
         Log.error "Error loading call graph from cache: %s" (Exn.to_string error);
         None
     | _ -> None
@@ -280,10 +280,10 @@ end = struct
     try
       let data = Target.CallableMap.sexp_of_t (Core.List.sexp_of_t Target.sexp_of_t) callgraph in
       ensure_save_directory_exists ~configuration;
-      Sexplib.Sexp.save (Path.absolute path) data;
-      Log.info "Saved call graph to cache file: %s" (Path.absolute path)
+      Sexplib.Sexp.save (PyrePath.absolute path) data;
+      Log.info "Saved call graph to cache file: %s" (PyrePath.absolute path)
     with
-    | error when not (Path.file_exists path) ->
+    | error when not (PyrePath.file_exists path) ->
         Log.error "Error saving call graph to cache: %s" (Exn.to_string error)
     | _ -> ()
 end

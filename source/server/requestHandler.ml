@@ -8,7 +8,6 @@
 open Core
 open Ast
 open Analysis
-module Path = Pyre.Path
 
 let module_of_path ~configuration ~module_tracker path =
   match ModuleTracker.lookup_path ~configuration module_tracker path with
@@ -30,7 +29,7 @@ let instantiate_path ~build_system ~configuration ~ast_environment qualifier =
                by Buck. *)
             artifact_path
       in
-      Some (Path.absolute path)
+      Some (PyrePath.absolute path)
 
 
 let instantiate_error
@@ -59,7 +58,7 @@ let process_display_type_error_request
     | [] -> Hashtbl.keys error_table
     | _ ->
         let get_module_for_source_path path =
-          let path = Path.create_absolute path in
+          let path = PyrePath.create_absolute path in
           match BuildSystem.lookup_artifact build_system path with
           | [] -> None
           | artifact_path :: _ ->
@@ -108,9 +107,9 @@ let create_info_response
     {
       version = Version.version ();
       pid = Unix.getpid () |> Pid.to_int;
-      socket = Pyre.Path.absolute socket_path;
-      global_root = Path.show project_root;
-      relative_local_root = Path.get_relative_to_root ~root:project_root ~path:local_root;
+      socket = PyrePath.absolute socket_path;
+      global_root = PyrePath.show project_root;
+      relative_local_root = PyrePath.get_relative_to_root ~root:project_root ~path:local_root;
     }
 
 
@@ -120,12 +119,12 @@ let process_incremental_update_request
     paths
   =
   let open Lwt.Infix in
-  let paths = List.map paths ~f:Path.create_absolute in
+  let paths = List.map paths ~f:PyrePath.create_absolute in
   match CriticalFile.find critical_files ~within:paths with
   | Some path ->
       Format.asprintf
         "Pyre needs to restart as it is notified on potential changes in `%a`"
-        Path.pp
+        PyrePath.pp
         path
       |> StartupNotification.produce ~log_path:configuration.log_directory;
       Stop.log_and_stop_waiting_server ~reason:"critical file update" ~properties ()
@@ -159,7 +158,7 @@ let process_incremental_update_request
       let changed_paths =
         List.concat_map paths ~f:(BuildSystem.lookup_artifact build_system)
         |> List.append changed_paths_from_rebuild
-        |> List.dedup_and_sort ~compare:Path.compare
+        |> List.dedup_and_sort ~compare:PyrePath.compare
       in
       let _ =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->

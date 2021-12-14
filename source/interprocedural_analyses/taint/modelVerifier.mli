@@ -38,7 +38,7 @@ val resolve_global : resolution:Resolution.t -> Reference.t -> Global.t option
 val demangle_class_attribute : string -> string
 
 val verify_signature
-  :  path:Pyre.Path.t option ->
+  :  path:PyrePath.t option ->
   location:Location.t ->
   normalized_model_parameters:(AccessPath.Root.t * string * Ast.Expression.Parameter.t) list ->
   name:Reference.t ->
@@ -46,7 +46,7 @@ val verify_signature
   (unit, ModelVerificationError.t) result
 
 val verify_global
-  :  path:Pyre.Path.t option ->
+  :  path:PyrePath.t option ->
   location:Location.t ->
   resolution:Resolution.t ->
   name:Reference.t ->

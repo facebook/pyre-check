@@ -2733,14 +2733,14 @@ module ScratchProject = struct
     =
     let add_source ~root (relative, content) =
       let content = trim_extra_indentation content in
-      let file = File.create ~content (Path.create_relative ~root ~relative) in
+      let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
       File.write file
     in
     (* We assume that there's only one checked source directory that acts as the local root as well. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> PyrePath.create_absolute in
     (* We assume that there's only one external source directory that acts as the local root as
        well. *)
-    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root = bracket_tmpdir context |> PyrePath.create_absolute in
     let log_directory = bracket_tmpdir context in
     let configuration =
       Configuration.Analysis.create
@@ -2787,7 +2787,7 @@ module ScratchProject = struct
           | SearchPath.Root root :: _ -> root
           | _ -> failwith "Scratch projects should have only one source path."
       in
-      Path.create_relative ~root ~relative
+      PyrePath.create_relative ~root ~relative
     in
     let file = File.create ~content path in
     File.write file

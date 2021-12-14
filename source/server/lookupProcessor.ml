@@ -8,7 +8,6 @@
 open Core
 open Ast
 open Analysis
-module Path = PyrePath
 
 type error_reason =
   | StubShadowing
@@ -35,7 +34,7 @@ let get_lookups ~configuration ~build_system ~environment paths =
   let generate_lookup_for_path path =
     let full_path =
       let { Configuration.Analysis.local_root = root; _ } = configuration in
-      Path.create_relative ~root ~relative:path
+      PyrePath.create_relative ~root ~relative:path
     in
     match BuildSystem.lookup_artifact build_system full_path with
     | [] -> generate_lookup_for_nonexistent_path (path, FileNotFound)

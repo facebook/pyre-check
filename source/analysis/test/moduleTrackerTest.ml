@@ -7,14 +7,13 @@
 
 open Core
 open Ast
-open Pyre
 open OUnit2
 module ModuleTracker = Analysis.ModuleTracker
 
 let touch path = File.create path ~content:"" |> File.write
 
 let create_source_path ~configuration root relative =
-  let path = Path.create_relative ~root ~relative in
+  let path = PyrePath.create_relative ~root ~relative in
   SourcePath.create ~configuration path
 
 
@@ -22,7 +21,7 @@ let create_source_path_exn ~configuration root relative =
   match create_source_path ~configuration root relative with
   | None ->
       let message =
-        Format.asprintf "Failed to create source file %s under %a" relative Path.pp root
+        Format.asprintf "Failed to create source file %s under %a" relative PyrePath.pp root
       in
       assert_failure message
   | Some result -> result
@@ -55,7 +54,7 @@ let test_creation context =
           Format.asprintf
             "Creating source file %s under %a is supposed to fail"
             relative
-            Path.pp
+            PyrePath.pp
             root
         in
         assert_failure message
@@ -76,9 +75,9 @@ let test_creation context =
          _;
        } as source_path)
     =
-    let expected_path = Path.create_relative ~root:search_root ~relative in
+    let expected_path = PyrePath.create_relative ~root:search_root ~relative in
     let actual_path = SourcePath.full_path ~configuration source_path in
-    assert_equal ~cmp:Path.equal ~printer:Path.show expected_path actual_path;
+    assert_equal ~cmp:PyrePath.equal ~printer:PyrePath.show expected_path actual_path;
     Option.iter priority ~f:(fun expected_priority ->
         assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
     Option.iter is_stub ~f:(fun expected_is_stub ->
@@ -105,7 +104,7 @@ let test_creation context =
     in
     assert_bool message (compare_result > 0)
   in
-  let touch root relative = touch (Path.create_relative ~root ~relative) in
+  let touch root relative = touch (PyrePath.create_relative ~root ~relative) in
   let test_basic () =
     (* SETUP:
      * local_root/a.py
@@ -120,22 +119,24 @@ let test_creation context =
      * external_root/b/__init__.py
      * external_root/c.py
      * external_root/c.pyi *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let external_root =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
-    let local_d_path = Path.absolute local_root ^ "/d" in
-    let external_b_path = Path.absolute external_root ^ "/b" in
+    let external_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let local_d_path = PyrePath.absolute local_root ^ "/d" in
+    let external_b_path = PyrePath.absolute external_root ^ "/b" in
     Sys_utils.mkdir_no_fail local_d_path;
     Sys_utils.mkdir_no_fail external_b_path;
     List.iter ~f:(touch local_root) ["a.py"; "b.py"; "c.py"; "c.pyi"; "d.py"; "e.py"];
     let () =
-      let path = local_d_path |> Path.create_absolute ~follow_symbolic_links:true in
+      let path = local_d_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
       touch path "__init__.py"
     in
     List.iter ~f:(touch external_root) ["a.py"; "b.pyi"; "c.py"; "c.pyi"];
     let () =
-      let path = external_b_path |> Path.create_absolute ~follow_symbolic_links:true in
+      let path = external_b_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
       touch path "__init__.py"
     in
     let configuration =
@@ -331,20 +332,22 @@ let test_creation context =
      * external_root/d/g.py
      * external_root/h/i/j/__init__.pyi
      *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
     let external_root =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     List.iter
       ~f:Sys_utils.mkdir_no_fail
       [
-        Path.absolute local_root ^ "/b";
-        Path.absolute local_root ^ "/d";
-        Path.absolute local_root ^ "/d/e";
-        Path.absolute external_root ^ "/d";
-        Path.absolute external_root ^ "/h";
-        Path.absolute external_root ^ "/h/i";
-        Path.absolute external_root ^ "/h/i/j";
+        PyrePath.absolute local_root ^ "/b";
+        PyrePath.absolute local_root ^ "/d";
+        PyrePath.absolute local_root ^ "/d/e";
+        PyrePath.absolute external_root ^ "/d";
+        PyrePath.absolute external_root ^ "/h";
+        PyrePath.absolute external_root ^ "/h/i";
+        PyrePath.absolute external_root ^ "/h/i/j";
       ];
     List.iter ~f:(touch local_root) ["a.py"; "b/c.py"; "d/__init__.py"; "d/e/f.py"];
     List.iter ~f:(touch external_root) ["d/g.py"; "h/i/j/__init__.pyi"];
@@ -396,12 +399,16 @@ let test_creation context =
     assert_module !&"h.i.j.k" ~expected:ModuleStatus.Untracked
   in
   let test_search_path_subdirectory () =
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let search_subdirectory_path = Path.absolute search_root ^ "/sub" in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let search_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let search_subdirectory_path = PyrePath.absolute search_root ^ "/sub" in
     Sys_utils.mkdir_no_fail search_subdirectory_path;
     let search_subdirectory =
-      Path.create_absolute ~follow_symbolic_links:true search_subdirectory_path
+      PyrePath.create_absolute ~follow_symbolic_links:true search_subdirectory_path
     in
     touch local_root "a.py";
     touch search_root "b.py";
@@ -414,24 +421,26 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
     in
-    let assert_path = assert_equal ~cmp:Path.equal ~printer:Path.show in
+    let assert_path = assert_equal ~cmp:PyrePath.equal ~printer:PyrePath.show in
     assert_create_fail ~configuration search_root "b.py";
     let source_path_a = create_source_path_exn ~configuration local_root "a.py" in
     assert_path
-      (Path.create_relative ~root:local_root ~relative:"a.py")
+      (PyrePath.create_relative ~root:local_root ~relative:"a.py")
       (SourcePath.full_path ~configuration source_path_a);
     let source_path_b = create_source_path_exn ~configuration search_subdirectory "c.py" in
     assert_path
-      (Path.create_relative ~root:search_subdirectory ~relative:"c.py")
+      (PyrePath.create_relative ~root:search_subdirectory ~relative:"c.py")
       (SourcePath.full_path ~configuration source_path_b)
   in
   let test_priority () =
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
     let external_root0 =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let external_root1 =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let external_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
     List.iter ~f:(touch external_root0) external_paths0;
@@ -521,13 +530,15 @@ let test_creation context =
       ~is_external:true
   in
   let test_priority_multi_source_paths () =
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let source_root0_path = Path.absolute local_root ^ "/source0" in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let source_root0_path = PyrePath.absolute local_root ^ "/source0" in
     Sys_utils.mkdir_no_fail source_root0_path;
-    let source_root0 = Path.create_absolute source_root0_path in
-    let source_root1_path = Path.absolute local_root ^ "/source1" in
+    let source_root0 = PyrePath.create_absolute source_root0_path in
+    let source_root1_path = PyrePath.absolute local_root ^ "/source1" in
     Sys_utils.mkdir_no_fail source_root1_path;
-    let source_root1 = Path.create_absolute source_root1_path in
+    let source_root1 = PyrePath.create_absolute source_root1_path in
     let source_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
     List.iter ~f:(touch source_root0) source_paths0;
     let source_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"] in
@@ -601,9 +612,11 @@ let test_creation context =
   in
   let test_exclude () =
     (* Test that ${SOURCE_DIRECTORY} gets correctly replaced *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
     let external_root =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     touch local_root "foo.py";
     touch local_root "bar.py";
@@ -647,14 +660,18 @@ let test_creation context =
      * - both derp and durp lives under search_root
      * - search_root is allowlisted with filter_directories and durp is denylisted with ignore_all_errors
      * We want to make sure that the is_external field is correct for this setup. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let derp_path = Path.absolute search_root ^ "/derp" in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let search_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let derp_path = PyrePath.absolute search_root ^ "/derp" in
     Sys_utils.mkdir_no_fail derp_path;
-    let durp_path = Path.absolute search_root ^ "/durp" in
+    let durp_path = PyrePath.absolute search_root ^ "/durp" in
     Sys_utils.mkdir_no_fail durp_path;
-    let derp = Path.create_absolute ~follow_symbolic_links:true derp_path in
-    let durp = Path.create_absolute ~follow_symbolic_links:true durp_path in
+    let derp = PyrePath.create_absolute ~follow_symbolic_links:true derp_path in
+    let durp = PyrePath.create_absolute ~follow_symbolic_links:true durp_path in
     touch local_root "a.py";
     touch search_root "b.py";
     touch derp "c.py";
@@ -667,7 +684,7 @@ let test_creation context =
         ~source_paths:[SearchPath.Root local_root]
         ~search_paths:[SearchPath.Root search_root]
         ~filter_directories:[search_root]
-        ~ignore_all_errors:[durp; Path.create_relative ~root:local_root ~relative:"e.py"]
+        ~ignore_all_errors:[durp; PyrePath.create_relative ~root:local_root ~relative:"e.py"]
         ()
     in
     let assert_source_path = assert_source_path ~configuration in
@@ -703,10 +720,14 @@ let test_creation context =
      * - local_root is the local root
      * - search_root is the root of other search paths
      * We want to test the case when `ignore_all_errors` contains nonexistent directories. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let nonexist_root = Path.create_absolute "/whosyourdaddy" in
-    assert (not (Path.file_exists nonexist_root));
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let search_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let nonexist_root = PyrePath.create_absolute "/whosyourdaddy" in
+    assert (not (PyrePath.file_exists nonexist_root));
 
     touch local_root "a.py";
     touch search_root "b.py";
@@ -735,22 +756,28 @@ let test_creation context =
   in
   let test_directory_filter3 () =
     (* We want test that filter_directories follows symlinks *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let search_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let search_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
     let link_local_root =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let link_search_root =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     touch local_root "a.py";
     touch search_root "b.py";
     Unix.symlink
-      ~link_name:(Path.create_relative ~root:link_local_root ~relative:"a.py" |> Path.absolute)
-      ~target:(Path.create_relative ~root:local_root ~relative:"a.py" |> Path.absolute);
+      ~link_name:
+        (PyrePath.create_relative ~root:link_local_root ~relative:"a.py" |> PyrePath.absolute)
+      ~target:(PyrePath.create_relative ~root:local_root ~relative:"a.py" |> PyrePath.absolute);
     Unix.symlink
-      ~link_name:(Path.create_relative ~root:link_search_root ~relative:"b.py" |> Path.absolute)
-      ~target:(Path.create_relative ~root:search_root ~relative:"b.py" |> Path.absolute);
+      ~link_name:
+        (PyrePath.create_relative ~root:link_search_root ~relative:"b.py" |> PyrePath.absolute)
+      ~target:(PyrePath.create_relative ~root:search_root ~relative:"b.py" |> PyrePath.absolute);
 
     let configuration =
       Configuration.Analysis.create
@@ -780,13 +807,15 @@ let test_creation context =
      * - external_root0 lives under local_root
      * - external_root1 lives under external_root0
      * Module resolution boils down to which root comes first in the search path *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let external_root0_path = Path.absolute local_root ^ "/external0" in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let external_root0_path = PyrePath.absolute local_root ^ "/external0" in
     Sys_utils.mkdir_no_fail external_root0_path;
     let external_root1_path = external_root0_path ^ "/external1" in
     Sys_utils.mkdir_no_fail external_root1_path;
-    let external_root0 = Path.create_absolute ~follow_symbolic_links:true external_root0_path in
-    let external_root1 = Path.create_absolute ~follow_symbolic_links:true external_root1_path in
+    let external_root0 = PyrePath.create_absolute ~follow_symbolic_links:true external_root0_path in
+    let external_root1 = PyrePath.create_absolute ~follow_symbolic_links:true external_root1_path in
     touch external_root0 "a.py";
     touch external_root1 "a.py";
     touch local_root "a.py";
@@ -935,11 +964,15 @@ let test_creation context =
      * - stubs_root lives under local_root (project-internal stubs)
      * - venv_root lives outside local_root (project-external stubs)
      *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    let stubs_path = Path.absolute local_root ^ "/stubs" in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let stubs_path = PyrePath.absolute local_root ^ "/stubs" in
     Sys_utils.mkdir_no_fail stubs_path;
-    let stubs_root = Path.create_absolute ~follow_symbolic_links:true stubs_path in
-    let venv_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let stubs_root = PyrePath.create_absolute ~follow_symbolic_links:true stubs_path in
+    let venv_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
     touch local_root "a.py";
     touch local_root "b.pyi";
     touch local_root "c.pyi";
@@ -1009,21 +1042,23 @@ let test_creation context =
   in
   let test_root_independence () =
     (* We want to test that `ModuleTracker` creation is independent of where the root is located at. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
     let external_root0 =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let external_root1 =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let local_root_copy =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let external_root0_copy =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let external_root1_copy =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let setup local_root external_root0 external_root1 =
       touch local_root "a.py";
@@ -1051,8 +1086,10 @@ let test_creation context =
       source_paths_copy
   in
   let test_hidden_files () =
-    let local_root = bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true in
-    List.iter ~f:Sys_utils.mkdir_no_fail [Path.absolute local_root ^ "/b"];
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    List.iter ~f:Sys_utils.mkdir_no_fail [PyrePath.absolute local_root ^ "/b"];
     List.iter ~f:(touch local_root) [".a.py"; ".b/c.py"];
     let module_tracker =
       Configuration.Analysis.create
@@ -1123,7 +1160,7 @@ module IncrementalTest = struct
     in
     let update_filesystem_state { Configuration.Analysis.local_root; search_paths; _ } =
       let update_file ~root { handle; operation } =
-        let path = Path.create_relative ~root ~relative:handle in
+        let path = PyrePath.create_relative ~root ~relative:handle in
         match operation with
         | Add
         | Update ->
@@ -1132,7 +1169,7 @@ module IncrementalTest = struct
             Some path
         | Remove ->
             (* A file is removed *)
-            Path.remove path;
+            PyrePath.remove path;
             Some path
         | LeftAlone -> None
       in

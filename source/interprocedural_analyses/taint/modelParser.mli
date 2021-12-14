@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Pyre
-
 module ClassDefinitionsCache : sig
   val invalidate : unit -> unit
 end
@@ -175,7 +173,7 @@ module Internal : sig
   end
 end
 
-val get_model_sources : paths:Path.t list -> (Path.t * string) list
+val get_model_sources : paths:PyrePath.t list -> (PyrePath.t * string) list
 
 type parse_result = {
   models: Model.t Interprocedural.Target.Map.t;
@@ -186,7 +184,7 @@ type parse_result = {
 
 val parse
   :  resolution:Analysis.Resolution.t ->
-  ?path:Path.t ->
+  ?path:PyrePath.t ->
   ?rule_filter:int list ->
   source:string ->
   configuration:TaintConfiguration.t ->
@@ -197,7 +195,7 @@ val parse
 
 exception InvalidModel of string
 
-val verify_model_syntax : path:Path.t -> source:string -> unit
+val verify_model_syntax : path:PyrePath.t -> source:string -> unit
 
 val compute_sources_and_sinks_to_keep
   :  configuration:TaintConfiguration.t ->

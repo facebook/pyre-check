@@ -6,7 +6,6 @@
  *)
 
 open Yojson.Safe.Util
-module Path = PyrePath
 
 let with_default ~extract ~extract_optional ?default json =
   match default with
@@ -18,7 +17,7 @@ let to_bool_with_default = with_default ~extract:to_bool ~extract_optional:to_bo
 
 let to_int_with_default = with_default ~extract:to_int ~extract_optional:to_int_option
 
-let to_path json = to_string json |> Path.create_absolute
+let to_path json = to_string json |> PyrePath.create_absolute
 
 (* The absent of explicit `~default` parameter means that the corresponding JSON field is
    mandantory. *)

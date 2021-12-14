@@ -7,7 +7,6 @@
 
 open Base
 open OUnit2
-module Path = Pyre.Path
 
 (* Create aliases to private modules so we could test their internal APIs. *)
 module BuildMap = Buck__BuildMap
@@ -15,7 +14,7 @@ module Artifacts = Buck__Artifacts
 
 let setup_source_directory ~root contents =
   let add_file (relative, content) =
-    File.create ~content (Path.create_relative ~root ~relative) |> File.write
+    File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
   in
   List.iter contents ~f:add_file
 
@@ -31,8 +30,8 @@ let assert_content ~context ~expected path =
 
 
 let assert_populate ~context ~build_map ~expected sources =
-  let source_root = bracket_tmpdir context |> Path.create_absolute in
-  let artifact_root = bracket_tmpdir context |> Path.create_absolute in
+  let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let () = setup_source_directory ~root:source_root sources in
   let build_map = BuildMap.Partial.of_alist_exn build_map |> BuildMap.create in
   let open Lwt.Infix in
@@ -41,14 +40,14 @@ let assert_populate ~context ~build_map ~expected sources =
   | Result.Error message -> assert_failure message
   | Result.Ok () ->
       List.iter expected ~f:(fun (relative, content) ->
-          Path.create_relative ~root:artifact_root ~relative
+          PyrePath.create_relative ~root:artifact_root ~relative
           |> assert_content ~context ~expected:content);
       Lwt.return_unit
 
 
 let assert_update ~context ~build_map ~difference ~expected sources =
-  let source_root = bracket_tmpdir context |> Path.create_absolute in
-  let artifact_root = bracket_tmpdir context |> Path.create_absolute in
+  let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let () = setup_source_directory ~root:source_root sources in
   let build_map = BuildMap.Partial.of_alist_exn build_map |> BuildMap.create in
   let open Lwt.Infix in
@@ -62,11 +61,11 @@ let assert_update ~context ~build_map ~difference ~expected sources =
       | Result.Error message -> assert_failure message
       | Result.Ok () ->
           List.iter expected ~f:(fun (relative, content) ->
-              let path = Path.create_relative ~root:artifact_root ~relative in
+              let path = PyrePath.create_relative ~root:artifact_root ~relative in
               match content with
               | None ->
                   let message = Format.sprintf "%s is expected to be removed" relative in
-                  assert_bool message (not (Path.file_exists path))
+                  assert_bool message (not (PyrePath.file_exists path))
               | Some content -> assert_content path ~context ~expected:content);
           Lwt.return_unit)
 
@@ -104,10 +103,10 @@ let test_artifacts_populate_ok context =
 
 
 let test_artifacts_populate_bad_directory context =
-  let root = bracket_tmpdir context |> Path.create_absolute in
+  let root = bracket_tmpdir context |> PyrePath.create_absolute in
   let build_map = BuildMap.Partial.of_alist_exn [] |> BuildMap.create in
-  let nonexistent_root = Path.create_relative ~root ~relative:"nonexistent" in
-  let existent_non_directory = Path.create_relative ~root ~relative:"not_a_directory" in
+  let nonexistent_root = PyrePath.create_relative ~root ~relative:"nonexistent" in
+  let existent_non_directory = PyrePath.create_relative ~root ~relative:"not_a_directory" in
   File.create existent_non_directory ~content:"" |> File.write;
 
   let open Lwt.Infix in
@@ -126,11 +125,11 @@ let test_artifacts_populate_bad_directory context =
 
 
 let test_artifacts_populate_unclean_artifact_directory context =
-  let source_root = bracket_tmpdir context |> Path.create_absolute in
-  let artifact_root = bracket_tmpdir context |> Path.create_absolute in
+  let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let () = setup_source_directory ~root:source_root ["foo.py", "foo"] in
   let build_map = BuildMap.Partial.of_alist_exn ["foo.py", "foo.py"] |> BuildMap.create in
-  Path.create_relative ~root:artifact_root ~relative:"foo.py"
+  PyrePath.create_relative ~root:artifact_root ~relative:"foo.py"
   |> File.create ~content:""
   |> File.write;
   assert_fails (fun () -> Artifacts.populate ~source_root ~artifact_root build_map)
@@ -253,10 +252,10 @@ let test_artifact_update_ok context =
 
 
 let test_artifact_update_bad_directory context =
-  let root = bracket_tmpdir context |> Path.create_absolute in
+  let root = bracket_tmpdir context |> PyrePath.create_absolute in
   let difference = BuildMap.Difference.of_alist_exn [] in
-  let nonexistent_root = Path.create_relative ~root ~relative:"nonexistent" in
-  let existent_non_directory = Path.create_relative ~root ~relative:"not_a_directory" in
+  let nonexistent_root = PyrePath.create_relative ~root ~relative:"nonexistent" in
+  let existent_non_directory = PyrePath.create_relative ~root ~relative:"not_a_directory" in
   File.create existent_non_directory ~content:"" |> File.write;
 
   let open Lwt.Infix in

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Pyre
 open Core
 open OUnit2
 open Taint
@@ -39,7 +38,7 @@ let test_to_json _ =
           Ast.Location.start = { Ast.Location.line = 1; column = 2 };
           stop = { Ast.Location.line = 3; column = 4 };
         };
-      path = Some (Path.create_absolute "/a/b.pysa");
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
     }
 
 

@@ -102,7 +102,7 @@ type kind =
 
 type t = {
   kind: kind;
-  path: Pyre.Path.t option;
+  path: PyrePath.t option;
   location: Location.t;
 }
 [@@deriving sexp, compare, show]

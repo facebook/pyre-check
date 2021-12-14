@@ -45,7 +45,7 @@ module ScratchProject : sig
     ?external_sources:(string * string) list ->
     ?include_typeshed_stubs:bool ->
     ?include_helper_builtins:bool ->
-    ?custom_source_root:Pyre.Path.t ->
+    ?custom_source_root:PyrePath.t ->
     ?watchman:Watchman.Raw.t ->
     ?build_system_initializer:BuildSystem.Initializer.t ->
     (* A list of test sources specified in the form of (relative_path, content) *)
@@ -54,7 +54,7 @@ module ScratchProject : sig
 
   val test_server_with
     :  ?expected_exit_status:Start.ExitStatus.t ->
-    ?on_server_socket_ready:(Pyre.Path.t -> unit Lwt.t) ->
+    ?on_server_socket_ready:(PyrePath.t -> unit Lwt.t) ->
     f:(Client.t -> unit Lwt.t) ->
     t ->
     unit Lwt.t

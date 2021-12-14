@@ -8,7 +8,6 @@
 open Core
 open OUnit2
 open Server
-module Path = Pyre.Path
 
 let test_low_level_apis _ =
   let open Lwt.Infix in
@@ -51,7 +50,7 @@ let test_low_level_apis _ =
 
 let test_subscription _ =
   let open Lwt.Infix in
-  let root = Path.create_absolute "/fake/root" in
+  let root = PyrePath.create_absolute "/fake/root" in
   let version_name = "fake_watchman_version" in
   let subscription_name = "my_subscription" in
   let initial_clock = "fake:clock:0" in
@@ -72,7 +71,7 @@ let test_subscription _ =
       [
         "is_fresh_instance", `Bool is_fresh_instance;
         "files", `List (List.map file_names ~f:(fun name -> `String name));
-        "root", `String (Path.absolute root);
+        "root", `String (PyrePath.absolute root);
         "version", `String version_name;
         "clock", `String clock;
         (* This can be mocked better once we start to utilize `since` queries. *)
@@ -101,8 +100,8 @@ let test_subscription _ =
       | next_update :: rest ->
           remaining_updates := rest;
           assert_equal
-            ~cmp:[%compare.equal: Path.t list]
-            ~printer:(fun paths -> [%sexp_of: Path.t list] paths |> Sexp.to_string_hum)
+            ~cmp:[%compare.equal: PyrePath.t list]
+            ~printer:(fun paths -> [%sexp_of: PyrePath.t list] paths |> Sexp.to_string_hum)
             next_update
             actual;
           Lwt.return_unit
@@ -149,7 +148,7 @@ let test_subscription _ =
       `Assoc
         [
           "unilateral", `Bool true;
-          "root", `String (Path.absolute root);
+          "root", `String (PyrePath.absolute root);
           "subscription", `String subscription_name;
           "version", `String version_name;
           "clock", `String initial_clock;
@@ -159,7 +158,7 @@ let test_subscription _ =
   >>= fun () ->
   (* Single file in single update. *)
   assert_updates
-    ~expected:[[Path.create_relative ~root ~relative:"foo.py"]]
+    ~expected:[[PyrePath.create_relative ~root ~relative:"foo.py"]]
     [initial_success_response; update_response ["foo.py"]]
   >>= fun () ->
   (* Multiple files in single update. *)
@@ -167,8 +166,8 @@ let test_subscription _ =
     ~expected:
       [
         [
-          Path.create_relative ~root ~relative:"foo.py";
-          Path.create_relative ~root ~relative:"bar/baz.py";
+          PyrePath.create_relative ~root ~relative:"foo.py";
+          PyrePath.create_relative ~root ~relative:"bar/baz.py";
         ];
       ]
     [initial_success_response; update_response ["foo.py"; "bar/baz.py"]]
@@ -177,8 +176,8 @@ let test_subscription _ =
   assert_updates
     ~expected:
       [
-        [Path.create_relative ~root ~relative:"foo.py"];
-        [Path.create_relative ~root ~relative:"bar/baz.py"];
+        [PyrePath.create_relative ~root ~relative:"foo.py"];
+        [PyrePath.create_relative ~root ~relative:"bar/baz.py"];
       ]
     [initial_success_response; update_response ["foo.py"]; update_response ["bar/baz.py"]]
   >>= fun () ->
@@ -187,12 +186,12 @@ let test_subscription _ =
     ~expected:
       [
         [
-          Path.create_relative ~root ~relative:"foo.py";
-          Path.create_relative ~root ~relative:"bar/baz.py";
+          PyrePath.create_relative ~root ~relative:"foo.py";
+          PyrePath.create_relative ~root ~relative:"bar/baz.py";
         ];
         [
-          Path.create_relative ~root ~relative:"my/cat.py";
-          Path.create_relative ~root ~relative:"dog.py";
+          PyrePath.create_relative ~root ~relative:"my/cat.py";
+          PyrePath.create_relative ~root ~relative:"dog.py";
         ];
       ]
     [
@@ -203,7 +202,7 @@ let test_subscription _ =
   >>= fun () ->
   (* Initial fresh instance update is ok *)
   assert_updates
-    ~expected:[[Path.create_relative ~root ~relative:"foo.py"]]
+    ~expected:[[PyrePath.create_relative ~root ~relative:"foo.py"]]
     [
       initial_success_response;
       update_response ~clock:initial_clock ~is_fresh_instance:true [];
@@ -227,7 +226,7 @@ let test_subscription _ =
   >>= fun () ->
   assert_updates
     ~should_raise:true
-    ~expected:[[Path.create_relative ~root ~relative:"foo.py"]]
+    ~expected:[[PyrePath.create_relative ~root ~relative:"foo.py"]]
     [
       initial_success_response;
       update_response ["foo.py"];
@@ -315,7 +314,7 @@ let test_filter_creation context =
        ~critical_files:
          [
            CriticalFile.BaseName "foo.txt";
-           CriticalFile.FullPath (Path.create_absolute "/derp/bar.txt");
+           CriticalFile.FullPath (PyrePath.create_absolute "/derp/bar.txt");
            CriticalFile.Extension "bar";
          ]
        ~extensions:[]
@@ -343,7 +342,7 @@ let test_filter_creation context =
          [
            CriticalFile.BaseName ".pyre_configuration";
            CriticalFile.BaseName ".pyre_configuration.local";
-           CriticalFile.FullPath (Path.create_absolute "/foo/bar.txt");
+           CriticalFile.FullPath (PyrePath.create_absolute "/foo/bar.txt");
            CriticalFile.BaseName "bar.txt";
          ]
        ~extensions:[]
@@ -364,8 +363,8 @@ let test_filter_creation context =
               Buck.mode = None;
               isolation_prefix = None;
               targets = [];
-              source_root = Path.create_absolute "/source";
-              artifact_root = Path.create_absolute "/artifact";
+              source_root = PyrePath.create_absolute "/source";
+              artifact_root = PyrePath.create_absolute "/artifact";
             })
        ())
     ~expected:
@@ -378,7 +377,7 @@ let test_filter_creation context =
 
 let test_since_query_request context =
   let open Watchman.SinceQuery in
-  let root = Path.create_absolute "/fake/root" in
+  let root = PyrePath.create_absolute "/fake/root" in
   let filter = { Watchman.Filter.base_names = [".pyre_configuration"]; suffixes = [".py"] } in
   let assert_request ~expected request =
     let actual = watchman_request_of request in
@@ -591,7 +590,7 @@ let test_since_query _ =
             query_exn
               ~connection
               {
-                root = Path.create_absolute "/fake/root";
+                root = PyrePath.create_absolute "/fake/root";
                 filter = { Watchman.Filter.base_names = []; suffixes = [] };
                 since = Since.Clock "fake:clock";
               }))

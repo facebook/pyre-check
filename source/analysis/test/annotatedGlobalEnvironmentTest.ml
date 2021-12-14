@@ -124,21 +124,21 @@ let test_updates context =
         ~relative
       =
       let content = trim_extra_indentation content in
-      let file = File.create ~content (Path.create_relative ~root:local_root ~relative) in
+      let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
       File.write file
     in
     let delete_file
         { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
         relative
       =
-      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+      PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
     in
     if Option.is_some original_source then
       delete_file project "test.py";
     new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
     let { ScratchProject.module_tracker; _ } = project in
     let { Configuration.Analysis.local_root; _ } = configuration in
-    let path = Path.create_relative ~root:local_root ~relative:"test.py" in
+    let path = PyrePath.create_relative ~root:local_root ~relative:"test.py" in
     let _, update_result =
       ModuleTracker.update ~configuration ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)

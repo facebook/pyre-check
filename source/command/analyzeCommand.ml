@@ -6,7 +6,6 @@
  *)
 
 open Core
-module Path = PyrePath
 
 (* Analyze command uses the same exit code scheme as check command. *)
 module ExitStatus = CheckCommand.ExitStatus
@@ -14,18 +13,18 @@ module ExitStatus = CheckCommand.ExitStatus
 module AnalyzeConfiguration = struct
   type t = {
     base: CommandStartup.BaseConfiguration.t;
-    dump_call_graph: Path.t option;
-    dump_model_query_results: Path.t option;
+    dump_call_graph: PyrePath.t option;
+    dump_model_query_results: PyrePath.t option;
     find_missing_flows: string option;
     inline_decorators: bool;
     maximum_tito_depth: int option;
     maximum_trace_length: int option;
     no_verify: bool;
-    repository_root: Path.t option;
+    repository_root: PyrePath.t option;
     rule_filter: int list option;
-    save_results_to: Path.t option;
+    save_results_to: PyrePath.t option;
     strict: bool;
-    taint_model_paths: Path.t list;
+    taint_model_paths: PyrePath.t list;
     use_cache: bool;
   }
   [@@deriving sexp, compare, hash]
@@ -142,7 +141,7 @@ module AnalyzeConfiguration = struct
         ~excludes
         ~extensions
         ~incremental_style:Configuration.Analysis.Shallow
-        ~log_directory:(Path.absolute log_path)
+        ~log_directory:(PyrePath.absolute log_path)
         ~python_major_version:major
         ~python_minor_version:minor
         ~python_micro_version:micro
@@ -251,7 +250,7 @@ let run_taint_analysis
           | None -> None
           | Some full_path ->
               let root = Option.value repository_root ~default:configuration.local_root in
-              Path.get_relative_to_root ~root ~path:(Path.create_absolute full_path)
+              PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute full_path)
         in
         Service.StaticAnalysis.analyze
           ~scheduler

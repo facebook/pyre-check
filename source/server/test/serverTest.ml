@@ -8,7 +8,6 @@
 open Core
 open OUnit2
 open Server
-module Path = Pyre.Path
 
 module Client = struct
   type t = {
@@ -93,7 +92,7 @@ module ScratchProject = struct
 
     let add_source ~root (relative, content) =
       let content = Test.trim_extra_indentation content in
-      let file = File.create ~content (Path.create_relative ~root ~relative) in
+      let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
       File.write file
     in
     (* We assume that there's only one checked source directory that acts as the global root as
@@ -101,11 +100,11 @@ module ScratchProject = struct
     let source_root =
       match custom_source_root with
       | Some source_root -> source_root
-      | None -> bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      | None -> bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     (* We assume that there's only one external source directory. *)
     let external_root =
-      bracket_tmpdir context |> Path.create_absolute ~follow_symbolic_links:true
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let external_sources =
       if include_typeshed_stubs then
@@ -143,8 +142,8 @@ module ScratchProject = struct
       {
         StartOptions.source_paths = Configuration.SourcePaths.Simple [SearchPath.Root source_root];
         socket_path =
-          Path.create_relative
-            ~root:(Path.create_absolute (bracket_tmpdir context))
+          PyrePath.create_relative
+            ~root:(PyrePath.create_absolute (bracket_tmpdir context))
             ~relative:"pyre_server_hash.sock";
         watchman_root;
         critical_files = [];
@@ -190,7 +189,7 @@ module ScratchProject = struct
         (* Open a connection to the started server and send some test messages. *)
         ExclusiveLock.read server_state ~f:Lwt.return
         >>= fun server_state ->
-        let socket_address = Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path) in
+        let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
         let test_client (input_channel, output_channel) =
           f { Client.context; server_properties; server_state; input_channel; output_channel }
           >>= fun () -> Lwt.return Start.ExitStatus.Ok

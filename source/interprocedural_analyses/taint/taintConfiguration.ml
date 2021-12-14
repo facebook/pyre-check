@@ -87,7 +87,7 @@ type t = {
   matching_sources: Sources.Set.t Sinks.Map.t;
   matching_sinks: Sinks.Set.t Sources.Map.t;
   find_missing_flows: missing_flows_kind option;
-  dump_model_query_results_path: Path.t option;
+  dump_model_query_results_path: PyrePath.t option;
   analysis_model_constraints: analysis_model_constraints;
   lineage_analysis: bool;
 }
@@ -719,11 +719,14 @@ let create
     ~maximum_tito_depth
     ~taint_model_paths
   =
-  let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths in
+  let file_paths =
+    PyrePath.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths
+  in
   let parse_configuration config_file =
-    if not (Path.file_exists config_file) then
+    if not (PyrePath.file_exists config_file) then
       raise
-        (MalformedConfiguration { path = Path.absolute config_file; parse_error = "File not found" })
+        (MalformedConfiguration
+           { path = PyrePath.absolute config_file; parse_error = "File not found" })
     else
       try
         config_file
@@ -735,7 +738,7 @@ let create
       with
       | Yojson.Json_error parse_error
       | Failure parse_error ->
-          raise (MalformedConfiguration { path = Path.absolute config_file; parse_error })
+          raise (MalformedConfiguration { path = PyrePath.absolute config_file; parse_error })
   in
   let configurations = file_paths |> List.filter_map ~f:parse_configuration in
   if List.is_empty configurations then

@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 module Worker = Hack_parallel.Std.Worker
 
 module GlobalState = struct
@@ -19,10 +18,10 @@ module GlobalState = struct
 
   let initialize ?profiling_output ?memory_profiling_output () =
     Option.iter profiling_output ~f:(fun output ->
-        Path.remove_if_exists (Path.create_absolute output);
+        PyrePath.remove_if_exists (PyrePath.create_absolute output);
         global_state.profiling_output <- Some output);
     Option.iter memory_profiling_output ~f:(fun output ->
-        Path.remove_if_exists (Path.create_absolute output);
+        PyrePath.remove_if_exists (PyrePath.create_absolute output);
         global_state.memory_profiling_output <- Some output);
     ()
 
@@ -66,7 +65,7 @@ module Event = struct
 end
 
 let log_to_path path ~event_creator =
-  let path = Path.create_absolute path in
+  let path = PyrePath.create_absolute path in
   let line = event_creator () |> Event.to_yojson |> Yojson.Safe.to_string in
   File.append ~lines:[line] path
 

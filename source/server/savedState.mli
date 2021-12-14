@@ -6,17 +6,16 @@
  *)
 
 open Core
-open Pyre
 
 module Setting : sig
   type t = {
-    watchman_root: Path.t;
+    watchman_root: PyrePath.t;
     watchman_filter: Watchman.Filter.t;
     watchman_connection: Watchman.Raw.Connection.t;
     project_name: string;
     project_metadata: string option;
     critical_files: CriticalFile.t list;
-    target: Path.t;
+    target: PyrePath.t;
   }
 end
 
@@ -26,8 +25,8 @@ module Queried : sig
   type t = {
     bucket: string;
     path: string;
-    target: Path.t;
-    changed_files: Path.t list;
+    target: PyrePath.t;
+    changed_files: PyrePath.t list;
     (* For logging purpose only *)
     commit_id: string option;
   }
@@ -36,8 +35,8 @@ end
 
 module Fetched : sig
   type t = {
-    path: Path.t;
-    changed_files: Path.t list;
+    path: PyrePath.t;
+    changed_files: PyrePath.t list;
   }
   [@@deriving sexp, compare]
 end

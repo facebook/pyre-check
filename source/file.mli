@@ -6,13 +6,12 @@
  *)
 
 open Core
-open Pyre
 
 type t [@@deriving show, hash]
 
-val create : ?content:string -> Path.t -> t
+val create : ?content:string -> PyrePath.t -> t
 
-val path : t -> Path.t
+val path : t -> PyrePath.t
 
 val content : t -> string option
 
@@ -26,6 +25,6 @@ val hash : t -> int option
 
 val write : t -> unit
 
-val append : lines:string list -> Path.t -> unit
+val append : lines:string list -> PyrePath.t -> unit
 
 module Set : Set.S with type Elt.t = t

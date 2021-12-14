@@ -159,7 +159,7 @@ let dump call_graph ~path =
   Buffer.add_string buffer "}";
 
   (* Write to file. *)
-  Log.warning "Emitting the contents of the call graph to `%s`" (Path.absolute path);
+  Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
   path |> File.create ~content:(Buffer.contents buffer) |> File.write
 
 

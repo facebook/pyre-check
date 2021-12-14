@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Pyre
 open Ast
 open Analysis
 
@@ -44,7 +43,7 @@ val pp : Format.formatter -> t -> unit
 
 val pp_partitions : Format.formatter -> Target.t list list -> unit
 
-val dump : t -> path:Path.t -> unit
+val dump : t -> path:PyrePath.t -> unit
 
 val from_overrides : overrides -> t
 

@@ -174,22 +174,21 @@ let report_statistics () =
 exception TarError of string
 
 type tar_structure = {
-  directory: Pyre.Path.t;
-  table_path: Pyre.Path.t;
-  dependencies_path: Pyre.Path.t;
+  directory: PyrePath.t;
+  table_path: PyrePath.t;
+  dependencies_path: PyrePath.t;
 }
 
 let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
-  let open Pyre in
-  let root = Path.create_relative ~root:log_directory ~relative:"saved_state" in
-  let table_path = Path.create_relative ~root ~relative:"table" in
-  let dependencies_path = Path.create_relative ~root ~relative:"deps" in
+  let root = PyrePath.create_relative ~root:log_directory ~relative:"saved_state" in
+  let table_path = PyrePath.create_relative ~root ~relative:"table" in
+  let dependencies_path = PyrePath.create_relative ~root ~relative:"deps" in
   let () =
-    try Core.Unix.mkdir (Path.absolute root) with
+    try Core.Unix.mkdir (PyrePath.absolute root) with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
     | Core.Unix.Unix_error ((EEXIST | EISDIR), _, _) ->
-        Path.remove_if_exists table_path;
-        Path.remove_if_exists dependencies_path
+        PyrePath.remove_if_exists table_path;
+        PyrePath.remove_if_exists dependencies_path
     | e -> raise e
   in
   { directory = root; table_path; dependencies_path }
@@ -207,24 +206,22 @@ let run_tar arguments =
 exception SavedStateLoadingFailure of string
 
 let save_shared_memory ~path ~configuration =
-  let open Pyre in
   SharedMemory.collect `aggressive;
   let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
-  SharedMem.save_table (Path.absolute table_path);
+  SharedMem.save_table (PyrePath.absolute table_path);
   let _edges_count : bytes =
-    SharedMem.save_dep_table_sqlite (Path.absolute dependencies_path) "0.0.0"
+    SharedMem.save_dep_table_sqlite (PyrePath.absolute dependencies_path) "0.0.0"
   in
-  run_tar ["cf"; path; "-C"; Path.absolute directory; "."]
+  run_tar ["cf"; path; "-C"; PyrePath.absolute directory; "."]
 
 
 let load_shared_memory ~path ~configuration =
-  let open Pyre in
   let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
-  run_tar ["xf"; path; "-C"; Path.absolute directory];
+  run_tar ["xf"; path; "-C"; PyrePath.absolute directory];
   try
-    SharedMem.load_table (Path.absolute table_path);
+    SharedMem.load_table (PyrePath.absolute table_path);
     let _edges_count : bytes =
-      SharedMem.load_dep_table_sqlite (Path.absolute dependencies_path) true
+      SharedMem.load_dep_table_sqlite (PyrePath.absolute dependencies_path) true
     in
     ()
   with

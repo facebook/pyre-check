@@ -8,7 +8,6 @@
 open Core
 open OUnit2
 open Commands.Analyze
-module Path = PyrePath
 
 let test_json_parsing context =
   let assert_parsed ~expected json =
@@ -49,7 +48,7 @@ let test_json_parsing context =
     ~expected:
       {
         dummy_analyze_configuration with
-        dump_call_graph = Some (Path.create_absolute "/call-graph");
+        dump_call_graph = Some (PyrePath.create_absolute "/call-graph");
       };
   assert_parsed
     (`Assoc
@@ -57,7 +56,7 @@ let test_json_parsing context =
     ~expected:
       {
         dummy_analyze_configuration with
-        dump_model_query_results = Some (Path.create_absolute "/model-query");
+        dump_model_query_results = Some (PyrePath.create_absolute "/model-query");
       };
   assert_parsed
     (`Assoc (("find_missing_flows", `String "obscure") :: BaseConfigurationTest.dummy_base_json))
@@ -77,14 +76,17 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("repository_root", `String "/root") :: BaseConfigurationTest.dummy_base_json))
     ~expected:
-      { dummy_analyze_configuration with repository_root = Some (Path.create_absolute "/root") };
+      { dummy_analyze_configuration with repository_root = Some (PyrePath.create_absolute "/root") };
   assert_parsed
     (`Assoc (("rule_filter", `List [`Int 1; `Int 2]) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with rule_filter = Some [1; 2] };
   assert_parsed
     (`Assoc (("save_results_to", `String "/result") :: BaseConfigurationTest.dummy_base_json))
     ~expected:
-      { dummy_analyze_configuration with save_results_to = Some (Path.create_absolute "/result") };
+      {
+        dummy_analyze_configuration with
+        save_results_to = Some (PyrePath.create_absolute "/result");
+      };
   assert_parsed
     (`Assoc (("strict", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with strict = true };
@@ -95,7 +97,7 @@ let test_json_parsing context =
     ~expected:
       {
         dummy_analyze_configuration with
-        taint_model_paths = [Path.create_absolute "/taint"; Path.create_absolute "/model"];
+        taint_model_paths = [PyrePath.create_absolute "/taint"; PyrePath.create_absolute "/model"];
       };
   assert_parsed
     (`Assoc (("use_cache", `Bool true) :: BaseConfigurationTest.dummy_base_json))

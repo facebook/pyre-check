@@ -479,7 +479,7 @@ type test_environment = {
 let set_up_decorator_inlining ~handle models =
   let decorators_to_skip =
     models
-    >>| Analysis.InlineDecorator.decorators_to_skip ~path:(Path.create_absolute handle)
+    >>| Analysis.InlineDecorator.decorators_to_skip ~path:(PyrePath.create_absolute handle)
     |> Option.value ~default:[]
   in
   List.iter decorators_to_skip ~f:(fun decorator ->

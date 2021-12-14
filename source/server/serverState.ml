@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 open Ast
 open Analysis
 
@@ -98,4 +97,4 @@ let store ~path ~configuration { type_environment; error_table; build_system; _ 
   ServerErrors.store error_table;
   BuildSystem.store build_system;
   Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
-  Memory.save_shared_memory ~path:(Path.absolute path) ~configuration
+  Memory.save_shared_memory ~path:(PyrePath.absolute path) ~configuration

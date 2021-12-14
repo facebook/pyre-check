@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 
 let default_python_major_version = 3
 
@@ -26,9 +25,9 @@ module Buck = struct
     isolation_prefix: string option;
     targets: string list;
     (* This is the buck root of the source directory, i.e. output of `buck root`. *)
-    source_root: Path.t;
+    source_root: PyrePath.t;
     (* This is the root of directory where built artifacts will be placed. *)
-    artifact_root: Path.t;
+    artifact_root: PyrePath.t;
   }
   [@@deriving sexp, compare, hash]
 
@@ -52,8 +51,8 @@ module Buck = struct
     let result =
       [
         "targets", `List (List.map targets ~f:(fun target -> `String target));
-        "source_root", `String (Path.absolute source_root);
-        "artifact_root", `String (Path.absolute artifact_root);
+        "source_root", `String (PyrePath.absolute source_root);
+        "artifact_root", `String (PyrePath.absolute artifact_root);
       ]
     in
     let result =
@@ -223,22 +222,22 @@ module Analysis = struct
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
-    filter_directories: Path.t list option;
-    ignore_all_errors: Path.t list option;
+    filter_directories: PyrePath.t list option;
+    ignore_all_errors: PyrePath.t list option;
     number_of_workers: int;
-    local_root: Path.t;
+    local_root: PyrePath.t;
     debug: bool;
-    project_root: Path.t;
+    project_root: PyrePath.t;
     source_paths: SearchPath.t list;
     search_paths: SearchPath.t list;
-    taint_model_paths: Path.t list;
+    taint_model_paths: PyrePath.t list;
     strict: bool;
     show_error_traces: bool;
     excludes: Str.regexp list; [@opaque]
     extensions: Extension.t list;
     store_type_check_resolution: bool;
     incremental_style: incremental_style;
-    log_directory: Path.t;
+    log_directory: PyrePath.t;
     python_major_version: int;
     python_minor_version: int;
     python_micro_version: int;
@@ -253,8 +252,8 @@ module Analysis = struct
       ?filter_directories
       ?ignore_all_errors
       ?(number_of_workers = 4)
-      ?(local_root = Path.current_working_directory ())
-      ?(project_root = Path.create_absolute "/")
+      ?(local_root = PyrePath.current_working_directory ())
+      ?(project_root = PyrePath.create_absolute "/")
       ?(search_paths = [])
       ?(taint_model_paths = [])
       ?(strict = false)
@@ -293,7 +292,7 @@ module Analysis = struct
         List.map excludes ~f:(fun exclude_regex ->
             Str.global_substitute
               (Str.regexp_string "${SOURCE_DIRECTORY}")
-              (fun _ -> Path.absolute local_root)
+              (fun _ -> PyrePath.absolute local_root)
               exclude_regex
             |> Str.regexp);
       extensions;
@@ -301,8 +300,8 @@ module Analysis = struct
       incremental_style;
       log_directory =
         (match log_directory with
-        | Some directory -> Path.create_absolute directory
-        | None -> Path.append local_root ~element:".pyre");
+        | Some directory -> PyrePath.create_absolute directory
+        | None -> PyrePath.append local_root ~element:".pyre");
       python_major_version;
       python_minor_version;
       python_micro_version;
@@ -328,13 +327,13 @@ module Analysis = struct
 
   let find_extension { extensions; _ } path =
     List.find extensions ~f:(fun extension ->
-        String.is_suffix ~suffix:(Extension.suffix extension) (Path.absolute path))
+        String.is_suffix ~suffix:(Extension.suffix extension) (PyrePath.absolute path))
 end
 
 module Server = struct
   type load_parameters = {
-    shared_memory_path: Path.t;
-    changed_files_path: Path.t option;
+    shared_memory_path: PyrePath.t;
+    changed_files_path: PyrePath.t option;
   }
 
   type load =
@@ -349,8 +348,8 @@ module Server = struct
     | Load of load
 
   type socket_path = {
-    path: Path.t;
-    link: Path.t;
+    path: PyrePath.t;
+    link: PyrePath.t;
   }
 
   type t = {
@@ -358,9 +357,9 @@ module Server = struct
     socket: socket_path;
     json_socket: socket_path;
     adapter_socket: socket_path;
-    lock_path: Path.t;
-    pid_path: Path.t;
-    log_path: Path.t;
+    lock_path: PyrePath.t;
+    pid_path: PyrePath.t;
+    log_path: PyrePath.t;
     daemonize: bool;
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
@@ -377,14 +376,14 @@ end
 
 module StaticAnalysis = struct
   type t = {
-    result_json_path: Path.t option;
-    dump_call_graph: Path.t option;
+    result_json_path: PyrePath.t option;
+    dump_call_graph: PyrePath.t option;
     verify_models: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
     find_missing_flows: string option;
-    dump_model_query_results: Path.t option;
+    dump_model_query_results: PyrePath.t option;
     use_cache: bool;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;

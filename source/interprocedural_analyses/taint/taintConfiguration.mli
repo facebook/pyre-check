@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 
 module Rule : sig
   type t = {
@@ -65,7 +64,7 @@ type t = {
   matching_sources: Sources.Set.t Sinks.Map.t;
   matching_sinks: Sinks.Set.t Sources.Map.t;
   find_missing_flows: missing_flows_kind option;
-  dump_model_query_results_path: Path.t option;
+  dump_model_query_results_path: PyrePath.t option;
   analysis_model_constraints: analysis_model_constraints;
   lineage_analysis: bool;
 }
@@ -89,10 +88,10 @@ val default : t
 val create
   :  rule_filter:int list option ->
   find_missing_flows:missing_flows_kind option ->
-  dump_model_query_results_path:Path.t option ->
+  dump_model_query_results_path:PyrePath.t option ->
   maximum_trace_length:int option ->
   maximum_tito_depth:int option ->
-  taint_model_paths:Path.t list ->
+  taint_model_paths:PyrePath.t list ->
   t
 
 val validate : t -> unit

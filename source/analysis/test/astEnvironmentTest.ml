@@ -46,16 +46,16 @@ let test_basic context =
         assert_failure message
     | Some source_path ->
         let actual = SourcePath.full_path ~configuration source_path in
-        assert_equal ~cmp:Path.equal ~printer:Path.show expected actual
+        assert_equal ~cmp:PyrePath.equal ~printer:PyrePath.show expected actual
   in
   assert_source_path
     !&"a"
     ~ast_environment
-    ~expected:(Path.create_relative ~root:local_root ~relative:handle_a);
+    ~expected:(PyrePath.create_relative ~root:local_root ~relative:handle_a);
   assert_source_path
     !&"b"
     ~ast_environment
-    ~expected:(Path.create_relative ~root:local_root ~relative:handle_b);
+    ~expected:(PyrePath.create_relative ~root:local_root ~relative:handle_b);
   ()
 
 
@@ -148,15 +148,15 @@ let test_parse_sources context =
   let scheduler = Test.mock_scheduler () in
   let content = "def foo() -> int: ..." in
   let source_handles, ast_environment =
-    let local_root = Path.create_absolute (bracket_tmpdir context) in
+    let local_root = PyrePath.create_absolute (bracket_tmpdir context) in
     let typeshed_root =
-      Path.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
+      PyrePath.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
     in
-    Sys_utils.mkdir_p (Path.absolute typeshed_root);
-    let module_root = Path.create_absolute (bracket_tmpdir context) in
-    let link_root = Path.create_absolute (bracket_tmpdir context) in
+    Sys_utils.mkdir_p (PyrePath.absolute typeshed_root);
+    let module_root = PyrePath.create_absolute (bracket_tmpdir context) in
+    let link_root = PyrePath.create_absolute (bracket_tmpdir context) in
     let write_file root relative =
-      File.create ~content (Path.create_relative ~root ~relative) |> File.write
+      File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
     in
     write_file local_root "a.pyi";
     write_file local_root "a.py";
@@ -167,11 +167,11 @@ let test_parse_sources context =
     write_file link_root "link.py";
     write_file link_root "seemingly_unrelated.pyi";
     Unix.symlink
-      ~target:(Path.absolute link_root ^/ "link.py")
-      ~link_name:(Path.absolute local_root ^/ "d.py");
+      ~target:(PyrePath.absolute link_root ^/ "link.py")
+      ~link_name:(PyrePath.absolute local_root ^/ "d.py");
     Unix.symlink
-      ~target:(Path.absolute link_root ^/ "seemingly_unrelated.pyi")
-      ~link_name:(Path.absolute local_root ^/ "d.pyi");
+      ~target:(PyrePath.absolute link_root ^/ "seemingly_unrelated.pyi")
+      ~link_name:(PyrePath.absolute local_root ^/ "d.pyi");
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -211,8 +211,8 @@ let test_parse_sources context =
     ~printer:(String.concat ~sep:", ")
     ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"; "foo.pyi"]
     source_handles;
-  let local_root = Path.create_absolute (bracket_tmpdir context) in
-  let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
+  let local_root = PyrePath.create_absolute (bracket_tmpdir context) in
+  let stub_root = PyrePath.create_relative ~root:local_root ~relative:"stubs" in
   let source_handles =
     let configuration =
       Configuration.Analysis.create
@@ -223,7 +223,7 @@ let test_parse_sources context =
         ()
     in
     let write_file root relative =
-      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
+      File.create ~content:"def foo() -> int: ..." (PyrePath.create_relative ~root ~relative)
       |> File.write
     in
     write_file local_root "a.py";
@@ -235,8 +235,8 @@ let test_parse_sources context =
         ~configuration
         ~paths:
           [
-            Path.create_relative ~root:local_root ~relative:"a.py";
-            Path.create_relative ~root:stub_root ~relative:"stub.pyi";
+            PyrePath.create_relative ~root:local_root ~relative:"a.py";
+            PyrePath.create_relative ~root:stub_root ~relative:"stub.pyi";
           ]
         module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
@@ -687,7 +687,7 @@ module IncrementalTest = struct
     in
     let update_filesystem_state { Configuration.Analysis.local_root; search_paths; _ } =
       let update_file ~root { handle; old_source; new_source } =
-        let path = Path.create_relative ~root ~relative:handle in
+        let path = PyrePath.create_relative ~root ~relative:handle in
         match old_source, new_source with
         | Some old_source, Some new_source
           when String.equal (trim_extra_indentation old_source) (trim_extra_indentation new_source)
@@ -700,7 +700,7 @@ module IncrementalTest = struct
             Some path
         | Some _, None ->
             (* A file is removed *)
-            Path.remove path;
+            PyrePath.remove path;
             Some path
         | _, _ -> None
       in

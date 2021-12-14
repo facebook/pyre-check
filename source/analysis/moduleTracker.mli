@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Pyre
-
 module IncrementalUpdate : sig
   type t =
     | NewExplicit of Ast.SourcePath.t
@@ -38,7 +36,7 @@ val lookup : t -> Ast.Reference.t -> ModuleLookup.t option
 
 val lookup_source_path : t -> Ast.Reference.t -> Ast.SourcePath.t option
 
-val lookup_path : configuration:Configuration.Analysis.t -> t -> Path.t -> PathLookup.t
+val lookup_path : configuration:Configuration.Analysis.t -> t -> PyrePath.t -> PathLookup.t
 
 val source_paths : t -> Ast.SourcePath.t list
 
@@ -55,7 +53,7 @@ val explicit_module_count : t -> int
 
 val update
   :  configuration:Configuration.Analysis.t ->
-  paths:Path.t list ->
+  paths:PyrePath.t list ->
   t ->
   IncrementalUpdate.t list
 

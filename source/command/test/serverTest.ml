@@ -8,7 +8,6 @@
 open Core
 open OUnit2
 open Commands.Server
-module Path = PyrePath
 
 let dummy_server_json =
   ("socket_path", `String "pyre_server_hash.sock") :: BaseConfigurationTest.dummy_base_json
@@ -35,7 +34,7 @@ let test_json_parsing context =
       strict = false;
       show_error_traces = false;
       additional_logging_sections = [];
-      socket_path = Path.create_absolute "pyre_server_hash.sock";
+      socket_path = PyrePath.create_absolute "pyre_server_hash.sock";
       watchman_root = None;
       critical_files = [];
       taint_model_paths = [];
@@ -57,7 +56,7 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("watchman_root", `String "/project") :: dummy_server_json))
     ~expected:
-      { dummy_server_configuration with watchman_root = Some (Path.create_absolute "/project") };
+      { dummy_server_configuration with watchman_root = Some (PyrePath.create_absolute "/project") };
   assert_parsed
     (`Assoc
       (( "critical_files",
@@ -75,13 +74,16 @@ let test_json_parsing context =
           [
             Server.CriticalFile.BaseName "foo.py";
             Server.CriticalFile.Extension "derp";
-            Server.CriticalFile.FullPath (Path.create_absolute "/home/bar.txt");
+            Server.CriticalFile.FullPath (PyrePath.create_absolute "/home/bar.txt");
           ];
       };
   assert_parsed
     (`Assoc (("taint_model_paths", `List [`String "/taint/model"]) :: dummy_server_json))
     ~expected:
-      { dummy_server_configuration with taint_model_paths = [Path.create_absolute "/taint/model"] };
+      {
+        dummy_server_configuration with
+        taint_model_paths = [PyrePath.create_absolute "/taint/model"];
+      };
   assert_parsed
     (`Assoc (("store_type_check_resolution", `Bool true) :: dummy_server_json))
     ~expected:{ dummy_server_configuration with store_type_check_resolution = true };

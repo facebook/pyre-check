@@ -97,11 +97,11 @@ let save_results_to_directory
   in
   let timer = Timer.start () in
   let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
-  let root = local_root |> Path.absolute in
+  let root = local_root |> PyrePath.absolute in
   let save_models () =
     let filename = models_path TaintResult.name in
-    let output_path = Path.append result_directory ~element:filename in
-    let out_channel = open_out (Path.absolute output_path) in
+    let output_path = PyrePath.append result_directory ~element:filename in
+    let out_channel = open_out (PyrePath.absolute output_path) in
     let out_buffer = Bi_outbuf.create_channel_writer out_channel in
     let array_emitter = emit_json_array_elements out_buffer in
     let header_with_version =
@@ -115,8 +115,8 @@ let save_results_to_directory
   in
   let save_metadata () =
     let filename = Format.sprintf "%s-metadata.json" TaintResult.name in
-    let output_path = Path.append result_directory ~element:filename in
-    let out_channel = open_out (Path.absolute output_path) in
+    let output_path = PyrePath.append result_directory ~element:filename in
+    let out_channel = open_out (PyrePath.absolute output_path) in
     let out_buffer = Bi_outbuf.create_channel_writer out_channel in
     let filename_spec = models_path TaintResult.name in
     let statistics =
@@ -148,7 +148,7 @@ let save_results_to_directory
   in
   save_models ();
   save_metadata ();
-  Log.info "Analysis results were written to `%s`." (Path.absolute result_directory);
+  Log.info "Analysis results were written to `%s`." (PyrePath.absolute result_directory);
   Statistics.performance
     ~name:"Wrote analysis results"
     ~phase_name:"Writing analysis results"

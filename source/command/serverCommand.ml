@@ -7,17 +7,16 @@
 
 open Core
 open Server
-module Path = PyrePath
 
 module ServerConfiguration = struct
   type t = {
     base: CommandStartup.BaseConfiguration.t;
-    socket_path: Path.t;
+    socket_path: PyrePath.t;
     strict: bool;
     show_error_traces: bool;
     additional_logging_sections: string list;
-    watchman_root: Path.t option;
-    taint_model_paths: Path.t list;
+    watchman_root: PyrePath.t option;
+    taint_model_paths: PyrePath.t list;
     store_type_check_resolution: bool;
     critical_files: CriticalFile.t list;
     saved_state_action: SavedStateAction.t option;
@@ -145,7 +144,7 @@ module ServerConfiguration = struct
       ~extensions
       ~store_type_check_resolution
       ~incremental_style:Configuration.Analysis.FineGrained
-      ~log_directory:(Path.absolute log_path)
+      ~log_directory:(PyrePath.absolute log_path)
       ~python_major_version:major
       ~python_minor_version:minor
       ~python_micro_version:micro

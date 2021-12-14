@@ -8,9 +8,8 @@
 open Core
 open OUnit2
 open Server
-module Path = Pyre.Path
 
-let ( ! ) = Path.create_absolute
+let ( ! ) = PyrePath.create_absolute
 
 let test_critical_files context =
   let base_name name = CriticalFile.BaseName name in
@@ -20,8 +19,8 @@ let test_critical_files context =
     let actual = CriticalFile.find critical_files ~within:paths in
     assert_equal
       ~ctxt:context
-      ~cmp:[%compare.equal: Path.t option]
-      ~printer:(fun result -> [%sexp_of: Path.t option] result |> Sexp.to_string_hum)
+      ~cmp:[%compare.equal: PyrePath.t option]
+      ~printer:(fun result -> [%sexp_of: PyrePath.t option] result |> Sexp.to_string_hum)
       expected
       actual
   in

@@ -6,7 +6,6 @@
  *)
 
 open Core
-module Path = Pyre.Path
 
 exception ConnectionError of string
 
@@ -158,7 +157,7 @@ module Filter = struct
   let from_server_configurations ~critical_files ~extensions ~source_paths () =
     let base_name_of = function
       | CriticalFile.BaseName name -> Some name
-      | CriticalFile.FullPath path -> Some (Path.last path)
+      | CriticalFile.FullPath path -> Some (PyrePath.last path)
       | CriticalFile.Extension _ -> None
     in
     let base_names =
@@ -213,7 +212,7 @@ module Subscriber = struct
   module Setting = struct
     type t = {
       raw: Raw.t;
-      root: Path.t;
+      root: PyrePath.t;
       filter: Filter.t;
     }
   end
@@ -233,7 +232,7 @@ module Subscriber = struct
         `List
           [
             `String "subscribe";
-            `String (Path.absolute root);
+            `String (PyrePath.absolute root);
             `String "pyre_file_change_subscription";
             `Assoc
               [
@@ -317,11 +316,11 @@ module Subscriber = struct
                       try
                         let root =
                           Yojson.Safe.Util.(member "root" response |> to_string)
-                          |> Path.create_absolute
+                          |> PyrePath.create_absolute
                         in
                         let changed_paths =
                           Yojson.Safe.Util.(convert_each to_string files_json)
-                          |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
+                          |> List.map ~f:(fun relative -> PyrePath.create_relative ~root ~relative)
                         in
                         f changed_paths >>= fun () -> do_listen ()
                       with
@@ -443,7 +442,7 @@ module SinceQuery = struct
   end
 
   type t = {
-    root: Pyre.Path.t;
+    root: PyrePath.t;
     filter: Filter.t;
     since: Since.t;
   }
@@ -453,7 +452,7 @@ module SinceQuery = struct
     `List
       [
         `String "query";
-        `String (Path.absolute root);
+        `String (PyrePath.absolute root);
         `Assoc
           [
             "fields", `List [`String "name"];

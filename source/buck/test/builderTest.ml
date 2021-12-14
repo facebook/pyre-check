@@ -7,7 +7,6 @@
 
 open Base
 open OUnit2
-module Path = Pyre.Path
 
 (* Create aliases to private modules so we could test their internal APIs. *)
 module BuildMap = Buck__BuildMap
@@ -393,10 +392,10 @@ let test_lookup_source context =
     let actual =
       Builder.do_lookup_source
         ~index
-        ~source_root:(Path.create_absolute source_root)
-        ~artifact_root:(Path.create_absolute artifact_root)
-        (Path.create_absolute path)
-      |> Option.map ~f:Path.absolute
+        ~source_root:(PyrePath.create_absolute source_root)
+        ~artifact_root:(PyrePath.create_absolute artifact_root)
+        (PyrePath.create_absolute path)
+      |> Option.map ~f:PyrePath.absolute
     in
     assert_equal
       ~ctxt:context
@@ -469,10 +468,10 @@ let test_lookup_artifact context =
     let actual =
       Builder.do_lookup_artifact
         ~index
-        ~source_root:(Path.create_absolute source_root)
-        ~artifact_root:(Path.create_absolute artifact_root)
-        (Path.create_absolute path)
-      |> List.map ~f:Path.absolute
+        ~source_root:(PyrePath.create_absolute source_root)
+        ~artifact_root:(PyrePath.create_absolute artifact_root)
+        (PyrePath.create_absolute path)
+      |> List.map ~f:PyrePath.absolute
     in
     assert_equal
       ~ctxt:context

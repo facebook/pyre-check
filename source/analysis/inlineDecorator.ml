@@ -66,7 +66,7 @@ let decorators_to_skip ~path source =
   | exn ->
       Log.dump
         "Ignoring `%s` when trying to get decorators to skip because of exception: %s"
-        (Path.show path)
+        (PyrePath.show path)
         (Exn.to_string exn);
       []
 

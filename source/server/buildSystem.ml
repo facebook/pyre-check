@@ -6,13 +6,12 @@
  *)
 
 open Base
-module Path = Pyre.Path
 
 type t = {
-  update: Path.t list -> Path.t list Lwt.t;
+  update: PyrePath.t list -> PyrePath.t list Lwt.t;
   cleanup: unit -> unit Lwt.t;
-  lookup_source: Path.t -> Path.t option;
-  lookup_artifact: Path.t -> Path.t list;
+  lookup_source: PyrePath.t -> PyrePath.t option;
+  lookup_artifact: PyrePath.t -> PyrePath.t list;
   store: unit -> unit;
 }
 
@@ -114,7 +113,8 @@ module BuckBuildSystem = struct
   let ensure_directory_exist_and_clean path =
     let result =
       let open Result in
-      Path.create_directory_recursively path >>= fun () -> Path.remove_contents_of_directory path
+      PyrePath.create_directory_recursively path
+      >>= fun () -> PyrePath.remove_contents_of_directory path
     in
     match result with
     | Result.Error message -> raise (Buck.Builder.LinkTreeConstructionError message)
@@ -147,7 +147,7 @@ module BuckBuildSystem = struct
       let incremental_builder =
         let should_renormalize paths =
           let f path =
-            let file_name = Path.last path in
+            let file_name = PyrePath.last path in
             String.equal file_name "TARGETS" || String.equal file_name "BUCK"
           in
           List.exists paths ~f
@@ -174,7 +174,7 @@ module BuckBuildSystem = struct
           let changed_paths, removed_paths =
             (* TODO (T90174546): This check may lead to temporary inconsistent view of the
                filesystem with `ModuleTracker`. *)
-            List.partition_tf paths ~f:Path.file_exists
+            List.partition_tf paths ~f:PyrePath.file_exists
           in
           if List.is_empty removed_paths && not (should_reconstruct_build_map changed_paths) then
             {

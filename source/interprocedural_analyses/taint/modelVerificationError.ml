@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 open Ast
 
 type incompatible_model_error_reason =
@@ -104,7 +103,7 @@ type kind =
 
 type t = {
   kind: kind;
-  path: Path.t option;
+  path: PyrePath.t option;
   location: Location.t;
 }
 [@@deriving sexp, compare, show]
@@ -307,7 +306,7 @@ let display { kind = error; path; location } =
   let model_origin =
     match path with
     | None -> ""
-    | Some path -> Format.sprintf "%s:%d: " (Path.absolute path) Location.(location.start.line)
+    | Some path -> Format.sprintf "%s:%d: " (PyrePath.absolute path) Location.(location.start.line)
   in
   Format.sprintf "%s%s" model_origin (description error)
 
@@ -316,7 +315,7 @@ let to_json ({ kind; path; location } as error) =
   let path =
     match path with
     | None -> `Null
-    | Some path -> `String (Path.absolute path)
+    | Some path -> `String (PyrePath.absolute path)
   in
   `Assoc
     [

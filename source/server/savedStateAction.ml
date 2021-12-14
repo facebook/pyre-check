@@ -6,18 +6,17 @@
  *)
 
 open Base
-module Path = PyrePath
 
 type t =
   | LoadFromFile of {
-      shared_memory_path: Path.t;
-      changed_files_path: Path.t option;
+      shared_memory_path: PyrePath.t;
+      changed_files_path: PyrePath.t option;
     }
   | LoadFromProject of {
       project_name: string;
       project_metadata: string option;
     }
-  | SaveToFile of { shared_memory_path: Path.t }
+  | SaveToFile of { shared_memory_path: PyrePath.t }
 [@@deriving sexp, compare, hash]
 
 let of_yojson json =
@@ -38,14 +37,14 @@ let of_yojson json =
           Result.Ok
             (LoadFromFile
                {
-                 shared_memory_path = Path.create_absolute shared_memory_path;
-                 changed_files_path = Some (Path.create_absolute changed_files_path);
+                 shared_memory_path = PyrePath.create_absolute shared_memory_path;
+                 changed_files_path = Some (PyrePath.create_absolute changed_files_path);
                })
       | `String shared_memory_path, `Null ->
           Result.Ok
             (LoadFromFile
                {
-                 shared_memory_path = Path.create_absolute shared_memory_path;
+                 shared_memory_path = PyrePath.create_absolute shared_memory_path;
                  changed_files_path = None;
                })
       | _, _ -> parsing_failed ())
@@ -62,7 +61,8 @@ let of_yojson json =
   | `List [`String "save_to_file"; save_to_file_options] -> (
       match member "shared_memory_path" save_to_file_options with
       | `String shared_memory_path ->
-          Result.Ok (SaveToFile { shared_memory_path = Path.create_absolute shared_memory_path })
+          Result.Ok
+            (SaveToFile { shared_memory_path = PyrePath.create_absolute shared_memory_path })
       | _ -> parsing_failed ())
   | _ -> parsing_failed ()
 
@@ -71,13 +71,13 @@ let to_yojson = function
   | LoadFromFile { shared_memory_path; changed_files_path } ->
       let load_from_file_options =
         let shared_memory_path_option =
-          "shared_memory_path", `String (Path.absolute shared_memory_path)
+          "shared_memory_path", `String (PyrePath.absolute shared_memory_path)
         in
         match changed_files_path with
         | None -> [shared_memory_path_option]
         | Some changed_files_path ->
             let changed_files_path_option =
-              "changed_files_path", `String (Path.absolute changed_files_path)
+              "changed_files_path", `String (PyrePath.absolute changed_files_path)
             in
             [shared_memory_path_option; changed_files_path_option]
       in
@@ -94,6 +94,6 @@ let to_yojson = function
       `List [`String "load_from_project"; `Assoc load_from_project_options]
   | SaveToFile { shared_memory_path } ->
       let save_to_file_options =
-        ["shared_memory_path", `String (Path.absolute shared_memory_path)]
+        ["shared_memory_path", `String (PyrePath.absolute shared_memory_path)]
       in
       `List [`String "save_to_file"; `Assoc save_to_file_options]

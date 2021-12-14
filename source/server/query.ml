@@ -26,7 +26,7 @@ module Request = struct
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | PathOfModule of Reference.t
-    | SaveServerState of Path.t
+    | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
     | Type of Expression.t
     | TypesInFiles of string list
@@ -284,7 +284,7 @@ let help () =
            decorator2]): Shows the function definition after decorators have been inlined."
     | Help _ -> None
   in
-  let path = Path.current_working_directory () in
+  let path = PyrePath.current_working_directory () in
   let empty = Expression.Name (Name.Identifier "") |> Node.create_with_default_location in
   List.filter_map
     ~f:help
@@ -402,7 +402,8 @@ let rec parse_request_exn query =
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
-      | "save_server_state", [path] -> Request.SaveServerState (Path.create_absolute (string path))
+      | "save_server_state", [path] ->
+          Request.SaveServerState (PyrePath.create_absolute (string path))
       | "superclasses", names -> Superclasses (List.map ~f:reference names)
       | "type", [argument] -> Type (expression argument)
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
@@ -694,13 +695,13 @@ let rec process_request ~environment ~build_system ~configuration request =
     | PathOfModule module_name ->
         ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
-              let path = SourcePath.full_path ~configuration source_path |> Path.absolute in
+              let path = SourcePath.full_path ~configuration source_path |> PyrePath.absolute in
               Some (Single (Base.FoundPath path)))
         |> Option.value
              ~default:
                (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
     | SaveServerState path ->
-        let path = Path.absolute path in
+        let path = PyrePath.absolute path in
         Log.info "Saving server state into `%s`" path;
         Memory.save_shared_memory ~path ~configuration;
         Single (Base.Success (Format.sprintf "Saved state."))
@@ -746,10 +747,10 @@ let rec process_request ~environment ~build_system ~configuration request =
             match path with
             | Some path ->
                 if String.is_prefix ~prefix:"/" path then
-                  [Path.create_absolute ~follow_symbolic_links:true path]
+                  [PyrePath.create_absolute ~follow_symbolic_links:true path]
                 else
                   let { Configuration.Analysis.local_root = root; _ } = configuration in
-                  [Path.create_relative ~root ~relative:path]
+                  [PyrePath.create_relative ~root ~relative:path]
             | None -> configuration.Configuration.Analysis.taint_model_paths
           in
           let configuration =
@@ -785,7 +786,7 @@ let rec process_request ~environment ~build_system ~configuration request =
               (Base.Success
                  (Format.asprintf
                     "Models in `%s` are valid."
-                    (paths |> List.map ~f:Path.show |> String.concat ~sep:", ")))
+                    (paths |> List.map ~f:PyrePath.show |> String.concat ~sep:", ")))
           else
             Single (Base.ModelVerificationErrors errors)
         with

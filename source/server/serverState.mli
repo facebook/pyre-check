@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Pyre
-
 module Subscriptions : sig
   type t
 
@@ -40,4 +38,4 @@ val load_stored_configuration : unit -> Configuration.Analysis.t
 
 val load : build_system:BuildSystem.t -> unit -> t
 
-val store : path:Path.t -> configuration:Configuration.Analysis.t -> t -> unit
+val store : path:PyrePath.t -> configuration:Configuration.Analysis.t -> t -> unit

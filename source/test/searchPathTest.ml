@@ -8,25 +8,25 @@
 open OUnit2
 open Pyre
 
-let ( ! ) = Path.create_absolute
+let ( ! ) = PyrePath.create_absolute
 
 let test_create_search_path _ =
-  let root = Path.create_absolute "/root" in
+  let root = PyrePath.create_absolute "/root" in
   (* Create root/subdirectory. *)
-  let subdirectory = Path.create_relative ~root ~relative:"subdirectory" in
-  assert_equal ~cmp:SearchPath.equal (SearchPath.Root root) (SearchPath.create (Path.show root));
+  let subdirectory = PyrePath.create_relative ~root ~relative:"subdirectory" in
+  assert_equal ~cmp:SearchPath.equal (SearchPath.Root root) (SearchPath.create (PyrePath.show root));
   assert_equal
     ~cmp:SearchPath.equal
     (SearchPath.Root subdirectory)
-    (SearchPath.create (Path.show subdirectory));
+    (SearchPath.create (PyrePath.show subdirectory));
   assert_equal
     ~cmp:SearchPath.equal
     (SearchPath.Subdirectory { root; subdirectory = "subdirectory" })
-    (SearchPath.create (Path.show root ^ "$subdirectory"));
+    (SearchPath.create (PyrePath.show root ^ "$subdirectory"));
   assert_equal
     ~cmp:SearchPath.equal
     (SearchPath.Submodule { root; submodule = "submodule.py" })
-    (SearchPath.create (Path.show root ^ "$submodule.py"));
+    (SearchPath.create (PyrePath.show root ^ "$submodule.py"));
   assert_raises (Failure "Unable to create search path from too$many$levels") (fun () ->
       SearchPath.create "too$many$levels")
 
@@ -113,35 +113,35 @@ let test_normalize context =
 
 
 let test_search_for_path context =
-  let root = bracket_tmpdir context |> Path.create_absolute in
+  let root = bracket_tmpdir context |> PyrePath.create_absolute in
   let assert_path ~search_paths ~path ~expected =
     assert_equal
       (Some expected)
       (SearchPath.search_for_path ~search_paths path
-      >>| fun SearchPath.{ relative_path; _ } -> Path.RelativePath.relative relative_path)
+      >>| fun SearchPath.{ relative_path; _ } -> PyrePath.RelativePath.relative relative_path)
   in
   let search_paths =
     [
       SearchPath.Subdirectory { root; subdirectory = "a" };
       SearchPath.Subdirectory
-        { root = Path.create_relative ~root ~relative:"b"; subdirectory = "c" };
+        { root = PyrePath.create_relative ~root ~relative:"b"; subdirectory = "c" };
       SearchPath.Subdirectory { root; subdirectory = "b" };
       SearchPath.Submodule { root; submodule = "b.py" };
     ]
   in
   assert_path
     ~search_paths
-    ~path:(Path.create_relative ~root ~relative:"a/file.py")
+    ~path:(PyrePath.create_relative ~root ~relative:"a/file.py")
     ~expected:"a/file.py";
   assert_path
     ~search_paths
-    ~path:(Path.create_relative ~root ~relative:"b/c/file.py")
+    ~path:(PyrePath.create_relative ~root ~relative:"b/c/file.py")
     ~expected:"c/file.py";
   assert_path
     ~search_paths
-    ~path:(Path.create_relative ~root ~relative:"b/other/file.py")
+    ~path:(PyrePath.create_relative ~root ~relative:"b/other/file.py")
     ~expected:"b/other/file.py";
-  assert_path ~search_paths ~path:(Path.create_relative ~root ~relative:"b.py") ~expected:"b.py"
+  assert_path ~search_paths ~path:(PyrePath.create_relative ~root ~relative:"b.py") ~expected:"b.py"
 
 
 let () =

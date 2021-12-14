@@ -22,8 +22,8 @@ let build_environment_data
   =
   (* Sanity check environment. *)
   let check_directory_exists directory =
-    if not (Path.is_directory directory) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
+    if not (PyrePath.is_directory directory) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" PyrePath.pp directory))
   in
   source_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   check_directory_exists project_root;

@@ -159,7 +159,7 @@ let parse_source
   let path = SourcePath.full_path ~configuration source_path in
   try File.content_exn (File.create path) |> parse with
   | Sys_error error ->
-      let message = Format.asprintf "Cannot open file `%a` due to: %s" Path.pp path error in
+      let message = Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error in
       Error
         {
           location =

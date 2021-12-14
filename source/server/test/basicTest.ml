@@ -10,7 +10,6 @@ open OUnit2
 open Lwt.Infix
 open Server
 open ServerTest
-module Path = Pyre.Path
 
 let test_basic client =
   let server_properties = Client.get_server_properties client in
@@ -18,7 +17,8 @@ let test_basic client =
     let { ServerProperties.configuration = { Configuration.Analysis.project_root = root; _ }; _ } =
       server_properties
     in
-    Path.create_relative ~root ~relative:"test.py", Path.create_relative ~root ~relative:"test2.py"
+    ( PyrePath.create_relative ~root ~relative:"test.py",
+      PyrePath.create_relative ~root ~relative:"test2.py" )
   in
   (* Test if the `GetInfo` request works properly. *)
   let expected = RequestHandler.create_info_response server_properties in
@@ -35,7 +35,7 @@ let test_basic client =
           "column", `Int 2;
           "stop_line", `Int 3;
           "stop_column", `Int 14;
-          "path", `String (Path.absolute test_path);
+          "path", `String (PyrePath.absolute test_path);
           "code", `Int 7;
           "name", `String "Incompatible return type";
           "description", `String "Incompatible return type [7]: Expected `str` but got `int`.";
@@ -57,7 +57,7 @@ let test_basic client =
           "column", `Int 0;
           "stop_line", `Int 2;
           "stop_column", `Int 3;
-          "path", `String (Path.absolute test2_path);
+          "path", `String (PyrePath.absolute test2_path);
           "code", `Int 9;
           "name", `String "Incompatible variable type";
           ( "description",
@@ -83,14 +83,14 @@ let test_basic client =
   (* Query type errors for `test.py`. *)
   Client.assert_response
     client
-    ~request:(Request.DisplayTypeError [Path.absolute test_path])
+    ~request:(Request.DisplayTypeError [PyrePath.absolute test_path])
     ~expected:(Response.TypeErrors [error_in_test])
   >>= fun () ->
   (* Sending `IncrementalUpdate` without the corresponding filesystem should have no impact on the
      type errors. *)
   Client.assert_response
     client
-    ~request:(Request.IncrementalUpdate [Path.absolute test_path])
+    ~request:(Request.IncrementalUpdate [PyrePath.absolute test_path])
     ~expected:Response.Ok
   >>= fun () ->
   Client.assert_response
@@ -108,7 +108,7 @@ let test_basic client =
   File.create ~content:new_test_content test_path |> File.write;
   Client.assert_response
     client
-    ~request:(Request.IncrementalUpdate [Path.absolute test_path])
+    ~request:(Request.IncrementalUpdate [PyrePath.absolute test_path])
     ~expected:Response.Ok
   >>= fun () ->
   Client.assert_response
@@ -177,7 +177,7 @@ let test_watchman_integration ~watchman_mailbox client =
     |> fun { ServerProperties.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
     project_root
   in
-  let test_path = Path.create_relative ~root:global_root ~relative:"test.py" in
+  let test_path = PyrePath.create_relative ~root:global_root ~relative:"test.py" in
   let initial_error =
     Analysis.AnalysisError.Instantiated.of_yojson
       (`Assoc
@@ -186,7 +186,7 @@ let test_watchman_integration ~watchman_mailbox client =
           "column", `Int 2;
           "stop_line", `Int 3;
           "stop_column", `Int 14;
-          "path", `String (Path.absolute test_path);
+          "path", `String (PyrePath.absolute test_path);
           "code", `Int 7;
           "name", `String "Incompatible return type";
           "description", `String "Incompatible return type [7]: Expected `str` but got `int`.";
@@ -215,7 +215,7 @@ let test_watchman_integration ~watchman_mailbox client =
   File.create ~content:new_test_content test_path |> File.write;
   Lwt_mvar.put
     watchman_mailbox
-    (watchman_update_response ~root:(Path.absolute global_root) ["test.py"])
+    (watchman_update_response ~root:(PyrePath.absolute global_root) ["test.py"])
   >>= fun () ->
   (* Test if the server correctly update the type errors. *)
   Client.assert_response
@@ -224,12 +224,12 @@ let test_watchman_integration ~watchman_mailbox client =
     ~expected:(Response.TypeErrors [])
   >>= fun () ->
   (* Add a new file and send a watchman response. *)
-  let test2_path = Path.create_relative ~root:global_root ~relative:"test2.py" in
+  let test2_path = PyrePath.create_relative ~root:global_root ~relative:"test2.py" in
   let test2_content = "bar: str = 42" in
   File.create ~content:test2_content test2_path |> File.write;
   Lwt_mvar.put
     watchman_mailbox
-    (watchman_update_response ~root:(Path.absolute global_root) ["test2.py"])
+    (watchman_update_response ~root:(PyrePath.absolute global_root) ["test2.py"])
   >>= fun () ->
   (* Test if the server correctly update the type errors. *)
   let new_error =
@@ -240,7 +240,7 @@ let test_watchman_integration ~watchman_mailbox client =
           "column", `Int 0;
           "stop_line", `Int 1;
           "stop_column", `Int 3;
-          "path", `String (Path.absolute test2_path);
+          "path", `String (PyrePath.absolute test2_path);
           "code", `Int 9;
           "name", `String "Incompatible variable type";
           ( "description",
@@ -263,10 +263,10 @@ let test_watchman_integration ~watchman_mailbox client =
     ~expected:(Response.TypeErrors [new_error])
   >>= fun () ->
   (* Remove a file and send a watchman response. *)
-  Path.remove test2_path;
+  PyrePath.remove test2_path;
   Lwt_mvar.put
     watchman_mailbox
-    (watchman_update_response ~root:(Path.absolute global_root) ["test2.py"])
+    (watchman_update_response ~root:(PyrePath.absolute global_root) ["test2.py"])
   >>= fun () ->
   (* Test if the server correctly update the type errors. *)
   Client.assert_response
@@ -337,7 +337,7 @@ let test_subscription_responses client =
     Client.get_server_properties client
   in
   let { ServerState.subscriptions; _ } = Client.current_server_state client in
-  let test_path = Path.create_relative ~root:project_root ~relative:"test.py" in
+  let test_path = PyrePath.create_relative ~root:project_root ~relative:"test.py" in
   let error =
     Analysis.AnalysisError.Instantiated.of_yojson
       (`Assoc
@@ -346,7 +346,7 @@ let test_subscription_responses client =
           "column", `Int 2;
           "stop_line", `Int 3;
           "stop_column", `Int 14;
-          "path", `String (Path.absolute test_path);
+          "path", `String (PyrePath.absolute test_path);
           "code", `Int 7;
           "name", `String "Incompatible return type";
           "description", `String "Incompatible return type [7]: Expected `str` but got `int`.";
@@ -373,9 +373,9 @@ let test_subscription_responses client =
   (* Open another connection to the started server and send an incremental update message -- we
      can't reuse the connection from `client` for this update message since that connection has
      already been used to receive subscriptions. *)
-  let socket_address = Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path) in
+  let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
   let send_incremental_update (_, output_channel) =
-    Request.IncrementalUpdate [Path.absolute test_path]
+    Request.IncrementalUpdate [PyrePath.absolute test_path]
     |> Request.to_yojson
     |> Yojson.Safe.to_string
     |> Lwt_io.write_line output_channel
