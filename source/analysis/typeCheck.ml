@@ -1286,7 +1286,7 @@ module State (Context : Context) = struct
                      }))
         | _ -> None
       in
-      let callable resolved =
+      let callable_from_type resolved =
         match unpack_callable_and_self_argument ~signature_select ~global_resolution resolved with
         | Some unpacked -> Some unpacked
         | _ -> find_method ~parent:resolved ~name:"__call__" ~special_method:true
@@ -1312,7 +1312,7 @@ module State (Context : Context) = struct
                   ]
                 in
                 if Type.is_any resolved_base || Type.is_unbound resolved_base then
-                  callable resolved_callee
+                  callable_from_type resolved_callee
                   >>| fun callable ->
                   [
                     {
@@ -1338,7 +1338,7 @@ module State (Context : Context) = struct
             match resolved with
             | Type.Union annotations ->
                 List.map annotations ~f:(fun annotation ->
-                    callable annotation
+                    callable_from_type annotation
                     >>| fun callable ->
                     {
                       callable;
@@ -1358,7 +1358,7 @@ module State (Context : Context) = struct
                 in
                 get_callables callee
             | annotation ->
-                callable annotation
+                callable_from_type annotation
                 >>| fun callable ->
                 [
                   {
