@@ -1348,15 +1348,14 @@ module State (Context : Context) = struct
                     callable annotation
                     >>| fun callable -> [{ callable; arguments; is_inverted_operator = false }])
           in
-          get_callables callee
+          get_callables callee |> Option.value ~default:[]
         in
         Context.Builder.add_callee
           ~global_resolution
           ~target
           ~callables:
-            (callable_data_list
-            >>| List.map ~f:(fun { callable = { TypeOperation.callable; _ }; _ } -> callable)
-            |> Option.value ~default:[])
+            (List.map callable_data_list ~f:(fun { callable = { TypeOperation.callable; _ }; _ } ->
+                 callable))
           ~arguments:original_arguments
           ~dynamic
           ~qualifier:Context.qualifier
@@ -1440,7 +1439,7 @@ module State (Context : Context) = struct
               |> fun signature -> signature, unpacked_callable_and_self_argument
           | _ -> signature, unpacked_callable_and_self_argument
         in
-        callable_data_list >>| List.map ~f:return_annotation_with_callable_and_self
+        List.map callable_data_list ~f:return_annotation_with_callable_and_self
       in
       let extract_found_not_found = function
         | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
@@ -1552,8 +1551,8 @@ module State (Context : Context) = struct
             { input with resolved = Type.Any; errors = new_errors }
       in
       selected_return_annotations
-      >>| List.partition_map ~f:extract_found_not_found
-      >>= join_return_annotations
+      |> List.partition_map ~f:extract_found_not_found
+      |> join_return_annotations
       |> (function
            | Some resolved -> resolved
            | None -> resolved_for_bad_callable ())
