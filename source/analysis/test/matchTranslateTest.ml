@@ -30,7 +30,7 @@ let assert_pattern_to_condition ~pattern ~expected =
 
 let test_as _ =
   assert_pattern_to_condition ~pattern:"x" ~expected:"(x := subject) == x";
-  assert_pattern_to_condition ~pattern:"42 as x" ~expected:"(x := subject) == x and x is 42";
+  assert_pattern_to_condition ~pattern:"42 as x" ~expected:"(x := subject) == x and x == 42";
   ()
 
 
@@ -38,13 +38,13 @@ let test_class _ =
   assert_pattern_to_condition ~pattern:"Foo()" ~expected:"isinstance(subject, Foo)";
   assert_pattern_to_condition
     ~pattern:"Foo(1)"
-    ~expected:"isinstance(subject, Foo) and getattr(subject, subject.__match_args__[0]) is 1";
+    ~expected:"isinstance(subject, Foo) and getattr(subject, subject.__match_args__[0]) == 1";
   assert_pattern_to_condition
     ~pattern:"Foo(x)"
     ~expected:"isinstance(subject, Foo) and (x := getattr(subject, subject.__match_args__[0])) == x";
   assert_pattern_to_condition
     ~pattern:"Foo(field=1)"
-    ~expected:"isinstance(subject, Foo) and subject.field is 1";
+    ~expected:"isinstance(subject, Foo) and subject.field == 1";
   assert_pattern_to_condition
     ~pattern:"Foo(field=x)"
     ~expected:"isinstance(subject, Foo) and (x := subject.field) == x";
@@ -53,9 +53,9 @@ let test_class _ =
     ~expected:
       {|
       (isinstance(subject, Foo) and
-       getattr(subject, subject.__match_args__[0]) is 1 and
+       getattr(subject, subject.__match_args__[0]) == 1 and
        (x := getattr(subject, subject.__match_args__[1])) == x and
-       subject.field_alpha is 1 and
+       subject.field_alpha == 1 and
        (y := subject.field_beta) == y)
     |};
   ()
@@ -75,7 +75,7 @@ let test_guard _ =
       (MatchTranslate.to_condition ~subject:!"subject" ~case:(parse_single_case case))
   in
   assert_to_condition ~case:"_ if guard" ~expected:"guard";
-  assert_to_condition ~case:"42" ~expected:"subject is 42";
+  assert_to_condition ~case:"42" ~expected:"subject == 42";
   assert_to_condition ~case:"x if x > 0" ~expected:"(x := subject) == x and x > 0";
   ()
 
@@ -83,10 +83,10 @@ let test_guard _ =
 let test_mapping _ =
   assert_pattern_to_condition
     ~pattern:"{1:2}"
-    ~expected:"isinstance(subject, typing.Mapping) and subject[1] is 2";
+    ~expected:"isinstance(subject, typing.Mapping) and subject[1] == 2";
   assert_pattern_to_condition
     ~pattern:"{1:2, 3:4}"
-    ~expected:"isinstance(subject, typing.Mapping) and subject[1] is 2 and subject[3] is 4";
+    ~expected:"isinstance(subject, typing.Mapping) and subject[1] == 2 and subject[3] == 4";
   assert_pattern_to_condition
     ~pattern:"{1:x}"
     ~expected:"isinstance(subject, typing.Mapping) and (x := subject[1]) == x";
@@ -97,7 +97,7 @@ let test_mapping _ =
   assert_pattern_to_condition
     ~pattern:"{1:2, **rest}"
     ~expected:
-      "isinstance(subject, typing.Mapping) and subject[1] is 2 and (rest := dict(subject)) == rest";
+      "isinstance(subject, typing.Mapping) and subject[1] == 2 and (rest := dict(subject)) == rest";
   ()
 
 
@@ -114,12 +114,12 @@ let test_nested _ =
             and
             ( ( (y := subject["text"]) == y
                 and
-                (isinstance(y, typing.Sequence) and y[0] is "hello" and (x := y[1]) == x)
+                (isinstance(y, typing.Sequence) and y[0] == "hello" and (x := y[1]) == x)
               )
               or
               ( (y := subject["text"]) == y
                 and
-                (isinstance(y, typing.Sequence) and y[0] is "world" and (x := y[1]) == x)
+                (isinstance(y, typing.Sequence) and y[0] == "world" and (x := y[1]) == x)
               )
             )
             and
@@ -130,12 +130,12 @@ let test_nested _ =
             and
             ( ( (y := subject["text2"]) == y
                 and
-                (isinstance(y, typing.Sequence) and y[0] is "hello" and (x := y[1]) == x)
+                (isinstance(y, typing.Sequence) and y[0] == "hello" and (x := y[1]) == x)
               )
               or
               ( (y := subject["text2"]) == y
                 and
-                (isinstance(y, typing.Sequence) and y[0] is "world" and (x := y[1]) == x)
+                (isinstance(y, typing.Sequence) and y[0] == "world" and (x := y[1]) == x)
               )
             )
             and
@@ -148,7 +148,7 @@ let test_nested _ =
 let test_or _ =
   assert_pattern_to_condition
     ~pattern:"1|2|3"
-    ~expected:"subject is 1 or subject is 2 or subject is 3";
+    ~expected:"subject == 1 or subject == 2 or subject == 3";
   ()
 
 
@@ -158,9 +158,9 @@ let test_sequence _ =
     ~expected:
       {|(
         isinstance(subject, typing.Sequence) and
-        subject[0] is 7 and
-        subject[1] is 8 and
-        subject[2] is 9
+        subject[0] == 7 and
+        subject[1] == 8 and
+        subject[2] == 9
       )|};
   assert_pattern_to_condition
     ~pattern:"[x, y]"
@@ -175,10 +175,10 @@ let test_sequence _ =
     ~expected:
       {|(
         isinstance(subject, typing.Sequence) and
-        subject[0] is 7 and
-        subject[1] is 8 and
-        subject[-2] is 99 and
-        subject[-1] is 100
+        subject[0] == 7 and
+        subject[1] == 8 and
+        subject[-2] == 99 and
+        subject[-1] == 100
       )|};
   assert_pattern_to_condition
     ~pattern:"[first, *_, last]"
@@ -194,9 +194,9 @@ let test_sequence _ =
       {|(
         isinstance(subject, typing.Sequence) and
         (first := subject[0]) == first and
-        subject[1] is 8 and
+        subject[1] == 8 and
         (rest := list(subject[2:-2])) == rest and
-        subject[-2] is 99 and
+        subject[-2] == 99 and
         (last := subject[-1]) == last
       )|};
   assert_pattern_to_condition
@@ -204,7 +204,7 @@ let test_sequence _ =
     ~expected:
       {|(
         isinstance(subject, typing.Sequence) and
-        subject[0] is 1 and
+        subject[0] == 1 and
         (rest := list(subject[1:])) == rest
       )|};
   assert_pattern_to_condition
@@ -213,7 +213,7 @@ let test_sequence _ =
       {|(
         isinstance(subject, typing.Sequence) and
         (rest := list(subject[:-1])) == rest and
-        subject[-1] is 100
+        subject[-1] == 100
       )|};
   assert_pattern_to_condition
     ~pattern:"[*rest]"
@@ -233,7 +233,7 @@ let test_singleton _ =
 
 
 let test_value _ =
-  assert_pattern_to_condition ~pattern:"42" ~expected:"subject is 42";
+  assert_pattern_to_condition ~pattern:"42" ~expected:"subject == 42";
   ()
 
 

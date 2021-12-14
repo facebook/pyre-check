@@ -224,7 +224,7 @@ module MatchTranslate = struct
         @ (Option.map rest ~f:of_rest |> Option.to_list)
         @ List.mapi suffix ~f:of_suffix_pattern
         |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
-    | MatchValue value -> create_comparison_is ~location subject value
+    | MatchValue value -> create_comparison_equals ~location ~left:subject ~right:value
     | MatchWildcard -> Expression.Constant Constant.True |> Node.create ~location
     | _ -> Expression.Constant Constant.False |> Node.create ~location
 
