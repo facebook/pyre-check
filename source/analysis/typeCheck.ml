@@ -1196,7 +1196,6 @@ module State (Context : Context) = struct
       { resolved with base }
     in
     let forward_callable ~resolution ~errors ~target ~dynamic ~callee ~arguments =
-      let original_arguments = arguments in
       let resolution, errors, reversed_arguments =
         let forward_argument (resolution, errors, reversed_arguments) argument =
           let expression, kind = Ast.Expression.Call.Argument.unpack argument in
@@ -1209,7 +1208,6 @@ module State (Context : Context) = struct
         in
         List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
       in
-      let arguments = List.rev reversed_arguments in
       let signature_select_bidirectional
           ~all_parameters
           ~parameters
@@ -1257,7 +1255,7 @@ module State (Context : Context) = struct
       (* When an operator does not exist on the left operand but its inverse exists on the right
          operand, the missing attribute error would not have been thrown for the original operator.
          Build up the original error in case the inverse operator does not typecheck. *)
-      let potential_missing_operator_error =
+      let potential_missing_operator_error arguments =
         match target, callee with
         | Some target, Callee.Attribute { attribute = { name; resolved }; _ }
           when Type.is_top resolved
@@ -1291,7 +1289,7 @@ module State (Context : Context) = struct
         | Some unpacked -> Some unpacked
         | _ -> find_method ~parent:resolved ~name:"__call__" ~special_method:true
       in
-      let rec get_callables callee =
+      let rec get_callables ~arguments callee =
         match callee with
         | Callee.Attribute
             { base = { expression; resolved_base }; attribute = { name; resolved }; _ }
@@ -1356,7 +1354,7 @@ module State (Context : Context) = struct
                   | Callee.NonAttribute callee ->
                       Callee.NonAttribute { callee with resolved = parent }
                 in
-                get_callables callee
+                get_callables ~arguments callee
             | annotation ->
                 callable_from_type annotation
                 >>| fun callable ->
@@ -1460,10 +1458,10 @@ module State (Context : Context) = struct
             First selected_return_annotation
         | not_found -> Second not_found
       in
-      let resolved_for_bad_callable () =
+      let resolved_for_bad_callable arguments =
         let errors =
           let resolved_callee = Callee.resolved callee in
-          match resolved_callee, potential_missing_operator_error with
+          match resolved_callee, potential_missing_operator_error arguments with
           | Type.Top, Some kind -> emit_error ~errors ~location ~kind
           | Parametric { name = "type"; parameters = [Single Any] }, _
           | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
@@ -1569,7 +1567,9 @@ module State (Context : Context) = struct
 
             { input with resolved = Type.Any; errors = new_errors }
       in
-      let callable_data_list = get_callables callee |> Option.value ~default:[] in
+      let original_arguments = arguments in
+      let arguments = List.rev reversed_arguments in
+      let callable_data_list = get_callables ~arguments callee |> Option.value ~default:[] in
       Context.Builder.add_callee
         ~global_resolution
         ~target
@@ -1589,7 +1589,7 @@ module State (Context : Context) = struct
       |> join_return_annotations
       |> (function
            | Some resolved -> resolved
-           | None -> resolved_for_bad_callable ())
+           | None -> resolved_for_bad_callable arguments)
       |> check_for_error
     in
     match value with
