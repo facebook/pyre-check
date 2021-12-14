@@ -96,7 +96,7 @@ def _log_lsp_event(
 
 def process_initialize_request(
     parameters: lsp.InitializeParameters,
-    ide_features: Optional[configuration_module.IdeFeatures],
+    ide_features: Optional[configuration_module.IdeFeatures] = None,
 ) -> lsp.InitializeResult:
     LOG.info(
         f"Received initialization request from {parameters.client_info} "

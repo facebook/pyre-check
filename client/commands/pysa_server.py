@@ -10,10 +10,13 @@ version of persistent.py.
 """
 
 import asyncio
+import json
 import logging
+from typing import Union
 
 from .. import (
     json_rpc,
+    log,
     command_arguments,
     configuration as configuration_module,
 )
@@ -26,14 +29,92 @@ from . import (
 from .persistent import (
     LSPEvent,
     _read_lsp_request,
-    try_initialize,
     _log_lsp_event,
-    InitializationExit,
     InitializationSuccess,
     InitializationFailure,
+    InitializationExit,
+    _wait_for_exit,
+    process_initialize_request,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+async def try_initialize(
+    input_channel: connection.TextReader,
+    output_channel: connection.TextWriter,
+) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
+    """
+    Read an LSP message from the input channel and try to initialize an LSP
+    server. Also write to the output channel with proper response if the input
+    message is a request instead of a notification.
+
+    The function can return one of three possibilities:
+    - If the initialization succeeds, return `InitializationSuccess`.
+    - If the initialization fails, return `InitializationFailure`. There could
+      be many reasons for the failure: The incoming LSP message may not be an
+      initiailization request. The incoming LSP request may be malformed. Or the
+      client may not complete the handshake by sending back an `initialized` request.
+    - If an exit notification is received, return `InitializationExit`. The LSP
+      spec allows exiting a server without a preceding initialize request.
+    """
+    request = None
+    try:
+        request = await lsp.read_json_rpc(input_channel)
+        LOG.debug(f"Received pre-initialization LSP request: {request}")
+
+        request_id = request.id
+        if request_id is None:
+            return (
+                InitializationExit()
+                if request.method == "exit"
+                else InitializationFailure()
+            )
+        if request.method != "initialize":
+            raise lsp.ServerNotInitializedError("An initialize request is needed.")
+        request_parameters = request.parameters
+        if request_parameters is None:
+            raise lsp.ServerNotInitializedError(
+                "Missing parameters for initialize request."
+            )
+
+        initialize_parameters = lsp.InitializeParameters.from_json_rpc_parameters(
+            request_parameters
+        )
+        result = process_initialize_request(initialize_parameters)
+        await lsp.write_json_rpc(
+            output_channel,
+            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+            json_rpc.SuccessResponse(id=request_id, result=result.to_dict()),
+        )
+
+        initialized_notification = await lsp.read_json_rpc(input_channel)
+        if initialized_notification.method == "shutdown":
+            await _wait_for_exit(input_channel, output_channel)
+            return InitializationExit()
+        elif initialized_notification.method != "initialized":
+            actual_message = json.dumps(initialized_notification.json())
+            raise lsp.ServerNotInitializedError(
+                "Failed to receive an `initialized` request from client. "
+                + f"Got {log.truncate(actual_message, 100)}"
+            )
+
+        return InitializationSuccess(
+            client_capabilities=initialize_parameters.capabilities,
+            client_info=initialize_parameters.client_info,
+            initialization_options=initialize_parameters.initialization_options,
+        )
+    except json_rpc.JSONRPCException as json_rpc_error:
+        await lsp.write_json_rpc(
+            output_channel,
+            json_rpc.ErrorResponse(
+                id=request.id if request is not None else None,
+                code=json_rpc_error.error_code(),
+                message=str(json_rpc_error),
+                data={"retry": False},
+            ),
+        )
+        return InitializationFailure(exception=json_rpc_error)
 
 
 class PysaServer:
