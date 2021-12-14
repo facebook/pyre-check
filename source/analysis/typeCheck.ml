@@ -583,12 +583,14 @@ module State (Context : Context) = struct
       resolved: Type.t;
     }
 
+    type callee_attribute = {
+      base: base;
+      attribute: attribute;
+      expression: Expression.t;
+    }
+
     type t =
-      | Attribute of {
-          base: base;
-          attribute: attribute;
-          expression: Expression.t;
-        }
+      | Attribute of callee_attribute
       | NonAttribute of {
           expression: Expression.t;
           resolved: Type.t;
@@ -1277,48 +1279,51 @@ module State (Context : Context) = struct
         | Some unpacked -> Some unpacked
         | _ -> find_method ~parent:resolved ~name:"__call__" ~special_method:true
       in
+      let inverse_operator_callable
+          ~callee_attribute:
+            { Callee.base = { expression; resolved_base }; attribute = { name; _ }; _ }
+        = function
+        | [{ AttributeResolution.Argument.resolved; _ }] as arguments ->
+            inverse_operator name
+            >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
+            >>= fun found_callable ->
+            let inverted_arguments =
+              [
+                {
+                  AttributeResolution.Argument.expression = Some expression;
+                  resolved = resolved_base;
+                  kind = Positional;
+                };
+              ]
+            in
+            if Type.is_any resolved_base || Type.is_unbound resolved_base then
+              callable_from_type Type.Top
+              >>| fun callable ->
+              [
+                {
+                  callable;
+                  arguments;
+                  is_inverted_operator = false;
+                  selected_return_annotation = ();
+                };
+              ]
+            else
+              Some
+                [
+                  {
+                    callable = found_callable;
+                    arguments = inverted_arguments;
+                    is_inverted_operator = true;
+                    selected_return_annotation = ();
+                  };
+                ]
+        | _ -> None
+      in
       let rec get_callables ~arguments callee =
         match callee with
-        | Callee.Attribute
-            { base = { expression; resolved_base }; attribute = { name; resolved }; _ }
-          when Type.is_top resolved -> (
-            let resolved_callee = resolved in
-            match arguments with
-            | [{ AttributeResolution.Argument.resolved; _ }] ->
-                inverse_operator name
-                >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
-                >>= fun found_callable ->
-                let inverted_arguments =
-                  [
-                    {
-                      AttributeResolution.Argument.expression = Some expression;
-                      resolved = resolved_base;
-                      kind = Positional;
-                    };
-                  ]
-                in
-                if Type.is_any resolved_base || Type.is_unbound resolved_base then
-                  callable_from_type resolved_callee
-                  >>| fun callable ->
-                  [
-                    {
-                      callable;
-                      arguments;
-                      is_inverted_operator = false;
-                      selected_return_annotation = ();
-                    };
-                  ]
-                else
-                  Some
-                    [
-                      {
-                        callable = found_callable;
-                        arguments = inverted_arguments;
-                        is_inverted_operator = true;
-                        selected_return_annotation = ();
-                      };
-                    ]
-            | _ -> None)
+        | Callee.Attribute ({ attribute = { resolved; _ }; _ } as callee_attribute)
+          when Type.is_top resolved ->
+            inverse_operator_callable ~callee_attribute arguments
         | Callee.Attribute { attribute = { resolved; _ }; _ }
         | Callee.NonAttribute { resolved; _ } -> (
             match resolved with
