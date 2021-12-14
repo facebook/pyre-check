@@ -99,100 +99,129 @@ def _read(position: FilePosition) -> bytes:
 
 
 def _filter_taint_tree(
-    taint_tree: List[Dict[str, Any]], predicate: Callable[[str, Dict[str, Any]], bool]
+    taint_tree: List[Dict[str, Any]],
+    frame_predicate: Callable[[str, Dict[str, Any]], bool],
 ) -> List[Dict[str, Any]]:
     new_taint_tree = []
     for taint in taint_tree:
-        new_taint_taint = [
-            flow_details
-            for flow_details in taint["taint"]
-            if predicate(taint["port"], flow_details)
-        ]
+        caller_port = taint["port"]
+        new_local_taints = []
+        for local_taint in taint["taint"]:
+            new_kinds = [
+                frame
+                for frame in local_taint["kinds"]
+                if frame_predicate(caller_port, frame)
+            ]
+            if len(new_kinds) > 0:
+                new_local_taint = local_taint.copy()
+                new_local_taint["kinds"] = new_kinds
+                new_local_taints.append(new_local_taint)
 
-        if len(new_taint_taint) > 0:
+        if len(new_local_taints) > 0:
             new_taint = taint.copy()
-            new_taint["taint"] = new_taint_taint
+            new_taint["taint"] = new_local_taints
             new_taint_tree.append(new_taint)
 
     return new_taint_tree
 
 
 def filter_model(
-    model: Dict[str, Any], predicate: Callable[[str, Dict[str, Any]], bool]
+    model: Dict[str, Any], frame_predicate: Callable[[str, Dict[str, Any]], bool]
 ) -> Dict[str, Any]:
     model = model.copy()
-    model["sources"] = _filter_taint_tree(model.get("sources", []), predicate)
-    model["sinks"] = _filter_taint_tree(model.get("sinks", []), predicate)
-    model["tito"] = _filter_taint_tree(model.get("tito", []), predicate)
+    model["sources"] = _filter_taint_tree(model.get("sources", []), frame_predicate)
+    model["sinks"] = _filter_taint_tree(model.get("sinks", []), frame_predicate)
+    model["tito"] = _filter_taint_tree(model.get("tito", []), frame_predicate)
     return model
 
 
 def filter_model_caller_port(model: Dict[str, Any], port: str) -> Dict[str, Any]:
-    def predicate(caller_port: str, flow_details: Dict[str, Any]) -> bool:
+    def predicate(caller_port: str, frame: Dict[str, Any]) -> bool:
         return port == caller_port
 
     return filter_model(model, predicate)
 
 
 def filter_model_kind(model: Dict[str, Any], kind: str) -> Dict[str, Any]:
-    def predicate(caller_port: str, flow_details: Dict[str, Any]) -> bool:
-        return any(leaf["kind"] == kind for leaf in flow_details["leaves"])
+    def predicate(caller_port: str, frame: Dict[str, Any]) -> bool:
+        return frame["kind"] == kind
 
     return filter_model(model, predicate)
 
 
 def _map_taint_tree(
-    taint_tree: List[Dict[str, Any]], map: Callable[[str, Dict[str, Any]], None]
+    taint_tree: List[Dict[str, Any]],
+    frame_map: Callable[[str, Dict[str, Any]], None],
+    local_taint_map: Callable[[str, Dict[str, Any]], None],
 ) -> List[Dict[str, Any]]:
     new_taint_tree = []
     for taint in taint_tree:
-        new_taint_taint = []
-        for flow_details in taint["taint"]:
-            flow_details = flow_details.copy()
-            map(taint["port"], flow_details)
-            new_taint_taint.append(flow_details)
+        caller_port = taint["port"]
+        new_local_taints = []
+        for local_taint in taint["taint"]:
+            new_kinds = []
+            for frame in local_taint["kinds"]:
+                new_frame = frame.copy()
+                frame_map(caller_port, new_frame)
+                new_kinds.append(new_frame)
+
+            new_local_taint = local_taint.copy()
+            new_local_taint["kinds"] = new_kinds
+            local_taint_map(caller_port, new_local_taint)
+            new_local_taints.append(new_local_taint)
 
         new_taint = taint.copy()
-        new_taint["taint"] = new_taint_taint
+        new_taint["taint"] = new_local_taints
         new_taint_tree.append(new_taint)
 
     return new_taint_tree
 
 
 def map_model(
-    model: Dict[str, Any], map: Callable[[str, Dict[str, Any]], None]
+    model: Dict[str, Any],
+    frame_map: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+    local_taint_map: Optional[Callable[[str, Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
+    frame_map = frame_map if frame_map is not None else lambda x, y: None
+    local_taint_map = (
+        local_taint_map if local_taint_map is not None else lambda x, y: None
+    )
+
     model = model.copy()
-    model["sources"] = _map_taint_tree(model.get("sources", []), map)
-    model["sinks"] = _map_taint_tree(model.get("sinks", []), map)
-    model["tito"] = _map_taint_tree(model.get("tito", []), map)
+    model["sources"] = _map_taint_tree(
+        model.get("sources", []), frame_map, local_taint_map
+    )
+    model["sinks"] = _map_taint_tree(model.get("sinks", []), frame_map, local_taint_map)
+    model["tito"] = _map_taint_tree(model.get("tito", []), frame_map, local_taint_map)
     return model
 
 
 def model_remove_tito_positions(model: Dict[str, Any]) -> Dict[str, Any]:
-    def map(caller_port: str, flow_details: Dict[str, Any]) -> None:
-        if "tito" in flow_details:
-            del flow_details["tito"]
+    def local_taint_map(caller_port: str, local_taint: Dict[str, Any]) -> None:
+        if "tito" in local_taint:
+            del local_taint["tito"]
 
-    return map_model(model, map)
+    return map_model(model, local_taint_map=local_taint_map)
 
 
 def model_remove_features(model: Dict[str, Any]) -> Dict[str, Any]:
-    def map(caller_port: str, flow_details: Dict[str, Any]) -> None:
-        if "features" in flow_details:
-            del flow_details["features"]
+    def frame_map(caller_port: str, frame: Dict[str, Any]) -> None:
+        if "features" in frame:
+            del frame["features"]
 
-    return map_model(model, map)
+    def local_taint_map(caller_port: str, local_taint: Dict[str, Any]) -> None:
+        if "local_features" in local_taint:
+            del local_taint["local_features"]
+
+    return map_model(model, frame_map=frame_map, local_taint_map=local_taint_map)
 
 
 def model_remove_leaf_names(model: Dict[str, Any]) -> Dict[str, Any]:
-    def map(caller_port: str, flow_details: Dict[str, Any]) -> None:
-        if "leaves" in flow_details:
-            kinds = {leaf["kind"] for leaf in flow_details["leaves"]}
-            del flow_details["leaves"]
-            flow_details["kinds"] = sorted(kinds)
+    def frame_map(caller_port: str, frame: Dict[str, Any]) -> None:
+        if "leaves" in frame:
+            del frame["leaves"]
 
-    return map_model(model, map)
+    return map_model(model, frame_map=frame_map)
 
 
 def get_model(
