@@ -609,7 +609,12 @@ module State (Context : Context) = struct
       selected_return_annotation: 'return_annotation;
     }
 
-    type 'return_annotation t = KnownCallable of 'return_annotation callable_data
+    type 'return_annotation t =
+      | KnownCallable of 'return_annotation callable_data
+      | UnknownCallableAttribute of {
+          callable_attribute: Callee.callee_attribute;
+          arguments: AttributeResolution.Argument.t list;
+        }
   end
 
   let type_of_signature ~resolution signature =
@@ -1286,44 +1291,50 @@ module State (Context : Context) = struct
       in
       let inverse_operator_callable
           ~callee_attribute:
-            { Callee.base = { expression; resolved_base }; attribute = { name; _ }; _ }
+            ({ Callee.base = { expression; resolved_base }; attribute = { name; _ }; _ } as
+            callee_attribute)
         = function
         | [{ AttributeResolution.Argument.resolved; _ }] as arguments ->
-            inverse_operator name
-            >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
-            >>= fun found_callable ->
-            let inverted_arguments =
-              [
-                {
-                  AttributeResolution.Argument.expression = Some expression;
-                  resolved = resolved_base;
-                  kind = Positional;
-                };
-              ]
-            in
-            if Type.is_any resolved_base || Type.is_unbound resolved_base then
-              callable_from_type Type.Top
-              >>| fun callable ->
-              [
-                KnownCallable
+            let found_inverse_operator =
+              inverse_operator name
+              >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
+              >>= fun found_callable ->
+              let inverted_arguments =
+                [
                   {
-                    callable;
-                    arguments;
-                    is_inverted_operator = false;
-                    selected_return_annotation = ();
+                    AttributeResolution.Argument.expression = Some expression;
+                    resolved = resolved_base;
+                    kind = Positional;
                   };
-              ]
-            else
-              Some
+                ]
+              in
+              if Type.is_any resolved_base || Type.is_unbound resolved_base then
+                callable_from_type Type.Top
+                >>| fun callable ->
                 [
                   KnownCallable
                     {
-                      callable = found_callable;
-                      arguments = inverted_arguments;
-                      is_inverted_operator = true;
+                      callable;
+                      arguments;
+                      is_inverted_operator = false;
                       selected_return_annotation = ();
                     };
                 ]
+              else
+                Some
+                  [
+                    KnownCallable
+                      {
+                        callable = found_callable;
+                        arguments = inverted_arguments;
+                        is_inverted_operator = true;
+                        selected_return_annotation = ();
+                      };
+                  ]
+            in
+            Option.first_some
+              found_inverse_operator
+              (Some [UnknownCallableAttribute { callable_attribute = callee_attribute; arguments }])
         | _ -> None
       in
       let rec get_callables ~arguments callee =
@@ -1371,13 +1382,12 @@ module State (Context : Context) = struct
       in
       let return_annotation_with_callable_and_self
           ~resolution
-          (KnownCallable
-            ({
-               callable = { TypeOperation.callable; self_argument };
-               arguments;
-               is_inverted_operator;
-               _;
-             } as callable_data))
+          ({
+             callable = { TypeOperation.callable; self_argument };
+             arguments;
+             is_inverted_operator;
+             _;
+           } as callable_data)
         =
         let selected_return_annotation = signature_select ~arguments ~callable ~self_argument in
         match selected_return_annotation, callable with
@@ -1400,22 +1410,20 @@ module State (Context : Context) = struct
                           };
                         ]
                       in
-                      KnownCallable
-                        {
-                          callable_data with
-                          selected_return_annotation =
-                            GlobalResolution.signature_select
-                              ~arguments
-                              ~global_resolution:(Resolution.global_resolution resolution)
-                              ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-                              ~callable
-                              ~self_argument;
-                          (* Make sure we emit errors against the inverse function, not the original *)
-                          callable = unpacked_callable_and_self_argument;
-                        })
-                |> Option.value
-                     ~default:(KnownCallable { callable_data with selected_return_annotation })
-            | _ -> KnownCallable { callable_data with selected_return_annotation })
+                      {
+                        callable_data with
+                        selected_return_annotation =
+                          GlobalResolution.signature_select
+                            ~arguments
+                            ~global_resolution:(Resolution.global_resolution resolution)
+                            ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+                            ~callable
+                            ~self_argument;
+                        (* Make sure we emit errors against the inverse function, not the original *)
+                        callable = unpacked_callable_and_self_argument;
+                      })
+                |> Option.value ~default:{ callable_data with selected_return_annotation }
+            | _ -> { callable_data with selected_return_annotation })
         | ( (Found { selected_return_annotation; _ } as found_return_annotation),
             { kind = Named access; _ } )
           when String.equal "__init__" (Reference.last access) ->
@@ -1452,9 +1460,8 @@ module State (Context : Context) = struct
                       else
                         found_return_annotation)
             |> Option.value ~default:found_return_annotation
-            |> fun selected_return_annotation ->
-            KnownCallable { callable_data with selected_return_annotation }
-        | _ -> KnownCallable { callable_data with selected_return_annotation }
+            |> fun selected_return_annotation -> { callable_data with selected_return_annotation }
+        | _ -> { callable_data with selected_return_annotation }
       in
       let extract_found_not_found = function
         | KnownCallable
@@ -1600,16 +1607,19 @@ module State (Context : Context) = struct
         ~global_resolution
         ~target
         ~callables:
-          (List.map
-             callable_data_list
-             ~f:(fun (KnownCallable { callable = { TypeOperation.callable; _ }; _ }) -> callable))
+          (List.filter_map callable_data_list ~f:(function
+              | KnownCallable { callable = { TypeOperation.callable; _ }; _ } -> Some callable
+              | _ -> None))
         ~arguments:original_arguments
         ~dynamic
         ~qualifier:Context.qualifier
         ~callee_type:(Callee.resolved callee)
         ~callee:(Callee.expression callee);
       let selected_return_annotations =
-        List.map callable_data_list ~f:(return_annotation_with_callable_and_self ~resolution)
+        List.map callable_data_list ~f:(function
+            | KnownCallable callable_data ->
+                KnownCallable (return_annotation_with_callable_and_self ~resolution callable_data)
+            | UnknownCallableAttribute other -> UnknownCallableAttribute other)
       in
       selected_return_annotations
       |> List.partition_map ~f:extract_found_not_found
