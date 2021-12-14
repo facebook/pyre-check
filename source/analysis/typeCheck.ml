@@ -19,10 +19,11 @@ type class_name_and_is_abstract_and_is_protocol = {
   is_protocol: bool;
 }
 
-type callable_data = {
+type 'return_annotation callable_data = {
   callable: TypeOperation.callable_and_self_argument;
   arguments: AttributeResolution.Argument.t list;
   is_inverted_operator: bool;
+  selected_return_annotation: 'return_annotation;
 }
 
 module LocalErrorMap = struct
@@ -1315,7 +1316,15 @@ module State (Context : Context) = struct
                     in
                     if Type.is_any resolved_base || Type.is_unbound resolved_base then
                       callable resolved
-                      >>| fun callable -> [{ callable; arguments; is_inverted_operator = false }]
+                      >>| fun callable ->
+                      [
+                        {
+                          callable;
+                          arguments;
+                          is_inverted_operator = false;
+                          selected_return_annotation = ();
+                        };
+                      ]
                     else
                       Some
                         [
@@ -1323,6 +1332,7 @@ module State (Context : Context) = struct
                             callable = found_callable;
                             arguments = inverted_arguments;
                             is_inverted_operator = true;
+                            selected_return_annotation = ();
                           };
                         ]
                 | _ -> None)
@@ -1332,7 +1342,13 @@ module State (Context : Context) = struct
                 | Type.Union annotations ->
                     List.map annotations ~f:(fun annotation ->
                         callable annotation
-                        >>| fun callable -> { callable; arguments; is_inverted_operator = false })
+                        >>| fun callable ->
+                        {
+                          callable;
+                          arguments;
+                          is_inverted_operator = false;
+                          selected_return_annotation = ();
+                        })
                     |> Option.all
                 | Type.Variable { constraints = Type.Variable.Bound parent; _ } ->
                     let callee =
@@ -1346,7 +1362,15 @@ module State (Context : Context) = struct
                     get_callables callee
                 | annotation ->
                     callable annotation
-                    >>| fun callable -> [{ callable; arguments; is_inverted_operator = false }])
+                    >>| fun callable ->
+                    [
+                      {
+                        callable;
+                        arguments;
+                        is_inverted_operator = false;
+                        selected_return_annotation = ();
+                      };
+                    ])
           in
           get_callables callee |> Option.value ~default:[]
         in
@@ -1362,12 +1386,12 @@ module State (Context : Context) = struct
           ~callee_type:(Callee.resolved callee)
           ~callee:(Callee.expression callee);
         let return_annotation_with_callable_and_self
-            {
-              callable =
-                { TypeOperation.callable; self_argument } as unpacked_callable_and_self_argument;
-              arguments;
-              is_inverted_operator;
-            }
+            ({
+               callable = { TypeOperation.callable; self_argument };
+               arguments;
+               is_inverted_operator;
+               _;
+             } as callable_data)
           =
           let selected_return_annotation = signature_select ~arguments ~callable ~self_argument in
           match selected_return_annotation, callable with
@@ -1390,17 +1414,20 @@ module State (Context : Context) = struct
                             };
                           ]
                         in
-                        ( GlobalResolution.signature_select
-                            ~arguments
-                            ~global_resolution:(Resolution.global_resolution resolution)
-                            ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-                            ~callable
-                            ~self_argument,
+                        {
+                          callable_data with
+                          selected_return_annotation =
+                            GlobalResolution.signature_select
+                              ~arguments
+                              ~global_resolution:(Resolution.global_resolution resolution)
+                              ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+                              ~callable
+                              ~self_argument;
                           (* Make sure we emit errors against the inverse function, not the original *)
-                          unpacked_callable_and_self_argument ))
-                  |> Option.value
-                       ~default:(selected_return_annotation, unpacked_callable_and_self_argument)
-              | _ -> selected_return_annotation, unpacked_callable_and_self_argument)
+                          callable = unpacked_callable_and_self_argument;
+                        })
+                  |> Option.value ~default:{ callable_data with selected_return_annotation }
+              | _ -> { callable_data with selected_return_annotation })
           | ( (Found { selected_return_annotation; _ } as found_return_annotation),
               { kind = Named access; _ } )
             when String.equal "__init__" (Reference.last access) ->
@@ -1438,14 +1465,17 @@ module State (Context : Context) = struct
                         else
                           found_return_annotation)
               |> Option.value ~default:found_return_annotation
-              |> fun selected_return_annotation ->
-              selected_return_annotation, unpacked_callable_and_self_argument
-          | _ -> selected_return_annotation, unpacked_callable_and_self_argument
+              |> fun selected_return_annotation -> { callable_data with selected_return_annotation }
+          | _ -> { callable_data with selected_return_annotation }
         in
         List.map callable_data_list ~f:return_annotation_with_callable_and_self
       in
       let extract_found_not_found = function
-        | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
+        | {
+            selected_return_annotation =
+              SignatureSelectionTypes.Found { selected_return_annotation };
+            _;
+          } ->
             First selected_return_annotation
         | not_found -> Second not_found
       in
@@ -1481,8 +1511,13 @@ module State (Context : Context) = struct
                 base = None;
               }
         | ( _,
-            ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
-              unpacked_callable_and_self_argument )
+            {
+              selected_return_annotation =
+                SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason };
+              callable = unpacked_callable_and_self_argument;
+              arguments;
+              _;
+            }
             :: _ ) ->
             (* For a union of callables, we prioritize mismatched signatures even if some of the
                callables matched correctly. *)
