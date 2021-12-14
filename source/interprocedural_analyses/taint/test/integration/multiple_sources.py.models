@@ -388,12 +388,12 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
                 "return_paths": [ "[id]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 16, "start": 19, "end": 21 } ],
             "decl": null
           }
@@ -519,13 +519,13 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "<unknown>" },
-                  { "always-via": "tito" }
+                  { "first-index": "<unknown>" }
                 ],
                 "leaves": [ { "name": "multiple_sources.Node.send" } ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[id]]"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 40, "start": 13, "end": 15 } ],
             "root": {
               "filename": "multiple_sources.py",

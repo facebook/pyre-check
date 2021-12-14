@@ -57,7 +57,7 @@ let generate_source_sink_matches ~location ~source_tree ~sink_tree =
     let source_taint =
       ForwardState.Tree.read path source_tree
       |> ForwardState.Tree.collapse
-           ~transform:(ForwardTaint.add_breadcrumbs (Features.issue_broadening_set ()))
+           ~transform:(ForwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
     in
     if ForwardTaint.is_bottom source_taint then
       matches
@@ -80,20 +80,8 @@ type flow_state = {
 
 let get_issue_features { source_taint; sink_taint } =
   let breadcrumbs =
-    let source_breadcrumbs =
-      ForwardTaint.fold
-        Features.BreadcrumbSet.Self
-        ~f:Features.BreadcrumbSet.join
-        ~init:Features.BreadcrumbSet.bottom
-        source_taint
-    in
-    let sink_breadcrumbs =
-      BackwardTaint.fold
-        Features.BreadcrumbSet.Self
-        ~f:Features.BreadcrumbSet.join
-        ~init:Features.BreadcrumbSet.bottom
-        sink_taint
-    in
+    let source_breadcrumbs = ForwardTaint.joined_breadcrumbs source_taint in
+    let sink_breadcrumbs = BackwardTaint.joined_breadcrumbs sink_taint in
     Features.BreadcrumbSet.sequence_join source_breadcrumbs sink_breadcrumbs
   in
   let first_indices =
@@ -111,7 +99,6 @@ let get_issue_features { source_taint; sink_taint } =
         ~init:Features.FirstIndexSet.bottom
         sink_taint
     in
-
     Features.FirstIndexSet.join source_indices sink_indices
   in
   let first_fields =
@@ -382,7 +369,7 @@ let code_metadata () =
 let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
   let partial_sinks_to_taint =
     BackwardState.Tree.collapse
-      ~transform:(BackwardTaint.add_breadcrumbs (Features.issue_broadening_set ()))
+      ~transform:(BackwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
       sink_tree
     |> BackwardTaint.partition BackwardTaint.kind ByFilter ~f:Sinks.extract_partial_sink
   in
@@ -404,7 +391,10 @@ let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
                   ~source_tree
                   ~sink_tree:
                     (BackwardState.Tree.create_leaf
-                       (BackwardTaint.singleton ~location (Sinks.TriggeredPartialSink sink)))
+                       (BackwardTaint.singleton
+                          ~location
+                          (Sinks.TriggeredPartialSink sink)
+                          Frame.initial))
               in
               None, Some candidate
             else

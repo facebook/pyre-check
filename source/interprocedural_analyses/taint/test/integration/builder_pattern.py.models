@@ -17,14 +17,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 45, "start": 46, "end": 60 } ],
             "root": {
               "filename": "builder_pattern.py",
@@ -86,14 +84,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 76, "start": 8, "end": 22 } ],
             "root": {
               "filename": "builder_pattern.py",
@@ -155,14 +151,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 58, "start": 8, "end": 22 } ],
             "root": {
               "filename": "builder_pattern.py",

@@ -14,22 +14,22 @@ open Core
 let test_no_errors _ =
   let open Flow in
   let source_tree_a =
-    ForwardTaint.singleton (Sources.NamedSource "Demo")
+    ForwardTaint.singleton (Sources.NamedSource "Demo") Frame.initial
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Index "a"]
   in
   let source_tree_b =
-    ForwardTaint.singleton (Sources.NamedSource "Test")
+    ForwardTaint.singleton (Sources.NamedSource "Test") Frame.initial
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Index "b"]
   in
   let sink_tree_a =
-    BackwardTaint.singleton (Sinks.NamedSink "Test")
+    BackwardTaint.singleton (Sinks.NamedSink "Test") Frame.initial
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index "a"]
   in
   let sink_tree_b =
-    BackwardTaint.singleton (Sinks.NamedSink "Demo")
+    BackwardTaint.singleton (Sinks.NamedSink "Demo") Frame.initial
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index "b"]
   in
@@ -64,12 +64,12 @@ let test_no_errors _ =
 let test_errors _ =
   let open Flow in
   let source_tree ~field ~source =
-    ForwardTaint.singleton (Sources.NamedSource source)
+    ForwardTaint.singleton (Sources.NamedSource source) Frame.initial
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Index field]
   in
   let sink_tree ~field ~sink =
-    BackwardTaint.singleton (Sinks.NamedSink sink)
+    BackwardTaint.singleton (Sinks.NamedSink sink) Frame.initial
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index field]
   in

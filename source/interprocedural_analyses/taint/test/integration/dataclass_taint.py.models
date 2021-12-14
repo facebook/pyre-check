@@ -340,14 +340,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -365,14 +365,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[bad]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -456,15 +453,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
                 "leaves": [
                   { "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}" }
                 ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -482,14 +479,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[bad_sink]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[bad_sink]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -511,14 +505,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[bad]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -602,15 +593,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
                 "leaves": [
                   { "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}" }
                 ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -627,14 +618,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -652,14 +643,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[bad_sink]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[bad_sink]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -681,14 +669,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[bad]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -758,14 +743,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "root": {
               "filename": "dataclass_taint.py",
@@ -783,14 +768,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[bad]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -934,15 +916,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
                 "leaves": [
                   { "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}" }
                 ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "root": {
               "filename": "dataclass_taint.py",
@@ -960,14 +942,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[bad_sink]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[bad_sink]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -989,14 +968,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[bad]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -1036,14 +1012,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 18, "start": 28, "end": 42 } ],
             "root": {
               "filename": "dataclass_taint.py",
@@ -1075,15 +1049,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "broadening" },
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "tito": [ { "line": 18, "start": 28, "end": 42 } ],
             "root": {
@@ -1136,14 +1110,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 24, "start": 28, "end": 42 } ],
             "root": {
               "filename": "dataclass_taint.py",

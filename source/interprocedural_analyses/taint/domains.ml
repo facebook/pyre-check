@@ -216,9 +216,9 @@ module Frame = struct
       [Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty); Part (TraceLength.Self, 0)]
 
 
-  let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
+  let add_propagated_breadcrumb breadcrumb =
+    transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
 
-  let add_breadcrumbs breadcrumbs = transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
 
   let product_pp = pp (* shadow *)
 
@@ -247,11 +247,17 @@ module type TAINT_DOMAIN = sig
 
   val call_info : CallInfo.t Abstract.Domain.part
 
-  val add_breadcrumb : Features.BreadcrumbInterned.t -> t -> t
+  val add_local_breadcrumb : Features.BreadcrumbInterned.t -> t -> t
 
-  val add_breadcrumbs : Features.BreadcrumbSet.t -> t -> t
+  val add_local_breadcrumbs : Features.BreadcrumbSet.t -> t -> t
 
-  val breadcrumbs : t -> Features.BreadcrumbSet.t
+  (* All breadcrumbs from all flows, accumulated with an `add`.
+   * The over-under approximation is lost when accumulating. *)
+  val accumulated_breadcrumbs : t -> Features.BreadcrumbSet.t
+
+  (* All breadcrumbs from all flows, accumulated with a `join`.
+   * The over-under approximation is properly preserved. *)
+  val joined_breadcrumbs : t -> Features.BreadcrumbSet.t
 
   val via_features : t -> Features.ViaFeatureSet.t
 
@@ -277,6 +283,12 @@ module type TAINT_DOMAIN = sig
     port:AccessPath.Root.t ->
     path:Abstract.TreeDomain.Label.path ->
     element:t ->
+    t
+
+  (* Return the taint with only essential elements. *)
+  val essential
+    :  return_access_paths:(Features.ReturnAccessPathSet.t -> Features.ReturnAccessPathSet.t) ->
+    t ->
     t
 
   val to_json : t -> Yojson.Safe.json
@@ -315,6 +327,8 @@ module MakeKindTaint (Kind : KIND_ARG) = struct
   end
 
   include Abstract.MapDomain.Make (Key) (Frame)
+
+  let singleton kind frame = set bottom ~key:kind ~data:frame
 end
 
 (* Represents taint originating from a specific call. *)
@@ -327,20 +341,23 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
     type 'a slot =
       | Kinds : KindTaintDomain.t slot
       | TitoPosition : Features.TitoPositionSet.t slot
+      | Breadcrumb : Features.BreadcrumbSet.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 2
+    let slots = 3
 
     let slot_name (type a) (slot : a slot) =
       match slot with
       | Kinds -> "Kinds"
       | TitoPosition -> "TitoPosition"
+      | Breadcrumb -> "Breadcrumb"
 
 
     let slot_domain (type a) (slot : a slot) =
       match slot with
       | Kinds -> (module KindTaintDomain : Abstract.Domain.S with type t = a)
       | TitoPosition -> (module Features.TitoPositionSet : Abstract.Domain.S with type t = a)
+      | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
 
 
     let strict (type a) (slot : a slot) =
@@ -351,7 +368,15 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
 
   include Abstract.ProductDomain.Make (Slots)
 
-  let singleton kind = create [Part (KindTaintDomain.KeyValue, (kind, Frame.initial))]
+  (* Warning: do NOT use `BreadcrumbSet` abstract parts (e.g,`BreadcrumbSet.Self`,
+   * `BreadcrumbSet.Element`, etc.) since these are ambiguous.
+   * They can refer to the sets in `Frame` or in `LocalTaint`. *)
+
+  let singleton kind frame =
+    bottom
+    |> update Slots.Kinds (KindTaintDomain.singleton kind frame)
+    |> update Slots.Breadcrumb Features.BreadcrumbSet.empty
+
 
   let product_pp = pp (* shadow *)
 
@@ -376,9 +401,9 @@ module MakeTaint (Kind : KIND_ARG) : sig
 
   val kinds : t -> kind list
 
-  val singleton : ?location:Location.WithModule.t -> kind -> t
+  val singleton : ?location:Location.WithModule.t -> Kind.t -> Frame.t -> t
 
-  val of_list : ?location:Location.WithModule.t -> kind list -> t
+  val of_list : ?location:Location.WithModule.t -> Kind.t list -> t
 end = struct
   type kind = Kind.t [@@deriving compare, eq]
 
@@ -393,21 +418,23 @@ end = struct
   module Map = Abstract.MapDomain.Make (CallInfoKey) (LocalTaintDomain)
   include Map
 
-  let add ?location map kind =
+  let add ?location map kind frame =
     let call_info =
       match location with
       | None -> CallInfo.Declaration { leaf_name_provided = false }
       | Some location -> CallInfo.Origin location
     in
-    let local_taint = LocalTaintDomain.singleton kind in
+    let local_taint = LocalTaintDomain.singleton kind frame in
     Map.update map call_info ~f:(function
         | None -> local_taint
         | Some existing -> LocalTaintDomain.join local_taint existing)
 
 
-  let singleton ?location kind = add ?location Map.bottom kind
+  let singleton ?location kind frame = add ?location Map.bottom kind frame
 
-  let of_list ?location kinds = List.fold kinds ~init:Map.bottom ~f:(add ?location)
+  let of_list ?location kinds =
+    List.fold kinds ~init:Map.bottom ~f:(fun taint kind -> add ?location taint kind Frame.initial)
+
 
   let kind = KindTaintDomain.Key
 
@@ -424,8 +451,32 @@ end = struct
       else
         (key, `List list) :: assoc
     in
+    let open Features in
+    let breadcrumbs_to_json ~breadcrumbs ~first_indices ~first_fields =
+      let breadcrumb_to_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
+        let element = BreadcrumbInterned.unintern element in
+        let json = Breadcrumb.to_json element ~on_all_paths:in_under in
+        json :: breadcrumbs
+      in
+      let breadcrumbs =
+        BreadcrumbSet.fold BreadcrumbSet.ElementAndUnder ~f:breadcrumb_to_json ~init:[] breadcrumbs
+      in
+      let first_index_breadcrumbs =
+        first_indices
+        |> FirstIndexSet.elements
+        |> List.map ~f:FirstIndexInterned.unintern
+        |> FirstIndex.to_json
+      in
+      let first_field_breadcrumbs =
+        first_fields
+        |> FirstFieldSet.elements
+        |> List.map ~f:FirstFieldInterned.unintern
+        |> FirstField.to_json
+      in
+      List.concat [first_index_breadcrumbs; first_field_breadcrumbs; breadcrumbs]
+    in
+
     let trace_to_json (trace_info, local_taint) =
-      let open Features in
       let json = [call_info_to_json trace_info] in
 
       let tito_positions =
@@ -434,6 +485,14 @@ end = struct
         |> List.map ~f:location_to_json
       in
       let json = cons_if_non_empty "tito" tito_positions json in
+
+      let local_breadcrumbs =
+        breadcrumbs_to_json
+          ~breadcrumbs:(LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint)
+          ~first_indices:FirstIndexSet.bottom
+          ~first_fields:FirstFieldSet.bottom
+      in
+      let json = cons_if_non_empty "local_features" local_breadcrumbs json in
 
       let add_kind (kind, frame) =
         let json = ["kind", `String (Kind.show kind)] in
@@ -468,28 +527,11 @@ end = struct
         in
         let json = cons_if_non_empty "via_features" via_features json in
 
-        let gather_breadcrumb_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
-          let element = Features.BreadcrumbInterned.unintern element in
-          let json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
-          json :: breadcrumbs
-        in
         let breadcrumbs =
-          Frame.fold BreadcrumbSet.ElementAndUnder frame ~f:gather_breadcrumb_json ~init:[]
-        in
-        let first_index_breadcrumbs =
-          Frame.get Frame.Slots.FirstIndex frame
-          |> FirstIndexSet.elements
-          |> List.map ~f:FirstIndexInterned.unintern
-          |> FirstIndex.to_json
-        in
-        let first_field_breadcrumbs =
-          Frame.get Frame.Slots.FirstField frame
-          |> FirstFieldSet.elements
-          |> List.map ~f:FirstFieldInterned.unintern
-          |> FirstField.to_json
-        in
-        let breadcrumbs =
-          List.concat [first_index_breadcrumbs; first_field_breadcrumbs; breadcrumbs]
+          breadcrumbs_to_json
+            ~breadcrumbs:(Frame.get Frame.Slots.Breadcrumb frame)
+            ~first_indices:(Frame.get Frame.Slots.FirstIndex frame)
+            ~first_fields:(Frame.get Frame.Slots.FirstField frame)
         in
         let json = cons_if_non_empty "features" breadcrumbs json in
 
@@ -516,21 +558,49 @@ end = struct
     create_json ~call_info_to_json:(CallInfo.to_external_json ~filename_lookup)
 
 
-  let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
-
-  let add_breadcrumbs breadcrumbs taint =
-    if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
-    then
-      taint
-    else
-      transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs taint
-
-
-  let breadcrumbs taint =
-    let gather_breadcrumbs to_add breadcrumbs =
-      Features.BreadcrumbSet.add_set breadcrumbs ~to_add
+  let add_local_breadcrumbs breadcrumbs taint =
+    let apply_local_taint local_taint =
+      let breadcrumbs =
+        LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint
+        |> Features.BreadcrumbSet.add_set ~to_add:breadcrumbs
+      in
+      LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb breadcrumbs local_taint
     in
-    fold Features.BreadcrumbSet.Self ~f:gather_breadcrumbs ~init:Features.BreadcrumbSet.bottom taint
+    transform LocalTaintDomain.Self Map ~f:apply_local_taint taint
+
+
+  let add_local_breadcrumb breadcrumb taint =
+    add_local_breadcrumbs (Features.BreadcrumbSet.singleton breadcrumb) taint
+
+
+  let get_features ~frame_slot ~local_slot ~bottom ~join ~sequence_join taint =
+    let local_taint_features local_taint sofar =
+      let frame_features frame sofar = Frame.get frame_slot frame |> join sofar in
+      let features = LocalTaintDomain.fold Frame.Self local_taint ~init:bottom ~f:frame_features in
+      let features = LocalTaintDomain.get local_slot local_taint |> sequence_join features in
+      join sofar features
+    in
+    fold LocalTaintDomain.Self ~f:local_taint_features ~init:bottom taint
+
+
+  let accumulated_breadcrumbs taint =
+    get_features
+      ~frame_slot:Frame.Slots.Breadcrumb
+      ~local_slot:LocalTaintDomain.Slots.Breadcrumb
+      ~bottom:Features.BreadcrumbSet.bottom
+      ~join:Features.BreadcrumbSet.sequence_join
+      ~sequence_join:Features.BreadcrumbSet.sequence_join
+      taint
+
+
+  let joined_breadcrumbs taint =
+    get_features
+      ~frame_slot:Frame.Slots.Breadcrumb
+      ~local_slot:LocalTaintDomain.Slots.Breadcrumb
+      ~bottom:Features.BreadcrumbSet.bottom
+      ~join:Features.BreadcrumbSet.join
+      ~sequence_join:Features.BreadcrumbSet.sequence_join
+      taint
 
 
   let via_features taint =
@@ -551,7 +621,7 @@ end = struct
           { element = Features.issue_broadening (); in_under = false };
         ]
     in
-    add_breadcrumbs broadening taint
+    add_local_breadcrumbs broadening taint
 
 
   let prune_maximum_length maximum_length =
@@ -595,22 +665,26 @@ end = struct
 
   let apply_call location ~callees ~port ~path ~element:taint =
     let apply (call_info, local_taint) =
-      let apply_frame frame =
-        Frame.transform
-          Features.ViaFeatureSet.Self
-          Map
-          ~f:(fun _ -> Features.ViaFeatureSet.bottom)
-          frame
-      in
       let local_taint =
         local_taint
         |> LocalTaintDomain.transform KindTaintDomain.Key Filter ~f:(fun kind ->
                not (Kind.ignore_kind_at_call kind))
         |> LocalTaintDomain.transform KindTaintDomain.Key Map ~f:Kind.apply_call
-        |> LocalTaintDomain.transform Frame.Self Map ~f:apply_frame
-        |> LocalTaintDomain.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
-               Features.TitoPositionSet.bottom)
       in
+      let local_breadcrumbs = LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint in
+      let local_taint =
+        local_taint
+        |> LocalTaintDomain.update
+             LocalTaintDomain.Slots.TitoPosition
+             Features.TitoPositionSet.bottom
+        |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb Features.BreadcrumbSet.empty
+      in
+      let apply_frame frame =
+        frame
+        |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
+        |> Frame.transform Features.BreadcrumbSet.Self Add ~f:local_breadcrumbs
+      in
+      let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
       match call_info with
       | CallInfo.Origin _
       | CallInfo.CallSite _ ->
@@ -637,6 +711,31 @@ end = struct
             LocalTaintDomain.transform Features.LeafNameSet.Self Add ~f:new_leaf_names local_taint
           in
           call_info, local_taint
+    in
+    Map.transform Map.KeyValue Map ~f:apply taint
+
+
+  let essential ~return_access_paths taint =
+    let apply (_, local_taint) =
+      let call_info = CallInfo.Declaration { leaf_name_provided = false } in
+      let local_taint =
+        local_taint
+        |> LocalTaintDomain.update
+             LocalTaintDomain.Slots.TitoPosition
+             Features.TitoPositionSet.bottom
+        |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb Features.BreadcrumbSet.empty
+      in
+      let apply_frame frame =
+        frame
+        |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
+        |> Frame.update Frame.Slots.Breadcrumb Features.BreadcrumbSet.bottom
+        |> Frame.update Frame.Slots.FirstIndex Features.FirstIndexSet.bottom
+        |> Frame.update Frame.Slots.FirstField Features.FirstFieldSet.bottom
+        |> Frame.update Frame.Slots.LeafName Features.LeafNameSet.bottom
+        |> Frame.transform Features.ReturnAccessPathSet.Self Map ~f:return_access_paths
+      in
+      let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
+      call_info, local_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
 end
@@ -666,31 +765,14 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let is_empty = is_bottom
 
-  let compute_essential_features ~essential_return_access_paths tree =
-    let essential_call_info = function
-      | _ -> CallInfo.Declaration { leaf_name_provided = false }
-    in
-    let essential_breadcrumbs _ = Features.BreadcrumbSet.bottom in
-    let essential_via_features _ = Features.ViaFeatureSet.bottom in
-    let essential_tito_positions _ = Features.TitoPositionSet.bottom in
-    let essential_leaf_names _ = Features.LeafNameSet.bottom in
-    transform Taint.call_info Map ~f:essential_call_info tree
-    |> transform Features.ReturnAccessPathSet.Self Map ~f:essential_return_access_paths
-    |> transform Features.BreadcrumbSet.Self Map ~f:essential_breadcrumbs
-    |> transform Features.ViaFeatureSet.Self Map ~f:essential_via_features
-    |> transform Features.TitoPositionSet.Self Map ~f:essential_tito_positions
-    |> transform Features.LeafNameSet.Self Map ~f:essential_leaf_names
-
-
-  (* Keep only non-essential structure. *)
+  (* Return the taint tree with only the essential structure. *)
   let essential tree =
-    let essential_return_access_paths _ = Features.ReturnAccessPathSet.bottom in
-    compute_essential_features ~essential_return_access_paths tree
+    let return_access_paths _ = Features.ReturnAccessPathSet.bottom in
+    transform Taint.Self Map ~f:(Taint.essential ~return_access_paths) tree
 
 
   let essential_for_constructor tree =
-    let essential_return_access_paths set = set in
-    compute_essential_features ~essential_return_access_paths tree
+    transform Taint.Self Map ~f:(Taint.essential ~return_access_paths:Fn.id) tree
 
 
   let approximate_return_access_paths ~maximum_return_access_path_length tree =
@@ -715,25 +797,30 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     |> collapse ~transform:Fn.id
 
 
-  let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
+  let add_local_breadcrumb breadcrumb =
+    transform Taint.Self Map ~f:(Taint.add_local_breadcrumb breadcrumb)
 
-  let add_breadcrumbs breadcrumbs taint_tree =
+
+  let add_local_breadcrumbs breadcrumbs taint_tree =
     if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
     then
       taint_tree
     else
-      transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs taint_tree
+      transform Taint.Self Map ~f:(Taint.add_local_breadcrumbs breadcrumbs) taint_tree
 
 
-  let breadcrumbs taint_tree =
-    let gather_breadcrumbs to_add breadcrumbs =
-      Features.BreadcrumbSet.add_set breadcrumbs ~to_add
+  let accumulated_breadcrumbs taint_tree =
+    let gather_breadcrumbs taint sofar =
+      Taint.accumulated_breadcrumbs taint |> Features.BreadcrumbSet.add_set ~to_add:sofar
     in
-    fold
-      Features.BreadcrumbSet.Self
-      ~f:gather_breadcrumbs
-      ~init:Features.BreadcrumbSet.bottom
-      taint_tree
+    fold Taint.Self ~f:gather_breadcrumbs ~init:Features.BreadcrumbSet.bottom taint_tree
+
+
+  let joined_breadcrumbs taint_tree =
+    let gather_breadcrumbs taint sofar =
+      Taint.accumulated_breadcrumbs taint |> Features.BreadcrumbSet.join sofar
+    in
+    fold Taint.Self ~f:gather_breadcrumbs ~init:Features.BreadcrumbSet.bottom taint_tree
 
 
   let add_via_features via_features taint_tree =
@@ -834,14 +921,16 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let roots environment = fold Key ~f:List.cons ~init:[] environment
 
-  let add_breadcrumb breadcrumb = transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
+  let add_local_breadcrumb breadcrumb =
+    transform Taint.Self Map ~f:(Taint.add_local_breadcrumb breadcrumb)
 
-  let add_breadcrumbs breadcrumbs taint_tree =
+
+  let add_local_breadcrumbs breadcrumbs taint_tree =
     if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
     then
       taint_tree
     else
-      transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs taint_tree
+      transform Taint.Self Map ~f:(Taint.add_local_breadcrumbs breadcrumbs) taint_tree
 
 
   let add_via_features via_features taint_tree =
@@ -857,7 +946,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
       |> Tree.collapse ~transform:Fn.id
     in
-    Taint.breadcrumbs taint, Taint.via_features taint
+    Taint.accumulated_breadcrumbs taint, Taint.via_features taint
 
 
   let sanitize sanitized_kinds taint =
@@ -881,17 +970,17 @@ module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 (** Used to infer which sinks are reached from parameters, as well as the taint-in-taint-out (TITO)
     using the special LocalReturn sink. *)
 
-(* Special sink as it needs the return access path *)
-let local_return_taint =
-  BackwardTaint.create
+let local_return_frame =
+  Frame.create
     [
-      Part (BackwardTaint.call_info, CallInfo.Declaration { leaf_name_provided = false });
-      Part (BackwardTaint.kind, Sinks.LocalReturn);
       Part (TraceLength.Self, 0);
       Part (Features.ReturnAccessPathSet.Element, []);
       Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty);
     ]
 
+
+(* Special sink as it needs the return access path *)
+let local_return_taint = BackwardTaint.singleton Sinks.LocalReturn local_return_frame
 
 module Sanitize = struct
   type sanitize_sources =

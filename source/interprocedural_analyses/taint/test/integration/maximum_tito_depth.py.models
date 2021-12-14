@@ -17,14 +17,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 69, "start": 19, "end": 20 } ],
             "root": {
               "filename": "maximum_tito_depth.py",
@@ -73,13 +71,9 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 3,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 3, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [
               { "line": 27, "start": 18, "end": 19 },
               { "line": 28, "start": 17, "end": 18 },
@@ -102,13 +96,9 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [
               { "line": 35, "start": 25, "end": 26 },
               { "line": 37, "start": 24, "end": 25 }
@@ -130,13 +120,9 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 2,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [
               { "line": 43, "start": 21, "end": 22 },
               { "line": 44, "start": 22, "end": 23 },
@@ -160,15 +146,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-via": "obscure:model" },
-                  { "always-via": "tito" }
-                ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 59, "start": 18, "end": 19 } ],
             "decl": null
@@ -188,13 +170,9 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 15, "start": 21, "end": 22 } ],
             "decl": null
           }
@@ -213,13 +191,9 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 3,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 3, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 23, "start": 20, "end": 21 } ],
             "decl": null
           }
@@ -238,13 +212,9 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "return_paths": [ "" ],
-                "length": 2,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 19, "start": 20, "end": 21 } ],
             "decl": null
           }

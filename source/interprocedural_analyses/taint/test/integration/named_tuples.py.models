@@ -236,14 +236,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[benign]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -365,12 +362,9 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "type": "integer" }, { "type": "scalar" } ],
-                "return_paths": [ "[benign]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
             ],
+            "local_features": [ { "type": "integer" }, { "type": "scalar" } ],
             "decl": null
           }
         ]
@@ -430,14 +424,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[benign]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -549,14 +540,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 52, "start": 35, "end": 49 } ],
             "root": {
               "filename": "named_tuples.py",
@@ -581,14 +570,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 34, "start": 35, "end": 49 } ],
             "root": {
               "filename": "named_tuples.py",
@@ -613,14 +600,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 17, "start": 28, "end": 42 } ],
             "root": {
               "filename": "named_tuples.py",

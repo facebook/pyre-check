@@ -58,13 +58,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "obscure:model" },
-                  { "always-via": "tito" }
-                ],
                 "leaves": [ { "name": "sanitize_obscure.b_sink" } ],
                 "kind": "TestB"
               }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 86, "start": 29, "end": 30 } ],
             "root": {
@@ -90,13 +90,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "obscure:model" },
-                  { "always-via": "tito" }
-                ],
                 "leaves": [ { "name": "sanitize_obscure.b_source" } ],
                 "kind": "TestB"
               }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 101, "start": 34, "end": 35 } ],
             "root": {
@@ -122,13 +122,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "obscure:model" },
-                  { "always-via": "tito" }
-                ],
                 "leaves": [ { "name": "sanitize_obscure.b_source" } ],
                 "kind": "TestB"
               }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 72, "start": 27, "end": 28 } ],
             "root": {

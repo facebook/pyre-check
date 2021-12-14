@@ -261,7 +261,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           List.fold
             items
             ~f:(fun state (root, sink) ->
-              let new_taint = BackwardState.Tree.create_leaf (BackwardTaint.singleton sink) in
+              let new_taint =
+                BackwardTaint.singleton sink Frame.initial |> BackwardState.Tree.create_leaf
+              in
               BackwardState.assign ~root ~path:[] new_taint state)
             ~init:BackwardState.bottom
       | None -> BackwardState.bottom
@@ -293,7 +295,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let call_taint =
       if Model.ModeSet.contains Obscure modes then
-        BackwardState.Tree.add_breadcrumbs (Lazy.force return_type_breadcrumbs) call_taint
+        BackwardState.Tree.add_local_breadcrumbs (Lazy.force return_type_breadcrumbs) call_taint
       else
         call_taint
     in
@@ -310,7 +312,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       get_taint access_path initial_state |> BackwardState.Tree.join global_sink
     in
     let convert_tito_path_to_taint ~kind (tito_path, tito_taint) argument_taint =
-      let breadcrumbs = BackwardTaint.breadcrumbs tito_taint in
+      let breadcrumbs = BackwardTaint.accumulated_breadcrumbs tito_taint in
       let tito_depth =
         BackwardTaint.fold TraceLength.Self tito_taint ~f:TraceLength.join ~init:TraceLength.bottom
       in
@@ -350,8 +352,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~f:(fun taint return_path ->
              read_tree return_path taint_to_propagate
              |> BackwardState.Tree.collapse
-                  ~transform:(BackwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
-             |> BackwardTaint.add_breadcrumbs breadcrumbs
+                  ~transform:(BackwardTaint.add_local_breadcrumbs (Features.tito_broadening_set ()))
+             |> BackwardTaint.add_local_breadcrumbs breadcrumbs
              |> BackwardTaint.transform
                   TraceLength.Self
                   (Context (BackwardTaint.kind, Map))
@@ -368,7 +370,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~init:BackwardState.Tree.bottom
         ~f:(convert_tito_path_to_taint ~kind)
       |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
-      |> BackwardState.Tree.add_breadcrumb (Features.tito ())
+      |> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
       |> BackwardState.Tree.join taint_tree
     in
     let analyze_argument
@@ -423,14 +425,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
-              |> BackwardTaint.breadcrumbs
+              |> BackwardTaint.accumulated_breadcrumbs
             in
             if Features.BreadcrumbSet.is_bottom breadcrumbs_to_add then
               state
             else
               let taint =
                 BackwardState.read state.taint ~root ~path
-                |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_add
+                |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_add
               in
               { taint = BackwardState.assign ~root ~path taint state.taint }
         | None -> state
@@ -467,9 +469,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments;
     let obscure_taint =
       BackwardState.Tree.collapse
-        ~transform:(BackwardTaint.add_breadcrumbs (Features.tito_broadening_set ()))
+        ~transform:(BackwardTaint.add_local_breadcrumbs (Features.tito_broadening_set ()))
         call_taint
-      |> BackwardTaint.add_breadcrumb (Features.obscure_unknown_callee ())
+      |> BackwardTaint.add_local_breadcrumb (Features.obscure_unknown_callee ())
       |> BackwardState.Tree.create_leaf
     in
     let compute_argument_taint { Call.Argument.value = argument; _ } =
@@ -868,9 +870,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let add_tito_features taint =
             let attribute_breadcrumbs =
-              global_model |> GlobalModel.get_tito |> BackwardState.Tree.breadcrumbs
+              global_model |> GlobalModel.get_tito |> BackwardState.Tree.accumulated_breadcrumbs
             in
-            BackwardState.Tree.add_breadcrumbs attribute_breadcrumbs taint
+            BackwardState.Tree.add_local_breadcrumbs attribute_breadcrumbs taint
           in
 
           let apply_attribute_sanitizers taint =
@@ -992,7 +994,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         arguments_taint
         |> List.fold ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
         |> read_tree [Abstract.TreeDomain.Label.AnyIndex]
-        |> BackwardState.Tree.add_breadcrumb (Features.lambda ())
+        |> BackwardState.Tree.add_local_breadcrumb (Features.lambda ())
       in
       state, all_taint
     in
@@ -1379,7 +1381,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   attribute = "format";
                   _;
                 }) ->
-              BackwardState.Tree.add_breadcrumb (Features.format_string ()) taint
+              BackwardState.Tree.add_local_breadcrumb (Features.format_string ()) taint
           | _ -> taint
         in
         let { Call.callee; arguments } =
@@ -1413,14 +1415,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           literal_string_sinks
           ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
             if Re2.matches pattern value then
-              BackwardState.Tree.join
-                taint
-                (BackwardState.Tree.create_leaf (BackwardTaint.singleton ~location sink_kind))
+              BackwardTaint.singleton ~location sink_kind Frame.initial
+              |> BackwardState.Tree.create_leaf
+              |> BackwardState.Tree.join taint
             else
               taint)
           ~init:taint
     in
-    let taint = BackwardState.Tree.add_breadcrumb (Features.format_string ()) taint in
+    let taint = BackwardState.Tree.add_local_breadcrumb (Features.format_string ()) taint in
     List.fold
       substrings
       ~f:(fun state substring ->
@@ -1447,7 +1449,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Some override -> analyze_expression ~resolution ~taint ~state ~expression:override
         | None ->
             let taint =
-              BackwardState.Tree.add_breadcrumbs (Features.type_bool_scalar_set ()) taint
+              BackwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ()) taint
             in
             analyze_expression ~resolution ~taint ~state ~expression:right
             |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left)
@@ -1777,12 +1779,12 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
         BackwardState.Tree.essential tree
     in
     BackwardState.Tree.shape
-      ~transform:(BackwardTaint.add_breadcrumbs (Features.widen_broadening_set ()))
+      ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
       tree
       ~mold:essential
-    |> BackwardState.Tree.add_breadcrumbs type_breadcrumbs
+    |> BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs
     |> BackwardState.Tree.limit_to
-         ~transform:(BackwardTaint.add_breadcrumbs (Features.widen_broadening_set ()))
+         ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
          ~width:maximum_model_width
     |> BackwardState.Tree.approximate_return_access_paths ~maximum_return_access_path_length
   in
@@ -1813,7 +1815,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       in
       let candidate_tree =
         candidate_tree
-        |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_attach
+        |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
         |> BackwardState.Tree.add_via_features via_features_to_attach
       in
       let number_of_paths =
@@ -1825,7 +1827,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       in
       if number_of_paths > TaintConfiguration.maximum_tito_leaves then
         BackwardState.Tree.collapse_to
-          ~transform:(BackwardTaint.add_breadcrumbs (Features.widen_broadening_set ()))
+          ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
           ~depth:0
           candidate_tree
       else
@@ -1858,7 +1860,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
           existing_backward.Model.Backward.sink_taint
       in
       sink_taint
-      |> BackwardState.Tree.add_breadcrumbs breadcrumbs_to_attach
+      |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
       |> BackwardState.Tree.add_via_features via_features_to_attach
     in
     Model.Backward.

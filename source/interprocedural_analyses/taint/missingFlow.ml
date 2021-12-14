@@ -23,7 +23,8 @@ let unknown_callee ~location ~call =
 let register_unknown_callee_model callable =
   (* Add a model with sinks on *args and **kwargs. *)
   let sink_leaf =
-    BackwardState.Tree.create_leaf (BackwardTaint.singleton (Sinks.NamedSink "UnknownCallee"))
+    BackwardTaint.singleton (Sinks.NamedSink "UnknownCallee") Frame.initial
+    |> BackwardState.Tree.create_leaf
   in
   let sink_taint =
     BackwardState.assign
@@ -37,7 +38,9 @@ let register_unknown_callee_model callable =
          sink_leaf
   in
   (* Add taint-in-taint-out for all parameters. *)
-  let local_return = BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn) in
+  let local_return =
+    BackwardTaint.singleton Sinks.LocalReturn Frame.initial |> BackwardState.Tree.create_leaf
+  in
   let taint_in_taint_out =
     BackwardState.assign
       ~root:(AccessPath.Root.StarParameter { position = 0 })

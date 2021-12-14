@@ -81,14 +81,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -211,14 +211,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -348,14 +348,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 227, "start": 31, "end": 32 } ],
             "root": {
               "filename": "dictionary.py",
@@ -530,14 +528,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -595,14 +593,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -660,14 +658,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "via": "obscure:model" },
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 212, "start": 38, "end": 52 } ],
             "root": {
@@ -726,14 +724,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "via": "obscure:model" },
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 217, "start": 41, "end": 55 } ],
             "root": {
@@ -851,15 +849,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito-broadening" },
-                  { "always-via": "tito" },
-                  { "always-via": "broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
             ],
             "tito": [ { "line": 64, "start": 30, "end": 51 } ],
             "root": {
@@ -1013,14 +1011,16 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "<unknown>" },
-                  { "via": "obscure:model" },
-                  { "always-via": "tito" }
+                  { "first-index": "<unknown>" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [
               { "line": 204, "start": 16, "end": 58 },
@@ -1042,12 +1042,10 @@
         "port": "formal(keys)[*]",
         "taint": [
           {
-            "kinds": [
-              {
-                "features": [ { "via": "obscure:model" }, { "via": "tito" } ],
-                "return_paths": [ "" ],
-                "kind": "LocalReturn"
-              }
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "tito" }
             ],
             "tito": [ { "line": 201, "start": 30, "end": 33 } ],
             "decl": null
@@ -1070,14 +1068,16 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "<unknown>" },
-                  { "via": "obscure:model" },
-                  { "always-via": "tito" }
+                  { "first-index": "<unknown>" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [
               { "line": 207, "start": 15, "end": 65 },
@@ -1791,13 +1791,13 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
                 "leaves": [
                   { "name": "Obj{dictionary.tainted_dictionary}" }
                 ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 68, "start": 30, "end": 33 } ],
             "root": {
               "filename": "dictionary.py",

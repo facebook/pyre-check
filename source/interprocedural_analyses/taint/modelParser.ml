@@ -961,10 +961,11 @@ let introduce_sink_taint
           let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
           let via_features = Features.ViaFeatureSet.of_list via_features in
           let leaf_taint =
-            BackwardTaint.singleton taint_sink_kind
-            |> BackwardTaint.transform Features.LeafNameSet.Self Add ~f:leaf_names
-            |> BackwardTaint.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
-            |> BackwardTaint.transform Features.ViaFeatureSet.Self Add ~f:via_features
+            Frame.initial
+            |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
+            |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+            |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+            |> BackwardTaint.singleton taint_sink_kind
             |> transform_call_information
             |> BackwardState.Tree.create_leaf
           in
@@ -994,9 +995,10 @@ let introduce_taint_in_taint_out
     match taint_sink_kind with
     | Sinks.LocalReturn ->
         let return_taint =
-          Domains.local_return_taint
-          |> BackwardTaint.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
-          |> BackwardTaint.transform Features.ViaFeatureSet.Self Add ~f:via_features
+          Domains.local_return_frame
+          |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+          |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+          |> BackwardTaint.singleton Sinks.LocalReturn
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
@@ -1008,9 +1010,10 @@ let introduce_taint_in_taint_out
     | Sinks.ParameterUpdate _
     | Sinks.Attach ->
         let update_taint =
-          BackwardTaint.singleton taint_sink_kind
-          |> BackwardTaint.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
-          |> BackwardTaint.transform Features.ViaFeatureSet.Self Add ~f:via_features
+          Frame.initial
+          |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+          |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+          |> BackwardTaint.singleton taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
@@ -1068,10 +1071,11 @@ let introduce_source_taint
         let leaf_names =
           leaf_names |> List.map ~f:Features.LeafNameInterned.intern |> Features.LeafNameSet.of_list
         in
-        ForwardTaint.singleton taint_source_kind
-        |> ForwardTaint.transform Features.LeafNameSet.Self Add ~f:leaf_names
-        |> ForwardTaint.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
-        |> ForwardTaint.transform Features.ViaFeatureSet.Self Add ~f:via_features
+        Frame.initial
+        |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
+        |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+        |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+        |> ForwardTaint.singleton taint_source_kind
         |> transform_call_information
         |> ForwardState.Tree.create_leaf
       in

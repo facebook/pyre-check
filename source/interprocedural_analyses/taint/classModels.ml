@@ -18,7 +18,8 @@ let infer ~environment =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let fold_taint position existing_state attribute =
     let leaf =
-      BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn)
+      BackwardTaint.singleton Sinks.LocalReturn Frame.initial
+      |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.transform Features.ReturnAccessPathSet.Self Map ~f:(fun _ ->
              Features.ReturnAccessPathSet.singleton
                [Abstract.TreeDomain.Label.create_name_index attribute])

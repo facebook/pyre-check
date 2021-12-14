@@ -139,13 +139,13 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "payload" },
-                  { "always-via": "tito" }
+                  { "first-index": "payload" }
                 ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "root": {
               "filename": "select.py",
@@ -174,14 +174,14 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "payload" },
-                  { "always-via": "tito" }
+                  { "first-index": "payload" }
                 ],
                 "return_paths": [ "" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "decl": null
           }
@@ -211,13 +211,13 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "payload" },
-                  { "always-via": "tito" }
+                  { "first-index": "payload" }
                 ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "root": {
               "filename": "select.py",
@@ -357,13 +357,13 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "payload" },
-                  { "always-via": "tito" }
+                  { "first-index": "payload" }
                 ],
                 "leaves": [ { "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 37, "start": 9, "end": 20 } ],
             "root": {
               "filename": "select.py",
@@ -398,13 +398,13 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "payload" },
-                  { "always-via": "tito" }
+                  { "first-index": "payload" }
                 ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 37, "start": 9, "end": 20 } ],
             "root": {
               "filename": "select.py",

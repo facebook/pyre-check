@@ -17,14 +17,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 65, "start": 13, "end": 27 } ],
             "root": {
               "filename": "global_flows.py",
@@ -143,14 +141,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 21, "start": 19, "end": 33 } ],
             "root": {
               "filename": "global_flows.py",
@@ -205,14 +201,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 29, "start": 16, "end": 30 } ],
             "root": {
               "filename": "global_flows.py",
@@ -427,11 +421,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "Obj{global_flows.l}" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 69, "start": 13, "end": 16 } ],
             "root": {
               "filename": "global_flows.py",
@@ -456,11 +450,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "Obj{global_flows.x}" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 37, "start": 19, "end": 22 } ],
             "root": {
               "filename": "global_flows.py",
@@ -485,11 +479,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "Obj{global_flows.x}" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 49, "start": 16, "end": 19 } ],
             "root": {
               "filename": "global_flows.py",

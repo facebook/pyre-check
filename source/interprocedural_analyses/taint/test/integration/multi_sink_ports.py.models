@@ -97,15 +97,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "broadening" },
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "a_feature" }
-                ],
+                "features": [ { "always-via": "a_feature" } ],
                 "leaves": [ { "name": "multi_sink_ports.source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "tito": [ { "line": 82, "start": 27, "end": 32 } ],
             "root": {
@@ -224,12 +224,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" }, { "via": "split" } ],
-                "return_paths": [ "" ],
-                "length": 2,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "via": "split" }
             ],
             "decl": null
           }
@@ -295,12 +294,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" }, { "via": "split" } ],
-                "return_paths": [ "" ],
-                "length": 2,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "via": "split" }
             ],
             "decl": null
           }
@@ -394,12 +392,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" }, { "via": "split" } ],
-                "return_paths": [ "" ],
-                "length": 2,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "via": "split" }
             ],
             "tito": [ { "line": 58, "start": 28, "end": 32 } ],
             "decl": null
@@ -731,12 +728,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "tito" }, { "via": "split" } ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "via": "split" }
             ],
             "tito": [ { "line": 46, "start": 17, "end": 18 } ],
             "decl": null
@@ -757,23 +753,19 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "via": "split" },
-                  { "always-via": "a_feature" }
-                ],
+                "features": [ { "always-via": "a_feature" } ],
                 "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
                 "kind": "Demo"
               },
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "via": "split" },
-                  { "always-via": "a_feature" }
-                ],
+                "features": [ { "always-via": "a_feature" } ],
                 "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "via": "split" }
             ],
             "tito": [ { "line": 36, "start": 14, "end": 15 } ],
             "root": {
@@ -918,25 +910,21 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "via": "split" },
-                  { "always-via": "a_feature" }
-                ],
+                "features": [ { "always-via": "a_feature" } ],
                 "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
                 "length": 1,
                 "kind": "Demo"
               },
               {
-                "features": [
-                  { "always-via": "tito" },
-                  { "via": "split" },
-                  { "always-via": "a_feature" }
-                ],
+                "features": [ { "always-via": "a_feature" } ],
                 "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "via": "split" }
             ],
             "tito": [ { "line": 74, "start": 19, "end": 20 } ],
             "call": {

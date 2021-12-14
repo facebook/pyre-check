@@ -35,14 +35,14 @@
                 "features": [
                   { "has": "first-index" },
                   { "first-index": "app_id" },
-                  { "first-index": "timestamp" },
-                  { "always-via": "tito" }
+                  { "first-index": "timestamp" }
                 ],
                 "return_paths": [ "[app_id]", "[timestamp]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "decl": null
           }
         ]
@@ -52,14 +52,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[id]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -113,14 +110,14 @@
                 "features": [
                   { "has": "first-index" },
                   { "first-index": "app_id" },
-                  { "first-index": "timestamp" },
-                  { "always-via": "tito" }
+                  { "first-index": "timestamp" }
                 ],
                 "return_paths": [ "[app_id]", "[timestamp]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "decl": null
           }
         ]
@@ -130,14 +127,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[id]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -191,14 +185,14 @@
                 "features": [
                   { "has": "first-index" },
                   { "first-index": "app_id" },
-                  { "first-index": "timestamp" },
-                  { "always-via": "tito" }
+                  { "first-index": "timestamp" }
                 ],
                 "return_paths": [ "[app_id]", "[timestamp]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [
               { "line": 15, "start": 25, "end": 31 },
               { "line": 16, "start": 22, "end": 28 }
@@ -212,14 +206,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "return_paths": [ "[id]" ],
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -248,12 +239,12 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
                 "return_paths": [ "[request]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 31, "start": 37, "end": 44 } ],
             "decl": null
           }
@@ -265,16 +256,16 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "via": "obscure:model" },
-                  { "always-via": "tito" }
-                ],
                 "return_paths": [
                   "[app_id]", "[kind]", "[request]", "[timestamp]"
                 ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [
               { "line": 24, "start": 19, "end": 25 },
@@ -293,15 +284,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" },
-                  { "always-via": "tito" }
-                ],
                 "return_paths": [ "[id]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 31, "start": 19, "end": 21 } ],
             "decl": null

@@ -118,11 +118,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "sanitize_discard_flows.a_source" } ],
                 "kind": "NotSink[TestA]@TestA"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 34, "start": 32, "end": 42 } ],
             "root": {
               "filename": "sanitize_discard_flows.py",

@@ -17,14 +17,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "issue-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -85,14 +85,16 @@
                 "features": [
                   { "has": "first-index" },
                   { "first-index": "b" },
-                  { "always-via": "tito-broadening" },
-                  { "always-via": "tito" },
-                  { "always-via": "broadening" },
                   { "always-via": "special_source" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
             ],
             "tito": [ { "line": 20, "start": 13, "end": 14 } ],
             "root": {
@@ -147,14 +149,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -166,14 +168,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -185,14 +187,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -204,14 +206,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -223,14 +225,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -242,14 +244,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -261,14 +263,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -280,14 +282,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -299,14 +301,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -318,14 +320,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -337,14 +339,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -356,14 +358,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -375,14 +377,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -394,14 +396,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -413,14 +415,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -432,14 +434,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -451,14 +453,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -470,14 +472,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -489,14 +491,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -508,14 +510,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -527,14 +529,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -546,14 +548,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -565,14 +567,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -584,14 +586,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -603,14 +605,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -622,14 +624,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -641,14 +643,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -660,14 +662,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -679,14 +681,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -698,14 +700,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "broadening" },
-                  { "always-via": "widen-broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -782,14 +784,16 @@
                 "features": [
                   { "has": "first-index" },
                   { "first-index": "b" },
-                  { "always-via": "tito-broadening" },
-                  { "always-via": "tito" },
-                  { "always-via": "broadening" },
                   { "always-via": "special_sink" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
             ],
             "tito": [ { "line": 25, "start": 13, "end": 14 } ],
             "root": {
@@ -815,15 +819,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "tito-broadening" },
-                  { "always-via": "tito" },
-                  { "always-via": "broadening" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
             ],
             "tito": [ { "line": 31, "start": 16, "end": 17 } ],
             "root": {

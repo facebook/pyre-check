@@ -272,7 +272,8 @@ let add_obscure_sink ~resolution ~call_target model =
       | Some (_, { value = { signature = { parameters; _ }; _ }; _ }) ->
           let open Domains in
           let sink =
-            BackwardState.Tree.create_leaf (BackwardTaint.singleton (Sinks.NamedSink "Obscure"))
+            BackwardTaint.singleton (Sinks.NamedSink "Obscure") Frame.initial
+            |> BackwardState.Tree.create_leaf
           in
           let parameters = AccessPath.Root.normalize_parameters parameters in
           let add_parameter_sink sink_taint (root, _, _) =

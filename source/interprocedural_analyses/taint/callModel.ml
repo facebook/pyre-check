@@ -42,7 +42,7 @@ let at_callsite ~resolution ~call_target ~arguments =
             match via_feature with
             | Features.ViaFeature.ViaValueOf { parameter; tag } ->
                 let arguments = match_all_arguments_to_parameter parameter in
-                Frame.add_breadcrumb
+                Frame.add_propagated_breadcrumb
                   (Features.ViaFeature.via_value_of_breadcrumb ?tag ~arguments)
                   frame
             | Features.ViaFeature.ViaTypeOf { parameter; tag } ->
@@ -59,7 +59,7 @@ let at_callsite ~resolution ~call_target ~arguments =
                         ~resolution
                         ~argument:(match_argument_to_parameter parameter)
                 in
-                Frame.add_breadcrumb breadcrumb frame
+                Frame.add_propagated_breadcrumb breadcrumb frame
           in
           Frame.fold Features.ViaFeatureSet.Element ~f:transform ~init:frame frame
         in
@@ -160,13 +160,14 @@ let taint_in_taint_out_mapping
     if Model.ModeSet.contains Obscure modes then
       let breadcrumbs =
         TaintInTaintOutMap.get mapping ~kind:Sinks.LocalReturn
-        >>| BackwardState.Tree.breadcrumbs
+        >>| BackwardState.Tree.accumulated_breadcrumbs
         |> Option.value ~default:Features.BreadcrumbSet.empty
         |> Features.BreadcrumbSet.add (Features.obscure_model ())
       in
       let return_tito =
-        Domains.local_return_taint
-        |> BackwardTaint.transform Features.BreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
+        Domains.local_return_frame
+        |> Frame.update Frame.Slots.Breadcrumb breadcrumbs
+        |> BackwardTaint.singleton Sinks.LocalReturn
         |> BackwardState.Tree.create_leaf
       in
       TaintInTaintOutMap.set mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
