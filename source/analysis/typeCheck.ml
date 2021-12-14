@@ -1368,6 +1368,7 @@ module State (Context : Context) = struct
                 ])
       in
       let return_annotation_with_callable_and_self
+          ~resolution
           ({
              callable = { TypeOperation.callable; self_argument };
              arguments;
@@ -1458,7 +1459,7 @@ module State (Context : Context) = struct
             First selected_return_annotation
         | not_found -> Second not_found
       in
-      let resolved_for_bad_callable arguments =
+      let resolved_for_bad_callable ~resolution ~errors arguments =
         let errors =
           let resolved_callee = Callee.resolved callee in
           match resolved_callee, potential_missing_operator_error arguments with
@@ -1478,7 +1479,11 @@ module State (Context : Context) = struct
           base = None;
         }
       in
-      let join_return_annotations (found_return_annotations, not_found_return_annotations) =
+      let join_return_annotations
+          ~resolution
+          ~errors
+          (found_return_annotations, not_found_return_annotations)
+        =
         match found_return_annotations, not_found_return_annotations with
         | head :: tail, [] ->
             Some
@@ -1582,14 +1587,14 @@ module State (Context : Context) = struct
         ~callee_type:(Callee.resolved callee)
         ~callee:(Callee.expression callee);
       let selected_return_annotations =
-        List.map callable_data_list ~f:return_annotation_with_callable_and_self
+        List.map callable_data_list ~f:(return_annotation_with_callable_and_self ~resolution)
       in
       selected_return_annotations
       |> List.partition_map ~f:extract_found_not_found
-      |> join_return_annotations
+      |> join_return_annotations ~resolution ~errors
       |> (function
            | Some resolved -> resolved
-           | None -> resolved_for_bad_callable arguments)
+           | None -> resolved_for_bad_callable ~resolution ~errors arguments)
       |> check_for_error
     in
     match value with
