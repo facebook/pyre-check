@@ -1369,8 +1369,8 @@ module State (Context : Context) = struct
               is_inverted_operator;
             }
           =
-          let signature = signature_select ~arguments ~callable ~self_argument in
-          match signature, callable with
+          let selected_return_annotation = signature_select ~arguments ~callable ~self_argument in
+          match selected_return_annotation, callable with
           | NotFound _, _ -> (
               match callee, callable, arguments with
               | ( Callee.Attribute { base = { expression; resolved_base }; _ },
@@ -1398,9 +1398,11 @@ module State (Context : Context) = struct
                             ~self_argument,
                           (* Make sure we emit errors against the inverse function, not the original *)
                           unpacked_callable_and_self_argument ))
-                  |> Option.value ~default:(signature, unpacked_callable_and_self_argument)
-              | _ -> signature, unpacked_callable_and_self_argument)
-          | Found { selected_return_annotation; _ }, { kind = Named access; _ }
+                  |> Option.value
+                       ~default:(selected_return_annotation, unpacked_callable_and_self_argument)
+              | _ -> selected_return_annotation, unpacked_callable_and_self_argument)
+          | ( (Found { selected_return_annotation; _ } as found_return_annotation),
+              { kind = Named access; _ } )
             when String.equal "__init__" (Reference.last access) ->
               Type.split selected_return_annotation
               |> fst
@@ -1434,10 +1436,11 @@ module State (Context : Context) = struct
                               reason = Some (ProtocolInstantiation (Reference.create class_name));
                             }
                         else
-                          signature)
-              |> Option.value ~default:signature
-              |> fun signature -> signature, unpacked_callable_and_self_argument
-          | _ -> signature, unpacked_callable_and_self_argument
+                          found_return_annotation)
+              |> Option.value ~default:found_return_annotation
+              |> fun selected_return_annotation ->
+              selected_return_annotation, unpacked_callable_and_self_argument
+          | _ -> selected_return_annotation, unpacked_callable_and_self_argument
         in
         List.map callable_data_list ~f:return_annotation_with_callable_and_self
       in
