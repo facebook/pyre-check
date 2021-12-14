@@ -94,6 +94,83 @@ def _log_lsp_event(
             )
 
 
+@dataclasses.dataclass(frozen=True)
+class PyreServerStartOptions:
+    binary: str
+    server_identifier: str
+    start_arguments: start.Arguments
+    ide_features: Optional[configuration_module.IdeFeatures]
+
+    @staticmethod
+    def read_from(
+        command_argument: command_arguments.CommandArguments, base_directory: Path
+    ) -> "PyreServerStartOptions":
+        configuration = configuration_module.create_configuration(
+            command_argument, base_directory
+        )
+        binary_location = configuration.get_binary_respecting_override()
+        if binary_location is None:
+            raise configuration_module.InvalidConfiguration(
+                "Cannot locate a Pyre binary to run."
+            )
+
+        start_arguments = start.create_server_arguments(
+            configuration,
+            command_arguments.StartArguments(
+                changed_files_path=command_argument.changed_files_path,
+                debug=command_argument.debug,
+                enable_memory_profiling=command_argument.enable_memory_profiling,
+                enable_profiling=command_argument.enable_profiling,
+                load_initial_state_from=command_argument.load_initial_state_from,
+                log_identifier=command_argument.log_identifier,
+                logging_sections=command_argument.logging_sections,
+                no_saved_state=command_argument.no_saved_state,
+                no_watchman=False,
+                noninteractive=command_argument.noninteractive,
+                save_initial_state_to=command_argument.save_initial_state_to,
+                saved_state_project=command_argument.saved_state_project,
+                sequential=command_argument.sequential,
+                show_error_traces=command_argument.show_error_traces,
+                store_type_check_resolution=False,
+                terminal=False,
+                wait_on_initialization=True,
+            ),
+        )
+        if start_arguments.watchman_root is None:
+            raise commands.ClientException(
+                "Cannot locate a `watchman` root. Pyre's server will not function "
+                "properly."
+            )
+
+        return PyreServerStartOptions(
+            binary=binary_location,
+            server_identifier=start.get_server_identifier(configuration),
+            start_arguments=start_arguments,
+            ide_features=configuration.ide_features,
+        )
+
+
+PyreServerStartOptionsReader = Callable[[], PyreServerStartOptions]
+
+
+def read_server_start_options(
+    server_start_options_reader: PyreServerStartOptionsReader,
+    remote_logging: Optional[backend_arguments.RemoteLogging],
+) -> "PyreServerStartOptions":
+    try:
+        LOG.info("Reading Pyre server configurations...")
+        return server_start_options_reader()
+    except Exception:
+        _log_lsp_event(
+            remote_logging=remote_logging,
+            event=LSPEvent.NOT_CONFIGURED,
+            normals={
+                "exception": traceback.format_exc(),
+            },
+        )
+        raise
+
+
 def process_initialize_request(
     parameters: lsp.InitializeParameters,
     ide_features: Optional[configuration_module.IdeFeatures] = None,
@@ -141,7 +218,7 @@ class InitializationExit:
 async def try_initialize(
     input_channel: connection.TextReader,
     output_channel: connection.TextWriter,
-    ide_features: Optional[configuration_module.IdeFeatures] = None,
+    server_start_options_reader: PyreServerStartOptionsReader,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
     Read an LSP message from the input channel and try to initialize an LSP
@@ -176,11 +253,20 @@ async def try_initialize(
             raise lsp.ServerNotInitializedError(
                 "Missing parameters for initialize request."
             )
-
         initialize_parameters = lsp.InitializeParameters.from_json_rpc_parameters(
             request_parameters
         )
-        result = process_initialize_request(initialize_parameters, ide_features)
+
+        try:
+            server_start_options = read_server_start_options(
+                server_start_options_reader, remote_logging=None
+            )
+        except configuration_module.InvalidConfiguration as e:
+            raise lsp.ServerNotInitializedError(str(e))
+
+        result = process_initialize_request(
+            initialize_parameters, server_start_options.ide_features
+        )
         await lsp.write_json_rpc(
             output_channel,
             # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
@@ -890,83 +976,6 @@ def path_to_coverage_result(
     return to_coverage_result(covered_and_uncovered)
 
 
-@dataclasses.dataclass(frozen=True)
-class PyreServerStartOptions:
-    binary: str
-    server_identifier: str
-    start_arguments: start.Arguments
-    ide_features: Optional[configuration_module.IdeFeatures]
-
-    @staticmethod
-    def read_from(
-        command_argument: command_arguments.CommandArguments, base_directory: Path
-    ) -> "PyreServerStartOptions":
-        configuration = configuration_module.create_configuration(
-            command_argument, base_directory
-        )
-        binary_location = configuration.get_binary_respecting_override()
-        if binary_location is None:
-            raise configuration_module.InvalidConfiguration(
-                "Cannot locate a Pyre binary to run."
-            )
-
-        start_arguments = start.create_server_arguments(
-            configuration,
-            command_arguments.StartArguments(
-                changed_files_path=command_argument.changed_files_path,
-                debug=command_argument.debug,
-                enable_memory_profiling=command_argument.enable_memory_profiling,
-                enable_profiling=command_argument.enable_profiling,
-                load_initial_state_from=command_argument.load_initial_state_from,
-                log_identifier=command_argument.log_identifier,
-                logging_sections=command_argument.logging_sections,
-                no_saved_state=command_argument.no_saved_state,
-                no_watchman=False,
-                noninteractive=command_argument.noninteractive,
-                save_initial_state_to=command_argument.save_initial_state_to,
-                saved_state_project=command_argument.saved_state_project,
-                sequential=command_argument.sequential,
-                show_error_traces=command_argument.show_error_traces,
-                store_type_check_resolution=False,
-                terminal=False,
-                wait_on_initialization=True,
-            ),
-        )
-        if start_arguments.watchman_root is None:
-            raise commands.ClientException(
-                "Cannot locate a `watchman` root. Pyre's server will not function "
-                "properly."
-            )
-
-        return PyreServerStartOptions(
-            binary=binary_location,
-            server_identifier=start.get_server_identifier(configuration),
-            start_arguments=start_arguments,
-            ide_features=configuration.ide_features,
-        )
-
-
-PyreServerStartOptionsReader = Callable[[], PyreServerStartOptions]
-
-
-def read_server_start_options(
-    server_start_options_reader: PyreServerStartOptionsReader,
-    remote_logging: Optional[backend_arguments.RemoteLogging],
-) -> "PyreServerStartOptions":
-    try:
-        LOG.info("Reading Pyre server configurations...")
-        return server_start_options_reader()
-    except Exception:
-        _log_lsp_event(
-            remote_logging=remote_logging,
-            event=LSPEvent.NOT_CONFIGURED,
-            normals={
-                "exception": traceback.format_exc(),
-            },
-        )
-        raise
-
-
 class PyreQueryHandler(connection.BackgroundTask):
     def __init__(
         self,
@@ -1396,10 +1405,9 @@ async def run_persistent(
 ) -> int:
     stdin, stdout = await connection.create_async_stdin_stdout()
     while True:
-        ide_features = read_server_start_options(
-            server_start_options_reader, remote_logging
-        ).ide_features
-        initialize_result = await try_initialize(stdin, stdout, ide_features)
+        initialize_result = await try_initialize(
+            stdin, stdout, server_start_options_reader
+        )
         if isinstance(initialize_result, InitializationExit):
             LOG.info("Received exit request before initialization.")
             return 0

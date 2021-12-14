@@ -7,7 +7,7 @@ import asyncio
 import json
 import tempfile
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 import testslide
 from libcst.metadata import CodeRange, CodePosition
@@ -39,6 +39,7 @@ from ..persistent import (
     LocationTypeLookup,
     PyreServer,
     PyreServerStartOptions,
+    PyreServerStartOptionsReader,
     PyreQueryHandler,
     PyreQueryState,
     ServerState,
@@ -53,6 +54,20 @@ from ..persistent import (
     PyreServerHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
 )
+
+
+def _create_server_start_options_reader(
+    binary: str,
+    server_identifier: str,
+    start_arguments: start.Arguments,
+    ide_features: Optional[configuration_module.IdeFeatures] = None,
+) -> PyreServerStartOptionsReader:
+    def reader() -> PyreServerStartOptions:
+        return PyreServerStartOptions(
+            binary, server_identifier, start_arguments, ide_features
+        )
+
+    return reader
 
 
 async def _create_input_channel_with_requests(
@@ -75,6 +90,19 @@ class WaitForeverBackgroundTask(BackgroundTask):
 
 
 class PersistentTest(testslide.TestCase):
+    def fake_option_reader(self) -> PyreServerStartOptionsReader:
+        return _create_server_start_options_reader(
+            binary="/not/relevant",
+            server_identifier="not_relevant",
+            start_arguments=start.Arguments(
+                base_arguments=backend_arguments.BaseArguments(
+                    source_paths=backend_arguments.SimpleSourcePath(),
+                    log_path="/log/path",
+                    global_root="/global/root",
+                )
+            ),
+        )
+
     @setup.async_test
     async def test_try_initialize_success(self) -> None:
         input_channel = await _create_input_channel_with_requests(
@@ -103,7 +131,9 @@ class PersistentTest(testslide.TestCase):
             ]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(input_channel, output_channel)
+        result = await try_initialize(
+            input_channel, output_channel, self.fake_option_reader()
+        )
         self.assertIsInstance(result, InitializationSuccess)
 
     @setup.async_test
@@ -112,7 +142,9 @@ class PersistentTest(testslide.TestCase):
             [json_rpc.Request(method="derp", parameters=None)]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(input_channel, output_channel)
+        result = await try_initialize(
+            input_channel, output_channel, self.fake_option_reader()
+        )
         self.assertIsInstance(result, InitializationFailure)
 
     @setup.async_test
@@ -121,7 +153,9 @@ class PersistentTest(testslide.TestCase):
             [json_rpc.Request(id=0, method="initialize", parameters=None)]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(input_channel, output_channel)
+        result = await try_initialize(
+            input_channel, output_channel, self.fake_option_reader()
+        )
         self.assertIsInstance(result, InitializationFailure)
 
     @setup.async_test
@@ -152,7 +186,9 @@ class PersistentTest(testslide.TestCase):
             ]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(input_channel, output_channel)
+        result = await try_initialize(
+            input_channel, output_channel, self.fake_option_reader()
+        )
         self.assertIsInstance(result, InitializationFailure)
 
     @setup.async_test
@@ -161,7 +197,9 @@ class PersistentTest(testslide.TestCase):
             [json_rpc.Request(method="exit", parameters=None)]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(input_channel, output_channel)
+        result = await try_initialize(
+            input_channel, output_channel, self.fake_option_reader()
+        )
         self.assertIsInstance(result, InitializationExit)
 
     @setup.async_test
@@ -191,7 +229,9 @@ class PersistentTest(testslide.TestCase):
             ]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(input_channel, output_channel)
+        result = await try_initialize(
+            input_channel, output_channel, self.fake_option_reader()
+        )
         self.assertIsInstance(result, InitializationExit)
 
     def test_parse_subscription(self) -> None:
@@ -836,7 +876,7 @@ class PersistentTest(testslide.TestCase):
 
         bytes_writer = MemoryBytesWriter()
         server_handler = PyreServerHandler(
-            server_start_options_reader=lambda: PyreServerStartOptions(
+            server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -884,7 +924,7 @@ class PersistentTest(testslide.TestCase):
     async def test_send_message_to_status_bar(self) -> None:
         bytes_writer = MemoryBytesWriter()
         server_handler = PyreServerHandler(
-            server_start_options_reader=lambda: PyreServerStartOptions(
+            server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1033,7 +1073,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         """
         pyre_query_manager = PyreQueryHandler(
             state=PyreQueryState(path_to_location_type_lookup={}),
-            server_start_options_reader=lambda: PyreServerStartOptions(
+            server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1077,7 +1117,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_types__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             state=PyreQueryState(),
-            server_start_options_reader=lambda: PyreServerStartOptions(
+            server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1104,7 +1144,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_does_not_run_when_hover_is_disabled(self) -> None:
         pyre_query_handler = PyreQueryHandler(
             state=PyreQueryState(),
-            server_start_options_reader=lambda: PyreServerStartOptions(
+            server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1124,7 +1164,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
 
         pyre_query_handler = PyreQueryHandler(
             state=PyreQueryState(),
-            server_start_options_reader=lambda: PyreServerStartOptions(
+            server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1144,7 +1184,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
 
         pyre_query_handler = PyreQueryHandler(
             state=PyreQueryState(),
-            server_start_options_reader=lambda: PyreServerStartOptions(
+            server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
