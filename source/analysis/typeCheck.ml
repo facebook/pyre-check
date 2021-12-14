@@ -1255,15 +1255,19 @@ module State (Context : Context) = struct
       (* When an operator does not exist on the left operand but its inverse exists on the right
          operand, the missing attribute error would not have been thrown for the original operator.
          Build up the original error in case the inverse operator does not typecheck. *)
-      let potential_missing_operator_error arguments =
+      let potential_missing_operator_error undefined_attributes =
         match target, callee with
         | Some target, Callee.Attribute { attribute = { name; resolved }; _ }
           when Type.is_top resolved
                && Option.is_some (inverse_operator name)
                && (not (Type.is_any target))
                && not (Type.is_unbound target) -> (
-            match arguments, operator_name_to_symbol name with
-            | [{ AttributeResolution.Argument.resolved; _ }], Some operator_name ->
+            match undefined_attributes, operator_name_to_symbol name with
+            | ( [
+                  UnknownCallableAttribute
+                    { arguments = [{ AttributeResolution.Argument.resolved; _ }]; _ };
+                ],
+                Some operator_name ) ->
                 Some
                   (Error.UnsupportedOperand
                      (Binary { operator_name; left_operand = target; right_operand = resolved }))
@@ -1463,20 +1467,22 @@ module State (Context : Context) = struct
             |> fun selected_return_annotation -> { callable_data with selected_return_annotation }
         | _ -> { callable_data with selected_return_annotation }
       in
-      let extract_found_not_found = function
+      let extract_found_not_found_unknown_attribute = function
         | KnownCallable
             {
               selected_return_annotation =
                 SignatureSelectionTypes.Found { selected_return_annotation };
               _;
             } ->
-            First selected_return_annotation
-        | not_found -> Second not_found
+            `Fst selected_return_annotation
+        | KnownCallable _ as not_found -> `Snd not_found
+        | UnknownCallableAttribute _ as unknown_callable_attribute ->
+            `Trd unknown_callable_attribute
       in
-      let resolved_for_bad_callable ~resolution ~errors arguments =
+      let resolved_for_bad_callable ~resolution ~errors undefined_attributes =
         let errors =
           let resolved_callee = Callee.resolved callee in
-          match resolved_callee, potential_missing_operator_error arguments with
+          match resolved_callee, potential_missing_operator_error undefined_attributes with
           | Type.Top, Some kind -> emit_error ~errors ~location ~kind
           | Parametric { name = "type"; parameters = [Single Any] }, _
           | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
@@ -1621,12 +1627,16 @@ module State (Context : Context) = struct
                 KnownCallable (return_annotation_with_callable_and_self ~resolution callable_data)
             | UnknownCallableAttribute other -> UnknownCallableAttribute other)
       in
-      selected_return_annotations
-      |> List.partition_map ~f:extract_found_not_found
-      |> join_return_annotations ~resolution ~errors
+      let found_return_annotations, not_found_return_annotations, undefined_attributes =
+        List.partition3_map selected_return_annotations ~f:extract_found_not_found_unknown_attribute
+      in
+      join_return_annotations
+        ~resolution
+        ~errors
+        (found_return_annotations, not_found_return_annotations)
       |> (function
            | Some resolved -> resolved
-           | None -> resolved_for_bad_callable ~resolution ~errors arguments)
+           | None -> resolved_for_bad_callable ~resolution ~errors undefined_attributes)
       |> check_for_error
     in
     match value with
