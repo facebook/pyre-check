@@ -504,6 +504,49 @@ let test_check_inverse_operator context =
       z: F = F() >> E()
     |}
     [];
+  (* When an operator doesn't exist on either side, raise an undefined attribute error. *)
+  assert_type_errors
+    ~context
+    {|
+      class D: ...
+
+      y1: D
+      y1.__radd__(D())
+
+      # Wrong number of arguments.
+      y2: D
+      y2.__add__(1, 2)
+
+      my_union: str | D
+      my_union.__radd__(D())
+    |}
+    [
+      "Undefined attribute [16]: `D` has no attribute `__radd__`.";
+      "Undefined attribute [16]: `D` has no attribute `__add__`.";
+      "Undefined attribute [16]: `typing.Union` has no attribute `__radd__`.";
+    ];
+  (* TODO(T107236583): When an object has type `Any`, we should not use the inverse operator or the
+     inverse `__call__` (wut). *)
+  assert_type_errors
+    ~context
+    {|
+      from typing import Any
+
+      class D:
+        def __radd__(self, other: D) -> D: ...
+
+        def __call__(self, other: int) -> bool: ...
+
+      # pyre-ignore[2]: Deliberate use of `Any`.
+      def main(x: Any) -> None:
+        y = x.__add__(D())
+        reveal_type(y)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `D.__call__` but got `D`.";
+      "Revealed type [-1]: Revealed type for `y` is `bool`.";
+    ];
   ()
 
 
