@@ -525,8 +525,8 @@ let test_check_inverse_operator context =
       "Undefined attribute [16]: `D` has no attribute `__add__`.";
       "Undefined attribute [16]: `typing.Union` has no attribute `__radd__`.";
     ];
-  (* TODO(T107236583): When an object has type `Any`, we should not use the inverse operator or the
-     inverse `__call__` (wut). *)
+  (* When an object has type `Any`, we should not use the inverse operator since the `Any` object
+     might have the original operator. Just treat it as an unknown callable. *)
   assert_type_errors
     ~context
     {|
@@ -542,11 +542,7 @@ let test_check_inverse_operator context =
         y = x.__add__(D())
         reveal_type(y)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `D.__call__` but got `D`.";
-      "Revealed type [-1]: Revealed type for `y` is `bool`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Any`."];
   ()
 
 

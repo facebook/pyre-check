@@ -1300,6 +1300,7 @@ module State (Context : Context) = struct
             | Callee.Attribute
                 { base = { expression; resolved_base }; attribute = { name; resolved }; _ }
               when Type.is_top resolved -> (
+                let resolved_callee = resolved in
                 match arguments with
                 | [{ AttributeResolution.Argument.resolved; _ }] ->
                     inverse_operator name
@@ -1315,7 +1316,7 @@ module State (Context : Context) = struct
                       ]
                     in
                     if Type.is_any resolved_base || Type.is_unbound resolved_base then
-                      callable resolved
+                      callable resolved_callee
                       >>| fun callable ->
                       [
                         {
