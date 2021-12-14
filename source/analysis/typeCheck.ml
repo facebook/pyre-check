@@ -1196,18 +1196,6 @@ module State (Context : Context) = struct
       { resolved with base }
     in
     let forward_callable ~resolution ~errors ~target ~dynamic ~callee ~arguments =
-      let resolution, errors, reversed_arguments =
-        let forward_argument (resolution, errors, reversed_arguments) argument =
-          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-          forward_expression ~resolution ~expression
-          |> fun { resolution; errors = new_errors; resolved; _ } ->
-          ( resolution,
-            List.append new_errors errors,
-            { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-            :: reversed_arguments )
-        in
-        List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
-      in
       let signature_select_bidirectional
           ~all_parameters
           ~parameters
@@ -1571,6 +1559,18 @@ module State (Context : Context) = struct
             in
 
             { input with resolved = Type.Any; errors = new_errors }
+      in
+      let resolution, errors, reversed_arguments =
+        let forward_argument (resolution, errors, reversed_arguments) argument =
+          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+          forward_expression ~resolution ~expression
+          |> fun { resolution; errors = new_errors; resolved; _ } ->
+          ( resolution,
+            List.append new_errors errors,
+            { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+            :: reversed_arguments )
+        in
+        List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
       in
       let original_arguments = arguments in
       let arguments = List.rev reversed_arguments in
