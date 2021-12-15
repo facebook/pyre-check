@@ -198,11 +198,11 @@ class CoverageTest(unittest.TestCase):
         )
         self.assert_coverage_matches_comments(
             """
-            def a_very_long_function_name(
+            def a_very_long_function_name(   # Not covered
                     parameter_1: int,        # Covered
                     parameter_2,             # Not covered
                     parameter_3: str,        # Covered
-            ):                               # Not covered
+            ):
                 pass
             """
         )

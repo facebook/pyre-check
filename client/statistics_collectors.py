@@ -142,13 +142,11 @@ class AnnotationCollector(cst.CSTVisitor):
                     break
         self.function_definition_depth += 1
 
-        if node.returns is None:
-            code_range = self._code_range(node.whitespace_before_colon)
-            return_is_annotated = False
-        else:
-            code_range = self._code_range(node.returns)
-            return_is_annotated = True
-        returns = AnnotationInfo(node, return_is_annotated, code_range)
+        returns = AnnotationInfo(
+            node,
+            is_annotated=node.returns is not None,
+            code_range=self._code_range(node.name),
+        )
 
         parameters = []
         annotated_parameter_count = 0
@@ -158,7 +156,7 @@ class AnnotationCollector(cst.CSTVisitor):
             parameters.append(parameter_info)
 
         annotation_kind = FunctionAnnotationKind.from_function_data(
-            return_is_annotated,
+            returns.is_annotated,
             annotated_parameter_count,
             self._is_method_or_classmethod(),
             parameters=node.params.params,

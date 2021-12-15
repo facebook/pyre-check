@@ -8,12 +8,13 @@ import unittest
 from typing import Dict
 
 import libcst as cst
-from libcst.metadata import MetadataWrapper
+from libcst.metadata import CodePosition, CodeRange, MetadataWrapper
 
 from ..statistics_collectors import (
-    FunctionAnnotationKind,
+    AnnotationCollector,
     AnnotationCountCollector,
     FixmeCountCollector,
+    FunctionAnnotationKind,
     IgnoreCountCollector,
     StrictCountCollector,
 )
@@ -21,6 +22,28 @@ from ..statistics_collectors import (
 
 def parse_source(source: str) -> cst.Module:
     return cst.parse_module(textwrap.dedent(source.rstrip()))
+
+
+class AnnotationCollectorTest(unittest.TestCase):
+    def _build_and_visit_annotation_collector(self, source: str) -> AnnotationCollector:
+        source_module = MetadataWrapper(parse_source(source))
+        collector = AnnotationCollector()
+        source_module.visit(collector)
+        return collector
+
+    def test_return_code_range(self) -> None:
+        collector = self._build_and_visit_annotation_collector(
+            """
+            def foobar():
+                pass
+            """
+        )
+        returns = list(collector.returns())
+        self.assertEqual(len(returns), 1)
+        self.assertEqual(
+            returns[0].code_range,
+            CodeRange(CodePosition(2, 4), CodePosition(2, 10)),
+        )
 
 
 class AnnotationCountCollectorTest(unittest.TestCase):
