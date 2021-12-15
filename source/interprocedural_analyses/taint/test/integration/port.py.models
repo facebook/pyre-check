@@ -527,15 +527,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" }
             ],
             "call": {
               "position": {
@@ -601,15 +601,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "arg" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "arg" }
             ],
             "call": {
               "position": {

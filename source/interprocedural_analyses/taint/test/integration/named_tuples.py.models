@@ -18,8 +18,6 @@
             "kinds": [
               {
                 "features": [
-                  { "has": "first-field" },
-                  { "first-field": "bad" },
                   { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
@@ -27,6 +25,10 @@
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "bad" }
             ],
             "call": {
               "position": {
@@ -90,8 +92,6 @@
             "kinds": [
               {
                 "features": [
-                  { "has": "first-field" },
-                  { "first-field": "bad" },
                   { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
@@ -99,6 +99,10 @@
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "bad" }
             ],
             "call": {
               "position": {
@@ -162,8 +166,6 @@
             "kinds": [
               {
                 "features": [
-                  { "has": "first-field" },
-                  { "first-field": "bad" },
                   { "always-via": "tito" },
                   { "always-via": "special_source" }
                 ],
@@ -171,6 +173,10 @@
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "bad" }
             ],
             "call": {
               "position": {

@@ -517,15 +517,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<unknown>" }
-                ],
                 "leaves": [ { "name": "multiple_sources.Node.send" } ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[id]]"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 40, "start": 13, "end": 15 } ],
             "root": {
               "filename": "multiple_sources.py",

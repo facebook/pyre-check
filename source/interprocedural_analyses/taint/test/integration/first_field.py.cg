@@ -1,3 +1,5 @@
 @generated
 Call dependencies
 first_field.alternate_fields (fun) -> [_test_sink (fun) _test_source (fun) dict::__getitem__ (method) int::__gt__ (method) int::__le__ (method)]
+first_field.local_fields (fun) -> [first_field.alternate_fields (fun) int::__gt__ (method) int::__le__ (method)]
+first_field.local_fields_hop (fun) -> [first_field.local_fields (fun) int::__gt__ (method) int::__le__ (method)]

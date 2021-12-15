@@ -65,14 +65,58 @@ module FirstIndex = First (struct
 end)
 
 module FirstIndexInterned = MakeInterner (FirstIndex)
-module FirstIndexSet = Abstract.SetDomain.Make (FirstIndexInterned)
+
+module FirstIndexSet = struct
+  include Abstract.SetDomain.Make (FirstIndexInterned)
+
+  let number_regexp = Str.regexp "[0-9]+"
+
+  let add_first index indices =
+    let is_numeric name = Str.string_match number_regexp name 0 in
+    let to_first_name = function
+      | Abstract.TreeDomain.Label.Index name when is_numeric name -> Some "<numeric>"
+      | Index name -> Some name
+      | Field _ -> None
+      | AnyIndex -> Some "<unknown>"
+    in
+    if is_bottom indices then
+      to_first_name index
+      >>| FirstIndexInterned.intern
+      >>| singleton
+      |> Option.value ~default:bottom
+    else
+      indices
+
+
+  let sequence_join new_indices existing_indices =
+    if is_bottom existing_indices then
+      new_indices
+    else
+      existing_indices
+end
 
 module FirstField = First (struct
   let kind = "field"
 end)
 
 module FirstFieldInterned = MakeInterner (FirstField)
-module FirstFieldSet = Abstract.SetDomain.Make (FirstFieldInterned)
+
+module FirstFieldSet = struct
+  include Abstract.SetDomain.Make (FirstFieldInterned)
+
+  let add_first field fields =
+    if is_bottom fields then
+      field |> FirstFieldInterned.intern |> singleton
+    else
+      fields
+
+
+  let sequence_join new_fields existing_fields =
+    if is_bottom existing_fields then
+      new_fields
+    else
+      existing_fields
+end
 
 module TitoPosition = struct
   let name = "tito positions"
@@ -434,15 +478,3 @@ let type_breadcrumbs ~resolution annotation =
   |> add_if is_boolean type_bool
   |> add_if is_integer type_integer
   |> add_if is_enumeration type_enumeration
-
-
-let number_regexp = Str.regexp "[0-9]+"
-
-let is_numeric name = Str.string_match number_regexp name 0
-
-let to_first_name label =
-  match label with
-  | Abstract.TreeDomain.Label.Index name when is_numeric name -> Some "<numeric>"
-  | Index name -> Some name
-  | Field _ -> None
-  | AnyIndex -> Some "<unknown>"

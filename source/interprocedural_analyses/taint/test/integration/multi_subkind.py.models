@@ -136,13 +136,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" }
-                ],
                 "leaves": [ { "name": "multi_subkind.sink_a" } ],
                 "kind": "SinkA[KindA]"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "root": {
               "filename": "multi_subkind.py",
@@ -159,13 +159,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "b" }
-                ],
                 "leaves": [ { "name": "multi_subkind.sink_b" } ],
                 "kind": "SinkA[KindB]"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" }
             ],
             "root": {
               "filename": "multi_subkind.py",

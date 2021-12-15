@@ -146,14 +146,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -283,14 +283,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "with_feature" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "with_feature" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -1008,17 +1008,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<unknown>" }
-                ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
               { "via": "obscure:model" },
               { "always-via": "tito" }
             ],
@@ -1065,17 +1059,11 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<unknown>" }
-                ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
               { "via": "obscure:model" },
               { "always-via": "tito" }
             ],
@@ -1210,14 +1198,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -1270,14 +1258,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -1302,14 +1290,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "root": {
               "filename": "dictionary.py",
@@ -1746,15 +1734,10 @@
         "port": "formal(d)[a]",
         "taint": [
           {
-            "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" }
-                ],
-                "return_paths": [ "" ],
-                "kind": "LocalReturn"
-              }
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "decl": null
           }

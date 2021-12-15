@@ -223,16 +223,16 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "arg" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "arg" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 195, "start": 19, "end": 33 } ],
             "root": {
               "filename": "taint_in_taint_out.py",
@@ -458,10 +458,6 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" }
-                ],
                 "return_paths": [
                   "[init_list]", "[related][init_list]",
                   "[related][related][init_list]",
@@ -471,6 +467,8 @@
               }
             ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
               { "via": "tito" },
               { "via": "broadening" },
               { "via": "issue-broadening" }
@@ -623,10 +621,6 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" }
-                ],
                 "return_paths": [
                   "[init_list]", "[related][init_list]",
                   "[related][related][init_list]",
@@ -636,6 +630,8 @@
               }
             ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
               { "via": "tito" },
               { "via": "broadening" },
               { "via": "issue-broadening" }
@@ -808,10 +804,6 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" }
-                ],
                 "return_paths": [
                   "[init_list]", "[related][init_list]",
                   "[related][related][init_list]",
@@ -821,6 +813,8 @@
               }
             ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
               { "via": "tito" },
               { "via": "broadening" },
               { "via": "issue-broadening" }
@@ -881,15 +875,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "add_tito" }
-                ],
                 "leaves": [ { "name": "taint_in_taint_out.adds_tito" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "add_tito" },
               { "always-type": "integer" },
               { "always-via": "string_concat_lhs" },
               { "always-type": "scalar" }
@@ -933,10 +925,6 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "add_tito" }
-                ],
                 "leaves": [
                   { "name": "taint_in_taint_out.adds_tito_inherited" }
                 ],
@@ -944,6 +932,8 @@
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "add_tito" },
               { "always-type": "integer" },
               { "always-via": "string_concat_lhs" },
               { "always-type": "scalar" }

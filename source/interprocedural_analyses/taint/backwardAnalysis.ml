@@ -139,16 +139,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ -> None
 
 
-  let add_first_index index indices =
-    if Features.FirstIndexSet.is_bottom indices then
-      Features.to_first_name index
-      >>| Features.FirstIndexInterned.intern
-      >>| Features.FirstIndexSet.singleton
-      |> Option.value ~default:Features.FirstIndexSet.bottom
-    else
-      indices
-
-
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
      paths for more precise tito. *)
   let initial_taint =
@@ -623,11 +613,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match callee.Node.value, arguments with
       | Expression.Name (Name.Attribute { attribute = "get"; _ }), index :: _ ->
           let label = AccessPath.get_index index.Call.Argument.value in
-          BackwardState.Tree.transform
-            Features.FirstIndexSet.Self
-            Map
-            ~f:(add_first_index label)
-            call_taint
+          BackwardState.Tree.add_local_first_index label call_taint
       | _ -> call_taint
     in
 
@@ -1160,8 +1146,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     } ->
         let index = AccessPath.get_index argument_value in
         let taint =
-          BackwardState.Tree.prepend [index] taint
-          |> BackwardState.Tree.transform Features.FirstIndexSet.Self Map ~f:(add_first_index index)
+          BackwardState.Tree.prepend [index] taint |> BackwardState.Tree.add_local_first_index index
         in
 
         analyze_expression ~resolution ~taint ~state ~expression:base

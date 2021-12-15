@@ -637,15 +637,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "attribute" }
-                ],
                 "leaves": [ { "name": "sanitize.b_source" } ],
                 "kind": "TestB"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "attribute" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 328, "start": 29, "end": 30 } ],
             "root": {
               "filename": "sanitize.py",
@@ -703,15 +703,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "instance" }
-                ],
                 "leaves": [ { "name": "sanitize.b_source" } ],
                 "kind": "TestB"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "instance" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 386, "start": 29, "end": 30 } ],
             "root": {
               "filename": "sanitize.py",
@@ -1119,15 +1119,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "attribute" }
-                ],
                 "leaves": [ { "name": "sanitize.a_source" } ],
                 "kind": "TestA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "attribute" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 357, "start": 29, "end": 30 } ],
             "root": {
               "filename": "sanitize.py",
@@ -1185,15 +1185,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "instance" }
-                ],
                 "leaves": [ { "name": "sanitize.a_source" } ],
                 "kind": "TestA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "instance" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 395, "start": 29, "end": 30 } ],
             "root": {
               "filename": "sanitize.py",
@@ -3070,15 +3070,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "attribute" }
-                ],
                 "leaves": [ { "name": "sanitize.a_source" } ],
                 "kind": "NotSink[TestA]@TestA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "attribute" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 428, "start": 27, "end": 28 } ],
             "root": {
               "filename": "sanitize.py",
@@ -3220,15 +3220,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "__add__" }
-                ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "__add__" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
             "tito": [ { "line": 743, "start": 11, "end": 30 } ],
             "root": {
               "filename": "sanitize.py",
@@ -3274,15 +3274,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "__add__" }
-                ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "__add__" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
             "tito": [ { "line": 749, "start": 11, "end": 30 } ],
             "root": {
               "filename": "sanitize.py",
@@ -3717,15 +3717,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "__add__" }
-                ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "__add__" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
             "tito": [ { "line": 534, "start": 11, "end": 30 } ],
             "root": {
               "filename": "sanitize.py",
@@ -3817,15 +3817,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "__add__" }
-                ],
                 "leaves": [ { "name": "sanitize.source_with_tito" } ],
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "__add__" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
             "tito": [ { "line": 540, "start": 11, "end": 30 } ],
             "root": {
               "filename": "sanitize.py",

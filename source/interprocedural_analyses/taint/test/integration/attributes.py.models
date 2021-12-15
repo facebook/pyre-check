@@ -195,16 +195,16 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 66, "start": 23, "end": 37 } ],
             "root": {
               "filename": "attributes.py",
@@ -808,14 +808,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "text" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "text" }
             ],
             "root": {
               "filename": "attributes.py",
@@ -847,13 +847,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "text" }
-                ],
                 "leaves": [ { "name": "Obj{attributes.C.dictionary}" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "text" }
             ],
             "root": {
               "filename": "attributes.py",
@@ -903,14 +903,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "other" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "other" }
             ],
             "root": {
               "filename": "attributes.py",

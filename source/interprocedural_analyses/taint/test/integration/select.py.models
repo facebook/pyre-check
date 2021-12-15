@@ -41,14 +41,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "access_token" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "access_token" }
             ],
             "root": {
               "filename": "select.py",
@@ -73,14 +73,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" }
             ],
             "root": {
               "filename": "select.py",
@@ -105,14 +105,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<unknown>" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
             ],
             "root": {
               "filename": "select.py",
@@ -137,15 +137,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "payload" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "root": {
               "filename": "select.py",
@@ -171,17 +171,13 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "payload" }
-                ],
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "decl": null
           }
@@ -209,15 +205,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "payload" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "root": {
               "filename": "select.py",
@@ -304,13 +300,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "payload" }
-                ],
                 "leaves": [ { "name": "select.view_entry_field" } ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "payload" }
             ],
             "root": {
               "filename": "select.py",
@@ -355,15 +351,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "payload" }
-                ],
                 "leaves": [ { "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 37, "start": 9, "end": 20 } ],
             "root": {
               "filename": "select.py",
@@ -396,15 +392,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "payload" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 37, "start": 9, "end": 20 } ],
             "root": {
               "filename": "select.py",
@@ -461,13 +457,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "payload" }
-                ],
                 "leaves": [ { "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" }
             ],
             "root": {
               "filename": "select.py",
@@ -500,15 +496,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "payload" },
-                  { "has": "first-field" },
-                  { "first-field": "GET" }
-                ],
                 "leaves": [ { "name": "select.view_entry_index" } ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "has": "first-field" },
+              { "first-field": "GET" }
             ],
             "root": {
               "filename": "select.py",

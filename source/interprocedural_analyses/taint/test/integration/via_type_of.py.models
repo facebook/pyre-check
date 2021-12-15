@@ -17,16 +17,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "x" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
               { "always-via": "obscure:model" },
               { "always-via-type": "int" },
               { "always-via": "tito" }
@@ -91,16 +89,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "y" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "y" },
               { "always-via-type": "str" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
@@ -165,16 +161,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "z" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "z" },
               { "always-via": "obscure:model" },
               { "always-via-type": "typing.Annotated[str]" },
               { "always-via": "tito" }
@@ -239,18 +233,16 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "y" },
-                  { "first-field": "z" },
-                  { "first-field": "x" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "y" },
+              { "first-field": "z" },
+              { "first-field": "x" },
               { "via-type": "str" },
               { "always-via": "obscure:model" },
               { "via-type": "int" },
@@ -321,16 +313,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "x" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" },
               { "always-via-type": "typing.Dict[str, int]" }
@@ -395,16 +385,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "y" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "y" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" },
               { "always-via-type": "typing.List[str]" }
@@ -469,16 +457,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "z" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "z" },
               { "always-via": "obscure:model" },
               { "always-via-type": "typing.Annotated[float]" },
               { "always-via": "tito" }
@@ -543,18 +529,16 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "y" },
-                  { "first-field": "z" },
-                  { "first-field": "x" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-field" },
+              { "first-field": "y" },
+              { "first-field": "z" },
+              { "first-field": "x" },
               { "always-via": "obscure:model" },
               { "via-type": "typing.Annotated[float]" },
               { "always-via": "tito" },

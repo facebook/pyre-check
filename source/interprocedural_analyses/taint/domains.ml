@@ -251,6 +251,10 @@ module type TAINT_DOMAIN = sig
 
   val add_local_breadcrumbs : Features.BreadcrumbSet.t -> t -> t
 
+  val add_local_first_index : Abstract.TreeDomain.Label.t -> t -> t
+
+  val add_local_first_field : string -> t -> t
+
   (* All breadcrumbs from all flows, accumulated with an `add`.
    * The over-under approximation is lost when accumulating. *)
   val accumulated_breadcrumbs : t -> Features.BreadcrumbSet.t
@@ -258,6 +262,10 @@ module type TAINT_DOMAIN = sig
   (* All breadcrumbs from all flows, accumulated with a `join`.
    * The over-under approximation is properly preserved. *)
   val joined_breadcrumbs : t -> Features.BreadcrumbSet.t
+
+  val first_indices : t -> Features.FirstIndexSet.t
+
+  val first_fields : t -> Features.FirstFieldSet.t
 
   val via_features : t -> Features.ViaFeatureSet.t
 
@@ -342,15 +350,19 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Kinds : KindTaintDomain.t slot
       | TitoPosition : Features.TitoPositionSet.t slot
       | Breadcrumb : Features.BreadcrumbSet.t slot
+      | FirstIndex : Features.FirstIndexSet.t slot
+      | FirstField : Features.FirstFieldSet.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 3
+    let slots = 5
 
     let slot_name (type a) (slot : a slot) =
       match slot with
       | Kinds -> "Kinds"
       | TitoPosition -> "TitoPosition"
       | Breadcrumb -> "Breadcrumb"
+      | FirstIndex -> "FirstIndex"
+      | FirstField -> "FirstField"
 
 
     let slot_domain (type a) (slot : a slot) =
@@ -358,6 +370,8 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Kinds -> (module KindTaintDomain : Abstract.Domain.S with type t = a)
       | TitoPosition -> (module Features.TitoPositionSet : Abstract.Domain.S with type t = a)
       | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
+      | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
+      | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
 
 
     let strict (type a) (slot : a slot) =
@@ -368,8 +382,8 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
 
   include Abstract.ProductDomain.Make (Slots)
 
-  (* Warning: do NOT use `BreadcrumbSet` abstract parts (e.g,`BreadcrumbSet.Self`,
-   * `BreadcrumbSet.Element`, etc.) since these are ambiguous.
+  (* Warning: do NOT use `BreadcrumbSet`, `FirstFieldSet` and `FirstFieldSet` abstract parts
+   * (e.g,`BreadcrumbSet.Self`, `BreadcrumbSet.Element`, etc.) since these are ambiguous.
    * They can refer to the sets in `Frame` or in `LocalTaint`. *)
 
   let singleton kind frame =
@@ -489,8 +503,8 @@ end = struct
       let local_breadcrumbs =
         breadcrumbs_to_json
           ~breadcrumbs:(LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint)
-          ~first_indices:FirstIndexSet.bottom
-          ~first_fields:FirstFieldSet.bottom
+          ~first_indices:(LocalTaintDomain.get LocalTaintDomain.Slots.FirstIndex local_taint)
+          ~first_fields:(LocalTaintDomain.get LocalTaintDomain.Slots.FirstField local_taint)
       in
       let json = cons_if_non_empty "local_features" local_breadcrumbs json in
 
@@ -573,6 +587,28 @@ end = struct
     add_local_breadcrumbs (Features.BreadcrumbSet.singleton breadcrumb) taint
 
 
+  let add_local_first_index index taint =
+    let apply_local_taint local_taint =
+      let first_indices =
+        LocalTaintDomain.get LocalTaintDomain.Slots.FirstIndex local_taint
+        |> Features.FirstIndexSet.add_first index
+      in
+      LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex first_indices local_taint
+    in
+    transform LocalTaintDomain.Self Map ~f:apply_local_taint taint
+
+
+  let add_local_first_field attribute taint =
+    let apply_local_taint local_taint =
+      let first_fields =
+        LocalTaintDomain.get LocalTaintDomain.Slots.FirstField local_taint
+        |> Features.FirstFieldSet.add_first attribute
+      in
+      LocalTaintDomain.update LocalTaintDomain.Slots.FirstField first_fields local_taint
+    in
+    transform LocalTaintDomain.Self Map ~f:apply_local_taint taint
+
+
   let get_features ~frame_slot ~local_slot ~bottom ~join ~sequence_join taint =
     let local_taint_features local_taint sofar =
       let frame_features frame sofar = Frame.get frame_slot frame |> join sofar in
@@ -600,6 +636,37 @@ end = struct
       ~bottom:Features.BreadcrumbSet.bottom
       ~join:Features.BreadcrumbSet.join
       ~sequence_join:Features.BreadcrumbSet.sequence_join
+      taint
+
+
+  let get_first ~frame_slot ~local_slot ~bottom ~join ~sequence_join taint =
+    let local_taint_first local_taint sofar =
+      let local_first = LocalTaintDomain.get local_slot local_taint in
+      let frame_first frame sofar =
+        Frame.get frame_slot frame |> sequence_join local_first |> join sofar
+      in
+      LocalTaintDomain.fold Frame.Self local_taint ~init:sofar ~f:frame_first
+    in
+    fold LocalTaintDomain.Self ~f:local_taint_first ~init:bottom taint
+
+
+  let first_indices taint =
+    get_first
+      ~frame_slot:Frame.Slots.FirstIndex
+      ~local_slot:LocalTaintDomain.Slots.FirstIndex
+      ~bottom:Features.FirstIndexSet.bottom
+      ~join:Features.FirstIndexSet.join
+      ~sequence_join:Features.FirstIndexSet.sequence_join
+      taint
+
+
+  let first_fields taint =
+    get_first
+      ~frame_slot:Frame.Slots.FirstField
+      ~local_slot:LocalTaintDomain.Slots.FirstField
+      ~bottom:Features.FirstFieldSet.bottom
+      ~join:Features.FirstFieldSet.join
+      ~sequence_join:Features.FirstFieldSet.sequence_join
       taint
 
 
@@ -672,17 +739,34 @@ end = struct
         |> LocalTaintDomain.transform KindTaintDomain.Key Map ~f:Kind.apply_call
       in
       let local_breadcrumbs = LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint in
+      let local_first_indices =
+        LocalTaintDomain.get LocalTaintDomain.Slots.FirstIndex local_taint
+      in
+      let local_first_fields = LocalTaintDomain.get LocalTaintDomain.Slots.FirstField local_taint in
       let local_taint =
         local_taint
         |> LocalTaintDomain.update
              LocalTaintDomain.Slots.TitoPosition
              Features.TitoPositionSet.bottom
         |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb Features.BreadcrumbSet.empty
+        |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex Features.FirstIndexSet.bottom
+        |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
       in
       let apply_frame frame =
         frame
         |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
-        |> Frame.transform Features.BreadcrumbSet.Self Add ~f:local_breadcrumbs
+        |> Frame.transform
+             Features.BreadcrumbSet.Self
+             Map
+             ~f:(Features.BreadcrumbSet.sequence_join local_breadcrumbs)
+        |> Frame.transform
+             Features.FirstIndexSet.Self
+             Map
+             ~f:(Features.FirstIndexSet.sequence_join local_first_indices)
+        |> Frame.transform
+             Features.FirstFieldSet.Self
+             Map
+             ~f:(Features.FirstFieldSet.sequence_join local_first_fields)
       in
       let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
       match call_info with
@@ -724,6 +808,8 @@ end = struct
              LocalTaintDomain.Slots.TitoPosition
              Features.TitoPositionSet.bottom
         |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb Features.BreadcrumbSet.empty
+        |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex Features.FirstIndexSet.bottom
+        |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
       in
       let apply_frame frame =
         frame
@@ -807,6 +893,12 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       taint_tree
     else
       transform Taint.Self Map ~f:(Taint.add_local_breadcrumbs breadcrumbs) taint_tree
+
+
+  let add_local_first_index index = transform Taint.Self Map ~f:(Taint.add_local_first_index index)
+
+  let add_local_first_field attribute =
+    transform Taint.Self Map ~f:(Taint.add_local_first_field attribute)
 
 
   let accumulated_breadcrumbs taint_tree =

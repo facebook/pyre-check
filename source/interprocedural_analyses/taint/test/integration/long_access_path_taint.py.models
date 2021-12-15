@@ -32,17 +32,17 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "app_id" },
-                  { "first-index": "timestamp" }
-                ],
                 "return_paths": [ "[app_id]", "[timestamp]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "app_id" },
+              { "first-index": "timestamp" },
+              { "always-via": "tito" }
+            ],
             "decl": null
           }
         ]
@@ -107,17 +107,17 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "app_id" },
-                  { "first-index": "timestamp" }
-                ],
                 "return_paths": [ "[app_id]", "[timestamp]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "app_id" },
+              { "first-index": "timestamp" },
+              { "always-via": "tito" }
+            ],
             "decl": null
           }
         ]
@@ -182,17 +182,17 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "app_id" },
-                  { "first-index": "timestamp" }
-                ],
                 "return_paths": [ "[app_id]", "[timestamp]" ],
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "app_id" },
+              { "first-index": "timestamp" },
+              { "always-via": "tito" }
+            ],
             "tito": [
               { "line": 15, "start": 25, "end": 31 },
               { "line": 16, "start": 22, "end": 28 }

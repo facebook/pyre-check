@@ -150,15 +150,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "x" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "x" }
             ],
             "call": {
               "position": {
@@ -1125,16 +1125,16 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" }
-                ],
                 "return_paths": [ "[oauth_token]" ],
                 "length": 2,
                 "kind": "LocalReturn"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 32, "start": 41, "end": 50 } ],
             "decl": null
           }
@@ -1146,16 +1146,16 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" }
-                ],
                 "return_paths": [ "[oauth_token_secret]" ],
                 "length": 2,
                 "kind": "LocalReturn"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 32, "start": 52, "end": 61 } ],
             "decl": null
           }

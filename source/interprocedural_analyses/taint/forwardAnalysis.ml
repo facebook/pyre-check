@@ -217,23 +217,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | None -> state
 
 
-  let add_first_index index indices =
-    if Features.FirstIndexSet.is_bottom indices then
-      Features.to_first_name index
-      >>| Features.FirstIndexInterned.intern
-      >>| Features.FirstIndexSet.singleton
-      |> Option.value ~default:Features.FirstIndexSet.bottom
-    else
-      indices
-
-
-  let add_first_field field fields =
-    if Features.FirstFieldSet.is_bottom fields then
-      field |> Features.FirstFieldInterned.intern |> Features.FirstFieldSet.singleton
-    else
-      fields
-
-
   (* A mapping from a taint-in-taint-out kind (e.g, `Sinks.LocalReturn`, `Sinks.ParameterUpdate` or
      `Sinks.AddFeatureToArgument`) to a source taint that must be propagated. *)
   module TaintInTaintOutEffects = struct
@@ -763,11 +746,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match Node.value callee, arguments with
       | Expression.Name (Name.Attribute { attribute = "get"; _ }), index :: _ ->
           let label = AccessPath.get_index index.value in
-          ForwardState.Tree.transform
-            Features.FirstIndexSet.Self
-            Map
-            ~f:(add_first_index label)
-            taint
+          ForwardState.Tree.add_local_first_index label taint
       | _ -> taint
     in
 
@@ -1141,7 +1120,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let index = AccessPath.get_index argument_value in
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [index]
-          |>> ForwardState.Tree.transform Features.FirstIndexSet.Self Map ~f:(add_first_index index)
+          |>> ForwardState.Tree.add_local_first_index index
       (* We read the taint at the `__iter__` call to be able to properly reference key taint as
          appropriate. *)
       | {
@@ -1525,10 +1504,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             base_taint
             |> add_tito_features
             |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index attribute]
-            |> ForwardState.Tree.transform
-                 Features.FirstFieldSet.Self
-                 Map
-                 ~f:(add_first_field attribute)
+            |> ForwardState.Tree.add_local_first_field attribute
             (* This should be applied before the join with the attribute taint, so inferred taint
              * is sanitized, but user-specified taint on the attribute is still propagated. *)
             |> apply_attribute_sanitizers

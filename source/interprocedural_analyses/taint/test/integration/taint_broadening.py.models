@@ -82,16 +82,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "b" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
               { "always-via": "broadening" }
@@ -732,14 +730,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -781,16 +779,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "b" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
               { "always-via": "broadening" }
@@ -853,14 +849,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -877,14 +873,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "<numeric>" },
-                  { "always-via": "special_sink" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" }
             ],
             "root": {
               "filename": "taint_broadening.py",

@@ -136,13 +136,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" }
-                ],
                 "leaves": [ { "name": "issue_grouping.sink_a" } ],
                 "kind": "SinkA"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "root": {
               "filename": "issue_grouping.py",
@@ -159,13 +159,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "b" }
-                ],
                 "leaves": [ { "name": "issue_grouping.sink_b" } ],
                 "kind": "SinkB"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" }
             ],
             "root": {
               "filename": "issue_grouping.py",

@@ -216,13 +216,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "tainted" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -247,13 +247,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "tainted" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -278,13 +278,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "tainted" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -309,13 +309,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "tainted" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -340,13 +340,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "tainted" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ],
             "root": {
               "filename": "string_conversion.py",
@@ -371,13 +371,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "tainted" }
-                ],
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" }
             ],
             "root": {
               "filename": "string_conversion.py",

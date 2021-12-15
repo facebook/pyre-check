@@ -17,14 +17,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "x" },
-                  { "always-via": "special_source" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "x" }
             ],
             "root": {
               "filename": "locals.py",
@@ -186,13 +186,13 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "x" }
-                ],
                 "leaves": [ { "name": "locals.source_parameter_to_sink" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "x" }
             ],
             "root": {
               "filename": "locals.py",

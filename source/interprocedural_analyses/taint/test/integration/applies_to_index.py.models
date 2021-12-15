@@ -17,15 +17,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" }
-                ],
                 "leaves": [
                   { "name": "applies_to_index.only_applies_to_a_key" }
                 ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
             ],
             "root": {
               "filename": "applies_to_index.py",
@@ -196,15 +196,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-field" },
-                  { "first-field": "a" }
-                ],
                 "leaves": [
                   { "name": "applies_to_index.only_applies_to_a_member" }
                 ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "a" }
             ],
             "root": {
               "filename": "applies_to_index.py",

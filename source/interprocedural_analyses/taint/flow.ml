@@ -85,37 +85,13 @@ let get_issue_features { source_taint; sink_taint } =
     Features.BreadcrumbSet.sequence_join source_breadcrumbs sink_breadcrumbs
   in
   let first_indices =
-    let source_indices =
-      ForwardTaint.fold
-        Features.FirstIndexSet.Self
-        ~f:Features.FirstIndexSet.join
-        ~init:Features.FirstIndexSet.bottom
-        source_taint
-    in
-    let sink_indices =
-      BackwardTaint.fold
-        Features.FirstIndexSet.Self
-        ~f:Features.FirstIndexSet.join
-        ~init:Features.FirstIndexSet.bottom
-        sink_taint
-    in
+    let source_indices = ForwardTaint.first_indices source_taint in
+    let sink_indices = BackwardTaint.first_indices sink_taint in
     Features.FirstIndexSet.join source_indices sink_indices
   in
   let first_fields =
-    let source_fields =
-      ForwardTaint.fold
-        Features.FirstFieldSet.Self
-        ~f:Features.FirstFieldSet.join
-        ~init:Features.FirstFieldSet.bottom
-        source_taint
-    in
-    let sink_fields =
-      BackwardTaint.fold
-        Features.FirstFieldSet.Self
-        ~f:Features.FirstFieldSet.join
-        ~init:Features.FirstFieldSet.bottom
-        sink_taint
-    in
+    let source_fields = ForwardTaint.first_fields source_taint in
+    let sink_fields = BackwardTaint.first_fields sink_taint in
     Features.FirstFieldSet.join source_fields sink_fields
   in
 

@@ -16,3 +16,21 @@ def alternate_fields():
         x = d["b"]
     _test_sink(x)
     return x
+
+
+def local_fields():
+    d = alternate_fields()
+    if 1 > 2:
+        x = d["c"]
+    else:
+        x = d["d"]
+    return x
+
+
+def local_fields_hop():
+    d = local_fields()
+    if 1 > 2:
+        x = d["e"]
+    else:
+        x = d["f"]
+    return x
