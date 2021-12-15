@@ -596,9 +596,3 @@ let do_lookup_artifact ~index ~source_root ~artifact_root path =
 
 let lookup_artifact ~index ~builder:{ source_root; artifact_root; _ } path =
   do_lookup_artifact ~index ~source_root ~artifact_root path
-
-
-let cleanup { artifact_root; _ } =
-  match PyrePath.remove_contents_of_directory artifact_root with
-  | Result.Error message -> Log.warning "Encountered error during buck builder cleanup: %s" message
-  | Result.Ok () -> ()

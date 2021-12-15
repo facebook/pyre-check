@@ -18,7 +18,8 @@ let test_initialize context =
       Lwt.return (BuildSystem.create_for_testing ())
     in
     let load () = failwith "saved state loading is not supported" in
-    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
+    let cleanup () = Lwt.return_unit in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
   in
   let test_initialize _ =
     (* Verify that the build system has indeed been initiailzed. *)
@@ -37,15 +38,13 @@ let test_initialize context =
 let test_cleanup context =
   let internal_state = ref "uncleaned" in
   let build_system_initializer =
-    let initialize () =
-      let cleanup () =
-        internal_state := "cleaned";
-        Lwt.return_unit
-      in
-      Lwt.return (BuildSystem.create_for_testing ~cleanup ())
-    in
+    let initialize () = Lwt.return (BuildSystem.create_for_testing ()) in
     let load () = failwith "saved state loading is not supported" in
-    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
+    let cleanup () =
+      internal_state := "cleaned";
+      Lwt.return_unit
+    in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
   in
   let open Lwt.Infix in
   let configuration, start_options =
@@ -92,7 +91,8 @@ let test_type_errors context =
       Lwt.return (BuildSystem.create_for_testing ~lookup_source ~lookup_artifact ())
     in
     let load () = failwith "saved state loading is not supported" in
-    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
+    let cleanup () = Lwt.return_unit in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
   in
   let test_type_errors client =
     let open Lwt.Infix in
@@ -206,7 +206,8 @@ let test_update context =
       Lwt.return (BuildSystem.create_for_testing ~update ~lookup_source ~lookup_artifact ())
     in
     let load () = failwith "saved state loading is not supported" in
-    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
+    let cleanup () = Lwt.return_unit in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
   in
   let test_update client =
     let open Lwt.Infix in

@@ -27,10 +27,6 @@ val update : t -> PyrePath.t list -> PyrePath.t list Lwt.t
     been updated on the filesystem. The build system should use the provided info to update its
     internal mapping, and return a list of artifact paths whose content may change by this update.*)
 
-val cleanup : t -> unit Lwt.t
-(** This API allows the build system to perform additional work (e.g. removing temporary files) when
-    the Pyre server is about to shut down. *)
-
 val lookup_source : t -> PyrePath.t -> PyrePath.t option
 (** Given an artifact path, return the corresponding source path, which is guaranteed to be unique
     if exists. Return [None] if no such source path exists. *)
@@ -48,7 +44,6 @@ val store : t -> unit
    purpose only. *)
 val create_for_testing
   :  ?update:(PyrePath.t list -> PyrePath.t list Lwt.t) ->
-  ?cleanup:(unit -> unit Lwt.t) ->
   ?lookup_source:(PyrePath.t -> PyrePath.t option) ->
   ?lookup_artifact:(PyrePath.t -> PyrePath.t list) ->
   ?store:(unit -> unit) ->
@@ -77,6 +72,14 @@ module Initializer : sig
       This API may or may not raise exceptions, depending on the behavior of each individual
       initializer. *)
 
+  val cleanup : t -> unit Lwt.t
+  (** This API allows the build system to perform additional work (e.g. removing temporary files)
+      when the Pyre server is about to shut down.
+
+      This API is defined on {!type: t} instead of {!type: build_system} because we want to ensure
+      that the cleanup operation can be performed even if build system initialization process is
+      interrupted before server initialization finishes. *)
+
   val null : t
   (** [null] initializes a no-op build system. It does nothing on [update], and [cleanup], and it
       always assumes an identity source-to-artifact mapping. This can be used when the project being
@@ -100,6 +103,7 @@ module Initializer : sig
   val create_for_testing
     :  initialize:(unit -> build_system Lwt.t) ->
     load:(unit -> build_system Lwt.t) ->
+    cleanup:(unit -> unit Lwt.t) ->
     unit ->
     t
 end

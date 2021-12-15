@@ -912,7 +912,8 @@ let test_handle_types_query_with_build_system context =
       Lwt.return (BuildSystem.create_for_testing ~lookup_artifact ())
     in
     let load () = failwith "saved state loading is not supported" in
-    BuildSystem.Initializer.create_for_testing ~initialize ~load ()
+    let cleanup () = Lwt.return_unit in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
   in
   let test_types_query client =
     let open Lwt.Infix in

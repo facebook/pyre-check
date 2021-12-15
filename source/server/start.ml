@@ -521,16 +521,8 @@ let with_server
   let server_waiter () = f (socket_path, server_properties, server_state) in
   let server_destructor () =
     Log.info "Server is going down. Cleaning up...";
-    let build_system_cleanup () =
-      (* We don't want to use `ExclusiveLock.read` here because when we reach this point, some other
-         thread might still hold the lock on the server state (e.g. this can happen when a `stop`
-         request is received concurrently while the build system is still busy). In those cases,
-         there's no point in waiting for that thread to release the lock as the server is going down
-         after that anyway. *)
-      let { ServerState.build_system; _ } = ExclusiveLock.unsafe_read server_state in
-      BuildSystem.cleanup build_system
-    in
-    build_system_cleanup () >>= fun () -> LwtSocketServer.shutdown server
+    BuildSystem.Initializer.cleanup build_system_initializer
+    >>= fun () -> LwtSocketServer.shutdown server
   in
   finalize
     (fun () ->

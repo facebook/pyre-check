@@ -9,15 +9,12 @@ open Base
 
 type t = {
   update: PyrePath.t list -> PyrePath.t list Lwt.t;
-  cleanup: unit -> unit Lwt.t;
   lookup_source: PyrePath.t -> PyrePath.t option;
   lookup_artifact: PyrePath.t -> PyrePath.t list;
   store: unit -> unit;
 }
 
 let update { update; _ } = update
-
-let cleanup { cleanup; _ } = cleanup ()
 
 let lookup_source { lookup_source; _ } = lookup_source
 
@@ -27,13 +24,12 @@ let store { store; _ } = store ()
 
 let create_for_testing
     ?(update = fun _ -> Lwt.return [])
-    ?(cleanup = fun () -> Lwt.return_unit)
     ?(lookup_source = fun path -> Some path)
     ?(lookup_artifact = fun path -> [path])
     ?(store = fun () -> ())
     ()
   =
-  { update; cleanup; lookup_source; lookup_artifact; store }
+  { update; lookup_source; lookup_artifact; store }
 
 
 module BuckBuildSystem = struct
@@ -216,10 +212,6 @@ module BuckBuildSystem = struct
           State.update ~normalized_targets ~build_map state;
           Lwt.return changed_artifacts)
     in
-    let cleanup () =
-      Buck.Builder.cleanup state.builder;
-      Lwt.return_unit
-    in
     let lookup_source path =
       Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder path
     in
@@ -234,7 +226,7 @@ module BuckBuildSystem = struct
       }
       |> SavedState.store
     in
-    { update; cleanup; lookup_source; lookup_artifact; store }
+    { update; lookup_source; lookup_artifact; store }
 
 
   let initialize_from_options
@@ -287,6 +279,13 @@ module BuckBuildSystem = struct
         in
         State.create_from_saved_state ~builder ~targets ~normalized_targets ~build_map ())
     >>= fun initial_state -> Lwt.return (initialize_from_state initial_state)
+
+
+  let cleanup artifact_root =
+    match PyrePath.remove_contents_of_directory artifact_root with
+    | Result.Error message ->
+        Log.warning "Encountered error during buck builder cleanup: %s" message
+    | Result.Ok () -> ()
 end
 
 module Initializer = struct
@@ -295,27 +294,35 @@ module Initializer = struct
   type t = {
     initialize: unit -> build_system Lwt.t;
     load: unit -> build_system Lwt.t;
+    cleanup: unit -> unit Lwt.t;
   }
 
   let run { initialize; _ } = initialize ()
 
   let load { load; _ } = load ()
 
+  let cleanup { cleanup; _ } = cleanup ()
+
   let null =
     {
       initialize = (fun () -> Lwt.return (create_for_testing ()));
       load = (fun () -> Lwt.return (create_for_testing ()));
+      cleanup = (fun () -> Lwt.return_unit);
     }
 
 
-  let buck ~raw buck_options =
+  let buck ~raw ({ Configuration.Buck.artifact_root; _ } as buck_options) =
     {
       initialize = BuckBuildSystem.initialize_from_options ~raw ~buck_options;
       load = BuckBuildSystem.initialize_from_saved_state ~raw ~buck_options;
+      cleanup =
+        (fun () ->
+          BuckBuildSystem.cleanup artifact_root;
+          Lwt.return_unit);
     }
 
 
-  let create_for_testing ~initialize ~load () = { initialize; load }
+  let create_for_testing ~initialize ~load ~cleanup () = { initialize; load; cleanup }
 end
 
 let get_initializer source_paths =
@@ -328,5 +335,7 @@ let get_initializer source_paths =
 
 let with_build_system ~f source_paths =
   let open Lwt.Infix in
-  Initializer.run (get_initializer source_paths)
-  >>= fun build_system -> Lwt.finalize (fun () -> f build_system) (fun () -> cleanup build_system)
+  let build_system_initializer = get_initializer source_paths in
+  Lwt.finalize
+    (fun () -> Initializer.run build_system_initializer >>= fun build_system -> f build_system)
+    (fun () -> Initializer.cleanup build_system_initializer)
