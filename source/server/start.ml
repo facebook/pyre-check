@@ -156,7 +156,7 @@ let handle_connection
     >>= function
     | None ->
         Log.log ~section:`Server "Connection closed";
-        ExclusiveLock.write server_state ~f:(fun server_state ->
+        ExclusiveLock.Lazy.write server_state ~f:(fun server_state ->
             ConnectionState.cleanup ~server_state connection_state;
             Lwt.return (server_state, ()))
     | Some message ->
@@ -172,12 +172,12 @@ let handle_connection
                 ~properties:server_properties
                 ()
           | ClientRequest.Request request ->
-              ExclusiveLock.write server_state ~f:(fun state ->
+              ExclusiveLock.Lazy.write server_state ~f:(fun state ->
                   handle_request ~properties:server_properties ~state request
                   >>= fun (new_state, response) ->
                   Lwt.return (new_state, (connection_state, response)))
           | ClientRequest.Subscription subscription ->
-              ExclusiveLock.write server_state ~f:(fun state ->
+              ExclusiveLock.Lazy.write server_state ~f:(fun state ->
                   let subscription = handle_subscription ~state ~output_channel subscription in
                   (* We send back the initial set of type errors when a subscription first gets
                      established. *)
@@ -452,7 +452,7 @@ let initialize_server_state
   if configuration.debug then
     Memory.report_statistics ();
   store_initial_state state;
-  Lwt.return (ExclusiveLock.create state)
+  Lwt.return state
 
 
 let get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions ~source_paths () =
@@ -480,7 +480,7 @@ let get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions
 let on_watchman_update ~server_properties ~server_state paths =
   let open Lwt.Infix in
   let update_request = Request.IncrementalUpdate (List.map paths ~f:PyrePath.absolute) in
-  ExclusiveLock.write server_state ~f:(fun state ->
+  ExclusiveLock.Lazy.write server_state ~f:(fun state ->
       handle_request ~properties:server_properties ~state update_request
       >>= fun (new_state, _ok_response) ->
       (* File watcher does not care about the content of the the response. *)
@@ -510,12 +510,14 @@ let with_server
   (* We do not want the expensive server initialization to happen before we start to accept client
      requests. *)
   let server_properties = create_server_properties ~configuration start_options in
-  initialize_server_state
-    ?watchman_subscriber
-    ~build_system_initializer
-    ~saved_state_action
-    server_properties
-  >>= fun server_state ->
+  let server_state =
+    ExclusiveLock.Lazy.create (fun () ->
+        initialize_server_state
+          ?watchman_subscriber
+          ~build_system_initializer
+          ~saved_state_action
+          server_properties)
+  in
   LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_properties ~server_state)
   >>= fun server ->
   let server_waiter () = f (socket_path, server_properties, server_state) in
@@ -597,7 +599,9 @@ let start_server_and_wait ?event_channel ~configuration start_options =
     ~on_server_socket_ready:(fun socket_path ->
       (* An empty message signals that server socket has been created. *)
       write_event (ServerEvent.SocketCreated socket_path))
-    ~on_started:(fun { ServerProperties.start_time; _ } _ ->
+    ~on_started:(fun { ServerProperties.start_time; _ } server_state ->
+      ExclusiveLock.Lazy.force server_state
+      >>= fun _ ->
       write_event ServerEvent.ServerInitialized
       >>= fun () ->
       choose

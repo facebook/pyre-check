@@ -187,7 +187,7 @@ module ScratchProject = struct
             Lwt.return Start.ExitStatus.Error)
       ~on_started:(fun ({ ServerProperties.socket_path; _ } as server_properties) server_state ->
         (* Open a connection to the started server and send some test messages. *)
-        ExclusiveLock.read server_state ~f:Lwt.return
+        ExclusiveLock.Lazy.read server_state ~f:Lwt.return
         >>= fun server_state ->
         let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
         let test_client (input_channel, output_channel) =
