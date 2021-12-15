@@ -212,9 +212,8 @@ let create_server_properties ~configuration { StartOptions.socket_path; critical
 
 let initialize_server_state
     ?watchman_subscriber
-    ?build_system_initializer
+    ~build_system_initializer
     ~saved_state_action
-    ~source_paths
     ({
        ServerProperties.configuration = { Configuration.Analysis.log_directory; _ } as configuration;
        critical_files;
@@ -447,16 +446,6 @@ let initialize_server_state
         Log.info "Initial server state written to %a" PyrePath.pp shared_memory_path
     | _ -> ()
   in
-  let build_system_initializer =
-    let from_source_paths = function
-      | Configuration.SourcePaths.Simple _ -> BuildSystem.Initializer.null
-      | Configuration.SourcePaths.Buck buck_options ->
-          let raw = Buck.Raw.create () in
-          BuildSystem.Initializer.buck ~raw buck_options
-    in
-    (* If not specified, auto-determine which build system to use based on server configuration *)
-    Option.value build_system_initializer ~default:(from_source_paths source_paths)
-  in
   get_initial_state ~build_system_initializer ()
   >>= fun state ->
   Log.info "Server state initialized.";
@@ -511,6 +500,11 @@ let with_server
      filesystem updates during server establishment. *)
   get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions ~source_paths ()
   >>= fun watchman_subscriber ->
+  let build_system_initializer =
+    match build_system_initializer with
+    | Some build_system_initializer -> build_system_initializer
+    | None -> BuildSystem.get_initializer source_paths
+  in
   LwtSocketServer.PreparedSocket.create_from_path socket_path
   >>= fun prepared_socket ->
   (* We do not want the expensive server initialization to happen before we start to accept client
@@ -518,8 +512,7 @@ let with_server
   let server_properties = create_server_properties ~configuration start_options in
   initialize_server_state
     ?watchman_subscriber
-    ?build_system_initializer
-    ~source_paths
+    ~build_system_initializer
     ~saved_state_action
     server_properties
   >>= fun server_state ->

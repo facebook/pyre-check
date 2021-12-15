@@ -318,14 +318,15 @@ module Initializer = struct
   let create_for_testing ~initialize ~load () = { initialize; load }
 end
 
+let get_initializer source_paths =
+  match source_paths with
+  | Configuration.SourcePaths.Simple _ -> Initializer.null
+  | Configuration.SourcePaths.Buck buck_options ->
+      let raw = Buck.Raw.create () in
+      Initializer.buck ~raw buck_options
+
+
 let with_build_system ~f source_paths =
-  let build_system_initializer =
-    match source_paths with
-    | Configuration.SourcePaths.Simple _ -> Initializer.null
-    | Configuration.SourcePaths.Buck buck_options ->
-        let raw = Buck.Raw.create () in
-        Initializer.buck ~raw buck_options
-  in
   let open Lwt.Infix in
-  Initializer.run build_system_initializer
+  Initializer.run (get_initializer source_paths)
   >>= fun build_system -> Lwt.finalize (fun () -> f build_system) (fun () -> cleanup build_system)

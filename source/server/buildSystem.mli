@@ -106,6 +106,10 @@ end
 
 (** {1 Convenient Helpers}*)
 
+val get_initializer : Configuration.SourcePaths.t -> Initializer.t
+(** [get_initializer source_paths] infers the right kind of build system initializer according to
+    [source_paths] and returns it. *)
+
 val with_build_system : f:(t -> 'a Lwt.t) -> Configuration.SourcePaths.t -> 'a Lwt.t
 (** [with_build_system ~f source_paths] creates a build system from [source_paths] and invoke [f] on
     it. The created build system will be automatically cleaned up after [f] returns.*)
