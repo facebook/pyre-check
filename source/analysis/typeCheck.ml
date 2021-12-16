@@ -1245,26 +1245,18 @@ module State (Context : Context) = struct
               inverse_operator name
               >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
               >>= fun found_callable ->
-              let inverted_arguments =
-                [
-                  {
-                    AttributeResolution.Argument.expression = Some expression;
-                    resolved = resolved_base;
-                    kind = Positional;
-                  };
-                ]
-              in
               if Type.is_any resolved_base || Type.is_unbound resolved_base then
-                callable_from_type Type.Top
-                >>| fun callable ->
-                KnownCallable
-                  {
-                    callable;
-                    arguments;
-                    is_inverted_operator = false;
-                    selected_return_annotation = ();
-                  }
+                None
               else
+                let inverted_arguments =
+                  [
+                    {
+                      AttributeResolution.Argument.expression = Some expression;
+                      resolved = resolved_base;
+                      kind = Positional;
+                    };
+                  ]
+                in
                 Some
                   (KnownCallable
                      {
