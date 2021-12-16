@@ -1,0 +1,989 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "supers.B.g4",
+    "callable_line": 52,
+    "code": 5002,
+    "line": 53,
+    "start": 16,
+    "end": 25,
+    "filename": "supers.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 53,
+                "start": 16,
+                "end": 25
+              },
+              "resolves_to": [ "supers.B.f4" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 53,
+                "start": 16,
+                "end": 25
+              },
+              "resolves_to": [ "supers.B.f5" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "supers.attribute_B_not_overwritten",
+    "callable_line": 80,
+    "code": 5002,
+    "line": 81,
+    "start": 4,
+    "end": 7,
+    "filename": "supers.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 81,
+                "start": 4,
+                "end": 7
+              },
+              "resolves_to": [ "supers.A.__init__" ],
+              "port": "result[attribute]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 81,
+                "start": 4,
+                "end": 7
+              },
+              "resolves_to": [ "supers.B.g1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "supers.attribute_C_not_overwritten",
+    "callable_line": 105,
+    "code": 5002,
+    "line": 106,
+    "start": 4,
+    "end": 7,
+    "filename": "supers.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 106,
+                "start": 4,
+                "end": 7
+              },
+              "resolves_to": [ "supers.A.__init__" ],
+              "port": "result[attribute]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 106,
+                "start": 4,
+                "end": 7
+              },
+              "resolves_to": [ "supers.C.g1", "supers.D.g1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "supers.attribute_D_not_overwritten",
+    "callable_line": 115,
+    "code": 5002,
+    "line": 117,
+    "start": 4,
+    "end": 5,
+    "filename": "supers.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 116,
+                "start": 8,
+                "end": 11
+              },
+              "resolves_to": [ "supers.A.__init__" ],
+              "port": "result[attribute]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 117,
+                "start": 4,
+                "end": 5
+              },
+              "resolves_to": [ "supers.D.g1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [
+      {
+        "port": "result[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.A::__init__}",
+    "sources": [
+      {
+        "port": "result[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.A::f1}",
+    "sinks": [
+      {
+        "port": "formal(self)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.A::f2}",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.A::f4}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.A::f5}",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.B::f4}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.B::f5}",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.B::g1}",
+    "sinks": [
+      {
+        "port": "formal(self)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "supers.A.f1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.C::g1}",
+    "sinks": [
+      {
+        "port": "formal(self)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "supers.A.f1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{supers.D::g1}",
+    "sinks": [
+      {
+        "port": "formal(self)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "supers.A.f1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.A.__init__",
+    "sources": [
+      {
+        "port": "result[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "supers.py",
+              "line": 11,
+              "start": 25,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.A.f1",
+    "sinks": [
+      {
+        "port": "formal(self)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "supers.py",
+              "line": 14,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.A.f2",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "supers.py",
+              "line": 17,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.A.f3",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "supers.py",
+              "line": 20,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.B.f4",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "supers.py",
+              "line": 34,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.B.f5",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "supers.py",
+              "line": 37,
+              "start": 26,
+              "end": 27
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.B.g1",
+    "sinks": [
+      {
+        "port": "formal(self)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 40,
+                "start": 8,
+                "end": 22
+              },
+              "resolves_to": [ "supers.A.f1" ],
+              "port": "formal(self)[attribute]"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 41,
+                "start": 8,
+                "end": 15
+              },
+              "resolves_to": [ "supers.A.f1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "supers.B.g1",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 42,
+    "start": 19,
+    "end": 31,
+    "filename": "supers.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 42,
+                "start": 19,
+                "end": 31
+              },
+              "resolves_to": [ "supers.A.f3" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 42,
+                "start": 19,
+                "end": 31
+              },
+              "resolves_to": [ "supers.A.f2" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.C.g1",
+    "sinks": [
+      {
+        "port": "formal(self)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 61,
+                "start": 15,
+                "end": 22
+              },
+              "resolves_to": [ "supers.A.f1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "supers.D.g1",
+    "sinks": [
+      {
+        "port": "formal(self)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "supers.py",
+                "line": 66,
+                "start": 8,
+                "end": 15
+              },
+              "resolves_to": [ "supers.A.f1" ],
+              "port": "formal(self)[attribute]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
