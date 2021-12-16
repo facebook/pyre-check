@@ -45,6 +45,16 @@ class AnnotationCollectorTest(unittest.TestCase):
             CodeRange(CodePosition(2, 4), CodePosition(2, 10)),
         )
 
+    def test_line_count(self) -> None:
+        source_module = MetadataWrapper(cst.parse_module("# No trailing newline"))
+        collector = AnnotationCollector()
+        source_module.visit(collector)
+        self.assertEqual(collector.line_count, 1)
+        source_module = MetadataWrapper(cst.parse_module("# With trailing newline\n"))
+        collector = AnnotationCollector()
+        source_module.visit(collector)
+        self.assertEqual(collector.line_count, 2)
+
 
 class AnnotationCountCollectorTest(unittest.TestCase):
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
@@ -71,7 +81,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -92,7 +102,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -113,7 +123,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -135,7 +145,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 5,
+                "line_count": 4,
             },
         )
 
@@ -157,7 +167,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -179,7 +189,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 2,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
-                "line_count": 5,
+                "line_count": 4,
             },
         )
 
@@ -201,7 +211,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 5,
+                "line_count": 4,
             },
         )
 
@@ -223,7 +233,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
-                "line_count": 5,
+                "line_count": 4,
             },
         )
 
@@ -246,7 +256,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 6,
+                "line_count": 5,
             },
         )
 
@@ -267,7 +277,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -290,7 +300,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 6,
+                "line_count": 5,
             },
         )
 
@@ -311,7 +321,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
         self.assert_counts(
@@ -338,7 +348,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 2,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 2,
-                "line_count": 11,
+                "line_count": 10,
             },
         )
         # Ensure globals and attributes with literal values are considered annotated.
@@ -364,7 +374,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 9,
+                "line_count": 8,
             },
         )
 
@@ -386,7 +396,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
         self.assert_counts(
@@ -406,7 +416,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
         self.assert_counts(
@@ -426,7 +436,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
         self.assert_counts(
@@ -446,7 +456,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
         self.assert_counts(
@@ -466,7 +476,7 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 

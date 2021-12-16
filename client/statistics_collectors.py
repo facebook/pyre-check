@@ -221,7 +221,12 @@ class AnnotationCollector(cst.CSTVisitor):
 
     def leave_Module(self, original_node: cst.Module) -> None:
         file_range = self.get_metadata(PositionProvider, original_node)
-        self.line_count = file_range.end.line
+        if original_node.has_trailing_newline:
+            self.line_count = file_range.end.line
+        else:
+            # Seems to be a quirk in LibCST, the module CodeRange still goes 1 over
+            # even when there is no trailing new line in the file.
+            self.line_count = file_range.end.line - 1
 
 
 class StatisticsCollector(cst.CSTVisitor):
