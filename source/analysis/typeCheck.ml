@@ -1387,15 +1387,14 @@ module State (Context : Context) = struct
       let return_annotation_with_callable_and_self
           ~resolution
           ({
-             callable = { TypeOperation.callable; self_argument };
+             callable = { TypeOperation.callable; _ };
              arguments;
              is_inverted_operator;
-             _;
+             selected_return_annotation;
            } as callable_data)
         =
-        let selected_return_annotation = signature_select ~arguments ~callable ~self_argument in
         match selected_return_annotation, callable with
-        | NotFound _, _ -> (
+        | SignatureSelectionTypes.NotFound _, _ -> (
             match callee, callable, arguments with
             | ( Callee.Attribute { base = { expression; resolved_base }; _ },
                 { Type.Callable.kind = Type.Callable.Named name; _ },
@@ -1622,10 +1621,21 @@ module State (Context : Context) = struct
         ~callee_type:(Callee.resolved callee)
         ~callee:(Callee.expression callee);
       let selected_return_annotations =
-        List.map callable_data_list ~f:(function
-            | KnownCallable callable_data ->
-                KnownCallable (return_annotation_with_callable_and_self ~resolution callable_data)
-            | UnknownCallableAttribute other -> UnknownCallableAttribute other)
+        let select_annotation_for_known_callable = function
+          | KnownCallable
+              ({ callable = { TypeOperation.callable; self_argument }; arguments; _ } as
+              callable_data) ->
+              KnownCallable
+                (return_annotation_with_callable_and_self
+                   ~resolution
+                   {
+                     callable_data with
+                     selected_return_annotation =
+                       signature_select ~arguments ~callable ~self_argument;
+                   })
+          | UnknownCallableAttribute other -> UnknownCallableAttribute other
+        in
+        List.map callable_data_list ~f:select_annotation_for_known_callable
       in
       let found_return_annotations, not_found_return_annotations, undefined_attributes =
         List.partition3_map selected_return_annotations ~f:extract_found_not_found_unknown_attribute
