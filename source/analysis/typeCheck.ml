@@ -1224,44 +1224,6 @@ module State (Context : Context) = struct
                ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution))
           ~global_resolution
       in
-      let signature_select_bidirectional
-          ~all_parameters
-          ~parameters
-          ~callable
-          ~self_argument
-          arguments
-        =
-        let open AttributeResolution.SignatureSelection in
-        prepare_arguments_for_signature_selection ~self_argument arguments
-        |> get_parameter_argument_mapping ~all_parameters ~parameters ~self_argument
-        |> check_arguments_against_parameters
-             ~order:(GlobalResolution.full_order global_resolution)
-             ~resolve_mutable_literals:(GlobalResolution.resolve_mutable_literals global_resolution)
-             ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-             ~callable
-        |> instantiate_return_annotation ~order:(GlobalResolution.full_order global_resolution)
-      in
-      let signature_select
-          ~arguments
-          ~callable:({ Type.Callable.implementation = { parameters; _ }; overloads; _ } as callable)
-          ~self_argument
-        =
-        match parameters, overloads with
-        | Type.Callable.Defined record_parameters, [] ->
-            signature_select_bidirectional
-              ~all_parameters:parameters
-              ~parameters:record_parameters
-              ~callable
-              ~self_argument
-              arguments
-        | _ ->
-            GlobalResolution.signature_select
-              ~arguments
-              ~global_resolution
-              ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-              ~callable
-              ~self_argument
-      in
       let find_method ~parent ~name ~special_method =
         GlobalResolution.attribute_from_annotation global_resolution ~parent ~name ~special_method
         >>| Annotated.Attribute.annotation
@@ -1624,22 +1586,73 @@ module State (Context : Context) = struct
         ~qualifier:Context.qualifier
         ~callee_type:(Callee.resolved callee)
         ~callee:(Callee.expression callee);
+      let signature_select_bidirectional
+          {
+            callable =
+              {
+                TypeOperation.callable =
+                  { Type.Callable.implementation = { parameters; _ }; overloads; _ } as callable;
+                self_argument;
+              };
+            arguments;
+            _;
+          }
+        =
+        match parameters, overloads with
+        | Type.Callable.Defined record_parameters, [] ->
+            let open AttributeResolution.SignatureSelection in
+            prepare_arguments_for_signature_selection ~self_argument arguments
+            |> get_parameter_argument_mapping
+                 ~all_parameters:parameters
+                 ~parameters:record_parameters
+                 ~self_argument
+            |> check_arguments_against_parameters
+                 ~order:(GlobalResolution.full_order global_resolution)
+                 ~resolve_mutable_literals:
+                   (GlobalResolution.resolve_mutable_literals global_resolution)
+                 ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+                 ~callable
+            |> instantiate_return_annotation ~order:(GlobalResolution.full_order global_resolution)
+        | _ ->
+            GlobalResolution.signature_select
+              ~global_resolution
+              ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+              ~arguments
+              ~callable
+              ~self_argument
+      in
       let selected_return_annotations =
-        let select_annotation_for_known_callable = function
-          | KnownCallable
-              ({ callable = { TypeOperation.callable; self_argument }; arguments; _ } as
-              callable_data) ->
-              KnownCallable
-                (return_annotation_with_callable_and_self
-                   ~resolution
-                   {
-                     callable_data with
-                     selected_return_annotation =
-                       signature_select ~arguments ~callable ~self_argument;
-                   })
-          | UnknownCallableAttribute other -> UnknownCallableAttribute other
-        in
-        List.map callable_data_list ~f:select_annotation_for_known_callable
+        match callable_data_list with
+        | [KnownCallable callable_data] ->
+            let callable_data =
+              return_annotation_with_callable_and_self
+                ~resolution
+                {
+                  callable_data with
+                  selected_return_annotation = signature_select_bidirectional callable_data;
+                }
+            in
+            [KnownCallable callable_data]
+        | callable_data_list ->
+            let select_annotation_for_known_callable = function
+              | KnownCallable
+                  ({ callable = { TypeOperation.callable; self_argument }; arguments; _ } as
+                  callable_data) ->
+                  let selected_return_annotation =
+                    GlobalResolution.signature_select
+                      ~global_resolution
+                      ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+                      ~arguments
+                      ~callable
+                      ~self_argument
+                  in
+                  KnownCallable
+                    (return_annotation_with_callable_and_self
+                       ~resolution
+                       { callable_data with selected_return_annotation })
+              | UnknownCallableAttribute other -> UnknownCallableAttribute other
+            in
+            List.map callable_data_list ~f:select_annotation_for_known_callable
       in
       let found_return_annotations, not_found_return_annotations, undefined_attributes =
         List.partition3_map selected_return_annotations ~f:extract_found_not_found_unknown_attribute
