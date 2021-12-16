@@ -85,6 +85,8 @@ module Analysis : sig
     | ExpressionLevel
   [@@deriving show]
 
+  val default_constraint_solving_style : constraint_solving_style
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;

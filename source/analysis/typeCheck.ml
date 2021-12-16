@@ -38,6 +38,8 @@ module type Context = sig
 
   val debug : bool
 
+  val constraint_solving_style : Configuration.Analysis.constraint_solving_style
+
   val define : Define.t Node.t
 
   (* Where to store local annotations during the fixpoint. `None` discards them. *)
@@ -5995,6 +5997,8 @@ module DummyContext = struct
 
   let debug = false
 
+  let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
+
   let define =
     Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
     |> Node.create_with_default_location
@@ -6775,7 +6779,7 @@ let exit_state ~resolution (module Context : Context) =
 
 
 let check_define
-    ~configuration:{ Configuration.Analysis.debug; _ }
+    ~configuration:{ Configuration.Analysis.debug; constraint_solving_style; _ }
     ~resolution
     ~qualifier
     ~call_graph_builder:(module Builder : Callgraph.Builder)
@@ -6787,6 +6791,8 @@ let check_define
         let qualifier = qualifier
 
         let debug = debug
+
+        let constraint_solving_style = constraint_solving_style
 
         let define = define_node
 
@@ -6844,6 +6850,8 @@ let get_or_recompute_local_annotations ~environment name =
               let qualifier = Reference.empty
 
               let debug = false
+
+              let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
 
               let define = define_node
 

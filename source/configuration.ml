@@ -224,6 +224,8 @@ module Analysis = struct
     | ExpressionLevel
   [@@deriving show]
 
+  let default_constraint_solving_style = FunctionCallLevel
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -277,7 +279,7 @@ module Analysis = struct
       ?(shared_memory_dependency_table_power = default_shared_memory_dependency_table_power)
       ?(shared_memory_hash_table_power = default_shared_memory_hash_table_power)
       ?(enable_type_comments = true)
-      ?(constraint_solving_style = FunctionCallLevel)
+      ?(constraint_solving_style = default_constraint_solving_style)
       ~source_paths
       ()
     =

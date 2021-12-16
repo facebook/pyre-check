@@ -74,6 +74,8 @@ module State (Context : Context) = struct
 
     let debug = Context.configuration.debug
 
+    let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
+
     let define = Context.define
 
     let resolution_fixpoint = Context.resolution_fixpoint

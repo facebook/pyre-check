@@ -22,6 +22,8 @@ module type Context = sig
 
   val debug : bool
 
+  val constraint_solving_style : Configuration.Analysis.constraint_solving_style
+
   val define : Define.t Node.t
 
   (* Where to store local annotations during the fixpoint. `None` discards them. *)
