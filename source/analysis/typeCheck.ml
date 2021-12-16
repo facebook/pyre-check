@@ -1545,21 +1545,6 @@ module State (Context : Context) = struct
 
             { input with resolved = Type.Any; errors = new_errors }
       in
-      let resolution, errors, reversed_arguments =
-        let forward_argument (resolution, errors, reversed_arguments) argument =
-          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-          forward_expression ~resolution ~expression
-          |> fun { resolution; errors = new_errors; resolved; _ } ->
-          ( resolution,
-            List.append new_errors errors,
-            { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-            :: reversed_arguments )
-        in
-        List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
-      in
-      let original_arguments = arguments in
-      let arguments = List.rev reversed_arguments in
-      let callable_data_list = get_callables callee |> Option.value ~default:[] in
       let signature_select_bidirectional
           {
             callable =
@@ -1595,9 +1580,23 @@ module State (Context : Context) = struct
               ~callable
               ~self_argument
       in
-      let callables_with_selected_return_annotations =
+      let callables_with_selected_return_annotations, resolution, errors =
+        let callable_data_list = get_callables callee |> Option.value ~default:[] in
         match callable_data_list, Context.constraint_solving_style with
         | [KnownCallable callable_data], Configuration.Analysis.ExpressionLevel ->
+            let resolution, errors, reversed_arguments =
+              let forward_argument (resolution, errors, reversed_arguments) argument =
+                let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+                forward_expression ~resolution ~expression
+                |> fun { resolution; errors = new_errors; resolved; _ } ->
+                ( resolution,
+                  List.append new_errors errors,
+                  { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+                  :: reversed_arguments )
+              in
+              List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
+            in
+            let arguments = List.rev reversed_arguments in
             let callable_data_with_return_annotation =
               let callable_data_with_arguments = { callable_data with arguments } in
               let selected_return_annotation =
@@ -1607,8 +1606,21 @@ module State (Context : Context) = struct
                 ~resolution
                 { callable_data_with_arguments with selected_return_annotation }
             in
-            [KnownCallable callable_data_with_return_annotation]
+            [KnownCallable callable_data_with_return_annotation], resolution, errors
         | callable_data_list, _ ->
+            let resolution, errors, reversed_arguments =
+              let forward_argument (resolution, errors, reversed_arguments) argument =
+                let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+                forward_expression ~resolution ~expression
+                |> fun { resolution; errors = new_errors; resolved; _ } ->
+                ( resolution,
+                  List.append new_errors errors,
+                  { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+                  :: reversed_arguments )
+              in
+              List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
+            in
+            let arguments = List.rev reversed_arguments in
             let callable_data_list =
               List.filter_map callable_data_list ~f:(function
                   | UnknownCallableAttribute { callable_attribute; _ } ->
@@ -1634,7 +1646,7 @@ module State (Context : Context) = struct
                        { callable_data with selected_return_annotation })
               | UnknownCallableAttribute other -> UnknownCallableAttribute other
             in
-            List.map callable_data_list ~f:select_annotation_for_known_callable
+            List.map callable_data_list ~f:select_annotation_for_known_callable, resolution, errors
       in
       Context.Builder.add_callee
         ~global_resolution
@@ -1643,7 +1655,7 @@ module State (Context : Context) = struct
           (List.filter_map callables_with_selected_return_annotations ~f:(function
               | KnownCallable { callable = { TypeOperation.callable; _ }; _ } -> Some callable
               | _ -> None))
-        ~arguments:original_arguments
+        ~arguments
         ~dynamic
         ~qualifier:Context.qualifier
         ~callee_type:(Callee.resolved callee)
