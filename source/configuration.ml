@@ -219,6 +219,11 @@ module Analysis = struct
   }
   [@@deriving show]
 
+  type constraint_solving_style =
+    | FunctionCallLevel
+    | ExpressionLevel
+  [@@deriving show]
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -243,6 +248,7 @@ module Analysis = struct
     python_micro_version: int;
     shared_memory: shared_memory;
     enable_type_comments: bool;
+    constraint_solving_style: constraint_solving_style;
   }
   [@@deriving show]
 
@@ -271,6 +277,7 @@ module Analysis = struct
       ?(shared_memory_dependency_table_power = default_shared_memory_dependency_table_power)
       ?(shared_memory_hash_table_power = default_shared_memory_hash_table_power)
       ?(enable_type_comments = true)
+      ?(constraint_solving_style = FunctionCallLevel)
       ~source_paths
       ()
     =
@@ -312,6 +319,7 @@ module Analysis = struct
           hash_table_power = shared_memory_hash_table_power;
         };
       enable_type_comments;
+      constraint_solving_style;
     }
 
 

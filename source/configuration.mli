@@ -80,6 +80,11 @@ module Analysis : sig
   }
   [@@deriving show]
 
+  type constraint_solving_style =
+    | FunctionCallLevel
+    | ExpressionLevel
+  [@@deriving show]
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -104,6 +109,7 @@ module Analysis : sig
     python_micro_version: int;
     shared_memory: shared_memory;
     enable_type_comments: bool;
+    constraint_solving_style: constraint_solving_style;
   }
   [@@deriving show]
 
@@ -132,6 +138,7 @@ module Analysis : sig
     ?shared_memory_dependency_table_power:int ->
     ?shared_memory_hash_table_power:int ->
     ?enable_type_comments:bool ->
+    ?constraint_solving_style:constraint_solving_style ->
     source_paths:SearchPath.t list ->
     unit ->
     t
