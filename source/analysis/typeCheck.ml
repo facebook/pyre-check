@@ -1616,8 +1616,8 @@ module State (Context : Context) = struct
               ~self_argument
       in
       let selected_return_annotations =
-        match callable_data_list with
-        | [KnownCallable callable_data] ->
+        match callable_data_list, Context.constraint_solving_style with
+        | [KnownCallable callable_data], Configuration.Analysis.ExpressionLevel ->
             let callable_data =
               return_annotation_with_callable_and_self
                 ~resolution
@@ -1627,7 +1627,7 @@ module State (Context : Context) = struct
                 }
             in
             [KnownCallable callable_data]
-        | callable_data_list ->
+        | callable_data_list, _ ->
             let select_annotation_for_known_callable = function
               | KnownCallable
                   ({ callable = { TypeOperation.callable; self_argument }; arguments; _ } as

@@ -2724,6 +2724,7 @@ module ScratchProject = struct
 
   let setup
       ?(incremental_style = Configuration.Analysis.FineGrained)
+      ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
       ~context
       ?(external_sources = [])
       ?(show_error_traces = false)
@@ -2751,6 +2752,7 @@ module ScratchProject = struct
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
         ~incremental_style
+        ~constraint_solving_style
         ~show_error_traces
         ~parallel:false
         ()
@@ -2900,6 +2902,7 @@ let assert_errors
     ?(handle = "test.py")
     ?(update_environment_with = [])
     ?(include_line_numbers = false)
+    ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
     ~context
     ~check
     source
@@ -2920,7 +2923,7 @@ let assert_errors
           let external_sources =
             List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
           in
-          ScratchProject.setup ~context ~external_sources [handle, source]
+          ScratchProject.setup ~context ~constraint_solving_style ~external_sources [handle, source]
         in
         let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
           ScratchProject.build_global_environment project

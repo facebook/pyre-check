@@ -9,6 +9,32 @@ open Test
 open OUnit2
 open IntegrationTest
 
+let assert_type_errors
+    ?include_line_numbers
+    ?update_environment_with
+    ?show_error_traces
+    ~context
+    source
+    expected_errors
+  =
+  assert_type_errors
+    ~context
+    ~constraint_solving_style:Configuration.Analysis.ExpressionLevel
+    ?include_line_numbers
+    ?update_environment_with
+    ?show_error_traces
+    source
+    expected_errors;
+  assert_type_errors
+    ~context
+    ~constraint_solving_style:Configuration.Analysis.FunctionCallLevel
+    ?include_line_numbers
+    ?update_environment_with
+    ?show_error_traces
+    source
+    expected_errors
+
+
 let test_check_method_returns context =
   assert_type_errors
     ~context
