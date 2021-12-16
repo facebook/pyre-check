@@ -1559,27 +1559,7 @@ module State (Context : Context) = struct
       in
       let original_arguments = arguments in
       let arguments = List.rev reversed_arguments in
-      let callable_data_list =
-        get_callables callee
-        |> Option.value ~default:[]
-        |> List.filter_map ~f:(function
-               | UnknownCallableAttribute { callable_attribute; _ } ->
-                   inverse_operator_callable ~callee_attribute:callable_attribute arguments
-               | KnownCallable callable_data ->
-                   Some (KnownCallable { callable_data with arguments }))
-      in
-      Context.Builder.add_callee
-        ~global_resolution
-        ~target
-        ~callables:
-          (List.filter_map callable_data_list ~f:(function
-              | KnownCallable { callable = { TypeOperation.callable; _ }; _ } -> Some callable
-              | _ -> None))
-        ~arguments:original_arguments
-        ~dynamic
-        ~qualifier:Context.qualifier
-        ~callee_type:(Callee.resolved callee)
-        ~callee:(Callee.expression callee);
+      let callable_data_list = get_callables callee |> Option.value ~default:[] in
       let signature_select_bidirectional
           {
             callable =
@@ -1615,19 +1595,27 @@ module State (Context : Context) = struct
               ~callable
               ~self_argument
       in
-      let selected_return_annotations =
+      let callables_with_selected_return_annotations =
         match callable_data_list, Context.constraint_solving_style with
         | [KnownCallable callable_data], Configuration.Analysis.ExpressionLevel ->
-            let callable_data =
+            let callable_data_with_return_annotation =
+              let callable_data_with_arguments = { callable_data with arguments } in
+              let selected_return_annotation =
+                signature_select_bidirectional callable_data_with_arguments
+              in
               return_annotation_with_callable_and_self
                 ~resolution
-                {
-                  callable_data with
-                  selected_return_annotation = signature_select_bidirectional callable_data;
-                }
+                { callable_data_with_arguments with selected_return_annotation }
             in
-            [KnownCallable callable_data]
+            [KnownCallable callable_data_with_return_annotation]
         | callable_data_list, _ ->
+            let callable_data_list =
+              List.filter_map callable_data_list ~f:(function
+                  | UnknownCallableAttribute { callable_attribute; _ } ->
+                      inverse_operator_callable ~callee_attribute:callable_attribute arguments
+                  | KnownCallable callable_data ->
+                      Some (KnownCallable { callable_data with arguments }))
+            in
             let select_annotation_for_known_callable = function
               | KnownCallable
                   ({ callable = { TypeOperation.callable; self_argument }; arguments; _ } as
@@ -1648,8 +1636,22 @@ module State (Context : Context) = struct
             in
             List.map callable_data_list ~f:select_annotation_for_known_callable
       in
+      Context.Builder.add_callee
+        ~global_resolution
+        ~target
+        ~callables:
+          (List.filter_map callables_with_selected_return_annotations ~f:(function
+              | KnownCallable { callable = { TypeOperation.callable; _ }; _ } -> Some callable
+              | _ -> None))
+        ~arguments:original_arguments
+        ~dynamic
+        ~qualifier:Context.qualifier
+        ~callee_type:(Callee.resolved callee)
+        ~callee:(Callee.expression callee);
       let found_return_annotations, not_found_return_annotations, undefined_attributes =
-        List.partition3_map selected_return_annotations ~f:extract_found_not_found_unknown_attribute
+        List.partition3_map
+          callables_with_selected_return_annotations
+          ~f:extract_found_not_found_unknown_attribute
       in
       join_return_annotations
         ~resolution
