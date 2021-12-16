@@ -25,6 +25,7 @@ from typing import (
 )
 
 import dataclasses_json
+from libcst.metadata import CodeRange
 
 from .. import (
     log,
@@ -911,44 +912,26 @@ def type_errors_to_diagnostics(
     return result
 
 
-def _annotation_kind_to_diagnostic_message(
-    annoation_kind: coverage_collector.AnnotationKind,
-) -> str:
-    if annoation_kind == coverage_collector.AnnotationKind.RETURN:
-        return "Consider adding return type annotation."
-    elif annoation_kind == coverage_collector.AnnotationKind.PARAMETER:
-        return "Consider adding parameter type annotation."
-    elif annoation_kind == coverage_collector.AnnotationKind.GLOBAL:
-        return "Consider adding type annotation to the global."
-    elif annoation_kind == coverage_collector.AnnotationKind.ATTRIBUTE:
-        return "Consider adding type annotation to the attribute."
-    else:
-        return "Consider adding type annotations."
-
-
-def uncovered_to_diagnostic(
-    uncovered: coverage_collector.CodeRangeAndAnnotationKind,
-) -> lsp.Diagnostic:
+def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
     return lsp.Diagnostic(
         range=lsp.Range(
             start=lsp.Position(
-                line=uncovered.code_range.start.line - 1,
-                character=uncovered.code_range.start.column,
+                line=uncovered_range.start.line - 1,
+                character=uncovered_range.start.column,
             ),
             end=lsp.Position(
-                line=uncovered.code_range.end.line - 1,
-                character=uncovered.code_range.end.column,
+                line=uncovered_range.end.line - 1, character=uncovered_range.end.column
             ),
         ),
-        message=_annotation_kind_to_diagnostic_message(uncovered.kind),
+        message="Consider adding type annotations.",
     )
 
 
-def to_coverage_result(
-    covered_and_uncovered: coverage_collector.CoveredAndUncovered,
+def coverage_ranges_to_coverage_result(
+    coverage_ranges: coverage_collector.CoveredAndUncoveredRanges,
 ) -> lsp.TypeCoverageResult:
-    num_covered = len(covered_and_uncovered.covered)
-    num_uncovered = len(covered_and_uncovered.uncovered)
+    num_covered = len(coverage_ranges.covered_ranges)
+    num_uncovered = len(coverage_ranges.uncovered_ranges)
     num_total = num_covered + num_uncovered
     if num_total == 0:
         return lsp.TypeCoverageResult(
@@ -958,7 +941,8 @@ def to_coverage_result(
         return lsp.TypeCoverageResult(
             covered_percent=100.0 * num_covered / num_total,
             uncovered_ranges=[
-                uncovered_to_diagnostic(u) for u in covered_and_uncovered.uncovered
+                uncovered_range_to_diagnostic(u)
+                for u in coverage_ranges.uncovered_ranges
             ],
             default_message="Consider adding type annotations.",
         )
@@ -972,8 +956,8 @@ def path_to_coverage_result(
         raise lsp.RequestCancelledError(
             f"Unable to compute coverage information for {path}"
         )
-    covered_and_uncovered = coverage_collector.coverage_for_module(str(path), module)
-    return to_coverage_result(covered_and_uncovered)
+    coverage_ranges = coverage_collector.coverage_ranges_for_module(str(path), module)
+    return coverage_ranges_to_coverage_result(coverage_ranges)
 
 
 class PyreQueryHandler(connection.BackgroundTask):

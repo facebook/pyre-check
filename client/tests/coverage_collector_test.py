@@ -9,11 +9,7 @@ from typing import List
 
 import libcst as cst
 
-from ..coverage_collector import (
-    AnnotationKind,
-    CoverageCollector,
-    collect_coverage_for_module,
-)
+from ..coverage_collector import collect_coverage_for_module
 
 
 class CoverageTest(unittest.TestCase):
@@ -43,12 +39,6 @@ class CoverageTest(unittest.TestCase):
             elif line.lower().endswith("# not covered"):
                 expected_uncovered.append(line_number)
         self.assert_coverage_equal(file_content, expected_covered, expected_uncovered)
-
-    def _create_coverage_collector(self, file_content: str) -> CoverageCollector:
-        module = cst.parse_module(textwrap.dedent(file_content).strip())
-        coverage_collector = CoverageCollector()
-        cst.MetadataWrapper(module).visit(coverage_collector)
-        return coverage_collector
 
     def test_coverage_covered(self) -> None:
         self.assert_coverage_equal(
@@ -205,24 +195,4 @@ class CoverageTest(unittest.TestCase):
             ):
                 pass
             """
-        )
-
-    def test_annotation_kind(self) -> None:
-        coverage_collector = self._create_coverage_collector(
-            """
-            x: int = 1
-            class Foo:
-                y: bool
-                def bar(self, z):
-                    pass
-            """
-        )
-        covered_and_uncovered = coverage_collector.covered_and_uncovered()
-        self.assertListEqual(
-            [c.kind for c in covered_and_uncovered.covered],
-            [AnnotationKind.GLOBAL, AnnotationKind.ATTRIBUTE],
-        )
-        self.assertListEqual(
-            [c.kind for c in covered_and_uncovered.uncovered],
-            [AnnotationKind.PARAMETER, AnnotationKind.RETURN],
         )
