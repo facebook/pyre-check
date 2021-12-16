@@ -1260,42 +1260,6 @@ module State (Context : Context) = struct
         >>| Annotation.annotation
         >>= unpack_callable_and_self_argument
       in
-      (* When an operator does not exist on the left operand but its inverse exists on the right
-         operand, the missing attribute error would not have been thrown for the original operator.
-         Build up the original error in case the inverse operator does not typecheck. *)
-      let potential_missing_operator_error undefined_attributes =
-        match target, callee with
-        | Some target, Callee.Attribute { attribute = { name; resolved }; _ }
-          when Type.is_top resolved
-               && Option.is_some (inverse_operator name)
-               && (not (Type.is_any target))
-               && not (Type.is_unbound target) -> (
-            match undefined_attributes, operator_name_to_symbol name with
-            | ( [
-                  UnknownCallableAttribute
-                    { arguments = [{ AttributeResolution.Argument.resolved; _ }]; _ };
-                ],
-                Some operator_name ) ->
-                Some
-                  (Error.UnsupportedOperand
-                     (Binary { operator_name; left_operand = target; right_operand = resolved }))
-            | _ ->
-                let class_module =
-                  let ast_environment = GlobalResolution.ast_environment global_resolution in
-                  GlobalResolution.class_definition global_resolution target
-                  >>| Node.value
-                  >>= fun { ClassSummary.qualifier; _ } ->
-                  AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
-                in
-                Some
-                  (Error.UndefinedAttribute
-                     {
-                       attribute = name;
-                       origin =
-                         Error.Class { class_type = target; parent_source_path = class_module };
-                     }))
-        | _ -> None
-      in
       let callable_from_type resolved =
         match unpack_callable_and_self_argument resolved with
         | Some unpacked -> Some unpacked
@@ -1487,6 +1451,42 @@ module State (Context : Context) = struct
             `Trd unknown_callable_attribute
       in
       let resolved_for_bad_callable ~resolution ~errors undefined_attributes =
+        (* When an operator does not exist on the left operand but its inverse exists on the right
+           operand, the missing attribute error would not have been thrown for the original
+           operator. Build up the original error in case the inverse operator does not typecheck. *)
+        let potential_missing_operator_error undefined_attributes =
+          match target, callee with
+          | Some target, Callee.Attribute { attribute = { name; resolved }; _ }
+            when Type.is_top resolved
+                 && Option.is_some (inverse_operator name)
+                 && (not (Type.is_any target))
+                 && not (Type.is_unbound target) -> (
+              match undefined_attributes, operator_name_to_symbol name with
+              | ( [
+                    UnknownCallableAttribute
+                      { arguments = [{ AttributeResolution.Argument.resolved; _ }]; _ };
+                  ],
+                  Some operator_name ) ->
+                  Some
+                    (Error.UnsupportedOperand
+                       (Binary { operator_name; left_operand = target; right_operand = resolved }))
+              | _ ->
+                  let class_module =
+                    let ast_environment = GlobalResolution.ast_environment global_resolution in
+                    GlobalResolution.class_definition global_resolution target
+                    >>| Node.value
+                    >>= fun { ClassSummary.qualifier; _ } ->
+                    AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+                  in
+                  Some
+                    (Error.UndefinedAttribute
+                       {
+                         attribute = name;
+                         origin =
+                           Error.Class { class_type = target; parent_source_path = class_module };
+                       }))
+          | _ -> None
+        in
         let errors =
           let resolved_callee = Callee.resolved callee in
           match resolved_callee, potential_missing_operator_error undefined_attributes with
