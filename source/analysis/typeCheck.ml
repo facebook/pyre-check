@@ -1208,6 +1208,14 @@ module State (Context : Context) = struct
     in
     let forward_callable ~resolution ~errors ~target ~dynamic ~callee ~arguments =
       let open CallableApplicationData in
+      let unpack_callable_and_self_argument =
+        unpack_callable_and_self_argument
+          ~signature_select:
+            (GlobalResolution.signature_select
+               ~global_resolution
+               ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution))
+          ~global_resolution
+      in
       let signature_select_bidirectional
           ~all_parameters
           ~parameters
@@ -1250,7 +1258,7 @@ module State (Context : Context) = struct
         GlobalResolution.attribute_from_annotation global_resolution ~parent ~name ~special_method
         >>| Annotated.Attribute.annotation
         >>| Annotation.annotation
-        >>= unpack_callable_and_self_argument ~signature_select ~global_resolution
+        >>= unpack_callable_and_self_argument
       in
       (* When an operator does not exist on the left operand but its inverse exists on the right
          operand, the missing attribute error would not have been thrown for the original operator.
@@ -1289,7 +1297,7 @@ module State (Context : Context) = struct
         | _ -> None
       in
       let callable_from_type resolved =
-        match unpack_callable_and_self_argument ~signature_select ~global_resolution resolved with
+        match unpack_callable_and_self_argument resolved with
         | Some unpacked -> Some unpacked
         | _ -> find_method ~parent:resolved ~name:"__call__" ~special_method:true
       in
