@@ -1287,37 +1287,33 @@ module State (Context : Context) = struct
               if Type.is_any resolved_base || Type.is_unbound resolved_base then
                 callable_from_type Type.Top
                 >>| fun callable ->
-                [
-                  KnownCallable
-                    {
-                      callable;
-                      arguments;
-                      is_inverted_operator = false;
-                      selected_return_annotation = ();
-                    };
-                ]
+                KnownCallable
+                  {
+                    callable;
+                    arguments;
+                    is_inverted_operator = false;
+                    selected_return_annotation = ();
+                  }
               else
                 Some
-                  [
-                    KnownCallable
-                      {
-                        callable = found_callable;
-                        arguments = inverted_arguments;
-                        is_inverted_operator = true;
-                        selected_return_annotation = ();
-                      };
-                  ]
+                  (KnownCallable
+                     {
+                       callable = found_callable;
+                       arguments = inverted_arguments;
+                       is_inverted_operator = true;
+                       selected_return_annotation = ();
+                     })
             in
             Option.first_some
               found_inverse_operator
-              (Some [UnknownCallableAttribute { callable_attribute = callee_attribute; arguments }])
+              (Some (UnknownCallableAttribute { callable_attribute = callee_attribute; arguments }))
         | _ -> None
       in
       let rec get_callables ~arguments callee =
         match callee with
         | Callee.Attribute ({ attribute = { resolved; _ }; _ } as callee_attribute)
           when Type.is_top resolved ->
-            inverse_operator_callable ~callee_attribute arguments
+            Some [UnknownCallableAttribute { callable_attribute = callee_attribute; arguments }]
         | Callee.Attribute { attribute = { resolved; _ }; _ }
         | Callee.NonAttribute { resolved; _ } -> (
             match resolved with
@@ -1615,7 +1611,14 @@ module State (Context : Context) = struct
       in
       let original_arguments = arguments in
       let arguments = List.rev reversed_arguments in
-      let callable_data_list = get_callables ~arguments callee |> Option.value ~default:[] in
+      let callable_data_list =
+        get_callables ~arguments callee
+        |> Option.value ~default:[]
+        |> List.filter_map ~f:(function
+               | UnknownCallableAttribute { callable_attribute; _ } ->
+                   inverse_operator_callable ~callee_attribute:callable_attribute arguments
+               | other -> Some other)
+      in
       Context.Builder.add_callee
         ~global_resolution
         ~target
