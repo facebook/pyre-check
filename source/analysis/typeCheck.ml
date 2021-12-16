@@ -602,19 +602,27 @@ module State (Context : Context) = struct
   end
 
   module CallableApplicationData = struct
-    type 'return_annotation callable_data = {
+    type ('return_annotation, 'arguments) callable_data = {
       callable: TypeOperation.callable_and_self_argument;
-      arguments: AttributeResolution.Argument.t list;
+      arguments: 'arguments;
       is_inverted_operator: bool;
       selected_return_annotation: 'return_annotation;
     }
 
-    type 'return_annotation t =
-      | KnownCallable of 'return_annotation callable_data
+    type ('return_annotation, 'arguments) t =
+      | KnownCallable of ('return_annotation, 'arguments) callable_data
       | UnknownCallableAttribute of {
           callable_attribute: Callee.callee_attribute;
-          arguments: AttributeResolution.Argument.t list;
+          arguments: 'arguments;
         }
+
+    let unknown_callable_attribute_before_application callable_attribute =
+      UnknownCallableAttribute { callable_attribute; arguments = () }
+
+
+    let known_callable_before_application callable =
+      KnownCallable
+        { callable; is_inverted_operator = false; arguments = (); selected_return_annotation = () }
   end
 
   let type_of_signature ~resolution signature =
@@ -1309,25 +1317,18 @@ module State (Context : Context) = struct
               (Some (UnknownCallableAttribute { callable_attribute = callee_attribute; arguments }))
         | _ -> None
       in
-      let rec get_callables ~arguments callee =
+      let rec get_callables callee =
         match callee with
         | Callee.Attribute ({ attribute = { resolved; _ }; _ } as callee_attribute)
           when Type.is_top resolved ->
-            Some [UnknownCallableAttribute { callable_attribute = callee_attribute; arguments }]
+            Some [unknown_callable_attribute_before_application callee_attribute]
         | Callee.Attribute { attribute = { resolved; _ }; _ }
         | Callee.NonAttribute { resolved; _ } -> (
             match resolved with
             | Type.Union annotations ->
                 List.map annotations ~f:(fun annotation ->
                     callable_from_type annotation
-                    >>| fun callable ->
-                    KnownCallable
-                      {
-                        callable;
-                        arguments;
-                        is_inverted_operator = false;
-                        selected_return_annotation = ();
-                      })
+                    >>| fun callable -> known_callable_before_application callable)
                 |> Option.all
             | Type.Variable { constraints = Type.Variable.Bound parent; _ } ->
                 let callee =
@@ -1338,19 +1339,10 @@ module State (Context : Context) = struct
                   | Callee.NonAttribute callee ->
                       Callee.NonAttribute { callee with resolved = parent }
                 in
-                get_callables ~arguments callee
+                get_callables callee
             | annotation ->
                 callable_from_type annotation
-                >>| fun callable ->
-                [
-                  KnownCallable
-                    {
-                      callable;
-                      arguments;
-                      is_inverted_operator = false;
-                      selected_return_annotation = ();
-                    };
-                ])
+                >>| fun callable -> [known_callable_before_application callable])
       in
       let return_annotation_with_callable_and_self
           ~resolution
@@ -1612,12 +1604,13 @@ module State (Context : Context) = struct
       let original_arguments = arguments in
       let arguments = List.rev reversed_arguments in
       let callable_data_list =
-        get_callables ~arguments callee
+        get_callables callee
         |> Option.value ~default:[]
         |> List.filter_map ~f:(function
                | UnknownCallableAttribute { callable_attribute; _ } ->
                    inverse_operator_callable ~callee_attribute:callable_attribute arguments
-               | other -> Some other)
+               | KnownCallable callable_data ->
+                   Some (KnownCallable { callable_data with arguments }))
       in
       Context.Builder.add_callee
         ~global_resolution
