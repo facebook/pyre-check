@@ -394,7 +394,7 @@ django.http.request.HttpRequest.GET: TaintSource[UserControlled]
 
 The signature of any modeled function needs to match the signature of the
 function, as seen by Pyre. Note that Pyre doesn't always see the definition of
-the of the functions directly. If [`.pyi` stub
+the functions directly. If [`.pyi` stub
 files](https://www.python.org/dev/peps/pep-0484/#stub-files) are present, Pyre
 will use the signatures from those files, rather than the actual signature from
 the function definition in your or your dependencies' code. See the [Gradual
