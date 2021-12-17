@@ -297,15 +297,19 @@ module Raw : sig
       arguments: ArgumentList.t;
       description: string;
       exit_code: int option;
+      additional_logs: string list;
     }
   [@@deriving sexp_of]
   (** Raised when external invocation of `buck` returns an error. The [exit_code] field is set to
-      [None] if the external `buck` process gets stopped by a signal. *)
+      [None] if the external `buck` process gets stopped by a signal. The [additional_log] field
+      contains the last few lines of Buck's log that get dumped on its stderr. *)
 
   type t
 
-  val create : unit -> t
-  (** Create an instance of [Raw.t] based on system-installed Buck. *)
+  val create : ?additional_log_size:int -> unit -> t
+  (** Create an instance of [Raw.t] based on system-installed Buck. The [additional_log_size]
+      parameter controls how many lines of Buck log to preserve when an {!BuckError} is raised. By
+      default, the size is set to 0, which means no additional log will be kept. *)
 
   val create_for_testing
     :  query:(?isolation_prefix:string -> string list -> string Lwt.t) ->

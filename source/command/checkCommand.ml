@@ -182,7 +182,7 @@ let run_check check_configuration =
 
 
 let on_exception = function
-  | Buck.Raw.BuckError { arguments; description; exit_code } ->
+  | Buck.Raw.BuckError { arguments; description; exit_code; additional_logs = _ } ->
       Log.error
         "Cannot build the project: %s. To reproduce this error, run `%s`."
         description

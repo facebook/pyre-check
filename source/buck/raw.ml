@@ -25,11 +25,36 @@ module ArgumentList = struct
     String.concat ~sep:" " ("buck" :: escaped_arguments)
 end
 
+module BoundedQueue = struct
+  type 'a t = {
+    queue: 'a Queue.t;
+    size: int;
+  }
+
+  let create size =
+    if size < 0 then
+      failwith "cannot have queue with negative size bound"
+    else
+      { queue = Queue.create ~capacity:size (); size }
+
+
+  let add ~item { queue; size } =
+    if size > 0 then (
+      Queue.enqueue queue item;
+      while Queue.length queue > size do
+        Queue.dequeue queue |> ignore
+      done)
+
+
+  let collect { queue; _ } = Queue.to_list queue
+end
+
 exception
   BuckError of {
     arguments: ArgumentList.t;
     description: string;
     exit_code: int option;
+    additional_logs: string list;
   }
 [@@deriving sexp_of]
 
@@ -47,13 +72,15 @@ let isolation_prefix_to_buck_arguments = function
   | Some isolation_prefix -> ["--isolation_prefix"; isolation_prefix]
 
 
-let create () =
+let create ?(additional_log_size = 0) () =
   let open Lwt.Infix in
   let invoke_buck ?isolation_prefix arguments =
     arguments
     |> Core.List.map ~f:(Format.asprintf "'%s'")
     |> Core.String.concat ~sep:" "
     |> Log.debug "Running buck command: buck %s";
+    (* Preserve the last several lines of Buck log for error reporting purpose. *)
+    let log_buffer = BoundedQueue.create additional_log_size in
     let consume_stderr stderr_channel =
       (* Forward the buck progress message from subprocess stderr to our users, so they get a sense
          of what is being done under the hood. *)
@@ -66,6 +93,7 @@ let create () =
             Lwt.return ""
         | Some line ->
             Log.info "[Buck] %s" line;
+            BoundedQueue.add log_buffer ~item:line;
             consume_line channel
       in
       consume_line stderr_channel
@@ -90,7 +118,14 @@ let create () =
           let arguments =
             List.append (isolation_prefix_to_buck_arguments isolation_prefix) arguments
           in
-          Lwt.fail (BuckError { arguments; description; exit_code })
+          Lwt.fail
+            (BuckError
+               {
+                 arguments;
+                 description;
+                 exit_code;
+                 additional_logs = BoundedQueue.collect log_buffer;
+               })
         in
         match status with
         | Unix.WEXITED 0 -> Lwt.return stdout

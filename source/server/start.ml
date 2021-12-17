@@ -618,7 +618,7 @@ let start_server_and_wait ?event_channel ~configuration start_options =
     ~on_exception:(fun exn ->
       let kind, message =
         match exn with
-        | Buck.Raw.BuckError { arguments; description; exit_code } ->
+        | Buck.Raw.BuckError { arguments; description; exit_code; additional_logs = _ } ->
             (* Buck exit code >=10 are considered internal:
                https://buck.build/command/exit_codes.html *)
             let kind =
