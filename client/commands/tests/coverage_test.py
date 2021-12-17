@@ -47,7 +47,9 @@ class CoverageTest(testslide.TestCase):
             baz_path = root_path / "baz.py"
 
             data: List[FileCoverage] = collect_coverage_for_paths(
-                [foo_path, bar_path, baz_path], working_directory=root
+                [foo_path, bar_path, baz_path],
+                working_directory=root,
+                strict_default=False,
             )
 
             def is_collected(path: Path) -> bool:

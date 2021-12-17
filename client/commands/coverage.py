@@ -36,25 +36,23 @@ def find_root_path(
 
 
 def collect_coverage_for_path(
-    path: Path, working_directory: str
+    path: Path, working_directory: str, strict_default: bool
 ) -> Optional[collector.FileCoverage]:
     module = statistics.parse_path_to_module(path)
     relative_path = os.path.relpath(str(path), working_directory)
     return (
-        collector.collect_coverage_for_module(
-            relative_path, module, strict_default=False
-        )
+        collector.collect_coverage_for_module(relative_path, module, strict_default)
         if module is not None
         else None
     )
 
 
 def collect_coverage_for_paths(
-    paths: Iterable[Path], working_directory: str
+    paths: Iterable[Path], working_directory: str, strict_default: bool
 ) -> List[collector.FileCoverage]:
     result: List[collector.FileCoverage] = []
     for path in paths:
-        coverage = collect_coverage_for_path(path, working_directory)
+        coverage = collect_coverage_for_path(path, working_directory, strict_default)
         if coverage is not None:
             result.append(coverage)
     return result
@@ -71,7 +69,9 @@ def run_coverage(
     else:
         root_paths = [find_root_path(configuration, working_directory_path)]
     module_paths = statistics.find_paths_to_parse(configuration, root_paths)
-    data = collect_coverage_for_paths(module_paths, working_directory)
+    data = collect_coverage_for_paths(
+        module_paths, working_directory, strict_default=configuration.strict
+    )
     log.stdout.write(json.dumps([dataclasses.asdict(entry) for entry in data]))
     return commands.ExitCode.SUCCESS
 
