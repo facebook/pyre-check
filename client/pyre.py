@@ -1265,7 +1265,8 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
             error.show()
             return_code = commands.ExitCode.FAILURE
         except commands.ClientException as error:
-            LOG.error(str(error))
+            for line in str(error).split("\n"):
+                LOG.error(line)
             return_code = error.exit_code
         except Exception as error:
             LOG.error(str(error))
