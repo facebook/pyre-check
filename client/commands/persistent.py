@@ -101,6 +101,7 @@ class PyreServerStartOptions:
     server_identifier: str
     start_arguments: start.Arguments
     ide_features: Optional[configuration_module.IdeFeatures]
+    strict_default: bool
 
     @staticmethod
     def read_from(
@@ -148,6 +149,7 @@ class PyreServerStartOptions:
             server_identifier=start.get_server_identifier(configuration),
             start_arguments=start_arguments,
             ide_features=configuration.ide_features,
+            strict_default=configuration.strict,
         )
 
 
@@ -511,6 +513,7 @@ async def _receive_query_types_response(
 class ServerState:
     # Immutable States
     client_capabilities: lsp.ClientCapabilities = lsp.ClientCapabilities()
+    strict_default: bool = False
 
     # Mutable States
     consecutive_start_failure: int = 0
@@ -653,7 +656,9 @@ class PyreServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        result = path_to_coverage_result(document_path)
+        result = path_to_coverage_result(
+            document_path, strict_default=self.state.strict_default
+        )
         await lsp.write_json_rpc(
             self.output_channel,
             json_rpc.SuccessResponse(
@@ -952,14 +957,14 @@ def to_coverage_result(
         )
 
 
-def path_to_coverage_result(path: Path) -> lsp.TypeCoverageResult:
+def path_to_coverage_result(path: Path, strict_default: bool) -> lsp.TypeCoverageResult:
     module = statistics.parse_path_to_module(path)
     if module is None:
         raise lsp.RequestCancelledError(
             f"Unable to compute coverage information for {path}"
         )
     coverage_collector = coverage_collector_for_module(
-        str(path), module, strict_default=False
+        str(path), module, strict_default
     )
     covered_and_uncovered_lines = coverage_collector.covered_and_uncovered_lines()
     uncovered_ranges = [f.code_range for f in coverage_collector.uncovered_functions()]
@@ -1279,6 +1284,7 @@ class PyreServerHandler(connection.BackgroundTask):
             project_root=Path(start_arguments.base_arguments.global_root),
             relative_local_root=Path(local_root) if local_root else None,
         )
+        self.server_state.strict_default = server_start_options.strict_default
         try:
             async with connection.connect_in_text_mode(socket_path) as (
                 input_channel,

@@ -57,10 +57,11 @@ def _create_server_start_options_reader(
     server_identifier: str,
     start_arguments: start.Arguments,
     ide_features: Optional[configuration_module.IdeFeatures] = None,
+    strict_defualt: bool = False,
 ) -> PyreServerStartOptionsReader:
     def reader() -> PyreServerStartOptions:
         return PyreServerStartOptions(
-            binary, server_identifier, start_arguments, ide_features
+            binary, server_identifier, start_arguments, ide_features, strict_defualt
         )
 
     return reader
@@ -929,7 +930,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_type_coverage_request(self) -> None:
         with tempfile.NamedTemporaryFile() as tmpfile:
-            tmpfile.write(b"def foo(x) -> None:\n  pass\n")
+            tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
@@ -954,6 +955,36 @@ class PersistentTest(testslide.TestCase):
             # A diagnostic update is sent via the output channel
             self.assertEqual(len(bytes_writer.items()), 1)
             self.assertIn(b"Consider adding type annotations", bytes_writer.items()[0])
+            self.assertNotIn(b"100.0", bytes_writer.items()[0])
+
+    @setup.async_test
+    async def test_type_coverage_request_strict(self) -> None:
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            tmpfile.write(b"def foo(x):\n  pass\n")
+            tmpfile.flush()
+            test_path = Path(tmpfile.name)
+            bytes_writer = MemoryBytesWriter()
+            fake_pyre_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+            fake_pyre_query_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+            server = PyreServer(
+                input_channel=create_memory_text_reader(""),
+                output_channel=TextWriter(bytes_writer),
+                state=ServerState(strict_default=True),
+                pyre_manager=fake_pyre_manager,
+                pyre_query_manager=fake_pyre_query_manager,
+            )
+
+            await server.process_type_coverage_request(
+                lsp.TypeCoverageTextDocumentParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                    )
+                ),
+                request_id=1,
+            )
+            # A diagnostic update is sent via the output channel, with 100% coverage.
+            self.assertEqual(len(bytes_writer.items()), 1)
+            self.assertIn(b"100.0", bytes_writer.items()[0])
 
 
 class PyreQueryStateTest(testslide.TestCase):
