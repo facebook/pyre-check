@@ -41,7 +41,9 @@ def collect_coverage_for_path(
     module = statistics.parse_path_to_module(path)
     relative_path = os.path.relpath(str(path), working_directory)
     return (
-        collector.collect_coverage_for_module(relative_path, module)
+        collector.collect_coverage_for_module(
+            relative_path, module, strict_default=False
+        )
         if module is not None
         else None
     )

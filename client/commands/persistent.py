@@ -35,8 +35,8 @@ from .. import (
     command_arguments,
     configuration as configuration_module,
     statistics_logger,
-    coverage_collector,
 )
+from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 from . import (
     backend_arguments,
     commands,
@@ -923,15 +923,19 @@ def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
                 line=uncovered_range.end.line - 1, character=uncovered_range.end.column
             ),
         ),
-        message="Consider adding type annotations.",
+        message=(
+            "This function is not type checked. "
+            "Consider adding parameter or return type annotations."
+        ),
     )
 
 
-def coverage_ranges_to_coverage_result(
-    coverage_ranges: coverage_collector.CoveredAndUncoveredRanges,
+def to_coverage_result(
+    covered_and_uncovered_lines: CoveredAndUncoveredLines,
+    uncovered_ranges: List[CodeRange],
 ) -> lsp.TypeCoverageResult:
-    num_covered = len(coverage_ranges.covered_ranges)
-    num_uncovered = len(coverage_ranges.uncovered_ranges)
+    num_covered = len(covered_and_uncovered_lines.covered_lines)
+    num_uncovered = len(covered_and_uncovered_lines.uncovered_lines)
     num_total = num_covered + num_uncovered
     if num_total == 0:
         return lsp.TypeCoverageResult(
@@ -941,23 +945,25 @@ def coverage_ranges_to_coverage_result(
         return lsp.TypeCoverageResult(
             covered_percent=100.0 * num_covered / num_total,
             uncovered_ranges=[
-                uncovered_range_to_diagnostic(u)
-                for u in coverage_ranges.uncovered_ranges
+                uncovered_range_to_diagnostic(uncovered_range)
+                for uncovered_range in uncovered_ranges
             ],
             default_message="Consider adding type annotations.",
         )
 
 
-def path_to_coverage_result(
-    path: Path,
-) -> lsp.TypeCoverageResult:
+def path_to_coverage_result(path: Path) -> lsp.TypeCoverageResult:
     module = statistics.parse_path_to_module(path)
     if module is None:
         raise lsp.RequestCancelledError(
             f"Unable to compute coverage information for {path}"
         )
-    coverage_ranges = coverage_collector.coverage_ranges_for_module(str(path), module)
-    return coverage_ranges_to_coverage_result(coverage_ranges)
+    coverage_collector = coverage_collector_for_module(
+        str(path), module, strict_default=False
+    )
+    covered_and_uncovered_lines = coverage_collector.covered_and_uncovered_lines()
+    uncovered_ranges = [f.code_range for f in coverage_collector.uncovered_functions()]
+    return to_coverage_result(covered_and_uncovered_lines, uncovered_ranges)
 
 
 class PyreQueryHandler(connection.BackgroundTask):

@@ -13,7 +13,7 @@ import testslide
 from libcst.metadata import CodeRange, CodePosition
 
 from ... import json_rpc, error, configuration as configuration_module
-from ...coverage_collector import CoveredAndUncoveredRanges
+from ...coverage_collector import CoveredAndUncoveredLines
 from ...tests import setup
 from .. import language_server_protocol as lsp, start, backend_arguments
 from ..async_server_connection import (
@@ -46,7 +46,7 @@ from ..persistent import (
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
     uncovered_range_to_diagnostic,
-    coverage_ranges_to_coverage_result,
+    to_coverage_result,
     PyreServerHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
 )
@@ -812,26 +812,24 @@ class PersistentTest(testslide.TestCase):
                     start=lsp.Position(line=0, character=1),
                     end=lsp.Position(line=1, character=2),
                 ),
-                message="Consider adding type annotations.",
+                message=(
+                    "This function is not type checked. "
+                    "Consider adding parameter or return type annotations."
+                ),
             ),
         )
 
     def test_coverage_percentage(self) -> None:
-        coverage_result = coverage_ranges_to_coverage_result(
-            CoveredAndUncoveredRanges(
-                covered_ranges=[
-                    CodeRange(
-                        CodePosition(line=1, column=1), CodePosition(line=2, column=2)
-                    )
-                ],
-                uncovered_ranges=[
-                    CodeRange(
-                        CodePosition(line=3, column=3), CodePosition(line=4, column=4)
-                    )
-                ],
-            )
+        coverage_result = to_coverage_result(
+            CoveredAndUncoveredLines({1, 2}, {3, 4}),
+            uncovered_ranges=[
+                CodeRange(
+                    CodePosition(line=3, column=3), CodePosition(line=4, column=4)
+                )
+            ],
         )
         self.assertEqual(coverage_result.covered_percent, 50.0)
+        self.assertEqual(len(coverage_result.uncovered_ranges), 1)
 
     @setup.async_test
     async def test_server_connection_lost(self) -> None:

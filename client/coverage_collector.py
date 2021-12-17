@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import itertools
 import logging
 from dataclasses import dataclass
 from typing import Set, Iterable, List
@@ -15,6 +14,7 @@ from libcst.metadata import CodeRange
 from .statistics_collectors import (
     AnnotationCollector,
     FunctionAnnotationInfo,
+    StrictCountCollector,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -39,23 +39,55 @@ class FileCoverage:
     uncovered_lines: List[int]
 
 
-def coverage_ranges_for_module(
-    relative_path: str, module: cst.Module
-) -> CoveredAndUncoveredRanges:
+class CoverageCollector(AnnotationCollector):
+    def __init__(self, is_strict: bool) -> None:
+        super().__init__()
+        self.is_strict = is_strict
+
+    def covered_functions(self) -> List[FunctionAnnotationInfo]:
+        if self.is_strict:
+            return self.functions
+        else:
+            return [f for f in self.functions if f.is_annotated]
+
+    def uncovered_functions(self) -> List[FunctionAnnotationInfo]:
+        if self.is_strict:
+            return []
+        else:
+            return [f for f in self.functions if not f.is_annotated]
+
+    def covered_and_uncovered_lines(self) -> CoveredAndUncoveredLines:
+        uncovered_lines = _code_ranges_to_lines(
+            f.code_range for f in self.uncovered_functions()
+        )
+        covered_lines = set(range(0, self.line_count)) - uncovered_lines
+        return CoveredAndUncoveredLines(covered_lines, uncovered_lines)
+
+
+def coverage_collector_for_module(
+    relative_path: str, module: cst.Module, strict_default: bool
+) -> CoverageCollector:
     module_with_metadata = cst.MetadataWrapper(module)
-    coverage_collector = CoverageCollector()
+    strict_count_collector = StrictCountCollector(strict_default)
+    try:
+        module_with_metadata.visit(strict_count_collector)
+    except RecursionError:
+        LOG.warning(f"LibCST encountered recursion error in `{relative_path}`")
+    coverage_collector = CoverageCollector(strict_count_collector.is_strict_module())
     try:
         module_with_metadata.visit(coverage_collector)
     except RecursionError:
         LOG.warning(f"LibCST encountered recursion error in `{relative_path}`")
-    return coverage_collector.covered_and_uncovered_ranges()
+    return coverage_collector
 
 
-def collect_coverage_for_module(relative_path: str, module: cst.Module) -> FileCoverage:
-    covered_and_uncovered_ranges = coverage_ranges_for_module(relative_path, module)
-    covered_and_uncovered_lines = _covered_and_uncovered_ranges_to_lines(
-        covered_and_uncovered_ranges
+def collect_coverage_for_module(
+    relative_path: str, module: cst.Module, strict_default: bool
+) -> FileCoverage:
+    coverage_collector = coverage_collector_for_module(
+        relative_path, module, strict_default
     )
+    covered_and_uncovered_lines = coverage_collector.covered_and_uncovered_lines()
     return FileCoverage(
         filepath=relative_path,
         covered_lines=sorted(covered_and_uncovered_lines.covered_lines),
@@ -63,39 +95,8 @@ def collect_coverage_for_module(relative_path: str, module: cst.Module) -> FileC
     )
 
 
-class CoverageCollector(AnnotationCollector):
-    def covered_functions(self) -> List[FunctionAnnotationInfo]:
-        return [f for f in self.functions if f.is_annotated]
-
-    def uncovered_functions(self) -> List[FunctionAnnotationInfo]:
-        return [f for f in self.functions if not f.is_annotated]
-
-    def covered_and_uncovered_ranges(self) -> CoveredAndUncoveredRanges:
-        covered_ranges = []
-        uncovered_ranges = []
-        for info in itertools.chain(
-            self.globals, self.attributes, self.parameters(), self.returns()
-        ):
-            if info.is_annotated:
-                covered_ranges.append(info.code_range)
-            else:
-                uncovered_ranges.append(info.code_range)
-        return CoveredAndUncoveredRanges(covered_ranges, uncovered_ranges)
-
-
 def _code_ranges_to_lines(code_ranges: Iterable[CodeRange]) -> Set[int]:
     lines: Set[int] = set()
     for code_range in code_ranges:
         lines |= set(range(code_range.start.line - 1, code_range.end.line))
     return lines
-
-
-def _covered_and_uncovered_ranges_to_lines(
-    covered_and_uncovered_ranges: CoveredAndUncoveredRanges,
-) -> CoveredAndUncoveredLines:
-    covered_lines = _code_ranges_to_lines(covered_and_uncovered_ranges.covered_ranges)
-    uncovered_lines = _code_ranges_to_lines(
-        covered_and_uncovered_ranges.uncovered_ranges
-    )
-    # We show partially covered lines as covered
-    return CoveredAndUncoveredLines(covered_lines, uncovered_lines - covered_lines)

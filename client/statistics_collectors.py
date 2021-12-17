@@ -161,12 +161,11 @@ class AnnotationCollector(cst.CSTVisitor):
             self._is_method_or_classmethod(),
             parameters=node.params.params,
         )
-        code_range = self._code_range(node.body)
         self.functions.append(
             FunctionAnnotationInfo(
                 node,
                 annotation_kind,
-                code_range,
+                self._code_range(node),
                 returns,
                 parameters,
                 self._is_method_or_classmethod(),
@@ -337,6 +336,9 @@ class StrictCountCollector(StatisticsCollector):
         elif self.is_strict or self.strict_by_default:
             return False
         return True
+
+    def is_strict_module(self) -> bool:
+        return not self.is_unsafe_module()
 
     def visit_Module(self, node: cst.Module) -> None:
         self.is_strict = False
