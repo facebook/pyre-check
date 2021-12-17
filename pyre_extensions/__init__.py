@@ -17,6 +17,7 @@ from .refinement import none_throws, assert_is_instance, safe_cast
 
 __all__ = [
     "assert_is_instance",
+    "DecoratorFactory",
     "Generic",
     "JSON",
     "ListVariadic",
