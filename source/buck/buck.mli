@@ -290,6 +290,9 @@ module Raw : sig
 
     val to_buck_command : t -> string
     (** Reconstruct the shell command Pyre uses to invoke Buck from an {!ArgumentList.t}. *)
+
+    val length : t -> int
+    (** Number of arguments in the list*)
   end
 
   exception

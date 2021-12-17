@@ -23,6 +23,9 @@ module ArgumentList = struct
       List.map arguments ~f:quote
     in
     String.concat ~sep:" " ("buck" :: escaped_arguments)
+
+
+  let length = List.length
 end
 
 module BoundedQueue = struct

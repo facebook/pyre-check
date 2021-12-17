@@ -182,11 +182,17 @@ let run_check check_configuration =
 
 
 let on_exception = function
-  | Buck.Raw.BuckError { arguments; description; exit_code; additional_logs = _ } ->
-      Log.error
-        "Cannot build the project: %s. To reproduce this error, run `%s`."
-        description
-        (Buck.Raw.ArgumentList.to_buck_command arguments);
+  | Buck.Raw.BuckError { arguments; description; exit_code; additional_logs } ->
+      Log.error "Cannot build the project: %s. " description;
+      (* Avoid spamming the user with repro command if the argument is really long. *)
+      if Buck.Raw.ArgumentList.length arguments <= 20 then
+        Log.error
+          "To reproduce this error, run `%s`."
+          (Buck.Raw.ArgumentList.to_buck_command arguments);
+      if not (List.is_empty additional_logs) then (
+        Log.error "Here are the last few lines of Buck log:";
+        Log.error "  ...";
+        List.iter additional_logs ~f:(Log.error "  %s"));
       let exit_status =
         match exit_code with
         | Some exit_code when exit_code < 10 -> ExitStatus.BuckUserError

@@ -618,7 +618,7 @@ let start_server_and_wait ?event_channel ~configuration start_options =
     ~on_exception:(fun exn ->
       let kind, message =
         match exn with
-        | Buck.Raw.BuckError { arguments; description; exit_code; additional_logs = _ } ->
+        | Buck.Raw.BuckError { arguments; description; exit_code; additional_logs } ->
             (* Buck exit code >=10 are considered internal:
                https://buck.build/command/exit_codes.html *)
             let kind =
@@ -626,11 +626,28 @@ let start_server_and_wait ?event_channel ~configuration start_options =
               | Some exit_code when exit_code < 10 -> ServerEvent.ErrorKind.BuckUser
               | _ -> ServerEvent.ErrorKind.BuckInternal
             in
+            let reproduce_message =
+              if Buck.Raw.ArgumentList.length arguments <= 20 then
+                [
+                  Format.sprintf
+                    "To reproduce this error, run `%s`."
+                    (Buck.Raw.ArgumentList.to_buck_command arguments);
+                ]
+              else
+                []
+            in
+            let additional_messages =
+              if List.is_empty additional_logs then
+                []
+              else
+                "Here are the last few lines of Buck log:"
+                :: "  ..." :: List.map additional_logs ~f:(String.( ^ ) " ")
+            in
             ( kind,
               Format.sprintf
-                "Cannot build the project: %s. To reproduce this error, run `%s`."
+                "Cannot build the project: %s.\n%s"
                 description
-                (Buck.Raw.ArgumentList.to_buck_command arguments) )
+                (String.concat ~sep:"\n" (List.append reproduce_message additional_messages)) )
         | Buck.Builder.JsonError message ->
             ( ServerEvent.ErrorKind.Pyre,
               Format.sprintf

@@ -329,7 +329,7 @@ let get_initializer source_paths =
   match source_paths with
   | Configuration.SourcePaths.Simple _ -> Initializer.null
   | Configuration.SourcePaths.Buck buck_options ->
-      let raw = Buck.Raw.create () in
+      let raw = Buck.Raw.create ~additional_log_size:10 () in
       Initializer.buck ~raw buck_options
 
 
