@@ -102,6 +102,7 @@ class PyreServerStartOptions:
     start_arguments: start.Arguments
     ide_features: Optional[configuration_module.IdeFeatures]
     strict_default: bool
+    excludes: Sequence[str]
 
     @staticmethod
     def read_from(
@@ -150,6 +151,7 @@ class PyreServerStartOptions:
             start_arguments=start_arguments,
             ide_features=configuration.ide_features,
             strict_default=configuration.strict,
+            excludes=configuration.excludes,
         )
 
 
@@ -514,6 +516,7 @@ class ServerState:
     # Immutable States
     client_capabilities: lsp.ClientCapabilities = lsp.ClientCapabilities()
     strict_default: bool = False
+    excludes: Sequence[str] = dataclasses.field(default_factory=list)
 
     # Mutable States
     consecutive_start_failure: int = 0
@@ -657,7 +660,9 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         result = path_to_coverage_result(
-            document_path, strict_default=self.state.strict_default
+            document_path,
+            strict_default=self.state.strict_default,
+            excludes=self.state.excludes,
         )
         await lsp.write_json_rpc(
             self.output_channel,
@@ -957,18 +962,44 @@ def to_coverage_result(
         )
 
 
-def path_to_coverage_result(path: Path, strict_default: bool) -> lsp.TypeCoverageResult:
+def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResult:
+    return lsp.TypeCoverageResult(
+        covered_percent=0.0,
+        uncovered_ranges=[
+            lsp.Diagnostic(
+                range=lsp.Range(
+                    start=lsp.Position(
+                        line=0,
+                        character=0,
+                    ),
+                    end=lsp.Position(line=1, character=0),
+                ),
+                message="This file is not type checked by Pyre.",
+            )
+        ],
+        default_message="",
+    )
+
+
+def path_to_coverage_result(
+    path: Path, strict_default: bool, excludes: Sequence[str]
+) -> lsp.TypeCoverageResult:
     module = statistics.parse_path_to_module(path)
     if module is None:
         raise lsp.RequestCancelledError(
             f"Unable to compute coverage information for {path}"
         )
-    coverage_collector = coverage_collector_for_module(
-        str(path), module, strict_default
-    )
-    covered_and_uncovered_lines = coverage_collector.covered_and_uncovered_lines()
-    uncovered_ranges = [f.code_range for f in coverage_collector.uncovered_functions()]
-    return to_coverage_result(covered_and_uncovered_lines, uncovered_ranges)
+    if statistics.has_py_extension_and_not_ignored(path, excludes):
+        coverage_collector = coverage_collector_for_module(
+            str(path), module, strict_default
+        )
+        covered_and_uncovered_lines = coverage_collector.covered_and_uncovered_lines()
+        uncovered_ranges = [
+            f.code_range for f in coverage_collector.uncovered_functions()
+        ]
+        return to_coverage_result(covered_and_uncovered_lines, uncovered_ranges)
+    else:
+        return file_not_typechecked_coverage_result()
 
 
 class PyreQueryHandler(connection.BackgroundTask):
@@ -1285,6 +1316,7 @@ class PyreServerHandler(connection.BackgroundTask):
             relative_local_root=Path(local_root) if local_root else None,
         )
         self.server_state.strict_default = server_start_options.strict_default
+        self.server_state.excludes = server_start_options.excludes
         try:
             async with connection.connect_in_text_mode(socket_path) as (
                 input_channel,
