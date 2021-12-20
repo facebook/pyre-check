@@ -58,6 +58,11 @@ let collect_typecheck_units { Source.statements; _ } =
     | Define ({ Define.body; _ } as define) ->
         let sofar = { Node.location; Node.value = define } :: sofar in
         List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class:true)
+    | Match { Match.cases; _ } ->
+        let from_case sofar { Match.Case.body; _ } =
+          List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class)
+        in
+        List.fold cases ~init:sofar ~f:from_case
     | For { For.body; orelse; _ }
     | If { If.body; orelse; _ }
     | While { While.body; orelse; _ } ->
@@ -80,8 +85,6 @@ let collect_typecheck_units { Source.statements; _ } =
     | Expression _
     | Global _
     | Import _
-    (* TODO(T107109041): Collect typecheck units within match statement. *)
-    | Match _
     | Nonlocal _
     | Pass
     | Raise _
@@ -100,6 +103,14 @@ let collect_typecheck_units { Source.statements; _ } =
                 for_statement with
                 body = drop_nested_body_in_statements body;
                 orelse = drop_nested_body_in_statements orelse;
+              }
+        | Match ({ Match.cases; _ } as match_statement) ->
+            Statement.Match
+              {
+                match_statement with
+                cases =
+                  List.map cases ~f:(fun ({ Match.Case.body; _ } as case) ->
+                      { case with Match.Case.body = drop_nested_body_in_statements body });
               }
         | If ({ If.body; orelse; _ } as if_statement) ->
             Statement.If

@@ -486,6 +486,22 @@ let test_check_nested context =
     [
       "Missing annotation for captured variable [53]: Captured variable `always_declared` is not \
        annotated.";
+    ];
+  assert_type_errors
+    {|
+      from builtins import int_to_int
+      def foo(x:int) -> None:
+        match x:
+          case _:
+            def nested() -> None:
+              int_to_int(1.0)
+            int_to_int("hi")
+    |}
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st positional only parameter to call `int_to_int` but got `float`.";
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st positional only parameter to call `int_to_int` but got `str`.";
     ]
 
 
