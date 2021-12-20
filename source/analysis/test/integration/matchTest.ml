@@ -715,11 +715,12 @@ let test_syntax context =
   (* TODO(T106617941): This should throw syntax error. *)
   assert_type_errors
     {|
-      match subject:
-        case _:
-          pass
-        case 42:
-          pass
+      def foo(subject: int) -> None:
+        match subject:
+          case _:
+            pass
+          case 42:
+            pass
     |}
     [];
   ()

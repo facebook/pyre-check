@@ -5332,6 +5332,24 @@ let test_populate_unbound_names _ =
     ~expected:[!&"foo", ["y", location (3, 21) (3, 22)]];
   assert_unbound_names
     {|
+      def foo():
+        match x:
+            case base.attribute | Derp() if y:
+                return z
+    |}
+    ~expected:
+      [
+        ( !&"foo",
+          [
+            "Derp", location (4, 28) (4, 34);
+            "base", location (4, 11) (4, 15);
+            "x", location (3, 8) (3, 9);
+            "y", location (4, 38) (4, 39);
+            "z", location (5, 17) (5, 18);
+          ] );
+      ];
+  assert_unbound_names
+    {|
       def bar() -> None: ...
       def foo():
         try:

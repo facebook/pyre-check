@@ -3091,6 +3091,35 @@ module AccessCollector = struct
         let collected = from_expression collected iterator in
         let collected = from_statements collected body in
         from_statements collected orelse
+    | Match { Match.subject; cases } ->
+        let collected = from_expression collected subject in
+        let from_case collected { Match.Case.pattern; guard; body } =
+          let rec from_pattern collected { Node.value; location } =
+            match value with
+            | Match.Pattern.MatchAs { pattern; _ } ->
+                Option.value_map ~default:collected ~f:(from_pattern collected) pattern
+            | MatchClass { cls; patterns; keyword_patterns; _ } ->
+                let collected =
+                  (* TODO(T107008455): explicit location for just class name would be more precise. *)
+                  from_expression collected (Node.create ~location (Expression.Name cls))
+                in
+                let collected = List.fold ~f:from_pattern ~init:collected patterns in
+                List.fold ~f:from_pattern ~init:collected keyword_patterns
+            | MatchMapping { patterns; _ }
+            | MatchOr patterns
+            | MatchSequence patterns ->
+                List.fold ~f:from_pattern ~init:collected patterns
+            | MatchValue expression -> from_expression collected expression
+            | MatchSingleton _
+            | MatchStar _
+            | MatchWildcard ->
+                collected
+          in
+          let collected = from_pattern collected pattern in
+          let collected = from_optional_expression collected guard in
+          from_statements collected body
+        in
+        List.fold ~f:from_case ~init:collected cases
     | If { If.test; body; orelse }
     | While { While.test; body; orelse } ->
         let collected = from_expression collected test in
@@ -3129,8 +3158,6 @@ module AccessCollector = struct
     | Continue
     | Global _
     | Import _
-    (* TODO(T107105911): Handle access for match statement. *)
-    | Match _
     | Nonlocal _
     | Pass ->
         collected
