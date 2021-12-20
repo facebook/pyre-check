@@ -1910,6 +1910,10 @@ let is_generator statements =
         is_expression_generator iterator
         || is_statements_generator body
         || is_statements_generator orelse
+    | Match { Match.subject; cases } ->
+        is_expression_generator subject
+        || List.exists cases ~f:(fun { Match.Case.body; guard; _ } ->
+               is_optional_expression_generator guard || is_statements_generator body)
     | If { If.test; body; orelse }
     | While { While.test; body; orelse } ->
         is_expression_generator test
@@ -1929,8 +1933,6 @@ let is_generator statements =
     | Define _
     | Global _
     | Import _
-    (* TODO(T107108539): Generator check in match statement. *)
-    | Match _
     | Nonlocal _
     | Pass ->
         false
