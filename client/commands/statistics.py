@@ -10,7 +10,7 @@ import logging
 import re
 import time
 from pathlib import Path
-from typing import Callable, Dict, Iterable, Optional, Union
+from typing import Sequence, Callable, Dict, Iterable, Optional, Union
 
 import libcst as cst
 
@@ -47,32 +47,35 @@ def find_roots(
     return [Path.cwd()]
 
 
+def _is_excluded(path: Path, excludes: Sequence[str]) -> bool:
+    try:
+        return any(
+            [re.match(exclude_pattern, str(path)) for exclude_pattern in excludes]
+        )
+    except re.error:
+        LOG.warning("Could not parse `excludes`: %s", excludes)
+        return False
+
+
+def _should_ignore(path: Path, excludes: Sequence[str]) -> bool:
+    return (
+        path.name.startswith("__")
+        or path.name.startswith(".")
+        or _is_excluded(path, excludes)
+    )
+
+
+def has_py_extension_and_not_ignored(path: Path, excludes: Sequence[str]) -> bool:
+    return path.suffix == ".py" and not _should_ignore(path, excludes)
+
+
 def find_paths_to_parse(
     configuration: configuration_module.Configuration, paths: Iterable[Path]
 ) -> Iterable[Path]:
-    def _is_excluded(path: Path) -> bool:
-        try:
-            return any(
-                [
-                    re.match(exclude_pattern, str(path))
-                    for exclude_pattern in configuration.excludes
-                ]
-            )
-        except re.error:
-            LOG.warning("Could not parse `excludes`: %s", configuration.excludes)
-            return False
-
-    def _should_ignore(path: Path) -> bool:
-        return (
-            path.name.startswith("__")
-            or path.name.startswith(".")
-            or _is_excluded(path)
-        )
-
     def _get_paths_for_file(target_file: Path) -> Iterable[Path]:
         return (
             [target_file]
-            if target_file.suffix == ".py" and not _should_ignore(target_file)
+            if has_py_extension_and_not_ignored(target_file, configuration.excludes)
             else []
         )
 
@@ -80,7 +83,7 @@ def find_paths_to_parse(
         return (
             path
             for path in target_directory.glob("**/*.py")
-            if not _should_ignore(path)
+            if not _should_ignore(path, configuration.excludes)
         )
 
     return itertools.chain.from_iterable(
