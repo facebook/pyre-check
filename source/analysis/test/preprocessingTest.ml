@@ -1765,14 +1765,14 @@ let test_qualify_ast _ =
   assert_qualify_pattern
     (+Match.Pattern.MatchClass
         {
-          cls = Ast.Expression.create_name ~location:Location.any "a";
+          class_name = +Ast.Expression.create_name ~location:Location.any "a";
           patterns = [];
           keyword_attributes = [];
           keyword_patterns = [];
         })
     (+Match.Pattern.MatchClass
         {
-          cls = Ast.Expression.create_name ~location:Location.any "b";
+          class_name = +Ast.Expression.create_name ~location:Location.any "b";
           patterns = [];
           keyword_attributes = [];
           keyword_patterns = [];
@@ -1780,14 +1780,14 @@ let test_qualify_ast _ =
   assert_qualify_pattern
     (+Match.Pattern.MatchClass
         {
-          cls = Ast.Expression.create_name ~location:Location.any "x";
+          class_name = +Ast.Expression.create_name ~location:Location.any "x";
           patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
           keyword_attributes = [];
           keyword_patterns = [];
         })
     (+Match.Pattern.MatchClass
         {
-          cls = Ast.Expression.create_name ~location:Location.any "x";
+          class_name = +Ast.Expression.create_name ~location:Location.any "x";
           patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
           keyword_attributes = [];
           keyword_patterns = [];
@@ -1795,14 +1795,14 @@ let test_qualify_ast _ =
   assert_qualify_pattern
     (+Match.Pattern.MatchClass
         {
-          cls = Ast.Expression.create_name ~location:Location.any "x";
+          class_name = +Ast.Expression.create_name ~location:Location.any "x";
           patterns = [];
           keyword_attributes = ["a"];
           keyword_patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
         })
     (+Match.Pattern.MatchClass
         {
-          cls = Ast.Expression.create_name ~location:Location.any "x";
+          class_name = +Ast.Expression.create_name ~location:Location.any "x";
           patterns = [];
           keyword_attributes = ["a"];
           keyword_patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
@@ -5341,7 +5341,7 @@ let test_populate_unbound_names _ =
       [
         ( !&"foo",
           [
-            "Derp", location (4, 28) (4, 34);
+            "Derp", location (4, 28) (4, 32);
             "base", location (4, 11) (4, 15);
             "x", location (3, 8) (3, 9);
             "y", location (4, 38) (4, 39);

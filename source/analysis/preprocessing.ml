@@ -897,10 +897,19 @@ module Qualify (Context : QualifyContext) = struct
       | Match.Pattern.MatchAs { pattern; name } ->
           Match.Pattern.MatchAs
             { pattern = pattern >>| qualify_pattern; name = qualify_match_target name }
-      | MatchClass { cls; patterns; keyword_attributes; keyword_patterns } ->
+      | MatchClass
+          {
+            class_name = { Node.value = class_name; location };
+            patterns;
+            keyword_attributes;
+            keyword_patterns;
+          } ->
           MatchClass
             {
-              cls = qualify_name ~qualify_strings:DoNotQualify ~scope ~location cls;
+              class_name =
+                Node.create
+                  ~location
+                  (qualify_name ~qualify_strings:DoNotQualify ~scope ~location class_name);
               patterns = List.map patterns ~f:qualify_pattern;
               keyword_attributes;
               keyword_patterns = List.map keyword_patterns ~f:qualify_pattern;
@@ -3094,14 +3103,19 @@ module AccessCollector = struct
     | Match { Match.subject; cases } ->
         let collected = from_expression collected subject in
         let from_case collected { Match.Case.pattern; guard; body } =
-          let rec from_pattern collected { Node.value; location } =
+          let rec from_pattern collected { Node.value; _ } =
             match value with
             | Match.Pattern.MatchAs { pattern; _ } ->
                 Option.value_map ~default:collected ~f:(from_pattern collected) pattern
-            | MatchClass { cls; patterns; keyword_patterns; _ } ->
+            | MatchClass
+                {
+                  class_name = { Node.value = class_name; location };
+                  patterns;
+                  keyword_patterns;
+                  _;
+                } ->
                 let collected =
-                  (* TODO(T107008455): explicit location for just class name would be more precise. *)
-                  from_expression collected (Node.create ~location (Expression.Name cls))
+                  from_expression collected (Node.create ~location (Expression.Name class_name))
                 in
                 let collected = List.fold ~f:from_pattern ~init:collected patterns in
                 List.fold ~f:from_pattern ~init:collected keyword_patterns

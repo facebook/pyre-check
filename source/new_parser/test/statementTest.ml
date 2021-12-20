@@ -2560,7 +2560,7 @@ let test_match _ =
       ~expected_pattern:
         (+Match.Pattern.MatchClass
             {
-              cls = Name.Identifier "Foo";
+              class_name = +Name.Identifier "Foo";
               patterns = [+Match.Pattern.MatchValue (+Expression.Constant (Constant.Integer 5))];
               keyword_attributes = ["y"];
               keyword_patterns =

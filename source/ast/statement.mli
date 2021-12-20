@@ -314,7 +314,7 @@ and Match : sig
           name: Identifier.t;
         }
       | MatchClass of {
-          cls: Expression.Name.t;
+          class_name: Expression.Name.t Node.t;
           patterns: t list;
           keyword_attributes: Identifier.t list;
           keyword_patterns: t list;

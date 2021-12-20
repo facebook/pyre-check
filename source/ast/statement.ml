@@ -1030,7 +1030,7 @@ and Match : sig
           name: Identifier.t;
         }
       | MatchClass of {
-          cls: Expression.Name.t;
+          class_name: Expression.Name.t Node.t;
           patterns: t list;
           keyword_attributes: Identifier.t list;
           keyword_patterns: t list;
@@ -1079,7 +1079,7 @@ end = struct
           name: Identifier.t;
         }
       | MatchClass of {
-          cls: Expression.Name.t;
+          class_name: Expression.Name.t Node.t;
           patterns: t list;
           keyword_attributes: Identifier.t list;
           keyword_patterns: t list;
@@ -1108,7 +1108,9 @@ end = struct
           Option.equal location_insensitive_equal left.pattern right.pattern
           && Identifier.equal left.name right.name
       | MatchClass left, MatchClass right ->
-          [%compare.equal: Expression.Name.t] left.cls right.cls
+          [%compare.equal: Expression.Name.t]
+            (Node.value left.class_name)
+            (Node.value right.class_name)
           && List.equal location_insensitive_equal left.patterns right.patterns
           && List.equal Identifier.equal left.keyword_attributes right.keyword_attributes
           && List.equal location_insensitive_equal left.keyword_patterns right.keyword_patterns

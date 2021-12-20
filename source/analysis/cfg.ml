@@ -151,7 +151,7 @@ module MatchTranslate = struct
         match pattern >>| pattern_to_condition ~subject:name with
         | Some condition -> create_boolean_and ~location ~left:capture ~right:condition
         | None -> capture)
-    | MatchClass { cls; patterns; keyword_attributes; keyword_patterns } ->
+    | MatchClass { class_name; patterns; keyword_attributes; keyword_patterns } ->
         let of_positional_pattern index =
           let attribute =
             create_getitem_index
@@ -164,7 +164,10 @@ module MatchTranslate = struct
         let of_attribute_pattern attribute =
           pattern_to_condition ~subject:(create_attribute_name ~location ~base:subject ~attribute)
         in
-        create_isinstance ~location subject (create_name ~location cls)
+        create_isinstance
+          ~location
+          subject
+          (create_name ~location:(Node.location class_name) (Node.value class_name))
         :: List.mapi ~f:of_positional_pattern patterns
         @ List.map2_exn ~f:of_attribute_pattern keyword_attributes keyword_patterns
         |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)

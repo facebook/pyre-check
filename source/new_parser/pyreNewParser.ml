@@ -487,9 +487,9 @@ let pattern =
     Match.Pattern.MatchMapping { keys; patterns; rest } |> Node.create ~location
   in
   let match_class ~location ~cls ~patterns ~kwd_attrs ~kwd_patterns =
-    let cls =
+    let class_name =
       match Node.value cls with
-      | Expression.Name name -> name
+      | Expression.Name name -> Node.create ~location:(Node.location cls) name
       | _ ->
           let {
             Ast.Location.start = { line; column };
@@ -509,7 +509,7 @@ let pattern =
                })
     in
     Match.Pattern.MatchClass
-      { cls; patterns; keyword_attributes = kwd_attrs; keyword_patterns = kwd_patterns }
+      { class_name; patterns; keyword_attributes = kwd_attrs; keyword_patterns = kwd_patterns }
     |> Node.create ~location
   in
   let match_star ~location ~name = Match.Pattern.MatchStar name |> Node.create ~location in
