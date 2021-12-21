@@ -138,6 +138,40 @@ let test_collect _ =
         +Statement.Expression (+Expression.Constant (Constant.Float 4.0));
         +Statement.Expression (+Expression.Constant (Constant.Float 3.0));
       ] );
+  assert_collect
+    [
+      +Statement.Match
+         {
+           Match.subject = +Expression.Constant (Constant.Integer 0);
+           cases =
+             [
+               {
+                 Match.Case.pattern = +Match.Pattern.MatchSingleton (Constant.Integer 2);
+                 guard = Some (+Expression.Constant (Constant.Integer 4));
+                 body = [];
+               };
+             ];
+         };
+    ]
+    ( [
+        +Expression.Constant (Constant.Integer 4);
+        +Expression.Constant (Constant.Integer 2);
+        +Expression.Constant (Constant.Integer 0);
+      ],
+      [
+        +Statement.Match
+           {
+             Match.subject = +Expression.Constant (Constant.Integer 0);
+             cases =
+               [
+                 {
+                   Match.Case.pattern = +Match.Pattern.MatchSingleton (Constant.Integer 2);
+                   guard = Some (+Expression.Constant (Constant.Integer 4));
+                   body = [];
+                 };
+               ];
+           };
+      ] );
 
   assert_collect
     [
@@ -385,6 +419,9 @@ let test_statement_visitor _ =
       | Import _ ->
           increment visited "import";
           visited
+      | Match _ ->
+          increment visited "match";
+          visited
       | Return _ ->
           increment visited "return";
           visited
@@ -409,9 +446,12 @@ let test_statement_visitor _ =
       if x < 3:
         import a
         c = 3
+      match x:
+        case _:
+          import b
   |}
   in
-  assert_counts source ["assign", 3; "return", 1; "import", 2];
+  assert_counts source ["assign", 3; "return", 1; "import", 3; "match", 1];
   ()
 
 

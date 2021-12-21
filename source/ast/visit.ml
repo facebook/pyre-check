@@ -185,6 +185,33 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression test;
           List.iter body ~f:visit_statement;
           List.iter orelse ~f:visit_statement
+      | Match { Match.subject; cases } ->
+          let rec visit_pattern { Node.value; location } =
+            match value with
+            | Match.Pattern.MatchAs { pattern; _ } -> Option.iter pattern ~f:visit_pattern
+            | MatchClass { patterns; keyword_patterns; _ } ->
+                List.iter patterns ~f:visit_pattern;
+                List.iter keyword_patterns ~f:visit_pattern
+            | MatchMapping { keys; patterns; _ } ->
+                List.iter keys ~f:visit_expression;
+                List.iter patterns ~f:visit_pattern
+            | MatchOr patterns
+            | MatchSequence patterns ->
+                List.iter patterns ~f:visit_pattern
+            | MatchSingleton constant ->
+                visit_expression { Node.value = Expression.Constant constant; location }
+            | MatchValue expression -> visit_expression expression
+            | MatchStar _
+            | MatchWildcard ->
+                ()
+          in
+          let visit_case { Match.Case.pattern; guard; body } =
+            visit_pattern pattern;
+            Option.iter guard ~f:visit_expression;
+            List.iter body ~f:visit_statement
+          in
+          visit_expression subject;
+          List.iter cases ~f:visit_case
       | Raise { Raise.expression; from } ->
           Option.iter ~f:visit_expression expression;
           Option.iter ~f:visit_expression from
@@ -212,8 +239,6 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Import _
       | Nonlocal _
       | Global _
-      (* TODO(T107108860): Visitor for match statement. *)
-      | Match _
       | Pass
       | Continue
       | Break ->
@@ -280,8 +305,6 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | Expression _
         | Global _
         | Import _
-        (* TODO(T107108860): Visitor for match statement. *)
-        | Match _
         | Pass
         | Raise _
         | Return _
@@ -296,6 +319,9 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | While { While.body; orelse; _ } ->
             List.iter ~f:visit_statement body;
             List.iter ~f:visit_statement orelse
+        | Match { Match.cases; _ } ->
+            let visit_case { Match.Case.body; _ } = List.iter ~f:visit_statement body in
+            List.iter ~f:visit_case cases
         | Try { Try.body; handlers; orelse; finally } ->
             let visit_handler { Try.Handler.body; _ } = List.iter ~f:visit_statement body in
             List.iter ~f:visit_statement body;
