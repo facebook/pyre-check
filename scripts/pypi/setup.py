@@ -45,15 +45,27 @@ def find_taint_stubs() -> List[Tuple[str, List[str]]]:
     taint_stubs = []
     for path in Path(os.path.join(os.getcwd(), "taint")).iterdir():
         if path.is_dir():
-            _, temporary_stubs = get_data_files(directory=str(path), extension_glob="*")
-            taint_stubs += temporary_stubs
-    _, third_party_taint_stubs = get_data_files(
+            relative_directory, temporary_stubs = get_data_files(
+                directory=str(path), extension_glob="*"
+            )
+            if temporary_stubs:
+                taint_stubs.append(
+                    (
+                        os.path.join("lib", "pyre_check", relative_directory),
+                        temporary_stubs,
+                    )
+                )
+    relative_directory, third_party_taint_stubs = get_data_files(
         directory=os.path.join(os.getcwd(), "third_party_taint"), extension_glob="*"
     )
-    taint_stubs += third_party_taint_stubs
-    if not taint_stubs:
-        return []
-    return [(os.path.join("lib", "pyre_check", "taint"), taint_stubs)]
+    if third_party_taint_stubs:
+        taint_stubs.append(
+            (
+                os.path.join("lib", "pyre_check", relative_directory),
+                third_party_taint_stubs,
+            )
+        )
+    return taint_stubs
 
 
 def run(
