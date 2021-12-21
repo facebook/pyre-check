@@ -46,6 +46,9 @@ let test_class _ =
     ~pattern:"Foo(field=1)"
     ~expected:"isinstance(subject, Foo) and subject.field == 1";
   assert_pattern_to_condition
+    ~pattern:"int(1)"
+    ~expected:"isinstance(subject, int) and subject == 1";
+  assert_pattern_to_condition
     ~pattern:"Foo(field=x)"
     ~expected:"isinstance(subject, Foo) and (x := subject.field) == x";
   assert_pattern_to_condition

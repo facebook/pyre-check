@@ -135,6 +135,25 @@ module MatchTranslate = struct
       ~attribute:"Mapping"
 
 
+  let is_special_builtin_for_class_pattern cls =
+    let is_special = function
+      | ["bool"]
+      | ["bytearray"]
+      | ["bytes"]
+      | ["dict"]
+      | ["float"]
+      | ["frozenset"]
+      | ["int"]
+      | ["list"]
+      | ["set"]
+      | ["str"]
+      | ["tuple"] ->
+          true
+      | _ -> false
+    in
+    cls |> name_to_identifiers >>| is_special |> Option.value ~default:false
+
+
   let rec pattern_to_condition ~subject { Node.location; value = pattern } =
     let boolean_expression_capture ~location ~target ~value =
       (* Since we are creating boolean expression, we use walrus for capture, and add a trivial
@@ -153,13 +172,17 @@ module MatchTranslate = struct
         | None -> capture)
     | MatchClass { class_name; patterns; keyword_attributes; keyword_patterns } ->
         let of_positional_pattern index =
-          let attribute =
-            create_getitem_index
-              ~location
-              ~sequence:(create_attribute_name ~location ~base:subject ~attribute:"__match_args__")
-              ~index
-          in
-          pattern_to_condition ~subject:(create_getattr ~location subject attribute)
+          if index == 0 && is_special_builtin_for_class_pattern (Node.value class_name) then
+            pattern_to_condition ~subject
+          else
+            let attribute =
+              create_getitem_index
+                ~location
+                ~sequence:
+                  (create_attribute_name ~location ~base:subject ~attribute:"__match_args__")
+                ~index
+            in
+            pattern_to_condition ~subject:(create_getattr ~location subject attribute)
         in
         let of_attribute_pattern attribute =
           pattern_to_condition ~subject:(create_attribute_name ~location ~base:subject ~attribute)

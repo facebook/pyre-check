@@ -696,6 +696,14 @@ let test_match_args context =
       "Revealed type [-1]: Revealed type for `y` is `int`.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";
     ];
+  assert_type_errors
+    {|
+      def foo(x: int|str) -> None:
+          match x:
+              case int(y):
+                  reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `int`."];
   ()
 
 
