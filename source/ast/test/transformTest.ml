@@ -153,6 +153,36 @@ let test_transform _ =
            orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
+    0;
+  assert_modifying_source
+    [
+      +Statement.Match
+         {
+           Match.subject = +Expression.Constant (Constant.Integer 0);
+           cases =
+             [
+               {
+                 Match.Case.pattern = +Match.Pattern.MatchSingleton (Constant.Integer 2);
+                 guard = Some (+Expression.Constant (Constant.Integer 4));
+                 body = [];
+               };
+             ];
+         };
+    ]
+    [
+      +Statement.Match
+         {
+           Match.subject = +Expression.Constant (Constant.Integer 1);
+           cases =
+             [
+               {
+                 Match.Case.pattern = +Match.Pattern.MatchSingleton (Constant.Integer 3);
+                 guard = Some (+Expression.Constant (Constant.Integer 5));
+                 body = [];
+               };
+             ];
+         };
+    ]
     0
 
 
@@ -552,6 +582,9 @@ let test_statement_transformer _ =
           y = 6
       class C:
         z = 7
+      match x:
+        case 1:
+          w = 0
     |}
     {|
       def foo():
@@ -568,6 +601,9 @@ let test_statement_transformer _ =
           y = 7
       class C:
         z = 8
+      match x:
+        case 1:
+          w = 1
     |}
     28
 
