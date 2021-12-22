@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+implicit_sinks.$toplevel (fun) -> []
 implicit_sinks.inline_issue (fun) -> [_test_source (fun)]
 implicit_sinks.percent_format (fun) -> [_test_source (fun)]
 implicit_sinks.propagate_sink (fun) -> []

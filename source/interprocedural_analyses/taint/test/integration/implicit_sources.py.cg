@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+implicit_sources.$toplevel (fun) -> []
 implicit_sources.bar (fun) -> []
 implicit_sources.does_not_match (fun) -> []
 implicit_sources.foo (fun) -> []

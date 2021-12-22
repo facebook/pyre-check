@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+add_feature_to_argument.$toplevel (fun) -> []
 add_feature_to_argument.add_feature_to_first (fun) -> []
 add_feature_to_argument.add_via_value_of (fun) -> []
 add_feature_to_argument.adds_and_taints (fun) -> [_test_source (fun) add_feature_to_argument.add_feature_to_first (fun)]

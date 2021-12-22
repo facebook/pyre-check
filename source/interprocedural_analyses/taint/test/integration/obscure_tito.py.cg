@@ -1,5 +1,8 @@
 @generated
 Call dependencies
+obscure_tito.$toplevel (fun) -> []
+obscure_tito.C::$class_toplevel (method) -> []
+obscure_tito.D::$class_toplevel (method) -> []
 obscure_tito.test_obscure_return (fun) -> [_test_source (fun) object::__init__ (method) object::__new__ (method) obscure_tito.C::update (override)]
 obscure_tito.test_obscure_sink (fun) -> [object::__init__ (method) object::__new__ (method) obscure_tito.C::taint_parameter (override)]
 obscure_tito.test_obscure_tito (fun) -> [_test_source (fun) object::__init__ (method) object::__new__ (method) obscure_tito.C::update (override)]

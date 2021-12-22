@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+via_value_of.$toplevel (fun) -> []
+via_value_of.MyEnum::$class_toplevel (method) -> []
 via_value_of.attach_to_sink (fun) -> [_test_sink (fun)]
 via_value_of.attach_to_source (fun) -> [_test_source (fun)]
 via_value_of.meta (fun) -> [via_value_of.return_via_parameter_name (fun)]

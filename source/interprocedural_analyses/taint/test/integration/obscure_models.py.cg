@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+obscure_models.$toplevel (fun) -> []
+obscure_models.C::$class_toplevel (method) -> []
 obscure_models.test_obscure (fun) -> [_test_source (fun) obscure_models.C::obscure (method)]
 obscure_models.test_obscure_with_multiple_models (fun) -> [_test_source (fun) obscure_models.C::obscure_with_multiple_models (method)]
 obscure_models.test_obscure_with_skip_inlining (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_inlining (method)]

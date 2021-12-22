@@ -1,4 +1,7 @@
 @generated
 Call dependencies
+constructor_inheritance.$toplevel (fun) -> []
+constructor_inheritance.MyBaseClass::$class_toplevel (method) -> []
 constructor_inheritance.MyBaseClass::__init__ (method) -> [_test_sink (fun)]
+constructor_inheritance.MyDerivedClass::$class_toplevel (method) -> []
 constructor_inheritance.test (fun) -> [_test_source (fun) constructor_inheritance.MyBaseClass::__init__ (method) object::__new__ (method)]

@@ -1,2 +1,4 @@
 @generated
 Call dependencies
+top_level.$toplevel (fun) -> [_test_sink (fun) _test_source (fun) top_level.foo (fun)]
+top_level.foo (fun) -> [_test_sink (fun)]

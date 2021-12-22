@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+sanitize_discard_flows.$toplevel (fun) -> []
 sanitize_discard_flows.sanitize_a_sink_tito (fun) -> []
 sanitize_discard_flows.sanitize_a_source_tito (fun) -> []
 sanitize_discard_flows.sanitize_b_sink_tito (fun) -> []

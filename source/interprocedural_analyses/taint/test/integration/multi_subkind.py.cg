@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+multi_subkind.$toplevel (fun) -> []
 multi_subkind.issue (fun) -> [dict::__setitem__ (method) multi_subkind.multi_sink (fun) multi_subkind.source_a (fun) multi_subkind.source_b (fun)]
 multi_subkind.multi_sink (fun) -> [multi_subkind.sink_a (fun) multi_subkind.sink_b (fun)]
 multi_subkind.sink_a (fun) -> []

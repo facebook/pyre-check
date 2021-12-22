@@ -1,4 +1,5 @@
 @generated
 Call dependencies
+starred.$toplevel (fun) -> []
 starred.sink (fun) -> [_test_sink (fun)]
 starred.test (fun) -> [_test_source (fun) starred.sink (fun)]

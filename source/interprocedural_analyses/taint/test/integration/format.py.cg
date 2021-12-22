@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+format.$toplevel (fun) -> []
 format.issue_in_format (fun) -> [_test_sink (fun) _test_source (fun)]
 format.sink_in_format (fun) -> [_test_sink (fun)]
 format.sink_via_format (fun) -> [_test_sink (fun)]

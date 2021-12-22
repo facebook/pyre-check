@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+global_flows.$toplevel (fun) -> []
+global_flows.MyList::$class_toplevel (method) -> []
 global_flows.append_argument (fun) -> [global_flows.MyList::append (method)]
 global_flows.append_directly (fun) -> [_test_source (fun) global_flows.MyList::append (method)]
 global_flows.append_indirectly (fun) -> [_test_source (fun) global_flows.append_argument (fun)]

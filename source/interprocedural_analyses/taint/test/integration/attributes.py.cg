@@ -1,5 +1,14 @@
 @generated
 Call dependencies
+attributes.$toplevel (fun) -> []
+attributes.C::$class_toplevel (method) -> []
+attributes.D::$class_toplevel (method) -> []
+attributes.OAuthRequest::$class_toplevel (method) -> []
+attributes.Request::$class_toplevel (method) -> [object::__init__ (method) object::__new__ (method)]
+attributes.Sink::$class_toplevel (method) -> []
+attributes.Token::$class_toplevel (method) -> []
+attributes.Untainted::$class_toplevel (method) -> []
+attributes.UseViaDict::$class_toplevel (method) -> []
 attributes.UseViaDict::__init__ (method) -> []
 attributes.test_attribute (fun) -> []
 attributes.test_attribute_union_sink (fun) -> [_test_source (fun) isinstance (fun)]

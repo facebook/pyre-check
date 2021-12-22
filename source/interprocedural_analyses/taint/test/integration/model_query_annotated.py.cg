@@ -1,5 +1,9 @@
 @generated
 Call dependencies
+model_query_annotated.$toplevel (fun) -> []
+model_query_annotated.Color::$class_toplevel (method) -> []
+model_query_annotated.Test1_C::$class_toplevel (method) -> []
+model_query_annotated.Test2_C::$class_toplevel (method) -> []
 model_query_annotated.test1_alarm1 (fun) -> [_test_sink (fun)]
 model_query_annotated.test1_alarm2 (fun) -> [_test_sink (fun)]
 model_query_annotated.test1_alarm3 (fun) -> [_test_sink (fun)]

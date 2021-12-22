@@ -1,7 +1,10 @@
 @generated
 Call dependencies
+higher_order_functions.$toplevel (fun) -> []
+higher_order_functions.C::$class_toplevel (method) -> []
 higher_order_functions.C::method_to_sink (method) -> [_test_sink (fun)]
 higher_order_functions.C::self_to_sink (method) -> [_test_sink (fun)]
+higher_order_functions.Callable::$class_toplevel (method) -> []
 higher_order_functions.Callable::__call__ (method) -> []
 higher_order_functions.Callable::__init__ (method) -> []
 higher_order_functions.apply (fun) -> []

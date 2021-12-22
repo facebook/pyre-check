@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+maximum_tito_depth.$toplevel (fun) -> []
+maximum_tito_depth.C::$class_toplevel (method) -> []
 maximum_tito_depth.issue (fun) -> [_test_sink (fun) _test_source (fun) maximum_tito_depth.tito_three (fun)]
 maximum_tito_depth.non_issue (fun) -> [_test_sink (fun) _test_source (fun) maximum_tito_depth.tito_four (fun)]
 maximum_tito_depth.tito_four (fun) -> [maximum_tito_depth.tito_three (fun)]

@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+exception_test.$toplevel (fun) -> []
 exception_test.none_throws (fun) -> [object::__init__ (method) object::__new__ (method)]
 exception_test.test_before_try_to_finally (fun) -> [_test_sink (fun) _test_source (fun) exception_test.none_throws (fun)]
 exception_test.test_caught_exception (fun) -> [BaseException::__str__ (method) isinstance (fun)]

@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+sanitize_obscure.$toplevel (fun) -> []
 sanitize_obscure.a_sink (fun) -> []
 sanitize_obscure.a_source (fun) -> []
 sanitize_obscure.b_sink (fun) -> []

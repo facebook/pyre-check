@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+strings.$toplevel (fun) -> []
 strings.bad_1 (fun) -> [_test_sink (fun) _test_source (fun) strings.concatenate_lhs (fun)]
 strings.bad_2 (fun) -> [_test_sink (fun) _test_source (fun) strings.concatenate_rhs (fun)]
 strings.concatenate_lhs (fun) -> [str::__add__ (method)]

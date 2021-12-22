@@ -1,7 +1,10 @@
 @generated
 Call dependencies
+model_query_parameters_viatypeof.$toplevel (fun) -> []
+model_query_parameters_viatypeof.Test2_C::$class_toplevel (method) -> []
 model_query_parameters_viatypeof.Test2_C::f1 (method) -> []
 model_query_parameters_viatypeof.Test2_C::f2 (method) -> []
+model_query_parameters_viatypeof.Test2_T::$class_toplevel (method) -> []
 model_query_parameters_viatypeof.test1_alarm1 (fun) -> [_test_source (fun) model_query_parameters_viatypeof.test1_f1 (fun)]
 model_query_parameters_viatypeof.test1_alarm2 (fun) -> [_test_source (fun) model_query_parameters_viatypeof.test1_f1 (fun)]
 model_query_parameters_viatypeof.test1_alarm3 (fun) -> [_test_source (fun) model_query_parameters_viatypeof.test1_f1 (fun)]

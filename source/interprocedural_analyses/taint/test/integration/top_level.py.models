@@ -5,6 +5,70 @@
     "callable": "top_level.$toplevel",
     "callable_line": 1,
     "code": 5002,
+    "line": 17,
+    "start": 4,
+    "end": 5,
+    "filename": "top_level.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "top_level.py",
+              "line": 16,
+              "start": 4,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "top_level.py",
+                "line": 17,
+                "start": 4,
+                "end": 5
+              },
+              "resolves_to": [ "top_level.foo" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "top_level.$toplevel",
+    "callable_line": 1,
+    "code": 5002,
     "line": 9,
     "start": 11,
     "end": 12,
@@ -55,6 +119,34 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "top_level.foo",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "top_level.py",
+              "line": 13,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
     ]
   }
 }

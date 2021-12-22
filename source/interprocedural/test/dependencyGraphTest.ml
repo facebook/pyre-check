@@ -111,6 +111,8 @@ let test_construction context =
     |}
     ~expected:
       [
+        `Function "test.$toplevel", [];
+        `Method "test.Foo.$class_toplevel", [];
         `Method "test.Foo.__init__", [];
         `Method "test.Foo.bar", [];
         `Method "test.Foo.qux", [`Method "test.Foo.bar"];
@@ -129,6 +131,8 @@ let test_construction context =
     |}
     ~expected:
       [
+        `Function "test.$toplevel", [];
+        `Method "test.Foo.$class_toplevel", [];
         `Method "test.Foo.__init__", [];
         `Method "test.Foo.bar", [`Method "test.Foo.qux"];
         `Method "test.Foo.qux", [`Method "test.Foo.bar"];
@@ -145,7 +149,10 @@ let test_construction context =
     |}
     ~expected:
       [
+        `Function "test.$toplevel", [];
+        `Method "test.A.$class_toplevel", [];
         `Method "test.A.__init__", [];
+        `Method "test.B.$class_toplevel", [];
         `Method "test.B.__init__", [`Method "test.A.__init__"; `Method "object.__new__"];
       ];
   assert_call_graph
@@ -157,7 +164,7 @@ let test_construction context =
      def foo():
        foobar.bar("foo")
     |}
-    ~expected:[`Function "test.foo", [`Function "foobar.bar"]];
+    ~expected:[`Function "test.$toplevel", []; `Function "test.foo", [`Function "foobar.bar"]];
   assert_call_graph
     ~update_environment_with:
       [{ handle = "bar/baz/qux.pyi"; source = {|
@@ -168,7 +175,7 @@ let test_construction context =
      def foo():
        qux.derp()
     |}
-    ~expected:[`Function "test.foo", [`Function "bar.baz.qux.derp"]];
+    ~expected:[`Function "test.$toplevel", []; `Function "test.foo", [`Function "bar.baz.qux.derp"]];
   assert_call_graph
     {|
        class Base:
@@ -178,7 +185,13 @@ let test_construction context =
        def call_foo(c: C) -> None:
          c.foo()
     |}
-    ~expected:[`Function "test.call_foo", [`Method "test.Base.foo"]];
+    ~expected:
+      [
+        `Function "test.$toplevel", [];
+        `Function "test.call_foo", [`Method "test.Base.foo"];
+        `Method "test.Base.$class_toplevel", [];
+        `Method "test.C.$class_toplevel", [];
+      ];
   assert_call_graph
     {|
        class Base:
@@ -192,7 +205,15 @@ let test_construction context =
        def call_foo(c: C) -> None:
          c.foo()
     |}
-    ~expected:[`Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"]];
+    ~expected:
+      [
+        `Function "test.$toplevel", [];
+        `Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"];
+        `Method "test.Base.$class_toplevel", [];
+        `Method "test.C.$class_toplevel", [];
+        `Method "test.D.$class_toplevel", [];
+        `Method "test.E.$class_toplevel", [];
+      ];
 
   (* Ensure that we don't include UnrelatedToC.foo here. *)
   assert_call_graph
@@ -208,7 +229,15 @@ let test_construction context =
        def call_foo(c: C) -> None:
          c.foo()
     |}
-    ~expected:[`Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"]];
+    ~expected:
+      [
+        `Function "test.$toplevel", [];
+        `Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"];
+        `Method "test.Base.$class_toplevel", [];
+        `Method "test.C.$class_toplevel", [];
+        `Method "test.D.$class_toplevel", [];
+        `Method "test.UnrelatedToC.$class_toplevel", [];
+      ];
 
   (* We only dereference overrides by one level. *)
   assert_call_graph
@@ -224,7 +253,15 @@ let test_construction context =
        def call_foo(c: C) -> None:
          c.foo()
     |}
-    ~expected:[`Function "test.call_foo", [`Override "test.Child.foo"; `Method "test.Base.foo"]];
+    ~expected:
+      [
+        `Function "test.$toplevel", [];
+        `Function "test.call_foo", [`Override "test.Child.foo"; `Method "test.Base.foo"];
+        `Method "test.Base.$class_toplevel", [];
+        `Method "test.C.$class_toplevel", [];
+        `Method "test.Child.$class_toplevel", [];
+        `Method "test.Grandchild.$class_toplevel", [];
+      ];
   assert_call_graph
     {|
       class C:
@@ -242,9 +279,13 @@ let test_construction context =
     |}
     ~expected:
       [
+        `Function "test.$toplevel", [];
         `Function "test.calls_c", [`Override "test.C.foo"];
         `Function "test.calls_d", [`Method "test.E.foo"; `Method "test.C.foo"];
         `Function "test.calls_e", [`Method "test.E.foo"];
+        `Method "test.C.$class_toplevel", [];
+        `Method "test.D.$class_toplevel", [];
+        `Method "test.E.$class_toplevel", [];
       ];
   assert_call_graph
     {|
@@ -255,7 +296,12 @@ let test_construction context =
     |}
     (* If we didn't weaken literals, the call would be a method("str.format") instead of override
        here. *)
-    ~expected:[`Function "test.format_str", [`Override "str.format"]];
+    ~expected:
+      [
+        `Function "test.$toplevel", [];
+        `Function "test.format_str", [`Override "str.format"];
+        `Method "test.C.$class_toplevel", [];
+      ];
 
   assert_call_graph
     {|
@@ -267,6 +313,7 @@ let test_construction context =
     ~expected:
       [
         `Function "$local_test?foo$bar", [`Method "str.lower"; `Override "str.format"];
+        `Function "test.$toplevel", [];
         `Function "test.foo", [`Function "$local_test?foo$bar"];
       ];
   assert_call_graph
@@ -284,8 +331,11 @@ let test_construction context =
     |}
     ~expected:
       [
+        `Function "test.$toplevel", [];
         `Function "test.calls_C_int", [`Override "test.C.method"];
         `Function "test.calls_C_str", [`Override "test.C.method"];
+        `Method "test.C.$class_toplevel", [];
+        `Method "test.D.$class_toplevel", [];
       ]
 
 
@@ -507,7 +557,14 @@ let test_strongly_connected_components context =
         return self.c1()
     |}
     ~handle:"s0.py"
-    ~expected:[[`Method "s0.Foo.__init__"]; [`Method "s0.Foo.c1"]; [`Method "s0.Foo.c2"]];
+    ~expected:
+      [
+        [`Function "s0.$toplevel"];
+        [`Method "s0.Foo.$class_toplevel"];
+        [`Method "s0.Foo.__init__"];
+        [`Method "s0.Foo.c1"];
+        [`Method "s0.Foo.c2"];
+      ];
   assert_strongly_connected_components
     {|
     class Foo:
@@ -532,6 +589,8 @@ let test_strongly_connected_components context =
     ~handle:"s1.py"
     ~expected:
       [
+        [`Function "s1.$toplevel"];
+        [`Method "s1.Foo.$class_toplevel"];
         [`Method "s1.Foo.__init__"];
         [`Method "s1.Foo.c1"; `Method "s1.Foo.c2"];
         [`Method "s1.Foo.c3"; `Method "s1.Foo.c4"];
@@ -568,12 +627,15 @@ let test_strongly_connected_components context =
     ~handle:"s2.py"
     ~expected:
       [
+        [`Function "s2.$toplevel"];
+        [`Method "s2.Bar.$class_toplevel"];
         [`Method "object.__new__"];
         [`Method "s2.Foo.__init__"];
         [`Method "s2.Bar.__init__"];
         [`Method "s2.Foo.c1"; `Method "s2.Foo.c2"];
         [`Method "s2.Bar.c1"];
         [`Method "s2.Bar.c2"; `Method "s2.Foo.c3"];
+        [`Method "s2.Foo.$class_toplevel"];
       ]
 
 

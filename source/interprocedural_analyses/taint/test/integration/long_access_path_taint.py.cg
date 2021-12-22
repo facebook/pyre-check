@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+long_access_path_taint.$toplevel (fun) -> []
+long_access_path_taint.C::$class_toplevel (method) -> []
 long_access_path_taint.C::__init__ (method) -> [dict::get (method)]
 long_access_path_taint.C::async_create (method) -> [long_access_path_taint.C::__init__ (method) object::__new__ (method) object::__repr__ (method) str::__eq__ (method) str::__ne__ (method)]
 long_access_path_taint.test (fun) -> [_test_sink (fun) _test_source (fun) long_access_path_taint.C::async_create (method)]

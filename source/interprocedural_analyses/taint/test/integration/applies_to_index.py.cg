@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+applies_to_index.$toplevel (fun) -> []
 applies_to_index.issue_only_with_a_key (fun) -> [_test_sink (fun) applies_to_index.only_applies_to_a_key (fun)]
 applies_to_index.issue_only_with_first (fun) -> [_test_sink (fun) applies_to_index.only_applies_to_first (fun)]
 applies_to_index.issue_only_with_nested_first (fun) -> [_test_sink (fun) applies_to_index.only_applies_to_nested (fun)]

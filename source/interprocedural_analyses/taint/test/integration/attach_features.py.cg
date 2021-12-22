@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+attach_features.$toplevel (fun) -> []
+attach_features.HasMethods::$class_toplevel (method) -> []
 attach_features.HasMethods::method_with_optionals (method) -> [_test_sink (fun)]
 attach_features.attach_to_returned_sink (fun) -> [_test_source (fun)]
 attach_features.attach_without_tito (fun) -> []

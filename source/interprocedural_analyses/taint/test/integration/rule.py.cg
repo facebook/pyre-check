@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+rule.$toplevel (fun) -> []
 rule.alarm (fun) -> [rule.sink (fun) rule.source (fun)]
 rule.sink (fun) -> []
 rule.source (fun) -> []

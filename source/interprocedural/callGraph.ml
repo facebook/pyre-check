@@ -1455,5 +1455,5 @@ let create_callgraph ?(use_shared_memory = false) ~environment ~source =
         |> fun callees ->
         Target.CallableMap.set dependencies ~key:(Target.create define) ~data:callees
   in
-  Preprocessing.defines ~include_nested:true source
+  Preprocessing.defines ~include_nested:true ~include_toplevels:true source
   |> List.fold ~init:Target.CallableMap.empty ~f:fold_defines

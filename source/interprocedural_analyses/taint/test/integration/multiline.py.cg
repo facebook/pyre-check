@@ -1,3 +1,4 @@
 @generated
 Call dependencies
+multiline.$toplevel (fun) -> []
 multiline.test (fun) -> [_test_sink (fun) _test_source (fun)]
