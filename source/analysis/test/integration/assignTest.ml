@@ -187,8 +187,8 @@ let test_check_assign context =
       "Incomplete type [37]: Type `typing.Type[typing.List[Variable[_T]]]` inferred for `x` is \
        incomplete, add an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[_T]]` for 1st positional \
-       only parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
+      "Incompatible parameter type [6]: Expected `Type[Variable[_T]]` for 1st positional only \
+       parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.List[typing.Any]]`.";
     ];
   assert_type_errors
@@ -208,7 +208,7 @@ let test_check_assign context =
       def foo( *args: str) -> None:
        args = [1, 2, 3]
     |}
-    ["Incompatible variable type [9]: Unable to unpack `typing.List[int]`, expected a tuple."];
+    ["Incompatible variable type [9]: Unable to unpack `List[int]`, expected a tuple."];
   assert_type_errors
     {|
       def foo( *args: str) -> None:
@@ -216,7 +216,7 @@ let test_check_assign context =
     |}
     [
       "Incompatible variable type [9]: args is declared to have type `typing.Tuple[str, ...]` but \
-       is used as type `typing.Tuple[int, int, int]`.";
+       is used as type `Tuple[int, int, int]`.";
     ];
 
   assert_type_errors
@@ -231,8 +231,8 @@ let test_check_assign context =
        kwargs = {"foo": 1}
     |}
     [
-      "Incompatible variable type [9]: kwargs is declared to have type `typing.Dict[str, str]` but \
-       is used as type `typing.Dict[str, int]`.";
+      "Incompatible variable type [9]: kwargs is declared to have type `Dict[str, str]` but is \
+       used as type `Dict[str, int]`.";
     ];
   assert_type_errors
     {|

@@ -851,7 +851,7 @@ let test_callback_protocols context =
     |}
     [
       "Incompatible variable type [9]: y is declared to have type `ShouldNotMatch` but is used as \
-       type `typing.Type[H]`.";
+       type `Type[H]`.";
     ];
 
   (* We should be able to pass a named callable type to a callable protocol that is generic in the

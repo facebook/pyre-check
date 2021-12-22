@@ -690,9 +690,9 @@ let test_check_method_parameters context =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[typing.Type[Variable[typing._KT]], \
-       typing.Type[Variable[typing._VT_co](covariant)]]` for 1st positional only parameter to call \
-       `typing.GenericMeta.__getitem__` but got `typing.Type[int]`.";
+      "Incompatible parameter type [6]: Expected `Tuple[Type[Variable[_KT]], \
+       Type[Variable[_VT_co](covariant)]]` for 1st positional only parameter to call \
+       `typing.GenericMeta.__getitem__` but got `Type[int]`.";
     ];
   assert_strict_type_errors
     {|
@@ -1949,8 +1949,8 @@ let test_check_callable_protocols context =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got "
-      ^ "`BoundMethod[typing.Callable(Foo.bar)[[Named(self, typing.Type[Foo]), Named(x, int)], \
-         str], typing.Type[Foo]]`.";
+      ^ "`BoundMethod[typing.Callable(Foo.bar)[[Named(self, Type[Foo]), Named(x, int)], str], \
+         Type[Foo]]`.";
     ];
   assert_type_errors
     {|
@@ -1973,9 +1973,8 @@ let test_check_callable_protocols context =
         type(obj)(v for v in obj)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.List[Variable[_T_co](covariant)]` for 1st \
-       positional only parameter to call `tuple.__init__` but got `typing.Generator[int, None, \
-       None]`.";
+      "Incompatible parameter type [6]: Expected `List[Variable[_T_co](covariant)]` for 1st \
+       positional only parameter to call `tuple.__init__` but got `Generator[int, None, None]`.";
     ];
 
   (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
@@ -1987,9 +1986,9 @@ let test_check_callable_protocols context =
     |}
     [
       "Incompatible parameter type [6]: Expected "
-      ^ "`typing.List[Variable[_T_co](covariant)]` for 1st "
+      ^ "`List[Variable[_T_co](covariant)]` for 1st "
       ^ "positional only parameter to call `tuple.__init__` but got "
-      ^ "`typing.Generator[int, None, None]`.";
+      ^ "`Generator[int, None, None]`.";
     ];
   assert_type_errors
     {|
@@ -2068,7 +2067,7 @@ let test_check_callable_protocols context =
     |}
     [
       "Incompatible variable type [9]: f is declared to have type `typing.Callable[[int], C]` but \
-       is used as type `typing.Type[C]`.";
+       is used as type `Type[C]`.";
     ];
   assert_default_type_errors
     {|

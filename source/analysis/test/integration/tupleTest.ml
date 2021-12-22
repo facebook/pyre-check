@@ -50,10 +50,7 @@ let test_check_tuple context =
       def foo() -> typing.Tuple[int, str]:
         return (1, "string", 3)
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Tuple[int, str]` but got "
-      ^ "`typing.Tuple[int, str, int]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[int, str, int]`."];
   assert_type_errors
     {|
       import typing
@@ -61,8 +58,8 @@ let test_check_tuple context =
         return (1, "string", 3)
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got "
-      ^ "`typing.Tuple[int, str, int]`.";
+      "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got `Tuple[int, str, \
+       int]`.";
     ];
   assert_type_errors
     {|
@@ -116,10 +113,7 @@ let test_check_tuple context =
         a, *b = x
         return b
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but got "
-      ^ "`typing.List[typing.Union[int, str]]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Tuple[str, int]` but got `List[Union[int, str]]`."];
   assert_type_errors
     {|
       def derp() -> int:
@@ -181,7 +175,7 @@ let test_check_tuple context =
       def foo() -> typing.Tuple[int, str]:
         return ()
     |}
-    ["Incompatible return type [7]: Expected `typing.Tuple[int, str]` but got `typing.Tuple[]`."];
+    ["Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[]`."];
   assert_type_errors
     {|
       import typing
@@ -210,10 +204,7 @@ let test_check_tuple context =
       def foo( *args: int) -> typing.Iterable[str]:
         return args
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Iterable[str]` but "
-      ^ "got `typing.Tuple[int, ...]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Iterable[str]` but got `typing.Tuple[int, ...]`."];
   assert_type_errors
     {|
       import collections
@@ -434,7 +425,7 @@ let test_tuple_literal_access context =
         x = (0, "one", 2)
         return x[p]
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
   assert_type_errors
     {|
       def foo() -> int:
@@ -473,7 +464,7 @@ let test_tuple_literal_access context =
         x = (0, "one", 2)
         return x[3]
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
 
   (* TODO(T41500251): This would ideally work as well *)
   assert_type_errors
@@ -484,8 +475,8 @@ let test_tuple_literal_access context =
         return x[0:2]
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Tuple[int, int]` but got "
-      ^ "`typing.Tuple[typing.Union[int, str], ...]`.";
+      "Incompatible return type [7]: Expected `Tuple[int, int]` but got "
+      ^ "`typing.Tuple[Union[int, str], ...]`.";
     ];
   assert_type_errors
     {|

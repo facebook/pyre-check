@@ -769,7 +769,7 @@ let test_check_immutable_annotations context =
           return constant
         return 0
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       import typing
@@ -1150,7 +1150,7 @@ let test_check_refinement context =
         l.append('a')
     |}
     [
-      "Incompatible variable type [9]: l is declared to have type `typing.List[int]` "
+      "Incompatible variable type [9]: l is declared to have type `List[int]` "
       ^ "but is used as type `None`.";
       "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st positional only parameter to call `list.append` but got `str`.";
@@ -1172,7 +1172,7 @@ let test_check_refinement context =
           y = x
         return x
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       import typing
@@ -1208,7 +1208,7 @@ let test_check_refinement context =
               else:
                   return 1
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       from builtins import int_to_int

@@ -319,7 +319,7 @@ let test_check_attributes context =
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
       ^ "to have type `typing.Optional[int]` but is never initialized.";
       "Undefined attribute [16]: Optional type has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
+      "Incompatible return type [7]: Expected `int` but got `Optional[int]`.";
     ];
   assert_type_errors
     {|
@@ -400,8 +400,8 @@ let test_check_attributes context =
       "Invalid type variable [34]: The current class isn't generic with respect to the type \
        variable `Variable[_T]`.";
       "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type "
-      ^ "`typing.Generic[Variable[_T]]` but is used as type `int`.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Generic[Variable[_T]]`.";
+      ^ "`Generic[Variable[_T]]` but is used as type `int`.";
+      "Incompatible return type [7]: Expected `int` but got `Generic[Variable[_T]]`.";
     ];
 
   (* Static attributes are properly resolved. *)
@@ -682,8 +682,8 @@ let test_check_attributes context =
     |}
     [
       "Incompatible attribute type [8]: Attribute `__match_args__` declared in class `Foo` has \
-       type `typing.Tuple[typing_extensions.Literal['x'], typing_extensions.Literal['y']]` but is \
-       used as type `typing.Tuple[typing_extensions.Literal['x']]`.";
+       type `Tuple[typing_extensions.Literal['x'], typing_extensions.Literal['y']]` but is used as \
+       type `Tuple[typing_extensions.Literal['x']]`.";
     ];
   assert_type_errors
     {|
@@ -796,7 +796,7 @@ let test_attribute_decorators context =
     |}
     [
       "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type \
-       `typing.Optional[int]` but is used as type `str`.";
+       `Optional[int]` but is used as type `str`.";
     ];
   assert_type_errors
     {|
@@ -1445,7 +1445,7 @@ let test_attribute_type_variable_resolution context =
   |}
     [
       "Incompatible return type [7]: Expected `ReturnClass[Variable[_T]]` but got \
-       `typing.Type[ReturnClass[Variable[_T]]]`.";
+       `Type[ReturnClass[Variable[_T]]]`.";
     ];
   assert_type_errors
     {|

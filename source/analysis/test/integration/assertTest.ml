@@ -19,8 +19,8 @@ let test_check_assert context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Sized` for 1st positional only parameter to call `len` but got "
-      ^ "`typing.Optional[str]`.";
+      ^ "Expected `Sized` for 1st positional only parameter to call `len` but got "
+      ^ "`Optional[str]`.";
     ];
   assert_type_errors
     {|
@@ -270,9 +270,8 @@ let test_check_all context =
           return ','.join(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Iterable[typing_extensions.Literal[str]]` \
-       for 1st positional only parameter to call `str.join` but got \
-       `typing.Iterable[typing.Optional[str]]`.";
+      "Incompatible parameter type [6]: Expected `Iterable[typing_extensions.Literal[str]]` for \
+       1st positional only parameter to call `str.join` but got `Iterable[Optional[str]]`.";
     ];
   assert_type_errors
     {|
@@ -302,8 +301,8 @@ let test_check_all context =
         return {}
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Dict[int, Variable[_T]]` but got \
-       `typing.Dict[typing.Optional[int], Variable[_T]]`.";
+      "Incompatible return type [7]: Expected `Dict[int, Variable[_T]]` but got \
+       `Dict[Optional[int], Variable[_T]]`.";
     ]
 
 

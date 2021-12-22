@@ -163,7 +163,7 @@ let test_check_globals context =
       def foo() -> int:
         return constant
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
   assert_type_errors
     {|
       constant: int = 1
@@ -284,7 +284,7 @@ let test_check_globals context =
       def foo() -> str:
         return str_to_int_dictionary
     |}
-    ["Incompatible return type [7]: Expected `str` but got `typing.Dict[str, int]`."];
+    ["Incompatible return type [7]: Expected `str` but got `Dict[str, int]`."];
   assert_type_errors
     ~update_environment_with:[{ handle = "export.py"; source = "x = 1" }]
     {|
@@ -362,7 +362,7 @@ let test_check_globals context =
           return GLOBAL
         return 0
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       from typing import Any, Callable, Mapping, Union

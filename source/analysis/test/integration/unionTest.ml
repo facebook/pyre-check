@@ -70,7 +70,7 @@ let test_check_union context =
       def foo() -> typing.Union[str, int]:
         return 1.0
     |}
-    ["Incompatible return type [7]: Expected `typing.Union[int, str]` but got `float`."];
+    ["Incompatible return type [7]: Expected `Union[int, str]` but got `float`."];
   assert_type_errors
     {|
       from builtins import condition
@@ -104,7 +104,7 @@ let test_check_union context =
         else:
           return a
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[float, str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Union[float, str]`."];
   assert_type_errors
     {|
       import typing
@@ -285,8 +285,8 @@ let test_check_union context =
       f(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Union[typing.Tuple[int, int], int, str]` \
-       for 1st positional only parameter to call `f` but got `typing.Union[None, int, str]`.";
+      "Incompatible parameter type [6]: Expected `Union[Tuple[int, int], int, str]` for 1st \
+       positional only parameter to call `f` but got `Union[None, int, str]`.";
     ];
   assert_type_errors
     {|
@@ -301,7 +301,7 @@ let test_check_union context =
         return x(8)
 
     |}
-    ["Incompatible return type [7]: Expected `None` but got `typing.Union[bool, str]`."];
+    ["Incompatible return type [7]: Expected `None` but got `Union[bool, str]`."];
   ()
 
 

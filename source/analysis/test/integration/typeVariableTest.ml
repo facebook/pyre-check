@@ -204,9 +204,8 @@ let test_check_unbounded_variables context =
       "Revealed type [-1]: Revealed type for `test.Foo[float]` is `typing.Type[Foo[float]]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[float]()` is `Foo[float]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[str]()` is `Foo[str]`.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X]]` for 1st positional \
-       only "
-      ^ "parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
+      "Incompatible parameter type [6]: Expected `Type[Variable[X]]` for 1st positional only \
+       parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -397,7 +396,7 @@ let test_check_unbounded_variables context =
     |}
     [
       "Incompatible variable type [9]: l is declared to have type `List[G[object]]` but is used as \
-       type `List[typing.Union[G[int], G[str]]]`.";
+       type `List[Union[G[int], G[str]]]`.";
     ];
   assert_type_errors
     {|
@@ -586,9 +585,8 @@ let test_check_variable_bindings context =
       "Revealed type [-1]: Revealed type for `test.Foo[test.C]` is `typing.Type[Foo[C]]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.C]()` is `Foo[C]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.D]()` is `Foo[D]`.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X (bound to C)]]` for "
-      ^ "1st positional only parameter to call `typing.GenericMeta.__getitem__` but got \
-         `typing.Type[int]`.";
+      "Incompatible parameter type [6]: Expected `Type[Variable[X (bound to C)]]` for 1st \
+       positional only parameter to call `typing.GenericMeta.__getitem__` but got `Type[int]`.";
     ];
   assert_type_errors
     {|
@@ -611,9 +609,8 @@ let test_check_variable_bindings context =
       "Revealed type [-1]: Revealed type for `test.Foo[test.Animal]()` is `Foo[Animal]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.Mineral]()` is `Foo[Mineral]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.Fish]()` is `Foo[Animal]`.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X <: [Mineral, Animal]]]` "
-      ^ "for 1st positional only parameter to call `typing.GenericMeta.__getitem__` but got "
-      ^ "`typing.Type[int]`.";
+      "Incompatible parameter type [6]: Expected `Type[Variable[X <: [Mineral, Animal]]]` for 1st \
+       positional only parameter to call `typing.GenericMeta.__getitem__` but got `Type[int]`.";
     ];
   assert_type_errors
     {|
@@ -784,8 +781,8 @@ let test_unbound_variables context =
         x: int = []
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as "
-      ^ "type `typing.List[Variable[_T]]`.";
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type \
+       `List[Variable[_T]]`.";
     ];
   assert_type_errors
     {|
@@ -813,8 +810,8 @@ let test_unbound_variables context =
         x: typing.List[int] = {}
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.List[int]` but is used \
-       as type `typing.Dict[Variable[_KT], Variable[_VT]]`.";
+      "Incompatible variable type [9]: x is declared to have type `List[int]` but is used as type \
+       `Dict[Variable[_KT], Variable[_VT]]`.";
     ];
   assert_type_errors
     {|
@@ -823,8 +820,8 @@ let test_unbound_variables context =
         x: typing.Dict[int, str] = []
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.Dict[int, str]` but is \
-       used as type `typing.List[Variable[_T]]`.";
+      "Incompatible variable type [9]: x is declared to have type `Dict[int, str]` but is used as \
+       type `List[Variable[_T]]`.";
     ];
   assert_type_errors
     {|
@@ -833,9 +830,8 @@ let test_unbound_variables context =
         x: typing.Dict[int, typing.List[int]] = { "A" : [] }
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type "
-      ^ "`typing.Dict[int, typing.List[int]]` but is used as type "
-      ^ "`typing.Dict[str, typing.List[int]]`.";
+      "Incompatible variable type [9]: x is declared to have type `Dict[int, List[int]]` but is \
+       used as type `Dict[str, List[int]]`.";
     ];
   assert_type_errors
     {|
@@ -1017,9 +1013,8 @@ let test_unbound_variables context =
         x: typing.Dict[int, str] = collections.defaultdict(dict)
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.Dict[int, str]` "
-      ^ "but is used as type `typing.DefaultDict[Variable[collections._KT], "
-      ^ "typing.Dict[Variable[_T], Variable[_S]]]`.";
+      "Incompatible variable type [9]: x is declared to have type `Dict[int, str]` but is used as \
+       type `DefaultDict[Variable[_KT], Dict[Variable[_T], Variable[_S]]]`.";
     ];
   assert_type_errors
     {|
@@ -1040,8 +1035,7 @@ let test_unbound_variables context =
     |}
     [
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `foo` "
-      ^ "but got `typing.List[Variable[_T]]`.";
+       `foo` but got `List[Variable[_T]]`.";
     ];
   assert_type_errors
     {|
@@ -2029,10 +2023,10 @@ let test_generic_aliases context =
     [
       "Incompatible variable type [9]: z is declared to have type `MyList[int]` but is used as \
        type `MyList[str]`.";
-      "Incompatible variable type [9]: z2 is declared to have type `typing.Iterable[int]` but is \
-       used as type `typing.Iterable[str]`.";
-      "Incompatible variable type [9]: z3 is declared to have type `foo.SomeGenericClass[int]` but \
-       is used as type `MyList[str]`.";
+      "Incompatible variable type [9]: z2 is declared to have type `Iterable[int]` but is used as \
+       type `Iterable[str]`.";
+      "Incompatible variable type [9]: z3 is declared to have type `SomeGenericClass[int]` but is \
+       used as type `MyList[str]`.";
     ];
   (* We should correctly resolve nested generic aliases like `baz.Dict`. *)
   assert_type_errors
@@ -2350,8 +2344,8 @@ let test_recursive_aliases context =
     |}
     [
       "Incompatible variable type [9]: contains_int is declared to have type `test.StringDict \
-       (resolves to Union[Mapping[str, StringDict], str])` but is used as type `typing.Dict[str, \
-       typing.Dict[str, int]]`.";
+       (resolves to Union[Mapping[str, StringDict], str])` but is used as type `Dict[str, \
+       Dict[str, int]]`.";
     ];
   assert_type_errors
     {|
@@ -3148,7 +3142,7 @@ let test_variadic_classes context =
        typing_extensions.Literal[50]]`.";
       "Incompatible parameter type [6]: Expected `Tensor[*test.Ts, typing_extensions.Literal[20]]` \
        for 1st positional only parameter to call `Linear.__call__` but got \
-       `typing.Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
+       `Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
     ];
   assert_type_errors
     {|

@@ -292,7 +292,7 @@ let test_bound_method context =
     |}
     [
       "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
-       parameter to call `foo` but got `typing.Tuple[int, int]`.";
+       parameter to call `foo` but got `Tuple[int, int]`.";
       "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 3rd positional only \
        parameter to call `foo` but got `str`.";
     ];

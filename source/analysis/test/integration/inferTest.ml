@@ -324,7 +324,7 @@ let test_check_missing_return context =
       ^ "but type `Any` is specified.";
       "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st positional only parameter to call `int_to_bool` but got "
-      ^ "`typing.Optional[int]`.";
+      ^ "`Optional[int]`.";
     ];
   assert_type_errors
     {|

@@ -211,7 +211,7 @@ let test_check_ternary context =
         x: int
         return y if x else 5
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       from builtins import int_to_str
@@ -374,8 +374,7 @@ let test_check_nested context =
        other than `Any`.";
       "Missing parameter annotation [2]: Parameter `noun` must have a type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `verb` must have a type other than `Any`.";
-      "Incompatible return type [7]: Expected `Derp.Word` but got "
-      ^ "implicit return value of `None`.";
+      "Incompatible return type [7]: Expected `Word` but got implicit return value of `None`.";
     ];
   assert_type_errors
     ~handle:"shadowing.py"

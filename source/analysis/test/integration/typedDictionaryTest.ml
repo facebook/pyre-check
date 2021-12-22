@@ -339,7 +339,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `Baz` for 1st positional only parameter to call \
-       `foo` but got `typing.Dict[str, int]`.";
+       `foo` but got `Dict[str, int]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -854,8 +854,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `Movie` for 1st positional only parameter to call \
-       `foo` but got "
-      ^ "`typing.Dict[str, typing.Union[int, str]]`.";
+       `foo` but got `Dict[str, Union[int, str]]`.";
     ];
   assert_test_typed_dictionary
     {|

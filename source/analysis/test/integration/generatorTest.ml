@@ -30,14 +30,14 @@ let test_check_comprehensions context =
       def foo(input: str) -> typing.List[int]:
         return [a for a in input]
     |}
-    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[str]`."];
+    ["Incompatible return type [7]: Expected `List[int]` but got `List[str]`."];
   assert_type_errors
     {|
       import typing
       def foo() -> typing.List[str]:
         return [x for x in [4,3,None, 1] if x]
     |}
-    ["Incompatible return type [7]: Expected `typing.List[str]` but got `typing.List[int]`."];
+    ["Incompatible return type [7]: Expected `List[str]` but got `List[int]`."];
   assert_type_errors
     {|
       import typing
@@ -114,14 +114,14 @@ let test_check_comprehensions context =
       def foo(a: typing.List[str], b: typing.List[str]) -> int:
         return {x + y for x in a for y in b}
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Set[str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Set[str]`."];
   assert_type_errors
     {|
       import typing
       def foo(a: typing.Dict[str, int]) -> typing.List[int]:
         return [x for x in a]
     |}
-    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[str]`."];
+    ["Incompatible return type [7]: Expected `List[int]` but got `List[str]`."];
   assert_type_errors
     {|
       def f() -> int:
@@ -144,10 +144,7 @@ let test_check_comprehensions context =
       def foo(a: typing.Dict[str, int]) -> typing.Dict[str, int]:
         return { y:x for x, y in a.items() }
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got "
-      ^ "`typing.Dict[int, str]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Dict[str, int]` but got `Dict[int, str]`."];
   assert_type_errors
     {|
       def f() -> None:
@@ -169,10 +166,7 @@ let test_check_comprehensions context =
       def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
         return { x: y for (x, y) in a.items() }
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got `typing.Dict[str, \
-       typing.Optional[int]]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Dict[str, int]` but got `Dict[str, Optional[int]]`."];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -216,8 +210,8 @@ let test_check_yield context =
         yield 1.0
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
-      ^ "but got `typing.Generator[float, typing.Any, typing.Any]`.";
+      "Incompatible return type [7]: Expected `Generator[int, None, None]` "
+      ^ "but got `Generator[float, typing.Any, typing.Any]`.";
     ];
   assert_type_errors
     {|
@@ -325,8 +319,8 @@ let test_check_yield context =
         return
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Generator[int, None, str]` but got \
-       `typing.Generator[typing.Any, typing.Any, None]`.";
+      "Incompatible return type [7]: Expected `Generator[int, None, str]` but got \
+       `Generator[typing.Any, typing.Any, None]`.";
     ];
   ()
 
@@ -347,8 +341,8 @@ let test_check_yield_from context =
         yield from [""]
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
-      ^ "but got `typing.Generator[str, None, typing.Any]`.";
+      "Incompatible return type [7]: Expected `Generator[int, None, None]` "
+      ^ "but got `Generator[str, None, typing.Any]`.";
     ];
   assert_type_errors
     {|
@@ -428,8 +422,8 @@ let test_check_generator_edge_cases context =
         return (x for x in l if x is not None)
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Generator[str, None, None]` "
-      ^ "but got `typing.Generator[int, None, None]`.";
+      "Incompatible return type [7]: Expected `Generator[str, None, None]` "
+      ^ "but got `Generator[int, None, None]`.";
     ];
   assert_type_errors
     {|
@@ -454,8 +448,8 @@ let test_check_generator_edge_cases context =
         yield from generator
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Generator[int, str, None]` but got \
-       `typing.Generator[int, float, typing.Any]`.";
+      "Incompatible return type [7]: Expected `Generator[int, str, None]` but got `Generator[int, \
+       float, typing.Any]`.";
     ];
   assert_type_errors
     {|

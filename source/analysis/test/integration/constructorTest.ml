@@ -529,7 +529,7 @@ let test_check_constructors context =
       "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st positional only parameter to call `Foo.__init__` but got `str`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[str]` for 2nd positional only parameter to call `Foo.__init__` "
+      ^ "Expected `Optional[str]` for 2nd positional only parameter to call `Foo.__init__` "
       ^ "but got `int`.";
     ];
 
@@ -860,7 +860,7 @@ let test_check_constructors context =
     |}
     [
       "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st \
-       positional only parameter to call `foo` but got `typing.Type[Class]`.";
+       positional only parameter to call `foo` but got `Type[Class]`.";
     ];
   assert_type_errors
     {|
@@ -1199,8 +1199,8 @@ let test_register_buffer_attribute context =
           reveal_type(self.foo)
     |}
     [
-      "Incompatible attribute type [8]: Attribute `foo` declared in class `Foo` has type \
-       `torch.Tensor` but is used as type `str`.";
+      "Incompatible attribute type [8]: Attribute `foo` declared in class `Foo` has type `Tensor` \
+       but is used as type `str`.";
       "Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`.";
     ];
   (* TODO(T80453653): We shouldn't respect `register_buffer` in non-Modules. *)

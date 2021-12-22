@@ -279,8 +279,8 @@ let test_check_async context =
         yield 1
     |}
     [
-      "Incompatible return type [7]: Expected `AsyncIterator[str]` but got \
-       `typing.AsyncGenerator[int, typing.Any]`.";
+      "Incompatible return type [7]: Expected `AsyncIterator[str]` but got `AsyncGenerator[int, \
+       typing.Any]`.";
     ];
   assert_type_errors
     {|

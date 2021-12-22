@@ -678,6 +678,110 @@ let weaken_literals kind =
   | _ -> kind
 
 
+module SimplificationMap = struct
+  (* (Lazy) suffix trie for references. Lazy only for leaf nodes. *)
+  type node =
+    | LazyLeaf of { to_be_expanded: Identifier.t list }
+    | Node of { children: node Identifier.Map.t }
+
+  type t = Reference.t Reference.Map.t
+
+  let pp fmt map =
+    let pp_one ~key ~data = Format.fprintf fmt "\n  %a -> %a" Reference.pp key Reference.pp data in
+    Reference.Map.iteri ~f:pp_one map
+
+
+  let show map = Format.asprintf "%a" pp map
+
+  let create references =
+    let empty_trie = Node { children = Identifier.Map.empty } in
+    let add_to_suffix_trie trie reference =
+      let rec add sofar node =
+        match sofar, node with
+        | [], _ -> node
+        | _, LazyLeaf { to_be_expanded } when List.equal Identifier.equal sofar to_be_expanded ->
+            node
+        | _, LazyLeaf { to_be_expanded } -> empty_trie |> add to_be_expanded |> add sofar
+        | head :: remaining, Node { children } ->
+            let updated_children =
+              Identifier.Map.update children head ~f:(fun existing ->
+                  match existing with
+                  | None -> LazyLeaf { to_be_expanded = remaining }
+                  | Some child -> add remaining child)
+            in
+            Node { children = updated_children }
+      in
+      let reference_reversed_as_list = Reference.reverse reference |> Reference.as_list in
+      add reference_reversed_as_list trie
+    in
+    (* Idea is that the leaves we could avoid expanding correspond to simplifications. *)
+    let extract_simplifications_from_suffix_trie trie =
+      let rec extract suffix node collected =
+        match node with
+        | LazyLeaf { to_be_expanded = [] } -> collected
+        | LazyLeaf { to_be_expanded } ->
+            let shortened = Reference.create_from_list suffix in
+            let dropped = List.rev to_be_expanded |> Reference.create_from_list in
+            (Reference.combine dropped shortened, shortened) :: collected
+        | Node { children } ->
+            Identifier.Map.fold children ~init:collected ~f:(fun ~key ~data ->
+                extract (key :: suffix) data)
+      in
+      extract [] trie []
+    in
+    List.fold references ~init:empty_trie ~f:add_to_suffix_trie
+    |> extract_simplifications_from_suffix_trie
+    |> Reference.Map.of_alist_exn
+end
+
+let simplify_mismatch ({ actual; expected; _ } as mismatch) =
+  let collect_references annotation =
+    let module CollectIdentifiers = Type.Transform.Make (struct
+      type state = Identifier.t list
+
+      let visit_children_before _ _ = true
+
+      let visit_children_after = false
+
+      let visit sofar annotation =
+        let updated =
+          match annotation with
+          | Type.Parametric { name; _ }
+          | Variable { variable = name; _ }
+          | Primitive name ->
+              name :: sofar
+          | _ -> sofar
+        in
+        { Type.Transform.transformed_annotation = annotation; new_state = updated }
+    end)
+    in
+    fst (CollectIdentifiers.visit [] annotation) |> List.map ~f:Reference.create
+  in
+  let references = collect_references actual @ collect_references expected in
+  let simplification_map = SimplificationMap.create references in
+  let simplified_expected = Type.dequalify simplification_map expected in
+  let simplified_actual = Type.dequalify simplification_map actual in
+  { mismatch with expected = simplified_expected; actual = simplified_actual }
+
+
+let simplify_kind kind =
+  let simplify_incompatible_type incompatible_type =
+    { incompatible_type with mismatch = simplify_mismatch incompatible_type.mismatch }
+  in
+  match kind with
+  | IncompatibleAttributeType details ->
+      IncompatibleAttributeType
+        { details with incompatible_type = simplify_incompatible_type details.incompatible_type }
+  | IncompatibleParameterType details ->
+      IncompatibleParameterType { details with mismatch = simplify_mismatch details.mismatch }
+  | IncompatibleReturnType details ->
+      IncompatibleReturnType { details with mismatch = simplify_mismatch details.mismatch }
+  | IncompatibleVariableType details ->
+      IncompatibleVariableType
+        { details with incompatible_type = simplify_incompatible_type details.incompatible_type }
+  | _ -> kind
+
+
 let rec messages ~concise ~signature location kind =
   let {
     Location.WithPath.start = { Location.line = start_line; _ };
@@ -722,6 +826,7 @@ let rec messages ~concise ~signature location kind =
   in
   let pp_identifier = Identifier.pp_sanitized in
   let kind = weaken_literals kind in
+  let kind = simplify_kind kind in
   match kind with
   | AnalysisFailure (UnexpectedUndefinedType annotation) when concise ->
       [Format.asprintf "Terminating analysis - type `%s` not defined." annotation]
@@ -4001,89 +4106,3 @@ let create_mismatch ~resolution ~actual ~expected ~covariant =
     actual;
     due_to_invariance = GlobalResolution.is_invariance_mismatch resolution ~left ~right;
   }
-
-
-module SimplificationMap = struct
-  (* (Lazy) suffix trie for references. Lazy only for leaf nodes. *)
-  type node =
-    | LazyLeaf of { to_be_expanded: Identifier.t list }
-    | Node of { children: node Identifier.Map.t }
-
-  type t = Reference.t Reference.Map.t
-
-  let pp fmt map =
-    let pp_one ~key ~data = Format.fprintf fmt "\n  %a -> %a" Reference.pp key Reference.pp data in
-    Reference.Map.iteri ~f:pp_one map
-
-
-  let show map = Format.asprintf "%a" pp map
-
-  let create references =
-    let empty_trie = Node { children = Identifier.Map.empty } in
-    let add_to_suffix_trie trie reference =
-      let rec add sofar node =
-        match sofar, node with
-        | [], _ -> node
-        | _, LazyLeaf { to_be_expanded } when List.equal Identifier.equal sofar to_be_expanded ->
-            node
-        | _, LazyLeaf { to_be_expanded } -> empty_trie |> add to_be_expanded |> add sofar
-        | head :: remaining, Node { children } ->
-            let updated_children =
-              Identifier.Map.update children head ~f:(fun existing ->
-                  match existing with
-                  | None -> LazyLeaf { to_be_expanded = remaining }
-                  | Some child -> add remaining child)
-            in
-            Node { children = updated_children }
-      in
-      let reference_reversed_as_list = Reference.reverse reference |> Reference.as_list in
-      add reference_reversed_as_list trie
-    in
-    (* Idea is that the leaves we could avoid expanding correspond to simplifications. *)
-    let extract_simplifications_from_suffix_trie trie =
-      let rec extract suffix node collected =
-        match node with
-        | LazyLeaf { to_be_expanded = [] } -> collected
-        | LazyLeaf { to_be_expanded } ->
-            let shortened = Reference.create_from_list suffix in
-            let dropped = List.rev to_be_expanded |> Reference.create_from_list in
-            (Reference.combine dropped shortened, shortened) :: collected
-        | Node { children } ->
-            Identifier.Map.fold children ~init:collected ~f:(fun ~key ~data ->
-                extract (key :: suffix) data)
-      in
-      extract [] trie []
-    in
-    List.fold references ~init:empty_trie ~f:add_to_suffix_trie
-    |> extract_simplifications_from_suffix_trie
-    |> Reference.Map.of_alist_exn
-end
-
-let simplify_mismatch ({ actual; expected; _ } as mismatch) =
-  let collect_references annotation =
-    let module CollectIdentifiers = Type.Transform.Make (struct
-      type state = Identifier.t list
-
-      let visit_children_before _ _ = true
-
-      let visit_children_after = false
-
-      let visit sofar annotation =
-        let updated =
-          match annotation with
-          | Type.Parametric { name; _ }
-          | Variable { variable = name; _ }
-          | Primitive name ->
-              name :: sofar
-          | _ -> sofar
-        in
-        { Type.Transform.transformed_annotation = annotation; new_state = updated }
-    end)
-    in
-    fst (CollectIdentifiers.visit [] annotation) |> List.map ~f:Reference.create
-  in
-  let references = collect_references actual @ collect_references expected in
-  let simplification_map = SimplificationMap.create references in
-  let simplified_expected = Type.dequalify simplification_map expected in
-  let simplified_actual = Type.dequalify simplification_map actual in
-  { mismatch with expected = simplified_expected; actual = simplified_actual }
