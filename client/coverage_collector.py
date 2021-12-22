@@ -6,7 +6,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Set, Iterable, List
+from typing import Tuple, Set, List
 
 import libcst as cst
 from libcst.metadata import CodeRange
@@ -57,9 +57,26 @@ class CoverageCollector(AnnotationCollector):
             return [f for f in self.functions if not f.is_annotated]
 
     def covered_and_uncovered_lines(self) -> CoveredAndUncoveredLines:
-        uncovered_lines = _code_ranges_to_lines(
-            f.code_range for f in self.uncovered_functions()
-        )
+        def num_lines(code_range_and_is_covered: Tuple[CodeRange, bool]) -> int:
+            code_range, _ = code_range_and_is_covered
+            return code_range.end.line - code_range.start.line + 1
+
+        # When the code ranges are nested, we want to respect the innermost
+        # one. By processing in descending order of number of lines we can
+        # ensure that.
+        uncovered_lines = set()
+        for code_range, is_covered in sorted(
+            [
+                *((f.code_range, False) for f in self.uncovered_functions()),
+                *((f.code_range, True) for f in self.covered_functions()),
+            ],
+            key=num_lines,
+            reverse=True,
+        ):
+            if is_covered:
+                uncovered_lines -= _code_range_to_lines(code_range)
+            else:
+                uncovered_lines |= _code_range_to_lines(code_range)
         covered_lines = set(range(0, self.line_count)) - uncovered_lines
         return CoveredAndUncoveredLines(covered_lines, uncovered_lines)
 
@@ -95,8 +112,5 @@ def collect_coverage_for_module(
     )
 
 
-def _code_ranges_to_lines(code_ranges: Iterable[CodeRange]) -> Set[int]:
-    lines: Set[int] = set()
-    for code_range in code_ranges:
-        lines |= set(range(code_range.start.line - 1, code_range.end.line))
-    return lines
+def _code_range_to_lines(code_range: CodeRange) -> Set[int]:
+    return set(range(code_range.start.line - 1, code_range.end.line))
