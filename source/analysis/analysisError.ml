@@ -46,7 +46,13 @@ type module_reference =
   | ImplicitModule of Reference.t
 [@@deriving compare, sexp, show, hash]
 
-type class_origin = ClassType of Type.t [@@deriving compare, sexp, show, hash]
+type class_origin =
+  | ClassType of Type.t
+  | ClassInUnion of {
+      unions: Type.t list;
+      index: int;
+    }
+[@@deriving compare, sexp, show, hash]
 
 type origin =
   | Class of {
@@ -2270,6 +2276,13 @@ let rec messages ~concise ~signature location kind =
                 Format.asprintf "`%a`" pp_type annotation
             in
             name
+        | Class { class_origin = ClassInUnion { unions; index }; _ } ->
+            Format.asprintf
+              "Item `%a` of `%a`"
+              pp_type
+              (fst (Type.split (List.nth_exn unions index)))
+              pp_type
+              (Type.Union unions)
         | Module module_reference ->
             let name =
               match module_reference with
@@ -4064,6 +4077,12 @@ let dequalify
                   dequalify class_type
               in
               Class { class_origin = ClassType annotation; parent_source_path }
+          | Class { class_origin = ClassInUnion { unions; index }; parent_source_path } ->
+              Class
+                {
+                  class_origin = ClassInUnion { unions = List.map ~f:dequalify unions; index };
+                  parent_source_path;
+                }
           | Module (ExplicitModule source_path) -> Module (ExplicitModule source_path)
           | Module (ImplicitModule module_name) ->
               Module (ImplicitModule (dequalify_reference module_name))

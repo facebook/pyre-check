@@ -1106,6 +1106,17 @@ module State (Context : Context) = struct
                        typechecked. *)
                     errors
                   else
+                    let class_origin =
+                      match resolved_base with
+                      | Type.Union [Type.NoneType; _]
+                      | Union [_; Type.NoneType] ->
+                          Error.ClassType target
+                      | Union unions ->
+                          List.findi ~f:(fun _ element -> Type.equal element target) unions
+                          >>| (fun (index, _) -> Error.ClassInUnion { unions; index })
+                          |> Option.value ~default:(Error.ClassType target)
+                      | _ -> Error.ClassType target
+                    in
                     emit_error
                       ~errors
                       ~location
@@ -1116,7 +1127,7 @@ module State (Context : Context) = struct
                              origin =
                                Error.Class
                                  {
-                                   class_origin = ClassType target;
+                                   class_origin;
                                    parent_source_path = source_path_of_parent_module target;
                                  };
                            })

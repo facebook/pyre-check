@@ -37,7 +37,13 @@ type module_reference =
   | ImplicitModule of Reference.t
 [@@deriving compare, sexp, show, hash]
 
-type class_origin = ClassType of Type.t [@@deriving compare, sexp, show, hash]
+type class_origin =
+  | ClassType of Type.t
+  | ClassInUnion of {
+      unions: Type.t list;
+      index: int;
+    }
+[@@deriving compare, sexp, show, hash]
 
 type origin =
   | Class of {

@@ -2868,6 +2868,9 @@ let test_check_private_member_access context =
         z = child.__private
     |}
     [
+      "Undefined attribute [16]: Item `Base` of `typing.Union[Base, Child]` has no attribute \
+       `__private`. `__private` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
       "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
        private attribute, which is not accessible from outside its parent class.";
       "Undefined attribute [16]: `Child` has no attribute `__private`. `__private` looks like a \

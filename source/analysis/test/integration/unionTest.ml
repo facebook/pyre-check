@@ -147,7 +147,8 @@ let test_check_union context =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
+      "Undefined attribute [16]: Item `Attributes` of `typing.Union[Attributes, OtherAttributes]` \
+       has no attribute `str_attribute`.";
     ];
   assert_type_errors
     {|
@@ -158,7 +159,8 @@ let test_check_union context =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
+      "Undefined attribute [16]: Item `Attributes` of `typing.Union[Attributes, OtherAttributes]` \
+       has no attribute `str_attribute`.";
     ];
   assert_type_errors
     {|
@@ -181,7 +183,7 @@ let test_check_union context =
       def baz(x: typing.Union[Foo, Bar]) -> int:
         return x.derp()
     |}
-    ["Undefined attribute [16]: `Bar` has no attribute `derp`."];
+    ["Undefined attribute [16]: Item `Bar` of `typing.Union[Bar, Foo]` has no attribute `derp`."];
 
   (* We require that all elements in a union have the same method for `in`. *)
   assert_type_errors

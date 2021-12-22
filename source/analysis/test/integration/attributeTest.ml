@@ -534,6 +534,17 @@ let test_check_attributes context =
       foo.y = 1
     |}
     ["Undefined attribute [16]: `Foo` has no attribute `y`."];
+  assert_strict_type_errors
+    {|
+      from typing import Union
+      class Foo:
+        def __init__(self) -> None:
+          self.x = 1
+
+      def bar(foo_or_int: Union[Foo, int]) -> None:
+        print(foo_or_int.x)
+    |}
+    ["Undefined attribute [16]: Item `int` of `typing.Union[int, Foo]` has no attribute `x`."];
 
   (* Class implements `__getattr__`. *)
   assert_type_errors
