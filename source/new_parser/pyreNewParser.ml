@@ -875,10 +875,33 @@ let statement =
     ]
   in
   let match_ ~location ~subject ~cases ~context =
-    [
-      Statement.Match { Match.subject; cases = build_match_cases ~context cases }
-      |> Node.create ~location;
-    ]
+    let check_cases_refutability cases =
+      let is_case_irrefutable case = not (Ast.Statement.Match.Case.is_refutable case) in
+      let raise_remanining_patterns_unreachable { Match.Case.pattern = { Ast.Node.location; _ }; _ }
+        =
+        let {
+          Ast.Location.start = { line; column };
+          stop = { line = end_line; column = end_column };
+        }
+          =
+          location
+        in
+        raise
+          (InternalError
+             {
+               Error.line;
+               column;
+               end_line;
+               end_column;
+               message = "This pattern makes remaining patterns unreachable.";
+             })
+      in
+      List.iter (List.drop_last_exn cases) ~f:(fun case ->
+          if is_case_irrefutable case then raise_remanining_patterns_unreachable case)
+    in
+    let cases = build_match_cases ~context cases in
+    check_cases_refutability cases;
+    [Statement.Match { Match.subject; cases } |> Node.create ~location]
   in
   let raise_ ~location ~exc ~cause ~context:_ =
     [Statement.Raise { Raise.expression = exc; from = cause } |> Node.create ~location]

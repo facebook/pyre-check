@@ -709,7 +709,6 @@ let test_match_args context =
 
 let test_syntax context =
   let assert_type_errors = assert_type_errors ~context in
-  (* TODO(T106617941): This should throw syntax error. *)
   assert_type_errors
     {|
       def foo(subject: int) -> None:
@@ -719,8 +718,7 @@ let test_syntax context =
           case x:
             pass
     |}
-    [];
-  (* TODO(T106617941): This should throw syntax error. *)
+    ["Parsing failure [404]: This pattern makes remaining patterns unreachable."];
   assert_type_errors
     {|
       def foo(subject: int) -> None:
@@ -730,7 +728,7 @@ let test_syntax context =
           case 42:
             pass
     |}
-    [];
+    ["Parsing failure [404]: This pattern makes remaining patterns unreachable."];
   ()
 
 

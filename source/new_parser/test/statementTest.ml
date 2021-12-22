@@ -2593,6 +2593,8 @@ let test_match _ =
     assert_not_parsed "match x:\n  case y | z:\n    pass";
     assert_not_parsed "match x:\n  case (1 as y) | (2 as z):\n    pass";
     assert_not_parsed "match x:\n  case [1, *_, 5, *_, 10]:\n    pass";
+    assert_not_parsed "match x:\n  case x:\n    pass\n  case x:\n    pass";
+    assert_not_parsed "match x:\n  case _:\n    pass\n  case 42:\n    pass";
     ()
   in
   PyreNewParser.with_context do_test
