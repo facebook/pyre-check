@@ -37,9 +37,11 @@ type module_reference =
   | ImplicitModule of Reference.t
 [@@deriving compare, sexp, show, hash]
 
+type class_origin = ClassType of Type.t [@@deriving compare, sexp, show, hash]
+
 type origin =
   | Class of {
-      class_type: Type.t;
+      class_origin: class_origin;
       parent_source_path: SourcePath.t option;
     }
   | Module of module_reference

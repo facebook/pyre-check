@@ -90,7 +90,10 @@ let incompatible_return_type
 
 let undefined_attribute actual =
   Error.UndefinedAttribute
-    { attribute = "foo"; origin = Error.Class { class_type = actual; parent_source_path = None } }
+    {
+      attribute = "foo";
+      origin = Error.Class { class_origin = ClassType actual; parent_source_path = None };
+    }
 
 
 let unexpected_keyword name callee =
@@ -737,7 +740,7 @@ let test_filter context =
          origin =
            Class
              {
-               class_type = Type.Callable.create ~annotation:Type.integer ();
+               class_origin = ClassType (Type.Callable.create ~annotation:Type.integer ());
                parent_source_path = None;
              };
        });
@@ -748,7 +751,7 @@ let test_filter context =
          origin =
            Class
              {
-               class_type = Type.Callable.create ~annotation:Type.integer ();
+               class_origin = ClassType (Type.Callable.create ~annotation:Type.integer ());
                parent_source_path = None;
              };
        });
@@ -759,10 +762,14 @@ let test_filter context =
          origin =
            Class
              {
-               class_type =
-                 Type.parametric
-                   "BoundMethod"
-                   [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
+               class_origin =
+                 ClassType
+                   (Type.parametric
+                      "BoundMethod"
+                      [
+                        Single (Type.Callable.create ~annotation:Type.integer ());
+                        Single Type.integer;
+                      ]);
                parent_source_path = None;
              };
        });
@@ -773,10 +780,14 @@ let test_filter context =
          origin =
            Class
              {
-               class_type =
-                 Type.parametric
-                   "BoundMethod"
-                   [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
+               class_origin =
+                 ClassType
+                   (Type.parametric
+                      "BoundMethod"
+                      [
+                        Single (Type.Callable.create ~annotation:Type.integer ());
+                        Single Type.integer;
+                      ]);
                parent_source_path = None;
              };
        });
@@ -920,7 +931,10 @@ let test_description _ =
   in
   assert_messages
     (UndefinedAttribute
-       { attribute = "at"; origin = Class { class_type = Type.integer; parent_source_path = None } })
+       {
+         attribute = "at";
+         origin = Class { class_origin = ClassType Type.integer; parent_source_path = None };
+       })
     "Undefined attribute [16]: `int` has no attribute `at`.";
   assert_messages
     (UndefinedAttribute
@@ -929,7 +943,7 @@ let test_description _ =
          origin =
            Class
              {
-               class_type = Type.Callable.create ~annotation:Type.integer ();
+               class_origin = ClassType (Type.Callable.create ~annotation:Type.integer ());
                parent_source_path = None;
              };
        })
@@ -941,8 +955,12 @@ let test_description _ =
          origin =
            Class
              {
-               class_type =
-                 Type.Callable.create ~name:(Reference.create "named") ~annotation:Type.integer ();
+               class_origin =
+                 ClassType
+                   (Type.Callable.create
+                      ~name:(Reference.create "named")
+                      ~annotation:Type.integer
+                      ());
                parent_source_path = None;
              };
        })
@@ -955,10 +973,14 @@ let test_description _ =
          origin =
            Class
              {
-               class_type =
-                 Type.parametric
-                   "BoundMethod"
-                   [Single (Type.Callable.create ~annotation:Type.integer ()); Single Type.integer];
+               class_origin =
+                 ClassType
+                   (Type.parametric
+                      "BoundMethod"
+                      [
+                        Single (Type.Callable.create ~annotation:Type.integer ());
+                        Single Type.integer;
+                      ]);
                parent_source_path = None;
              };
        })
@@ -970,17 +992,18 @@ let test_description _ =
          origin =
            Class
              {
-               class_type =
-                 Type.parametric
-                   "BoundMethod"
-                   [
-                     Single
-                       (Type.Callable.create
-                          ~name:(Reference.create "named")
-                          ~annotation:Type.integer
-                          ());
-                     Single Type.integer;
-                   ];
+               class_origin =
+                 ClassType
+                   (Type.parametric
+                      "BoundMethod"
+                      [
+                        Single
+                          (Type.Callable.create
+                             ~name:(Reference.create "named")
+                             ~annotation:Type.integer
+                             ());
+                        Single Type.integer;
+                      ]);
                parent_source_path = None;
              };
        })

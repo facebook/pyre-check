@@ -46,9 +46,11 @@ type module_reference =
   | ImplicitModule of Reference.t
 [@@deriving compare, sexp, show, hash]
 
+type class_origin = ClassType of Type.t [@@deriving compare, sexp, show, hash]
+
 type origin =
   | Class of {
-      class_type: Type.t;
+      class_origin: class_origin;
       parent_source_path: SourcePath.t option;
     }
   | Module of module_reference
@@ -2245,18 +2247,21 @@ let rec messages ~concise ~signature location kind =
         match origin with
         | Class
             {
-              class_type =
-                ( Callable { kind; _ }
-                (* TODO(T64161566): Don't pretend these are just Callables *)
-                | Parametric
-                    { name = "BoundMethod"; parameters = [Single (Callable { kind; _ }); Single _] }
-                  );
+              class_origin =
+                ClassType
+                  ( Callable { kind; _ }
+                  (* TODO(T64161566): Don't pretend these are just Callables *)
+                  | Parametric
+                      {
+                        name = "BoundMethod";
+                        parameters = [Single (Callable { kind; _ }); Single _];
+                      } );
               _;
             } -> (
             match kind with
             | Anonymous -> "Anonymous callable"
             | Named name -> Format.asprintf "Callable `%a`" pp_reference name)
-        | Class { class_type = annotation; _ } ->
+        | Class { class_origin = ClassType annotation; _ } ->
             let annotation, _ = Type.split annotation in
             let name =
               if Type.is_optional_primitive annotation then
@@ -2275,7 +2280,10 @@ let rec messages ~concise ~signature location kind =
       in
       match origin with
       | Class
-          { class_type; parent_source_path = Some { SourcePath.relative; is_stub = true; _ }; _ }
+          {
+            class_origin = ClassType class_type;
+            parent_source_path = Some { SourcePath.relative; is_stub = true; _ };
+          }
         when not (Type.is_optional_primitive class_type) ->
           let stub_trace =
             Format.asprintf
@@ -2595,7 +2603,7 @@ let due_to_analysis_limitations { kind; _ } =
       is_due_to_analysis_limitations left_operand || is_due_to_analysis_limitations right_operand
   | UnsupportedOperand (Unary { operand; _ }) -> is_due_to_analysis_limitations operand
   | Top -> true
-  | UndefinedAttribute { origin = Class { class_type = annotation; _ }; _ } ->
+  | UndefinedAttribute { origin = Class { class_origin = ClassType annotation; _ }; _ } ->
       Type.contains_unknown annotation
   | AnalysisFailure _
   | BroadcastError _
@@ -2860,7 +2868,7 @@ let less_or_equal ~resolution left right =
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
       match left.origin, right.origin with
-      | Class { class_type = left; _ }, Class { class_type = right; _ } ->
+      | Class { class_origin = ClassType left; _ }, Class { class_origin = ClassType right; _ } ->
           GlobalResolution.less_or_equal resolution ~left ~right
       | Module (ImplicitModule left), Module (ImplicitModule right)
       | ( Module (ExplicitModule { SourcePath.qualifier = left; _ }),
@@ -3245,12 +3253,12 @@ let join ~resolution left right =
         DuplicateTypeVariables { variable = left; base = ProtocolBase }
     | ( UndefinedAttribute
           {
-            origin = Class { class_type = left; parent_source_path = left_module };
+            origin = Class { class_origin = ClassType left; parent_source_path = left_module };
             attribute = left_attribute;
           },
         UndefinedAttribute
           {
-            origin = Class { class_type = right; parent_source_path = right_module };
+            origin = Class { class_origin = ClassType right; parent_source_path = right_module };
             attribute = right_attribute;
           } )
       when Identifier.equal_sanitized left_attribute right_attribute
@@ -3258,7 +3266,7 @@ let join ~resolution left right =
         let annotation = GlobalResolution.join resolution left right in
         UndefinedAttribute
           {
-            origin = Class { class_type = annotation; parent_source_path = left_module };
+            origin = Class { class_origin = ClassType annotation; parent_source_path = left_module };
             attribute = left_attribute;
           }
     | ( UndefinedAttribute { origin = Module (ImplicitModule left); attribute = left_attribute },
@@ -3482,8 +3490,11 @@ let join_at_define ~resolution errors =
     | { kind = MissingParameterAnnotation { name; _ }; _ }
     | { kind = MissingReturnAnnotation { name; _ }; _ } ->
         add_error_to_map (Reference.show_sanitized name)
-    | { kind = UndefinedAttribute { attribute; origin = Class { class_type = annotation; _ } }; _ }
-      ->
+    | {
+     kind =
+       UndefinedAttribute { attribute; origin = Class { class_origin = ClassType annotation; _ } };
+     _;
+    } ->
         (* Only error once per define on accesses or assigns to an undefined class attribute. *)
         add_error_to_map (attribute ^ Type.show annotation)
     | _ -> error :: errors
@@ -3551,7 +3562,7 @@ let filter ~resolution errors =
       | IncompatibleReturnType { mismatch = { actual; _ }; _ }
       | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
-      | UndefinedAttribute { origin = Class { class_type = actual; _ }; _ } ->
+      | UndefinedAttribute { origin = Class { class_origin = ClassType actual; _ }; _ } ->
           let is_subclass_of_mock annotation =
             try
               match annotation with
@@ -3611,20 +3622,26 @@ let filter ~resolution errors =
     let is_callable_attribute_error { kind; _ } =
       (* TODO(T53616545): Remove once our decorators are more expressive. *)
       match kind with
-      | UndefinedAttribute { origin = Class { class_type = Callable _; _ }; attribute = "command" }
-        ->
+      | UndefinedAttribute
+          { origin = Class { class_origin = ClassType (Callable _); _ }; attribute = "command" } ->
           true
       (* We also need to filter errors for common mocking patterns. *)
       | UndefinedAttribute
           {
-            origin = Class { class_type = Callable _ | Parametric { name = "BoundMethod"; _ }; _ };
+            origin =
+              Class
+                {
+                  class_origin = ClassType (Callable _ | Parametric { name = "BoundMethod"; _ });
+                  _;
+                };
             attribute =
               ( "assert_not_called" | "assert_called_once" | "assert_called_once_with"
               | "reset_mock" | "assert_has_calls" | "assert_any_call" );
           } ->
           true
       | UndefinedAttribute
-          { origin = Class { class_type = Callable { kind = Named name; _ }; _ }; _ } ->
+          { origin = Class { class_origin = ClassType (Callable { kind = Named name; _ }); _ }; _ }
+        ->
           String.equal (Reference.last name) "patch"
       | _ -> false
     in
@@ -4038,7 +4055,7 @@ let dequalify
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =
           match origin with
-          | Class { class_type; parent_source_path } ->
+          | Class { class_origin = ClassType class_type; parent_source_path } ->
               let annotation =
                 (* Don't dequalify optionals because we special case their display. *)
                 if Type.is_optional_primitive class_type then
@@ -4046,7 +4063,7 @@ let dequalify
                 else
                   dequalify class_type
               in
-              Class { class_type = annotation; parent_source_path }
+              Class { class_origin = ClassType annotation; parent_source_path }
           | Module (ExplicitModule source_path) -> Module (ExplicitModule source_path)
           | Module (ImplicitModule module_name) ->
               Module (ImplicitModule (dequalify_reference module_name))
