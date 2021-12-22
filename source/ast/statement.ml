@@ -1062,6 +1062,8 @@ and Match : sig
     [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
+
+    val is_refutable : t -> bool
   end
 
   type t = {
@@ -1156,6 +1158,19 @@ end = struct
           match Option.compare Expression.location_insensitive_compare left.guard right.guard with
           | x when not (Int.equal x 0) -> x
           | _ -> List.compare Statement.location_insensitive_compare left.body right.body)
+
+
+    let is_refutable { Match.Case.guard; pattern; _ } =
+      let rec is_pattern_irrefutable { Node.value = pattern; _ } =
+        match pattern with
+        | Match.Pattern.MatchAs { pattern = None; _ }
+        | MatchWildcard ->
+            true
+        | Match.Pattern.MatchAs { pattern = Some pattern; _ } -> is_pattern_irrefutable pattern
+        | MatchOr patterns -> List.exists ~f:is_pattern_irrefutable patterns
+        | _ -> false
+      in
+      Option.is_some guard || not (is_pattern_irrefutable pattern)
   end
 
   type t = {

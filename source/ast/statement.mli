@@ -346,6 +346,8 @@ and Match : sig
     [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
+
+    val is_refutable : t -> bool
   end
 
   type t = {

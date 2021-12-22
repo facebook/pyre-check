@@ -399,20 +399,8 @@ type jumps = {
 }
 
 let match_cases_refutable cases =
-  let is_case_refutable { Match.Case.guard; pattern; _ } =
-    let rec is_pattern_irrefutable { Ast.Node.value = pattern; _ } =
-      match pattern with
-      | Match.Pattern.MatchAs { pattern = None; _ }
-      | MatchWildcard ->
-          true
-      | Match.Pattern.MatchAs { pattern = Some pattern; _ } -> is_pattern_irrefutable pattern
-      | MatchOr patterns -> List.exists ~f:is_pattern_irrefutable patterns
-      | _ -> false
-    in
-    Option.is_some guard || not (is_pattern_irrefutable pattern)
-  in
   (* The parser guarantees irrefutable case will only appear at the last one. *)
-  List.last cases >>| is_case_refutable |> Option.value ~default:true
+  List.last cases >>| Match.Case.is_refutable |> Option.value ~default:true
 
 
 let pp format graph =
