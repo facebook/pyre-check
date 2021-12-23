@@ -192,16 +192,14 @@ let test_check_isinstance context =
   assert_type_errors
     "isinstance(str, '')"
     [
-      "Incompatible parameter type [6]: Expected `Union[Type[typing.Any], \
-       typing.Tuple[Type[typing.Any], ...]]` for 2nd positional only parameter to call \
-       `isinstance` but got `str`.";
+      "Incompatible parameter type [6]: In call `isinstance`, for 2nd positional only parameter \
+       expected `Union[Type[typing.Any], typing.Tuple[Type[typing.Any], ...]]` but got `str`.";
     ];
   assert_type_errors
     "isinstance(1, (int, ('', str)))"
     [
-      "Incompatible parameter type [6]: Expected `Union[Type[typing.Any], \
-       typing.Tuple[Type[typing.Any], ...]]` for 2nd positional only parameter to call \
-       `isinstance` but got `str`.";
+      "Incompatible parameter type [6]: In call `isinstance`, for 2nd positional only parameter \
+       expected `Union[Type[typing.Any], typing.Tuple[Type[typing.Any], ...]]` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -230,9 +228,8 @@ let test_check_isinstance context =
         isinstance(x, y)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Union[Type[typing.Any], \
-       typing.Tuple[Type[typing.Any], ...]]` for 2nd positional only parameter to call \
-       `isinstance` but got `int`.";
+      "Incompatible parameter type [6]: In call `isinstance`, for 2nd positional only parameter \
+       expected `Union[Type[typing.Any], typing.Tuple[Type[typing.Any], ...]]` but got `int`.";
     ];
   assert_type_errors
     {|

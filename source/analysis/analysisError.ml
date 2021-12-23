@@ -981,24 +981,18 @@ let rec messages ~concise ~signature location kind =
           | _ -> "anonymous call"
         in
         if concise then
-          Format.asprintf "%s param" (ordinal position)
+          Format.asprintf "For %s param" (ordinal position)
         else
-          Format.asprintf "%s %s to %s" (ordinal position) parameter callee
+          Format.asprintf "In %s, for %s %s" callee (ordinal position) parameter
       in
       match Option.map ~f:Reference.as_list callee with
       | Some ["int"; "__add__"]
       | Some ["int"; "__sub__"]
       | Some ["int"; "__mul__"]
       | Some ["int"; "__floordiv__"] ->
-          Format.asprintf "Expected `int` for %s but got `%a`." target pp_type actual :: trace
+          Format.asprintf "%s expected `int` but got `%a`." target pp_type actual :: trace
       | _ ->
-          Format.asprintf
-            "Expected `%a` for %s but got `%a`."
-            pp_type
-            expected
-            target
-            pp_type
-            actual
+          Format.asprintf "%s expected `%a` but got `%a`." target pp_type expected pp_type actual
           :: trace)
   | IncompatibleConstructorAnnotation _ when concise -> ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->

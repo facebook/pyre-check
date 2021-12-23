@@ -263,8 +263,8 @@ let test_check_yield context =
           yield takes_int(item)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `takes_int` but got `str`.";
+      "Incompatible parameter type [6]: In call `takes_int`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   (* Make sure the send type is handled correctly *)
   assert_type_errors

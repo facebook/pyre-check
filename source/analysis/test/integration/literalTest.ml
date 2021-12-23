@@ -26,8 +26,8 @@ let test_boolean_literal context =
         foo(False)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[True]` for 1st \
-       positional only parameter to call `foo` but got `typing_extensions.Literal[False]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing_extensions.Literal[True]` but got `typing_extensions.Literal[False]`.";
     ];
   assert_type_errors
     {|
@@ -37,8 +37,8 @@ let test_boolean_literal context =
         foo(b)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[True]` for 1st \
-       positional only parameter to call `foo` but got `bool`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing_extensions.Literal[True]` but got `bool`.";
     ]
 
 
@@ -118,8 +118,9 @@ let test_enumeration_literal context =
       foo(MyEnum.WORLD)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[MyEnum.HELLO]` for 1st \
-       positional only parameter to call `foo` but got `typing_extensions.Literal[MyEnum.WORLD]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing_extensions.Literal[MyEnum.HELLO]` but got \
+       `typing_extensions.Literal[MyEnum.WORLD]`.";
     ];
   assert_type_errors
     {|
@@ -145,8 +146,8 @@ let test_enumeration_literal context =
       expects_string(A.ONE)
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
-       `expects_string` but got `A`.";
+      "Incompatible parameter type [6]: In call `expects_string`, for 1st positional only \
+       parameter expected `str` but got `A`.";
     ];
   assert_type_errors
     {|
@@ -358,11 +359,10 @@ let test_string_literal context =
         expect_literal_string(1)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
-       positional only parameter to call `expect_literal_string` but got `str`.";
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
-       positional only parameter to call `expect_literal_string` but got \
-       `typing_extensions.Literal[1]`.";
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.Literal[str]` but got `str`.";
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.Literal[str]` but got `typing_extensions.Literal[1]`.";
     ];
   assert_type_errors
     {|
@@ -397,9 +397,9 @@ let test_string_literal context =
         return_literal_string(s)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Variable[TLiteral (bound to \
-       typing_extensions.Literal[str])]` for 1st positional only parameter to call \
-       `return_literal_string` but got `str`.";
+      "Incompatible parameter type [6]: In call `return_literal_string`, for 1st positional only \
+       parameter expected `Variable[TLiteral (bound to typing_extensions.Literal[str])]` but got \
+       `str`.";
     ];
   assert_type_errors
     {|
@@ -479,8 +479,8 @@ let test_string_literal context =
         connection_query(SQL + value, value)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
-       positional only parameter to call `connection_query` but got `str`.";
+      "Incompatible parameter type [6]: In call `connection_query`, for 1st positional only \
+       parameter expected `typing_extensions.Literal[str]` but got `str`.";
     ];
   assert_type_errors
     {|

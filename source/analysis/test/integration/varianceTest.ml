@@ -308,8 +308,8 @@ let test_check_literal_variance context =
         return foo(a)
     |}
     [
-      "Incompatible parameter type [6]: Expected `List[float]` for 1st positional only parameter \
-       to call `foo` but got `List[int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `List[float]` but got `List[int]`.";
     ];
   assert_type_errors
     ~show_error_traces:true
@@ -322,11 +322,10 @@ let test_check_literal_variance context =
         return foo(a)
     |}
     [
-      "Incompatible parameter type [6]: Expected `List[float]` "
-      ^ "for 1st positional only parameter to call `foo` but got `List[int]`. "
-      ^ "This call might modify the type of the parameter. See "
-      ^ "https://pyre-check.org/docs/errors#covariance-and-contravariance "
-      ^ "for mutable container errors.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `List[float]` but got `List[int]`. This call might modify the type of the parameter. See \
+       https://pyre-check.org/docs/errors#covariance-and-contravariance for mutable container \
+       errors.";
     ];
   assert_type_errors
     {|
@@ -347,8 +346,8 @@ let test_check_literal_variance context =
         return foo(a)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Dict[str, float]` for 1st positional only \
-       parameter to call `foo` but got `Dict[str, int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `Dict[str, float]` but got `Dict[str, int]`.";
     ]
 
 

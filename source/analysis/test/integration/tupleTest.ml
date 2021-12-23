@@ -33,9 +33,8 @@ let test_check_tuple context =
         a.tuple_method(1.0)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `tuple.tuple_method` but got \
-         `float`.";
+      "Incompatible parameter type [6]: In call `tuple.tuple_method`, for 1st positional only \
+       parameter expected `int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -510,10 +509,10 @@ let test_tuple_literal_access context =
       func(1, *c)
     |}
     [
-      "Incompatible parameter type [6]: Expected `bool` for 2nd positional only parameter to call \
-       `func` but got `str`.";
-      "Incompatible parameter type [6]: Expected `str` for 3rd positional only parameter to call \
-       `func` but got `bool`.";
+      "Incompatible parameter type [6]: In call `func`, for 2nd positional only parameter expected \
+       `bool` but got `str`.";
+      "Incompatible parameter type [6]: In call `func`, for 3rd positional only parameter expected \
+       `str` but got `bool`.";
     ];
   assert_type_errors
     {|

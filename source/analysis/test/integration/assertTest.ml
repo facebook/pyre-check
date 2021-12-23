@@ -18,9 +18,8 @@ let test_check_assert context =
           pass
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `Sized` for 1st positional only parameter to call `len` but got "
-      ^ "`Optional[str]`.";
+      "Incompatible parameter type [6]: In call `len`, for 1st positional only parameter expected \
+       `Sized` but got `Optional[str]`.";
     ];
   assert_type_errors
     {|
@@ -270,8 +269,8 @@ let test_check_all context =
           return ','.join(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Iterable[typing_extensions.Literal[str]]` for \
-       1st positional only parameter to call `str.join` but got `Iterable[Optional[str]]`.";
+      "Incompatible parameter type [6]: In call `str.join`, for 1st positional only parameter \
+       expected `Iterable[typing_extensions.Literal[str]]` but got `Iterable[Optional[str]]`.";
     ];
   assert_type_errors
     {|
