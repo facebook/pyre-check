@@ -75,6 +75,8 @@ type matched_argument =
   | Default
 [@@deriving compare, show]
 
+let make_matched_argument argument = MatchedArgument argument
+
 type ranks = {
   arity: int;
   annotation: int;
@@ -866,7 +868,9 @@ module SignatureSelection = struct
       | ( ({ kind = Named _; _ } as argument) :: arguments_tail,
           (Parameter.Keywords _ as parameter) :: _ ) ->
           (* Labeled argument, keywords parameter *)
-          let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
+          let parameter_argument_mapping =
+            update_mapping parameter (make_matched_argument argument)
+          in
           consume
             ~arguments:arguments_tail
             ~parameters
@@ -890,7 +894,7 @@ module SignatureSelection = struct
           let parameter_argument_mapping, reasons =
             match matching_parameter with
             | Some matching_parameter ->
-                update_mapping matching_parameter (MatchedArgument argument), reasons
+                update_mapping matching_parameter (make_matched_argument argument), reasons
             | None ->
                 ( parameter_argument_mapping,
                   { reasons with arity = UnexpectedKeyword name.value :: arity } )
@@ -904,7 +908,9 @@ module SignatureSelection = struct
       | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
           (Parameter.Variable _ as parameter) :: _ ) ->
           (* (Double) starred argument, (double) starred parameter *)
-          let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
+          let parameter_argument_mapping =
+            update_mapping parameter (make_matched_argument argument)
+          in
           consume
             ~arguments:arguments_tail
             ~parameters
@@ -931,7 +937,9 @@ module SignatureSelection = struct
           (Parameter.Variable _ as parameter) :: _ ) ->
           (* Unlabeled argument, starred parameter *)
           let parameter_argument_mapping_with_reasons =
-            let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
+            let parameter_argument_mapping =
+              update_mapping parameter (make_matched_argument argument)
+            in
             { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           in
           consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
@@ -941,7 +949,9 @@ module SignatureSelection = struct
       | ({ kind = DoubleStar; _ } as argument) :: _, parameter :: parameters_tail
       | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
           (* Double starred or starred argument, parameter *)
-          let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
+          let parameter_argument_mapping =
+            update_mapping parameter (make_matched_argument argument)
+          in
           consume
             ~arguments
             ~parameters:parameters_tail
@@ -954,7 +964,9 @@ module SignatureSelection = struct
           { parameter_argument_mapping_with_reasons with reasons }
       | ({ kind = Positional; _ } as argument) :: arguments_tail, parameter :: parameters_tail ->
           (* Unlabeled argument, parameter *)
-          let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
+          let parameter_argument_mapping =
+            update_mapping parameter (make_matched_argument argument)
+          in
           consume
             ~arguments:arguments_tail
             ~parameters:parameters_tail
@@ -3776,7 +3788,7 @@ class base class_metadata_environment dependency =
                     let arguments =
                       let resolve argument_index argument =
                         let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-                        let make_argument resolved =
+                        let make_matched_argument resolved =
                           { Argument.kind; expression = Some expression; resolved }
                         in
                         let error = AnnotatedAttribute.CouldNotResolveArgument { argument_index } in
@@ -3785,7 +3797,7 @@ class base class_metadata_environment dependency =
                          Node.value = Expression.Expression.Constant Expression.Constant.NoneLiteral;
                          _;
                         } ->
-                            Ok (make_argument Type.NoneType)
+                            Ok (make_matched_argument Type.NoneType)
                         | { Node.value = Expression.Expression.Name name; _ } ->
                             Expression.name_to_reference name
                             >>| Reference.delocalize
@@ -3793,7 +3805,7 @@ class base class_metadata_environment dependency =
                                   (unannotated_global_environment class_metadata_environment)
                                   ?dependency
                             >>= resolver
-                            >>| make_argument
+                            >>| make_matched_argument
                             |> Result.of_option
                                  ~error:
                                    (AnnotatedAttribute.InvalidDecorator { index; reason = error })
@@ -3802,7 +3814,7 @@ class base class_metadata_environment dependency =
                             if Type.is_untyped resolved || Type.contains_unknown resolved then
                               make_error error
                             else
-                              Ok (make_argument resolved)
+                              Ok (make_matched_argument resolved)
                       in
                       List.mapi arguments ~f:resolve |> Result.all
                     in

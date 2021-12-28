@@ -68,6 +68,8 @@ type matched_argument =
   | MatchedArgument of Argument.WithPosition.t
   | Default
 
+val make_matched_argument : Argument.WithPosition.t -> matched_argument
+
 type reasons = {
   arity: SignatureSelectionTypes.reason list;
   annotation: SignatureSelectionTypes.reason list;
