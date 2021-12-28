@@ -60,6 +60,7 @@ module Argument : sig
       kind: Ast.Expression.Call.Argument.kind;
       resolved: Type.t;
     }
+    [@@deriving compare, show]
   end
 end
 

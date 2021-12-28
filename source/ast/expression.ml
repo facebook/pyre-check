@@ -166,6 +166,7 @@ and Call : sig
       | DoubleStar
       | Named of string Node.t
       | Positional
+    [@@deriving compare, show]
 
     val location_insensitive_compare : t -> t -> int
 
@@ -192,6 +193,7 @@ end = struct
       | DoubleStar
       | Named of string Node.t
       | Positional
+    [@@deriving compare, show]
 
     let location_insensitive_compare left right =
       match

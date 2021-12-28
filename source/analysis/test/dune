@@ -2,15 +2,15 @@
  (names aliasEnvironmentTest analysisErrorTest annotatedBasesTest
    annotatedCallTest annotatedCallableTest annotatedDefineTest
    annotatedGlobalEnvironmentTest annotatedSignatureTest annotationTest
-   astEnvironmentTest attrsTest callgraphTest cfgTest classHierarchyTest
-   classHierarchyEnvironmentTest classMetadataEnvironmentTest
+   astEnvironmentTest attributeResolutionTest attrsTest callgraphTest cfgTest
+   classHierarchyTest classHierarchyEnvironmentTest classMetadataEnvironmentTest
    constraintsSetTest dataClassTest environmentTest fixpointTest
    globalResolutionTest inlineDecoratorTest matchTranslateTest lookupTest
-   moduleTrackerTest newTypeTest namedTupleTest preprocessingTest
-   refinementTest resolutionTest resolvedCallableTest scopeTest
-   sqlAlchemyTest typeCheckTest typeConstraintsTest typeOperationTest
-   typeOrderTest typeTest unannotatedGlobalEnvironmentTest
-   uninitializedLocalCheckTest weakTopologicalOrderTest)
+   moduleTrackerTest newTypeTest namedTupleTest preprocessingTest refinementTest
+   resolutionTest resolvedCallableTest scopeTest sqlAlchemyTest typeCheckTest
+   typeConstraintsTest typeOperationTest typeOrderTest typeTest
+   unannotatedGlobalEnvironmentTest uninitializedLocalCheckTest
+   weakTopologicalOrderTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv
     ppx_sexp_message ppx_hash))
