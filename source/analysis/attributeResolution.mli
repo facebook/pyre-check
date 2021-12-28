@@ -72,12 +72,16 @@ type reasons = {
   arity: SignatureSelectionTypes.reason list;
   annotation: SignatureSelectionTypes.reason list;
 }
+[@@deriving compare, show]
 
 module ParameterArgumentMapping : sig
   type t = {
     parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
     reasons: reasons;
   }
+  [@@deriving compare]
+
+  val pp : Format.formatter -> t -> unit
 end
 
 type ranks = {

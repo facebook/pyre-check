@@ -73,6 +73,7 @@ end
 type argument =
   | Argument of Argument.WithPosition.t
   | Default
+[@@deriving compare, show]
 
 type ranks = {
   arity: int;
@@ -84,6 +85,7 @@ type reasons = {
   arity: SignatureSelectionTypes.reason list;
   annotation: SignatureSelectionTypes.reason list;
 }
+[@@deriving compare, show]
 
 let empty_reasons = { arity = []; annotation = [] }
 
@@ -92,6 +94,16 @@ module ParameterArgumentMapping = struct
     parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
     reasons: reasons;
   }
+  [@@deriving compare]
+
+  let pp format { parameter_argument_mapping; reasons } =
+    Format.fprintf
+      format
+      "ParameterArgumentMapping { parameter_argument_mapping: %s; reasons: %a }"
+      ([%show: (Type.Callable.Parameter.parameter * argument list) list]
+         (Map.to_alist parameter_argument_mapping))
+      pp_reasons
+      reasons
 end
 
 type signature_match = {

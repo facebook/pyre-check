@@ -112,7 +112,151 @@ let test_prepare_arguments_for_signature_selection _ =
   ()
 
 
+let test_get_parameter_argument_mapping _ =
+  let open AttributeResolution in
+  let open Type.Callable in
+  let assert_parameter_argument_mapping
+      ?(all_parameters = Undefined)
+      ~callable
+      ~self_argument
+      arguments
+      expected
+    =
+    let parameters =
+      match parse_callable callable with
+      | Type.Callable { implementation = { parameters = Defined parameters; _ }; _ } -> parameters
+      | _ -> failwith "expected defined parameters"
+    in
+    let actual =
+      SignatureSelection.get_parameter_argument_mapping
+        ~all_parameters
+        ~parameters
+        ~self_argument
+        arguments
+    in
+    assert_equal
+      ~pp_diff:(diff ~print:ParameterArgumentMapping.pp)
+      ~printer:[%show: ParameterArgumentMapping.t]
+      ~cmp:[%compare.equal: ParameterArgumentMapping.t]
+      expected
+      actual
+  in
+  assert_parameter_argument_mapping
+    ~callable:
+      "typing.Callable[[PositionalOnly(int), Named(some_argument, str), Variable(bool)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.string;
+        kind = Named (Node.create_with_default_location "some_argument");
+        expression = parse_single_expression "'hello'" |> Option.some;
+        position = 2;
+      };
+      {
+        Argument.WithPosition.resolved = Type.integer;
+        kind = Positional;
+        expression = parse_single_expression "42" |> Option.some;
+        position = 1;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "some_argument"; annotation = Type.string; default = false },
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.string;
+                    kind = Named (Node.create_with_default_location "some_argument");
+                    expression = parse_single_expression "'hello'" |> Option.some;
+                    position = 2;
+                  };
+              ] );
+            ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
+                    expression = parse_single_expression "42" |> Option.some;
+                    position = 1;
+                  };
+              ] );
+            Variable (Concrete Type.bool), [];
+          ];
+      reasons = { arity = []; annotation = [] };
+    };
+  (* TODO(T107236583): Handle `foo(x, *args)` correctly. *)
+  assert_parameter_argument_mapping
+    ~callable:
+      "typing.Callable[[PositionalOnly(int), Named(some_argument, str), Variable(bool)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+        kind = SingleStar;
+        expression = None;
+        position = 2;
+      };
+      {
+        Argument.WithPosition.resolved = Type.integer;
+        kind = Positional;
+        expression = parse_single_expression "42" |> Option.some;
+        position = 1;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "some_argument"; annotation = Type.string; default = false },
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 2;
+                  };
+              ] );
+            ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 2;
+                  };
+              ] );
+            ( Variable (Concrete Type.bool),
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
+                    expression = parse_single_expression "42" |> Option.some;
+                    position = 1;
+                  };
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 2;
+                  };
+              ] );
+          ];
+      reasons = { arity = []; annotation = [] };
+    };
+  ()
+
+
 let () =
   "attributeResolution"
-  >::: ["prepare_arguments" >:: test_prepare_arguments_for_signature_selection]
+  >::: [
+         "prepare_arguments" >:: test_prepare_arguments_for_signature_selection;
+         "parameter_argument_mapping" >:: test_get_parameter_argument_mapping;
+       ]
   |> Test.run
