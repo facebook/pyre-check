@@ -283,6 +283,87 @@ let test_get_parameter_argument_mapping _ =
           annotation = [];
         };
     };
+  (* We collect multiple starred arguments under the same `*args` parameter. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[Variable(int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.integer;
+        kind = Positional;
+        expression = parse_single_expression "42" |> Option.some;
+        position = 2;
+      };
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 3;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Variable (Concrete Type.integer),
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 3;
+                  };
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
+                    expression = parse_single_expression "42" |> Option.some;
+                    position = 2;
+                  };
+                Argument
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+          ];
+      reasons = { arity = []; annotation = [] };
+    };
+  (* TODO(T107236583): We mistakenly count `provided` arguments as 3. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[Keywords(int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.integer;
+        kind = Positional;
+        expression = parse_single_expression "42" |> Option.some;
+        position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.integer;
+        kind = Positional;
+        expression = parse_single_expression "42" |> Option.some;
+        position = 2;
+      };
+    ]
+    {
+      parameter_argument_mapping = Parameter.Map.empty;
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 1; provided = 3 }];
+          annotation = [];
+        };
+    };
   ()
 
 
