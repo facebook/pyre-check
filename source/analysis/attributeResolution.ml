@@ -70,8 +70,8 @@ module Argument = struct
   end
 end
 
-type argument =
-  | Argument of Argument.WithPosition.t
+type matched_argument =
+  | MatchedArgument of Argument.WithPosition.t
   | Default
 [@@deriving compare, show]
 
@@ -91,7 +91,7 @@ let empty_reasons = { arity = []; annotation = [] }
 
 module ParameterArgumentMapping = struct
   type t = {
-    parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
+    parameter_argument_mapping: matched_argument list Type.Callable.Parameter.Map.t;
     reasons: reasons;
   }
   [@@deriving compare]
@@ -100,7 +100,7 @@ module ParameterArgumentMapping = struct
     Format.fprintf
       format
       "ParameterArgumentMapping { parameter_argument_mapping: %s; reasons: %a }"
-      ([%show: (Type.Callable.Parameter.parameter * argument list) list]
+      ([%show: (Type.Callable.Parameter.parameter * matched_argument list) list]
          (Map.to_alist parameter_argument_mapping))
       pp_reasons
       reasons
@@ -108,7 +108,7 @@ end
 
 type signature_match = {
   callable: Type.Callable.t;
-  parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
+  parameter_argument_mapping: matched_argument list Type.Callable.Parameter.Map.t;
   constraints_set: TypeConstraints.t list;
   ranks: ranks;
   reasons: reasons;
@@ -866,7 +866,7 @@ module SignatureSelection = struct
       | ( ({ kind = Named _; _ } as argument) :: arguments_tail,
           (Parameter.Keywords _ as parameter) :: _ ) ->
           (* Labeled argument, keywords parameter *)
-          let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+          let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
           consume
             ~arguments:arguments_tail
             ~parameters
@@ -890,7 +890,7 @@ module SignatureSelection = struct
           let parameter_argument_mapping, reasons =
             match matching_parameter with
             | Some matching_parameter ->
-                update_mapping matching_parameter (Argument argument), reasons
+                update_mapping matching_parameter (MatchedArgument argument), reasons
             | None ->
                 ( parameter_argument_mapping,
                   { reasons with arity = UnexpectedKeyword name.value :: arity } )
@@ -904,7 +904,7 @@ module SignatureSelection = struct
       | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
           (Parameter.Variable _ as parameter) :: _ ) ->
           (* (Double) starred argument, (double) starred parameter *)
-          let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+          let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
           consume
             ~arguments:arguments_tail
             ~parameters
@@ -931,7 +931,7 @@ module SignatureSelection = struct
           (Parameter.Variable _ as parameter) :: _ ) ->
           (* Unlabeled argument, starred parameter *)
           let parameter_argument_mapping_with_reasons =
-            let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+            let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
             { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
           in
           consume ~arguments:arguments_tail ~parameters parameter_argument_mapping_with_reasons
@@ -941,7 +941,7 @@ module SignatureSelection = struct
       | ({ kind = DoubleStar; _ } as argument) :: _, parameter :: parameters_tail
       | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
           (* Double starred or starred argument, parameter *)
-          let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+          let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
           consume
             ~arguments
             ~parameters:parameters_tail
@@ -954,7 +954,7 @@ module SignatureSelection = struct
           { parameter_argument_mapping_with_reasons with reasons }
       | ({ kind = Positional; _ } as argument) :: arguments_tail, parameter :: parameters_tail ->
           (* Unlabeled argument, parameter *)
-          let parameter_argument_mapping = update_mapping parameter (Argument argument) in
+          let parameter_argument_mapping = update_mapping parameter (MatchedArgument argument) in
           consume
             ~arguments:arguments_tail
             ~parameters:parameters_tail
@@ -1005,7 +1005,7 @@ module SignatureSelection = struct
               _;
             },
           [
-            Argument
+            MatchedArgument
               {
                 expression =
                   Some
@@ -1039,7 +1039,7 @@ module SignatureSelection = struct
           let extracted, errors =
             let arguments =
               List.map arguments ~f:(function
-                  | Argument argument -> argument
+                  | MatchedArgument argument -> argument
                   | Default -> failwith "Variable parameters do not have defaults")
             in
             let extract { Argument.WithPosition.kind; resolved; expression; _ } =
@@ -1170,7 +1170,7 @@ module SignatureSelection = struct
             | Default :: tail ->
                 (* Parameter default value was used. Assume it is correct. *)
                 check signature_match tail
-            | Argument { expression; position; kind; resolved } :: tail -> (
+            | MatchedArgument { expression; position; kind; resolved } :: tail -> (
                 let argument_location =
                   expression >>| Node.location |> Option.value ~default:Location.any
                 in

@@ -159,7 +159,7 @@ let test_get_parameter_argument_mapping _ =
           [
             ( Named { name = "some_argument"; annotation = Type.string; default = false },
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.string;
                     kind = Named (Node.create_with_default_location "some_argument");
@@ -169,7 +169,7 @@ let test_get_parameter_argument_mapping _ =
               ] );
             ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.integer;
                     kind = Positional;
@@ -206,7 +206,7 @@ let test_get_parameter_argument_mapping _ =
           [
             ( Named { name = "some_argument"; annotation = Type.string; default = false },
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
                     kind = SingleStar;
@@ -216,7 +216,7 @@ let test_get_parameter_argument_mapping _ =
               ] );
             ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
                     kind = SingleStar;
@@ -226,14 +226,14 @@ let test_get_parameter_argument_mapping _ =
               ] );
             ( Variable (Concrete Type.bool),
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.integer;
                     kind = Positional;
                     expression = parse_single_expression "42" |> Option.some;
                     position = 1;
                   };
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
                     kind = SingleStar;
@@ -313,21 +313,21 @@ let test_get_parameter_argument_mapping _ =
           [
             ( Variable (Concrete Type.integer),
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
                     kind = SingleStar;
                     expression = None;
                     position = 3;
                   };
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.integer;
                     kind = Positional;
                     expression = parse_single_expression "42" |> Option.some;
                     position = 2;
                   };
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
                     kind = SingleStar;
@@ -458,7 +458,7 @@ let test_get_parameter_argument_mapping _ =
           [
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved =
                       Type.tuple [Type.integer; Type.string; Type.bool];
@@ -494,7 +494,7 @@ let test_get_parameter_argument_mapping _ =
           [
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved =
                       Type.tuple [Type.integer; Type.string; Type.bool];
@@ -505,7 +505,7 @@ let test_get_parameter_argument_mapping _ =
               ] );
             ( Named { name = "y"; annotation = Type.integer; default = false },
               [
-                Argument
+                MatchedArgument
                   {
                     Argument.WithPosition.resolved =
                       Type.tuple [Type.integer; Type.string; Type.bool];

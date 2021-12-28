@@ -64,8 +64,8 @@ module Argument : sig
   end
 end
 
-type argument =
-  | Argument of Argument.WithPosition.t
+type matched_argument =
+  | MatchedArgument of Argument.WithPosition.t
   | Default
 
 type reasons = {
@@ -76,7 +76,7 @@ type reasons = {
 
 module ParameterArgumentMapping : sig
   type t = {
-    parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
+    parameter_argument_mapping: matched_argument list Type.Callable.Parameter.Map.t;
     reasons: reasons;
   }
   [@@deriving compare]
@@ -92,7 +92,7 @@ type ranks = {
 
 type signature_match = {
   callable: Type.Callable.t;
-  parameter_argument_mapping: argument list Type.Callable.Parameter.Map.t;
+  parameter_argument_mapping: matched_argument list Type.Callable.Parameter.Map.t;
   constraints_set: TypeConstraints.t list;
   ranks: ranks;
   reasons: reasons;
