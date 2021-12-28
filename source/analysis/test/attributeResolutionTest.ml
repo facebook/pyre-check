@@ -364,6 +364,163 @@ let test_get_parameter_argument_mapping _ =
           annotation = [];
         };
     };
+  (* TODO(T107236583): We fail to complain about extra `*args`. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[Keywords(int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+    ]
+    { parameter_argument_mapping = Parameter.Map.empty; reasons = { arity = []; annotation = [] } };
+  (* TODO(T107236583): We fail to complain about extra `*args`. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[Keywords(int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.dictionary ~key:Type.string ~value:Type.integer;
+        kind = DoubleStar;
+        expression = None;
+        position = 2;
+      };
+    ]
+    { parameter_argument_mapping = Parameter.Map.empty; reasons = { arity = []; annotation = [] } };
+  (* TODO(T107236583): We fail to complain about extra `*args`. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[KeywordOnly(x, int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [KeywordOnly { name = "x"; annotation = Type.integer; default = false }, []];
+      reasons = { arity = []; annotation = [] };
+    };
+  (* TODO(T107236583): We fail to complain about extra `*args`. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[KeywordOnly(x, int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.integer;
+        kind = Positional;
+        expression = parse_single_expression "42" |> Option.some;
+        position = 2;
+      };
+    ]
+    {
+      parameter_argument_mapping = Parameter.Map.empty;
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 1 }];
+          annotation = [];
+        };
+    };
+  (* TODO(T107236583): We currently store the argument for a named parameter as the entire `*args`. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[Named(x, int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.string; Type.bool];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "x"; annotation = Type.integer; default = false },
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.integer; Type.string; Type.bool];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+          ];
+      reasons = { arity = []; annotation = [] };
+    };
+  (* TODO(T107236583): We mistakenly count `provided` arguments as 3. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[Named(x, int), Named(y, int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.string; Type.bool];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.integer;
+        kind = Positional;
+        expression = parse_single_expression "42" |> Option.some;
+        position = 2;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "x"; annotation = Type.integer; default = false },
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.integer; Type.string; Type.bool];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+            ( Named { name = "y"; annotation = Type.integer; default = false },
+              [
+                Argument
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.integer; Type.string; Type.bool];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+          ];
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 2; provided = 3 }];
+          annotation = [];
+        };
+    };
   ()
 
 
