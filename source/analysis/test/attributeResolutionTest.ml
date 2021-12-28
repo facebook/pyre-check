@@ -115,13 +115,7 @@ let test_prepare_arguments_for_signature_selection _ =
 let test_get_parameter_argument_mapping _ =
   let open AttributeResolution in
   let open Type.Callable in
-  let assert_parameter_argument_mapping
-      ?(all_parameters = Undefined)
-      ~callable
-      ~self_argument
-      arguments
-      expected
-    =
+  let assert_parameter_argument_mapping ~callable ~self_argument arguments expected =
     let parameters =
       match parse_callable callable with
       | Type.Callable { implementation = { parameters = Defined parameters; _ }; _ } -> parameters
@@ -129,7 +123,7 @@ let test_get_parameter_argument_mapping _ =
     in
     let actual =
       SignatureSelection.get_parameter_argument_mapping
-        ~all_parameters
+        ~all_parameters:(Defined parameters)
         ~parameters
         ~self_argument
         arguments
@@ -249,6 +243,45 @@ let test_get_parameter_argument_mapping _ =
               ] );
           ];
       reasons = { arity = []; annotation = [] };
+    };
+  (* TODO(T107236583): We should raise an error about the extra `*args`. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+    ]
+    { parameter_argument_mapping = Parameter.Map.empty; reasons = { arity = []; annotation = [] } };
+  (* TODO(T107236583): We should raise an error about the extra `*args`. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.integer;
+        kind = Positional;
+        expression = parse_single_expression "42" |> Option.some;
+        position = 2;
+      };
+    ]
+    {
+      parameter_argument_mapping = Parameter.Map.empty;
+      reasons =
+        {
+          arity = [SignatureSelectionTypes.TooManyArguments { expected = 0; provided = 1 }];
+          annotation = [];
+        };
     };
   ()
 
