@@ -1271,23 +1271,24 @@ module SignatureSelection = struct
       | Named { annotation = parameter_annotation; _ }, arguments
       | Variable (Concrete parameter_annotation), arguments
       | Keywords parameter_annotation, arguments -> (
-          let rec check signature_match = function
+          let rec check ~arguments signature_match =
+            match arguments with
             | [] -> signature_match
             | Default :: tail ->
                 (* Parameter default value was used. Assume it is correct. *)
-                check signature_match tail
+                check signature_match ~arguments:tail
             | MatchedArgument
                 { argument = { expression; position; kind; resolved }; index_into_starred_tuple }
               :: tail -> (
                 let argument_location =
                   expression >>| Node.location |> Option.value ~default:Location.any
                 in
-                let check_argument_and_set_constraints_and_reasons argument_annotation =
-                  let name =
-                    match kind with
-                    | Named name -> Some name
-                    | _ -> None
-                  in
+                let name =
+                  match kind with
+                  | Named name -> Some name
+                  | _ -> None
+                in
+                let check_argument argument_annotation =
                   check_argument_and_set_constraints_and_reasons
                     ~position
                     ~argument_location
@@ -1295,7 +1296,6 @@ module SignatureSelection = struct
                     ~parameter_annotation
                     ~name
                     signature_match
-                  |> fun signature_match -> check signature_match tail
                 in
                 let add_annotation_error
                     ({ reasons = { annotation; _ }; _ } as signature_match)
@@ -1335,7 +1335,8 @@ module SignatureSelection = struct
                         solution
                         synthetic_variable
                       |> Option.value ~default:Type.Any
-                      |> check_argument_and_set_constraints_and_reasons
+                      |> check_argument
+                      |> check ~arguments:tail
                 in
                 match kind with
                 | DoubleStar ->
@@ -1360,7 +1361,8 @@ module SignatureSelection = struct
                           Type.OrderedTypes.index
                             ~python_index:index_into_starred_tuple
                             ordered_type
-                          >>| check_argument_and_set_constraints_and_reasons
+                          >>| check_argument
+                          >>| check ~arguments:tail
                       | _ -> None
                     in
                     match signature_match_for_single_element with
@@ -1399,12 +1401,11 @@ module SignatureSelection = struct
                     in
                     match weakening_error with
                     | Some weakening_error -> add_annotation_error signature_match weakening_error
-                    | None -> argument_annotation |> check_argument_and_set_constraints_and_reasons)
-                )
+                    | None -> argument_annotation |> check_argument |> check ~arguments:tail))
           in
           match is_generic_lambda key arguments with
           | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)
-          | None -> List.rev arguments |> check signature_match)
+          | None -> check ~arguments:(List.rev arguments) signature_match)
     in
     let check_if_solution_exists
         ({ constraints_set; reasons = { annotation; _ } as reasons; callable; _ } as
