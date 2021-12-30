@@ -524,10 +524,179 @@ let test_get_parameter_argument_mapping _ =
   ()
 
 
+let test_check_arguments_against_parameters context =
+  let open AttributeResolution in
+  let open Type.Callable in
+  let assert_arguments_against_parameters
+      ~callable
+      ~parameter_argument_mapping_with_reasons
+      ?(expected_reasons = empty_reasons)
+      expected_constraints_set
+    =
+    let order =
+      ScratchProject.setup ~context ["test.py", ""]
+      |> ScratchProject.build_global_environment
+      |> (fun { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } -> global_environment)
+      |> AnnotatedGlobalEnvironment.read_only
+      |> GlobalResolution.create
+      |> GlobalResolution.full_order
+    in
+    let callable =
+      match parse_callable callable with
+      | Type.Callable ({ implementation = { parameters = Defined _; _ }; _ } as callable_record) ->
+          callable_record
+      | _ -> failwith "expected defined parameters"
+    in
+    let { constraints_set = actual_constraints_set; reasons = actual_reasons; _ } =
+      SignatureSelection.check_arguments_against_parameters
+        ~order
+        ~resolve_mutable_literals:(fun ~resolve:_ ~expression:_ ~resolved ~expected:_ ->
+          WeakenMutableLiterals.make_weakened_type resolved)
+        ~resolve_with_locals:(fun ~locals:_ _ -> failwith "don't care")
+        ~callable
+        parameter_argument_mapping_with_reasons
+    in
+    let print_reasons format reasons = Format.fprintf format "%s" ([%show: reasons] reasons) in
+    assert_equal
+      ~pp_diff:(diff ~print:print_reasons)
+      ~printer:(Format.asprintf "%a" print_reasons)
+      ~cmp:(fun left right -> location_insensitive_compare_reasons left right = 0)
+      expected_reasons
+      actual_reasons;
+    assert_equal
+      ~pp_diff:
+        (diff ~print:(fun format x ->
+             Format.fprintf format "%s" ([%show: TypeConstraints.t list] x)))
+      ~printer:[%show: TypeConstraints.t list]
+      ~cmp:[%compare.equal: TypeConstraints.t list]
+      expected_constraints_set
+      actual_constraints_set
+  in
+  assert_arguments_against_parameters
+    ~callable:"typing.Callable[[Variable(int)], None]"
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Variable (Concrete Type.integer),
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer);
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    [TypeConstraints.empty];
+  (* TODO(T107236583): `*args` with partly concrete types and partly unbounded tuple: Tuple[int,
+     str, *Tuple[int, ...]]. Need to compare each parameter with the specific part of the `*args`. *)
+  let tuple_int_str_int_unbounded_int =
+    Type.Tuple
+      (Concatenation
+         (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+            ~prefix:[Type.integer; Type.string; Type.integer]
+            Type.integer))
+  in
+  assert_arguments_against_parameters
+    ~callable:
+      "typing.Callable[[PositionalOnly(int), Named(some_argument, str), Variable(int)], None]"
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Named { name = "some_argument"; annotation = Type.string; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Variable (Concrete Type.integer),
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:2
+                    {
+                      Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    ~expected_reasons:
+      {
+        arity = [];
+        annotation =
+          [
+            SignatureSelectionTypes.Mismatches
+              [
+                SignatureSelectionTypes.Mismatch
+                  ({
+                     SignatureSelectionTypes.actual = Type.object_primitive;
+                     expected = Type.integer;
+                     name = None;
+                     position = 1;
+                   }
+                  |> Node.create_with_default_location);
+              ];
+            SignatureSelectionTypes.Mismatches
+              [
+                SignatureSelectionTypes.Mismatch
+                  ({
+                     SignatureSelectionTypes.actual = Type.object_primitive;
+                     expected = Type.string;
+                     name = None;
+                     position = 1;
+                   }
+                  |> Node.create_with_default_location);
+              ];
+            SignatureSelectionTypes.Mismatches
+              [
+                SignatureSelectionTypes.Mismatch
+                  ({
+                     SignatureSelectionTypes.actual = Type.object_primitive;
+                     expected = Type.integer;
+                     name = None;
+                     position = 1;
+                   }
+                  |> Node.create_with_default_location);
+              ];
+          ];
+      }
+    [TypeConstraints.empty];
+  ()
+
+
 let () =
   "attributeResolution"
   >::: [
          "prepare_arguments" >:: test_prepare_arguments_for_signature_selection;
          "parameter_argument_mapping" >:: test_get_parameter_argument_mapping;
+         "check_arguments_against_parameters" >:: test_check_arguments_against_parameters;
        ]
   |> Test.run
