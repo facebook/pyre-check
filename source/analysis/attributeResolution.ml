@@ -1263,7 +1263,12 @@ module SignatureSelection = struct
                     reasons = { reasons with annotation = error :: annotation };
                   }
                 in
-                let solution_based_extraction ~create_error ~synthetic_variable ~solve_against =
+                let check_using_iterable_type
+                    ~create_error
+                    ~synthetic_variable
+                    ~generic_iterable_type
+                    resolved
+                  =
                   let signature_with_error =
                     { expression; annotation = resolved }
                     |> Node.create ~location:argument_location
@@ -1276,7 +1281,8 @@ module SignatureSelection = struct
                     else
                       TypeOrder.OrderedConstraintsSet.add
                         ConstraintsSet.empty
-                        ~new_constraint:(LessOrEqual { left = resolved; right = solve_against })
+                        ~new_constraint:
+                          (LessOrEqual { left = resolved; right = generic_iterable_type })
                         ~order
                   in
                   match TypeOrder.OrderedConstraintsSet.solve iterable_constraints ~order with
@@ -1292,17 +1298,25 @@ module SignatureSelection = struct
                 | DoubleStar ->
                     let create_error error = InvalidKeywordArgument error in
                     let synthetic_variable = Type.Variable.Unary.create "$_T" in
-                    let solve_against =
+                    let generic_iterable_type =
                       Type.parametric
                         "typing.Mapping"
                         [Single Type.string; Single (Type.Variable synthetic_variable)]
                     in
-                    solution_based_extraction ~create_error ~synthetic_variable ~solve_against
+                    check_using_iterable_type
+                      ~create_error
+                      ~synthetic_variable
+                      ~generic_iterable_type
+                      resolved
                 | SingleStar ->
                     let create_error error = InvalidVariableArgument error in
                     let synthetic_variable = Type.Variable.Unary.create "$_T" in
-                    let solve_against = Type.iterable (Type.Variable synthetic_variable) in
-                    solution_based_extraction ~create_error ~synthetic_variable ~solve_against
+                    let generic_iterable_type = Type.iterable (Type.Variable synthetic_variable) in
+                    check_using_iterable_type
+                      ~create_error
+                      ~synthetic_variable
+                      ~generic_iterable_type
+                      resolved
                 | Named _
                 | Positional -> (
                     let argument_annotation, weakening_error =
