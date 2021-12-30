@@ -87,12 +87,28 @@ type ranks = {
   annotation: int;
   position: int;
 }
+[@@deriving compare, show]
 
 type reasons = {
   arity: SignatureSelectionTypes.reason list;
   annotation: SignatureSelectionTypes.reason list;
 }
 [@@deriving compare, show]
+
+let location_insensitive_compare_reasons
+    { arity = left_arity; annotation = left_annotation }
+    { arity = right_arity; annotation = right_annotation }
+  =
+  match
+    List.compare SignatureSelectionTypes.location_insensitive_compare_reason left_arity right_arity
+  with
+  | x when not (Int.equal x 0) -> x
+  | _ ->
+      List.compare
+        SignatureSelectionTypes.location_insensitive_compare_reason
+        left_annotation
+        right_annotation
+
 
 let empty_reasons = { arity = []; annotation = [] }
 
@@ -120,6 +136,28 @@ type signature_match = {
   ranks: ranks;
   reasons: reasons;
 }
+[@@deriving compare]
+
+let pp_signature_match
+    format
+    { callable; parameter_argument_mapping; constraints_set; ranks; reasons }
+  =
+  Format.fprintf
+    format
+    "{ callable = %a; parameter_argument_mapping = %s; constraints_set = %s; ranks = %a; reasons = \
+     %a }"
+    Type.Callable.pp
+    callable
+    ([%show: (Type.Callable.Parameter.parameter * matched_argument list) list]
+       (Map.to_alist parameter_argument_mapping))
+    ([%show: TypeConstraints.t list] constraints_set)
+    pp_ranks
+    ranks
+    pp_reasons
+    reasons
+
+
+let show_signature_match = Format.asprintf "%a" pp_signature_match
 
 let create_uninstantiated_method ?(accessed_via_metaclass = false) callable =
   { UninstantiatedAnnotation.accessed_via_metaclass; kind = Attribute (Callable callable) }

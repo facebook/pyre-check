@@ -41,6 +41,13 @@ type mismatch_reason =
     }
 [@@deriving show, sexp, compare]
 
+let location_insensitive_compare_mismatch_reason left right =
+  match left, right with
+  | Mismatch { Node.value = left; _ }, Mismatch { Node.value = right; _ } ->
+      [%compare: mismatch] left right
+  | _ -> [%compare: mismatch_reason] left right
+
+
 type reason =
   | AbstractClassInstantiation of {
       class_name: Reference.t;
@@ -61,6 +68,15 @@ type reason =
       WeakenMutableLiterals.typed_dictionary_mismatch Node.t list
   | UnexpectedKeyword of Identifier.t
 [@@deriving show, sexp, compare]
+
+(* TODO(T108707096): Implement location-insensitive compare for the remaining branches containing
+   Node. *)
+let location_insensitive_compare_reason left right =
+  match left, right with
+  | Mismatches left_list, Mismatches right_list ->
+      List.compare location_insensitive_compare_mismatch_reason left_list right_list
+  | _ -> [%compare: reason] left right
+
 
 let equal_reason = [%compare.equal: reason]
 

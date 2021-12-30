@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t [@@deriving show]
+type t [@@deriving compare, show]
 
 val empty : t
 

@@ -70,6 +70,7 @@ type matched_argument =
       index_into_starred_tuple: int option;
     }
   | Default
+[@@deriving compare, show]
 
 val make_matched_argument
   :  ?index_into_starred_tuple:int ->
@@ -81,6 +82,10 @@ type reasons = {
   annotation: SignatureSelectionTypes.reason list;
 }
 [@@deriving compare, show]
+
+val empty_reasons : reasons
+
+val location_insensitive_compare_reasons : reasons -> reasons -> int
 
 module ParameterArgumentMapping : sig
   type t = {
@@ -105,6 +110,7 @@ type signature_match = {
   ranks: ranks;
   reasons: reasons;
 }
+[@@deriving compare, show]
 
 module SignatureSelection : sig
   val get_parameter_argument_mapping
