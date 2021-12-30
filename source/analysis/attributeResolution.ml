@@ -1156,7 +1156,20 @@ module SignatureSelection = struct
                       >>| Either.first
                       |> Option.value ~default:(Either.Second { expression; annotation = resolved })
                   | Type.Tuple ordered_type, None -> Either.first ordered_type
-                  | _ -> Either.Second { expression; annotation = resolved })
+                  | _ -> (
+                      let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                      let generic_iterable_type =
+                        Type.iterable (Type.Variable synthetic_variable)
+                      in
+                      match
+                        extract_iterable_item_type
+                          ~synthetic_variable
+                          ~generic_iterable_type
+                          resolved
+                      with
+                      | Some item_type ->
+                          Either.First (Type.OrderedTypes.create_unbounded_concatenation item_type)
+                      | None -> Either.Second { expression; annotation = resolved }))
               | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
             in
             List.rev arguments |> List.partition_map ~f:extract

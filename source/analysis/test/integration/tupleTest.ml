@@ -725,6 +725,46 @@ let test_unpacking context =
   ()
 
 
+let test_star_args context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* We should be able to pass an unpacked list to `*args`. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification, Unpack
+      from typing import List, Tuple
+
+      P = ParameterSpecification("P")
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def main(xs: List[int]) -> None:
+        expect_int( *xs)
+    |}
+    [];
+  (* ParamSpec `P.args` should be treated as having type `Tuple[object, ...]`. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification, Unpack
+      from typing import Callable, Tuple
+
+      P = ParameterSpecification("P")
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def expect_object( *args: Unpack[Tuple[object, Unpack[Tuple[object, ...]]]]) -> None: ...
+
+      def outer(f: Callable[P, int]) -> None:
+        def inner( *args: P.args, **kwargs: P.kwargs) -> None:
+          expect_object( *args)
+          expect_int( *args)
+    |}
+    [
+      "Invalid argument [32]: Argument types `*Tuple[object, ...]` are not compatible with \
+       expected variadic elements `int, *Tuple[int, ...]`.";
+    ];
+  ()
+
+
 let () =
   "tuple"
   >::: [
@@ -733,5 +773,6 @@ let () =
          "custom_tuple" >:: test_custom_tuple;
          "length" >:: test_length;
          "unpacking" >:: test_unpacking;
+         "star_args" >:: test_star_args;
        ]
   |> Test.run
