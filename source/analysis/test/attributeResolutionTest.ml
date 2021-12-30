@@ -527,6 +527,13 @@ let test_get_parameter_argument_mapping _ =
 let test_check_arguments_against_parameters context =
   let open AttributeResolution in
   let open Type.Callable in
+  let open Type.OrderedTypes in
+  let parse_callable_record callable =
+    match parse_callable callable with
+    | Type.Callable ({ implementation = { parameters = Defined _; _ }; _ } as callable_record) ->
+        callable_record
+    | _ -> failwith "expected defined parameters"
+  in
   let assert_arguments_against_parameters
       ~callable
       ~parameter_argument_mapping_with_reasons
@@ -540,12 +547,6 @@ let test_check_arguments_against_parameters context =
       |> AnnotatedGlobalEnvironment.read_only
       |> GlobalResolution.create
       |> GlobalResolution.full_order
-    in
-    let callable =
-      match parse_callable callable with
-      | Type.Callable ({ implementation = { parameters = Defined _; _ }; _ } as callable_record) ->
-          callable_record
-      | _ -> failwith "expected defined parameters"
     in
     let { constraints_set = actual_constraints_set; reasons = actual_reasons; _ } =
       SignatureSelection.check_arguments_against_parameters
@@ -573,7 +574,7 @@ let test_check_arguments_against_parameters context =
       actual_constraints_set
   in
   assert_arguments_against_parameters
-    ~callable:"typing.Callable[[Variable(int)], None]"
+    ~callable:(parse_callable_record "typing.Callable[[Variable(int)], None]")
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -595,6 +596,52 @@ let test_check_arguments_against_parameters context =
         reasons = empty_reasons;
       }
     [TypeConstraints.empty];
+  let ordered_type_str_int_unbounded_int =
+    Type.OrderedTypes.Concatenation.create_from_unbounded_element ~prefix:[Type.string] Type.integer
+  in
+  (* Check `*Tuple[str, int, *Tuple[int, ...]]` after dropping a prefix of one type. This leaves
+     `*Tuple[int, *Tuple[int, ...]]`, which is compatible against the expected type `*Tuple[int,
+     ...]`. *)
+  assert_arguments_against_parameters
+    ~callable:
+      {
+        Type.Callable.implementation =
+          {
+            parameters =
+              Defined
+                [
+                  Variable
+                    (Concatenation
+                       (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer));
+                ];
+            annotation = Type.none;
+          };
+        overloads = [];
+        kind = Anonymous;
+      }
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Variable
+                  (Concatenation
+                     (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer)),
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.Tuple (Concatenation ordered_type_str_int_unbounded_int);
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    [TypeConstraints.empty];
   (* TODO(T107236583): `*args` with partly concrete types and partly unbounded tuple: Tuple[int,
      str, *Tuple[int, ...]]. Need to compare each parameter with the specific part of the `*args`. *)
   let tuple_int_str_int_unbounded_int =
@@ -606,7 +653,8 @@ let test_check_arguments_against_parameters context =
   in
   assert_arguments_against_parameters
     ~callable:
-      "typing.Callable[[PositionalOnly(int), Named(some_argument, str), Variable(int)], None]"
+      (parse_callable_record
+         "typing.Callable[[PositionalOnly(int), Named(some_argument, str), Variable(int)], None]")
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =

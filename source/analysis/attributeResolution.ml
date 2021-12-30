@@ -1098,16 +1098,22 @@ module SignatureSelection = struct
           let extracted, errors =
             let arguments =
               List.map arguments ~f:(function
-                  | MatchedArgument { argument; _ } -> argument
+                  | MatchedArgument { argument; index_into_starred_tuple } ->
+                      argument, index_into_starred_tuple
                   | Default -> failwith "Variable parameters do not have defaults")
             in
-            let extract { Argument.WithPosition.kind; resolved; expression; _ } =
+            let extract
+                ({ Argument.WithPosition.kind; resolved; expression; _ }, index_into_starred_tuple)
+              =
               match kind with
               | SingleStar -> (
-                  match resolved with
-                  | Type.Tuple ordered_types -> Either.First ordered_types
-                  (* We don't support unpacking unbounded tuples yet. *)
-                  | annotation -> Either.Second { expression; annotation })
+                  match resolved, index_into_starred_tuple with
+                  | Type.Tuple ordered_type, Some index_into_starred_tuple ->
+                      Type.OrderedTypes.drop_prefix ~length:index_into_starred_tuple ordered_type
+                      >>| Either.first
+                      |> Option.value ~default:(Either.Second { expression; annotation = resolved })
+                  | Type.Tuple ordered_type, None -> Either.first ordered_type
+                  | _ -> Either.Second { expression; annotation = resolved })
               | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
             in
             List.rev arguments |> List.partition_map ~f:extract
