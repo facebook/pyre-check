@@ -65,10 +65,16 @@ module Argument : sig
 end
 
 type matched_argument =
-  | MatchedArgument of Argument.WithPosition.t
+  | MatchedArgument of {
+      argument: Argument.WithPosition.t;
+      index_into_starred_tuple: int option;
+    }
   | Default
 
-val make_matched_argument : Argument.WithPosition.t -> matched_argument
+val make_matched_argument
+  :  ?index_into_starred_tuple:int ->
+  Argument.WithPosition.t ->
+  matched_argument
 
 type reasons = {
   arity: SignatureSelectionTypes.reason list;

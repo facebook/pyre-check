@@ -71,11 +71,16 @@ module Argument = struct
 end
 
 type matched_argument =
-  | MatchedArgument of Argument.WithPosition.t
+  | MatchedArgument of {
+      argument: Argument.WithPosition.t;
+      index_into_starred_tuple: int option;
+    }
   | Default
 [@@deriving compare, show]
 
-let make_matched_argument argument = MatchedArgument argument
+let make_matched_argument ?index_into_starred_tuple argument =
+  MatchedArgument { argument; index_into_starred_tuple }
+
 
 type ranks = {
   arity: int;
@@ -1019,24 +1024,28 @@ module SignatureSelection = struct
           [
             MatchedArgument
               {
-                expression =
-                  Some
-                    {
-                      value =
-                        Lambda
-                          {
-                            body = lambda_body;
-                            parameters =
-                              [
-                                {
-                                  value =
-                                    { name = lambda_parameter; value = None; annotation = None };
-                                  _;
-                                };
-                              ];
-                          };
-                      _;
-                    };
+                argument =
+                  {
+                    expression =
+                      Some
+                        {
+                          value =
+                            Lambda
+                              {
+                                body = lambda_body;
+                                parameters =
+                                  [
+                                    {
+                                      value =
+                                        { name = lambda_parameter; value = None; annotation = None };
+                                      _;
+                                    };
+                                  ];
+                              };
+                          _;
+                        };
+                    _;
+                  };
                 _;
               };
           ] )
@@ -1051,7 +1060,7 @@ module SignatureSelection = struct
           let extracted, errors =
             let arguments =
               List.map arguments ~f:(function
-                  | MatchedArgument argument -> argument
+                  | MatchedArgument { argument; _ } -> argument
                   | Default -> failwith "Variable parameters do not have defaults")
             in
             let extract { Argument.WithPosition.kind; resolved; expression; _ } =
@@ -1182,7 +1191,8 @@ module SignatureSelection = struct
             | Default :: tail ->
                 (* Parameter default value was used. Assume it is correct. *)
                 check signature_match tail
-            | MatchedArgument { expression; position; kind; resolved } :: tail -> (
+            | MatchedArgument { argument = { expression; position; kind; resolved }; _ } :: tail
+              -> (
                 let argument_location =
                   expression >>| Node.location |> Option.value ~default:Location.any
                 in
