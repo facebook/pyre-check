@@ -712,30 +712,67 @@ let test_check_arguments_against_parameters context =
                    }
                   |> Node.create_with_default_location);
               ];
-            SignatureSelectionTypes.Mismatches
-              [
-                SignatureSelectionTypes.Mismatch
-                  ({
-                     SignatureSelectionTypes.actual = Type.object_primitive;
-                     expected = Type.string;
-                     name = None;
-                     position = 1;
-                   }
-                  |> Node.create_with_default_location);
-              ];
-            SignatureSelectionTypes.Mismatches
-              [
-                SignatureSelectionTypes.Mismatch
-                  ({
-                     SignatureSelectionTypes.actual = Type.object_primitive;
-                     expected = Type.integer;
-                     name = None;
-                     position = 1;
-                   }
-                  |> Node.create_with_default_location);
-              ];
           ];
       }
+    [TypeConstraints.empty];
+  assert_arguments_against_parameters
+    ~callable:
+      (parse_callable_record
+         "typing.Callable[[PositionalOnly(int), Named(argument, str), Named(argument2, int), \
+          Named(argument3, int)], None]")
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "argument"; annotation = Type.string; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "argument2"; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:2
+                    {
+                      Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "argument3"; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:3
+                    {
+                      Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    ~expected_reasons:{ arity = []; annotation = [] }
     [TypeConstraints.empty];
   ()
 

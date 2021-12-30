@@ -1235,8 +1235,9 @@ module SignatureSelection = struct
             | Default :: tail ->
                 (* Parameter default value was used. Assume it is correct. *)
                 check signature_match tail
-            | MatchedArgument { argument = { expression; position; kind; resolved }; _ } :: tail
-              -> (
+            | MatchedArgument
+                { argument = { expression; position; kind; resolved }; index_into_starred_tuple }
+              :: tail -> (
                 let argument_location =
                   expression >>| Node.location |> Option.value ~default:Location.any
                 in
@@ -1308,15 +1309,31 @@ module SignatureSelection = struct
                       ~synthetic_variable
                       ~generic_iterable_type
                       resolved
-                | SingleStar ->
-                    let create_error error = InvalidVariableArgument error in
-                    let synthetic_variable = Type.Variable.Unary.create "$_T" in
-                    let generic_iterable_type = Type.iterable (Type.Variable synthetic_variable) in
-                    check_using_iterable_type
-                      ~create_error
-                      ~synthetic_variable
-                      ~generic_iterable_type
-                      resolved
+                | SingleStar -> (
+                    let signature_match_for_single_element =
+                      match key, index_into_starred_tuple, resolved with
+                      | ( (PositionalOnly _ | Named _),
+                          Some index_into_starred_tuple,
+                          Type.Tuple ordered_type ) ->
+                          Type.OrderedTypes.index
+                            ~python_index:index_into_starred_tuple
+                            ordered_type
+                          >>| set_constraints_and_reasons
+                      | _ -> None
+                    in
+                    match signature_match_for_single_element with
+                    | Some signature_match_for_single_element -> signature_match_for_single_element
+                    | None ->
+                        let create_error error = InvalidVariableArgument error in
+                        let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                        let generic_iterable_type =
+                          Type.iterable (Type.Variable synthetic_variable)
+                        in
+                        check_using_iterable_type
+                          ~create_error
+                          ~synthetic_variable
+                          ~generic_iterable_type
+                          resolved)
                 | Named _
                 | Positional -> (
                     let argument_annotation, weakening_error =
