@@ -5269,6 +5269,53 @@ let test_split_ordered_types _ =
   ()
 
 
+let test_drop_prefix_ordered_type _ =
+  let open Type.OrderedTypes in
+  let assert_drop_prefix ~length actual expected_tuple =
+    let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None
+    in
+    let extract_ordered_type string =
+      match parse_single_expression string |> Type.create ~aliases with
+      | Type.Tuple ordered_type -> ordered_type
+      | _ -> failwith "expected tuple"
+    in
+    assert_equal
+      ~cmp:[%equal: Type.t record option]
+      ~printer:[%show: Type.t record option]
+      (expected_tuple >>| extract_ordered_type)
+      (extract_ordered_type actual |> Type.OrderedTypes.drop_prefix ~length)
+  in
+  assert_drop_prefix ~length:0 "typing.Tuple[int, str]" (Some "typing.Tuple[int, str]");
+  assert_drop_prefix ~length:2 "typing.Tuple[int, str]" (Some "typing.Tuple[()]");
+  assert_drop_prefix ~length:2 "typing.Tuple[int, str, bool, int]" (Some "typing.Tuple[bool, int]");
+  assert_drop_prefix ~length:3 "typing.Tuple[int, str]" None;
+  assert_drop_prefix
+    ~length:0
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    (Some "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]");
+  assert_drop_prefix
+    ~length:1
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]], str]"
+    (Some "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[int, ...]], str]");
+  assert_drop_prefix
+    ~length:2
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    (Some "typing.Tuple[int, ...]");
+  assert_drop_prefix
+    ~length:2
+    "typing.Tuple[int, str, pyre_extensions.Unpack[Ts]]"
+    (Some "typing.Tuple[pyre_extensions.Unpack[Ts]]");
+  assert_drop_prefix
+    ~length:3
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    (Some "typing.Tuple[int, ...]");
+  assert_drop_prefix ~length:3 "typing.Tuple[int, str, pyre_extensions.Unpack[Ts]]" None;
+  ()
+
+
 let test_zip_variables_with_parameters _ =
   let unary = Type.Variable.Unary.create "T" in
   let unary2 = Type.Variable.Unary.create "T2" in
@@ -6276,6 +6323,7 @@ let () =
          "concatenation_from_unpack_expression" >:: test_concatenation_from_unpack_expression;
          "broadcast" >:: test_broadcast;
          "split_ordered_types" >:: test_split_ordered_types;
+         "drop_prefix_ordered_type" >:: test_drop_prefix_ordered_type;
          "zip_variables_with_parameters" >:: test_zip_variables_with_parameters;
          "zip_on_two_parameter_lists" >:: test_zip_on_two_parameter_lists;
          "union_upper_bound" >:: test_union_upper_bound;

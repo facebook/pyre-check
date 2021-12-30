@@ -704,6 +704,21 @@ module Record = struct
                     } )
               in
               Some { prefix_pairs; middle_pair; suffix_pairs })
+
+
+    let drop_prefix ~length = function
+      | Concrete elements ->
+          Concrete (List.drop elements length) |> Option.some_if (length <= List.length elements)
+      | Concatenation ({ prefix; middle = UnboundedElements _; _ } as concatenation) ->
+          (* We can drop indefinitely many elements after the concrete prefix because the middle
+             element is an unbounded tuple. *)
+          Concatenation { concatenation with prefix = List.drop prefix length } |> Option.some
+      | Concatenation ({ prefix; middle = Variadic _ | Broadcast _; _ } as concatenation) ->
+          (* Variadic or Broadcast middle element may be empty, so we cannot drop any elements past
+             the concrete prefix. *)
+          List.drop prefix length
+          |> Option.some_if (length <= List.length prefix)
+          >>| fun new_prefix -> Concatenation { concatenation with prefix = new_prefix }
   end
 
   module Callable = struct
