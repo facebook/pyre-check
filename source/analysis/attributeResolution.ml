@@ -1127,6 +1127,21 @@ module SignatureSelection = struct
         else
           { signature_match with constraints_set; reasons = reasons_with_mismatch }
       in
+      let extract_iterable_item_type ~synthetic_variable ~generic_iterable_type resolved =
+        let iterable_constraints =
+          if Type.is_unbound resolved then
+            ConstraintsSet.impossible
+          else
+            TypeOrder.OrderedConstraintsSet.add
+              ConstraintsSet.empty
+              ~new_constraint:(LessOrEqual { left = resolved; right = generic_iterable_type })
+              ~order
+        in
+        TypeOrder.OrderedConstraintsSet.solve iterable_constraints ~order
+        >>| fun solution ->
+        ConstraintsSet.Solution.instantiate_single_variable solution synthetic_variable
+        |> Option.value ~default:Type.Any
+      in
       let bind_arguments_to_variadic ~expected ~arguments =
         let extract_ordered_types arguments =
           let extracted, errors =
@@ -1306,37 +1321,28 @@ module SignatureSelection = struct
                     reasons = { reasons with annotation = error :: annotation };
                   }
                 in
-                let check_using_iterable_type
-                    ~create_error
-                    ~synthetic_variable
-                    ~generic_iterable_type
-                    resolved
-                  =
-                  let signature_with_error =
-                    { expression; annotation = resolved }
-                    |> Node.create ~location:argument_location
-                    |> create_error
-                    |> add_annotation_error signature_match
+                let update_signature_match_for_iterable ~create_error ~resolved iterable_item_type =
+                  let argument_location =
+                    expression >>| Node.location |> Option.value ~default:Location.any
                   in
-                  let iterable_constraints =
-                    if Type.is_unbound resolved then
-                      ConstraintsSet.impossible
-                    else
-                      TypeOrder.OrderedConstraintsSet.add
-                        ConstraintsSet.empty
-                        ~new_constraint:
-                          (LessOrEqual { left = resolved; right = generic_iterable_type })
-                        ~order
-                  in
-                  match TypeOrder.OrderedConstraintsSet.solve iterable_constraints ~order with
-                  | None -> signature_with_error
-                  | Some solution ->
-                      ConstraintsSet.Solution.instantiate_single_variable
-                        solution
-                        synthetic_variable
-                      |> Option.value ~default:Type.Any
-                      |> check_argument
+                  match iterable_item_type with
+                  | Some iterable_item_type ->
+                      check_argument_and_set_constraints_and_reasons
+                        ~position
+                        ~argument_location
+                        ~argument_annotation:iterable_item_type
+                        ~parameter_annotation
+                        ~name
+                        signature_match
                       |> check ~arguments:tail
+                  | None ->
+                      let argument_location =
+                        expression >>| Node.location |> Option.value ~default:Location.any
+                      in
+                      { expression; annotation = resolved }
+                      |> Node.create ~location:argument_location
+                      |> create_error
+                      |> add_annotation_error signature_match
                 in
                 match kind with
                 | DoubleStar ->
@@ -1347,11 +1353,8 @@ module SignatureSelection = struct
                         "typing.Mapping"
                         [Single Type.string; Single (Type.Variable synthetic_variable)]
                     in
-                    check_using_iterable_type
-                      ~create_error
-                      ~synthetic_variable
-                      ~generic_iterable_type
-                      resolved
+                    extract_iterable_item_type ~synthetic_variable ~generic_iterable_type resolved
+                    |> update_signature_match_for_iterable ~create_error ~resolved
                 | SingleStar -> (
                     let signature_match_for_single_element =
                       match key, index_into_starred_tuple, resolved with
@@ -1373,11 +1376,11 @@ module SignatureSelection = struct
                         let generic_iterable_type =
                           Type.iterable (Type.Variable synthetic_variable)
                         in
-                        check_using_iterable_type
-                          ~create_error
+                        extract_iterable_item_type
                           ~synthetic_variable
                           ~generic_iterable_type
-                          resolved)
+                          resolved
+                        |> update_signature_match_for_iterable ~create_error ~resolved)
                 | Named _
                 | Positional -> (
                     let argument_annotation, weakening_error =
