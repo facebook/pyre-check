@@ -5316,6 +5316,67 @@ let test_drop_prefix_ordered_type _ =
   ()
 
 
+let test_index_ordered_type _ =
+  let assert_index ~python_index tuple expected =
+    let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None
+    in
+    let extract_ordered_type string =
+      match parse_single_expression string |> Type.create ~aliases with
+      | Type.Tuple ordered_type -> ordered_type
+      | _ -> failwith "expected tuple"
+    in
+    assert_equal
+      ~cmp:[%equal: Type.t option]
+      ~printer:[%show: Type.t option]
+      (expected >>| parse_single_expression >>| Type.create ~aliases)
+      (extract_ordered_type tuple |> Type.OrderedTypes.index ~python_index)
+  in
+  assert_index ~python_index:0 "typing.Tuple[int, str]" (Some "int");
+  assert_index ~python_index:1 "typing.Tuple[int, str]" (Some "str");
+  assert_index ~python_index:(-1) "typing.Tuple[int, str]" (Some "str");
+  assert_index ~python_index:(-2) "typing.Tuple[int, str]" (Some "int");
+  assert_index ~python_index:2 "typing.Tuple[int, str]" None;
+  assert_index ~python_index:(-3) "typing.Tuple[int, str]" None;
+  assert_index
+    ~python_index:0
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]]]"
+    (Some "int");
+  assert_index
+    ~python_index:2
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]]]"
+    (Some "bool");
+  assert_index
+    ~python_index:99
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]]]"
+    (Some "bool");
+  assert_index
+    ~python_index:(-1)
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]], str]"
+    (Some "str");
+  assert_index
+    ~python_index:(-2)
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]], str]"
+    (Some "bool");
+  assert_index
+    ~python_index:(-99)
+    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]], str]"
+    (Some "bool");
+  assert_index
+    ~python_index:1
+    "typing.Tuple[int, str, pyre_extensions.Unpack[Ts], bool]"
+    (Some "str");
+  assert_index
+    ~python_index:(-1)
+    "typing.Tuple[int, str, pyre_extensions.Unpack[Ts], bool]"
+    (Some "bool");
+  assert_index ~python_index:2 "typing.Tuple[int, str, pyre_extensions.Unpack[Ts], bool]" None;
+  assert_index ~python_index:(-2) "typing.Tuple[int, str, pyre_extensions.Unpack[Ts], bool]" None;
+  ()
+
+
 let test_zip_variables_with_parameters _ =
   let unary = Type.Variable.Unary.create "T" in
   let unary2 = Type.Variable.Unary.create "T2" in
@@ -6324,6 +6385,7 @@ let () =
          "broadcast" >:: test_broadcast;
          "split_ordered_types" >:: test_split_ordered_types;
          "drop_prefix_ordered_type" >:: test_drop_prefix_ordered_type;
+         "index_ordered_type" >:: test_index_ordered_type;
          "zip_variables_with_parameters" >:: test_zip_variables_with_parameters;
          "zip_on_two_parameter_lists" >:: test_zip_on_two_parameter_lists;
          "union_upper_bound" >:: test_union_upper_bound;

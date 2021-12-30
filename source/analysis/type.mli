@@ -168,6 +168,8 @@ module Record : sig
       'annotation ordered_type_split option
 
     val drop_prefix : length:int -> 'annotation record -> 'annotation record option
+
+    val index : python_index:int -> 'annotation record -> 'annotation option
   end
 
   module Callable : sig

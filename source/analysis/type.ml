@@ -719,6 +719,28 @@ module Record = struct
           List.drop prefix length
           |> Option.some_if (length <= List.length prefix)
           >>| fun new_prefix -> Concatenation { concatenation with prefix = new_prefix }
+
+
+    let index ~python_index = function
+      | Concrete elements ->
+          let index =
+            if python_index < 0 then List.length elements + python_index else python_index
+          in
+          List.nth elements index
+      | Concatenation { prefix; middle; suffix } -> (
+          let result =
+            if python_index >= 0 then
+              List.nth prefix python_index
+            else
+              List.nth suffix (python_index + List.length suffix)
+          in
+          match middle with
+          | UnboundedElements unbounded ->
+              (* We can index indefinitely many elements in the unbounded tuple. *)
+              result |> Option.value ~default:unbounded |> Option.some
+          | Variadic _
+          | Broadcast _ ->
+              result)
   end
 
   module Callable = struct
