@@ -1096,12 +1096,6 @@ module SignatureSelection = struct
       let bind_arguments_to_variadic ~expected ~arguments =
         let extract_ordered_types arguments =
           let extracted, errors =
-            let arguments =
-              List.map arguments ~f:(function
-                  | MatchedArgument { argument; index_into_starred_tuple } ->
-                      argument, index_into_starred_tuple
-                  | Default -> failwith "Variable parameters do not have defaults")
-            in
             let extract
                 ({ Argument.WithPosition.kind; resolved; expression; _ }, index_into_starred_tuple)
               =
@@ -1148,7 +1142,7 @@ module SignatureSelection = struct
                        { variable = expected; mismatch = CannotConcatenate extracted };
                    ])
         in
-        let solve concatenated =
+        let solve ~arguments concatenated =
           let updated_constraints_set =
             TypeOrder.OrderedConstraintsSet.add
               signature_match.constraints_set
@@ -1158,20 +1152,66 @@ module SignatureSelection = struct
           if ConstraintsSet.potentially_satisfiable updated_constraints_set then
             Ok updated_constraints_set
           else
-            Error
-              (Mismatches
-                 [
-                   MismatchWithTupleVariadicTypeVariable
-                     { variable = expected; mismatch = ConstraintFailure concatenated };
-                 ])
+            let expected_concatenation_type =
+              match expected with
+              | Concatenation concatenation -> Some concatenation
+              | _ -> None
+            in
+            match
+              expected_concatenation_type
+              >>= Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
+            with
+            | Some expected_item_type ->
+                let make_mismatch ({ Argument.WithPosition.position; expression; kind; resolved }, _)
+                  =
+                  let name =
+                    match kind with
+                    | Named name -> Some name
+                    | _ -> None
+                  in
+                  let location =
+                    Option.first_some (name >>| Node.location) (expression >>| Node.location)
+                    |> Option.value ~default:Location.any
+                  in
+                  let is_mismatch =
+                    TypeOrder.OrderedConstraintsSet.add
+                      signature_match.constraints_set
+                      ~new_constraint:(LessOrEqual { left = resolved; right = expected_item_type })
+                      ~order
+                    |> ConstraintsSet.potentially_satisfiable
+                    |> not
+                  in
+                  {
+                    actual = resolved;
+                    expected = expected_item_type;
+                    name = name >>| Node.value;
+                    position;
+                  }
+                  |> Node.create ~location
+                  |> fun mismatch -> Mismatch mismatch |> Option.some_if is_mismatch
+                in
+                Error (Mismatches (List.filter_map arguments ~f:make_mismatch))
+            | None ->
+                Error
+                  (Mismatches
+                     [
+                       MismatchWithTupleVariadicTypeVariable
+                         { variable = expected; mismatch = ConstraintFailure concatenated };
+                     ])
         in
         let make_signature_match = function
           | Ok constraints_set -> { signature_match with constraints_set }
           | Error error ->
               { signature_match with reasons = { reasons with arity = error :: arity } }
         in
+        let arguments =
+          List.map arguments ~f:(function
+              | MatchedArgument { argument; index_into_starred_tuple } ->
+                  argument, index_into_starred_tuple
+              | Default -> failwith "Variable parameters do not have defaults")
+        in
         let open Result in
-        extract_ordered_types arguments >>= concatenate >>= solve |> make_signature_match
+        extract_ordered_types arguments >>= concatenate >>= solve ~arguments |> make_signature_match
       in
       match key, data with
       | Parameter.Variable (Concatenation concatenation), arguments ->

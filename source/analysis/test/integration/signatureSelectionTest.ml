@@ -995,7 +995,27 @@ let test_check_variable_arguments context =
      def foo(a: typing.Tuple[int, str]) -> typing.Set[int]:
        return set(a)
    |}
-    ["Incompatible return type [7]: Expected `Set[int]` but got `Set[Union[int, str]]`."]
+    ["Incompatible return type [7]: Expected `Set[int]` but got `Set[Union[int, str]]`."];
+  (* These two ways of annotating `*args` are equivalent. *)
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import Unpack
+
+      def simple_starred_args( *args: str) -> None: ...
+      def unbounded_tuple_starred_args( *args: Unpack[Tuple[str, ...]]) -> None: ...
+
+      def main() -> None:
+        simple_starred_args(1, "hello")
+        unbounded_tuple_starred_args(1, "hello")
+   |}
+    [
+      "Incompatible parameter type [6]: In call `simple_starred_args`, for 1st positional only \
+       parameter expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `unbounded_tuple_starred_args`, for 1st positional \
+       only parameter expected `str` but got `int`.";
+    ];
+  ()
 
 
 let test_check_variable_restrictions context =
