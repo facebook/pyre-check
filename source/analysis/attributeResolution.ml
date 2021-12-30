@@ -1093,6 +1093,40 @@ module SignatureSelection = struct
       | _ -> None
     in
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
+      let check_argument_and_set_constraints_and_reasons
+          ~position
+          ~argument_location
+          ~name
+          ~argument_annotation
+          ~parameter_annotation
+          ({ constraints_set; reasons = { annotation; _ } as reasons; _ } as signature_match)
+        =
+        let reasons_with_mismatch =
+          let mismatch =
+            let location = name >>| Node.location |> Option.value ~default:argument_location in
+            {
+              actual = argument_annotation;
+              expected = parameter_annotation;
+              name = Option.map name ~f:Node.value;
+              position;
+            }
+            |> Node.create ~location
+            |> fun mismatch -> Mismatches [Mismatch mismatch]
+          in
+          { reasons with annotation = mismatch :: annotation }
+        in
+        let updated_constraints_set =
+          TypeOrder.OrderedConstraintsSet.add
+            constraints_set
+            ~new_constraint:
+              (LessOrEqual { left = argument_annotation; right = parameter_annotation })
+            ~order
+        in
+        if ConstraintsSet.potentially_satisfiable updated_constraints_set then
+          { signature_match with constraints_set = updated_constraints_set }
+        else
+          { signature_match with constraints_set; reasons = reasons_with_mismatch }
+      in
       let bind_arguments_to_variadic ~expected ~arguments =
         let extract_ordered_types arguments =
           let extracted, errors =
@@ -1237,39 +1271,6 @@ module SignatureSelection = struct
       | Named { annotation = parameter_annotation; _ }, arguments
       | Variable (Concrete parameter_annotation), arguments
       | Keywords parameter_annotation, arguments -> (
-          let set_constraints_and_reasons
-              ~position
-              ~argument_location
-              ~name
-              ~argument_annotation
-              ({ constraints_set; reasons = { annotation; _ }; _ } as signature_match)
-            =
-            let reasons_with_mismatch =
-              let mismatch =
-                let location = name >>| Node.location |> Option.value ~default:argument_location in
-                {
-                  actual = argument_annotation;
-                  expected = parameter_annotation;
-                  name = Option.map name ~f:Node.value;
-                  position;
-                }
-                |> Node.create ~location
-                |> fun mismatch -> Mismatches [Mismatch mismatch]
-              in
-              { reasons with annotation = mismatch :: annotation }
-            in
-            let updated_constraints_set =
-              TypeOrder.OrderedConstraintsSet.add
-                constraints_set
-                ~new_constraint:
-                  (LessOrEqual { left = argument_annotation; right = parameter_annotation })
-                ~order
-            in
-            if ConstraintsSet.potentially_satisfiable updated_constraints_set then
-              { signature_match with constraints_set = updated_constraints_set }
-            else
-              { signature_match with constraints_set; reasons = reasons_with_mismatch }
-          in
           let rec check signature_match = function
             | [] -> signature_match
             | Default :: tail ->
@@ -1281,16 +1282,17 @@ module SignatureSelection = struct
                 let argument_location =
                   expression >>| Node.location |> Option.value ~default:Location.any
                 in
-                let set_constraints_and_reasons argument_annotation =
+                let check_argument_and_set_constraints_and_reasons argument_annotation =
                   let name =
                     match kind with
                     | Named name -> Some name
                     | _ -> None
                   in
-                  set_constraints_and_reasons
+                  check_argument_and_set_constraints_and_reasons
                     ~position
                     ~argument_location
                     ~argument_annotation
+                    ~parameter_annotation
                     ~name
                     signature_match
                   |> fun signature_match -> check signature_match tail
@@ -1333,7 +1335,7 @@ module SignatureSelection = struct
                         solution
                         synthetic_variable
                       |> Option.value ~default:Type.Any
-                      |> set_constraints_and_reasons
+                      |> check_argument_and_set_constraints_and_reasons
                 in
                 match kind with
                 | DoubleStar ->
@@ -1358,7 +1360,7 @@ module SignatureSelection = struct
                           Type.OrderedTypes.index
                             ~python_index:index_into_starred_tuple
                             ordered_type
-                          >>| set_constraints_and_reasons
+                          >>| check_argument_and_set_constraints_and_reasons
                       | _ -> None
                     in
                     match signature_match_for_single_element with
@@ -1397,7 +1399,8 @@ module SignatureSelection = struct
                     in
                     match weakening_error with
                     | Some weakening_error -> add_annotation_error signature_match weakening_error
-                    | None -> argument_annotation |> set_constraints_and_reasons))
+                    | None -> argument_annotation |> check_argument_and_set_constraints_and_reasons)
+                )
           in
           match is_generic_lambda key arguments with
           | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)
