@@ -642,8 +642,6 @@ let test_check_arguments_against_parameters context =
         reasons = empty_reasons;
       }
     [TypeConstraints.empty];
-  (* TODO(T107236583): `*args` with partly concrete types and partly unbounded tuple: Tuple[int,
-     str, *Tuple[int, ...]]. Need to compare each parameter with the specific part of the `*args`. *)
   let tuple_int_str_int_unbounded_int =
     Type.Tuple
       (Concatenation
@@ -695,24 +693,6 @@ let test_check_arguments_against_parameters context =
                 ] );
             ];
         reasons = empty_reasons;
-      }
-    ~expected_reasons:
-      {
-        arity = [];
-        annotation =
-          [
-            SignatureSelectionTypes.Mismatches
-              [
-                SignatureSelectionTypes.Mismatch
-                  ({
-                     SignatureSelectionTypes.actual = Type.union [Type.integer; Type.string];
-                     expected = Type.integer;
-                     name = None;
-                     position = 1;
-                   }
-                  |> Node.create_with_default_location);
-              ];
-          ];
       }
     [TypeConstraints.empty];
   assert_arguments_against_parameters
@@ -1000,6 +980,53 @@ let test_check_arguments_against_parameters context =
               ];
           ];
         annotation = [];
+      }
+    [TypeConstraints.empty];
+  assert_arguments_against_parameters
+    ~callable:(parse_callable_record "typing.Callable[[Variable(int)], None]")
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Variable (Concrete Type.integer),
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved = Type.list Type.integer;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    [TypeConstraints.empty];
+  assert_arguments_against_parameters
+    ~callable:(parse_callable_record "typing.Callable[[Variable(typing.object)], None]")
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Variable (Concrete Type.object_primitive),
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved =
+                        (Type.Variable.Variadic.Parameters.create "P"
+                        |> Type.Variable.Variadic.Parameters.decompose
+                        |> fun { positional_component; _ } -> positional_component);
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
       }
     [TypeConstraints.empty];
   ()

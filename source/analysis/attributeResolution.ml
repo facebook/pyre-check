@@ -1310,7 +1310,10 @@ module SignatureSelection = struct
           bind_arguments_to_variadic
             ~expected:(Type.OrderedTypes.Concatenation concatenation)
             ~arguments
-      | Parameter.Variable _, []
+      | Parameter.Variable (Concrete parameter_annotation), arguments ->
+          bind_arguments_to_variadic
+            ~expected:(Type.OrderedTypes.create_unbounded_concatenation parameter_annotation)
+            ~arguments
       | Parameter.Keywords _, [] ->
           (* Parameter was not matched, but empty is acceptable for variable arguments and keyword
              arguments. *)
@@ -1327,7 +1330,6 @@ module SignatureSelection = struct
       | PositionalOnly { annotation = parameter_annotation; _ }, arguments
       | KeywordOnly { annotation = parameter_annotation; _ }, arguments
       | Named { annotation = parameter_annotation; _ }, arguments
-      | Variable (Concrete parameter_annotation), arguments
       | Keywords parameter_annotation, arguments -> (
           let rec check ~arguments signature_match =
             match arguments with
