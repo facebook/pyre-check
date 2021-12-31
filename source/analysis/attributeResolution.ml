@@ -1212,7 +1212,7 @@ module SignatureSelection = struct
               Error
                 (Mismatches
                    [
-                     MismatchWithTupleVariadicTypeVariable
+                     MismatchWithUnpackableType
                        { variable = expected; mismatch = NotBoundedTuple not_bounded_tuple };
                    ])
         in
@@ -1224,7 +1224,7 @@ module SignatureSelection = struct
               Error
                 (Mismatches
                    [
-                     MismatchWithTupleVariadicTypeVariable
+                     MismatchWithUnpackableType
                        { variable = expected; mismatch = CannotConcatenate ordered_types };
                    ])
         in
@@ -1287,7 +1287,7 @@ module SignatureSelection = struct
                 Error
                   (Mismatches
                      [
-                       MismatchWithTupleVariadicTypeVariable
+                       MismatchWithUnpackableType
                          { variable = expected; mismatch = ConstraintFailure concatenated };
                      ])
         in

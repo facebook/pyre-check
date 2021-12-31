@@ -209,7 +209,7 @@ let errors_from_not_found
               | _ -> normal
             in
             [Some location, kind]
-        | MismatchWithTupleVariadicTypeVariable { variable; mismatch } ->
+        | MismatchWithUnpackableType { variable; mismatch } ->
             [None, Error.InvalidArgument (TupleVariadicVariable { variable; mismatch })]
       in
       List.concat_map mismatches ~f:convert_to_error

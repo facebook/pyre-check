@@ -112,7 +112,7 @@ and invalid_argument =
     }
   | TupleVariadicVariable of {
       variable: Type.OrderedTypes.t;
-      mismatch: SignatureSelectionTypes.mismatch_with_tuple_variadic_type_variable;
+      mismatch: SignatureSelectionTypes.mismatch_with_unpackable_type;
     }
 
 and precondition_mismatch =

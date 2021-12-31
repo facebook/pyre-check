@@ -27,7 +27,7 @@ type missing_argument =
   | PositionalOnly of int
 [@@deriving show, compare, sexp, hash]
 
-type mismatch_with_tuple_variadic_type_variable =
+type mismatch_with_unpackable_type =
   | NotBoundedTuple of invalid_argument
   | CannotConcatenate of Type.OrderedTypes.t list
   | ConstraintFailure of Type.OrderedTypes.t
@@ -35,9 +35,9 @@ type mismatch_with_tuple_variadic_type_variable =
 
 type mismatch_reason =
   | Mismatch of mismatch Node.t
-  | MismatchWithTupleVariadicTypeVariable of {
+  | MismatchWithUnpackableType of {
       variable: Type.OrderedTypes.t;
-      mismatch: mismatch_with_tuple_variadic_type_variable;
+      mismatch: mismatch_with_unpackable_type;
     }
 [@@deriving show, sexp, compare]
 
