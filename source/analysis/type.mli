@@ -806,6 +806,8 @@ module OrderedTypes : sig
     type_t Concatenation.t option
 
   val broadcast : type_t -> type_t -> type_t
+
+  val coalesce_ordered_types : type_t record list -> type_t record option
 end
 
 val split : t -> t * Parameter.t list

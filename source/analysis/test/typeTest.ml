@@ -5269,6 +5269,39 @@ let test_split_ordered_types _ =
   ()
 
 
+let test_coalesce_ordered_types _ =
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let assert_coalesce ordered_types expected =
+    let aliases ?replace_unbound_parameters_with_any:_ = function
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None
+    in
+    let parse_ordered_type type_ =
+      match
+        Type.create ~aliases (parse_single_expression ~preprocess:true ("typing.Tuple" ^ type_))
+      with
+      | Type.Tuple ordered_type -> ordered_type
+      | _ -> failwith "expected tuple elements"
+    in
+    let ordered_types = List.map ordered_types ~f:parse_ordered_type in
+    let expected = expected >>| parse_ordered_type in
+    assert_equal
+      ~printer:[%show: Type.t Type.OrderedTypes.record option]
+      expected
+      (Type.OrderedTypes.coalesce_ordered_types ordered_types)
+  in
+  assert_coalesce ["[int, str]"; "[bool, bool]"] (Some "[int, str, bool, bool]");
+  assert_coalesce
+    ["[int, str]"; "[int, ...]"; "[bool, bool]"]
+    (Some "[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]], bool, bool]");
+  assert_coalesce
+    ["[int, str]"; "[pyre_extensions.Unpack[Ts]]"; "[bool, bool]"]
+    (Some "[int, str, pyre_extensions.Unpack[Ts], bool, bool]");
+  assert_coalesce ["[int, ...]"; "[pyre_extensions.Unpack[Ts]]"] None;
+  assert_coalesce ["[int, ...]"; "[int, ...]"] None;
+  ()
+
+
 let test_drop_prefix_ordered_type _ =
   let open Type.OrderedTypes in
   let assert_drop_prefix ~length actual expected_tuple =
@@ -6384,6 +6417,7 @@ let () =
          "concatenation_from_unpack_expression" >:: test_concatenation_from_unpack_expression;
          "broadcast" >:: test_broadcast;
          "split_ordered_types" >:: test_split_ordered_types;
+         "coalesce_ordered_types" >:: test_coalesce_ordered_types;
          "drop_prefix_ordered_type" >:: test_drop_prefix_ordered_type;
          "index_ordered_type" >:: test_index_ordered_type;
          "zip_variables_with_parameters" >:: test_zip_variables_with_parameters;

@@ -1185,16 +1185,7 @@ module SignatureSelection = struct
                    ])
         in
         let concatenate extracted =
-          let concatenated =
-            match extracted with
-            | [] -> Some (Type.OrderedTypes.Concrete [])
-            | head :: tail ->
-                let concatenate sofar next =
-                  sofar >>= fun left -> Type.OrderedTypes.concatenate ~left ~right:next
-                in
-                List.fold tail ~f:concatenate ~init:(Some head)
-          in
-          match concatenated with
+          match Type.OrderedTypes.coalesce_ordered_types extracted with
           | Some concatenated -> Ok concatenated
           | None ->
               Error

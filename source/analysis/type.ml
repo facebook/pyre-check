@@ -3580,6 +3580,13 @@ module OrderedTypes = struct
     | Concrete dimensions -> Tuple (Concrete (prefix @ dimensions @ suffix))
     | Concatenation { prefix = new_prefix; middle; suffix = new_suffix } ->
         Tuple (Concatenation { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix })
+
+
+  let coalesce_ordered_types = function
+    | [] -> Some (Concrete [])
+    | head :: tail ->
+        let concatenate sofar next = sofar >>= fun left -> concatenate ~left ~right:next in
+        List.fold tail ~f:concatenate ~init:(Some head)
 end
 
 module TypeOperation = struct
