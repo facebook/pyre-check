@@ -210,7 +210,10 @@ let errors_from_not_found
             in
             [Some location, kind]
         | MismatchWithUnpackableType { variable; mismatch } ->
-            [None, Error.InvalidArgument (TupleVariadicVariable { variable; mismatch })]
+            [
+              ( None,
+                Error.InvalidArgument (VariableArgumentsWithUnpackableType { variable; mismatch }) );
+            ]
       in
       List.concat_map mismatches ~f:convert_to_error
   | MissingArgument parameter -> [None, Error.MissingArgument { callee; parameter }]

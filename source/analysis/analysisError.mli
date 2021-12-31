@@ -110,7 +110,7 @@ and invalid_argument =
       expression: Expression.t option;
       annotation: Type.t;
     }
-  | TupleVariadicVariable of {
+  | VariableArgumentsWithUnpackableType of {
       variable: Type.OrderedTypes.t;
       mismatch: SignatureSelectionTypes.mismatch_with_unpackable_type;
     }
