@@ -800,6 +800,32 @@ let test_star_args context =
       "Invalid argument [32]: Argument types `*Tuple[typing.Union[int, str], ...]` are not \
        compatible with expected variadic elements `int, *Tuple[int, ...]`.";
     ];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def main(x: int) -> None:
+        expect_int( *x)
+    |}
+    [
+      "Invalid argument [32]: Unpacked argument `x` must have an unpackable type but has type `int`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: int) -> None: ...
+
+      def main(x: int) -> None:
+        expect_int( *x)
+    |}
+    [
+      "Invalid argument [32]: Unpacked argument `x` must have an unpackable type but has type `int`.";
+    ];
   ()
 
 

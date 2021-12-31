@@ -1227,7 +1227,7 @@ module SignatureSelection = struct
                 (Mismatches
                    [
                      MismatchWithUnpackableType
-                       { variable = expected; mismatch = NotBoundedTuple not_bounded_tuple };
+                       { variable = expected; mismatch = NotUnpackableType not_bounded_tuple };
                    ])
         in
         let concatenate extracted =

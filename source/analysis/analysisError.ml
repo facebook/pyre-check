@@ -1161,10 +1161,10 @@ let rec messages ~concise ~signature location kind =
               Type.OrderedTypes.pp_concise
               variable;
           ]
-      | VariableArgumentsWithUnpackableType { variable; mismatch = NotBoundedTuple _ } ->
+      | VariableArgumentsWithUnpackableType { variable; mismatch = NotUnpackableType _ } ->
           [
             Format.asprintf
-              "Variable argument for `%a` must be a bounded tuple."
+              "Unpacked argument `%a` must have an unpackable type."
               Type.OrderedTypes.pp_concise
               variable;
           ]
@@ -1205,16 +1205,13 @@ let rec messages ~concise ~signature location kind =
               variable;
           ]
       | VariableArgumentsWithUnpackableType
-          { variable; mismatch = NotBoundedTuple { expression; annotation } } ->
+          { mismatch = NotUnpackableType { expression; annotation }; _ } ->
           [
             Format.asprintf
-              "Variable argument%s has type `%a` but must be a definite tuple to be included in \
-               variadic type variable `%a`."
+              "Unpacked argument%s must have an unpackable type but has type `%a`."
               (show_sanitized_optional_expression expression)
               pp_type
-              annotation
-              (Type.Record.OrderedTypes.pp_concise ~pp_type)
-              variable;
+              annotation;
           ]
       | VariableArgumentsWithUnpackableType
           { variable; mismatch = CannotConcatenate unconcatenatable } ->
@@ -2600,7 +2597,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidArgument (ConcreteVariable { annotation = actual; _ })
   | InvalidArgument
       (VariableArgumentsWithUnpackableType
-        { mismatch = NotBoundedTuple { annotation = actual; _ }; _ })
+        { mismatch = NotUnpackableType { annotation = actual; _ }; _ })
   | InvalidException { annotation = actual; _ }
   | InvalidType (InvalidType { annotation = actual; _ })
   | InvalidType (FinalNested actual)
@@ -3873,8 +3870,8 @@ let dequalify
     | InvalidArgument (VariableArgumentsWithUnpackableType { variable; mismatch }) ->
         let mismatch =
           match mismatch with
-          | NotBoundedTuple { expression; annotation } ->
-              SignatureSelectionTypes.NotBoundedTuple
+          | NotUnpackableType { expression; annotation } ->
+              SignatureSelectionTypes.NotUnpackableType
                 { expression; annotation = dequalify annotation }
           | _ ->
               (* TODO(T45656387): Implement dequalify for ordered_types *)

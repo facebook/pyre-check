@@ -28,7 +28,7 @@ type missing_argument =
 [@@deriving show, compare, sexp, hash]
 
 type mismatch_with_unpackable_type =
-  | NotBoundedTuple of invalid_argument
+  | NotUnpackableType of invalid_argument
   | CannotConcatenate of Type.OrderedTypes.t list
   | ConstraintFailure of Type.OrderedTypes.t
 [@@deriving compare, show, sexp, hash]
