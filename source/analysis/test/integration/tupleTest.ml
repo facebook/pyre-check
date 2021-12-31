@@ -739,6 +739,20 @@ let test_star_args context =
         expect_int( *xs)
     |}
     [];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: Unpack[Tuple[int, ...]]) -> None: ...
+
+      def main(list_of_string: List[str]) -> None:
+        expect_int( *list_of_string)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_int`, for 1st positional only parameter \
+       expected `int` but got `str`.";
+    ];
   (* ParamSpec `P.args` should be treated as having type `Tuple[object, ...]`. *)
   assert_type_errors
     {|

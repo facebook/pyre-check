@@ -95,6 +95,12 @@ type reasons = {
 }
 [@@deriving compare, show]
 
+type extracted_ordered_type = {
+  ordered_type: Type.OrderedTypes.t;
+  argument: Argument.WithPosition.t;
+  item_type_for_error: Type.t;
+}
+
 let location_insensitive_compare_reasons
     { arity = left_arity; annotation = left_annotation }
     { arity = right_arity; annotation = right_annotation }
@@ -1146,17 +1152,31 @@ module SignatureSelection = struct
         let extract_ordered_types arguments =
           let extracted, errors =
             let extract
-                ({ Argument.WithPosition.kind; resolved; expression; _ }, index_into_starred_tuple)
+                ( ({ Argument.WithPosition.kind; resolved; expression; _ } as argument),
+                  index_into_starred_tuple )
               =
               match kind with
               | SingleStar -> (
                   match resolved, index_into_starred_tuple with
                   | Type.Tuple ordered_type, Some index_into_starred_tuple ->
                       Type.OrderedTypes.drop_prefix ~length:index_into_starred_tuple ordered_type
-                      >>| Either.first
+                      >>| (fun ordered_type ->
+                            Either.First
+                              {
+                                ordered_type;
+                                argument;
+                                item_type_for_error =
+                                  Type.OrderedTypes.union_upper_bound ordered_type;
+                              })
                       |> Option.value ~default:(Either.Second { expression; annotation = resolved })
-                  | Type.Tuple ordered_type, None -> Either.first ordered_type
-                  | _ -> (
+                  | Type.Tuple ordered_type, None ->
+                      Either.First
+                        {
+                          ordered_type;
+                          argument;
+                          item_type_for_error = Type.OrderedTypes.union_upper_bound ordered_type;
+                        }
+                  | _, _ -> (
                       let synthetic_variable = Type.Variable.Unary.create "$_T" in
                       let generic_iterable_type =
                         Type.iterable (Type.Variable synthetic_variable)
@@ -1168,9 +1188,21 @@ module SignatureSelection = struct
                           resolved
                       with
                       | Some item_type ->
-                          Either.First (Type.OrderedTypes.create_unbounded_concatenation item_type)
-                      | None -> Either.Second { expression; annotation = resolved }))
-              | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
+                          Either.First
+                            {
+                              ordered_type =
+                                Type.OrderedTypes.create_unbounded_concatenation item_type;
+                              argument;
+                              item_type_for_error = item_type;
+                            }
+                      | _ -> Either.Second { expression; annotation = resolved }))
+              | _ ->
+                  Either.First
+                    {
+                      ordered_type = Type.OrderedTypes.Concrete [resolved];
+                      argument;
+                      item_type_for_error = resolved;
+                    }
             in
             List.rev arguments |> List.partition_map ~f:extract
           in
@@ -1185,17 +1217,18 @@ module SignatureSelection = struct
                    ])
         in
         let concatenate extracted =
-          match Type.OrderedTypes.coalesce_ordered_types extracted with
-          | Some concatenated -> Ok concatenated
+          let ordered_types = List.map extracted ~f:(fun { ordered_type; _ } -> ordered_type) in
+          match Type.OrderedTypes.coalesce_ordered_types ordered_types with
+          | Some concatenated -> Ok (concatenated, extracted)
           | None ->
               Error
                 (Mismatches
                    [
                      MismatchWithTupleVariadicTypeVariable
-                       { variable = expected; mismatch = CannotConcatenate extracted };
+                       { variable = expected; mismatch = CannotConcatenate ordered_types };
                    ])
         in
-        let solve ~arguments concatenated =
+        let solve (concatenated, extracted_ordered_types) =
           let updated_constraints_set =
             TypeOrder.OrderedConstraintsSet.add
               signature_match.constraints_set
@@ -1215,7 +1248,12 @@ module SignatureSelection = struct
               >>= Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
             with
             | Some expected_item_type ->
-                let make_mismatch ({ Argument.WithPosition.position; expression; kind; resolved }, _)
+                let make_mismatch
+                    {
+                      argument = { Argument.WithPosition.position; expression; kind; _ };
+                      item_type_for_error;
+                      _;
+                    }
                   =
                   let name =
                     match kind with
@@ -1229,13 +1267,14 @@ module SignatureSelection = struct
                   let is_mismatch =
                     TypeOrder.OrderedConstraintsSet.add
                       signature_match.constraints_set
-                      ~new_constraint:(LessOrEqual { left = resolved; right = expected_item_type })
+                      ~new_constraint:
+                        (LessOrEqual { left = item_type_for_error; right = expected_item_type })
                       ~order
                     |> ConstraintsSet.potentially_satisfiable
                     |> not
                   in
                   {
-                    actual = resolved;
+                    actual = item_type_for_error;
                     expected = expected_item_type;
                     name = name >>| Node.value;
                     position;
@@ -1243,7 +1282,7 @@ module SignatureSelection = struct
                   |> Node.create ~location
                   |> fun mismatch -> Mismatch mismatch |> Option.some_if is_mismatch
                 in
-                Error (Mismatches (List.filter_map arguments ~f:make_mismatch))
+                Error (Mismatches (List.filter_map extracted_ordered_types ~f:make_mismatch))
             | None ->
                 Error
                   (Mismatches
@@ -1264,7 +1303,7 @@ module SignatureSelection = struct
               | Default -> failwith "Variable parameters do not have defaults")
         in
         let open Result in
-        extract_ordered_types arguments >>= concatenate >>= solve ~arguments |> make_signature_match
+        extract_ordered_types arguments >>= concatenate >>= solve |> make_signature_match
       in
       match key, data with
       | Parameter.Variable (Concatenation concatenation), arguments ->

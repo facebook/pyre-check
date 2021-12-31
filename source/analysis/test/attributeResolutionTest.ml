@@ -907,6 +907,101 @@ let test_check_arguments_against_parameters context =
         annotation = [];
       }
     [TypeConstraints.empty];
+  let tuple_unbounded_int =
+    Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer
+  in
+  let callable_expecting_unbounded_int =
+    {
+      Type.Callable.implementation =
+        {
+          parameters = Defined [Variable (Concatenation tuple_unbounded_int)];
+          annotation = Type.none;
+        };
+      overloads = [];
+      kind = Anonymous;
+    }
+  in
+  (* Pass an unpacked list of strings to `*args: *Tuple[int, ...]`. *)
+  assert_arguments_against_parameters
+    ~callable:callable_expecting_unbounded_int
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Variable (Concatenation tuple_unbounded_int),
+                [
+                  make_matched_argument
+                    {
+                      Argument.WithPosition.resolved = Type.list Type.string;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    ~expected_reasons:
+      {
+        arity =
+          [
+            SignatureSelectionTypes.Mismatches
+              [
+                Mismatch
+                  ({
+                     SignatureSelectionTypes.actual = Type.string;
+                     expected = Type.integer;
+                     name = None;
+                     position = 1;
+                   }
+                  |> Node.create_with_default_location);
+              ];
+          ];
+        annotation = [];
+      }
+    [TypeConstraints.empty];
+  (* Pass part of an unpacked tuple to `*args: *Tuple[int, ...]`. *)
+  assert_arguments_against_parameters
+    ~callable:callable_expecting_unbounded_int
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Variable (Concatenation tuple_unbounded_int),
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.string];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    ~expected_reasons:
+      {
+        arity =
+          [
+            SignatureSelectionTypes.Mismatches
+              [
+                Mismatch
+                  ({
+                     SignatureSelectionTypes.actual = Type.string;
+                     expected = Type.integer;
+                     name = None;
+                     position = 1;
+                   }
+                  |> Node.create_with_default_location);
+              ];
+          ];
+        annotation = [];
+      }
+    [TypeConstraints.empty];
   ()
 
 
