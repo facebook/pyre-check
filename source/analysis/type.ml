@@ -740,6 +740,8 @@ module Record = struct
               result |> Option.value ~default:unbounded |> Option.some
           | Variadic _
           | Broadcast _ ->
+              (* Variadic or Broadcast middle element may be empty, so we cannot index any elements
+                 past the concrete prefix. *)
               result)
   end
 

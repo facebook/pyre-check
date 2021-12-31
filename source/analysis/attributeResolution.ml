@@ -1248,6 +1248,8 @@ module SignatureSelection = struct
               >>= Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
             with
             | Some expected_item_type ->
+                (* The expected type is `*args: *Tuple[X, ...]`. Raise an individual error for each
+                   argument that was passed. *)
                 let make_mismatch
                     {
                       argument = { Argument.WithPosition.position; expression; kind; _ };
@@ -1284,6 +1286,10 @@ module SignatureSelection = struct
                 in
                 Error (Mismatches (List.filter_map extracted_ordered_types ~f:make_mismatch))
             | None ->
+                (* The expected type is different from `*args: *Tuple[X, ...]`, such as `*Ts` or
+                   more complicated unbounded tuples. It may require a prefix or suffix of
+                   arguments. Since we cannot express that clearly by raising individual errors, we
+                   raise a combined error about the arguments. *)
                 Error
                   (Mismatches
                      [
