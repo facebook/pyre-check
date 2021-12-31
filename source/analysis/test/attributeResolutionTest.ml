@@ -528,12 +528,6 @@ let test_check_arguments_against_parameters context =
   let open AttributeResolution in
   let open Type.Callable in
   let open Type.OrderedTypes in
-  let parse_callable_record callable =
-    match parse_callable callable with
-    | Type.Callable ({ implementation = { parameters = Defined _; _ }; _ } as callable_record) ->
-        callable_record
-    | _ -> failwith "expected defined parameters"
-  in
   let assert_arguments_against_parameters
       ~callable
       ~parameter_argument_mapping_with_reasons
@@ -548,13 +542,19 @@ let test_check_arguments_against_parameters context =
       |> GlobalResolution.create
       |> GlobalResolution.full_order
     in
+    let parse_callable_record callable =
+      match parse_callable callable with
+      | Type.Callable ({ implementation = { parameters = Defined _; _ }; _ } as callable_record) ->
+          callable_record
+      | _ -> failwith "expected defined parameters"
+    in
     let { constraints_set = actual_constraints_set; reasons = actual_reasons; _ } =
       SignatureSelection.check_arguments_against_parameters
         ~order
         ~resolve_mutable_literals:(fun ~resolve:_ ~expression:_ ~resolved ~expected:_ ->
           WeakenMutableLiterals.make_weakened_type resolved)
         ~resolve_with_locals:(fun ~locals:_ _ -> failwith "don't care")
-        ~callable
+        ~callable:(parse_callable_record callable)
         parameter_argument_mapping_with_reasons
     in
     let print_reasons format reasons = Format.fprintf format "%s" ([%show: reasons] reasons) in
@@ -574,7 +574,7 @@ let test_check_arguments_against_parameters context =
       actual_reasons
   in
   assert_arguments_against_parameters
-    ~callable:(parse_callable_record "typing.Callable[[Variable(int)], None]")
+    ~callable:"typing.Callable[[Variable(int)], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -597,33 +597,34 @@ let test_check_arguments_against_parameters context =
       }
     [TypeConstraints.empty];
   let ordered_type_str_int_unbounded_int =
-    Type.OrderedTypes.Concatenation.create_from_unbounded_element ~prefix:[Type.string] Type.integer
+    Type.OrderedTypes.Concatenation.create_from_unbounded_element
+      ~prefix:[Type.string; Type.integer]
+      Type.integer
   in
   (* Check `*Tuple[str, int, *Tuple[int, ...]]` after dropping a prefix of one type. This leaves
      `*Tuple[int, *Tuple[int, ...]]`, which is compatible against the expected type `*Tuple[int,
      ...]`. *)
   assert_arguments_against_parameters
     ~callable:
-      {
-        Type.Callable.implementation =
-          {
-            parameters =
-              Defined
-                [
-                  Variable
-                    (Concatenation
-                       (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer));
-                ];
-            annotation = Type.none;
-          };
-        overloads = [];
-        kind = Anonymous;
-      }
+      "typing.Callable[[Named(x, str), Variable(pyre_extensions.Unpack[typing.Tuple[int, ...]])], \
+       None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
           Parameter.Map.of_alist_exn
             [
+              ( Named { name = "x"; annotation = Type.string; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.Tuple (Concatenation ordered_type_str_int_unbounded_int);
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
               ( Variable
                   (Concatenation
                      (Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer)),
@@ -651,17 +652,16 @@ let test_check_arguments_against_parameters context =
   in
   assert_arguments_against_parameters
     ~callable:
-      (parse_callable_record
-         "typing.Callable[[PositionalOnly(int), Named(some_argument, str), Variable(int)], None]")
+      "typing.Callable[[PositionalOnly(int), Named(some_argument, str), Variable(int)], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
           Parameter.Map.of_alist_exn
             [
-              ( Named { name = "some_argument"; annotation = Type.string; default = false },
+              ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:1
+                    ~index_into_starred_tuple:0
                     {
                       Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
                       kind = SingleStar;
@@ -669,10 +669,10 @@ let test_check_arguments_against_parameters context =
                       position = 1;
                     };
                 ] );
-              ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
+              ( Named { name = "some_argument"; annotation = Type.string; default = false },
                 [
                   make_matched_argument
-                    ~index_into_starred_tuple:0
+                    ~index_into_starred_tuple:1
                     {
                       Argument.WithPosition.resolved = tuple_int_str_int_unbounded_int;
                       kind = SingleStar;
@@ -697,9 +697,8 @@ let test_check_arguments_against_parameters context =
     [TypeConstraints.empty];
   assert_arguments_against_parameters
     ~callable:
-      (parse_callable_record
-         "typing.Callable[[PositionalOnly(int), Named(argument, str), Named(argument2, int), \
-          Named(argument3, int)], None]")
+      "typing.Callable[[PositionalOnly(int), Named(argument, str), Named(argument2, int), \
+       Named(argument3, int)], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -759,20 +758,10 @@ let test_check_arguments_against_parameters context =
       ~prefix:[Type.integer]
       Type.integer
   in
-  let callable_expecting_int_unbounded_int =
-    {
-      Type.Callable.implementation =
-        {
-          parameters = Defined [Variable (Concatenation tuple_int_unbounded_int)];
-          annotation = Type.none;
-        };
-      overloads = [];
-      kind = Anonymous;
-    }
-  in
   (* Pass an unpacked list to `*args: *Tuple[int, *Tuple[int, ...]]`. *)
   assert_arguments_against_parameters
-    ~callable:callable_expecting_int_unbounded_int
+    ~callable:
+      "typing.Callable[[Variable(int, pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -794,7 +783,8 @@ let test_check_arguments_against_parameters context =
     [TypeConstraints.empty];
   (* Pass multiple unpacked lists to `*args: *Tuple[int, *Tuple[int, ...]]`. *)
   assert_arguments_against_parameters
-    ~callable:callable_expecting_int_unbounded_int
+    ~callable:
+      "typing.Callable[[Variable(int, pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -837,7 +827,8 @@ let test_check_arguments_against_parameters context =
     [TypeConstraints.empty];
   (* Pass multiple, heterogeneous, unpacked lists to `*args: *Tuple[int, *Tuple[int, ...]]`. *)
   assert_arguments_against_parameters
-    ~callable:callable_expecting_int_unbounded_int
+    ~callable:
+      "typing.Callable[[Variable(int, pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -890,20 +881,9 @@ let test_check_arguments_against_parameters context =
   let tuple_unbounded_int =
     Type.OrderedTypes.Concatenation.create_from_unbounded_element Type.integer
   in
-  let callable_expecting_unbounded_int =
-    {
-      Type.Callable.implementation =
-        {
-          parameters = Defined [Variable (Concatenation tuple_unbounded_int)];
-          annotation = Type.none;
-        };
-      overloads = [];
-      kind = Anonymous;
-    }
-  in
   (* Pass an unpacked list of strings to `*args: *Tuple[int, ...]`. *)
   assert_arguments_against_parameters
-    ~callable:callable_expecting_unbounded_int
+    ~callable:"typing.Callable[[Variable(pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -943,7 +923,7 @@ let test_check_arguments_against_parameters context =
     [TypeConstraints.empty];
   (* Pass part of an unpacked tuple to `*args: *Tuple[int, ...]`. *)
   assert_arguments_against_parameters
-    ~callable:callable_expecting_unbounded_int
+    ~callable:"typing.Callable[[Variable(pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -983,7 +963,7 @@ let test_check_arguments_against_parameters context =
       }
     [TypeConstraints.empty];
   assert_arguments_against_parameters
-    ~callable:(parse_callable_record "typing.Callable[[Variable(int)], None]")
+    ~callable:"typing.Callable[[Variable(int)], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -1005,7 +985,7 @@ let test_check_arguments_against_parameters context =
       }
     [TypeConstraints.empty];
   assert_arguments_against_parameters
-    ~callable:(parse_callable_record "typing.Callable[[Variable(typing.object)], None]")
+    ~callable:"typing.Callable[[Variable(typing.object)], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
