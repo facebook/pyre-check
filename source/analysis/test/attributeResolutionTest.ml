@@ -812,6 +812,101 @@ let test_check_arguments_against_parameters context =
         reasons = empty_reasons;
       }
     [TypeConstraints.empty];
+  (* Pass multiple unpacked lists to `*args: *Tuple[int, *Tuple[int, ...]]`. *)
+  assert_arguments_against_parameters
+    ~callable:callable_expecting_int_unbounded_int
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Variable (Concatenation tuple_int_unbounded_int),
+                [
+                  make_matched_argument
+                    {
+                      Argument.WithPosition.resolved = Type.list Type.integer;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                  make_matched_argument
+                    {
+                      Argument.WithPosition.resolved = Type.list Type.integer;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 2;
+                    };
+                  make_matched_argument
+                    {
+                      Argument.WithPosition.resolved = Type.integer;
+                      kind = Positional;
+                      expression = None;
+                      position = 3;
+                    };
+                  make_matched_argument
+                    {
+                      Argument.WithPosition.resolved = Type.list Type.integer;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 4;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    [TypeConstraints.empty];
+  (* Pass multiple, heterogeneous, unpacked lists to `*args: *Tuple[int, *Tuple[int, ...]]`. *)
+  assert_arguments_against_parameters
+    ~callable:callable_expecting_int_unbounded_int
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Variable (Concatenation tuple_int_unbounded_int),
+                [
+                  make_matched_argument
+                    {
+                      Argument.WithPosition.resolved = Type.list Type.integer;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                  make_matched_argument
+                    {
+                      Argument.WithPosition.resolved = Type.list Type.string;
+                      kind = SingleStar;
+                      expression = None;
+                      position = 2;
+                    };
+                ] );
+            ];
+        reasons = empty_reasons;
+      }
+    ~expected_reasons:
+      {
+        arity =
+          [
+            SignatureSelectionTypes.Mismatches
+              [
+                MismatchWithTupleVariadicTypeVariable
+                  {
+                    variable =
+                      Concatenation
+                        (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+                           ~prefix:[Type.integer]
+                           Type.integer);
+                    mismatch =
+                      ConstraintFailure
+                        (Concatenation
+                           (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+                              (Type.union [Type.integer; Type.string])));
+                  };
+              ];
+          ];
+        annotation = [];
+      }
+    [TypeConstraints.empty];
   ()
 
 

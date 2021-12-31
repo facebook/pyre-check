@@ -5298,7 +5298,21 @@ let test_coalesce_ordered_types _ =
     ["[int, str]"; "[pyre_extensions.Unpack[Ts]]"; "[bool, bool]"]
     (Some "[int, str, pyre_extensions.Unpack[Ts], bool, bool]");
   assert_coalesce ["[int, ...]"; "[pyre_extensions.Unpack[Ts]]"] None;
-  assert_coalesce ["[int, ...]"; "[int, ...]"] None;
+  assert_coalesce ["[int, ...]"; "[int, ...]"] (Some "[int, ...]");
+  assert_coalesce ["[int, ...]"; "[str, ...]"] (Some "[typing.Union[int, str], ...]");
+  assert_coalesce
+    [
+      "[int, int]";
+      "[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]], bool, bool]";
+      "[bool, bool]";
+      "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool, bool]";
+      "[bool, bool]";
+      "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool, bool]";
+      "[bool, bool]";
+    ]
+    (Some
+       "[int, int, int, str, pyre_extensions.Unpack[typing.Tuple[typing.Union[int, bool, str], \
+        ...]], bool, bool, bool, bool]");
   ()
 
 

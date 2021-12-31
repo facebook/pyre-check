@@ -3582,11 +3582,48 @@ module OrderedTypes = struct
         Tuple (Concatenation { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix })
 
 
-  let coalesce_ordered_types = function
-    | [] -> Some (Concrete [])
-    | head :: tail ->
-        let concatenate sofar next = sofar >>= fun left -> concatenate ~left ~right:next in
-        List.fold tail ~f:concatenate ~init:(Some head)
+  let coalesce_ordered_types ordered_types =
+    let concatenate_ordered_types = function
+      | [] -> Some (Concrete [])
+      | head :: tail ->
+          let concatenate sofar next = sofar >>= fun left -> concatenate ~left ~right:next in
+          List.fold tail ~f:concatenate ~init:(Some head)
+    in
+    let is_concrete = function
+      | Concrete _ -> true
+      | _ -> false
+    in
+    let separated_prefixes_and_suffixes =
+      List.concat_map ordered_types ~f:(function
+          | Concatenation { prefix; middle; suffix } ->
+              [Concrete prefix; Concatenation { prefix = []; middle; suffix = [] }; Concrete suffix]
+          | Concrete _ as concrete -> [concrete])
+    in
+    let concrete_tuples_prefix, rest =
+      List.split_while separated_prefixes_and_suffixes ~f:is_concrete
+    in
+    let concrete_tuples_suffix, middle_items =
+      List.rev rest |> List.split_while ~f:is_concrete |> fun (xs, ys) -> List.rev xs, List.rev ys
+    in
+    match middle_items with
+    | _ :: _ :: _ ->
+        (* There are multiple unpacked tuples. Coalesce them into a single tuple with a common
+           iterable type so that we can compare it to an expected tuple type. *)
+        let extract_common_type = function
+          | Concrete items -> Some (union items)
+          | Concatenation { middle = UnboundedElements item_type; prefix; suffix } ->
+              union (item_type :: (prefix @ suffix)) |> Option.some
+          | Concatenation { middle = Variadic _ | Broadcast _; _ } -> None
+        in
+        List.map middle_items ~f:extract_common_type
+        |> Option.all
+        >>| union
+        >>| (fun item_type ->
+              concrete_tuples_prefix
+              @ [Concatenation (Concatenation.create_from_unbounded_element item_type)]
+              @ concrete_tuples_suffix)
+        >>= concatenate_ordered_types
+    | _ -> concatenate_ordered_types ordered_types
 end
 
 module TypeOperation = struct
